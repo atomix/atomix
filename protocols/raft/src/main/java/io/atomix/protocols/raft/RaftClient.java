@@ -81,21 +81,21 @@ public interface RaftClient {
    *
    * @return the globally unique client identifier
    */
-  String id();
+  String getClientId();
 
   /**
    * Returns the Copycat metadata.
    *
    * @return The Copycat metadata.
    */
-  RaftMetadataClient metadata();
+  RaftMetadataClient getMetadataClient();
 
   /**
    * Returns a new proxy builder.
    *
    * @return A new proxy builder.
    */
-  RaftProxy.Builder proxyBuilder();
+  RaftProxy.Builder newProxyBuilder();
 
   /**
    * Connects the client to Copycat cluster via the default server address.

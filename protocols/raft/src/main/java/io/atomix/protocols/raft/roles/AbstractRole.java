@@ -54,7 +54,7 @@ public abstract class AbstractRole implements RaftRole {
    * Logs a request.
    */
   protected final <R extends RaftRequest> R logRequest(R request) {
-    LOGGER.trace("{} - Received {}", context.getCluster().member().id(), request);
+    LOGGER.trace("{} - Received {}", context.getCluster().getMember().getMemberId(), request);
     return request;
   }
 
@@ -62,7 +62,7 @@ public abstract class AbstractRole implements RaftRole {
    * Logs a response.
    */
   protected final <R extends RaftResponse> R logResponse(R response) {
-    LOGGER.trace("{} - Sending {}", context.getCluster().member().id(), response);
+    LOGGER.trace("{} - Sending {}", context.getCluster().getMember().getMemberId(), response);
     return response;
   }
 
@@ -88,7 +88,7 @@ public abstract class AbstractRole implements RaftRole {
       return Futures.exceptionalFuture(new NoLeaderException("No leader found"));
     }
 
-    function.apply(leader.id(), request).whenComplete((response, error) -> {
+    function.apply(leader.getMemberId(), request).whenComplete((response, error) -> {
       if (error == null) {
         future.complete(response);
       } else {

@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  * <p>
  * This class provides the view of the Copycat cluster from the perspective of a single server. When a
  * {@link RaftServer CopycatServer} is started, the server will form a cluster
- * with other servers. Each Copycat cluster consists of some set of {@link #members() members}, and each
+ * with other servers. Each Copycat cluster consists of some set of {@link #getMembers() members}, and each
  * {@link RaftMember} represents a single server in the cluster. Users can use the {@code Cluster} to react to
  * state changes in the underlying Raft algorithm via the various listeners.
  * <p>
@@ -41,7 +41,7 @@ import java.util.function.Consumer;
  * </pre>
  * Membership exposed via this interface is provided from the perspective of the local server and may not
  * necessarily be consistent with cluster membership from the perspective of other nodes. The only consistent
- * membership list is on the {@link #leader() leader} node.
+ * membership list is on the {@link #getLeader() leader} node.
  * <h2>Cluster management</h2>
  * Users can use the {@code Cluster} to manage the Copycat cluster membership. Typically, servers join the
  * cluster by calling {@link RaftServer#bootstrap(MemberId...)}  or {@link #join(MemberId...)},
@@ -71,14 +71,14 @@ public interface RaftCluster {
   /**
    * Returns the current cluster leader.
    * <p>
-   * If no leader has been elected for the current {@link #term() term}, the leader will be {@code null}.
+   * If no leader has been elected for the current {@link #getTerm() term}, the leader will be {@code null}.
    * Once a leader is elected, the leader must be known to the local server's configuration. If the returned
    * {@link RaftMember} is {@code null} then that does not necessarily indicate that no leader yet exists for the
    * current term, only that the local server has not learned of a valid leader for the term.
    *
    * @return The current cluster leader or {@code null} if no leader is known for the current term.
    */
-  RaftMember leader();
+  RaftMember getLeader();
 
   /**
    * Returns the current cluster term.
@@ -86,11 +86,11 @@ public interface RaftCluster {
    * The term is representative of the epoch determined by the underlying Raft consensus algorithm. The term is a monotonically
    * increasing number used by Raft to represent a point in logical time. If the cluster is persistent (i.e. all servers use a persistent
    * {@link StorageLevel}), the term is guaranteed to be unique and monotonically increasing even across
-   * cluster restarts. Additionally, for any given term, Raft guarantees that only a single {@link #leader() leader} can be elected.
+   * cluster restarts. Additionally, for any given term, Raft guarantees that only a single {@link #getLeader() leader} can be elected.
    *
    * @return The current cluster term.
    */
-  long term();
+  long getTerm();
 
   /**
    * Adds a listener to be called when a leader is elected.
@@ -106,8 +106,8 @@ public interface RaftCluster {
    *   }
    * </pre>
    * The {@link RaftMember} provided to the callback represents the member that was elected leader. Copycat guarantees that this member is
-   * a member of the {@link RaftCluster}. When a leader election callback is called, the correct {@link #term()} for the leader is guaranteed
-   * to have already been set. Thus, to get the term for the provided leader, simply read the cluster {@link #term()}.
+   * a member of the {@link RaftCluster}. When a leader election callback is called, the correct {@link #getTerm()} for the leader is guaranteed
+   * to have already been set. Thus, to get the term for the provided leader, simply read the cluster {@link #getTerm()}.
    *
    * @param listener The listener to be called when a new leader is elected.
    */
@@ -125,17 +125,17 @@ public interface RaftCluster {
    *
    * @return The local cluster member.
    */
-  RaftMember member();
+  RaftMember getMember();
 
   /**
    * Returns a member by ID.
    * <p>
-   * The returned {@link RaftMember} is referenced by the unique {@link RaftMember#id()}.
+   * The returned {@link RaftMember} is referenced by the unique {@link RaftMember#getMemberId()}.
    *
    * @param id The member ID.
    * @return The member or {@code null} if no member with the given {@code id} exists.
    */
-  RaftMember member(MemberId id);
+  RaftMember getMember(MemberId id);
 
   /**
    * Returns a collection of all cluster members.
@@ -147,7 +147,7 @@ public interface RaftCluster {
    *
    * @return A collection of all cluster members.
    */
-  Collection<RaftMember> members();
+  Collection<RaftMember> getMembers();
 
   /**
    * Bootstraps the cluster.
@@ -293,25 +293,6 @@ public interface RaftCluster {
   CompletableFuture<Void> leave();
 
   /**
-   * Registers a callback to be called when a member joins the cluster.
-   * <p>
-   * The registered {@code callback} will be called whenever a new {@link RaftMember} joins the cluster. Membership
-   * changes are sequentially consistent, meaning each server in the cluster will see members join in the same
-   * order, but different servers may see members join at different points in time. Users should not in any case
-   * assume that because one server has seen a member join the cluster all servers have.
-   *
-   * @param listener The listener to be called when a member joins the cluster.
-   */
-  void addJoinListener(Consumer<RaftMember> listener);
-
-  /**
-   * Removes a join listener from the cluster.
-   *
-   * @param listener The listener to remove from the cluster.
-   */
-  void removeJoinListener(Consumer<RaftMember> listener);
-
-  /**
    * Registers a callback to be called when a member leaves the cluster.
    * <p>
    * The registered {@code callback} will be called whenever an existing {@link RaftMember} leaves the cluster. Membership
@@ -321,13 +302,13 @@ public interface RaftCluster {
    *
    * @param listener The listener to be called when a member leaves the cluster.
    */
-  void addLeaveListener(Consumer<RaftMember> listener);
+  void addListener(RaftClusterEventListener listener);
 
   /**
-   * Removes a leave listener from the cluster.
+   * Removes a listener from the cluster.
    *
    * @param listener The listener to remove from the cluster.
    */
-  void removeLeaveListener(Consumer<RaftMember> listener);
+  void removeListener(RaftClusterEventListener listener);
 
 }

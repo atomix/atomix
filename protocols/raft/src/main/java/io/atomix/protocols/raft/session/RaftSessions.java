@@ -33,7 +33,7 @@ public interface RaftSessions extends Iterable<RaftSession> {
    * @param sessionId The session ID.
    * @return The session or {@code null} if no session with the given {@code sessionId} exists.
    */
-  RaftSession session(long sessionId);
+  RaftSession getSession(long sessionId);
 
   /**
    * Adds a listener to the sessions.

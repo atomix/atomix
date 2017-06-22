@@ -36,7 +36,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * with the same sequence number. Queries are guaranteed to be applied in sequence order.
  * <p>
  * Query requests should always be submitted to the server to which the client is connected. The provided
- * query's {@link RaftQuery#consistency() consistency level} will be used to determine how the query should be
+ * query's {@link RaftQuery#getConsistencyLevel() consistency level} will be used to determine how the query should be
  * handled. If the query is received by a follower, it may be evaluated on that node if the consistency level
  * is {@link RaftQuery.ConsistencyLevel#SEQUENTIAL}, otherwise it will be forwarded to the cluster leader.
  * Queries are always guaranteed to see state progress monotonically within a single {@link #session()}

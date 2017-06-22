@@ -45,7 +45,7 @@ class RaftServerStateMachineSessions implements RaftSessions {
    * @param session The session to add.
    */
   void add(RaftSessionContext session) {
-    sessions.put(session.id(), session);
+    sessions.put(session.getSessionId(), session);
     sessionManager.registerSession(session);
   }
 
@@ -55,12 +55,12 @@ class RaftServerStateMachineSessions implements RaftSessions {
    * @param session The session to remove.
    */
   void remove(RaftSessionContext session) {
-    sessions.remove(session.id());
-    sessionManager.unregisterSession(session.id());
+    sessions.remove(session.getSessionId());
+    sessionManager.unregisterSession(session.getSessionId());
   }
 
   @Override
-  public RaftSession session(long sessionId) {
+  public RaftSession getSession(long sessionId) {
     return sessions.get(sessionId);
   }
 

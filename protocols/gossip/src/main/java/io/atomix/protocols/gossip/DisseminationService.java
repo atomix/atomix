@@ -98,12 +98,12 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
   public void process(GossipEvent<K, V> event) {
     LogicalTimestamp timestamp = logicalClock.increment();
     GossipUpdate<K, V> update = new GossipUpdate<>(
-        event.subject(),
+        event.getSubject(),
         event.value(),
         timestamp.asVersion());
 
     if (event.value() != null) {
-      updates.put(event.subject(), update);
+      updates.put(event.getSubject(), update);
       if (fastConvergence) {
         updatePeers();
       }
@@ -111,9 +111,9 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
       // For deletes, simply remove the event if tombstones are disabled.
       // Otherwise, treat the tombstone as an update to ensure it's replicated.
       if (tombstonesDisabled) {
-        updates.remove(event.subject());
+        updates.remove(event.getSubject());
       } else {
-        updates.put(event.subject(), update);
+        updates.put(event.getSubject(), update);
         if (fastConvergence) {
           updatePeers();
         }

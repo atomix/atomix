@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.protocols.raft.CommunicationStrategies;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.metadata.RaftSessionMetadata;
+import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -51,12 +51,12 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   }
 
   @Override
-  public MemberId leader() {
+  public MemberId getLeader() {
     return selectorManager.leader();
   }
 
   @Override
-  public Collection<MemberId> servers() {
+  public Collection<MemberId> getServers() {
     return selectorManager.servers();
   }
 
@@ -88,7 +88,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
 
   @Override
   public CompletableFuture<Set<RaftSessionMetadata>> getSessions(String type) {
-    return getMetadata().thenApply(response -> response.sessions().stream().filter(s -> s.type().equals(type)).collect(Collectors.toSet()));
+    return getMetadata().thenApply(response -> response.sessions().stream().filter(s -> s.getTypeName().equals(type)).collect(Collectors.toSet()));
   }
 
 }

@@ -234,7 +234,7 @@ public interface RaftServer {
      * Represents the state of a server which is actively coordinating and replicating logs with other servers.
      * <p>
      * Leaders are responsible for handling and replicating writes from clients. Note that more than one leader can
-     * exist at any given time, but Raft guarantees that no two leaders will exist for the same {@link RaftCluster#term()}.
+     * exist at any given time, but Raft guarantees that no two leaders will exist for the same {@link RaftCluster#getTerm()}.
      */
     LEADER
 
@@ -251,19 +251,7 @@ public interface RaftServer {
    *
    * @return The server name.
    */
-  String name();
-
-  /**
-   * Returns the server storage.
-   * <p>
-   * The returned {@link RaftStorage} object is the object provided to the server via the {@link Builder#withStorage(RaftStorage) builder}
-   * configuration. The storage object is immutable and is intended to provide runtime configuration information only. Users
-   * should <em>never open logs, snapshots, or other storage related files</em> through the {@link RaftStorage} API. Doing so
-   * can conflict with internal server operations, resulting in the loss of state.
-   *
-   * @return The server storage.
-   */
-  RaftStorage storage();
+  String getServerName();
 
   /**
    * Returns the server's cluster configuration.
@@ -279,7 +267,7 @@ public interface RaftServer {
    *
    * @return The server's cluster configuration.
    */
-  RaftCluster cluster();
+  RaftCluster getCluster();
 
   /**
    * Returns the server role.
@@ -290,7 +278,7 @@ public interface RaftServer {
    *
    * @return The server role.
    */
-  Role role();
+  Role getRole();
 
   /**
    * Adds a role change listener.

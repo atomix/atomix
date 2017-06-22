@@ -21,7 +21,7 @@ import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.error.InternalException;
 import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.error.UnknownStateMachineException;
-import io.atomix.protocols.raft.metadata.RaftSessionMetadata;
+import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.protocols.raft.storage.log.RaftLog;
@@ -244,7 +244,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   private <T> CompletableFuture<T> applyEntry(Indexed<? extends RaftLogEntry> entry) {
-    LOGGER.trace("{} - Applying {}", state.getCluster().member().id(), entry);
+    LOGGER.trace("{} - Applying {}", state.getCluster().getMember().getMemberId(), entry);
     if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());
     } else if (entry.type() == CommandEntry.class) {
@@ -394,14 +394,14 @@ public class RaftServerStateMachineManager implements AutoCloseable {
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext s : sessionManager.getSessions()) {
         if (s.name().equals(session.name())) {
-          sessions.add(new RaftSessionMetadata(s.id(), s.name(), s.type()));
+          sessions.add(new RaftSessionMetadata(s.getSessionId(), s.name(), s.type()));
         }
       }
       return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
     } else {
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext session : sessionManager.getSessions()) {
-        sessions.add(new RaftSessionMetadata(session.id(), session.name(), session.type()));
+        sessions.add(new RaftSessionMetadata(session.getSessionId(), session.name(), session.type()));
       }
       return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
     }
@@ -475,7 +475,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     // Iterate through state machines and compute the lowest stored snapshot for all state machines.
     long snapshotIndex = state.getLogWriter().lastIndex();
     for (RaftServerStateMachineExecutor stateMachineExecutor : stateMachines.values()) {
-      Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.context().id());
+      Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.getContext().getStateMachineId());
       if (snapshot == null) {
         return;
       } else {

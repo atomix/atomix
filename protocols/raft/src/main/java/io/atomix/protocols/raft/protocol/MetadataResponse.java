@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.error.RaftError;
-import io.atomix.protocols.raft.metadata.RaftSessionMetadata;
+import io.atomix.protocols.raft.session.RaftSessionMetadata;
 
 import java.util.Arrays;
 import java.util.Collection;

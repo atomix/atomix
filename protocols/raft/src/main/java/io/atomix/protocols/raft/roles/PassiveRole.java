@@ -97,7 +97,7 @@ public class PassiveRole extends ReserveRole {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getTerm()) {
-      LOGGER.debug("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().member().id(), request, context.getTerm());
+      LOGGER.debug("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().getMember().getMemberId(), request, context.getTerm());
       return AppendResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -115,7 +115,7 @@ public class PassiveRole extends ReserveRole {
   protected AppendResponse checkPreviousEntry(AppendRequest request) {
     final long lastIndex = context.getLogWriter().lastIndex();
     if (request.logIndex() != 0 && request.logIndex() > lastIndex) {
-      LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().member().id(), request, request.logIndex(), lastIndex);
+      LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().getMemberId(), request, request.logIndex(), lastIndex);
       return AppendResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -159,7 +159,7 @@ public class PassiveRole extends ReserveRole {
           Indexed<? extends RaftLogEntry> existing = reader.get(entry.index());
           if (existing == null || existing.entry().term() != entry.entry().term()) {
             writer.append(entry);
-            LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+            LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
           }
         }
       } finally {
@@ -172,7 +172,7 @@ public class PassiveRole extends ReserveRole {
     context.setCommitIndex(commitIndex);
 
     if (context.getCommitIndex() > previousCommitIndex) {
-      LOGGER.trace("{} - Committed entries up to index {}", context.getCluster().member().id(), commitIndex);
+      LOGGER.trace("{} - Committed entries up to index {}", context.getCluster().getMember().getMemberId(), commitIndex);
     }
 
     // Apply commits to the state machine in batch.
@@ -198,14 +198,14 @@ public class PassiveRole extends ReserveRole {
       // query to the leader. This ensures that a follower does not tell the client its session
       // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
       if (context.getStateMachine().getLastApplied() < request.session()) {
-        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().member().id());
+        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().getMemberId());
         return queryForward(request);
       }
 
       // If the commit index is not in the log then we've fallen too far behind the leader to perform a local query.
       // Forward the request to the leader.
       if (context.getLogWriter().lastIndex() < context.getCommitIndex()) {
-        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().member().id());
+        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().getMemberId());
         return queryForward(request);
       }
 
@@ -235,7 +235,7 @@ public class PassiveRole extends ReserveRole {
           .build()));
     }
 
-    LOGGER.trace("{} - Forwarding {}", context.getCluster().member().id(), request);
+    LOGGER.trace("{} - Forwarding {}", context.getCluster().getMember().getMemberId(), request);
     return forward(request, context.getProtocol()::query)
         .exceptionally(error -> QueryResponse.builder()
             .withStatus(RaftResponse.Status.ERROR)
@@ -351,7 +351,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Write the data to the snapshot.
-    try (SnapshotWriter writer = pendingSnapshot.writer(context.getStorage().serializer())) {
+    try (SnapshotWriter writer = pendingSnapshot.writer(context.getStorage().getSerializer())) {
       writer.write(request.data());
     }
 

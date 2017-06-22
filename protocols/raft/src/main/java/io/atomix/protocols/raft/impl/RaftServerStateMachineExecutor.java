@@ -38,7 +38,6 @@ import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -101,7 +100,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
    * @return The state machine serializer.
    */
   public Serializer serializer() {
-    return stateMachine.serializer();
+    return stateMachine.getSerializer();
   }
 
   /**
@@ -114,7 +113,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public RaftServerStateMachineContext context() {
+  public RaftServerStateMachineContext getContext() {
     return context;
   }
 
@@ -138,7 +137,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
       while (iterator.hasNext()) {
         ServerScheduledTask task = iterator.next();
         if (task.complete(this.timestamp)) {
-          context.update(index, Instant.ofEpochMilli(task.time), RaftServerStateMachineContext.Type.COMMAND);
+          context.update(index, task.time, RaftServerStateMachineContext.Type.COMMAND);
           task.execute();
           complete.add(task);
           iterator.remove();
@@ -181,15 +180,14 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
 
         // Update the state machine context with the keep-alive entry's index. This ensures that events published
         // as a result of asynchronous callbacks will be executed at the proper index with SEQUENTIAL consistency.
-        context.update(index, Instant.ofEpochMilli(timestamp), RaftServerStateMachineContext.Type.COMMAND);
+        context.update(index, timestamp, RaftServerStateMachineContext.Type.COMMAND);
 
         // Expire the session.
         session.expire();
 
         // Iterate through and invoke session listeners.
         for (RaftSessionListener listener : sessions.listeners) {
-          listener.expire(session);
-          listener.close(session);
+          listener.onExpire(session);
         }
       }
     }
@@ -200,13 +198,13 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
    */
   private synchronized void maybeTakeSnapshot(long index, long timestamp) {
     if (pendingSnapshot == null && snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS) {
-      LOGGER.info("{} - Taking snapshot {}", server.getCluster().member().id(), index);
-      context.update(index, Instant.ofEpochMilli(timestamp), RaftServerStateMachineContext.Type.SNAPSHOT);
-      pendingSnapshot = server.getSnapshotStore().createTemporarySnapshot(context.id(), index);
+      LOGGER.info("{} - Taking snapshot {}", server.getCluster().getMember().getMemberId(), index);
+      context.update(index, timestamp, RaftServerStateMachineContext.Type.SNAPSHOT);
+      pendingSnapshot = server.getSnapshotStore().createTemporarySnapshot(context.getStateMachineId(), index);
       try (SnapshotWriter writer = pendingSnapshot.writer(serializer())) {
         writer.writeInt(sessions.sessions.size());
         for (RaftSessionContext session : sessions.sessions.values()) {
-          writer.writeLong(session.id());
+          writer.writeLong(session.getSessionId());
           writer.writeLong(session.timeout());
           writer.writeLong(session.getTimestamp());
         }
@@ -237,7 +235,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
 
       // If the lowest completed index for all sessions is greater than the snapshot index, complete the snapshot.
       if (lastCompleted >= pendingSnapshot.index()) {
-        LOGGER.debug("{} - Completing snapshot {}", server.getCluster().member().id(), pendingSnapshot.index());
+        LOGGER.debug("{} - Completing snapshot {}", server.getCluster().getMember().getMemberId(), pendingSnapshot.index());
         pendingSnapshot.complete();
 
         // Update the snapshot index to ensure we don't simply install the same snapshot.
@@ -253,9 +251,9 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
    * Installs a snapshot if one exists.
    */
   private void maybeInstallSnapshot(long index) {
-    Snapshot snapshot = server.getSnapshotStore().getSnapshotById(context.id());
+    Snapshot snapshot = server.getSnapshotStore().getSnapshotById(context.getStateMachineId());
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() <= index) {
-      LOGGER.info("{} - Installing snapshot {}", server.getCluster().member().id(), snapshot.index());
+      LOGGER.info("{} - Installing snapshot {}", server.getCluster().getMember().getMemberId(), snapshot.index());
       try (SnapshotReader reader = snapshot.reader(serializer())) {
         int sessionCount = reader.readInt();
         sessions.sessions.clear();
@@ -267,8 +265,8 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
           RaftSessionContext session = new RaftSessionContext(
               sessionId,
               node,
-              context.name(),
-              context.type(),
+              context.getName(),
+              context.getTypeName(),
               sessionTimeout,
               this,
               server);
@@ -300,21 +298,21 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
 
       // Update the state machine context with the keep-alive entry's index. This ensures that events published
       // as a result of asynchronous callbacks will be executed at the proper index with SEQUENTIAL consistency.
-      context.update(index, Instant.ofEpochMilli(timestamp), RaftServerStateMachineContext.Type.COMMAND);
+      context.update(index, timestamp, RaftServerStateMachineContext.Type.COMMAND);
 
       // Add the session to the sessions list.
       sessions.add(session);
 
       // Iterate through and invoke session listeners.
       for (RaftSessionListener listener : sessions.listeners) {
-        listener.register(session);
+        listener.onOpen(session);
       }
 
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
 
       // Complete the future.
-      future.complete(session.id());
+      future.complete(session.getSessionId());
     });
     return future;
   }
@@ -339,7 +337,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
 
       // Update the state machine context with the keep-alive entry's index. This ensures that events published
       // as a result of asynchronous callbacks will be executed at the proper index with SEQUENTIAL consistency.
-      context.update(index, Instant.ofEpochMilli(timestamp), RaftServerStateMachineContext.Type.COMMAND);
+      context.update(index, timestamp, RaftServerStateMachineContext.Type.COMMAND);
 
       // Clear results cached in the session.
       session.clearResults(commandSequence);
@@ -392,7 +390,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
 
       // Update the state machine context with the keep-alive entry's index. This ensures that events published
       // as a result of asynchronous callbacks will be executed at the proper index with SEQUENTIAL consistency.
-      context.update(index, Instant.ofEpochMilli(timestamp), RaftServerStateMachineContext.Type.COMMAND);
+      context.update(index, timestamp, RaftServerStateMachineContext.Type.COMMAND);
 
       // Remove the session from the sessions list.
       sessions.remove(session);
@@ -402,8 +400,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
 
       // Iterate through and invoke session listeners.
       for (RaftSessionListener listener : sessions.listeners) {
-        listener.unregister(session);
-        listener.close(session);
+        listener.onClose(session);
       }
 
       // Commit the index, causing events to be sent to clients if necessary.
@@ -442,8 +439,8 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
     tick(index, timestamp);
 
     // If the session is not open, fail the request.
-    if (!session.state().active()) {
-      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.id()));
+    if (!session.getState().active()) {
+      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.getSessionId()));
       return;
     }
 
@@ -475,7 +472,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
   private void sequenceCommand(long sequence, RaftSessionContext session, CompletableFuture<RaftOperationResult> future) {
     RaftOperationResult result = session.getResult(sequence);
     if (result == null) {
-      LOGGER.debug("Missing command result for {}:{}", session.id(), sequence);
+      LOGGER.debug("Missing command result for {}:{}", session.getSessionId(), sequence);
     }
     future.complete(result);
   }
@@ -492,7 +489,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
 
     RaftCommand command = serializer().decode(bytes);
     RaftCommit commit = new DefaultRaftCommit(index, command, session, timestamp);
-    context.update(commit.index(), commit.time(), RaftServerStateMachineContext.Type.COMMAND);
+    context.update(commit.getIndex(), timestamp, RaftServerStateMachineContext.Type.COMMAND);
 
     long eventIndex = session.getEventIndex();
 
@@ -540,8 +537,8 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
    */
   private void executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, byte[] bytes, CompletableFuture<RaftOperationResult> future) {
     // If the session is not open, fail the request.
-    if (!session.state().active()) {
-      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.id()));
+    if (!session.getState().active()) {
+      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.getSessionId()));
       return;
     }
 
@@ -580,14 +577,14 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
    */
   private void applyQuery(long index, long timestamp, RaftSessionContext session, byte[] bytes, CompletableFuture<RaftOperationResult> future) {
     // If the session is not open, fail the request.
-    if (!session.state().active()) {
-      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.id()));
+    if (!session.getState().active()) {
+      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.getSessionId()));
       return;
     }
 
     RaftQuery query = serializer().decode(bytes);
     RaftCommit commit = new DefaultRaftCommit(session.getLastApplied(), query, session, timestamp);
-    context.update(commit.index(), commit.time(), RaftServerStateMachineContext.Type.QUERY);
+    context.update(commit.getIndex(), timestamp, RaftServerStateMachineContext.Type.QUERY);
 
     long eventIndex = session.getEventIndex();
 
@@ -607,13 +604,13 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
   private <T extends RaftOperation<U>, U> U applyCommit(RaftCommit commit) {
     // Get the function registered for the operation. If no function is registered, attempt to
     // use a global function if available.
-    Function function = operations.get(commit.type());
+    Function function = operations.get(commit.getType());
 
     if (function == null) {
       // If no operation function was found for the class, try to find an operation function
       // registered with a parent class.
       for (Map.Entry<Class, Function> entry : operations.entrySet()) {
-        if (entry.getKey().isAssignableFrom(commit.type())) {
+        if (entry.getKey().isAssignableFrom(commit.getType())) {
           function = entry.getValue();
           break;
         }
@@ -621,12 +618,12 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
 
       // If a parent operation function was found, store the function for future reference.
       if (function != null) {
-        operations.put(commit.type(), function);
+        operations.put(commit.getType(), function);
       }
     }
 
     if (function == null) {
-      throw new IllegalStateException("unknown state machine operation: " + commit.type());
+      throw new IllegalStateException("unknown state machine operation: " + commit.getType());
     } else {
       // Execute the operation. If the operation return value is a Future, await the result,
       // otherwise immediately complete the execution future.
@@ -647,7 +644,6 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
     // Execute any tasks that were queue during execution of the command.
     if (!tasks.isEmpty()) {
       for (Runnable callback : tasks) {
-        context.update(context.index(), context.clock().instant(), RaftServerStateMachineContext.Type.COMMAND);
         callback.run();
       }
       tasks.clear();
@@ -705,7 +701,6 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
    * Scheduled task.
    */
   private class ServerScheduledTask implements Scheduled {
-    private final long delay;
     private final long interval;
     private final Runnable callback;
     private long time;
@@ -715,10 +710,9 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
     }
 
     private ServerScheduledTask(Runnable callback, long delay, long interval) {
-      this.delay = delay;
       this.interval = interval;
       this.callback = callback;
-      this.time = context.clock().instant().toEpochMilli() + delay;
+      this.time = timestamp + delay;
     }
 
     /**

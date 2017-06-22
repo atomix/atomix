@@ -18,8 +18,8 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.session.RaftSession;
-
-import java.time.Instant;
+import io.atomix.time.LogicalTimestamp;
+import io.atomix.time.WallClockTimestamp;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -29,39 +29,44 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public class DefaultRaftCommit implements RaftCommit<RaftOperation<?>> {
   private final long index;
   private final RaftSession session;
-  private final Instant instant;
+  private final long timestamp;
   private final RaftOperation operation;
 
   public DefaultRaftCommit(long index, RaftOperation operation, RaftSession session, long timestamp) {
     this.index = index;
     this.session = session;
-    this.instant = Instant.ofEpochMilli(timestamp);
+    this.timestamp = timestamp;
     this.operation = operation;
   }
 
   @Override
-  public long index() {
+  public long getIndex() {
     return index;
   }
 
   @Override
-  public RaftSession session() {
+  public RaftSession getSession() {
     return session;
   }
 
   @Override
-  public Instant time() {
-    return instant;
+  public LogicalTimestamp getLogicalTime() {
+    return LogicalTimestamp.of(index);
+  }
+
+  @Override
+  public WallClockTimestamp getWallClockTime() {
+    return WallClockTimestamp.of(timestamp);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Class type() {
+  public Class getType() {
     return operation != null ? operation.getClass() : null;
   }
 
   @Override
-  public RaftOperation<?> operation() {
+  public RaftOperation<?> getOperation() {
     return operation;
   }
 
@@ -70,7 +75,7 @@ public class DefaultRaftCommit implements RaftCommit<RaftOperation<?>> {
     return toStringHelper(this)
         .add("index", index)
         .add("session", session)
-        .add("time", instant)
+        .add("time", getWallClockTime())
         .add("operation", operation)
         .toString();
   }

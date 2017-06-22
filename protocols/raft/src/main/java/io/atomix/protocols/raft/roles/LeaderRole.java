@@ -110,7 +110,7 @@ public final class LeaderRole extends ActiveRole {
    * Sets the current node as the cluster leader.
    */
   private void takeLeadership() {
-    context.setLeader(context.getCluster().member().id());
+    context.setLeader(context.getCluster().getMember().getMemberId());
     context.getClusterState().getRemoteMemberStates().forEach(m -> m.resetState(context.getLog()));
   }
 
@@ -124,13 +124,13 @@ public final class LeaderRole extends ActiveRole {
     writer.lock().lock();
     try {
       Indexed<RaftLogEntry> indexed = writer.append(new InitializeEntry(term, appender.time()));
-      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), indexed.index());
+      LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), indexed.index());
     } finally {
       writer.lock().unlock();
     }
 
     // Append a configuration entry to propagate the leader's cluster configuration.
-    configure(context.getCluster().members());
+    configure(context.getCluster().getMembers());
   }
 
   /**
@@ -164,7 +164,7 @@ public final class LeaderRole extends ActiveRole {
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
-    LOGGER.trace("{} - Starting append timer", context.getCluster().member().id());
+    LOGGER.trace("{} - Starting append timer", context.getCluster().getMember().getMemberId());
     appendTimer = context.getThreadContext().schedule(Duration.ZERO, context.getHeartbeatInterval(), this::appendMembers);
   }
 
@@ -212,7 +212,7 @@ public final class LeaderRole extends ActiveRole {
     writer.lock().lock();
     try {
       entry = writer.append(new ConfigurationEntry(term, System.currentTimeMillis(), members));
-      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+      LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.lock().unlock();
     }
@@ -247,13 +247,13 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // If the member is already a known member of the cluster, complete the join successfully.
-    if (context.getCluster().member(request.member().id()) != null) {
+    if (context.getCluster().getMember(request.member().getMemberId()) != null) {
       return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withIndex(context.getClusterState().getConfiguration().index())
           .withTerm(context.getClusterState().getConfiguration().term())
           .withTime(context.getClusterState().getConfiguration().time())
-          .withMembers(context.getCluster().members())
+          .withMembers(context.getCluster().getMembers())
           .build()));
     }
 
@@ -261,8 +261,8 @@ public final class LeaderRole extends ActiveRole {
 
     // Add the joining member to the members list. If the joining member's type is ACTIVE, join the member in the
     // PROMOTABLE state to allow it to get caught up without impacting the quorum size.
-    Collection<RaftMember> members = context.getCluster().members();
-    members.add(new DefaultRaftMember(member.id(), member.type(), member.status(), Instant.now()));
+    Collection<RaftMember> members = context.getCluster().getMembers();
+    members.add(new DefaultRaftMember(member.getMemberId(), member.getType(), member.getStatus(), Instant.now()));
 
     CompletableFuture<JoinResponse> future = new CompletableFuture<>();
     configure(members).whenComplete((index, error) -> {
@@ -303,7 +303,7 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // If the member is not a known member of the cluster, fail the promotion.
-    DefaultRaftMember existingMember = context.getClusterState().member(request.member().id());
+    DefaultRaftMember existingMember = context.getClusterState().getMember(request.member().getMemberId());
     if (existingMember == null) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
@@ -314,7 +314,7 @@ public final class LeaderRole extends ActiveRole {
     // If the configuration request index is less than the last known configuration index for
     // the leader, fail the request to ensure servers can't reconfigure an old configuration.
     if (request.index() > 0 && request.index() < context.getClusterState().getConfiguration().index() || request.term() != context.getClusterState().getConfiguration().term()
-        && (existingMember.type() != request.member().type() || existingMember.status() != request.member().status())) {
+        && (existingMember.getType() != request.member().getType() || existingMember.getStatus() != request.member().getStatus())) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.CONFIGURATION_ERROR)
@@ -322,9 +322,9 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // Update the member type.
-    existingMember.update(request.member().type(), Instant.now());
+    existingMember.update(request.member().getType(), Instant.now());
 
-    Collection<RaftMember> members = context.getCluster().members();
+    Collection<RaftMember> members = context.getCluster().getMembers();
 
     CompletableFuture<ReconfigureResponse> future = new CompletableFuture<>();
     configure(members).whenComplete((index, error) -> {
@@ -365,16 +365,16 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // If the leaving member is not a known member of the cluster, complete the leave successfully.
-    if (context.getCluster().member(request.member().id()) == null) {
+    if (context.getCluster().getMember(request.member().getMemberId()) == null) {
       return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
           .withStatus(RaftResponse.Status.OK)
-          .withMembers(context.getCluster().members())
+          .withMembers(context.getCluster().getMembers())
           .build()));
     }
 
     RaftMember member = request.member();
 
-    Collection<RaftMember> members = context.getCluster().members();
+    Collection<RaftMember> members = context.getCluster().getMembers();
     members.remove(member);
 
     CompletableFuture<LeaveResponse> future = new CompletableFuture<>();
@@ -410,9 +410,9 @@ public final class LeaderRole extends ActiveRole {
     RaftMemberContext member = context.getClusterState().getMemberState(request.candidate());
     if (member != null) {
       member.resetFailureCount();
-      if (member.getMember().status() == RaftMember.Status.UNAVAILABLE) {
+      if (member.getMember().getStatus() == RaftMember.Status.UNAVAILABLE) {
         member.getMember().update(RaftMember.Status.AVAILABLE, Instant.now());
-        configure(context.getCluster().members());
+        configure(context.getCluster().getMembers());
       }
     }
 
@@ -426,7 +426,7 @@ public final class LeaderRole extends ActiveRole {
   @Override
   public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
     if (updateTermAndLeader(request.term(), null)) {
-      LOGGER.debug("{} - Received greater term", context.getCluster().member().id());
+      LOGGER.debug("{} - Received greater term", context.getCluster().getMember().getMemberId());
       context.transition(RaftServer.Role.FOLLOWER);
       return super.vote(request);
     } else {
@@ -526,7 +526,7 @@ public final class LeaderRole extends ActiveRole {
     writer.lock().lock();
     try {
       entry = writer.append(new CommandEntry(term, timestamp, request.session(), request.sequence(), request.bytes()));
-      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+      LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.lock().unlock();
     }
@@ -634,7 +634,7 @@ public final class LeaderRole extends ActiveRole {
     writer.lock().lock();
     try {
       entry = writer.append(new OpenSessionEntry(term, timestamp, request.member(), request.name(), request.stateMachine(), timeout));
-      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+      LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.lock().unlock();
     }
@@ -695,7 +695,7 @@ public final class LeaderRole extends ActiveRole {
     writer.lock().lock();
     try {
       entry = writer.append(new KeepAliveEntry(term, timestamp, request.sessionIds(), request.commandSequences(), request.eventIndexes()));
-      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+      LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.lock().unlock();
     }
@@ -710,27 +710,27 @@ public final class LeaderRole extends ActiveRole {
               if (sessionError == null) {
                 future.complete(logResponse(KeepAliveResponse.builder()
                     .withStatus(RaftResponse.Status.OK)
-                    .withLeader(context.getCluster().member().id())
-                    .withMembers(context.getCluster().members().stream()
-                        .map(RaftMember::id)
+                    .withLeader(context.getCluster().getMember().getMemberId())
+                    .withMembers(context.getCluster().getMembers().stream()
+                        .map(RaftMember::getMemberId)
                         .filter(m -> m != null)
                         .collect(Collectors.toList())).build()));
               } else if (sessionError instanceof CompletionException && sessionError.getCause() instanceof RaftException) {
                 future.complete(logResponse(KeepAliveResponse.builder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withLeader(context.getCluster().member().id())
+                    .withLeader(context.getCluster().getMember().getMemberId())
                     .withError(((RaftException) sessionError.getCause()).getType())
                     .build()));
               } else if (sessionError instanceof RaftException) {
                 future.complete(logResponse(KeepAliveResponse.builder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withLeader(context.getCluster().member().id())
+                    .withLeader(context.getCluster().getMember().getMemberId())
                     .withError(((RaftException) sessionError).getType())
                     .build()));
               } else {
                 future.complete(logResponse(KeepAliveResponse.builder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withLeader(context.getCluster().member().id())
+                    .withLeader(context.getCluster().getMember().getMemberId())
                     .withError(RaftError.Type.INTERNAL_ERROR)
                     .build()));
               }
@@ -739,7 +739,7 @@ public final class LeaderRole extends ActiveRole {
         } else {
           future.complete(logResponse(KeepAliveResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withLeader(context.getCluster().member().id())
+              .withLeader(context.getCluster().getMember().getMemberId())
               .withError(RaftError.Type.INTERNAL_ERROR)
               .build()));
         }
@@ -762,7 +762,7 @@ public final class LeaderRole extends ActiveRole {
     writer.lock().lock();
     try {
       entry = writer.append(new CloseSessionEntry(term, timestamp, request.session()));
-      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+      LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.lock().unlock();
     }
@@ -813,7 +813,7 @@ public final class LeaderRole extends ActiveRole {
    */
   private void cancelAppendTimer() {
     if (appendTimer != null) {
-      LOGGER.trace("{} - Cancelling append timer", context.getCluster().member().id());
+      LOGGER.trace("{} - Cancelling append timer", context.getCluster().getMember().getMemberId());
       appendTimer.cancel();
     }
   }
@@ -822,7 +822,7 @@ public final class LeaderRole extends ActiveRole {
    * Ensures the local server is not the leader.
    */
   private void stepDown() {
-    if (context.getLeader() != null && context.getLeader().equals(context.getCluster().member())) {
+    if (context.getLeader() != null && context.getLeader().equals(context.getCluster().getMember())) {
       context.setLeader(null);
     }
   }

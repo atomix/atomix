@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.protocols.raft.metadata.RaftSessionMetadata;
+import io.atomix.protocols.raft.session.RaftSessionMetadata;
 
 import java.util.Set;
 

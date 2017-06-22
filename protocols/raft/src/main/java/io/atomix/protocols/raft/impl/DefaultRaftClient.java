@@ -60,12 +60,12 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public String id() {
+  public String getClientId() {
     return clientId;
   }
 
   @Override
-  public RaftMetadataClient metadata() {
+  public RaftMetadataClient getMetadataClient() {
     return metadata;
   }
 
@@ -98,7 +98,7 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public RaftProxy.Builder proxyBuilder() {
+  public RaftProxy.Builder newProxyBuilder() {
     return new SessionBuilder();
   }
 

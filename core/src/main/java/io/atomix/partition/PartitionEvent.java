@@ -69,7 +69,7 @@ public class PartitionEvent extends AbstractEvent<PartitionEvent.Type, Partition
 
   @Override
   public int hashCode() {
-    return Objects.hash(type(), subject(), time());
+    return Objects.hash(getType(), getSubject(), getTime());
   }
 
   @Override
@@ -79,9 +79,9 @@ public class PartitionEvent extends AbstractEvent<PartitionEvent.Type, Partition
     }
     if (obj instanceof PartitionEvent) {
       final PartitionEvent other = (PartitionEvent) obj;
-      return Objects.equals(this.type(), other.type()) &&
-          Objects.equals(this.subject(), other.subject()) &&
-          Objects.equals(this.time(), other.time());
+      return Objects.equals(this.getType(), other.getType()) &&
+          Objects.equals(this.getSubject(), other.getSubject()) &&
+          Objects.equals(this.getTime(), other.getTime());
     }
     return false;
   }

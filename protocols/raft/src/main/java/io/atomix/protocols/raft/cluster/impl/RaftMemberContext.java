@@ -69,7 +69,7 @@ public final class RaftMemberContext {
     appendSucceeded = false;
     failures = 0;
 
-    switch (member.type()) {
+    switch (member.getType()) {
       case PASSIVE:
         reader = log.createReader(log.writer().lastIndex() + 1, RaftLogReader.Mode.COMMITS);
         break;
@@ -391,7 +391,7 @@ public final class RaftMemberContext {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("member", member.id())
+        .add("member", member.getMemberId())
         .add("term", term)
         .add("configIndex", configIndex)
         .add("nextSnapshotIndex", nextSnapshotIndex)

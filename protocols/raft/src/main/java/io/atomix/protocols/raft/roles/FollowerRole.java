@@ -68,7 +68,7 @@ public final class FollowerRole extends ActiveRole {
    * Starts the heartbeat timer.
    */
   private void startHeartbeatTimeout() {
-    LOGGER.trace("{} - Starting heartbeat timer", context.getCluster().member().id());
+    LOGGER.trace("{} - Starting heartbeat timer", context.getCluster().getMember().getMemberId());
     resetHeartbeatTimeout();
   }
 
@@ -92,7 +92,7 @@ public final class FollowerRole extends ActiveRole {
       heartbeatTimer = null;
       if (isOpen()) {
         context.setLeader(null);
-        LOGGER.debug("{} - Heartbeat timed out in {}", context.getCluster().member().id(), delay);
+        LOGGER.debug("{} - Heartbeat timed out in {}", context.getCluster().getMember().getMemberId(), delay);
         sendPollRequests();
       }
     });
@@ -104,7 +104,7 @@ public final class FollowerRole extends ActiveRole {
   private void sendPollRequests() {
     // Set a new timer within which other nodes must respond in order for this node to transition to candidate.
     heartbeatTimer = context.getThreadContext().schedule(context.getElectionTimeout(), () -> {
-      LOGGER.debug("{} - Failed to poll a majority of the cluster in {}", context.getCluster().member().id(), context.getElectionTimeout());
+      LOGGER.debug("{} - Failed to poll a majority of the cluster in {}", context.getCluster().getMember().getMemberId(), context.getElectionTimeout());
       resetHeartbeatTimeout();
     });
 
@@ -139,23 +139,23 @@ public final class FollowerRole extends ActiveRole {
       lastTerm = 0;
     }
 
-    LOGGER.info("{} - Polling members {}", context.getCluster().member().id(), votingMembers);
+    LOGGER.info("{} - Polling members {}", context.getCluster().getMember().getMemberId(), votingMembers);
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
-      LOGGER.trace("{} - Polling {} for next term {}", context.getCluster().member().id(), member, context.getTerm() + 1);
+      LOGGER.trace("{} - Polling {} for next term {}", context.getCluster().getMember().getMemberId(), member, context.getTerm() + 1);
       PollRequest request = PollRequest.builder()
           .withTerm(context.getTerm())
-          .withCandidate(context.getCluster().member().id())
+          .withCandidate(context.getCluster().getMember().getMemberId())
           .withLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLogTerm(lastTerm)
           .build();
-      context.getProtocol().poll(member.id(), request).whenCompleteAsync((response, error) -> {
+      context.getProtocol().poll(member.getMemberId(), request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
-            LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
+            LOGGER.warn("{} - {}", context.getCluster().getMember().getMemberId(), error.getMessage());
             quorum.fail();
           } else {
             if (response.term() > context.getTerm()) {
@@ -163,13 +163,13 @@ public final class FollowerRole extends ActiveRole {
             }
 
             if (!response.accepted()) {
-              LOGGER.trace("{} - Received rejected poll from {}", context.getCluster().member().id(), member);
+              LOGGER.trace("{} - Received rejected poll from {}", context.getCluster().getMember().getMemberId(), member);
               quorum.fail();
             } else if (response.term() != context.getTerm()) {
-              LOGGER.trace("{} - Received accepted poll for a different term from {}", context.getCluster().member().id(), member);
+              LOGGER.trace("{} - Received accepted poll for a different term from {}", context.getCluster().getMember().getMemberId(), member);
               quorum.fail();
             } else {
-              LOGGER.trace("{} - Received accepted poll from {}", context.getCluster().member().id(), member);
+              LOGGER.trace("{} - Received accepted poll from {}", context.getCluster().getMember().getMemberId(), member);
               quorum.succeed();
             }
           }
@@ -219,7 +219,7 @@ public final class FollowerRole extends ActiveRole {
    */
   private void cancelHeartbeatTimeout() {
     if (heartbeatTimer != null) {
-      LOGGER.trace("{} - Cancelling heartbeat timer", context.getCluster().member().id());
+      LOGGER.trace("{} - Cancelling heartbeat timer", context.getCluster().getMember().getMemberId());
       heartbeatTimer.cancel();
     }
   }

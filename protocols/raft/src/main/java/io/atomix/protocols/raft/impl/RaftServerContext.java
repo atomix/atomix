@@ -275,10 +275,10 @@ public class RaftServerContext implements AutoCloseable {
         // ACTIVE members configuration. Note that we don't throw exceptions for unknown members. It's
         // possible that a failure following a configuration change could result in an unknown leader
         // sending AppendRequest to this server. Simply configure the leader if it's known.
-        DefaultRaftMember member = cluster.member(leader);
+        DefaultRaftMember member = cluster.getMember(leader);
         if (member != null) {
           this.leader = leader;
-          LOGGER.info("{} - Found leader {}", cluster.member().id(), member.id());
+          LOGGER.info("{} - Found leader {}", cluster.getMember().getMemberId(), member.getMemberId());
           electionListeners.forEach(l -> l.accept(member));
         }
       }
@@ -315,7 +315,7 @@ public class RaftServerContext implements AutoCloseable {
   public DefaultRaftMember getLeader() {
     // Store in a local variable to prevent race conditions and/or multiple volatile lookups.
     MemberId leader = this.leader;
-    return leader != null ? cluster.member(leader) : null;
+    return leader != null ? cluster.getMember(leader) : null;
   }
 
   /**
@@ -325,7 +325,7 @@ public class RaftServerContext implements AutoCloseable {
    */
   public boolean isLeader() {
     MemberId leader = this.leader;
-    return leader != null && leader.equals(cluster.member().id());
+    return leader != null && leader.equals(cluster.getMember().getMemberId());
   }
 
   /**
@@ -341,7 +341,7 @@ public class RaftServerContext implements AutoCloseable {
       this.lastVotedFor = null;
       meta.storeTerm(this.term);
       meta.storeVote(this.lastVotedFor);
-      LOGGER.debug("{} - Set term {}", cluster.member().id(), term);
+      LOGGER.debug("{} - Set term {}", cluster.getMember().getMemberId(), term);
     }
     return this;
   }
@@ -364,15 +364,15 @@ public class RaftServerContext implements AutoCloseable {
   public RaftServerContext setLastVotedFor(MemberId candidate) {
     // If we've already voted for another candidate in this term then the last voted for candidate cannot be overridden.
     checkState(!(lastVotedFor != null && candidate != null), "Already voted for another candidate");
-    DefaultRaftMember member = cluster.member(candidate);
+    DefaultRaftMember member = cluster.getMember(candidate);
     checkState(member != null, "Unknown candidate: %d", candidate);
     this.lastVotedFor = candidate;
     meta.storeVote(this.lastVotedFor);
 
     if (candidate != null) {
-      LOGGER.debug("{} - Voted for {}", cluster.member().id(), member.id());
+      LOGGER.debug("{} - Voted for {}", cluster.getMember().getMemberId(), member.getMemberId());
     } else {
-      LOGGER.trace("{} - Reset last voted for", cluster.member().id());
+      LOGGER.trace("{} - Reset last voted for", cluster.getMember().getMemberId());
     }
     return this;
   }
@@ -624,7 +624,7 @@ public class RaftServerContext implements AutoCloseable {
       return;
     }
 
-    LOGGER.info("{} - Transitioning to {}", cluster.member().id(), role);
+    LOGGER.info("{} - Transitioning to {}", cluster.getMember().getMemberId(), role);
 
     // Close the old state.
     try {

@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.session;
 
-import java.util.function.Consumer;
-
 /**
  * Provides an interface to communicating with a client via session events.
  * <p>
@@ -52,28 +50,28 @@ public interface RaftSession {
    *
    * @return The session identifier.
    */
-  long id();
+  long getSessionId();
 
   /**
    * Returns the session state.
    *
    * @return The session state.
    */
-  State state();
+  State getState();
 
   /**
    * Adds a state change listener to the session.
    *
    * @param listener the state change listener to add
    */
-  void addStateChangeListener(Consumer<State> listener);
+  void addListener(RaftSessionEventListener listener);
 
   /**
    * Removes a state change listener from the session.
    *
    * @param listener the state change listener to remove
    */
-  void removeStateChangeListener(Consumer<State> listener);
+  void removeListener(RaftSessionEventListener listener);
 
   /**
    * Publishes a {@code null} named event to the session.

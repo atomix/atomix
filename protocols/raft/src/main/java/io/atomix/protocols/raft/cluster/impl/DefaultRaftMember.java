@@ -51,7 +51,7 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   public DefaultRaftMember(MemberId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
     this.id = checkNotNull(id, "id cannot be null");
     this.hash = Hashing.murmur3_32()
-        .hashUnencodedChars(id.id())
+        .hashUnencodedChars(id.getValue())
         .asInt();
     this.type = checkNotNull(type, "type cannot be null");
     this.status = checkNotNull(status, "status cannot be null");
@@ -67,27 +67,27 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   }
 
   @Override
-  public MemberId id() {
+  public MemberId getMemberId() {
     return id;
   }
 
   @Override
-  public int hash() {
+  public int getHash() {
     return hash;
   }
 
   @Override
-  public RaftMember.Type type() {
+  public RaftMember.Type getType() {
     return type;
   }
 
   @Override
-  public Status status() {
+  public Status getStatus() {
     return status;
   }
 
   @Override
-  public Instant updated() {
+  public Instant getLastUpdated() {
     return updated;
   }
 

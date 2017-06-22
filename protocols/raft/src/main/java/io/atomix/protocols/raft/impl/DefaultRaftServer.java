@@ -66,22 +66,17 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   @Override
-  public String name() {
+  public String getServerName() {
     return name;
   }
 
   @Override
-  public RaftStorage storage() {
-    return context.getStorage();
-  }
-
-  @Override
-  public RaftCluster cluster() {
+  public RaftCluster getCluster() {
     return context.getCluster();
   }
 
   @Override
-  public Role role() {
+  public Role getRole() {
     return context.getState();
   }
 
@@ -107,7 +102,7 @@ public class DefaultRaftServer implements RaftServer {
 
   @Override
   public CompletableFuture<RaftServer> bootstrap(Collection<MemberId> cluster) {
-    return start(() -> cluster().bootstrap(cluster));
+    return start(() -> getCluster().bootstrap(cluster));
   }
 
   @Override
@@ -117,7 +112,7 @@ public class DefaultRaftServer implements RaftServer {
 
   @Override
   public CompletableFuture<RaftServer> join(Collection<MemberId> cluster) {
-    return start(() -> cluster().join(cluster));
+    return start(() -> getCluster().join(cluster));
   }
 
   /**
@@ -134,7 +129,7 @@ public class DefaultRaftServer implements RaftServer {
           openFuture = future;
           joiner.get().whenComplete((result, error) -> {
             if (error == null) {
-              if (cluster().leader() != null) {
+              if (getCluster().getLeader() != null) {
                 started = true;
                 future.complete(this);
               } else {
@@ -142,11 +137,11 @@ public class DefaultRaftServer implements RaftServer {
                   if (electionListener != null) {
                     started = true;
                     future.complete(this);
-                    cluster().removeLeaderElectionListener(electionListener);
+                    getCluster().removeLeaderElectionListener(electionListener);
                     electionListener = null;
                   }
                 };
-                cluster().addLeaderElectionListener(electionListener);
+                getCluster().addLeaderElectionListener(electionListener);
               }
             } else {
               future.completeExceptionally(error);
@@ -213,7 +208,7 @@ public class DefaultRaftServer implements RaftServer {
         if (closeFuture == null) {
           closeFuture = new CompletableFuture<>();
           if (openFuture == null) {
-            cluster().leave().whenComplete((leaveResult, leaveError) -> {
+            getCluster().leave().whenComplete((leaveResult, leaveError) -> {
               shutdown().whenComplete((shutdownResult, shutdownError) -> {
                 context.delete();
                 closeFuture.complete(null);
@@ -222,7 +217,7 @@ public class DefaultRaftServer implements RaftServer {
           } else {
             openFuture.whenComplete((openResult, openError) -> {
               if (openError == null) {
-                cluster().leave().whenComplete((leaveResult, leaveError) -> {
+                getCluster().leave().whenComplete((leaveResult, leaveError) -> {
                   shutdown().whenComplete((shutdownResult, shutdownError) -> {
                     context.delete();
                     closeFuture.complete(null);
@@ -263,12 +258,12 @@ public class DefaultRaftServer implements RaftServer {
 
       // If the server name is null, set it to the member ID.
       if (name == null) {
-        name = localMemberId.id();
+        name = localMemberId.getValue();
       }
 
       // If the storage is not configured, create a new Storage instance with the configured serializer.
       if (storage == null) {
-        storage = RaftStorage.builder().build();
+        storage = RaftStorage.newBuilder().build();
       }
 
       ThreadContext threadContext = new SingleThreadContext(String.format("raft-server-%s-%s", localMemberId, name));

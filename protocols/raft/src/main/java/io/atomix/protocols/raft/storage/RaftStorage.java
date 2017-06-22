@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * This class provides a factory for {@link RaftLog} objects. {@code Storage} objects are immutable and
  * can be created only via the {@link RaftStorage.Builder}. To create a new
- * {@code Storage.Builder}, use the static {@link #builder()} factory method:
+ * {@code Storage.Builder}, use the static {@link #newBuilder()} factory method:
  * <pre>
  *   {@code
  *     Storage storage = Storage.builder()
@@ -58,7 +58,7 @@ public class RaftStorage {
    *
    * @return A new storage builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -99,7 +99,7 @@ public class RaftStorage {
    *
    * @return The storage filename prefix.
    */
-  public String prefix() {
+  public String getPrefix() {
     return prefix;
   }
 
@@ -108,7 +108,7 @@ public class RaftStorage {
    *
    * @return The storage serializer.
    */
-  public Serializer serializer() {
+  public Serializer getSerializer() {
     return serializer;
   }
 
@@ -121,7 +121,7 @@ public class RaftStorage {
    *
    * @return The storage directory.
    */
-  public File directory() {
+  public File getDirectory() {
     return directory;
   }
 
@@ -132,7 +132,7 @@ public class RaftStorage {
    *
    * @return The storage level.
    */
-  public StorageLevel level() {
+  public StorageLevel getStorageLevel() {
     return storageLevel;
   }
 
@@ -144,7 +144,7 @@ public class RaftStorage {
    *
    * @return The maximum segment size in bytes.
    */
-  public int maxSegmentSize() {
+  public int getMaxLogSegmentSize() {
     return maxSegmentSize;
   }
 
@@ -156,7 +156,7 @@ public class RaftStorage {
    *
    * @return The maximum number of entries per segment.
    */
-  public int maxEntriesPerSegment() {
+  public int getMaxLogEntriesPerSecond() {
     return maxEntriesPerSegment;
   }
 
@@ -168,7 +168,7 @@ public class RaftStorage {
    *
    * @return The entry buffer size.
    */
-  public int entryBufferSize() {
+  public int getLogEntryBufferSize() {
     return entryBufferSize;
   }
 
@@ -177,7 +177,7 @@ public class RaftStorage {
    *
    * @return Whether to flush buffers to disk when entries are committed.
    */
-  public boolean flushOnCommit() {
+  public boolean isFlushOnCommit() {
     return flushOnCommit;
   }
 
@@ -190,7 +190,7 @@ public class RaftStorage {
    *
    * @return Indicates whether to retain stale snapshots on disk.
    */
-  public boolean retainStaleSnapshots() {
+  public boolean isRetainStaleSnapshots() {
     return retainStaleSnapshots;
   }
 
@@ -242,7 +242,7 @@ public class RaftStorage {
   /**
    * Opens a new {@link RaftLog}, recovering the log from disk if it exists.
    * <p>
-   * When a log is opened, the log will attempt to load segments from the storage {@link #directory()}
+   * When a log is opened, the log will attempt to load segments from the storage {@link #getDirectory()}
    * according to the provided log {@code name}. If segments for the given log name are present on disk, segments
    * will be loaded and indexes will be rebuilt from disk. If no segments are found, an empty log will be created.
    * <p>
@@ -291,7 +291,7 @@ public class RaftStorage {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("directory", directory())
+        .add("directory", getDirectory())
         .toString();
   }
 
@@ -299,7 +299,7 @@ public class RaftStorage {
    * Builds a {@link RaftStorage} configuration.
    * <p>
    * The storage builder provides simplifies building more complex {@link RaftStorage} configurations. To
-   * create a storage builder, use the {@link #builder()} factory method. Set properties of the configured
+   * create a storage builder, use the {@link #newBuilder()} factory method. Set properties of the configured
    * {@code Storage} object with the various {@code with*} methods. Once the storage has been configured,
    * call {@link #build()} to build the object.
    * <pre>

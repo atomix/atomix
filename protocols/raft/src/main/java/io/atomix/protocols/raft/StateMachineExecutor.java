@@ -69,7 +69,7 @@ public interface StateMachineExecutor extends ThreadContext {
    *
    * @return The state machine context.
    */
-  StateMachineContext context();
+  StateMachineContext getContext();
 
   /**
    * Registers a void operation callback.

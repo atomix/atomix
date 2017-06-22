@@ -15,8 +15,8 @@
  */
 package io.atomix.primitives.elector.impl;
 
-import io.atomix.cluster.Leadership;
-import io.atomix.cluster.LeadershipEvent;
+import io.atomix.leadership.Leadership;
+import io.atomix.leadership.LeadershipEvent;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitives.PrimitiveException;
 import io.atomix.primitives.Synchronous;

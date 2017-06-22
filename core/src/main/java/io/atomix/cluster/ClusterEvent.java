@@ -79,7 +79,7 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Node> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(type(), subject(), time());
+    return Objects.hash(getType(), getSubject(), getTime());
   }
 
   @Override
@@ -89,9 +89,9 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Node> {
     }
     if (obj instanceof ClusterEvent) {
       final ClusterEvent other = (ClusterEvent) obj;
-      return Objects.equals(this.type(), other.type()) &&
-          Objects.equals(this.subject(), other.subject()) &&
-          Objects.equals(this.time(), other.time());
+      return Objects.equals(this.getType(), other.getType()) &&
+          Objects.equals(this.getSubject(), other.getSubject()) &&
+          Objects.equals(this.getTime(), other.getTime());
     }
     return false;
   }
@@ -99,9 +99,9 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Node> {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this.getClass())
-        .add("type", type())
-        .add("subject", subject())
-        .add("time", time())
+        .add("type", getType())
+        .add("subject", getSubject())
+        .add("time", getTime())
         .toString();
   }
 

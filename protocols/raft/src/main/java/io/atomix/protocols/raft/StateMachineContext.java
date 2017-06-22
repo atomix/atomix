@@ -17,14 +17,14 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.protocols.raft.session.RaftSessions;
-
-import java.time.Clock;
+import io.atomix.time.LogicalClock;
+import io.atomix.time.WallClock;
 
 /**
  * State machine context.
  * <p>
  * The context is reflective of the current position and state of the Raft state machine. In particular,
- * it exposes the current approximate {@link StateMachineContext#clock() time} and all open
+ * it exposes the current approximate {@link StateMachineContext#getWallClock() time} and all open
  * {@link RaftSessions}.
  */
 public interface StateMachineContext {
@@ -34,45 +34,52 @@ public interface StateMachineContext {
    *
    * @return The unique state machine identifier.
    */
-  long id();
+  long getStateMachineId();
 
   /**
    * Returns the state machine name.
    *
    * @return The state machine name.
    */
-  String name();
+  String getName();
 
   /**
    * Returns the state machine type.
    *
    * @return The state machine type.
    */
-  String type();
+  String getTypeName();
 
   /**
    * Returns the current state machine index.
    * <p>
-   * The state index is indicative of the index of the current {@link Command}
-   * being applied to the server state machine. If a {@link Query} is being applied,
+   * The state index is indicative of the index of the current {@link RaftCommand}
+   * being applied to the server state machine. If a {@link RaftQuery} is being applied,
    * the index of the last command applied will be used.
    *
    * @return The current state machine index.
    */
-  long index();
+  long getCurrentIndex();
 
   /**
-   * Returns the state machine clock.
+   * Returns the state machine's logical clock.
    *
-   * @return The state machine clock.
+   * @return The state machine's logical clock.
    */
-  Clock clock();
+  LogicalClock getLogicalClock();
+
+  /**
+   * Returns the state machine's wall clock.
+   *
+   * @return The state machine's wall clock.
+   */
+  WallClock getWallClock();
 
   /**
    * Returns the state machine sessions.
    *
    * @return The state machine sessions.
    */
-  RaftSessions sessions();
+  RaftSessions getSessions();
 
 }

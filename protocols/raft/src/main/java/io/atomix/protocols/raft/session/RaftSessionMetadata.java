@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.metadata;
+package io.atomix.protocols.raft.session;
 
 import java.util.Objects;
 
@@ -21,7 +21,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Copycat session metadata.
+ * Raft session metadata.
  */
 public final class RaftSessionMetadata {
   private final long id;
@@ -39,7 +39,7 @@ public final class RaftSessionMetadata {
    *
    * @return The globally unique session identifier.
    */
-  public long id() {
+  public long getSessionId() {
     return id;
   }
 
@@ -48,7 +48,7 @@ public final class RaftSessionMetadata {
    *
    * @return The session name.
    */
-  public String name() {
+  public String getName() {
     return name;
   }
 
@@ -57,7 +57,7 @@ public final class RaftSessionMetadata {
    *
    * @return The session type.
    */
-  public String type() {
+  public String getTypeName() {
     return type;
   }
 

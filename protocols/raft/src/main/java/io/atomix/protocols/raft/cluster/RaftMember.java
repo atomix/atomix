@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  * Each member in the cluster has an associated {@link RaftMember.Type} and {@link RaftMember.Status}. The
  * {@link RaftMember.Type} is indicative of the manner in which the member interacts with other members of
  * the cluster. The {@link RaftMember.Status} is indicative of the leader's ability to communicate with the
- * member. Additionally, each member is identified by an {@link #id() address} and unique {@link #id() ID}
+ * member. Additionally, each member is identified by an {@link #getMemberId() address} and unique {@link #getMemberId() ID}
  * which is generated from the {@link MemberId} hash code. The member's {@link MemberId} represents the
  * address through which the server communicates with other servers and not through which clients
  * communicate with the member (which may be a different {@link MemberId}).
@@ -39,7 +39,7 @@ import java.util.function.Consumer;
  * Member types can be modified by virtually any member of the cluster via the {@link #promote()} and {@link #demote()}
  * methods. This allows servers to modify the way dead nodes interact with the cluster and modify the
  * Raft quorum size without requiring the member being modified to be available. The member status is
- * controlled only by the cluster {@link RaftCluster#leader() leader}. When the leader fails to contact a
+ * controlled only by the cluster {@link RaftCluster#getLeader() leader}. When the leader fails to contact a
  * member for a few rounds of heartbeats, the leader will commit a configuration change marking that
  * member as {@link RaftMember.Status#UNAVAILABLE}. Once the member can be reached again, the leader will
  * update its status back to {@link RaftMember.Status#AVAILABLE}.
@@ -50,7 +50,7 @@ public interface RaftMember {
    * Indicates how the member participates in voting and replication.
    * <p>
    * The member type defines how a member interacts with the other members of the cluster and, more
-   * importantly, how the cluster {@link RaftCluster#leader() leader} interacts with the member server.
+   * importantly, how the cluster {@link RaftCluster#getLeader() leader} interacts with the member server.
    * Members can be {@link #promote() promoted} and {@link #demote() demoted} to alter member states.
    * See the specific member types for descriptions of their implications on the cluster.
    */
@@ -101,9 +101,9 @@ public interface RaftMember {
   }
 
   /**
-   * Indicates the availability of a member from the perspective of the cluster {@link RaftCluster#leader() leader}.
+   * Indicates the availability of a member from the perspective of the cluster {@link RaftCluster#getLeader() leader}.
    * <p>
-   * Member statuses are manged by the cluster {@link RaftCluster#leader() leader}. For each {@link RaftMember} of a
+   * Member statuses are manged by the cluster {@link RaftCluster#getLeader() leader}. For each {@link RaftMember} of a
    * {@link RaftCluster}, the leader periodically sends a heartbeat to the member to determine its availability.
    * In the event that the leader cannot contact a member for more than a few heartbeats, the leader will
    * set the member's availability status to {@link #UNAVAILABLE}. Once the leader reestablishes communication
@@ -137,14 +137,14 @@ public interface RaftMember {
    *
    * @return The member node ID.
    */
-  MemberId id();
+  MemberId getMemberId();
 
   /**
    * Returns the member hash.
    *
    * @return The member hash.
    */
-  int hash();
+  int getHash();
 
   /**
    * Returns the member type.
@@ -157,7 +157,7 @@ public interface RaftMember {
    *
    * @return The member type.
    */
-  Type type();
+  Type getType();
 
   /**
    * Adds a listener to be called when the member's type changes.
@@ -188,7 +188,7 @@ public interface RaftMember {
    *
    * @return The member status.
    */
-  Status status();
+  Status getStatus();
 
   /**
    * Returns the time at which the member was updated.
@@ -198,7 +198,7 @@ public interface RaftMember {
    *
    * @return The time at which the member was updated.
    */
-  Instant updated();
+  Instant getLastUpdated();
 
   /**
    * Adds a listener to be called when the member's status changes.

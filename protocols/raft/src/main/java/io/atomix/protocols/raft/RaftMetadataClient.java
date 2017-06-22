@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.metadata.RaftSessionMetadata;
+import io.atomix.protocols.raft.session.RaftSessionMetadata;
 
 import java.util.Collection;
 import java.util.Set;
@@ -32,14 +32,14 @@ public interface RaftMetadataClient {
    *
    * @return The current cluster leader.
    */
-  MemberId leader();
+  MemberId getLeader();
 
   /**
    * Returns the set of known servers in the cluster.
    *
    * @return The set of known servers in the cluster.
    */
-  Collection<MemberId> servers();
+  Collection<MemberId> getServers();
 
   /**
    * Returns a list of open sessions.

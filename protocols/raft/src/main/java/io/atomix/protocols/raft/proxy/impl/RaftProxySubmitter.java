@@ -143,7 +143,7 @@ final class RaftProxySubmitter {
         .withSequence(state.getCommandRequest())
         .withIndex(state.getResponseIndex())
         .withBytes(bytes)
-        .withConsistency(query.consistency())
+        .withConsistency(query.getConsistencyLevel())
         .build();
     submitQuery(request, future);
   }

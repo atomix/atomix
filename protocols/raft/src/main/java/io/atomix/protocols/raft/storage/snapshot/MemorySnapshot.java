@@ -73,9 +73,9 @@ final class MemorySnapshot extends Snapshot {
 
   @Override
   public Snapshot persist() {
-    if (store.storage.level() != StorageLevel.MEMORY) {
+    if (store.storage.getStorageLevel() != StorageLevel.MEMORY) {
       try (Snapshot newSnapshot = store.createSnapshot(id(), index())) {
-        try (SnapshotWriter newSnapshotWriter = newSnapshot.writer(store.storage.serializer())) {
+        try (SnapshotWriter newSnapshotWriter = newSnapshot.writer(store.storage.getSerializer())) {
           buffer.flip();
           newSnapshotWriter.write(buffer.array(), 0, buffer.remaining());
         }

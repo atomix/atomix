@@ -17,10 +17,10 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.StateMachineContext;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
+import io.atomix.time.LogicalClock;
+import io.atomix.time.LogicalTimestamp;
+import io.atomix.time.WallClock;
+import io.atomix.time.WallClockTimestamp;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -41,8 +41,20 @@ public class RaftServerStateMachineContext implements StateMachineContext {
   private final long id;
   private final String name;
   private final String type;
-  private final InternalClock clock = new InternalClock();
   private final RaftServerStateMachineSessions sessions;
+  private final LogicalClock logicalClock = new LogicalClock() {
+    @Override
+    public LogicalTimestamp getTime() {
+      return new LogicalTimestamp(index);
+    }
+  };
+  private final WallClock wallClock = new WallClock() {
+    @Override
+    public WallClockTimestamp getTime() {
+      return new WallClockTimestamp(timestamp);
+    }
+  };
+  private long timestamp;
   private Type context;
   private long index;
 
@@ -56,10 +68,10 @@ public class RaftServerStateMachineContext implements StateMachineContext {
   /**
    * Updates the state machine context.
    */
-  public void update(long index, Instant instant, Type context) {
+  public void update(long index, long timestamp, Type context) {
     this.index = index;
+    this.timestamp = timestamp;
     this.context = context;
-    clock.set(instant);
   }
 
   /**
@@ -80,32 +92,37 @@ public class RaftServerStateMachineContext implements StateMachineContext {
   }
 
   @Override
-  public long id() {
+  public long getStateMachineId() {
     return id;
   }
 
   @Override
-  public String name() {
+  public String getName() {
     return name;
   }
 
   @Override
-  public String type() {
+  public String getTypeName() {
     return type;
   }
 
   @Override
-  public long index() {
+  public long getCurrentIndex() {
     return index;
   }
 
   @Override
-  public Clock clock() {
-    return clock;
+  public LogicalClock getLogicalClock() {
+    return logicalClock;
   }
 
   @Override
-  public RaftServerStateMachineSessions sessions() {
+  public WallClock getWallClock() {
+    return wallClock;
+  }
+
+  @Override
+  public RaftServerStateMachineSessions getSessions() {
     return sessions;
   }
 
@@ -113,37 +130,7 @@ public class RaftServerStateMachineContext implements StateMachineContext {
   public String toString() {
     return toStringHelper(this)
         .add("index", index)
-        .add("time", clock)
+        .add("time", wallClock)
         .toString();
-  }
-
-  /**
-   * Internal clock implementation.
-   */
-  private static final class InternalClock extends Clock {
-    private final ZoneId zoneId = ZoneId.of("UTC");
-    private Instant instant;
-
-    /**
-     * Sets the state machine time instant.
-     */
-    void set(Instant instant) {
-      this.instant = instant;
-    }
-
-    @Override
-    public ZoneId getZone() {
-      return zoneId;
-    }
-
-    @Override
-    public Clock withZone(ZoneId zone) {
-      throw new UnsupportedOperationException("cannot modify state machine time zone");
-    }
-
-    @Override
-    public Instant instant() {
-      return instant;
-    }
   }
 }

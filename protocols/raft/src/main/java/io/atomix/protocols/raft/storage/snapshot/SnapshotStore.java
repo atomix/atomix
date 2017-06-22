@@ -35,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Persists server snapshots via the {@link RaftStorage} module.
  * <p>
  * The server snapshot store is responsible for persisting periodic state machine snapshots according
- * to the configured {@link RaftStorage#level() storage level}. Each server with a snapshottable state machine
+ * to the configured {@link RaftStorage#getStorageLevel() storage level}. Each server with a snapshottable state machine
  * persists the state machine state to allow commands to be removed from disk.
  * <p>
  * When a snapshot store is {@link RaftStorage#openSnapshotStore() created}, the store will load any
@@ -88,7 +88,7 @@ public class SnapshotStore implements AutoCloseable {
         stateMachineSnapshots.put(snapshot.id(), snapshot);
 
         // If a newer snapshot was found, delete the old snapshot if necessary.
-        if (existingSnapshot != null && !storage.retainStaleSnapshots()) {
+        if (existingSnapshot != null && !storage.isRetainStaleSnapshots()) {
           existingSnapshot.close();
           existingSnapshot.delete();
         }
@@ -127,15 +127,15 @@ public class SnapshotStore implements AutoCloseable {
    */
   private Collection<Snapshot> loadSnapshots() {
     // Ensure log directories are created.
-    storage.directory().mkdirs();
+    storage.getDirectory().mkdirs();
 
     List<Snapshot> snapshots = new ArrayList<>();
 
     // Iterate through all files in the log directory.
-    for (File file : storage.directory().listFiles(File::isFile)) {
+    for (File file : storage.getDirectory().listFiles(File::isFile)) {
 
       // If the file looks like a segment file, attempt to load the segment.
-      if (SnapshotFile.isSnapshotFile(storage.prefix(), file)) {
+      if (SnapshotFile.isSnapshotFile(storage.getPrefix(), file)) {
         SnapshotFile snapshotFile = new SnapshotFile(file);
         SnapshotDescriptor descriptor = new SnapshotDescriptor(FileBuffer.allocate(file, SnapshotDescriptor.BYTES));
 
@@ -187,7 +187,7 @@ public class SnapshotStore implements AutoCloseable {
         .withIndex(index)
         .withTimestamp(System.currentTimeMillis())
         .build();
-    return createSnapshot(descriptor, storage.level());
+    return createSnapshot(descriptor, storage.getStorageLevel());
   }
 
   /**
@@ -215,7 +215,7 @@ public class SnapshotStore implements AutoCloseable {
    * Creates a disk snapshot.
    */
   private Snapshot createDiskSnapshot(SnapshotDescriptor descriptor) {
-    SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(storage.prefix(), storage.directory(), descriptor.id(), descriptor.index(), descriptor.timestamp()));
+    SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(storage.getPrefix(), storage.getDirectory(), descriptor.id(), descriptor.index(), descriptor.timestamp()));
     Snapshot snapshot = new FileSnapshot(file, this);
     LOGGER.debug("Created disk snapshot: {}", snapshot);
     return snapshot;
@@ -236,14 +236,14 @@ public class SnapshotStore implements AutoCloseable {
       // Delete the old snapshot if necessary.
       if (existingSnapshot != null) {
         indexSnapshots.remove(existingSnapshot.index());
-        if (!storage.retainStaleSnapshots()) {
+        if (!storage.isRetainStaleSnapshots()) {
           existingSnapshot.close();
           existingSnapshot.delete();
         }
       }
     }
     // If the snapshot was old, delete it if necessary.
-    else if (!storage.retainStaleSnapshots()) {
+    else if (!storage.isRetainStaleSnapshots()) {
       snapshot.close();
       snapshot.delete();
     }

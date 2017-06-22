@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-present Open Networking Laboratory
+ * Copyright 2017-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.event;
+package io.atomix.protocols.raft.cluster;
+
+import io.atomix.event.EventListener;
+import io.atomix.protocols.raft.cluster.RaftClusterEvent;
 
 /**
- * Entity capable of receiving events.
+ * Raft cluster event listener.
  */
 @FunctionalInterface
-public interface EventListener<E extends Event> extends EventFilter<E> {
-
-  /**
-   * Reacts to the specified event.
-   *
-   * @param event event to be processed
-   */
-  void onEvent(E event);
-
+public interface RaftClusterEventListener extends EventListener<RaftClusterEvent> {
 }

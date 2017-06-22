@@ -20,6 +20,9 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.serializer.Serializer;
+import io.atomix.time.LogicalClock;
+import io.atomix.time.WallClock;
+import io.atomix.utils.concurrent.Scheduler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,7 +30,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.time.Clock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -80,9 +82,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  * </pre>
  * When operations are applied to the state machine they're wrapped in a {@link RaftCommit} object. The commit provides the
- * context of how the command or query was committed to the cluster, including the log {@link RaftCommit#index()}, the
+ * context of how the command or query was committed to the cluster, including the log {@link RaftCommit#getIndex()}, the
  * {@link RaftSession} from which the operation was submitted, and the approximate
- * wall-clock {@link RaftCommit#time()} at which the commit was written to the Raft log. Note that the commit time is
+ * wall-clock {@link RaftCommit#getWallClockTime()} at which the commit was written to the Raft log. Note that the commit time is
  * guaranteed to progress monotonically, but it may not be representative of the progress of actual time. See the
  * {@link RaftCommit} documentation for more information.
  * <p>
@@ -166,11 +168,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see StateMachineExecutor
  */
 public abstract class RaftStateMachine implements Snapshottable {
-  protected final Serializer serializer;
-  protected StateMachineExecutor executor;
-  protected StateMachineContext context;
-  protected Clock clock;
-  protected RaftSessions sessions;
+  private final Serializer serializer;
+  private StateMachineExecutor executor;
+  private StateMachineContext context;
 
   protected RaftStateMachine(Serializer serializer) {
     this.serializer = serializer;
@@ -181,7 +181,7 @@ public abstract class RaftStateMachine implements Snapshottable {
    *
    * @return The state machine serializer.
    */
-  public Serializer serializer() {
+  public Serializer getSerializer() {
     return serializer;
   }
 
@@ -193,11 +193,9 @@ public abstract class RaftStateMachine implements Snapshottable {
    */
   public void init(StateMachineExecutor executor) {
     this.executor = checkNotNull(executor, "executor cannot be null");
-    this.context = executor.context();
-    this.clock = context.clock();
-    this.sessions = context.sessions();
+    this.context = executor.getContext();
     if (this instanceof RaftSessionListener) {
-      executor.context().sessions().addListener((RaftSessionListener) this);
+      executor.getContext().getSessions().addListener((RaftSessionListener) this);
     }
     configure(executor);
   }
@@ -213,6 +211,69 @@ public abstract class RaftStateMachine implements Snapshottable {
    */
   protected void configure(StateMachineExecutor executor) {
     registerOperations();
+  }
+
+  /**
+   * Returns the state machine scheduler.
+   *
+   * @return The state machine scheduler.
+   */
+  protected Scheduler getScheduler() {
+    return executor;
+  }
+
+  /**
+   * Returns the unique state machine identifier.
+   *
+   * @return The unique state machine identifier.
+   */
+  protected long getStateMachineId() {
+    return context.getStateMachineId();
+  }
+
+  /**
+   * Returns the unique state machine name.
+   *
+   * @return The unique state machine name.
+   */
+  protected String getStateMachineName() {
+    return context.getName();
+  }
+
+  /**
+   * Returns the state machine's current index.
+   *
+   * @return The state machine's current index.
+   */
+  protected long getCurrentIndex() {
+    return context.getCurrentIndex();
+  }
+
+  /**
+   * Returns the state machine's wall clock.
+   *
+   * @return The state machine's wall clock.
+   */
+  protected WallClock getWallClock() {
+    return context.getWallClock();
+  }
+
+  /**
+   * Returns the state machine's logical clock.
+   *
+   * @return The state machine's logical clock.
+   */
+  protected LogicalClock getLogicalClock() {
+    return context.getLogicalClock();
+  }
+
+  /**
+   * Returns the sessions registered with the state machines.
+   *
+   * @return The state machine's sessions.
+   */
+  protected RaftSessions getSessions() {
+    return context.getSessions();
   }
 
   /**

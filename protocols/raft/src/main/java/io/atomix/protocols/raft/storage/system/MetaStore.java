@@ -34,7 +34,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Manages persistence of server configurations.
  * <p>
  * The server metastore is responsible for persisting server configurations according to the configured
- * {@link RaftStorage#level() storage level}. Each server persists their current {@link #loadTerm() term}
+ * {@link RaftStorage#getStorageLevel() storage level}. Each server persists their current {@link #loadTerm() term}
  * and last {@link #loadVote() vote} as is dictated by the Raft consensus algorithm. Additionally, the
  * metastore is responsible for storing the last know server {@link Configuration}, including cluster
  * membership.
@@ -48,18 +48,18 @@ public class MetaStore implements AutoCloseable {
   public MetaStore(RaftStorage storage, Serializer serializer) {
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
 
-    if (!(storage.directory().isDirectory() || storage.directory().mkdirs())) {
-      throw new IllegalArgumentException(String.format("Can't create storage directory [%s].", storage.directory()));
+    if (!(storage.getDirectory().isDirectory() || storage.getDirectory().mkdirs())) {
+      throw new IllegalArgumentException(String.format("Can't create storage directory [%s].", storage.getDirectory()));
     }
 
     // Note that for raft safety, irrespective of the storage level, <term, vote> metadata is always persisted on disk.
-    File metaFile = new File(storage.directory(), String.format("%s.meta", storage.prefix()));
+    File metaFile = new File(storage.getDirectory(), String.format("%s.meta", storage.getPrefix()));
     metadataBuffer = FileBuffer.allocate(metaFile, 12);
 
-    if (storage.level() == StorageLevel.MEMORY) {
+    if (storage.getStorageLevel() == StorageLevel.MEMORY) {
       configurationBuffer = HeapBuffer.allocate(32);
     } else {
-      File confFile = new File(storage.directory(), String.format("%s.conf", storage.prefix()));
+      File confFile = new File(storage.getDirectory(), String.format("%s.conf", storage.getPrefix()));
       configurationBuffer = FileBuffer.allocate(confFile, 32);
     }
   }
@@ -90,7 +90,7 @@ public class MetaStore implements AutoCloseable {
    */
   public synchronized void storeVote(MemberId vote) {
     LOGGER.trace("Store vote {}", vote);
-    metadataBuffer.writeString(8, vote != null ? vote.id() : null).flush();
+    metadataBuffer.writeString(8, vote != null ? vote.getValue() : null).flush();
   }
 
   /**

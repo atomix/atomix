@@ -204,13 +204,13 @@ final class LeaderAppender extends AbstractAppender {
       }
     }
     // If the member is a reserve or passive member, send an empty AppendRequest to it.
-    else if (member.getMember().type() == RaftMember.Type.RESERVE || member.getMember().type() == RaftMember.Type.PASSIVE) {
+    else if (member.getMember().getType() == RaftMember.Type.RESERVE || member.getMember().getType() == RaftMember.Type.PASSIVE) {
       if (member.canAppend()) {
         sendAppendRequest(member, buildAppendEmptyRequest(member));
       }
     }
     // If there's a snapshot at the member's nextIndex, replicate the snapshot.
-    else if (member.getMember().type() == RaftMember.Type.ACTIVE) {
+    else if (member.getMember().getType() == RaftMember.Type.ACTIVE) {
       Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getNextIndex());
       if (snapshot != null) {
         if (member.canInstall()) {
@@ -229,8 +229,8 @@ final class LeaderAppender extends AbstractAppender {
   @Override
   protected boolean hasMoreEntries(RaftMemberContext member) {
     // If the member's nextIndex is an entry in the local log then more entries can be sent.
-    return member.getMember().type() != RaftMember.Type.RESERVE
-        && member.getMember().type() != RaftMember.Type.PASSIVE
+    return member.getMember().getType() != RaftMember.Type.RESERVE
+        && member.getMember().getType() != RaftMember.Type.PASSIVE
         && member.getNextIndex() <= server.getLogWriter().lastIndex();
   }
 
@@ -260,12 +260,12 @@ final class LeaderAppender extends AbstractAppender {
     server.checkThread();
 
     if (error != null && member.getHeartbeatStartTime() == heartbeatTime) {
-      int votingMemberSize = server.getClusterState().getActiveMemberStates().size() + (server.getCluster().member().type() == RaftMember.Type.ACTIVE ? 1 : 0);
+      int votingMemberSize = server.getClusterState().getActiveMemberStates().size() + (server.getCluster().getMember().getType() == RaftMember.Type.ACTIVE ? 1 : 0);
       int quorumSize = (int) Math.floor(votingMemberSize / 2) + 1;
       // If a quorum of successful responses cannot be achieved, fail this heartbeat. Ensure that only
       // ACTIVE members are considered. A member could have been transitioned to another state while the
       // heartbeat was being sent.
-      if (member.getMember().type() == RaftMember.Type.ACTIVE && ++heartbeatFailures > votingMemberSize - quorumSize) {
+      if (member.getMember().getType() == RaftMember.Type.ACTIVE && ++heartbeatFailures > votingMemberSize - quorumSize) {
         heartbeatFuture.completeExceptionally(new InternalException("Failed to reach consensus"));
         completeHeartbeat();
       }
@@ -436,7 +436,7 @@ final class LeaderAppender extends AbstractAppender {
     // If we've received a greater term, update the term and transition back to follower.
     if (response.term() > server.getTerm()) {
       server.getThreadContext().execute(() -> {
-        log.debug("{} - Received higher term from {}", server.getClusterState().member().id(), member.getMember().id());
+        log.debug("{} - Received higher term from {}", server.getClusterState().getMember().getMemberId(), member.getMember().getMemberId());
         server.setTerm(response.term()).setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       });
@@ -451,9 +451,9 @@ final class LeaderAppender extends AbstractAppender {
 
     // If the member is currently marked as UNAVAILABLE, change its status to AVAILABLE and update the configuration.
     server.getThreadContext().execute(() -> {
-      if (member.getMember().status() == DefaultRaftMember.Status.UNAVAILABLE && !leader.configuring()) {
+      if (member.getMember().getStatus() == DefaultRaftMember.Status.UNAVAILABLE && !leader.configuring()) {
         member.getMember().update(DefaultRaftMember.Status.AVAILABLE, Instant.now());
-        leader.configure(server.getCluster().members());
+        leader.configure(server.getCluster().getMembers());
       }
     });
   }
@@ -467,16 +467,16 @@ final class LeaderAppender extends AbstractAppender {
       // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
       // that a partition occurred and transition back to the FOLLOWER state.
       if (System.currentTimeMillis() - Math.max(heartbeatTime(), leaderTime) > server.getElectionTimeout().toMillis() * 2) {
-        log.warn("{} - Suspected network partition. Stepping down", server.getCluster().member().id());
+        log.warn("{} - Suspected network partition. Stepping down", server.getCluster().getMember().getMemberId());
         server.setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       }
       // If the number of failures has increased above 3 and the member hasn't been marked as UNAVAILABLE, do so.
       else if (member.getFailureCount() >= 3) {
         // If the member is currently marked as AVAILABLE, change its status to UNAVAILABLE and update the configuration.
-        if (member.getMember().status() == DefaultRaftMember.Status.AVAILABLE && !leader.configuring()) {
+        if (member.getMember().getStatus() == DefaultRaftMember.Status.AVAILABLE && !leader.configuring()) {
           member.getMember().update(DefaultRaftMember.Status.UNAVAILABLE, Instant.now());
-          leader.configure(server.getCluster().members());
+          leader.configure(server.getCluster().getMembers());
         }
       }
     });

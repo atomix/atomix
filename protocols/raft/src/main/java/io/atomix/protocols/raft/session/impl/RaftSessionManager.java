@@ -29,7 +29,7 @@ public class RaftSessionManager {
    * Registers a session.
    */
   public void registerSession(RaftSessionContext session) {
-    sessions.put(session.id(), session);
+    sessions.put(session.getSessionId(), session);
   }
 
   /**

@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.protocols.raft.session.RaftSession;
-
-import java.time.Instant;
+import io.atomix.time.LogicalTimestamp;
+import io.atomix.time.WallClockTimestamp;
 
 /**
  * Represents the committed state and metadata of a Raft state machine operation.
@@ -37,7 +37,7 @@ public interface RaftCommit<T extends RaftOperation> {
    *
    * @return The commit index.
    */
-  long index();
+  long getIndex();
 
   /**
    * Returns the session that submitted the operation.
@@ -48,7 +48,14 @@ public interface RaftCommit<T extends RaftOperation> {
    *
    * @return The session that created the commit.
    */
-  RaftSession session();
+  RaftSession getSession();
+
+  /**
+   * Returns the logical time at which the operation was committed.
+   *
+   * @return The logical commit time.
+   */
+  LogicalTimestamp getLogicalTime();
 
   /**
    * Returns the time at which the operation was committed.
@@ -63,7 +70,7 @@ public interface RaftCommit<T extends RaftOperation> {
    *
    * @return The commit time.
    */
-  Instant time();
+  WallClockTimestamp getWallClockTime();
 
   /**
    * Returns the commit type.
@@ -72,39 +79,39 @@ public interface RaftCommit<T extends RaftOperation> {
    *
    * @return The commit type.
    */
-  Class<T> type();
+  Class<T> getType();
 
   /**
    * Returns the operation submitted by the client.
    *
    * @return The operation submitted by the client.
    */
-  T operation();
+  T getOperation();
 
   /**
    * Returns the command submitted by the client.
    * <p>
-   * This method is an alias for the {@link #operation()} method. It is intended to aid with clarity in code.
+   * This method is an alias for the {@link #getOperation()} method. It is intended to aid with clarity in code.
    * This method does <em>not</em> perform any type checking of the operation to ensure it is in fact a
    * {@link RaftCommand} object.
    *
    * @return The command submitted by the client.
    */
-  default T command() {
-    return operation();
+  default T getCommand() {
+    return getOperation();
   }
 
   /**
    * Returns the query submitted by the client.
    * <p>
-   * This method is an alias for the {@link #operation()} method. It is intended to aid with clarity in code.
+   * This method is an alias for the {@link #getOperation()} method. It is intended to aid with clarity in code.
    * This method does <em>not</em> perform any type checking of the operation to ensure it is in fact a
    * {@link RaftQuery} object.
    *
    * @return The query submitted by the client.
    */
-  default T query() {
-    return operation();
+  default T getQuery() {
+    return getOperation();
   }
 
 }

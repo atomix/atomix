@@ -26,9 +26,9 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.serializer.Namespace;
+import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.serializer.Serializer;
 import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
@@ -305,21 +305,6 @@ public class RaftProxySubmitterTest {
     @Override
     public Logger logger() {
       return null;
-    }
-
-    @Override
-    public boolean isBlocked() {
-      return false;
-    }
-
-    @Override
-    public void block() {
-
-    }
-
-    @Override
-    public void unblock() {
-
     }
 
     @Override

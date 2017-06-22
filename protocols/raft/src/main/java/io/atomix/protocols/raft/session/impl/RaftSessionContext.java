@@ -25,6 +25,8 @@ import io.atomix.protocols.raft.impl.RaftServerStateMachineExecutor;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.session.RaftSessionEvent;
+import io.atomix.protocols.raft.session.RaftSessionEventListener;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -33,7 +35,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -65,7 +66,7 @@ public class RaftSessionContext implements RaftSession {
   private final Map<Long, RaftOperationResult> results = new HashMap<>();
   private final Queue<EventHolder> events = new LinkedList<>();
   private EventHolder event;
-  private final Set<Consumer<State>> changeListeners = new CopyOnWriteArraySet<>();
+  private final Set<RaftSessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
 
   public RaftSessionContext(long id, MemberId member, String name, String type, long timeout, RaftServerStateMachineExecutor executor, RaftServerContext server) {
     this.id = id;
@@ -83,7 +84,7 @@ public class RaftSessionContext implements RaftSession {
   }
 
   @Override
-  public long id() {
+  public long getSessionId() {
     return id;
   }
 
@@ -151,7 +152,7 @@ public class RaftSessionContext implements RaftSession {
   }
 
   @Override
-  public State state() {
+  public State getState() {
     return state;
   }
 
@@ -164,18 +165,28 @@ public class RaftSessionContext implements RaftSession {
     if (this.state != state) {
       this.state = state;
       LOGGER.debug("{} - State changed: {}", id, state);
-      changeListeners.forEach(l -> l.accept(state));
+      switch (state) {
+        case OPEN:
+          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.OPEN, this, getTimestamp())));
+          break;
+        case EXPIRED:
+          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.EXPIRE, this, getTimestamp())));
+          break;
+        case CLOSED:
+          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.CLOSE, this, getTimestamp())));
+          break;
+      }
     }
   }
 
   @Override
-  public void addStateChangeListener(Consumer<State> listener) {
-    changeListeners.add(listener);
+  public void addListener(RaftSessionEventListener listener) {
+    eventListeners.add(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<State> listener) {
-    changeListeners.remove(listener);
+  public void removeListener(RaftSessionEventListener listener) {
+    eventListeners.remove(listener);
   }
 
   /**
@@ -363,18 +374,18 @@ public class RaftSessionContext implements RaftSession {
     State state = this.state;
     checkState(state != State.EXPIRED, "session is expired");
     checkState(state != State.CLOSED, "session is closed");
-    checkState(executor.context().context() == RaftServerStateMachineContext.Type.COMMAND, "session events can only be published during command execution");
+    checkState(executor.getContext().context() == RaftServerStateMachineContext.Type.COMMAND, "session events can only be published during command execution");
 
     // If the client acked an index greater than the current event sequence number since we know the
     // client must have received it from another server.
-    if (completeIndex > executor.context().index()) {
+    if (completeIndex > executor.getContext().getCurrentIndex()) {
       return;
     }
 
     // If no event has been published for this index yet, create a new event holder.
-    if (this.event == null || this.event.eventIndex != executor.context().index()) {
+    if (this.event == null || this.event.eventIndex != executor.getContext().getCurrentIndex()) {
       long previousIndex = eventIndex;
-      eventIndex = executor.context().index();
+      eventIndex = executor.getContext().getCurrentIndex();
       this.event = new EventHolder(eventIndex, previousIndex);
     }
 
@@ -447,7 +458,7 @@ public class RaftSessionContext implements RaftSession {
   private void sendEvent(EventHolder event) {
     if (server.isLeader()) {
       PublishRequest request = PublishRequest.builder()
-          .withSession(id())
+          .withSession(getSessionId())
           .withEventIndex(event.eventIndex)
           .withPreviousIndex(Math.max(event.previousIndex, completeIndex))
           .withEvents(event.events.stream()
@@ -485,7 +496,7 @@ public class RaftSessionContext implements RaftSession {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof RaftSession && ((RaftSession) object).id() == id;
+    return object instanceof RaftSession && ((RaftSession) object).getSessionId() == id;
   }
 
   @Override

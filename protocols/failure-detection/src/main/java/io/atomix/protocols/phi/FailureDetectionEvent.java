@@ -70,8 +70,8 @@ public class FailureDetectionEvent<T extends Identifier> extends AbstractEvent<F
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("type", type())
-        .add("subject", subject())
+        .add("type", getType())
+        .add("subject", getSubject())
         .add("oldState", oldState)
         .add("newState", newState)
         .toString();
