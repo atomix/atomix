@@ -27,6 +27,17 @@ import static com.google.common.base.Preconditions.checkArgument;
  * wallclock time on the controller where it is generated.
  */
 public class WallClockTimestamp implements Timestamp {
+
+  /**
+   * Returns a new wall clock timestamp for the given unix timestamp.
+   *
+   * @param unixTimestamp the unix timestamp for which to create a new wall clock timestamp
+   * @return the wall clock timestamp
+   */
+  public static WallClockTimestamp of(long unixTimestamp) {
+    return new WallClockTimestamp(unixTimestamp);
+  }
+
   private final long unixTimestamp;
 
   public WallClockTimestamp() {

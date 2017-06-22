@@ -28,6 +28,17 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * LogicalTimestamps are ordered by their sequence values.
  */
 public class LogicalTimestamp implements Timestamp {
+
+  /**
+   * Returns a new logical timestamp for the given logical time.
+   *
+   * @param value the logical time for which to create a new logical timestamp
+   * @return the logical timestamp
+   */
+  public static WallClockTimestamp of(long value) {
+    return new WallClockTimestamp(value);
+  }
+
   private final long value;
 
   public LogicalTimestamp(long value) {
