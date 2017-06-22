@@ -22,8 +22,8 @@ import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
-import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.serializer.Serializer;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -66,8 +66,8 @@ public class DefaultRaftProxy implements RaftProxy {
     this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
     RaftProxySequencer sequencer = new RaftProxySequencer(state);
     this.sessionListener = new RaftProxyListener(protocol, state, sequencer, serializer, context);
-    RaftConnection leaderConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
-    RaftConnection sessionConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(communicationStrategy));
+    RaftConnection leaderConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol, selectorManager.createSelector(CommunicationStrategies.LEADER));
+    RaftConnection sessionConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol, selectorManager.createSelector(communicationStrategy));
     this.sessionSubmitter = new RaftProxySubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, context);
   }
 

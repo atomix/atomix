@@ -180,7 +180,7 @@ abstract class AbstractAppender implements AutoCloseable {
     long timestamp = System.currentTimeMillis();
 
     log.trace("{} - Sending {} to {}", server.getCluster().member().id(), request, member.getMember().id());
-    server.getProtocolDispatcher().append(member.getMember().id(), request).whenCompleteAsync((response, error) -> {
+    server.getProtocol().append(member.getMember().id(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
       // Complete the append to the member.
@@ -374,7 +374,7 @@ abstract class AbstractAppender implements AutoCloseable {
     member.startConfigure();
 
     log.trace("{} - Sending {} to {}", server.getCluster().member().id(), request, member.getMember().id());
-    server.getProtocolDispatcher().configure(member.getMember().id(), request).whenCompleteAsync((response, error) -> {
+    server.getProtocol().configure(member.getMember().id(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
       // Complete the configure to the member.
@@ -487,7 +487,7 @@ abstract class AbstractAppender implements AutoCloseable {
     member.startInstall();
 
     log.trace("{} - Sending {} to {}", server.getCluster().member().id(), request, member.getMember().id());
-    server.getProtocolDispatcher().install(member.getMember().id(), request).whenCompleteAsync((response, error) -> {
+    server.getProtocol().install(member.getMember().id(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
       // Complete the install to the member.

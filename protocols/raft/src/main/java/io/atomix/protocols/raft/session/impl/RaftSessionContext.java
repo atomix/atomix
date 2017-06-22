@@ -79,7 +79,7 @@ public class RaftSessionContext implements RaftSession {
     this.protocol = server.getProtocol();
     this.executor = executor;
     this.server = server;
-    protocol.listener().registerResetListener(id, request -> resendEvents(request.index()), executor.executor());
+    protocol.registerResetListener(id, request -> resendEvents(request.index()), executor.executor());
   }
 
   @Override
@@ -456,7 +456,7 @@ public class RaftSessionContext implements RaftSession {
           .build();
 
       LOGGER.trace("{} - Sending {}", id, request);
-      protocol.dispatcher().publish(member, request);
+      protocol.publish(member, request);
     }
   }
 
@@ -465,7 +465,7 @@ public class RaftSessionContext implements RaftSession {
    */
   public void expire() {
     setState(State.EXPIRED);
-    protocol.listener().unregisterResetListener(id);
+    protocol.unregisterResetListener(id);
   }
 
   /**
@@ -473,7 +473,7 @@ public class RaftSessionContext implements RaftSession {
    */
   public void close() {
     setState(State.CLOSED);
-    protocol.listener().unregisterResetListener(id);
+    protocol.unregisterResetListener(id);
   }
 
   @Override

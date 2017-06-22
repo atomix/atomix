@@ -236,7 +236,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     LOGGER.trace("{} - Forwarding {}", context.getCluster().member().id(), request);
-    return forward(request, context.getProtocolDispatcher()::query)
+    return forward(request, context.getProtocol()::query)
         .exceptionally(error -> QueryResponse.builder()
             .withStatus(RaftResponse.Status.ERROR)
             .withError(RaftError.Type.NO_LEADER_ERROR)

@@ -15,23 +15,92 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.protocols.raft.cluster.MemberId;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+
 /**
  * Raft client protocol.
  */
 public interface RaftClientProtocol {
 
   /**
-   * Returns the protocol listener.
+   * Sends an open session request to the given node.
    *
-   * @return the protocol listener
+   * @param memberId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
    */
-  RaftClientProtocolListener listener();
+  CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request);
 
   /**
-   * Returns the protocol dispatcher.
+   * Sends a close session request to the given node.
    *
-   * @return the protocol dispatcher
+   * @param memberId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
    */
-  RaftClientProtocolDispatcher dispatcher();
+  CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request);
+
+  /**
+   * Sends a keep alive request to the given node.
+   *
+   * @param memberId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request);
+
+  /**
+   * Sends a query request to the given node.
+   *
+   * @param memberId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request);
+
+  /**
+   * Sends a command request to the given node.
+   *
+   * @param memberId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request);
+
+  /**
+   * Sends a metadata request to the given node.
+   *
+   * @param memberId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request);
+
+  /**
+   * Broadcasts a reset request to all nodes in the cluster.
+   *
+   * @param request the reset request to broadcast
+   */
+  void reset(ResetRequest request);
+
+  /**
+   * Registers a publish request listener.
+   *
+   * @param sessionId the session for which to listen for the publish request
+   * @param listener  the listener to register
+   * @param executor  the executor with which to execute the listener callback
+   */
+  void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor);
+
+  /**
+   * Unregisters the publish request listener for the given session.
+   *
+   * @param sessionId the session for which to unregister the listener
+   */
+  void unregisterPublishListener(long sessionId);
 
 }

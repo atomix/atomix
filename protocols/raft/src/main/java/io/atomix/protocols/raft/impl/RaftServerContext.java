@@ -26,8 +26,6 @@ import io.atomix.protocols.raft.cluster.impl.RaftClusterContext;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.protocol.RaftServerProtocolDispatcher;
-import io.atomix.protocols.raft.protocol.RaftServerProtocolListener;
 import io.atomix.protocols.raft.roles.AbstractRole;
 import io.atomix.protocols.raft.roles.ActiveRole;
 import io.atomix.protocols.raft.roles.CandidateRole;
@@ -135,7 +133,7 @@ public class RaftServerContext implements AutoCloseable {
     this.cluster = new RaftClusterContext(type, localMemberId, this);
 
     // Register protocol listeners.
-    registerHandlers(protocol.listener());
+    registerHandlers(protocol);
   }
 
   /**
@@ -190,24 +188,6 @@ public class RaftServerContext implements AutoCloseable {
    */
   public RaftServerProtocol getProtocol() {
     return protocol;
-  }
-
-  /**
-   * Returns the server protocol dispatcher.
-   *
-   * @return The server protocol dispatcher.
-   */
-  public RaftServerProtocolDispatcher getProtocolDispatcher() {
-    return protocol.dispatcher();
-  }
-
-  /**
-   * Returns the server protocol listener.
-   *
-   * @return The server protocol listener.
-   */
-  public RaftServerProtocolListener getProtocolListener() {
-    return protocol.listener();
   }
 
   /**
@@ -557,20 +537,20 @@ public class RaftServerContext implements AutoCloseable {
   /**
    * Registers server handlers on the configured protocol.
    */
-  private void registerHandlers(RaftServerProtocolListener listener) {
-    listener.registerOpenSessionHandler(request -> runOnContext(() -> state.openSession(request)));
-    listener.registerCloseSessionHandler(request -> runOnContext(() -> state.closeSession(request)));
-    listener.registerKeepAliveHandler(request -> runOnContext(() -> state.keepAlive(request)));
-    listener.registerConfigureHandler(request -> runOnContext(() -> state.configure(request)));
-    listener.registerInstallHandler(request -> runOnContext(() -> state.install(request)));
-    listener.registerJoinHandler(request -> runOnContext(() -> state.join(request)));
-    listener.registerReconfigureHandler(request -> runOnContext(() -> state.reconfigure(request)));
-    listener.registerLeaveHandler(request -> runOnContext(() -> state.leave(request)));
-    listener.registerAppendHandler(request -> runOnContext(() -> state.append(request)));
-    listener.registerPollHandler(request -> runOnContext(() -> state.poll(request)));
-    listener.registerVoteHandler(request -> runOnContext(() -> state.vote(request)));
-    listener.registerCommandHandler(request -> runOnContext(() -> state.command(request)));
-    listener.registerQueryHandler(request -> runOnContext(() -> state.query(request)));
+  private void registerHandlers(RaftServerProtocol protocol) {
+    protocol.registerOpenSessionHandler(request -> runOnContext(() -> state.openSession(request)));
+    protocol.registerCloseSessionHandler(request -> runOnContext(() -> state.closeSession(request)));
+    protocol.registerKeepAliveHandler(request -> runOnContext(() -> state.keepAlive(request)));
+    protocol.registerConfigureHandler(request -> runOnContext(() -> state.configure(request)));
+    protocol.registerInstallHandler(request -> runOnContext(() -> state.install(request)));
+    protocol.registerJoinHandler(request -> runOnContext(() -> state.join(request)));
+    protocol.registerReconfigureHandler(request -> runOnContext(() -> state.reconfigure(request)));
+    protocol.registerLeaveHandler(request -> runOnContext(() -> state.leave(request)));
+    protocol.registerAppendHandler(request -> runOnContext(() -> state.append(request)));
+    protocol.registerPollHandler(request -> runOnContext(() -> state.poll(request)));
+    protocol.registerVoteHandler(request -> runOnContext(() -> state.vote(request)));
+    protocol.registerCommandHandler(request -> runOnContext(() -> state.command(request)));
+    protocol.registerQueryHandler(request -> runOnContext(() -> state.query(request)));
   }
 
   private <T extends RaftRequest, U extends RaftResponse> CompletableFuture<U> runOnContext(Supplier<CompletableFuture<U>> function) {
@@ -590,20 +570,20 @@ public class RaftServerContext implements AutoCloseable {
   /**
    * Unregisters server handlers on the configured protocol.
    */
-  private void unregisterHandlers(RaftServerProtocolListener listener) {
-    listener.unregisterOpenSessionHandler();
-    listener.unregisterCloseSessionHandler();
-    listener.unregisterKeepAliveHandler();
-    listener.unregisterConfigureHandler();
-    listener.unregisterInstallHandler();
-    listener.unregisterJoinHandler();
-    listener.unregisterReconfigureHandler();
-    listener.unregisterLeaveHandler();
-    listener.unregisterAppendHandler();
-    listener.unregisterPollHandler();
-    listener.unregisterVoteHandler();
-    listener.unregisterCommandHandler();
-    listener.unregisterQueryHandler();
+  private void unregisterHandlers(RaftServerProtocol protocol) {
+    protocol.unregisterOpenSessionHandler();
+    protocol.unregisterCloseSessionHandler();
+    protocol.unregisterKeepAliveHandler();
+    protocol.unregisterConfigureHandler();
+    protocol.unregisterInstallHandler();
+    protocol.unregisterJoinHandler();
+    protocol.unregisterReconfigureHandler();
+    protocol.unregisterLeaveHandler();
+    protocol.unregisterAppendHandler();
+    protocol.unregisterPollHandler();
+    protocol.unregisterVoteHandler();
+    protocol.unregisterCommandHandler();
+    protocol.unregisterQueryHandler();
   }
 
   /**
@@ -689,7 +669,7 @@ public class RaftServerContext implements AutoCloseable {
   @Override
   public void close() {
     // Unregister protocol listeners.
-    unregisterHandlers(protocol.listener());
+    unregisterHandlers(protocol);
 
     // Close the log.
     try {

@@ -83,7 +83,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::metadata)
+      return forward(request, context.getProtocol()::metadata)
           .exceptionally(error -> MetadataResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
@@ -143,7 +143,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::command)
+      return forward(request, context.getProtocol()::command)
           .exceptionally(error -> CommandResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
@@ -163,7 +163,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::query)
+      return forward(request, context.getProtocol()::query)
           .exceptionally(error -> QueryResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
@@ -183,7 +183,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::keepAlive)
+      return forward(request, context.getProtocol()::keepAlive)
           .exceptionally(error -> KeepAliveResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
@@ -203,7 +203,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::openSession)
+      return forward(request, context.getProtocol()::openSession)
           .exceptionally(error -> OpenSessionResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
@@ -223,7 +223,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::closeSession)
+      return forward(request, context.getProtocol()::closeSession)
           .exceptionally(error -> CloseSessionResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
@@ -243,7 +243,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::join)
+      return forward(request, context.getProtocol()::join)
           .exceptionally(error -> JoinResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
@@ -263,7 +263,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::reconfigure)
+      return forward(request, context.getProtocol()::reconfigure)
           .exceptionally(error -> ReconfigureResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
@@ -283,7 +283,7 @@ public class ReserveRole extends InactiveRole {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
-      return forward(request, context.getProtocolDispatcher()::leave)
+      return forward(request, context.getProtocol()::leave)
           .exceptionally(error -> LeaveResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)

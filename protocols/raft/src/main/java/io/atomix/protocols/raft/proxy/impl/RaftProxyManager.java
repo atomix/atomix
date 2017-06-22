@@ -67,7 +67,7 @@ public class RaftProxyManager {
     this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-    this.connection = new RaftConnection(clientId, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.ANY));
+    this.connection = new RaftConnection(clientId, protocol, selectorManager.createSelector(CommunicationStrategies.ANY));
     this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
   }
 

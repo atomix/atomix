@@ -42,7 +42,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
 
   public DefaultRaftMetadataClient(String clientId, RaftClientProtocol protocol, NodeSelectorManager selectorManager) {
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-    this.connection = new RaftConnection(clientId, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
+    this.connection = new RaftConnection(clientId, protocol, selectorManager.createSelector(CommunicationStrategies.LEADER));
   }
 
   @Override

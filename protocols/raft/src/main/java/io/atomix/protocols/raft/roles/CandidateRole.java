@@ -148,7 +148,7 @@ public final class CandidateRole extends ActiveRole {
           .withLogTerm(lastTerm)
           .build();
 
-      context.getProtocolDispatcher().vote(member.id(), request).whenCompleteAsync((response, error) -> {
+      context.getProtocol().vote(member.id(), request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {

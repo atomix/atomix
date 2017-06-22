@@ -49,7 +49,7 @@ final class RaftProxyListener {
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
     this.executor = checkNotNull(executor, "executor cannot be null");
-    protocol.listener().registerPublishListener(state.getSessionId(), this::handlePublish, executor);
+    protocol.registerPublishListener(state.getSessionId(), this::handlePublish, executor);
   }
 
   /**
@@ -104,7 +104,7 @@ final class RaftProxyListener {
           .withSession(state.getSessionId())
           .withIndex(eventIndex)
           .build();
-      protocol.dispatcher().reset(resetRequest);
+      protocol.reset(resetRequest);
       return;
     }
 
@@ -127,7 +127,7 @@ final class RaftProxyListener {
    * @return A completable future to be completed once the listener is closed.
    */
   public CompletableFuture<Void> close() {
-    protocol.listener().unregisterPublishListener(state.getSessionId());
+    protocol.unregisterPublishListener(state.getSessionId());
     return CompletableFuture.completedFuture(null);
   }
 }

@@ -397,7 +397,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
       JoinRequest request = JoinRequest.builder()
           .withMember(new DefaultRaftMember(member().id(), member().type(), member().status(), member().updated()))
           .build();
-      context.getProtocolDispatcher().join(member.getMember().id(), request).whenComplete((response, error) -> {
+      context.getProtocol().join(member.getMember().id(), request).whenComplete((response, error) -> {
         // Cancel the join timer.
         cancelJoinTimer();
 

@@ -31,7 +31,7 @@ import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.OpenSessionResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
-import io.atomix.protocols.raft.protocol.RaftClientProtocolDispatcher;
+import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 
@@ -51,13 +51,13 @@ public class RaftConnection {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftConnection.class);
 
   private final String name;
-  private final RaftClientProtocolDispatcher dispatcher;
+  private final RaftClientProtocol protocol;
   private final NodeSelector selector;
   private MemberId node;
 
-  public RaftConnection(String name, RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
+  public RaftConnection(String name, RaftClientProtocol protocol, NodeSelector selector) {
     this.name = checkNotNull(name, "name cannot be null");
-    this.dispatcher = checkNotNull(dispatcher, "dispatcher cannot be null");
+    this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selector = checkNotNull(selector, "selector cannot be null");
   }
 
@@ -109,7 +109,7 @@ public class RaftConnection {
    */
   public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
     CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
-    sendRequest(request, dispatcher::openSession, future);
+    sendRequest(request, protocol::openSession, future);
     return future;
   }
 
@@ -121,7 +121,7 @@ public class RaftConnection {
    */
   public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
     CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();
-    sendRequest(request, dispatcher::closeSession, future);
+    sendRequest(request, protocol::closeSession, future);
     return future;
   }
 
@@ -133,7 +133,7 @@ public class RaftConnection {
    */
   public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
     CompletableFuture<KeepAliveResponse> future = new CompletableFuture<>();
-    sendRequest(request, dispatcher::keepAlive, future);
+    sendRequest(request, protocol::keepAlive, future);
     return future;
   }
 
@@ -145,7 +145,7 @@ public class RaftConnection {
    */
   public CompletableFuture<QueryResponse> query(QueryRequest request) {
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    sendRequest(request, dispatcher::query, future);
+    sendRequest(request, protocol::query, future);
     return future;
   }
 
@@ -157,7 +157,7 @@ public class RaftConnection {
    */
   public CompletableFuture<CommandResponse> command(CommandRequest request) {
     CompletableFuture<CommandResponse> future = new CompletableFuture<>();
-    sendRequest(request, dispatcher::command, future);
+    sendRequest(request, protocol::command, future);
     return future;
   }
 
@@ -169,7 +169,7 @@ public class RaftConnection {
    */
   public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
-    sendRequest(request, dispatcher::metadata, future);
+    sendRequest(request, protocol::metadata, future);
     return future;
   }
 

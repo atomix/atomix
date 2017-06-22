@@ -151,7 +151,7 @@ public final class FollowerRole extends ActiveRole {
           .withLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLogTerm(lastTerm)
           .build();
-      context.getProtocolDispatcher().poll(member.id(), request).whenCompleteAsync((response, error) -> {
+      context.getProtocol().poll(member.id(), request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
