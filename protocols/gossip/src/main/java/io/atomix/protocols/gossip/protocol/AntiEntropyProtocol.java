@@ -17,25 +17,33 @@ package io.atomix.protocols.gossip.protocol;
 
 import io.atomix.utils.Identifier;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+
 /**
  * Anti-entropy protocol.
  */
-public interface AntiEntropyProtocol<T extends Identifier> extends GossipProtocol {
+public interface AntiEntropyProtocol<T extends Identifier> extends GossipProtocol<T> {
 
   /**
-   * Returns the anti-entropy protocol listener.
+   * Sends an anti-entropy advertisement.
    *
-   * @return the anti-entropy protocol listener
+   * @param identifier the location to which to send the advertisement
+   * @param advertisement the anti-entropy advertisement to send
+   * @return a future to be completed with the advertisement response
    */
-  @Override
-  AntiEntropyProtocolListener listener();
+  <K> CompletableFuture<AntiEntropyResponse<K>> advertise(T identifier, AntiEntropyAdvertisement<K> advertisement);
 
   /**
-   * Returns the anti-entropy protocol dispatcher.
+   * Registers an anti-entropy advertisement handler.
    *
-   * @return the anti-entropy protocol dispatcher
+   * @param handler the anti-entropy advertisement handler to register
    */
-  @Override
-  AntiEntropyProtocolDispatcher<T> dispatcher();
+  <K> void registerAdvertisementHandler(Function<AntiEntropyAdvertisement<K>, AntiEntropyResponse<K>> handler);
+
+  /**
+   * Unregisters the anti-entropy advertisement handler.
+   */
+  void unregisterAdvertisementHandler();
 
 }

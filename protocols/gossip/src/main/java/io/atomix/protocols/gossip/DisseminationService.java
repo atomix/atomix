@@ -71,7 +71,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
   private final Map<Identifier, LogicalTimestamp> peerTimestamps = Maps.newHashMap();
 
   public DisseminationService(
-      GossipProtocol protocol,
+      GossipProtocol<?> protocol,
       Supplier<Collection<Identifier>> peerProvider,
       Executor eventExecutor,
       ScheduledExecutorService communicationExecutor,
@@ -84,7 +84,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
     this.eventExecutor = checkNotNull(eventExecutor, "eventExecutor cannot be null");
     this.fastConvergence = fastConvergence;
     this.tombstonesDisabled = tombstonesDisabled;
-    protocol.listener().registerGossipListener(this::update);
+    protocol.registerGossipListener(this::update);
     updateFuture = communicationExecutor.scheduleAtFixedRate(this::gossip, 0, updateInterval.toMillis(), TimeUnit.MILLISECONDS);
     purgeFuture = !tombstonesDisabled ? communicationExecutor.scheduleAtFixedRate(this::purgeTombstones, 0, purgeInterval.toMillis(), TimeUnit.MILLISECONDS) : null;
   }
@@ -190,7 +190,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
         .collect(Collectors.toList());
 
     // Send the gossip message.
-    protocol.dispatcher().gossip(peer, new GossipMessage<>(updateTimestamp, filteredUpdates));
+    protocol.gossip(peer, new GossipMessage<>(updateTimestamp, filteredUpdates));
 
     // Set the peer's update time.
     peerTimestamps.put(peer, updateTimestamp);
@@ -216,7 +216,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
 
   @Override
   public void close() {
-    protocol.listener().unregisterGossipListener();
+    protocol.unregisterGossipListener();
     updateFuture.cancel(false);
     if (purgeFuture != null) {
       purgeFuture.cancel(false);

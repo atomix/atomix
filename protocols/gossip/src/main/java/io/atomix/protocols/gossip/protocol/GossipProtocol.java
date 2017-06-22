@@ -17,23 +17,31 @@ package io.atomix.protocols.gossip.protocol;
 
 import io.atomix.utils.Identifier;
 
+import java.util.function.Consumer;
+
 /**
  * Gossip protocol.
  */
 public interface GossipProtocol<T extends Identifier> {
 
   /**
-   * Returns the gossip protocol listener.
+   * Sends a gossip message to the given node.
    *
-   * @return the gossip protocol listener
+   * @param identifier the location to which to send the gossip message
+   * @param message the gossip message to send
    */
-  GossipProtocolListener listener();
+  <K, V> void gossip(T identifier, GossipMessage<K, V> message);
 
   /**
-   * Returns the gossip protocol dispatcher.
+   * Registers a gossip message listener.
    *
-   * @return the gossip protocol dispatcher
+   * @param listener the gossip message listener to register
    */
-  GossipProtocolDispatcher<T> dispatcher();
+  <K, V> void registerGossipListener(Consumer<GossipMessage<K, V>> listener);
+
+  /**
+   * Unregisters the gossip message listener.
+   */
+  void unregisterGossipListener();
 
 }

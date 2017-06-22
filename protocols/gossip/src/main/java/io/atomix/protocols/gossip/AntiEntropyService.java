@@ -79,7 +79,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
   private final SlidingWindowCounter counter = new SlidingWindowCounter(WINDOW_SIZE);
 
   public AntiEntropyService(
-      AntiEntropyProtocol protocol,
+      AntiEntropyProtocol<Identifier> protocol,
       Supplier<Collection<Identifier>> peerProvider,
       Executor eventExecutor,
       ScheduledExecutorService communicationExecutor,
@@ -91,7 +91,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
     this.eventExecutor = checkNotNull(eventExecutor, "eventExecutor cannot be null");
     this.communicationExecutor = checkNotNull(communicationExecutor, "communicationExecutor cannot be null");
     this.tombstonesDisabled = tombstonesDisabled;
-    protocol.listener().registerGossipListener(this::update);
+    protocol.registerGossipListener(this::update);
     updateFuture = communicationExecutor.scheduleAtFixedRate(this::performAntiEntropy, 0, antiEntropyInterval.toMillis(), TimeUnit.MILLISECONDS);
     purgeFuture = !tombstonesDisabled ? communicationExecutor.scheduleAtFixedRate(this::purgeTombstones, 0, purgeInterval.toMillis(), TimeUnit.MILLISECONDS) : null;
   }
@@ -206,7 +206,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
     long updateTime = System.currentTimeMillis();
     AntiEntropyAdvertisement<K> advertisement = new AntiEntropyAdvertisement<>(
         ImmutableMap.copyOf(Maps.transformValues(updates, GossipUpdate::digest)));
-    protocol.dispatcher().advertise(peer, advertisement).whenComplete((response, error) -> {
+    protocol.advertise(peer, advertisement).whenComplete((response, error) -> {
       if (error != null) {
         log.debug("Failed to send anti-entropy advertisement to {}: {}", peer, error.getMessage());
       } else if (response.status() == AntiEntropyResponse.Status.PROCESSED) {
@@ -277,7 +277,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
   @Override
   public void close() {
     open = false;
-    protocol.listener().unregisterGossipListener();
+    protocol.unregisterGossipListener();
     updateFuture.cancel(false);
     if (purgeFuture != null) {
       purgeFuture.cancel(false);
@@ -314,7 +314,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
           item.timestamp().isNewerThan(existing.timestamp()) ? item : existing));
       communicationExecutor.execute(() -> {
         try {
-          protocol.dispatcher().gossip(peer, new GossipMessage<>(logicalClock.increment(), map.values()));
+          protocol.gossip(peer, new GossipMessage<>(logicalClock.increment(), map.values()));
         } catch (Exception e) {
           log.warn("Failed to send to {}", peer, e);
         }
