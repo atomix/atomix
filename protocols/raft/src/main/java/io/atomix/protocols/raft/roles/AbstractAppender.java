@@ -109,8 +109,8 @@ abstract class AbstractAppender implements AutoCloseable {
     return AppendRequest.builder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.getMemberId() : null)
-        .withLogIndex(prevEntry != null ? prevEntry.index() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.entry().getTerm() : 0)
+        .withLogIndex(prevEntry != null ? prevEntry.getIndex() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.getEntry().getTerm() : 0)
         .withEntries(Collections.EMPTY_LIST)
         .withCommitIndex(server.getCommitIndex())
         .build();
@@ -131,8 +131,8 @@ abstract class AbstractAppender implements AutoCloseable {
     AppendRequest.Builder builder = AppendRequest.builder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.getMemberId() : null)
-        .withLogIndex(prevEntry != null ? prevEntry.index() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.entry().getTerm() : 0)
+        .withLogIndex(prevEntry != null ? prevEntry.getIndex() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.getEntry().getTerm() : 0)
         .withCommitIndex(server.getCommitIndex());
 
     // Build a list of entries to send to the member.
@@ -161,7 +161,7 @@ abstract class AbstractAppender implements AutoCloseable {
       // Otherwise, read the next entry and add it to the batch.
       Indexed<RaftLogEntry> entry = reader.next();
       entries.add(entry);
-      size += entry.size();
+      size += entry.getSize();
       if (nextIndex == lastIndex || size >= MAX_BATCH_SIZE) {
         break;
       }
@@ -321,7 +321,7 @@ abstract class AbstractAppender implements AutoCloseable {
   protected void updateNextIndex(RaftMemberContext member, AppendRequest request) {
     // If the match index was set, update the next index to be greater than the match index if necessary.
     if (!request.entries().isEmpty()) {
-      member.setNextIndex(request.entries().get(request.entries().size() - 1).index() + 1);
+      member.setNextIndex(request.entries().get(request.entries().size() - 1).getIndex() + 1);
     }
   }
 

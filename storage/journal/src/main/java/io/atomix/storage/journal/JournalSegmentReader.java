@@ -63,7 +63,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
   @Override
   public long getCurrentIndex() {
-    return currentEntry != null ? currentEntry.index() : 0;
+    return currentEntry != null ? currentEntry.getIndex() : 0;
   }
 
   @Override
@@ -73,7 +73,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
   @Override
   public long getNextIndex() {
-    return currentEntry != null ? currentEntry.index() + 1 : firstIndex;
+    return currentEntry != null ? currentEntry.getIndex() + 1 : firstIndex;
   }
 
   @Override
@@ -82,12 +82,12 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     // If the current entry is set, use it to determine whether to reset the reader.
     if (currentEntry != null) {
       // If the index matches the current entry index, return the current entry.
-      if (index == currentEntry.index()) {
+      if (index == currentEntry.getIndex()) {
         return currentEntry;
       }
 
       // If the index is less than the current entry index, reset the reader.
-      if (index < currentEntry.index()) {
+      if (index < currentEntry.getIndex()) {
         reset();
       }
     }
@@ -102,7 +102,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
     // Seek to the given index.
     while (hasNext()) {
-      if (nextEntry.index() <= index) {
+      if (nextEntry.getIndex() <= index) {
         next();
       } else {
         break;
@@ -110,7 +110,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     }
 
     // If the current entry's index matches the given index, return it. Otherwise, return null.
-    if (currentEntry != null && index == currentEntry.index()) {
+    if (currentEntry != null && index == currentEntry.getIndex()) {
       return currentEntry;
     }
     return null;

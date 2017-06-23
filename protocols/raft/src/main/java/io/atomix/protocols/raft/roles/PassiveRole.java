@@ -134,7 +134,7 @@ public class PassiveRole extends ReserveRole {
     // Get the last entry index or default to the request log index.
     long lastEntryIndex = request.logIndex();
     if (!request.entries().isEmpty()) {
-      lastEntryIndex = request.entries().get(request.entries().size() - 1).index();
+      lastEntryIndex = request.entries().get(request.entries().size() - 1).getIndex();
     }
 
     // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
@@ -150,15 +150,15 @@ public class PassiveRole extends ReserveRole {
       try {
         for (Indexed<RaftLogEntry> entry : request.entries()) {
           // If the entry index is greater than the commitIndex, break the loop.
-          if (entry.index() > commitIndex) {
+          if (entry.getIndex() > commitIndex) {
             break;
           }
 
           // Read the existing entry from the log. If the entry does not exist in the log,
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
-          Indexed<? extends RaftLogEntry> existing = reader.getEntry(entry.index());
-          if (existing == null || existing.entry().getTerm() != entry.entry().getTerm()) {
+          Indexed<? extends RaftLogEntry> existing = reader.getEntry(entry.getIndex());
+          if (existing == null || existing.getEntry().getTerm() != entry.getEntry().getTerm()) {
             writer.appendEntry(entry);
             LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
           }

@@ -124,7 +124,7 @@ public final class LeaderRole extends ActiveRole {
     writer.getLock().lock();
     try {
       Indexed<RaftLogEntry> indexed = writer.appendEntry(new InitializeEntry(term, appender.getTime()));
-      LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), indexed.index());
+      LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), indexed.getIndex());
     } finally {
       writer.getLock().unlock();
     }
@@ -219,10 +219,10 @@ public final class LeaderRole extends ActiveRole {
 
     // Store the index of the configuration entry in order to prevent other configurations from
     // being logged and committed concurrently. This is an important safety property of Raft.
-    configuring = entry.index();
-    context.getClusterState().configure(new Configuration(entry.index(), entry.entry().getTerm(), entry.entry().getTimestamp(), entry.entry().getMembers()));
+    configuring = entry.getIndex();
+    context.getClusterState().configure(new Configuration(entry.getIndex(), entry.getEntry().getTerm(), entry.getEntry().getTimestamp(), entry.getEntry().getMembers()));
 
-    return appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+    return appender.appendEntries(entry.getIndex()).whenComplete((commitIndex, commitError) -> {
       context.checkThread();
       if (isOpen()) {
         // Reset the configuration index to allow new configuration changes to be committed.
@@ -532,12 +532,12 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // Replicate the command to followers.
-    appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+    appender.appendEntries(entry.getIndex()).whenComplete((commitIndex, commitError) -> {
       context.checkThread();
       if (isOpen()) {
         // If the command was successfully committed, apply it to the state machine.
         if (commitError == null) {
-          context.getStateMachine().<RaftOperationResult>apply(entry.index()).whenComplete((result, error) -> {
+          context.getStateMachine().<RaftOperationResult>apply(entry.getIndex()).whenComplete((result, error) -> {
             if (isOpen()) {
               completeOperation(result, CommandResponse.builder(), error, future);
             }
@@ -640,11 +640,11 @@ public final class LeaderRole extends ActiveRole {
     }
 
     CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
-    appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+    appender.appendEntries(entry.getIndex()).whenComplete((commitIndex, commitError) -> {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          context.getStateMachine().<Long>apply(entry.index()).whenComplete((sessionId, sessionError) -> {
+          context.getStateMachine().<Long>apply(entry.getIndex()).whenComplete((sessionId, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(OpenSessionResponse.builder()
@@ -701,11 +701,11 @@ public final class LeaderRole extends ActiveRole {
     }
 
     CompletableFuture<KeepAliveResponse> future = new CompletableFuture<>();
-    appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+    appender.appendEntries(entry.getIndex()).whenComplete((commitIndex, commitError) -> {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          context.getStateMachine().apply(entry.index()).whenComplete((sessionResult, sessionError) -> {
+          context.getStateMachine().apply(entry.getIndex()).whenComplete((sessionResult, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(KeepAliveResponse.builder()
@@ -768,11 +768,11 @@ public final class LeaderRole extends ActiveRole {
     }
 
     CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();
-    appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+    appender.appendEntries(entry.getIndex()).whenComplete((commitIndex, commitError) -> {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          context.getStateMachine().<Long>apply(entry.index()).whenComplete((closeResult, closeError) -> {
+          context.getStateMachine().<Long>apply(entry.getIndex()).whenComplete((closeResult, closeError) -> {
             if (isOpen()) {
               if (closeError == null) {
                 future.complete(logResponse(CloseSessionResponse.builder()

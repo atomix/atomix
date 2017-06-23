@@ -110,7 +110,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
 
   @Override
   public long getLastIndex() {
-    return lastEntry != null ? lastEntry.index() : descriptor.index() - 1;
+    return lastEntry != null ? lastEntry.getIndex() : descriptor.index() - 1;
   }
 
   @Override
@@ -121,7 +121,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
   @Override
   public long getNextIndex() {
     if (lastEntry != null) {
-      return lastEntry.index() + 1;
+      return lastEntry.getIndex() + 1;
     } else {
       return firstIndex;
     }
@@ -168,15 +168,15 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     final long nextIndex = getNextIndex();
 
     // If the entry's index is greater than the next index in the segment, skip some entries.
-    if (entry.index() > nextIndex) {
+    if (entry.getIndex() > nextIndex) {
       throw new IndexOutOfBoundsException("Entry index is not sequential");
     }
 
     // If the entry's index is less than the next index, truncate the segment.
-    if (entry.index() < nextIndex) {
-      truncate(entry.index() - 1);
+    if (entry.getIndex() < nextIndex) {
+      truncate(entry.getIndex() - 1);
     }
-    appendEntry(entry.entry());
+    appendEntry(entry.getEntry());
   }
 
   @Override

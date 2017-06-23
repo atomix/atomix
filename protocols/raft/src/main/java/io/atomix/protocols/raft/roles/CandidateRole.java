@@ -130,7 +130,7 @@ public final class CandidateRole extends ActiveRole {
 
     final long lastTerm;
     if (lastEntry != null) {
-      lastTerm = lastEntry.entry().getTerm();
+      lastTerm = lastEntry.getEntry().getTerm();
     } else {
       lastTerm = 0;
     }
@@ -144,7 +144,7 @@ public final class CandidateRole extends ActiveRole {
       VoteRequest request = VoteRequest.builder()
           .withTerm(context.getTerm())
           .withCandidate(context.getCluster().getMember().getMemberId())
-          .withLogIndex(lastEntry != null ? lastEntry.index() : 0)
+          .withLogIndex(lastEntry != null ? lastEntry.getIndex() : 0)
           .withLogTerm(lastTerm)
           .build();
 

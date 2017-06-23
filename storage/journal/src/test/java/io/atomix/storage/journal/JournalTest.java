@@ -45,12 +45,12 @@ public class JournalTest {
     Indexed<TestEntry> indexed;
     assertEquals(writer.getNextIndex(), 1);
     indexed = writer.appendEntry(new TestEntry(10));
-    assertEquals(indexed.index(), 1);
+    assertEquals(indexed.getIndex(), 1);
 
     assertEquals(writer.getNextIndex(), 2);
     writer.appendEntry(new Indexed<>(2, new TestEntry(10), 0));
 
     indexed = reader.getEntry(2);
-    assertEquals(indexed.index(), 2);
+    assertEquals(indexed.getIndex(), 2);
   }
 }

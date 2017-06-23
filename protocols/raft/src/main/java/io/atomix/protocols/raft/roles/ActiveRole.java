@@ -83,8 +83,8 @@ public abstract class ActiveRole extends PassiveRole {
       try {
         // If the previous entry term doesn't match the local previous term then reject the request.
         Indexed<RaftLogEntry> entry = reader.getEntry(request.logIndex());
-        if (entry == null || entry.entry().getTerm() != request.logTerm()) {
-          LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().getMember().getMemberId(), request, entry != null ? entry.entry().getTerm() : "unknown");
+        if (entry == null || entry.getEntry().getTerm() != request.logTerm()) {
+          LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().getMember().getMemberId(), request, entry != null ? entry.getEntry().getTerm() : "unknown");
           return AppendResponse.builder()
               .withStatus(RaftResponse.Status.OK)
               .withTerm(context.getTerm())
@@ -104,7 +104,7 @@ public abstract class ActiveRole extends PassiveRole {
     // Get the last entry index or default to the request log index.
     long lastEntryIndex = request.logIndex();
     if (!request.entries().isEmpty()) {
-      lastEntryIndex = request.entries().get(request.entries().size() - 1).index();
+      lastEntryIndex = request.entries().get(request.entries().size() - 1).getIndex();
     }
 
     // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
@@ -122,8 +122,8 @@ public abstract class ActiveRole extends PassiveRole {
           // Read the existing entry from the log. If the entry does not exist in the log,
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
-          Indexed<RaftLogEntry> existing = reader.getEntry(entry.index());
-          if (existing == null || existing.entry().getTerm() != entry.entry().getTerm()) {
+          Indexed<RaftLogEntry> existing = reader.getEntry(entry.getIndex());
+          if (existing == null || existing.getEntry().getTerm() != entry.getEntry().getTerm()) {
             writer.appendEntry(entry);
             LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
           }
@@ -290,8 +290,8 @@ public abstract class ActiveRole extends PassiveRole {
     }
 
     // If the candidate's last log term is lower than the local log's last entry term, reject the request.
-    if (lastTerm < lastEntry.entry().getTerm()) {
-      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastTerm, lastEntry.entry().getTerm());
+    if (lastTerm < lastEntry.getEntry().getTerm()) {
+      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastTerm, lastEntry.getEntry().getTerm());
       return false;
     }
 
@@ -299,8 +299,8 @@ public abstract class ActiveRole extends PassiveRole {
     // candidate's last index is less than the local log's last index. If the candidate's last log term is
     // greater than the local log's last term then it's considered up to date, and if both have the same term
     // then the candidate's last index must be greater than the local log's last index.
-    if (lastTerm == lastEntry.entry().getTerm() && lastIndex < lastEntry.index()) {
-      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastIndex, lastEntry.index());
+    if (lastTerm == lastEntry.getEntry().getTerm() && lastIndex < lastEntry.getIndex()) {
+      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastIndex, lastEntry.getIndex());
       return false;
     }
 
