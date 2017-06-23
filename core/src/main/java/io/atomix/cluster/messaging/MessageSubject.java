@@ -28,24 +28,29 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class MessageSubject {
 
-  private final String value;
+  private final String name;
 
-  public MessageSubject(String value) {
-    this.value = Preconditions.checkNotNull(value);
+  public MessageSubject(String name) {
+    this.name = Preconditions.checkNotNull(name);
   }
 
-  public String value() {
-    return value;
+  /**
+   * Returns the subject name.
+   *
+   * @return the message subject name
+   */
+  public String name() {
+    return name;
   }
 
   @Override
   public String toString() {
-    return value;
+    return name;
   }
 
   @Override
   public int hashCode() {
-    return value.hashCode();
+    return name.hashCode();
   }
 
   @Override
@@ -60,11 +65,11 @@ public final class MessageSubject {
       return false;
     }
     MessageSubject that = (MessageSubject) obj;
-    return Objects.equals(this.value, that.value);
+    return Objects.equals(this.name, that.name);
   }
 
   // for serializer
   protected MessageSubject() {
-    this.value = "";
+    this.name = "";
   }
 }

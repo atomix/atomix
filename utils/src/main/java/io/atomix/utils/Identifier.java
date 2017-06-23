@@ -47,7 +47,7 @@ public class Identifier<T extends Comparable<T>> {
    *
    * @return identifier
    */
-  public T value() {
+  public T id() {
     return identifier;
   }
 

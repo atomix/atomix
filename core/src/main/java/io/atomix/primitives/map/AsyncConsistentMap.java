@@ -58,7 +58,7 @@ import java.util.function.Predicate;
 public interface AsyncConsistentMap<K, V> extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type getPrimitiveType() {
+  default DistributedPrimitive.Type primitiveType() {
     return DistributedPrimitive.Type.CONSISTENT_MAP;
   }
 

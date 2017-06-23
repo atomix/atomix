@@ -228,7 +228,7 @@ public class DefaultConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<K
       Thread.currentThread().interrupt();
       throw new ConsistentMapException.Interrupted();
     } catch (TimeoutException e) {
-      throw new ConsistentMapException.Timeout(getName());
+      throw new ConsistentMapException.Timeout(name());
     } catch (ExecutionException e) {
       Throwables.propagateIfPossible(e.getCause());
       throw new ConsistentMapException(e.getCause());

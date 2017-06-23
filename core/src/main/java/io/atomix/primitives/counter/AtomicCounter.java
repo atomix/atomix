@@ -23,7 +23,7 @@ import io.atomix.primitives.DistributedPrimitive;
 public interface AtomicCounter extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type getPrimitiveType() {
+  default DistributedPrimitive.Type primitiveType() {
     return DistributedPrimitive.Type.COUNTER;
   }
 

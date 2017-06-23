@@ -138,14 +138,14 @@ public interface DistributedPrimitive {
    *
    * @return name
    */
-  String getName();
+  String name();
 
   /**
    * Returns the type of primitive.
    *
    * @return primitive type
    */
-  Type getPrimitiveType();
+  Type primitiveType();
 
   /**
    * Purges state associated with this primitive.

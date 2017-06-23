@@ -32,13 +32,13 @@ public abstract class Synchronous<T extends DistributedPrimitive> implements Dis
   }
 
   @Override
-  public String getName() {
-    return primitive.getName();
+  public String name() {
+    return primitive.name();
   }
 
   @Override
-  public Type getPrimitiveType() {
-    return primitive.getPrimitiveType();
+  public Type primitiveType() {
+    return primitive.primitiveType();
   }
 
   @Override

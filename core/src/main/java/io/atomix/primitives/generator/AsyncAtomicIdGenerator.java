@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncAtomicIdGenerator extends DistributedPrimitive {
 
   @Override
-  default Type getPrimitiveType() {
+  default Type primitiveType() {
     return Type.ID_GENERATOR;
   }
 

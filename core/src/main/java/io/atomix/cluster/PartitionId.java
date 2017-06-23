@@ -49,7 +49,7 @@ public class PartitionId extends Identifier<Integer> implements Comparable<Parti
    * @return number
    */
   public int asInt() {
-    return value();
+    return id();
   }
 
   @Override

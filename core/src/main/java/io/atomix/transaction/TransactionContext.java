@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
 public interface TransactionContext extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type getPrimitiveType() {
+  default DistributedPrimitive.Type primitiveType() {
     return DistributedPrimitive.Type.TRANSACTION_CONTEXT;
   }
 
@@ -49,7 +49,7 @@ public interface TransactionContext extends DistributedPrimitive {
    *
    * @return transaction id
    */
-  TransactionId getTransactionId();
+  TransactionId transactionId();
 
   /**
    * Returns if this transaction context is open.

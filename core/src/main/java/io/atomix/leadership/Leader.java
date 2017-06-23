@@ -49,7 +49,7 @@ public class Leader {
    *
    * @return node identifier
    */
-  public NodeId getNodeId() {
+  public NodeId nodeId() {
     return nodeId;
   }
 
@@ -58,7 +58,7 @@ public class Leader {
    *
    * @return leader term
    */
-  public long getTerm() {
+  public long term() {
     return term;
   }
 
@@ -67,7 +67,7 @@ public class Leader {
    *
    * @return current leader term start time
    */
-  public long getTimestamp() {
+  public long timestamp() {
     return termStartTime;
   }
 

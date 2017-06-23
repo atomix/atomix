@@ -68,20 +68,20 @@ public interface Node {
    *
    * @return instance identifier
    */
-  NodeId getNodeId();
+  NodeId nodeId();
 
   /**
    * Returns the IP address of the controller instance.
    *
    * @return IP address
    */
-  InetAddress getInetAddress();
+  InetAddress getAddress();
 
   /**
    * Returns the TCP port on which the node listens for connections.
    *
    * @return TCP port
    */
-  int getTcpPort();
+  int getPort();
 
 }

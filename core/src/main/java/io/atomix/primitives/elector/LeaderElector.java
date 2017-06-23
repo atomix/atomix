@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 public interface LeaderElector extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type getPrimitiveType() {
+  default DistributedPrimitive.Type primitiveType() {
     return DistributedPrimitive.Type.LEADER_ELECTOR;
   }
 

@@ -468,7 +468,7 @@ abstract class AbstractAppender implements AutoCloseable {
         request = InstallRequest.newBuilder()
             .withTerm(server.getTerm())
             .withLeader(leader != null ? leader.getMemberId() : null)
-            .withId(snapshot.getSnapshotId().value())
+            .withId(snapshot.getSnapshotId().id())
             .withIndex(snapshot.getIndex())
             .withOffset(member.getNextSnapshotOffset())
             .withData(data)

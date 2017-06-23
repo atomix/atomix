@@ -90,7 +90,7 @@ public class MetaStore implements AutoCloseable {
    */
   public synchronized void storeVote(MemberId vote) {
     LOGGER.trace("Store vote {}", vote);
-    metadataBuffer.writeString(8, vote != null ? vote.value() : null).flush();
+    metadataBuffer.writeString(8, vote != null ? vote.id() : null).flush();
   }
 
   /**

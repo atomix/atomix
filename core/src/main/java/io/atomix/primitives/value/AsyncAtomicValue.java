@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncAtomicValue<V> extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type getPrimitiveType() {
+  default DistributedPrimitive.Type primitiveType() {
     return DistributedPrimitive.Type.VALUE;
   }
 

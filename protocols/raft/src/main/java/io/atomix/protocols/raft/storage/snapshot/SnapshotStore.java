@@ -183,7 +183,7 @@ public class SnapshotStore implements AutoCloseable {
    */
   public Snapshot newSnapshot(SnapshotId snapshotId, long index) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-        .withId(snapshotId.value())
+        .withId(snapshotId.id())
         .withIndex(index)
         .withTimestamp(System.currentTimeMillis())
         .build();
