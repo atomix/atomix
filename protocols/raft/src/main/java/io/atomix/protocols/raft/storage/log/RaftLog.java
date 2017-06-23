@@ -49,11 +49,11 @@ public class RaftLog extends JournalDelegate<RaftLogEntry> {
     super(delegate);
     this.delegate = delegate;
     this.flushOnCommit = flushOnCommit;
-    this.writer = new RaftLogWriter(delegate.getWriter(), this);
+    this.writer = new RaftLogWriter(delegate.writer(), this);
   }
 
   @Override
-  public RaftLogWriter getWriter() {
+  public RaftLogWriter writer() {
     return writer;
   }
 

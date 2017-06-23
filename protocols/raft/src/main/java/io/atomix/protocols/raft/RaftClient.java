@@ -81,14 +81,14 @@ public interface RaftClient {
    *
    * @return the globally unique client identifier
    */
-  String getClientId();
+  String clientId();
 
   /**
    * Returns the Raft metadata.
    *
    * @return The Raft metadata.
    */
-  RaftMetadataClient getMetadataClient();
+  RaftMetadataClient metadata();
 
   /**
    * Returns a new proxy builder.

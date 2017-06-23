@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.protocol;
 
 import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 
 import java.net.ConnectException;
@@ -397,19 +398,19 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
   }
 
   void reset(ResetRequest request) {
-    Consumer<ResetRequest> listener = resetListeners.get(request.getSession());
+    Consumer<ResetRequest> listener = resetListeners.get(request.session());
     if (listener != null) {
       listener.accept(request);
     }
   }
 
   @Override
-  public void registerResetListener(long sessionId, Consumer<ResetRequest> listener, Executor executor) {
-    resetListeners.put(sessionId, request -> executor.execute(() -> listener.accept(request)));
+  public void registerResetListener(SessionId sessionId, Consumer<ResetRequest> listener, Executor executor) {
+    resetListeners.put(sessionId.id(), request -> executor.execute(() -> listener.accept(request)));
   }
 
   @Override
-  public void unregisterResetListener(long sessionId) {
-    resetListeners.remove(sessionId);
+  public void unregisterResetListener(SessionId sessionId) {
+    resetListeners.remove(sessionId.id());
   }
 }

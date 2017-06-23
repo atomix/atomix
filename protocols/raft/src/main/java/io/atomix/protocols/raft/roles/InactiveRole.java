@@ -61,7 +61,7 @@ public class InactiveRole extends AbstractRole {
   }
 
   @Override
-  public RaftServer.Role getRole() {
+  public RaftServer.Role role() {
     return RaftServer.Role.INACTIVE;
   }
 
@@ -69,9 +69,9 @@ public class InactiveRole extends AbstractRole {
   public CompletableFuture<ConfigureResponse> onConfigure(ConfigureRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.getTerm(), request.getLeader());
+    updateTermAndLeader(request.term(), request.leader());
 
-    Configuration configuration = new Configuration(request.getIndex(), request.getTerm(), request.getTimestamp(), request.getMembers());
+    Configuration configuration = new Configuration(request.index(), request.term(), request.timestamp(), request.members());
 
     // Configure the cluster membership. This will cause this server to transition to the
     // appropriate state if its type has changed.
@@ -80,7 +80,7 @@ public class InactiveRole extends AbstractRole {
     // If the configuration is already committed, commit it to disk.
     // Check against the actual cluster Configuration rather than the received configuration in
     // case the received configuration was an older configuration that was not applied.
-    if (context.getCommitIndex() >= context.getClusterState().getConfiguration().getIndex()) {
+    if (context.getCommitIndex() >= context.getClusterState().getConfiguration().index()) {
       context.getClusterState().commit();
     }
 

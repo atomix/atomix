@@ -44,7 +44,7 @@ public final class MemberId extends Identifier<String> implements Comparable<Mem
    * @param id string identifier
    * @return node id
    */
-  public static MemberId memberId(String id) {
+  public static MemberId from(String id) {
     return new MemberId(id);
   }
 

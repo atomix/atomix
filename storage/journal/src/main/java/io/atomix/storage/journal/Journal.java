@@ -29,7 +29,7 @@ public interface Journal<E> extends Closeable {
    *
    * @return The journal writer.
    */
-  JournalWriter<E> getWriter();
+  JournalWriter<E> writer();
 
   /**
    * Opens a new journal reader.

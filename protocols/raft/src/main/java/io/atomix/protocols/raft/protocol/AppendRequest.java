@@ -66,7 +66,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The requesting node's current term.
    */
-  public long getTerm() {
+  public long term() {
     return term;
   }
 
@@ -75,7 +75,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public MemberId getLeader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -84,7 +84,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The index of the log entry preceding the new entry.
    */
-  public long getLogIndex() {
+  public long previousLogIndex() {
     return logIndex;
   }
 
@@ -93,7 +93,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The index of the term preceding the new entry.
    */
-  public long getLogTerm() {
+  public long previousLogTerm() {
     return logTerm;
   }
 
@@ -102,7 +102,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return A list of log entries.
    */
-  public List<Indexed<RaftLogEntry>> getEntries() {
+  public List<Indexed<RaftLogEntry>> entries() {
     return entries;
   }
 
@@ -111,7 +111,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The leader commit index.
    */
-  public long getCommitIndex() {
+  public long commitIndex() {
     return commitIndex;
   }
 
@@ -139,8 +139,8 @@ public class AppendRequest extends AbstractRaftRequest {
     return toStringHelper(this)
         .add("term", term)
         .add("leader", leader)
-        .add("logIndex", logIndex)
-        .add("logTerm", logTerm)
+        .add("previousLogIndex", logIndex)
+        .add("previousLogTerm", logTerm)
         .add("entries", entries.size())
         .add("commitIndex", commitIndex)
         .toString();
@@ -190,7 +190,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if the {@code index} is not positive
      */
     public Builder withLogIndex(long logIndex) {
-      checkArgument(logIndex >= 0, "logIndex must be positive");
+      checkArgument(logIndex >= 0, "previousLogIndex must be positive");
       this.logIndex = logIndex;
       return this;
     }
@@ -203,7 +203,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if the {@code term} is not positive
      */
     public Builder withLogTerm(long logTerm) {
-      checkArgument(logTerm >= 0, "logTerm must be positive");
+      checkArgument(logTerm >= 0, "previousLogTerm must be positive");
       this.logTerm = logTerm;
       return this;
     }
@@ -262,8 +262,8 @@ public class AppendRequest extends AbstractRaftRequest {
       super.validate();
       checkArgument(term > 0, "term must be positive");
       checkNotNull(leader, "leader cannot be null");
-      checkArgument(logIndex >= 0, "logIndex must be positive");
-      checkArgument(logTerm >= 0, "logTerm must be positive");
+      checkArgument(logIndex >= 0, "previousLogIndex must be positive");
+      checkArgument(logTerm >= 0, "previousLogTerm must be positive");
       checkNotNull(entries, "entries cannot be null");
       checkArgument(commitIndex >= 0, "commitIndex must be positive");
     }

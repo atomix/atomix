@@ -34,13 +34,13 @@ public class RaftClientDelegate implements RaftClient {
   }
 
   @Override
-  public String getClientId() {
-    return delegate.getClientId();
+  public String clientId() {
+    return delegate.clientId();
   }
 
   @Override
-  public RaftMetadataClient getMetadataClient() {
-    return delegate.getMetadataClient();
+  public RaftMetadataClient metadata() {
+    return delegate.metadata();
   }
 
   @Override

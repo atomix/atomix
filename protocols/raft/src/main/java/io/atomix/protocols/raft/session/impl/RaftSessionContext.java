@@ -28,11 +28,13 @@ import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionEvent;
 import io.atomix.protocols.raft.session.RaftSessionEventListener;
+import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -46,7 +48,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class RaftSessionContext implements RaftSession {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionContext.class);
-  private final long id;
+  private final SessionId id;
   private final MemberId member;
   private final String name;
   private final String type;
@@ -69,23 +71,23 @@ public class RaftSessionContext implements RaftSession {
   private EventHolder currentEventList;
   private final Set<RaftSessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
 
-  public RaftSessionContext(long id, MemberId member, String name, String type, long timeout, RaftServerStateMachineExecutor executor, RaftServerContext server) {
+  public RaftSessionContext(SessionId id, MemberId member, String name, String type, long timeout, RaftServerStateMachineExecutor executor, RaftServerContext server) {
     this.id = id;
     this.member = member;
     this.name = name;
     this.type = type;
     this.timeout = timeout;
-    this.eventIndex = id;
-    this.completeIndex = id;
-    this.lastApplied = id;
+    this.eventIndex = id.id();
+    this.completeIndex = id.id();
+    this.lastApplied = id.id();
     this.protocol = server.getProtocol();
     this.executor = executor;
     this.server = server;
-    protocol.registerResetListener(id, request -> resendEvents(request.getIndex()), executor.executor());
+    protocol.registerResetListener(id, request -> resendEvents(request.index()), executor.executor());
   }
 
   @Override
-  public long getSessionId() {
+  public SessionId sessionId() {
     return id;
   }
 
@@ -379,14 +381,14 @@ public class RaftSessionContext implements RaftSession {
 
     // If the client acked an index greater than the current event sequence number since we know the
     // client must have received it from another server.
-    if (completeIndex > executor.getContext().getCurrentIndex()) {
+    if (completeIndex > executor.getContext().currentIndex()) {
       return;
     }
 
     // If no event has been published for this index yet, create a new event holder.
-    if (this.currentEventList == null || this.currentEventList.eventIndex != executor.getContext().getCurrentIndex()) {
+    if (this.currentEventList == null || this.currentEventList.eventIndex != executor.getContext().currentIndex()) {
       long previousIndex = eventIndex;
-      eventIndex = executor.getContext().getCurrentIndex();
+      eventIndex = executor.getContext().currentIndex();
       this.currentEventList = new EventHolder(eventIndex, previousIndex);
     }
 
@@ -460,7 +462,7 @@ public class RaftSessionContext implements RaftSession {
     // Only send events to the client if this server is the leader.
     if (server.isLeader()) {
       PublishRequest request = PublishRequest.newBuilder()
-          .withSession(getSessionId())
+          .withSession(sessionId().id())
           .withEventIndex(event.eventIndex)
           .withPreviousIndex(Math.max(event.previousIndex, completeIndex))
           .withEvents(event.events.stream()
@@ -491,14 +493,12 @@ public class RaftSessionContext implements RaftSession {
 
   @Override
   public int hashCode() {
-    int hashCode = 23;
-    hashCode = 37 * hashCode + (int) (id ^ (id >>> 32));
-    return hashCode;
+    return Objects.hash(getClass(), id);
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof RaftSession && ((RaftSession) object).getSessionId() == id;
+    return object instanceof RaftSession && ((RaftSession) object).sessionId() == id;
   }
 
   @Override

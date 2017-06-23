@@ -13,36 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.snapshot;
+package io.atomix.protocols.raft.session;
 
 import io.atomix.utils.Identifier;
 
 /**
- * Snapshot identifier.
+ * Session identifier.
  */
-public class SnapshotId extends Identifier<Long> {
+public class SessionId extends Identifier<Long> {
 
   /**
-   * Creates a snapshot ID from the given number.
+   * Returns a new session ID from the given identifier.
    *
-   * @param id the number from which to create the identifier
-   * @return the snapshot identifier
+   * @param id the identifier from which to create a session ID
+   * @return a new session identifier
    */
-  public static SnapshotId of(long id) {
-    return new SnapshotId(id);
+  public static SessionId from(long id) {
+    return new SessionId(id);
   }
 
-  /**
-   * Creates a snapshot ID from the given string.
-   *
-   * @param id the string from which to create the identifier
-   * @return the snapshot identifier
-   */
-  public static SnapshotId of(String id) {
-    return of(Long.parseLong(id));
+  protected SessionId() {
   }
 
-  public SnapshotId(Long value) {
+  public SessionId(Long value) {
     super(value);
   }
 }

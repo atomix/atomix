@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -336,13 +337,13 @@ public interface RaftServerProtocol {
    * @param listener  the reset request listener to add
    * @param executor  the executor with which to execute the listener
    */
-  void registerResetListener(long sessionId, Consumer<ResetRequest> listener, Executor executor);
+  void registerResetListener(SessionId sessionId, Consumer<ResetRequest> listener, Executor executor);
 
   /**
    * Unregisters the given reset request listener.
    *
    * @param sessionId the session ID for which to unregister the listener
    */
-  void unregisterResetListener(long sessionId);
+  void unregisterResetListener(SessionId sessionId);
 
 }

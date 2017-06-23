@@ -41,7 +41,7 @@ public abstract class ConfigurationRequest extends AbstractRaftRequest {
    *
    * @return The member to configure.
    */
-  public RaftMember getMember() {
+  public RaftMember member() {
     return member;
   }
 

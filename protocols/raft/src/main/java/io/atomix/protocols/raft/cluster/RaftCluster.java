@@ -130,7 +130,7 @@ public interface RaftCluster {
   /**
    * Returns a member by ID.
    * <p>
-   * The returned {@link RaftMember} is referenced by the unique {@link RaftMember#getMemberId()}.
+   * The returned {@link RaftMember} is referenced by the unique {@link RaftMember#memberId()}.
    *
    * @param id The member ID.
    * @return The member or {@code null} if no member with the given {@code id} exists.

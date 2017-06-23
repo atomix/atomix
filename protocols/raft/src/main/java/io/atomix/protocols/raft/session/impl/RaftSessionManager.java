@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
+import io.atomix.protocols.raft.session.SessionId;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +31,7 @@ public class RaftSessionManager {
    * Registers a session.
    */
   public void registerSession(RaftSessionContext session) {
-    sessions.put(session.getSessionId(), session);
+    sessions.put(session.sessionId().id(), session);
   }
 
   /**

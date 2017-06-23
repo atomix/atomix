@@ -22,7 +22,7 @@ package io.atomix.protocols.raft;
  * {@link RaftCommand commands}, queries allow for more flexible {@link ConsistencyLevel consistency levels} that trade
  * consistency for performance.
  * <h2>Consistency levels</h2>
- * All queries must specify a {@link #getConsistencyLevel()} with which to execute the query. The provided consistency level
+ * All queries must specify a {@link #consistency()} with which to execute the query. The provided consistency level
  * dictates how queries are submitted to the Raft cluster. When a query is submitted to the cluster, the query is
  * sent in a message to the server to which the client is currently connected. The server handles the query requests
  * based on the configured {@link RaftQuery.ConsistencyLevel}. For {@link ConsistencyLevel#SEQUENTIAL} consistency, followers
@@ -103,7 +103,7 @@ public interface RaftQuery<T> extends RaftOperation<T> {
    *
    * @return The query consistency level.
    */
-  default ConsistencyLevel getConsistencyLevel() {
+  default ConsistencyLevel consistency() {
     return ConsistencyLevel.LINEARIZABLE;
   }
 

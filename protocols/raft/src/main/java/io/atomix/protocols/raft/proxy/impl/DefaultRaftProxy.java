@@ -24,6 +24,7 @@ import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.ThreadContext;
 
@@ -98,13 +99,18 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
-  public String getName() {
+  public String name() {
     return state.getSessionName();
   }
 
   @Override
-  public String getTypeName() {
+  public String typeName() {
     return state.getSessionType();
+  }
+
+  @Override
+  public SessionId sessionId() {
+    return SessionId.from(state.getSessionId());
   }
 
   @Override

@@ -58,7 +58,7 @@ public class PollRequest extends AbstractRaftRequest {
    *
    * @return The requesting node's current term.
    */
-  public long getTerm() {
+  public long term() {
     return term;
   }
 
@@ -67,7 +67,7 @@ public class PollRequest extends AbstractRaftRequest {
    *
    * @return The candidate's address.
    */
-  public MemberId getCandidate() {
+  public MemberId candidate() {
     return candidate;
   }
 
@@ -76,7 +76,7 @@ public class PollRequest extends AbstractRaftRequest {
    *
    * @return The candidate's last log index.
    */
-  public long getLogIndex() {
+  public long lastLogIndex() {
     return logIndex;
   }
 
@@ -85,7 +85,7 @@ public class PollRequest extends AbstractRaftRequest {
    *
    * @return The candidate's last log term.
    */
-  public long getLogTerm() {
+  public long lastLogTerm() {
     return logTerm;
   }
 
@@ -111,8 +111,8 @@ public class PollRequest extends AbstractRaftRequest {
     return toStringHelper(this)
         .add("term", term)
         .add("candidate", candidate)
-        .add("logIndex", logIndex)
-        .add("logTerm", logTerm)
+        .add("lastLogIndex", logIndex)
+        .add("lastLogTerm", logTerm)
         .toString();
   }
 
@@ -158,7 +158,7 @@ public class PollRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if {@code index} is negative
      */
     public Builder withLogIndex(long logIndex) {
-      checkArgument(logIndex >= 0, "logIndex must be positive");
+      checkArgument(logIndex >= 0, "lastLogIndex must be positive");
       this.logIndex = logIndex;
       return this;
     }
@@ -171,7 +171,7 @@ public class PollRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if {@code term} is negative
      */
     public Builder withLogTerm(long logTerm) {
-      checkArgument(logTerm >= 0, "logTerm must be positive");
+      checkArgument(logTerm >= 0, "lastLogTerm must be positive");
       this.logTerm = logTerm;
       return this;
     }
@@ -181,12 +181,12 @@ public class PollRequest extends AbstractRaftRequest {
       super.validate();
       checkArgument(term >= 0, "term must be positive");
       checkNotNull(candidate, "candidate cannot be null");
-      checkArgument(logIndex >= 0, "logIndex must be positive");
-      checkArgument(logTerm >= 0, "logTerm must be positive");
+      checkArgument(logIndex >= 0, "lastLogIndex must be positive");
+      checkArgument(logTerm >= 0, "lastLogTerm must be positive");
     }
 
     /**
-     * @throws IllegalStateException if candidate is not positive or if term, logIndex or logTerm are negative
+     * @throws IllegalStateException if candidate is not positive or if term, lastLogIndex or lastLogTerm are negative
      */
     @Override
     public PollRequest build() {

@@ -21,6 +21,7 @@ import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
+import io.atomix.time.WallClockTimestamp;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Persists server snapshots via the {@link RaftStorage} module.
  * <p>
  * The server snapshot store is responsible for persisting periodic state machine snapshots according
- * to the configured {@link RaftStorage#getStorageLevel() storage level}. Each server with a snapshottable state machine
+ * to the configured {@link RaftStorage#storageLevel() storage level}. Each server with a snapshottable state machine
  * persists the state machine state to allow commands to be removed from disk.
  * <p>
  * When a snapshot store is {@link RaftStorage#openSnapshotStore() created}, the store will load any
@@ -49,7 +50,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   Snapshot snapshot = snapshots.snapshot(1);
  *   }
  * </pre>
- * To create a new {@link Snapshot}, use the {@link #newSnapshot(SnapshotId, long)} method. Each snapshot must
+ * To create a new {@link Snapshot}, use the {@link #newSnapshot(StateMachineId, long)} method. Each snapshot must
  * be created with a unique {@code index} which represents the index of the server state machine at
  * the point at which the snapshot was taken. Snapshot indices are used to sort snapshots loaded from
  * disk and apply them at the correct point in the state machine.
@@ -71,7 +72,7 @@ public class SnapshotStore implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotStore.class);
   final RaftStorage storage;
   private final Map<Long, Snapshot> indexSnapshots = new ConcurrentHashMap<>();
-  private final Map<SnapshotId, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
+  private final Map<StateMachineId, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
 
   public SnapshotStore(RaftStorage storage) {
     this.storage = checkNotNull(storage, "storage cannot be null");
@@ -83,9 +84,9 @@ public class SnapshotStore implements AutoCloseable {
    */
   private void open() {
     for (Snapshot snapshot : loadSnapshots()) {
-      Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.getSnapshotId());
-      if (existingSnapshot == null || existingSnapshot.getIndex() < snapshot.getIndex()) {
-        stateMachineSnapshots.put(snapshot.getSnapshotId(), snapshot);
+      Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.snapshotId());
+      if (existingSnapshot == null || existingSnapshot.index() < snapshot.index()) {
+        stateMachineSnapshots.put(snapshot.snapshotId(), snapshot);
 
         // If a newer snapshot was found, delete the old snapshot if necessary.
         if (existingSnapshot != null && !storage.isRetainStaleSnapshots()) {
@@ -96,7 +97,7 @@ public class SnapshotStore implements AutoCloseable {
     }
 
     for (Snapshot snapshot : stateMachineSnapshots.values()) {
-      indexSnapshots.put(snapshot.getIndex(), snapshot);
+      indexSnapshots.put(snapshot.index(), snapshot);
     }
   }
 
@@ -106,7 +107,7 @@ public class SnapshotStore implements AutoCloseable {
    * @param id The state machine identifier for which to return the snapshot.
    * @return The latest snapshot for the given state machine.
    */
-  public Snapshot getSnapshotById(long id) {
+  public Snapshot getSnapshotById(StateMachineId id) {
     return stateMachineSnapshots.get(id);
   }
 
@@ -127,28 +128,28 @@ public class SnapshotStore implements AutoCloseable {
    */
   private Collection<Snapshot> loadSnapshots() {
     // Ensure log directories are created.
-    storage.getDirectory().mkdirs();
+    storage.directory().mkdirs();
 
     List<Snapshot> snapshots = new ArrayList<>();
 
     // Iterate through all files in the log directory.
-    for (File file : storage.getDirectory().listFiles(File::isFile)) {
+    for (File file : storage.directory().listFiles(File::isFile)) {
 
       // If the file looks like a segment file, attempt to load the segment.
-      if (SnapshotFile.isSnapshotFile(storage.getPrefix(), file)) {
+      if (SnapshotFile.isSnapshotFile(storage.prefix(), file)) {
         SnapshotFile snapshotFile = new SnapshotFile(file);
         SnapshotDescriptor descriptor = new SnapshotDescriptor(FileBuffer.allocate(file, SnapshotDescriptor.BYTES));
 
         // Valid segments will have been locked. Segments that resulting from failures during log cleaning will be
         // unlocked and should ultimately be deleted from disk.
         if (descriptor.isLocked()) {
-          LOGGER.debug("Loaded disk snapshot: {} ({})", snapshotFile.getIndex(), snapshotFile.getFile().getName());
+          LOGGER.debug("Loaded disk snapshot: {} ({})", snapshotFile.index(), snapshotFile.file().getName());
           snapshots.add(new FileSnapshot(snapshotFile, this));
           descriptor.close();
         }
         // If the segment descriptor wasn't locked, close and delete the descriptor.
         else {
-          LOGGER.debug("Deleting partial snapshot: {} ({})", descriptor.getIndex(), snapshotFile.getFile().getName());
+          LOGGER.debug("Deleting partial snapshot: {} ({})", descriptor.index(), snapshotFile.file().getName());
           descriptor.close();
           descriptor.delete();
         }
@@ -161,15 +162,16 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a temporary in-memory snapshot.
    *
-   * @param id    The in-memory snapshot identifier.
+   * @param stateMachineId The snapshot identifier.
    * @param index The snapshot index.
+   * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newTemporarySnapshot(long id, long index) {
+  public Snapshot newTemporarySnapshot(StateMachineId stateMachineId, long index, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-        .withId(id)
+        .withId(stateMachineId.id())
         .withIndex(index)
-        .withTimestamp(System.currentTimeMillis())
+        .withTimestamp(timestamp.unixTimestamp())
         .build();
     return newSnapshot(descriptor, StorageLevel.MEMORY);
   }
@@ -177,17 +179,18 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a new snapshot.
    *
-   * @param snapshotId    The snapshot identifier.
+   * @param stateMachineId The snapshot identifier.
    * @param index The snapshot index.
+   * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newSnapshot(SnapshotId snapshotId, long index) {
+  public Snapshot newSnapshot(StateMachineId stateMachineId, long index, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-        .withId(snapshotId.id())
+        .withId(stateMachineId.id())
         .withIndex(index)
-        .withTimestamp(System.currentTimeMillis())
+        .withTimestamp(timestamp.unixTimestamp())
         .build();
-    return newSnapshot(descriptor, storage.getStorageLevel());
+    return newSnapshot(descriptor, storage.storageLevel());
   }
 
   /**
@@ -215,7 +218,7 @@ public class SnapshotStore implements AutoCloseable {
    * Creates a disk snapshot.
    */
   private Snapshot createDiskSnapshot(SnapshotDescriptor descriptor) {
-    SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(storage.getPrefix(), storage.getDirectory(), descriptor.getId(), descriptor.getIndex(), descriptor.getTimestamp()));
+    SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(storage.prefix(), storage.directory(), descriptor.snapshotId(), descriptor.index(), descriptor.timestamp()));
     Snapshot snapshot = new FileSnapshot(file, this);
     LOGGER.debug("Created disk snapshot: {}", snapshot);
     return snapshot;
@@ -228,14 +231,14 @@ public class SnapshotStore implements AutoCloseable {
     checkNotNull(snapshot, "snapshot cannot be null");
 
     // Only store the snapshot if no existing snapshot exists.
-    Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.getSnapshotId());
-    if (existingSnapshot == null || existingSnapshot.getIndex() <= snapshot.getIndex()) {
-      stateMachineSnapshots.put(snapshot.getSnapshotId(), snapshot);
-      indexSnapshots.put(snapshot.getIndex(), snapshot);
+    Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.snapshotId());
+    if (existingSnapshot == null || existingSnapshot.index() <= snapshot.index()) {
+      stateMachineSnapshots.put(snapshot.snapshotId(), snapshot);
+      indexSnapshots.put(snapshot.index(), snapshot);
 
       // Delete the old snapshot if necessary.
       if (existingSnapshot != null) {
-        indexSnapshots.remove(existingSnapshot.getIndex());
+        indexSnapshots.remove(existingSnapshot.index());
         if (!storage.isRetainStaleSnapshots()) {
           existingSnapshot.close();
           existingSnapshot.delete();

@@ -24,11 +24,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft session metadata.
  */
 public final class RaftSessionMetadata {
-  private final long id;
+  private final SessionId id;
   private final String name;
   private final String type;
 
-  public RaftSessionMetadata(long id, String name, String type) {
+  public RaftSessionMetadata(SessionId id, String name, String type) {
     this.id = id;
     this.name = checkNotNull(name, "name cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
@@ -39,7 +39,7 @@ public final class RaftSessionMetadata {
    *
    * @return The globally unique session identifier.
    */
-  public long getSessionId() {
+  public SessionId sessionId() {
     return id;
   }
 
@@ -48,7 +48,7 @@ public final class RaftSessionMetadata {
    *
    * @return The session name.
    */
-  public String getName() {
+  public String name() {
     return name;
   }
 
@@ -57,7 +57,7 @@ public final class RaftSessionMetadata {
    *
    * @return The session type.
    */
-  public String getTypeName() {
+  public String typeName() {
     return type;
   }
 

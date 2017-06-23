@@ -37,7 +37,7 @@ public interface RaftCommit<T extends RaftOperation> {
    *
    * @return The commit index.
    */
-  long getIndex();
+  long index();
 
   /**
    * Returns the session that submitted the operation.
@@ -48,14 +48,14 @@ public interface RaftCommit<T extends RaftOperation> {
    *
    * @return The session that created the commit.
    */
-  RaftSession getSession();
+  RaftSession session();
 
   /**
    * Returns the logical time at which the operation was committed.
    *
    * @return The logical commit time.
    */
-  LogicalTimestamp getLogicalTime();
+  LogicalTimestamp logicalTime();
 
   /**
    * Returns the time at which the operation was committed.
@@ -70,7 +70,7 @@ public interface RaftCommit<T extends RaftOperation> {
    *
    * @return The commit time.
    */
-  WallClockTimestamp getWallClockTime();
+  WallClockTimestamp wallClockTime();
 
   /**
    * Returns the commit type.
@@ -79,39 +79,39 @@ public interface RaftCommit<T extends RaftOperation> {
    *
    * @return The commit type.
    */
-  Class<T> getType();
+  Class<T> type();
 
   /**
    * Returns the operation submitted by the client.
    *
    * @return The operation submitted by the client.
    */
-  T getOperation();
+  T operation();
 
   /**
    * Returns the command submitted by the client.
    * <p>
-   * This method is an alias for the {@link #getOperation()} method. It is intended to aid with clarity in code.
+   * This method is an alias for the {@link #operation()} method. It is intended to aid with clarity in code.
    * This method does <em>not</em> perform any type checking of the operation to ensure it is in fact a
    * {@link RaftCommand} object.
    *
    * @return The command submitted by the client.
    */
-  default T getCommand() {
-    return getOperation();
+  default T command() {
+    return operation();
   }
 
   /**
    * Returns the query submitted by the client.
    * <p>
-   * This method is an alias for the {@link #getOperation()} method. It is intended to aid with clarity in code.
+   * This method is an alias for the {@link #operation()} method. It is intended to aid with clarity in code.
    * This method does <em>not</em> perform any type checking of the operation to ensure it is in fact a
    * {@link RaftQuery} object.
    *
    * @return The query submitted by the client.
    */
-  default T getQuery() {
-    return getOperation();
+  default T query() {
+    return operation();
   }
 
 }

@@ -47,7 +47,7 @@ public abstract class ConfigurationResponse extends AbstractRaftResponse {
    *
    * @return The response index.
    */
-  public long getIndex() {
+  public long index() {
     return index;
   }
 
@@ -56,7 +56,7 @@ public abstract class ConfigurationResponse extends AbstractRaftResponse {
    *
    * @return The configuration term.
    */
-  public long getTerm() {
+  public long term() {
     return term;
   }
 
@@ -65,7 +65,7 @@ public abstract class ConfigurationResponse extends AbstractRaftResponse {
    *
    * @return The response time.
    */
-  public long getTimestamp() {
+  public long timestamp() {
     return timestamp;
   }
 
@@ -74,7 +74,7 @@ public abstract class ConfigurationResponse extends AbstractRaftResponse {
    *
    * @return The configuration members list.
    */
-  public Collection<RaftMember> getMembers() {
+  public Collection<RaftMember> members() {
     return members;
   }
 

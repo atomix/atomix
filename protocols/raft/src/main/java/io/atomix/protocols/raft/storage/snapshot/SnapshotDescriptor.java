@@ -76,7 +76,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    *
    * @return The snapshot identifier.
    */
-  public long getId() {
+  public long snapshotId() {
     return id;
   }
 
@@ -85,7 +85,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    *
    * @return The snapshot index.
    */
-  public long getIndex() {
+  public long index() {
     return index;
   }
 
@@ -94,7 +94,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    *
    * @return The snapshot timestamp.
    */
-  public long getTimestamp() {
+  public long timestamp() {
     return timestamp;
   }
 

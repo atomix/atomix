@@ -43,7 +43,7 @@ public class ConfigurationEntry extends TimestampedEntry {
    *
    * @return The members.
    */
-  public Collection<RaftMember> getMembers() {
+  public Collection<RaftMember> members() {
     return members;
   }
 

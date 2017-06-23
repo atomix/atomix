@@ -49,7 +49,7 @@ public class ResetRequest extends SessionRequest {
    *
    * @return The event index.
    */
-  public long getIndex() {
+  public long index() {
     return index;
   }
 

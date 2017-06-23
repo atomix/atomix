@@ -34,7 +34,7 @@ public class WallClockTimestamp implements Timestamp {
    * @param unixTimestamp the unix timestamp for which to create a new wall clock timestamp
    * @return the wall clock timestamp
    */
-  public static WallClockTimestamp of(long unixTimestamp) {
+  public static WallClockTimestamp from(long unixTimestamp) {
     return new WallClockTimestamp(unixTimestamp);
   }
 

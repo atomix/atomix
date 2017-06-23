@@ -251,7 +251,7 @@ public interface RaftServer {
    *
    * @return The server name.
    */
-  String getServerName();
+  String serverName();
 
   /**
    * Returns the server's cluster configuration.
@@ -267,7 +267,7 @@ public interface RaftServer {
    *
    * @return The server's cluster configuration.
    */
-  RaftCluster getCluster();
+  RaftCluster cluster();
 
   /**
    * Returns the server role.

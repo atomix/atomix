@@ -52,7 +52,7 @@ public class MetadataResponse extends AbstractRaftResponse {
    *
    * @return Session metadata.
    */
-  public Set<RaftSessionMetadata> getSessions() {
+  public Set<RaftSessionMetadata> sessions() {
     return sessions;
   }
 

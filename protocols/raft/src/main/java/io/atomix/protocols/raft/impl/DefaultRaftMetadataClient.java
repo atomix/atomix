@@ -69,10 +69,10 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
     connection.metadata(MetadataRequest.newBuilder().build()).whenComplete((response, error) -> {
       if (error == null) {
-        if (response.getStatus() == RaftResponse.Status.OK) {
+        if (response.status() == RaftResponse.Status.OK) {
           future.complete(response);
         } else {
-          future.completeExceptionally(response.getError().createException());
+          future.completeExceptionally(response.error().createException());
         }
       } else {
         future.completeExceptionally(error);
@@ -83,12 +83,12 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
 
   @Override
   public CompletableFuture<Set<RaftSessionMetadata>> getSessions() {
-    return getMetadata().thenApply(MetadataResponse::getSessions);
+    return getMetadata().thenApply(MetadataResponse::sessions);
   }
 
   @Override
   public CompletableFuture<Set<RaftSessionMetadata>> getSessions(String type) {
-    return getMetadata().thenApply(response -> response.getSessions().stream().filter(s -> s.getTypeName().equals(type)).collect(Collectors.toSet()));
+    return getMetadata().thenApply(response -> response.sessions().stream().filter(s -> s.typeName().equals(type)).collect(Collectors.toSet()));
   }
 
 }

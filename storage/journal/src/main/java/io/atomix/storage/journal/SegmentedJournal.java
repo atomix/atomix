@@ -587,7 +587,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   }
 
   @Override
-  public SegmentedJournalWriter<E> getWriter() {
+  public SegmentedJournalWriter<E> writer() {
     return writer;
   }
 

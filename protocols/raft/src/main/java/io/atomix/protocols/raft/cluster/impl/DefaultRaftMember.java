@@ -67,12 +67,12 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   }
 
   @Override
-  public MemberId getMemberId() {
+  public MemberId memberId() {
     return id;
   }
 
   @Override
-  public int getHash() {
+  public int hash() {
     return hash;
   }
 
@@ -196,21 +196,21 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
     // Non-leader states should forward the request to the leader if there is one. Leader states
     // will log, replicate, and commit the reconfiguration.
     cluster.getContext().getRaftRole().onReconfigure(ReconfigureRequest.newBuilder()
-        .withIndex(cluster.getConfiguration().getIndex())
-        .withTerm(cluster.getConfiguration().getTerm())
+        .withIndex(cluster.getConfiguration().index())
+        .withTerm(cluster.getConfiguration().term())
         .withMember(new DefaultRaftMember(id, type, status, updated))
         .build()).whenComplete((response, error) -> {
       if (error == null) {
-        if (response.getStatus() == RaftResponse.Status.OK) {
+        if (response.status() == RaftResponse.Status.OK) {
           cancelConfigureTimer();
-          cluster.configure(new Configuration(response.getIndex(), response.getTerm(), response.getTimestamp(), response.getMembers()));
+          cluster.configure(new Configuration(response.index(), response.term(), response.timestamp(), response.members()));
           future.complete(null);
-        } else if (response.getError() == null || response.getError() == RaftError.Type.NO_LEADER_ERROR) {
+        } else if (response.error() == null || response.error() == RaftError.Type.NO_LEADER_ERROR) {
           cancelConfigureTimer();
           configureTimeout = cluster.getContext().getThreadContext().schedule(cluster.getContext().getElectionTimeout().multipliedBy(2), () -> configure(type, future));
         } else {
           cancelConfigureTimer();
-          future.completeExceptionally(response.getError().createException());
+          future.completeExceptionally(response.error().createException());
         }
       }
     });

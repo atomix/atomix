@@ -59,7 +59,7 @@ public final class RaftMemberContext {
     nextSnapshotIndex = 0;
     nextSnapshotOffset = 0;
     matchIndex = 0;
-    nextIndex = log.getWriter().getLastIndex() + 1;
+    nextIndex = log.writer().getLastIndex() + 1;
     heartbeatTime = 0;
     heartbeatStartTime = 0;
     appending = 0;
@@ -71,10 +71,10 @@ public final class RaftMemberContext {
 
     switch (member.getType()) {
       case PASSIVE:
-        reader = log.openReader(log.getWriter().getLastIndex() + 1, RaftLogReader.Mode.COMMITS);
+        reader = log.openReader(log.writer().getLastIndex() + 1, RaftLogReader.Mode.COMMITS);
         break;
       case ACTIVE:
-        reader = log.openReader(log.getWriter().getLastIndex() + 1, RaftLogReader.Mode.ALL);
+        reader = log.openReader(log.writer().getLastIndex() + 1, RaftLogReader.Mode.ALL);
         break;
     }
   }
@@ -391,7 +391,7 @@ public final class RaftMemberContext {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("member", member.getMemberId())
+        .add("member", member.memberId())
         .add("term", term)
         .add("configIndex", configIndex)
         .add("nextSnapshotIndex", nextSnapshotIndex)

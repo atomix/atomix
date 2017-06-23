@@ -54,7 +54,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    *
    * @return The client node identifier.
    */
-  public MemberId getMember() {
+  public MemberId member() {
     return member;
   }
 
@@ -63,7 +63,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    *
    * @return The state machine name.
    */
-  public String getName() {
+  public String name() {
     return name;
   }
 
@@ -72,7 +72,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    *
    * @return The state machine type.
    */
-  public String getTypeName() {
+  public String typeName() {
     return stateMachine;
   }
 
@@ -81,7 +81,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    *
    * @return The session timeout.
    */
-  public long getTimeout() {
+  public long timeout() {
     return timeout;
   }
 

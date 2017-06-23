@@ -58,7 +58,7 @@ public interface RaftRole extends Managed<RaftRole> {
    *
    * @return The server state type.
    */
-  RaftServer.Role getRole();
+  RaftServer.Role role();
 
   /**
    * Handles a metadata request.

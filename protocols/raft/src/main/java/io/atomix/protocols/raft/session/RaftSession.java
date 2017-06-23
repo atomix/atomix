@@ -52,7 +52,7 @@ public interface RaftSession {
    *
    * @return The session identifier.
    */
-  long getSessionId();
+  SessionId sessionId();
 
   /**
    * Returns the session state.

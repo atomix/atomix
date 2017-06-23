@@ -19,6 +19,7 @@ import io.atomix.protocols.raft.error.CommandException;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
+import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.serializer.Serializer;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;
@@ -82,9 +83,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  * </pre>
  * When operations are applied to the state machine they're wrapped in a {@link RaftCommit} object. The commit provides the
- * context of how the command or query was committed to the cluster, including the log {@link RaftCommit#getIndex()}, the
+ * context of how the command or query was committed to the cluster, including the log {@link RaftCommit#index()}, the
  * {@link RaftSession} from which the operation was submitted, and the approximate
- * wall-clock {@link RaftCommit#getWallClockTime()} at which the commit was written to the Raft log. Note that the commit time is
+ * wall-clock {@link RaftCommit#wallClockTime()} at which the commit was written to the Raft log. Note that the commit time is
  * guaranteed to progress monotonically, but it may not be representative of the progress of actual time. See the
  * {@link RaftCommit} documentation for more information.
  * <p>
@@ -195,7 +196,7 @@ public abstract class RaftStateMachine implements Snapshottable {
     this.executor = checkNotNull(executor, "executor cannot be null");
     this.context = executor.getContext();
     if (this instanceof RaftSessionListener) {
-      executor.getContext().getSessions().addListener((RaftSessionListener) this);
+      executor.getContext().sessions().addListener((RaftSessionListener) this);
     }
     configure(executor);
   }
@@ -227,8 +228,8 @@ public abstract class RaftStateMachine implements Snapshottable {
    *
    * @return The unique state machine identifier.
    */
-  protected long getStateMachineId() {
-    return context.getStateMachineId();
+  protected StateMachineId getStateMachineId() {
+    return context.stateMachineId();
   }
 
   /**
@@ -237,7 +238,7 @@ public abstract class RaftStateMachine implements Snapshottable {
    * @return The unique state machine name.
    */
   protected String getStateMachineName() {
-    return context.getName();
+    return context.name();
   }
 
   /**
@@ -246,7 +247,7 @@ public abstract class RaftStateMachine implements Snapshottable {
    * @return The state machine's current index.
    */
   protected long getCurrentIndex() {
-    return context.getCurrentIndex();
+    return context.currentIndex();
   }
 
   /**
@@ -255,7 +256,7 @@ public abstract class RaftStateMachine implements Snapshottable {
    * @return The state machine's wall clock.
    */
   protected WallClock getWallClock() {
-    return context.getWallClock();
+    return context.wallClock();
   }
 
   /**
@@ -264,7 +265,7 @@ public abstract class RaftStateMachine implements Snapshottable {
    * @return The state machine's logical clock.
    */
   protected LogicalClock getLogicalClock() {
-    return context.getLogicalClock();
+    return context.logicalClock();
   }
 
   /**
@@ -273,7 +274,7 @@ public abstract class RaftStateMachine implements Snapshottable {
    * @return The state machine's sessions.
    */
   protected RaftSessions getSessions() {
-    return context.getSessions();
+    return context.sessions();
   }
 
   /**

@@ -54,7 +54,7 @@ public class VoteResponse extends AbstractRaftResponse {
    *
    * @return The responding node's current term.
    */
-  public long getTerm() {
+  public long term() {
     return term;
   }
 

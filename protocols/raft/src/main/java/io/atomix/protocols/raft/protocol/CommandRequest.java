@@ -27,7 +27,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * <p>
  * Command requests are submitted by clients to the Raft cluster to commit commands to
  * the replicated state machine. Each command request must be associated with a registered
- * {@link #getSession()} and have a unique {@link #getSequence()} number within that session. Commands will
+ * {@link #session()} and have a unique {@link #sequenceNumber()} number within that session. Commands will
  * be applied in the cluster in the order defined by the provided sequence number. Thus, sequence numbers
  * should never be skipped. In the event of a failure of a command request, the request should be resent
  * with the same sequence number. Commands are guaranteed to be applied in sequence order.

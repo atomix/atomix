@@ -99,7 +99,7 @@ public class RaftStorage {
    *
    * @return The storage filename prefix.
    */
-  public String getPrefix() {
+  public String prefix() {
     return prefix;
   }
 
@@ -108,7 +108,7 @@ public class RaftStorage {
    *
    * @return The storage serializer.
    */
-  public Serializer getSerializer() {
+  public Serializer serializer() {
     return serializer;
   }
 
@@ -121,7 +121,7 @@ public class RaftStorage {
    *
    * @return The storage directory.
    */
-  public File getDirectory() {
+  public File directory() {
     return directory;
   }
 
@@ -132,7 +132,7 @@ public class RaftStorage {
    *
    * @return The storage level.
    */
-  public StorageLevel getStorageLevel() {
+  public StorageLevel storageLevel() {
     return storageLevel;
   }
 
@@ -144,7 +144,7 @@ public class RaftStorage {
    *
    * @return The maximum segment size in bytes.
    */
-  public int getMaxLogSegmentSize() {
+  public int maxLogSegmentSize() {
     return maxSegmentSize;
   }
 
@@ -156,7 +156,7 @@ public class RaftStorage {
    *
    * @return The maximum number of entries per segment.
    */
-  public int getMaxLogEntriesPerSecond() {
+  public int maxLogEntriesPerSecond() {
     return maxEntriesPerSegment;
   }
 
@@ -168,7 +168,7 @@ public class RaftStorage {
    *
    * @return The entry buffer size.
    */
-  public int getLogEntryBufferSize() {
+  public int logEntryBufferSize() {
     return entryBufferSize;
   }
 
@@ -242,7 +242,7 @@ public class RaftStorage {
   /**
    * Opens a new {@link RaftLog}, recovering the log from disk if it exists.
    * <p>
-   * When a log is opened, the log will attempt to load segments from the storage {@link #getDirectory()}
+   * When a log is opened, the log will attempt to load segments from the storage {@link #directory()}
    * according to the provided log {@code name}. If segments for the given log name are present on disk, segments
    * will be loaded and indexes will be rebuilt from disk. If no segments are found, an empty log will be created.
    * <p>
@@ -291,7 +291,7 @@ public class RaftStorage {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("directory", getDirectory())
+        .add("directory", directory())
         .toString();
   }
 

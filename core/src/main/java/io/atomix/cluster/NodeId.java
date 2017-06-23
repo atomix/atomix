@@ -44,7 +44,7 @@ public final class NodeId extends Identifier<String> implements Comparable<NodeI
    * @param id string identifier
    * @return node id
    */
-  public static NodeId nodeId(String id) {
+  public static NodeId from(String id) {
     return new NodeId(id);
   }
 

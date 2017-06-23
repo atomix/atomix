@@ -36,7 +36,7 @@ public final class RaftMetadataResult {
    *
    * @return The session metadata.
    */
-  public Set<RaftSessionMetadata> getSessions() {
+  public Set<RaftSessionMetadata> sessions() {
     return sessions;
   }
 

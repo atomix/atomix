@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  * Each member in the cluster has an associated {@link RaftMember.Type} and {@link RaftMember.Status}. The
  * {@link RaftMember.Type} is indicative of the manner in which the member interacts with other members of
  * the cluster. The {@link RaftMember.Status} is indicative of the leader's ability to communicate with the
- * member. Additionally, each member is identified by an {@link #getMemberId() address} and unique {@link #getMemberId() ID}
+ * member. Additionally, each member is identified by an {@link #memberId() address} and unique {@link #memberId() ID}
  * which is generated from the {@link MemberId} hash code. The member's {@link MemberId} represents the
  * address through which the server communicates with other servers and not through which clients
  * communicate with the member (which may be a different {@link MemberId}).
@@ -137,14 +137,14 @@ public interface RaftMember {
    *
    * @return The member node ID.
    */
-  MemberId getMemberId();
+  MemberId memberId();
 
   /**
    * Returns the member hash.
    *
    * @return The member hash.
    */
-  int getHash();
+  int hash();
 
   /**
    * Returns the member type.

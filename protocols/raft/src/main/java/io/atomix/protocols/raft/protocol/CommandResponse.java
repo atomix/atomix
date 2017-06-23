@@ -22,7 +22,7 @@ import io.atomix.protocols.raft.error.RaftError;
  * <p>
  * Command responses are sent by servers to clients upon the completion of a
  * {@link CommandRequest}. Command responses are sent with the
- * {@link #getIndex()} (or index) of the state machine at the point at which the command was evaluated.
+ * {@link #index()} (or index) of the state machine at the point at which the command was evaluated.
  * This can be used by the client to ensure it sees state progress monotonically. Note, however, that
  * command responses may not be sent or received in sequential order. If a command response has to await
  * the completion of an event, or if the response is proxied through another server, responses may be

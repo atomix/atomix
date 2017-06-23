@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.StateMachineContext;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
+import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
@@ -38,7 +39,7 @@ public class RaftServerStateMachineContext implements StateMachineContext {
     SNAPSHOT,
   }
 
-  private final long id;
+  private final StateMachineId id;
   private final String name;
   private final String type;
   private final RaftServerStateMachineSessions sessions;
@@ -58,7 +59,7 @@ public class RaftServerStateMachineContext implements StateMachineContext {
   private Type context;
   private long index;
 
-  RaftServerStateMachineContext(long id, String name, String type, RaftServerStateMachineSessions sessions) {
+  RaftServerStateMachineContext(StateMachineId id, String name, String type, RaftServerStateMachineSessions sessions) {
     this.id = id;
     this.name = name;
     this.type = type;
@@ -79,7 +80,7 @@ public class RaftServerStateMachineContext implements StateMachineContext {
    */
   public void commit() {
     long index = this.index;
-    for (RaftSessionContext session : sessions.sessions.values()) {
+    for (RaftSessionContext session : sessions.getSessions()) {
       session.commit(index);
     }
   }
@@ -92,37 +93,37 @@ public class RaftServerStateMachineContext implements StateMachineContext {
   }
 
   @Override
-  public long getStateMachineId() {
+  public StateMachineId stateMachineId() {
     return id;
   }
 
   @Override
-  public String getName() {
+  public String name() {
     return name;
   }
 
   @Override
-  public String getTypeName() {
+  public String typeName() {
     return type;
   }
 
   @Override
-  public long getCurrentIndex() {
+  public long currentIndex() {
     return index;
   }
 
   @Override
-  public LogicalClock getLogicalClock() {
+  public LogicalClock logicalClock() {
     return logicalClock;
   }
 
   @Override
-  public WallClock getWallClock() {
+  public WallClock wallClock() {
     return wallClock;
   }
 
   @Override
-  public RaftServerStateMachineSessions getSessions() {
+  public RaftServerStateMachineSessions sessions() {
     return sessions;
   }
 

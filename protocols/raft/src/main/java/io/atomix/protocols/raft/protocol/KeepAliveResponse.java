@@ -57,7 +57,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    *
    * @return The cluster leader.
    */
-  public MemberId getLeader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -66,7 +66,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    *
    * @return The cluster members.
    */
-  public Collection<MemberId> getMembers() {
+  public Collection<MemberId> members() {
     return members;
   }
 

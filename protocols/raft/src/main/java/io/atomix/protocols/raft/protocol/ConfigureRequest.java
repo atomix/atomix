@@ -63,7 +63,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The requesting node's current term.
    */
-  public long getTerm() {
+  public long term() {
     return term;
   }
 
@@ -72,7 +72,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public MemberId getLeader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -81,7 +81,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The configuration index.
    */
-  public long getIndex() {
+  public long index() {
     return index;
   }
 
@@ -90,7 +90,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The configuration timestamp.
    */
-  public long getTimestamp() {
+  public long timestamp() {
     return timestamp;
   }
 
@@ -99,7 +99,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The configuration members.
    */
-  public Collection<RaftMember> getMembers() {
+  public Collection<RaftMember> members() {
     return members;
   }
 

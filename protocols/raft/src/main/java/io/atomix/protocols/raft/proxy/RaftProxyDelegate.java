@@ -19,6 +19,7 @@ import io.atomix.event.Event;
 import io.atomix.event.EventListener;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftQuery;
+import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -37,13 +38,18 @@ public class RaftProxyDelegate implements RaftProxy {
   }
 
   @Override
-  public String getName() {
-    return delegate.getName();
+  public String name() {
+    return delegate.name();
   }
 
   @Override
-  public String getTypeName() {
-    return delegate.getTypeName();
+  public String typeName() {
+    return delegate.typeName();
+  }
+
+  @Override
+  public SessionId sessionId() {
+    return delegate.sessionId();
   }
 
   @Override

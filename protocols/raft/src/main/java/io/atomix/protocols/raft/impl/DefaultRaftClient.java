@@ -60,12 +60,12 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public String getClientId() {
+  public String clientId() {
     return clientId;
   }
 
   @Override
-  public RaftMetadataClient getMetadataClient() {
+  public RaftMetadataClient metadata() {
     return metadata;
   }
 

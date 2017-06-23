@@ -31,10 +31,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * Publish requests are used by servers to publish event messages to clients. Event messages are
  * sequenced based on the point in the Raft log at which they were published to the client. The
- * {@link #getEventIndex()} indicates the index at which the event was sent, and the {@link #getPreviousIndex()}
+ * {@link #eventIndex()} indicates the index at which the event was sent, and the {@link #previousIndex()}
  * indicates the index of the prior event messages sent to the client. Clients must ensure that event
  * messages are received in sequence by tracking the last index for which they received an event message
- * and validating {@link #getPreviousIndex()} against that index.
+ * and validating {@link #previousIndex()} against that index.
  */
 public class PublishRequest extends SessionRequest {
 
@@ -63,7 +63,7 @@ public class PublishRequest extends SessionRequest {
    *
    * @return The event index.
    */
-  public long getEventIndex() {
+  public long eventIndex() {
     return eventIndex;
   }
 
@@ -72,7 +72,7 @@ public class PublishRequest extends SessionRequest {
    *
    * @return The previous event index.
    */
-  public long getPreviousIndex() {
+  public long previousIndex() {
     return previousIndex;
   }
 
@@ -81,7 +81,7 @@ public class PublishRequest extends SessionRequest {
    *
    * @return The request events.
    */
-  public List<byte[]> getEvents() {
+  public List<byte[]> events() {
     return events;
   }
 

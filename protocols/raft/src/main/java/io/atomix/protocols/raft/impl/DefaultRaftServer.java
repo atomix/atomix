@@ -66,12 +66,12 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   @Override
-  public String getServerName() {
+  public String serverName() {
     return name;
   }
 
   @Override
-  public RaftCluster getCluster() {
+  public RaftCluster cluster() {
     return context.getCluster();
   }
 
@@ -102,7 +102,7 @@ public class DefaultRaftServer implements RaftServer {
 
   @Override
   public CompletableFuture<RaftServer> bootstrap(Collection<MemberId> cluster) {
-    return start(() -> getCluster().bootstrap(cluster));
+    return start(() -> cluster().bootstrap(cluster));
   }
 
   @Override
@@ -112,7 +112,7 @@ public class DefaultRaftServer implements RaftServer {
 
   @Override
   public CompletableFuture<RaftServer> join(Collection<MemberId> cluster) {
-    return start(() -> getCluster().join(cluster));
+    return start(() -> cluster().join(cluster));
   }
 
   /**
@@ -129,7 +129,7 @@ public class DefaultRaftServer implements RaftServer {
           openFuture = future;
           joiner.get().whenComplete((result, error) -> {
             if (error == null) {
-              if (getCluster().getLeader() != null) {
+              if (cluster().getLeader() != null) {
                 started = true;
                 future.complete(this);
               } else {
@@ -137,11 +137,11 @@ public class DefaultRaftServer implements RaftServer {
                   if (electionListener != null) {
                     started = true;
                     future.complete(this);
-                    getCluster().removeLeaderElectionListener(electionListener);
+                    cluster().removeLeaderElectionListener(electionListener);
                     electionListener = null;
                   }
                 };
-                getCluster().addLeaderElectionListener(electionListener);
+                cluster().addLeaderElectionListener(electionListener);
               }
             } else {
               future.completeExceptionally(error);
@@ -208,7 +208,7 @@ public class DefaultRaftServer implements RaftServer {
         if (closeFuture == null) {
           closeFuture = new CompletableFuture<>();
           if (openFuture == null) {
-            getCluster().leave().whenComplete((leaveResult, leaveError) -> {
+            cluster().leave().whenComplete((leaveResult, leaveError) -> {
               shutdown().whenComplete((shutdownResult, shutdownError) -> {
                 context.delete();
                 closeFuture.complete(null);
@@ -217,7 +217,7 @@ public class DefaultRaftServer implements RaftServer {
           } else {
             openFuture.whenComplete((openResult, openError) -> {
               if (openError == null) {
-                getCluster().leave().whenComplete((leaveResult, leaveError) -> {
+                cluster().leave().whenComplete((leaveResult, leaveError) -> {
                   shutdown().whenComplete((shutdownResult, shutdownError) -> {
                     context.delete();
                     closeFuture.complete(null);

@@ -59,14 +59,14 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public RaftServer.Role getRole() {
+  public RaftServer.Role role() {
     return RaftServer.Role.RESERVE;
   }
 
   @Override
   public CompletableFuture<RaftRole> open() {
     return super.open().thenRun(() -> {
-      if (getRole() == RaftServer.Role.RESERVE) {
+      if (role() == RaftServer.Role.RESERVE) {
         context.reset();
       }
     }).thenApply(v -> this);
@@ -96,10 +96,10 @@ public class ReserveRole extends InactiveRole {
   public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.getTerm(), request.getLeader());
+    updateTermAndLeader(request.term(), request.leader());
 
     // Update the local commitIndex and globalIndex.
-    context.setCommitIndex(request.getCommitIndex());
+    context.setCommitIndex(request.commitIndex());
 
     return CompletableFuture.completedFuture(logResponse(AppendResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
@@ -124,7 +124,7 @@ public class ReserveRole extends InactiveRole {
   public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.getTerm(), null);
+    updateTermAndLeader(request.term(), null);
 
     return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
@@ -306,7 +306,7 @@ public class ReserveRole extends InactiveRole {
   @Override
   public CompletableFuture<Void> close() {
     return super.close().thenRun(() -> {
-      if (getRole() == RaftServer.Role.RESERVE) {
+      if (role() == RaftServer.Role.RESERVE) {
         context.reset();
       }
     });

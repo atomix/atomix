@@ -198,7 +198,7 @@ final class LeaderAppender extends AbstractAppender {
     // Ensure that only one configuration attempt per member is attempted at any given time by storing the
     // member state in a set of configuring members.
     // Once the configuration is complete sendAppendRequest will be called recursively.
-    else if (member.getConfigTerm() < server.getTerm() || member.getConfigIndex() < server.getClusterState().getConfiguration().getIndex()) {
+    else if (member.getConfigTerm() < server.getTerm() || member.getConfigIndex() < server.getClusterState().getConfiguration().index()) {
       if (member.canConfigure()) {
         sendConfigureRequest(member, buildConfigureRequest(member));
       }
@@ -399,7 +399,7 @@ final class LeaderAppender extends AbstractAppender {
       updateMatchIndex(member, response);
 
       // If entries were committed to the replica then check commit indexes.
-      if (!request.getEntries().isEmpty()) {
+      if (!request.entries().isEmpty()) {
         server.getThreadContext().execute(() -> commitEntries());
       }
 
@@ -409,9 +409,9 @@ final class LeaderAppender extends AbstractAppender {
       }
     }
     // If we've received a greater term, update the term and transition back to follower.
-    else if (response.getTerm() > server.getTerm()) {
+    else if (response.term() > server.getTerm()) {
       server.getThreadContext().execute(() -> {
-        server.setTerm(response.getTerm()).setLeader(null);
+        server.setTerm(response.term()).setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       });
     }
@@ -434,10 +434,10 @@ final class LeaderAppender extends AbstractAppender {
    */
   protected void handleAppendResponseError(RaftMemberContext member, AppendRequest request, AppendResponse response) {
     // If we've received a greater term, update the term and transition back to follower.
-    if (response.getTerm() > server.getTerm()) {
+    if (response.term() > server.getTerm()) {
       server.getThreadContext().execute(() -> {
-        log.debug("{} - Received higher term from {}", server.getClusterState().getMember().getMemberId(), member.getMember().getMemberId());
-        server.setTerm(response.getTerm()).setLeader(null);
+        log.debug("{} - Received higher term from {}", server.getClusterState().getMember().memberId(), member.getMember().memberId());
+        server.setTerm(response.term()).setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       });
     } else {
@@ -467,7 +467,7 @@ final class LeaderAppender extends AbstractAppender {
       // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
       // that a partition occurred and transition back to the FOLLOWER state.
       if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > server.getElectionTimeout().toMillis() * 2) {
-        log.warn("{} - Suspected network partition. Stepping down", server.getCluster().getMember().getMemberId());
+        log.warn("{} - Suspected network partition. Stepping down", server.getCluster().getMember().memberId());
         server.setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       }

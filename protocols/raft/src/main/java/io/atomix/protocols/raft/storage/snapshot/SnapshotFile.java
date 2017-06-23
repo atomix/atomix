@@ -118,7 +118,7 @@ public final class SnapshotFile {
    *
    * @return The snapshot file.
    */
-  public File getFile() {
+  public File file() {
     return file;
   }
 
@@ -127,8 +127,8 @@ public final class SnapshotFile {
    *
    * @return The snapshot identifier.
    */
-  public SnapshotId getSnapshotId() {
-    return SnapshotId.of(parseId(file.getName()));
+  public StateMachineId snapshotId() {
+    return StateMachineId.from(parseId(file.getName()));
   }
 
   /**
@@ -150,7 +150,7 @@ public final class SnapshotFile {
    *
    * @return The snapshot index.
    */
-  public long getIndex() {
+  public long index() {
     return parseIndex(file.getName());
   }
 
@@ -164,9 +164,7 @@ public final class SnapshotFile {
   static long parseIndex(String fileName) {
     int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) - 1) + 1;
     int end = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1);
-    String indexString = fileName.substring(
-        fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) + 1,
-        fileName.lastIndexOf(PART_SEPARATOR));
+    String indexString = fileName.substring(start, end);
     return Long.parseLong(indexString);
   }
 
@@ -175,7 +173,7 @@ public final class SnapshotFile {
    *
    * @return The snapshot timestamp.
    */
-  public long getTimestamp() {
+  public long timestamp() {
     return parseTimestamp(file.getName());
   }
 

@@ -43,7 +43,7 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The client node identifier.
    */
-  public MemberId getMemberId() {
+  public MemberId memberId() {
     return memberId;
   }
 
@@ -52,7 +52,7 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The session's state machine name.
    */
-  public String getName() {
+  public String name() {
     return name;
   }
 
@@ -61,7 +61,7 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The session's state machine type name.
    */
-  public String getTypeName() {
+  public String typeName() {
     return type;
   }
 
@@ -70,7 +70,7 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The session timeout.
    */
-  public long getTimeout() {
+  public long timeout() {
     return timeout;
   }
 

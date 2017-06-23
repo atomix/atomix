@@ -108,9 +108,9 @@ abstract class AbstractAppender implements AutoCloseable {
     DefaultRaftMember leader = server.getLeader();
     return AppendRequest.newBuilder()
         .withTerm(server.getTerm())
-        .withLeader(leader != null ? leader.getMemberId() : null)
+        .withLeader(leader != null ? leader.memberId() : null)
         .withLogIndex(prevEntry != null ? prevEntry.getIndex() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.getEntry().getTerm() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.getEntry().term() : 0)
         .withEntries(Collections.EMPTY_LIST)
         .withCommitIndex(server.getCommitIndex())
         .build();
@@ -130,9 +130,9 @@ abstract class AbstractAppender implements AutoCloseable {
     final DefaultRaftMember leader = server.getLeader();
     AppendRequest.Builder builder = AppendRequest.newBuilder()
         .withTerm(server.getTerm())
-        .withLeader(leader != null ? leader.getMemberId() : null)
+        .withLeader(leader != null ? leader.memberId() : null)
         .withLogIndex(prevEntry != null ? prevEntry.getIndex() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.getEntry().getTerm() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.getEntry().term() : 0)
         .withCommitIndex(server.getCommitIndex());
 
     // Build a list of entries to send to the member.
@@ -180,12 +180,12 @@ abstract class AbstractAppender implements AutoCloseable {
 
     long timestamp = System.currentTimeMillis();
 
-    log.trace("{} - Sending {} to {}", server.getCluster().getMember().getMemberId(), request, member.getMember().getMemberId());
-    server.getProtocol().append(member.getMember().getMemberId(), request).whenCompleteAsync((response, error) -> {
+    log.trace("{} - Sending {} to {}", server.getCluster().getMember().memberId(), request, member.getMember().memberId());
+    server.getProtocol().append(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
       // Complete the append to the member.
-      if (!request.getEntries().isEmpty()) {
+      if (!request.entries().isEmpty()) {
         member.completeAppend(System.currentTimeMillis() - timestamp);
       } else {
         member.completeAppend();
@@ -193,7 +193,7 @@ abstract class AbstractAppender implements AutoCloseable {
 
       if (open) {
         if (error == null) {
-          log.trace("{} - Received {} from {}", server.getCluster().getMember().getMemberId(), response, member.getMember().getMemberId());
+          log.trace("{} - Received {} from {}", server.getCluster().getMember().memberId(), response, member.getMember().memberId());
           handleAppendResponse(member, request, response);
         } else {
           handleAppendResponseFailure(member, request, error);
@@ -202,7 +202,7 @@ abstract class AbstractAppender implements AutoCloseable {
     }, member.getThreadContext());
 
     updateNextIndex(member, request);
-    if (!request.getEntries().isEmpty() && hasMoreEntries(member)) {
+    if (!request.entries().isEmpty() && hasMoreEntries(member)) {
       appendEntries(member);
     }
   }
@@ -227,7 +227,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Handles an append response.
    */
   protected void handleAppendResponse(RaftMemberContext member, AppendRequest request, AppendResponse response) {
-    if (response.getStatus() == RaftResponse.Status.OK) {
+    if (response.status() == RaftResponse.Status.OK) {
       handleAppendResponseOk(member, request, response);
     } else {
       handleAppendResponseError(member, request, response);
@@ -246,13 +246,13 @@ abstract class AbstractAppender implements AutoCloseable {
       updateMatchIndex(member, response);
 
       // If there are more entries to send then attempt to send another commit.
-      if (request.getLogIndex() != response.getLogIndex() && hasMoreEntries(member)) {
+      if (request.previousLogIndex() != response.lastLogIndex() && hasMoreEntries(member)) {
         appendEntries(member);
       }
     }
     // If we've received a greater term, update the term and transition back to follower.
-    else if (response.getTerm() > server.getTerm()) {
-      server.setTerm(response.getTerm()).setLeader(null);
+    else if (response.term() > server.getTerm()) {
+      server.setTerm(response.term()).setLeader(null);
       server.transition(RaftServer.Role.FOLLOWER);
     }
     // If the response failed, the follower should have provided the correct last index in their log. This helps
@@ -262,7 +262,7 @@ abstract class AbstractAppender implements AutoCloseable {
       resetNextIndex(member);
 
       // If there are more entries to send then attempt to send another commit.
-      if (response.getLogIndex() != request.getLogIndex() && hasMoreEntries(member)) {
+      if (response.lastLogIndex() != request.previousLogIndex() && hasMoreEntries(member)) {
         appendEntries(member);
       }
     }
@@ -277,7 +277,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // when attempting to send entries to down followers.
     int failures = member.incrementFailureCount();
     if (failures <= 3 || failures % 100 == 0) {
-      log.warn("{} - AppendRequest to {} failed: {}", server.getCluster().getMember().getMemberId(), member.getMember().getMemberId(), response.getError() != null ? response.getError() : "");
+      log.warn("{} - AppendRequest to {} failed: {}", server.getCluster().getMember().memberId(), member.getMember().memberId(), response.error() != null ? response.error() : "");
     }
   }
 
@@ -298,7 +298,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // when attempting to send entries to down followers.
     int failures = member.incrementFailureCount();
     if (failures <= 3 || failures % 100 == 0) {
-      log.warn("{} - AppendRequest to {} failed: {}", server.getCluster().getMember().getMemberId(), member.getMember().getMemberId(), error.getMessage());
+      log.warn("{} - AppendRequest to {} failed: {}", server.getCluster().getMember().memberId(), member.getMember().memberId(), error.getMessage());
     }
   }
 
@@ -312,7 +312,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void updateMatchIndex(RaftMemberContext member, AppendResponse response) {
     // If the replica returned a valid match index then update the existing match index.
-    member.setMatchIndex(response.getLogIndex());
+    member.setMatchIndex(response.lastLogIndex());
   }
 
   /**
@@ -320,8 +320,8 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void updateNextIndex(RaftMemberContext member, AppendRequest request) {
     // If the match index was set, update the next index to be greater than the match index if necessary.
-    if (!request.getEntries().isEmpty()) {
-      member.setNextIndex(request.getEntries().get(request.getEntries().size() - 1).getIndex() + 1);
+    if (!request.entries().isEmpty()) {
+      member.setNextIndex(request.entries().get(request.entries().size() - 1).getIndex() + 1);
     }
   }
 
@@ -329,8 +329,8 @@ abstract class AbstractAppender implements AutoCloseable {
    * Resets the match index when a response fails.
    */
   protected void resetMatchIndex(RaftMemberContext member, AppendResponse response) {
-    member.setMatchIndex(response.getLogIndex());
-    log.trace("{} - Reset match index for {} to {}", server.getCluster().getMember().getMemberId(), member, member.getMatchIndex());
+    member.setMatchIndex(response.lastLogIndex());
+    log.trace("{} - Reset match index for {} to {}", server.getCluster().getMember().memberId(), member, member.getMatchIndex());
   }
 
   /**
@@ -345,7 +345,7 @@ abstract class AbstractAppender implements AutoCloseable {
       } else {
         reader.reset();
       }
-      log.trace("{} - Reset next index for {} to {} + 1", server.getCluster().getMember().getMemberId(), member, member.getMatchIndex());
+      log.trace("{} - Reset next index for {} to {} + 1", server.getCluster().getMember().memberId(), member, member.getMatchIndex());
     } finally {
       reader.getLock().unlock();
     }
@@ -358,9 +358,9 @@ abstract class AbstractAppender implements AutoCloseable {
     DefaultRaftMember leader = server.getLeader();
     return ConfigureRequest.newBuilder()
         .withTerm(server.getTerm())
-        .withLeader(leader != null ? leader.getMemberId() : null)
-        .withIndex(server.getClusterState().getConfiguration().getIndex())
-        .withTime(server.getClusterState().getConfiguration().getTime())
+        .withLeader(leader != null ? leader.memberId() : null)
+        .withIndex(server.getClusterState().getConfiguration().index())
+        .withTime(server.getClusterState().getConfiguration().time())
         .withMembers(server.getClusterState().getConfiguration().members())
         .build();
   }
@@ -369,13 +369,13 @@ abstract class AbstractAppender implements AutoCloseable {
    * Connects to the member and sends a configure request.
    */
   protected void sendConfigureRequest(RaftMemberContext member, ConfigureRequest request) {
-    log.debug("{} - Configuring {}", server.getCluster().getMember().getMemberId(), member.getMember().getMemberId());
+    log.debug("{} - Configuring {}", server.getCluster().getMember().memberId(), member.getMember().memberId());
 
     // Start the configure to the member.
     member.startConfigure();
 
-    log.trace("{} - Sending {} to {}", server.getCluster().getMember().getMemberId(), request, member.getMember().getMemberId());
-    server.getProtocol().configure(member.getMember().getMemberId(), request).whenCompleteAsync((response, error) -> {
+    log.trace("{} - Sending {} to {}", server.getCluster().getMember().memberId(), request, member.getMember().memberId());
+    server.getProtocol().configure(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
       // Complete the configure to the member.
@@ -383,10 +383,10 @@ abstract class AbstractAppender implements AutoCloseable {
 
       if (open) {
         if (error == null) {
-          log.trace("{} - Received {} from {}", server.getCluster().getMember().getMemberId(), response, member.getMember().getMemberId());
+          log.trace("{} - Received {} from {}", server.getCluster().getMember().memberId(), response, member.getMember().memberId());
           handleConfigureResponse(member, request, response);
         } else {
-          log.warn("{} - Failed to configure {}", server.getCluster().getMember().getMemberId(), member.getMember().getMemberId());
+          log.warn("{} - Failed to configure {}", server.getCluster().getMember().memberId(), member.getMember().memberId());
           handleConfigureResponseFailure(member, request, error);
         }
       }
@@ -413,7 +413,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Handles a configuration response.
    */
   protected void handleConfigureResponse(RaftMemberContext member, ConfigureRequest request, ConfigureResponse response) {
-    if (response.getStatus() == RaftResponse.Status.OK) {
+    if (response.status() == RaftResponse.Status.OK) {
       handleConfigureResponseOk(member, request, response);
     } else {
       handleConfigureResponseError(member, request, response);
@@ -429,7 +429,7 @@ abstract class AbstractAppender implements AutoCloseable {
     succeedAttempt(member);
 
     // Update the member's current configuration term and index according to the installed configuration.
-    member.setConfigTerm(request.getTerm()).setConfigIndex(request.getIndex());
+    member.setConfigTerm(request.term()).setConfigIndex(request.index());
 
     // Recursively append entries to the member.
     appendEntries(member);
@@ -449,14 +449,14 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected InstallRequest buildInstallRequest(RaftMemberContext member) {
     Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getNextIndex());
-    if (member.getNextSnapshotIndex() != snapshot.getIndex()) {
-      member.setNextSnapshotIndex(snapshot.getIndex()).setNextSnapshotOffset(0);
+    if (member.getNextSnapshotIndex() != snapshot.index()) {
+      member.setNextSnapshotIndex(snapshot.index()).setNextSnapshotOffset(0);
     }
 
     InstallRequest request;
     synchronized (snapshot) {
       // Open a new snapshot reader.
-      try (SnapshotReader reader = snapshot.openReader(server.getStorage().getSerializer())) {
+      try (SnapshotReader reader = snapshot.openReader(server.getStorage().serializer())) {
         // Skip to the next batch of bytes according to the snapshot chunk size and current offset.
         reader.skip(member.getNextSnapshotOffset() * MAX_BATCH_SIZE);
         byte[] data = new byte[Math.min(MAX_BATCH_SIZE, (int) reader.remaining())];
@@ -467,9 +467,9 @@ abstract class AbstractAppender implements AutoCloseable {
         DefaultRaftMember leader = server.getLeader();
         request = InstallRequest.newBuilder()
             .withTerm(server.getTerm())
-            .withLeader(leader != null ? leader.getMemberId() : null)
-            .withId(snapshot.getSnapshotId().id())
-            .withIndex(snapshot.getIndex())
+            .withLeader(leader != null ? leader.memberId() : null)
+            .withId(snapshot.snapshotId().id())
+            .withIndex(snapshot.index())
             .withOffset(member.getNextSnapshotOffset())
             .withData(data)
             .withComplete(!reader.hasRemaining())
@@ -487,8 +487,8 @@ abstract class AbstractAppender implements AutoCloseable {
     // Start the install to the member.
     member.startInstall();
 
-    log.trace("{} - Sending {} to {}", server.getCluster().getMember().getMemberId(), request, member.getMember().getMemberId());
-    server.getProtocol().install(member.getMember().getMemberId(), request).whenCompleteAsync((response, error) -> {
+    log.trace("{} - Sending {} to {}", server.getCluster().getMember().memberId(), request, member.getMember().memberId());
+    server.getProtocol().install(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
       // Complete the install to the member.
@@ -496,10 +496,10 @@ abstract class AbstractAppender implements AutoCloseable {
 
       if (open) {
         if (error == null) {
-          log.trace("{} - Received {} from {}", server.getCluster().getMember().getMemberId(), response, member.getMember().getMemberId());
+          log.trace("{} - Received {} from {}", server.getCluster().getMember().memberId(), response, member.getMember().memberId());
           handleInstallResponse(member, request, response);
         } else {
-          log.warn("{} - Failed to install {}", server.getCluster().getMember().getMemberId(), member.getMember().getMemberId());
+          log.warn("{} - Failed to install {}", server.getCluster().getMember().memberId(), member.getMember().memberId());
 
           // Trigger reactions to the install response failure.
           handleInstallResponseFailure(member, request, error);
@@ -532,7 +532,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Handles an install response.
    */
   protected void handleInstallResponse(RaftMemberContext member, InstallRequest request, InstallResponse response) {
-    if (response.getStatus() == RaftResponse.Status.OK) {
+    if (response.status() == RaftResponse.Status.OK) {
       handleInstallResponseOk(member, request, response);
     } else {
       handleInstallResponseError(member, request, response);
@@ -549,15 +549,15 @@ abstract class AbstractAppender implements AutoCloseable {
 
     // If the install request was completed successfully, set the member's snapshotIndex and reset
     // the next snapshot index/offset.
-    if (request.isComplete()) {
+    if (request.complete()) {
       member
           .setNextSnapshotIndex(0)
           .setNextSnapshotOffset(0)
-          .setNextIndex(request.getSnapshotIndex() + 1);
+          .setNextIndex(request.snapshotIndex() + 1);
     }
     // If more install requests remain, increment the member's snapshot offset.
     else {
-      member.setNextSnapshotOffset(request.getChunkOffset() + 1);
+      member.setNextSnapshotOffset(request.chunkOffset() + 1);
     }
 
     // Recursively append entries to the member.
@@ -569,7 +569,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   @SuppressWarnings("unused")
   protected void handleInstallResponseError(RaftMemberContext member, InstallRequest request, InstallResponse response) {
-    log.warn("{} - Failed to install {}", server.getCluster().getMember().getMemberId(), member.getMember().getMemberId());
+    log.warn("{} - Failed to install {}", server.getCluster().getMember().memberId(), member.getMember().memberId());
     member.setNextSnapshotIndex(0).setNextSnapshotOffset(0);
   }
 

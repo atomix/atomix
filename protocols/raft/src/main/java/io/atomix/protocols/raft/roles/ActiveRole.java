@@ -49,7 +49,7 @@ public abstract class ActiveRole extends PassiveRole {
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and transition to follower.
-    boolean transition = updateTermAndLeader(request.getTerm(), request.getLeader());
+    boolean transition = updateTermAndLeader(request.term(), request.leader());
 
     CompletableFuture<AppendResponse> future = CompletableFuture.completedFuture(logResponse(handleAppend(request)));
 
@@ -64,10 +64,10 @@ public abstract class ActiveRole extends PassiveRole {
   @Override
   protected AppendResponse checkPreviousEntry(AppendRequest request) {
     // If the request log index is positive, ensure it aligns with the local log.
-    if (request.getLogIndex() != 0) {
+    if (request.previousLogIndex() != 0) {
       final long lastIndex = context.getLogWriter().getLastIndex();
-      if (request.getLogIndex() > lastIndex) {
-        LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().getMemberId(), request, request.getLogIndex(), lastIndex);
+      if (request.previousLogIndex() > lastIndex) {
+        LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().memberId(), request, request.previousLogIndex(), lastIndex);
         return AppendResponse.newBuilder()
             .withStatus(RaftResponse.Status.OK)
             .withTerm(context.getTerm())
@@ -82,14 +82,14 @@ public abstract class ActiveRole extends PassiveRole {
       reader.getLock().lock();
       try {
         // If the previous entry term doesn't match the local previous term then reject the request.
-        Indexed<RaftLogEntry> entry = reader.getEntry(request.getLogIndex());
-        if (entry == null || entry.getEntry().getTerm() != request.getLogTerm()) {
-          LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().getMember().getMemberId(), request, entry != null ? entry.getEntry().getTerm() : "unknown");
+        Indexed<RaftLogEntry> entry = reader.getEntry(request.previousLogIndex());
+        if (entry == null || entry.getEntry().term() != request.previousLogTerm()) {
+          LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().getMember().memberId(), request, entry != null ? entry.getEntry().term() : "unknown");
           return AppendResponse.newBuilder()
               .withStatus(RaftResponse.Status.OK)
               .withTerm(context.getTerm())
               .withSucceeded(false)
-              .withLogIndex(request.getLogIndex() <= lastIndex ? request.getLogIndex() - 1 : lastIndex)
+              .withLogIndex(request.previousLogIndex() <= lastIndex ? request.previousLogIndex() - 1 : lastIndex)
               .build();
         }
       } finally {
@@ -102,30 +102,30 @@ public abstract class ActiveRole extends PassiveRole {
   @Override
   protected AppendResponse appendEntries(AppendRequest request) {
     // Get the last entry index or default to the request log index.
-    long lastEntryIndex = request.getLogIndex();
-    if (!request.getEntries().isEmpty()) {
-      lastEntryIndex = request.getEntries().get(request.getEntries().size() - 1).getIndex();
+    long lastEntryIndex = request.previousLogIndex();
+    if (!request.entries().isEmpty()) {
+      lastEntryIndex = request.entries().get(request.entries().size() - 1).getIndex();
     }
 
     // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
-    long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.getCommitIndex(), lastEntryIndex));
+    long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
 
     // Get the server log reader/writer.
     final RaftLogReader reader = context.getLogReader();
     final RaftLogWriter writer = context.getLogWriter();
 
     // If the request entries are non-empty, write them to the log.
-    if (!request.getEntries().isEmpty()) {
+    if (!request.entries().isEmpty()) {
       writer.getLock().lock();
       try {
-        for (Indexed<RaftLogEntry> entry : request.getEntries()) {
+        for (Indexed<RaftLogEntry> entry : request.entries()) {
           // Read the existing entry from the log. If the entry does not exist in the log,
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
           Indexed<RaftLogEntry> existing = reader.getEntry(entry.getIndex());
-          if (existing == null || existing.getEntry().getTerm() != entry.getEntry().getTerm()) {
+          if (existing == null || existing.getEntry().term() != entry.getEntry().term()) {
             writer.appendEntry(entry);
-            LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
+            LOGGER.debug("{} - Appended {}", context.getCluster().getMember().memberId(), entry);
           }
         }
       } finally {
@@ -138,7 +138,7 @@ public abstract class ActiveRole extends PassiveRole {
     context.setCommitIndex(commitIndex);
 
     if (context.getCommitIndex() > previousCommitIndex) {
-      LOGGER.trace("{} - Committed entries up to index {}", context.getCluster().getMember().getMemberId(), commitIndex);
+      LOGGER.trace("{} - Committed entries up to index {}", context.getCluster().getMember().memberId(), commitIndex);
     }
 
     // Apply commits to the local state machine.
@@ -156,7 +156,7 @@ public abstract class ActiveRole extends PassiveRole {
   public CompletableFuture<PollResponse> onPoll(PollRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.getTerm(), null);
+    updateTermAndLeader(request.term(), null);
     return CompletableFuture.completedFuture(logResponse(handlePoll(request)));
   }
 
@@ -167,14 +167,14 @@ public abstract class ActiveRole extends PassiveRole {
     // If the request term is not as great as the current context term then don't
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
-    if (request.getTerm() < context.getTerm()) {
-      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().getMember().getMemberId(), request);
+    if (request.term() < context.getTerm()) {
+      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().getMember().memberId(), request);
       return PollResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withAccepted(false)
           .build();
-    } else if (isLogUpToDate(request.getLogIndex(), request.getLogTerm(), request)) {
+    } else if (isLogUpToDate(request.lastLogIndex(), request.lastLogTerm(), request)) {
       return PollResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -196,7 +196,7 @@ public abstract class ActiveRole extends PassiveRole {
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context.
-    boolean transition = updateTermAndLeader(request.getTerm(), null);
+    boolean transition = updateTermAndLeader(request.term(), null);
 
     CompletableFuture<VoteResponse> future = CompletableFuture.completedFuture(logResponse(handleVote(request)));
     if (transition) {
@@ -212,8 +212,8 @@ public abstract class ActiveRole extends PassiveRole {
     // If the request term is not as great as the current context term then don't
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
-    if (request.getTerm() < context.getTerm()) {
-      LOGGER.trace("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().getMember().getMemberId(), request);
+    if (request.term() < context.getTerm()) {
+      LOGGER.trace("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().getMember().memberId(), request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -222,7 +222,7 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // If a leader was already determined for this term then reject the request.
     else if (context.getLeader() != null) {
-      LOGGER.trace("{} - Rejected {}: leader already exists", context.getCluster().getMember().getMemberId(), request);
+      LOGGER.trace("{} - Rejected {}: leader already exists", context.getCluster().getMember().memberId(), request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -231,8 +231,8 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!context.getClusterState().getRemoteMemberStates().stream().map(m -> m.getMember().getMemberId()).collect(Collectors.toSet()).contains(request.getCandidate())) {
-      LOGGER.trace("{} - Rejected {}: candidate is not known to the local member", context.getCluster().getMember().getMemberId(), request);
+    else if (!context.getClusterState().getRemoteMemberStates().stream().map(m -> m.getMember().memberId()).collect(Collectors.toSet()).contains(request.candidate())) {
+      LOGGER.trace("{} - Rejected {}: candidate is not known to the local member", context.getCluster().getMember().memberId(), request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -241,8 +241,8 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // If no vote has been cast, check the log and cast a vote if necessary.
     else if (context.getLastVotedFor() == null) {
-      if (isLogUpToDate(request.getLogIndex(), request.getLogTerm(), request)) {
-        context.setLastVotedFor(request.getCandidate());
+      if (isLogUpToDate(request.lastLogIndex(), request.lastLogTerm(), request)) {
+        context.setLastVotedFor(request.candidate());
         return VoteResponse.newBuilder()
             .withStatus(RaftResponse.Status.OK)
             .withTerm(context.getTerm())
@@ -257,8 +257,8 @@ public abstract class ActiveRole extends PassiveRole {
       }
     }
     // If we already voted for the requesting server, respond successfully.
-    else if (context.getLastVotedFor() == request.getCandidate()) {
-      LOGGER.debug("{} - Accepted {}: already voted for {}", context.getCluster().getMember().getMemberId(), request, context.getCluster().getMember(context.getLastVotedFor()).getMemberId());
+    else if (context.getLastVotedFor() == request.candidate()) {
+      LOGGER.debug("{} - Accepted {}: already voted for {}", context.getCluster().getMember().memberId(), request, context.getCluster().getMember(context.getLastVotedFor()).memberId());
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -267,7 +267,7 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // In this case, we've already voted for someone else.
     else {
-      LOGGER.debug("{} - Rejected {}: already voted for {}", context.getCluster().getMember().getMemberId(), request, context.getCluster().getMember(context.getLastVotedFor()).getMemberId());
+      LOGGER.debug("{} - Rejected {}: already voted for {}", context.getCluster().getMember().memberId(), request, context.getCluster().getMember(context.getLastVotedFor()).memberId());
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -285,13 +285,13 @@ public abstract class ActiveRole extends PassiveRole {
 
     // If the log is empty then vote for the candidate.
     if (lastEntry == null) {
-      LOGGER.trace("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().getMember().getMemberId(), request);
+      LOGGER.trace("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().getMember().memberId(), request);
       return true;
     }
 
     // If the candidate's last log term is lower than the local log's last entry term, reject the request.
-    if (lastTerm < lastEntry.getEntry().getTerm()) {
-      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastTerm, lastEntry.getEntry().getTerm());
+    if (lastTerm < lastEntry.getEntry().term()) {
+      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().getMember().memberId(), request, lastTerm, lastEntry.getEntry().term());
       return false;
     }
 
@@ -299,15 +299,15 @@ public abstract class ActiveRole extends PassiveRole {
     // candidate's last index is less than the local log's last index. If the candidate's last log term is
     // greater than the local log's last term then it's considered up to date, and if both have the same term
     // then the candidate's last index must be greater than the local log's last index.
-    if (lastTerm == lastEntry.getEntry().getTerm() && lastIndex < lastEntry.getIndex()) {
-      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastIndex, lastEntry.getIndex());
+    if (lastTerm == lastEntry.getEntry().term() && lastIndex < lastEntry.getIndex()) {
+      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().getMember().memberId(), request, lastIndex, lastEntry.getIndex());
       return false;
     }
 
     // If we made it this far, the candidate's last term is greater than or equal to the local log's last
     // term, and if equal to the local log's last term, the candidate's last index is equal to or greater
     // than the local log's last index.
-    LOGGER.trace("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().getMember().getMemberId(), request);
+    LOGGER.trace("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().getMember().memberId(), request);
     return true;
   }
 

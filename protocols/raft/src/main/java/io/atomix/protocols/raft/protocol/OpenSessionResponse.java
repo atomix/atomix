@@ -50,7 +50,7 @@ public class OpenSessionResponse extends AbstractRaftResponse {
    *
    * @return The registered session ID.
    */
-  public long getSession() {
+  public long session() {
     return session;
   }
 
@@ -59,7 +59,7 @@ public class OpenSessionResponse extends AbstractRaftResponse {
    *
    * @return The session timeout.
    */
-  public long getTimeout() {
+  public long timeout() {
     return timeout;
   }
 

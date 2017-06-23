@@ -143,7 +143,7 @@ final class RaftProxySubmitter {
         .withSequence(state.getCommandRequest())
         .withIndex(state.getResponseIndex())
         .withBytes(bytes)
-        .withConsistency(query.getConsistencyLevel())
+        .withConsistency(query.consistency())
         .build();
     submitQuery(request, future);
   }
@@ -199,7 +199,7 @@ final class RaftProxySubmitter {
     } else {
       for (Map.Entry<Long, OperationAttempt> entry : attempts.entrySet()) {
         OperationAttempt operation = entry.getValue();
-        if (operation instanceof CommandAttempt && operation.request.getSequence() > commandSequence && operation.attempt <= attempt.attempt) {
+        if (operation instanceof CommandAttempt && operation.request.sequenceNumber() > commandSequence && operation.attempt <= attempt.attempt) {
           operation.retry();
         }
       }
@@ -344,21 +344,21 @@ final class RaftProxySubmitter {
     public void accept(CommandResponse response, Throwable error) {
       if (error == null) {
         LOG.trace("{} - Received {}", state.getSessionId(), response);
-        if (response.getStatus() == RaftResponse.Status.OK) {
+        if (response.status() == RaftResponse.Status.OK) {
           complete(response);
         }
         // COMMAND_ERROR indicates that the command was received by the leader out of sequential order.
         // We need to resend commands starting at the provided lastSequence number.
-        else if (response.getError() == RaftError.Type.COMMAND_ERROR) {
-          resubmit(response.getLastSequenceNumber(), this);
+        else if (response.error() == RaftError.Type.COMMAND_ERROR) {
+          resubmit(response.lastSequenceNumber(), this);
         }
         // The following exceptions need to be handled at a higher level by the client or the user.
-        else if (response.getError() == RaftError.Type.APPLICATION_ERROR
-            || response.getError() == RaftError.Type.UNKNOWN_CLIENT_ERROR
-            || response.getError() == RaftError.Type.UNKNOWN_SESSION_ERROR
-            || response.getError() == RaftError.Type.UNKNOWN_STATE_MACHINE_ERROR
-            || response.getError() == RaftError.Type.INTERNAL_ERROR) {
-          complete(response.getError().createException());
+        else if (response.error() == RaftError.Type.APPLICATION_ERROR
+            || response.error() == RaftError.Type.UNKNOWN_CLIENT_ERROR
+            || response.error() == RaftError.Type.UNKNOWN_SESSION_ERROR
+            || response.error() == RaftError.Type.UNKNOWN_STATE_MACHINE_ERROR
+            || response.error() == RaftError.Type.INTERNAL_ERROR) {
+          complete(response.error().createException());
         }
         // For all other errors, use fibonacci backoff to resubmit the command.
         else {
@@ -377,8 +377,8 @@ final class RaftProxySubmitter {
       if (cause instanceof UnknownSessionException) {
         state.setState(RaftProxy.State.CLOSED);
         CommandRequest request = CommandRequest.newBuilder()
-            .withSession(this.request.getSession())
-            .withSequence(this.request.getSequence())
+            .withSession(this.request.session())
+            .withSequence(this.request.sequenceNumber())
             .withBytes(new byte[0])
             .build();
         context.execute(() -> submit(new CommandAttempt<>(sequence, this.attempt + 1, request, future)));
@@ -389,9 +389,9 @@ final class RaftProxySubmitter {
     @SuppressWarnings("unchecked")
     protected void complete(CommandResponse response) {
       sequence(response, () -> {
-        state.setCommandResponse(request.getSequence());
-        state.setResponseIndex(response.getIndex());
-        future.complete((T) response.getResult());
+        state.setCommandResponse(request.sequenceNumber());
+        state.setResponseIndex(response.index());
+        future.complete((T) response.result());
       });
     }
   }
@@ -427,10 +427,10 @@ final class RaftProxySubmitter {
     public void accept(QueryResponse response, Throwable error) {
       if (error == null) {
         LOG.trace("{} - Received {}", state.getSessionId(), response);
-        if (response.getStatus() == RaftResponse.Status.OK) {
+        if (response.status() == RaftResponse.Status.OK) {
           complete(response);
         } else {
-          complete(response.getError().createException());
+          complete(response.error().createException());
         }
       } else {
         fail(error);
@@ -441,8 +441,8 @@ final class RaftProxySubmitter {
     @SuppressWarnings("unchecked")
     protected void complete(QueryResponse response) {
       sequence(response, () -> {
-        state.setResponseIndex(response.getIndex());
-        future.complete((T) response.getResult());
+        state.setResponseIndex(response.index());
+        future.complete((T) response.result());
       });
     }
   }

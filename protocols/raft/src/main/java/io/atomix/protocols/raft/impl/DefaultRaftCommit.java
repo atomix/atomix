@@ -40,33 +40,33 @@ public class DefaultRaftCommit implements RaftCommit<RaftOperation<?>> {
   }
 
   @Override
-  public long getIndex() {
+  public long index() {
     return index;
   }
 
   @Override
-  public RaftSession getSession() {
+  public RaftSession session() {
     return session;
   }
 
   @Override
-  public LogicalTimestamp getLogicalTime() {
+  public LogicalTimestamp logicalTime() {
     return LogicalTimestamp.of(index);
   }
 
   @Override
-  public WallClockTimestamp getWallClockTime() {
-    return WallClockTimestamp.of(timestamp);
+  public WallClockTimestamp wallClockTime() {
+    return WallClockTimestamp.from(timestamp);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Class getType() {
+  public Class type() {
     return operation != null ? operation.getClass() : null;
   }
 
   @Override
-  public RaftOperation<?> getOperation() {
+  public RaftOperation<?> operation() {
     return operation;
   }
 
@@ -75,7 +75,7 @@ public class DefaultRaftCommit implements RaftCommit<RaftOperation<?>> {
     return toStringHelper(this)
         .add("index", index)
         .add("session", session)
-        .add("time", getWallClockTime())
+        .add("time", wallClockTime())
         .add("operation", operation)
         .toString();
   }

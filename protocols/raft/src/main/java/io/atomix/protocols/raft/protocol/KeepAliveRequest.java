@@ -28,10 +28,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * Keep alive requests are sent by clients to servers to maintain a session registered via
  * a {@link OpenSessionRequest}. Once a session has been registered, clients are responsible for sending
- * keep alive requests to the cluster at a rate less than the provided {@link OpenSessionResponse#getTimeout()}.
+ * keep alive requests to the cluster at a rate less than the provided {@link OpenSessionResponse#timeout()}.
  * Keep alive requests also server to acknowledge the receipt of responses and events by the client.
- * The {@link #getCommandSequenceNumbers()} number indicates the highest command sequence number for which the client
- * has received a response, and the {@link #getEventIndexes()} numbers indicate the highest index for which the
+ * The {@link #commandSequenceNumbers()} number indicates the highest command sequence number for which the client
+ * has received a response, and the {@link #eventIndexes()} numbers indicate the highest index for which the
  * client has received an event in proper sequence.
  */
 public class KeepAliveRequest extends AbstractRaftRequest {
@@ -60,7 +60,7 @@ public class KeepAliveRequest extends AbstractRaftRequest {
    *
    * @return The session identifiers.
    */
-  public long[] getSessionIds() {
+  public long[] sessionIds() {
     return sessionIds;
   }
 
@@ -69,7 +69,7 @@ public class KeepAliveRequest extends AbstractRaftRequest {
    *
    * @return The command sequence numbers.
    */
-  public long[] getCommandSequenceNumbers() {
+  public long[] commandSequenceNumbers() {
     return commandSequences;
   }
 
@@ -78,7 +78,7 @@ public class KeepAliveRequest extends AbstractRaftRequest {
    *
    * @return The event indexes.
    */
-  public long[] getEventIndexes() {
+  public long[] eventIndexes() {
     return eventIndexes;
   }
 

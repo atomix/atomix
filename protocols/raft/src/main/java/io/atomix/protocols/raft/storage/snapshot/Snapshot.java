@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.serializer.Serializer;
+import io.atomix.time.WallClockTimestamp;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -65,7 +66,7 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot identifier.
    */
-  public abstract SnapshotId getSnapshotId();
+  public abstract StateMachineId snapshotId();
 
   /**
    * Returns the snapshot index.
@@ -74,17 +75,16 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot index.
    */
-  public abstract long getIndex();
+  public abstract long index();
 
   /**
    * Returns the snapshot timestamp.
    * <p>
-   * The timestamp is the logical state machine time at the {@link #getIndex() index} at which the snapshot
-   * was written.
+   * The timestamp is the wall clock time at the {@link #index()} at which the snapshot was taken.
    *
    * @return The snapshot timestamp.
    */
-  public abstract long getTimestamp();
+  public abstract WallClockTimestamp timestamp();
 
   /**
    * Opens a new snapshot writer.

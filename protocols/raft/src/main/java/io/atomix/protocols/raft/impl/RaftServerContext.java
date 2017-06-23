@@ -278,7 +278,7 @@ public class RaftServerContext implements AutoCloseable {
         DefaultRaftMember member = cluster.getMember(leader);
         if (member != null) {
           this.leader = leader;
-          LOGGER.info("{} - Found leader {}", cluster.getMember().getMemberId(), member.getMemberId());
+          LOGGER.info("{} - Found leader {}", cluster.getMember().memberId(), member.memberId());
           electionListeners.forEach(l -> l.accept(member));
         }
       }
@@ -325,7 +325,7 @@ public class RaftServerContext implements AutoCloseable {
    */
   public boolean isLeader() {
     MemberId leader = this.leader;
-    return leader != null && leader.equals(cluster.getMember().getMemberId());
+    return leader != null && leader.equals(cluster.getMember().memberId());
   }
 
   /**
@@ -341,7 +341,7 @@ public class RaftServerContext implements AutoCloseable {
       this.lastVotedFor = null;
       meta.storeTerm(this.term);
       meta.storeVote(this.lastVotedFor);
-      LOGGER.debug("{} - Set term {}", cluster.getMember().getMemberId(), term);
+      LOGGER.debug("{} - Set term {}", cluster.getMember().memberId(), term);
     }
     return this;
   }
@@ -370,9 +370,9 @@ public class RaftServerContext implements AutoCloseable {
     meta.storeVote(this.lastVotedFor);
 
     if (candidate != null) {
-      LOGGER.debug("{} - Voted for {}", cluster.getMember().getMemberId(), member.getMemberId());
+      LOGGER.debug("{} - Voted for {}", cluster.getMember().memberId(), member.memberId());
     } else {
-      LOGGER.trace("{} - Reset last voted for", cluster.getMember().getMemberId());
+      LOGGER.trace("{} - Reset last voted for", cluster.getMember().memberId());
     }
     return this;
   }
@@ -398,7 +398,7 @@ public class RaftServerContext implements AutoCloseable {
     if (commitIndex > previousCommitIndex) {
       this.commitIndex = commitIndex;
       writer.commit(Math.min(commitIndex, writer.getLastIndex()));
-      long configurationIndex = cluster.getConfiguration().getIndex();
+      long configurationIndex = cluster.getConfiguration().index();
       if (configurationIndex > previousCommitIndex && configurationIndex <= commitIndex) {
         cluster.commit();
       }
@@ -439,7 +439,7 @@ public class RaftServerContext implements AutoCloseable {
    * @return The current server role.
    */
   public RaftServer.Role getRole() {
-    return role.getRole();
+    return role.role();
   }
 
   /**
@@ -507,7 +507,7 @@ public class RaftServerContext implements AutoCloseable {
 
     // Open the log.
     log = storage.openLog();
-    writer = log.getWriter();
+    writer = log.writer();
     reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
     // Open the snapshot store.
@@ -597,17 +597,17 @@ public class RaftServerContext implements AutoCloseable {
         }
         break;
       case PASSIVE:
-        if (this.role.getRole() != RaftServer.Role.PASSIVE) {
+        if (this.role.role() != RaftServer.Role.PASSIVE) {
           transition(RaftServer.Role.PASSIVE);
         }
         break;
       case RESERVE:
-        if (this.role.getRole() != RaftServer.Role.RESERVE) {
+        if (this.role.role() != RaftServer.Role.RESERVE) {
           transition(RaftServer.Role.RESERVE);
         }
         break;
       default:
-        if (this.role.getRole() != RaftServer.Role.INACTIVE) {
+        if (this.role.role() != RaftServer.Role.INACTIVE) {
           transition(RaftServer.Role.INACTIVE);
         }
         break;
@@ -620,11 +620,11 @@ public class RaftServerContext implements AutoCloseable {
   public void transition(RaftServer.Role role) {
     checkThread();
 
-    if (this.role != null && role == this.role.getRole()) {
+    if (this.role != null && role == this.role.role()) {
       return;
     }
 
-    LOGGER.info("{} - Transitioning to {}", cluster.getMember().getMemberId(), role);
+    LOGGER.info("{} - Transitioning to {}", cluster.getMember().memberId(), role);
 
     // Close the old state.
     try {
@@ -641,7 +641,7 @@ public class RaftServerContext implements AutoCloseable {
       throw new IllegalStateException("failed to initialize Raft state", e);
     }
 
-    stateChangeListeners.forEach(l -> l.accept(this.role.getRole()));
+    stateChangeListeners.forEach(l -> l.accept(this.role.role()));
   }
 
   /**

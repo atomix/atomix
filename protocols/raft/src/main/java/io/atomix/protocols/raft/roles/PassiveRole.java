@@ -34,9 +34,10 @@ import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
-import io.atomix.protocols.raft.storage.snapshot.SnapshotId;
+import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.journal.Indexed;
+import io.atomix.time.WallClockTimestamp;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class PassiveRole extends ReserveRole {
   }
 
   @Override
-  public RaftServer.Role getRole() {
+  public RaftServer.Role role() {
     return RaftServer.Role.PASSIVE;
   }
 
@@ -70,7 +71,7 @@ public class PassiveRole extends ReserveRole {
    * Truncates uncommitted entries from the log.
    */
   private void truncateUncommittedEntries() {
-    if (getRole() == RaftServer.Role.PASSIVE) {
+    if (role() == RaftServer.Role.PASSIVE) {
       final RaftLogWriter writer = context.getLogWriter();
       writer.getLock().lock();
       try {
@@ -85,7 +86,7 @@ public class PassiveRole extends ReserveRole {
   public CompletableFuture<AppendResponse> onAppend(final AppendRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.getTerm(), request.getLeader());
+    updateTermAndLeader(request.term(), request.leader());
 
     return CompletableFuture.completedFuture(logResponse(handleAppend(request)));
   }
@@ -97,8 +98,8 @@ public class PassiveRole extends ReserveRole {
     // If the request term is less than the current term then immediately
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
-    if (request.getTerm() < context.getTerm()) {
-      LOGGER.debug("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().getMember().getMemberId(), request, context.getTerm());
+    if (request.term() < context.getTerm()) {
+      LOGGER.debug("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().getMember().memberId(), request, context.getTerm());
       return AppendResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -115,8 +116,8 @@ public class PassiveRole extends ReserveRole {
    */
   protected AppendResponse checkPreviousEntry(AppendRequest request) {
     final long lastIndex = context.getLogWriter().getLastIndex();
-    if (request.getLogIndex() != 0 && request.getLogIndex() > lastIndex) {
-      LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().getMemberId(), request, request.getLogIndex(), lastIndex);
+    if (request.previousLogIndex() != 0 && request.previousLogIndex() > lastIndex) {
+      LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().memberId(), request, request.previousLogIndex(), lastIndex);
       return AppendResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -132,23 +133,23 @@ public class PassiveRole extends ReserveRole {
    */
   protected AppendResponse appendEntries(AppendRequest request) {
     // Get the last entry index or default to the request log index.
-    long lastEntryIndex = request.getLogIndex();
-    if (!request.getEntries().isEmpty()) {
-      lastEntryIndex = request.getEntries().get(request.getEntries().size() - 1).getIndex();
+    long lastEntryIndex = request.previousLogIndex();
+    if (!request.entries().isEmpty()) {
+      lastEntryIndex = request.entries().get(request.entries().size() - 1).getIndex();
     }
 
     // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
-    long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.getCommitIndex(), lastEntryIndex));
+    long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
 
     // Get the server log reader/writer.
     final RaftLogReader reader = context.getLogReader();
     final RaftLogWriter writer = context.getLogWriter();
 
     // If the request entries are non-empty, write them to the log.
-    if (!request.getEntries().isEmpty()) {
+    if (!request.entries().isEmpty()) {
       writer.getLock().lock();
       try {
-        for (Indexed<RaftLogEntry> entry : request.getEntries()) {
+        for (Indexed<RaftLogEntry> entry : request.entries()) {
           // If the entry index is greater than the commitIndex, break the loop.
           if (entry.getIndex() > commitIndex) {
             break;
@@ -158,9 +159,9 @@ public class PassiveRole extends ReserveRole {
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
           Indexed<? extends RaftLogEntry> existing = reader.getEntry(entry.getIndex());
-          if (existing == null || existing.getEntry().getTerm() != entry.getEntry().getTerm()) {
+          if (existing == null || existing.getEntry().term() != entry.getEntry().term()) {
             writer.appendEntry(entry);
-            LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
+            LOGGER.debug("{} - Appended {}", context.getCluster().getMember().memberId(), entry);
           }
         }
       } finally {
@@ -173,7 +174,7 @@ public class PassiveRole extends ReserveRole {
     context.setCommitIndex(commitIndex);
 
     if (context.getCommitIndex() > previousCommitIndex) {
-      LOGGER.trace("{} - Committed entries up to index {}", context.getCluster().getMember().getMemberId(), commitIndex);
+      LOGGER.trace("{} - Committed entries up to index {}", context.getCluster().getMember().memberId(), commitIndex);
     }
 
     // Apply commits to the state machine in batch.
@@ -193,31 +194,31 @@ public class PassiveRole extends ReserveRole {
     logRequest(request);
 
     // If the query was submitted with sequential read consistency, attempt to apply the query to the local state machine.
-    if (request.getConsistencyLevel() == RaftQuery.ConsistencyLevel.SEQUENTIAL) {
+    if (request.consistencyLevel() == RaftQuery.ConsistencyLevel.SEQUENTIAL) {
 
       // If this server has not yet applied entries up to the client's session ID, forward the
       // query to the leader. This ensures that a follower does not tell the client its session
       // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
-      if (context.getStateMachine().getLastApplied() < request.getSession()) {
-        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().getMemberId());
+      if (context.getStateMachine().getLastApplied() < request.session()) {
+        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().memberId());
         return queryForward(request);
       }
 
       // If the commit index is not in the log then we've fallen too far behind the leader to perform a local query.
       // Forward the request to the leader.
       if (context.getLogWriter().getLastIndex() < context.getCommitIndex()) {
-        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().getMemberId());
+        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().memberId());
         return queryForward(request);
       }
 
       final Indexed<QueryEntry> entry = new Indexed<>(
-          request.getIndex(),
+          request.index(),
           new QueryEntry(
               context.getTerm(),
               System.currentTimeMillis(),
-              request.getSession(),
-              request.getSequence(),
-              request.getBytes()), 0);
+              request.session(),
+              request.sequenceNumber(),
+              request.bytes()), 0);
 
       return applyQuery(entry).thenApply(this::logResponse);
     } else {
@@ -236,7 +237,7 @@ public class PassiveRole extends ReserveRole {
           .build()));
     }
 
-    LOGGER.trace("{} - Forwarding {}", context.getCluster().getMember().getMemberId(), request);
+    LOGGER.trace("{} - Forwarding {}", context.getCluster().getMember().memberId(), request);
     return forward(request, context.getProtocol()::query)
         .exceptionally(error -> QueryResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
@@ -271,16 +272,16 @@ public class PassiveRole extends ReserveRole {
   protected <T extends OperationResponse> void completeOperation(RaftOperationResult result, OperationResponse.Builder<?, T> builder, Throwable error, CompletableFuture<T> future) {
     if (isOpen()) {
       if (result != null) {
-        builder.withIndex(result.getIndex());
-        builder.withEventIndex(result.getEventIndex());
-        if (result.getResult() instanceof Exception) {
-          error = (Exception) result.getResult();
+        builder.withIndex(result.index());
+        builder.withEventIndex(result.eventIndex());
+        if (result.result() instanceof Exception) {
+          error = (Exception) result.result();
         }
       }
 
       if (error == null) {
         future.complete(builder.withStatus(RaftResponse.Status.OK)
-            .withResult(result != null ? result.getResult() : null)
+            .withResult(result != null ? result.result() : null)
             .build());
       } else if (error instanceof CompletionException && error.getCause() instanceof RaftException) {
         future.complete(builder.withStatus(RaftResponse.Status.ERROR)
@@ -303,10 +304,10 @@ public class PassiveRole extends ReserveRole {
   public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.getTerm(), request.getLeader());
+    updateTermAndLeader(request.term(), request.leader());
 
     // If the request is for a lesser term, reject the request.
-    if (request.getTerm() < context.getTerm()) {
+    if (request.term() < context.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
@@ -314,7 +315,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Get the pending snapshot for the associated snapshot ID.
-    Snapshot pendingSnapshot = pendingSnapshots.get(request.getSnapshotId());
+    Snapshot pendingSnapshot = pendingSnapshots.get(request.snapshotId());
 
     // If a snapshot is currently being received and the snapshot versions don't match, simply
     // close the existing snapshot. This is a naive implementation that assumes that the leader
@@ -322,7 +323,7 @@ public class PassiveRole extends ReserveRole {
     // where snapshots must be sent since entries can still legitimately exist prior to the snapshot,
     // and so snapshots aren't simply sent at the beginning of the follower's log, but rather the
     // leader dictates when a snapshot needs to be sent.
-    if (pendingSnapshot != null && request.getSnapshotIndex() != pendingSnapshot.getIndex()) {
+    if (pendingSnapshot != null && request.snapshotIndex() != pendingSnapshot.index()) {
       pendingSnapshot.close();
       pendingSnapshot.delete();
       pendingSnapshot = null;
@@ -332,19 +333,22 @@ public class PassiveRole extends ReserveRole {
     // If there is no pending snapshot, create a new snapshot.
     if (pendingSnapshot == null) {
       // For new snapshots, the initial snapshot offset must be 0.
-      if (request.getChunkOffset() > 0) {
+      if (request.chunkOffset() > 0) {
         return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
             .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
             .build()));
       }
 
-      pendingSnapshot = context.getSnapshotStore().newSnapshot(SnapshotId.of(request.getSnapshotId()), request.getSnapshotIndex());
+      pendingSnapshot = context.getSnapshotStore().newSnapshot(
+              StateMachineId.from(request.snapshotId()),
+              request.snapshotIndex(),
+              WallClockTimestamp.from(request.snapshotTimestamp()));
       nextSnapshotOffset = 0;
     }
 
     // If the request offset is greater than the next expected snapshot offset, fail the request.
-    if (request.getChunkOffset() > nextSnapshotOffset) {
+    if (request.chunkOffset() > nextSnapshotOffset) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
@@ -352,14 +356,14 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Write the data to the snapshot.
-    try (SnapshotWriter writer = pendingSnapshot.openWriter(context.getStorage().getSerializer())) {
-      writer.write(request.getData());
+    try (SnapshotWriter writer = pendingSnapshot.openWriter(context.getStorage().serializer())) {
+      writer.write(request.data());
     }
 
     // If the snapshot is complete, store the snapshot and reset state, otherwise update the next snapshot offset.
-    if (request.isComplete()) {
+    if (request.complete()) {
       pendingSnapshot.persist().complete();
-      pendingSnapshots.remove(request.getSnapshotId());
+      pendingSnapshots.remove(request.snapshotId());
       nextSnapshotOffset = 0;
     } else {
       nextSnapshotOffset++;

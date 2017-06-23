@@ -50,7 +50,7 @@ public final class CandidateRole extends ActiveRole {
   }
 
   @Override
-  public RaftServer.Role getRole() {
+  public RaftServer.Role role() {
     return RaftServer.Role.CANDIDATE;
   }
 
@@ -63,7 +63,7 @@ public final class CandidateRole extends ActiveRole {
    * Starts the election.
    */
   void startElection() {
-    LOGGER.info("{} - Starting election", context.getCluster().getMember().getMemberId());
+    LOGGER.info("{} - Starting election", context.getCluster().getMember().memberId());
     sendVoteRequests();
   }
 
@@ -86,19 +86,19 @@ public final class CandidateRole extends ActiveRole {
 
     // When the election timer is reset, increment the current term and
     // restart the election.
-    context.setTerm(context.getTerm() + 1).setLastVotedFor(context.getCluster().getMember().getMemberId());
+    context.setTerm(context.getTerm() + 1).setLastVotedFor(context.getCluster().getMember().memberId());
 
     Duration delay = context.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) context.getElectionTimeout().toMillis())));
     currentTimer = context.getThreadContext().schedule(delay, () -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      LOGGER.debug("{} - Election timed out", context.getCluster().getMember().getMemberId());
+      LOGGER.debug("{} - Election timed out", context.getCluster().getMember().memberId());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       sendVoteRequests();
-      LOGGER.debug("{} - Restarted election", context.getCluster().getMember().getMemberId());
+      LOGGER.debug("{} - Restarted election", context.getCluster().getMember().memberId());
     });
 
     final AtomicBoolean complete = new AtomicBoolean();
@@ -106,7 +106,7 @@ public final class CandidateRole extends ActiveRole {
 
     // If there are no other members in the cluster, immediately transition to leader.
     if (votingMembers.isEmpty()) {
-      LOGGER.trace("{} - Single member cluster. Transitioning directly to leader.", context.getCluster().getMember().getMemberId());
+      LOGGER.trace("{} - Single member cluster. Transitioning directly to leader.", context.getCluster().getMember().memberId());
       context.transition(RaftServer.Role.LEADER);
       return;
     }
@@ -130,44 +130,44 @@ public final class CandidateRole extends ActiveRole {
 
     final long lastTerm;
     if (lastEntry != null) {
-      lastTerm = lastEntry.getEntry().getTerm();
+      lastTerm = lastEntry.getEntry().term();
     } else {
       lastTerm = 0;
     }
 
-    LOGGER.debug("{} - Requesting votes for term {}", context.getCluster().getMember().getMemberId(), context.getTerm());
+    LOGGER.debug("{} - Requesting votes for term {}", context.getCluster().getMember().memberId(), context.getTerm());
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
-      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getCluster().getMember().getMemberId(), member, context.getTerm());
+      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getCluster().getMember().memberId(), member, context.getTerm());
       VoteRequest request = VoteRequest.newBuilder()
           .withTerm(context.getTerm())
-          .withCandidate(context.getCluster().getMember().getMemberId())
+          .withCandidate(context.getCluster().getMember().memberId())
           .withLogIndex(lastEntry != null ? lastEntry.getIndex() : 0)
           .withLogTerm(lastTerm)
           .build();
 
-      context.getProtocol().vote(member.getMemberId(), request).whenCompleteAsync((response, error) -> {
+      context.getProtocol().vote(member.memberId(), request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
             LOGGER.warn(error.getMessage());
             quorum.fail();
           } else {
-            if (response.getTerm() > context.getTerm()) {
-              LOGGER.trace("{} - Received greater term from {}", context.getCluster().getMember().getMemberId(), member);
-              context.setTerm(response.getTerm());
+            if (response.term() > context.getTerm()) {
+              LOGGER.trace("{} - Received greater term from {}", context.getCluster().getMember().memberId(), member);
+              context.setTerm(response.term());
               complete.set(true);
               context.transition(RaftServer.Role.FOLLOWER);
             } else if (!response.voted()) {
-              LOGGER.trace("{} - Received rejected vote from {}", context.getCluster().getMember().getMemberId(), member);
+              LOGGER.trace("{} - Received rejected vote from {}", context.getCluster().getMember().memberId(), member);
               quorum.fail();
-            } else if (response.getTerm() != context.getTerm()) {
-              LOGGER.trace("{} - Received successful vote for a different term from {}", context.getCluster().getMember().getMemberId(), member);
+            } else if (response.term() != context.getTerm()) {
+              LOGGER.trace("{} - Received successful vote for a different term from {}", context.getCluster().getMember().memberId(), member);
               quorum.fail();
             } else {
-              LOGGER.trace("{} - Received successful vote from {}", context.getCluster().getMember().getMemberId(), member);
+              LOGGER.trace("{} - Received successful vote from {}", context.getCluster().getMember().memberId(), member);
               quorum.succeed();
             }
           }
@@ -182,8 +182,8 @@ public final class CandidateRole extends ActiveRole {
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
-    if (request.getTerm() >= context.getTerm()) {
-      context.setTerm(request.getTerm());
+    if (request.term() >= context.getTerm()) {
+      context.setTerm(request.term());
       context.transition(RaftServer.Role.FOLLOWER);
     }
     return super.onAppend(request);
@@ -196,14 +196,14 @@ public final class CandidateRole extends ActiveRole {
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
-    if (updateTermAndLeader(request.getTerm(), null)) {
+    if (updateTermAndLeader(request.term(), null)) {
       CompletableFuture<VoteResponse> future = super.onVote(request);
       context.transition(RaftServer.Role.FOLLOWER);
       return future;
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (request.getCandidate() == context.getCluster().getMember().getMemberId()) {
+    if (request.candidate() == context.getCluster().getMember().memberId()) {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -224,7 +224,7 @@ public final class CandidateRole extends ActiveRole {
   private void cancelElection() {
     context.checkThread();
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling election", context.getCluster().getMember().getMemberId());
+      LOGGER.debug("{} - Cancelling election", context.getCluster().getMember().memberId());
       currentTimer.cancel();
     }
     if (quorum != null) {

@@ -18,6 +18,7 @@ package io.atomix.protocols.raft.storage.snapshot;
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.HeapBuffer;
+import io.atomix.time.WallClockTimestamp;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -40,18 +41,18 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public SnapshotId getSnapshotId() {
-    return SnapshotId.of(descriptor.getId());
+  public StateMachineId snapshotId() {
+    return StateMachineId.from(descriptor.snapshotId());
   }
 
   @Override
-  public long getIndex() {
-    return descriptor.getIndex();
+  public long index() {
+    return descriptor.index();
   }
 
   @Override
-  public long getTimestamp() {
-    return descriptor.getTimestamp();
+  public WallClockTimestamp timestamp() {
+    return WallClockTimestamp.from(descriptor.timestamp());
   }
 
   @Override
@@ -73,9 +74,9 @@ final class MemorySnapshot extends Snapshot {
 
   @Override
   public Snapshot persist() {
-    if (store.storage.getStorageLevel() != StorageLevel.MEMORY) {
-      try (Snapshot newSnapshot = store.newSnapshot(getSnapshotId(), getIndex())) {
-        try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter(store.storage.getSerializer())) {
+    if (store.storage.storageLevel() != StorageLevel.MEMORY) {
+      try (Snapshot newSnapshot = store.newSnapshot(snapshotId(), index(), timestamp())) {
+        try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter(store.storage.serializer())) {
           buffer.flip();
           newSnapshotWriter.write(buffer.array(), 0, buffer.remaining());
         }
@@ -99,7 +100,7 @@ final class MemorySnapshot extends Snapshot {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("index", getIndex())
+        .add("index", index())
         .toString();
   }
 

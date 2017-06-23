@@ -51,6 +51,7 @@ import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -77,7 +78,7 @@ public class RaftServerCommunicator implements RaftServerProtocol {
   }
 
   private <T, U> CompletableFuture<U> sendAndReceive(MessageSubject subject, T request, MemberId memberId) {
-    return clusterCommunicator.sendAndReceive(request, subject, serializer::encode, serializer::decode, NodeId.nodeId(memberId.id()));
+    return clusterCommunicator.sendAndReceive(request, subject, serializer::encode, serializer::decode, NodeId.from(memberId.id()));
   }
 
   @Override
@@ -152,7 +153,7 @@ public class RaftServerCommunicator implements RaftServerProtocol {
 
   @Override
   public void publish(MemberId memberId, PublishRequest request) {
-    clusterCommunicator.unicast(request, context.publishSubject(request.getSession()), serializer::encode, NodeId.nodeId(memberId.id()));
+    clusterCommunicator.unicast(request, context.publishSubject(request.session()), serializer::encode, NodeId.from(memberId.id()));
   }
 
   @Override
@@ -296,12 +297,12 @@ public class RaftServerCommunicator implements RaftServerProtocol {
   }
 
   @Override
-  public void registerResetListener(long sessionId, Consumer<ResetRequest> listener, Executor executor) {
-    clusterCommunicator.addSubscriber(context.resetSubject(sessionId), serializer::decode, listener, executor);
+  public void registerResetListener(SessionId sessionId, Consumer<ResetRequest> listener, Executor executor) {
+    clusterCommunicator.addSubscriber(context.resetSubject(sessionId.id()), serializer::decode, listener, executor);
   }
 
   @Override
-  public void unregisterResetListener(long sessionId) {
-    clusterCommunicator.removeSubscriber(context.resetSubject(sessionId));
+  public void unregisterResetListener(SessionId sessionId) {
+    clusterCommunicator.removeSubscriber(context.resetSubject(sessionId.id()));
   }
 }

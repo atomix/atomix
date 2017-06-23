@@ -38,7 +38,7 @@ public final class RaftOperationResult {
    *
    * @return The result index.
    */
-  public long getIndex() {
+  public long index() {
     return index;
   }
 
@@ -47,7 +47,7 @@ public final class RaftOperationResult {
    *
    * @return The result event index.
    */
-  public long getEventIndex() {
+  public long eventIndex() {
     return eventIndex;
   }
 
@@ -56,7 +56,7 @@ public final class RaftOperationResult {
    *
    * @return The result value.
    */
-  public Object getResult() {
+  public Object result() {
     return result;
   }
 

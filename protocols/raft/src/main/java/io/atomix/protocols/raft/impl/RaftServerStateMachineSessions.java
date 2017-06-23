@@ -18,9 +18,11 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,10 +34,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class RaftServerStateMachineSessions implements RaftSessions {
   private final RaftSessionManager sessionManager;
-  final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
-  final Set<RaftSessionListener> listeners = new HashSet<>();
+  private final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
+  private final Set<RaftSessionListener> listeners = new HashSet<>();
 
-  public RaftServerStateMachineSessions(RaftSessionManager sessionManager) {
+  RaftServerStateMachineSessions(RaftSessionManager sessionManager) {
     this.sessionManager = sessionManager;
   }
 
@@ -45,7 +47,7 @@ class RaftServerStateMachineSessions implements RaftSessions {
    * @param session The session to add.
    */
   void add(RaftSessionContext session) {
-    sessions.put(session.getSessionId(), session);
+    sessions.put(session.sessionId().id(), session);
     sessionManager.registerSession(session);
   }
 
@@ -55,8 +57,25 @@ class RaftServerStateMachineSessions implements RaftSessions {
    * @param session The session to remove.
    */
   void remove(RaftSessionContext session) {
-    sessions.remove(session.getSessionId());
-    sessionManager.unregisterSession(session.getSessionId());
+    sessions.remove(session.sessionId().id());
+    sessionManager.unregisterSession(session.sessionId().id());
+  }
+
+  /**
+   * Clears the sessions.
+   */
+  void clear() {
+    sessions.values().forEach(session -> sessionManager.unregisterSession(session.sessionId().id()));
+    sessions.clear();
+  }
+
+  /**
+   * Returns the session contexts.
+   *
+   * @return The session contexts.
+   */
+  Collection<RaftSessionContext> getSessions() {
+    return sessions.values();
   }
 
   @Override
@@ -74,6 +93,15 @@ class RaftServerStateMachineSessions implements RaftSessions {
   public RaftSessions removeListener(RaftSessionListener listener) {
     listeners.remove(listener);
     return this;
+  }
+
+  /**
+   * Returns the session listeners.
+   *
+   * @return The session listeners.
+   */
+  Collection<RaftSessionListener> getListeners() {
+    return listeners;
   }
 
   @Override

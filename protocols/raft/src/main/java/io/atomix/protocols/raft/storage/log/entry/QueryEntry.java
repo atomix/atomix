@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * <p>
  * The {@code QueryEntry} is a special entry that is typically not ever written to the Raft log.
  * Query entries are simply used to represent the context within which a query is applied to the
- * state machine. Query entry {@link #getSequenceNumber() sequence} numbers and indexes
+ * state machine. Query entry {@link #sequenceNumber() sequence} numbers and indexes
  * are used to sequence queries as they're applied to the user state machine.
  */
 public class QueryEntry extends OperationEntry {

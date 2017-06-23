@@ -38,7 +38,7 @@ public class JournalTest {
 
   public void testJournalWriteRead() throws Exception {
     Journal<TestEntry> journal = createJournal();
-    JournalWriter<TestEntry> writer = journal.getWriter();
+    JournalWriter<TestEntry> writer = journal.writer();
     JournalReader<TestEntry> reader = journal.openReader(1);
 
     // Append a couple entries.

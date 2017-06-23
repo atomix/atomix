@@ -28,8 +28,8 @@ public class JournalDelegate<E> implements Journal<E> {
   }
 
   @Override
-  public JournalWriter<E> getWriter() {
-    return delegate.getWriter();
+  public JournalWriter<E> writer() {
+    return delegate.writer();
   }
 
   @Override

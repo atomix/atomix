@@ -30,8 +30,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Snapshot installation requests are sent by the leader to a follower when the follower indicates
  * that its log is further behind than the last snapshot taken by the leader. Snapshots are sent
  * in chunks, with each chunk being sent in a separate install request. As requests are received by
- * the follower, the snapshot is reconstructed based on the provided {@link #getChunkOffset()} and other
- * metadata. The last install request will be sent with {@link #isComplete()} being {@code true} to
+ * the follower, the snapshot is reconstructed based on the provided {@link #chunkOffset()} and other
+ * metadata. The last install request will be sent with {@link #complete()} being {@code true} to
  * indicate that all chunks of the snapshot have been sent.
  */
 public class InstallRequest extends AbstractRaftRequest {
@@ -49,15 +49,17 @@ public class InstallRequest extends AbstractRaftRequest {
   private final MemberId leader;
   private final long id;
   private final long index;
+  private final long timestamp;
   private final int offset;
   private final byte[] data;
   private final boolean complete;
 
-  public InstallRequest(long term, MemberId leader, long id, long index, int offset, byte[] data, boolean complete) {
+  public InstallRequest(long term, MemberId leader, long id, long index, long timestamp, int offset, byte[] data, boolean complete) {
     this.term = term;
     this.leader = leader;
     this.id = id;
     this.index = index;
+    this.timestamp = timestamp;
     this.offset = offset;
     this.data = data;
     this.complete = complete;
@@ -68,7 +70,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The requesting node's current term.
    */
-  public long getTerm() {
+  public long term() {
     return term;
   }
 
@@ -77,7 +79,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public MemberId getLeader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -86,7 +88,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The snapshot identifier.
    */
-  public long getSnapshotId() {
+  public long snapshotId() {
     return id;
   }
 
@@ -95,8 +97,17 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The snapshot index.
    */
-  public long getSnapshotIndex() {
+  public long snapshotIndex() {
     return index;
+  }
+
+  /**
+   * Returns the snapshot timestamp.
+   *
+   * @return The snapshot timestamp.
+   */
+  public long snapshotTimestamp() {
+    return timestamp;
   }
 
   /**
@@ -104,7 +115,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The offset of the snapshot chunk.
    */
-  public int getChunkOffset() {
+  public int chunkOffset() {
     return offset;
   }
 
@@ -113,7 +124,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The snapshot data.
    */
-  public byte[] getData() {
+  public byte[] data() {
     return data;
   }
 
@@ -122,7 +133,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return Indicates whether this request is the last chunk of the snapshot.
    */
-  public boolean isComplete() {
+  public boolean complete() {
     return complete;
   }
 
@@ -167,6 +178,7 @@ public class InstallRequest extends AbstractRaftRequest {
     private MemberId leader;
     private long id;
     private long index;
+    private long timestamp;
     private int offset;
     private byte[] data;
     private boolean complete;
@@ -217,6 +229,18 @@ public class InstallRequest extends AbstractRaftRequest {
     public Builder withIndex(long index) {
       checkArgument(index >= 0, "index must be positive");
       this.index = index;
+      return this;
+    }
+
+    /**
+     * Sets the request timestamp.
+     *
+     * @param timestamp The request timestamp.
+     * @return The request builder.
+     */
+    public Builder withTimestamp(long timestamp) {
+      checkArgument(timestamp >= 0, "timestamp must be positive");
+      this.timestamp = timestamp;
       return this;
     }
 
@@ -272,7 +296,7 @@ public class InstallRequest extends AbstractRaftRequest {
     @Override
     public InstallRequest build() {
       validate();
-      return new InstallRequest(term, leader, id, index, offset, data, complete);
+      return new InstallRequest(term, leader, id, index, timestamp, offset, data, complete);
     }
   }
 

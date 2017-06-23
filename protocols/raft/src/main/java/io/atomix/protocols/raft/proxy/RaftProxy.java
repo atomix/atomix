@@ -22,6 +22,7 @@ import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftQuery;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.serializer.Serializer;
 
 import java.time.Duration;
@@ -91,14 +92,21 @@ public interface RaftProxy {
    *
    * @return The client proxy name.
    */
-  String getName();
+  String name();
 
   /**
    * Returns the client proxy type.
    *
    * @return The client proxy type.
    */
-  String getTypeName();
+  String typeName();
+
+  /**
+   * Returns the proxy session identifier.
+   *
+   * @return The proxy session identifier
+   */
+  SessionId sessionId();
 
   /**
    * Returns the session state.
