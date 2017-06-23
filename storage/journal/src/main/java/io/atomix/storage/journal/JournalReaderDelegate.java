@@ -30,28 +30,28 @@ public class JournalReaderDelegate<E> implements JournalReader<E> {
   }
 
   @Override
-  public Lock lock() {
-    return delegate.lock();
+  public Lock getLock() {
+    return delegate.getLock();
   }
 
   @Override
-  public long currentIndex() {
-    return delegate.currentIndex();
+  public long getCurrentIndex() {
+    return delegate.getCurrentIndex();
   }
 
   @Override
-  public Indexed<E> currentEntry() {
-    return delegate.currentEntry();
+  public Indexed<E> getCurrentEntry() {
+    return delegate.getCurrentEntry();
   }
 
   @Override
-  public long nextIndex() {
-    return delegate.nextIndex();
+  public long getNextIndex() {
+    return delegate.getNextIndex();
   }
 
   @Override
-  public Indexed<E> get(long index) {
-    return delegate.get(index);
+  public Indexed<E> getEntry(long index) {
+    return delegate.getEntry(index);
   }
 
   @Override

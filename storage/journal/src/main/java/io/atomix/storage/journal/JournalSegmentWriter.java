@@ -104,22 +104,22 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
   }
 
   @Override
-  public Lock lock() {
+  public Lock getLock() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public long lastIndex() {
+  public long getLastIndex() {
     return lastEntry != null ? lastEntry.index() : descriptor.index() - 1;
   }
 
   @Override
-  public Indexed<E> lastEntry() {
+  public Indexed<E> getLastEntry() {
     return lastEntry;
   }
 
   @Override
-  public long nextIndex() {
+  public long getNextIndex() {
     if (lastEntry != null) {
       return lastEntry.index() + 1;
     } else {
@@ -152,7 +152,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
    */
   public boolean isFull() {
     return size() >= descriptor.maxSegmentSize()
-        || nextIndex() - firstIndex >= descriptor.maxEntries();
+        || getNextIndex() - firstIndex >= descriptor.maxEntries();
   }
 
   /**
@@ -164,8 +164,8 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public void append(Indexed<E> entry) {
-    final long nextIndex = nextIndex();
+  public void appendEntry(Indexed<E> entry) {
+    final long nextIndex = getNextIndex();
 
     // If the entry's index is greater than the next index in the segment, skip some entries.
     if (entry.index() > nextIndex) {
@@ -176,14 +176,14 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     if (entry.index() < nextIndex) {
       truncate(entry.index() - 1);
     }
-    append(entry.entry());
+    appendEntry(entry.entry());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends E> Indexed<T> append(T entry) {
+  public <T extends E> Indexed<T> appendEntry(T entry) {
     // Store the entry index.
-    final long index = nextIndex();
+    final long index = getNextIndex();
 
     // Serialize the entry.
     final byte[] bytes = serializer.encode(entry);
@@ -204,7 +204,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     this.lastEntry = indexedEntry;
 
     // Store the entry in the journal buffer and return the indexed entry.
-    journal.buffer().append(indexedEntry);
+    journal.getBuffer().append(indexedEntry);
     return (Indexed<T>) indexedEntry;
   }
 
@@ -212,7 +212,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
   @SuppressWarnings("unchecked")
   public void truncate(long index) {
     // If the index is greater than or equal to the last index, skip the truncate.
-    if (index >= lastIndex()) {
+    if (index >= getLastIndex()) {
       return;
     }
 

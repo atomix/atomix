@@ -51,7 +51,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return A new segmented journal builder.
    */
-  public static <E> Builder<E> builder() {
+  public static <E> Builder<E> newBuilder() {
     return new Builder<>();
   }
 
@@ -101,7 +101,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The segment file name prefix.
    */
-  public String name() {
+  public String getName() {
     return name;
   }
 
@@ -114,7 +114,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The storage directory.
    */
-  public File directory() {
+  public File getDirectory() {
     return directory;
   }
 
@@ -125,7 +125,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The storage level.
    */
-  public StorageLevel level() {
+  public StorageLevel getStorageLevel() {
     return storageLevel;
   }
 
@@ -137,7 +137,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The maximum segment size in bytes.
    */
-  public int maxSegmentSize() {
+  public int getMaxSegmentSize() {
     return maxSegmentSize;
   }
 
@@ -149,7 +149,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The maximum number of entries per segment.
    */
-  public int maxEntriesPerSegment() {
+  public int getMaxEntriesPerSegment() {
     return maxEntriesPerSegment;
   }
 
@@ -161,7 +161,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The entry buffer size.
    */
-  public int entryBufferSize() {
+  public int getEntryBufferSize() {
     return entryBufferSize;
   }
 
@@ -170,7 +170,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The journal entry buffer.
    */
-  JournalEntryBuffer<E> buffer() {
+  JournalEntryBuffer<E> getBuffer() {
     return buffer;
   }
 
@@ -181,16 +181,6 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   protected SegmentedJournalWriter<E> openWriter() {
     return new SegmentedJournalWriter<>(this, lock.writeLock());
-  }
-
-  /**
-   * Opens a new journal reader.
-   *
-   * @param index The index from which to start the reader.
-   * @return A new journal reader.
-   */
-  protected SegmentedJournalReader<E> openReader(long index) {
-    return new SegmentedJournalReader<>(this, lock.readLock(), index);
   }
 
   /**
@@ -237,7 +227,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * Resets the current segment, creating a new segment if necessary.
    */
   private synchronized void resetCurrentSegment() {
-    JournalSegment lastSegment = lastSegment();
+    JournalSegment lastSegment = getLastSegment();
     if (lastSegment != null) {
       currentSegment = lastSegment;
     } else {
@@ -261,7 +251,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @throws IllegalStateException if the segment manager is not open
    */
-  synchronized JournalSegment<E> firstSegment() {
+  synchronized JournalSegment<E> getFirstSegment() {
     assertOpen();
     Map.Entry<Long, JournalSegment<E>> segment = segments.firstEntry();
     return segment != null ? segment.getValue() : null;
@@ -272,7 +262,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @throws IllegalStateException if the segment manager is not open
    */
-  synchronized JournalSegment<E> lastSegment() {
+  synchronized JournalSegment<E> getLastSegment() {
     assertOpen();
     Map.Entry<Long, JournalSegment<E>> segment = segments.lastEntry();
     return segment != null ? segment.getValue() : null;
@@ -284,7 +274,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @param index The segment index with which to look up the prior segment.
    * @return The prior segment for the given index.
    */
-  JournalSegment<E> previousSegment(long index) {
+  JournalSegment<E> getPreviousSegment(long index) {
     Map.Entry<Long, JournalSegment<E>> previousSegment = segments.lowerEntry(index);
     return previousSegment != null ? previousSegment.getValue() : null;
   }
@@ -295,9 +285,9 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @return The next segment.
    * @throws IllegalStateException if the segment manager is not open
    */
-  synchronized JournalSegment<E> nextSegment() {
+  synchronized JournalSegment<E> getNextSegment() {
     assertOpen();
-    JournalSegment lastSegment = lastSegment();
+    JournalSegment lastSegment = getLastSegment();
     JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
         .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
         .withVersion(1)
@@ -319,7 +309,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @param index The segment index with which to look up the next segment.
    * @return The next segment for the given index.
    */
-  JournalSegment<E> nextSegment(long index) {
+  JournalSegment<E> getNextSegment(long index) {
     Map.Entry<Long, JournalSegment<E>> nextSegment = segments.higherEntry(index);
     return nextSegment != null ? nextSegment.getValue() : null;
   }
@@ -330,7 +320,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @param index The index for which to return the segment.
    * @throws IllegalStateException if the segment manager is not open
    */
-  public synchronized JournalSegment<E> segment(long index) {
+  synchronized JournalSegment<E> getSegment(long index) {
     assertOpen();
     // Check if the current segment contains the given index first in order to prevent an unnecessary map lookup.
     if (currentSegment != null && index > currentSegment.index()) {
@@ -590,20 +580,20 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   void resetReaders(long index) {
     for (SegmentedJournalReader<E> reader : readers) {
-      if (reader.nextIndex() >= index) {
+      if (reader.getNextIndex() >= index) {
         reader.reset(index);
       }
     }
   }
 
   @Override
-  public SegmentedJournalWriter<E> writer() {
+  public SegmentedJournalWriter<E> getWriter() {
     return writer;
   }
 
   @Override
-  public SegmentedJournalReader<E> createReader(long index) {
-    return openReader(index);
+  public SegmentedJournalReader<E> openReader(long index) {
+    return new SegmentedJournalReader<>(this, lock.readLock(), index);
   }
 
   @Override
@@ -613,7 +603,7 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   @Override
   public void compact(long index) {
-    writer.lock().lock();
+    writer.getLock().lock();
     try {
       LOGGER.info("Compacting log");
       SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(index);
@@ -624,7 +614,7 @@ public class SegmentedJournal<E> implements Journal<E> {
       }
       compactSegments.clear();
     } finally {
-      writer.lock().unlock();
+      writer.getLock().unlock();
     }
   }
 

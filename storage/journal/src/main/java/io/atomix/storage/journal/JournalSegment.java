@@ -78,7 +78,7 @@ public class JournalSegment<E> implements AutoCloseable {
    * @return The last index in the segment.
    */
   public long lastIndex() {
-    return writer.lastIndex();
+    return writer.getLastIndex();
   }
 
   /**
@@ -132,7 +132,7 @@ public class JournalSegment<E> implements AutoCloseable {
    * @return The segment length.
    */
   public long length() {
-    return writer.nextIndex() - index();
+    return writer.getNextIndex() - index();
   }
 
   /**

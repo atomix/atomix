@@ -48,7 +48,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   }
 
   @Override
-  public Lock lock() {
+  public Lock getLock() {
     throw new UnsupportedOperationException();
   }
 
@@ -62,23 +62,23 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   }
 
   @Override
-  public long currentIndex() {
+  public long getCurrentIndex() {
     return currentEntry != null ? currentEntry.index() : 0;
   }
 
   @Override
-  public Indexed<E> currentEntry() {
+  public Indexed<E> getCurrentEntry() {
     return currentEntry;
   }
 
   @Override
-  public long nextIndex() {
+  public long getNextIndex() {
     return currentEntry != null ? currentEntry.index() + 1 : firstIndex;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Indexed<E> get(long index) {
+  public Indexed<E> getEntry(long index) {
     // If the current entry is set, use it to determine whether to reset the reader.
     if (currentEntry != null) {
       // If the index matches the current entry index, return the current entry.
@@ -93,7 +93,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     }
 
     // If the entry is in the journal buffer, update the current entry and return it.
-    Indexed<E> bufferedEntry = journal.buffer().get(index);
+    Indexed<E> bufferedEntry = journal.getBuffer().get(index);
     if (bufferedEntry != null) {
       this.currentEntry = bufferedEntry;
       readNext();
@@ -119,7 +119,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   @Override
   public Indexed<E> reset(long index) {
     reset();
-    return get(index);
+    return getEntry(index);
   }
 
   @Override
@@ -164,10 +164,10 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   @SuppressWarnings("unchecked")
   private void readNext() {
     // Compute the index of the next entry in the segment.
-    final long index = nextIndex();
+    final long index = getNextIndex();
 
     // If the entry is in the journal buffer, store it as the next entry and return.
-    Indexed<E> bufferedEntry = journal.buffer().get(index);
+    Indexed<E> bufferedEntry = journal.getBuffer().get(index);
     if (bufferedEntry != null) {
       nextEntry = bufferedEntry;
       return;

@@ -72,7 +72,7 @@ abstract class AbstractAppender implements AutoCloseable {
     final RaftLogReader reader = member.getLogReader();
 
     // Lock the entry reader.
-    reader.lock().lock();
+    reader.getLock().lock();
     try {
       // If the log is empty then send an empty commit.
       // If the next index hasn't yet been set then we send an empty commit first.
@@ -86,7 +86,7 @@ abstract class AbstractAppender implements AutoCloseable {
       }
     } finally {
       // Unlock the entry reader.
-      reader.lock().unlock();
+      reader.getLock().unlock();
     }
   }
 
@@ -103,7 +103,7 @@ abstract class AbstractAppender implements AutoCloseable {
 
     // Read the previous entry from the reader.
     // The reader can be null for RESERVE members.
-    Indexed<RaftLogEntry> prevEntry = reader != null ? reader.currentEntry() : null;
+    Indexed<RaftLogEntry> prevEntry = reader != null ? reader.getCurrentEntry() : null;
 
     DefaultRaftMember leader = server.getLeader();
     return AppendRequest.builder()
@@ -125,7 +125,7 @@ abstract class AbstractAppender implements AutoCloseable {
 
     final RaftLogReader reader = member.getLogReader();
 
-    final Indexed<RaftLogEntry> prevEntry = reader.currentEntry();
+    final Indexed<RaftLogEntry> prevEntry = reader.getCurrentEntry();
 
     final DefaultRaftMember leader = server.getLeader();
     AppendRequest.Builder builder = AppendRequest.builder()
@@ -149,7 +149,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // Iterate through the log until the last index or the end of the log is reached.
     while (reader.hasNext()) {
       // Get the next index from the reader.
-      long nextIndex = reader.nextIndex();
+      long nextIndex = reader.getNextIndex();
 
       // If a snapshot exists at the next index, complete the request. This will ensure that
       // the snapshot is sent on the next index.
@@ -338,7 +338,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void resetNextIndex(RaftMemberContext member) {
     final RaftLogReader reader = member.getLogReader();
-    reader.lock().lock();
+    reader.getLock().lock();
     try {
       if (member.getMatchIndex() != 0) {
         reader.reset(member.getMatchIndex());
@@ -347,7 +347,7 @@ abstract class AbstractAppender implements AutoCloseable {
       }
       log.trace("{} - Reset next index for {} to {} + 1", server.getCluster().getMember().getMemberId(), member, member.getMatchIndex());
     } finally {
-      reader.lock().unlock();
+      reader.getLock().unlock();
     }
   }
 

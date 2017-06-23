@@ -55,8 +55,8 @@ public class RaftLogReader extends JournalReaderDelegate<RaftLogEntry> {
       return super.hasNext();
     }
 
-    long nextIndex = nextIndex();
-    long commitIndex = log.commitIndex();
+    long nextIndex = getNextIndex();
+    long commitIndex = log.getCommitIndex();
     if (nextIndex <= commitIndex) {
       return super.hasNext();
     }

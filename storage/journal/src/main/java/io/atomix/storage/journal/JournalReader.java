@@ -30,28 +30,28 @@ public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
    *
    * @return The reader lock.
    */
-  Lock lock();
+  Lock getLock();
 
   /**
    * Returns the current reader index.
    *
    * @return The current reader index.
    */
-  long currentIndex();
+  long getCurrentIndex();
 
   /**
    * Returns the last read entry.
    *
    * @return The last read entry.
    */
-  Indexed<E> currentEntry();
+  Indexed<E> getCurrentEntry();
 
   /**
    * Returns the next reader index.
    *
    * @return The next reader index.
    */
-  long nextIndex();
+  long getNextIndex();
 
   /**
    * Returns the entry at the given index.
@@ -60,7 +60,7 @@ public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
    * @return The entry at the given index or {@code null} if the entry doesn't exist.
    * @throws IndexOutOfBoundsException if the given index is outside the range of the journal
    */
-  Indexed<E> get(long index);
+  Indexed<E> getEntry(long index);
 
   /**
    * Resets the reader to the given index.

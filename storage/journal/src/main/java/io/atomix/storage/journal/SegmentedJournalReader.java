@@ -38,44 +38,44 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
    * Initializes the reader to the given index.
    */
   private void initialize(long index) {
-    currentSegment = journal.segment(index);
+    currentSegment = journal.getSegment(index);
     currentReader = currentSegment.createReader();
-    long nextIndex = nextIndex();
+    long nextIndex = getNextIndex();
     while (index > nextIndex && hasNext()) {
       next();
-      nextIndex = nextIndex();
+      nextIndex = getNextIndex();
     }
   }
 
   @Override
-  public Lock lock() {
+  public Lock getLock() {
     return lock;
   }
 
   @Override
-  public long currentIndex() {
-    return currentReader.currentIndex();
+  public long getCurrentIndex() {
+    return currentReader.getCurrentIndex();
   }
 
   @Override
-  public Indexed<E> currentEntry() {
-    return currentReader.currentEntry();
+  public Indexed<E> getCurrentEntry() {
+    return currentReader.getCurrentEntry();
   }
 
   @Override
-  public long nextIndex() {
-    return currentReader.nextIndex();
+  public long getNextIndex() {
+    return currentReader.getNextIndex();
   }
 
   @Override
-  public Indexed<E> get(long index) {
+  public Indexed<E> getEntry(long index) {
     return reset(index);
   }
 
   @Override
   public Indexed<E> reset(long index) {
     if (index < currentReader.firstIndex()) {
-      currentSegment = journal.previousSegment(currentSegment.index());
+      currentSegment = journal.getPreviousSegment(currentSegment.index());
       while (currentSegment != null) {
         currentReader.close();
         currentReader = currentSegment.createReader();
@@ -90,14 +90,14 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
   @Override
   public void reset() {
     currentReader.close();
-    currentSegment = journal.firstSegment();
+    currentSegment = journal.getFirstSegment();
     currentReader = currentSegment.createReader();
   }
 
   @Override
   public boolean hasNext() {
     if (!currentReader.hasNext()) {
-      JournalSegment<E> nextSegment = journal.nextSegment(currentSegment.index());
+      JournalSegment<E> nextSegment = journal.getNextSegment(currentSegment.index());
       if (nextSegment != null) {
         currentSegment = nextSegment;
         currentReader = currentSegment.createReader();

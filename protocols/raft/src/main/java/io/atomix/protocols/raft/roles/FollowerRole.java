@@ -130,7 +130,7 @@ public final class FollowerRole extends ActiveRole {
 
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
-    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().lastEntry();
+    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().getLastEntry();
 
     final long lastTerm;
     if (lastEntry != null) {

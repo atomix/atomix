@@ -29,15 +29,15 @@ public interface Journal<E> extends Closeable {
    *
    * @return The journal writer.
    */
-  JournalWriter<E> writer();
+  JournalWriter<E> getWriter();
 
   /**
-   * Creates a new journal reader.
+   * Opens a new journal reader.
    *
    * @param index The index at which to start the reader.
    * @return A new journal reader.
    */
-  JournalReader<E> createReader(long index);
+  JournalReader<E> openReader(long index);
 
   /**
    * Returns a boolean indicating whether the journal is open.

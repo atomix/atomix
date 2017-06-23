@@ -76,18 +76,18 @@ public class LogTest {
 
   public void testLogWriteRead() throws Exception {
     RaftLog log = createLog();
-    RaftLogWriter writer = log.writer();
-    RaftLogReader reader = log.createReader(1, RaftLogReader.Mode.ALL);
+    RaftLogWriter writer = log.getWriter();
+    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
     // Append a couple entries.
     Indexed<RaftLogEntry> indexed;
-    assertEquals(writer.nextIndex(), 1);
-    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), MemberId.memberId("client"), "test1", "test", 1000));
+    assertEquals(writer.getNextIndex(), 1);
+    indexed = writer.appendEntry(new OpenSessionEntry(1, System.currentTimeMillis(), MemberId.memberId("client"), "test1", "test", 1000));
     assertEquals(indexed.index(), 1);
 
-    assertEquals(writer.nextIndex(), 2);
-    writer.append(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1), 0));
-    indexed = reader.get(2);
+    assertEquals(writer.getNextIndex(), 2);
+    writer.appendEntry(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1), 0));
+    indexed = reader.getEntry(2);
     assertEquals(indexed.index(), 2);
     assertFalse(reader.hasNext());
 
@@ -100,23 +100,23 @@ public class LogTest {
     assertEquals(openSession.entry().name(), "test1");
     assertEquals(openSession.entry().type(), "test");
     assertEquals(openSession.entry().timeout(), 1000);
-    assertEquals(reader.currentEntry(), openSession);
-    assertEquals(reader.currentIndex(), 1);
+    assertEquals(reader.getCurrentEntry(), openSession);
+    assertEquals(reader.getCurrentIndex(), 1);
 
     // Test reading the unregister entry.
     Indexed<CloseSessionEntry> closeSession;
     assertTrue(reader.hasNext());
-    assertEquals(reader.nextIndex(), 2);
+    assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
     assertEquals(closeSession.index(), 2);
     assertEquals(closeSession.entry().term(), 1);
     assertEquals(closeSession.entry().session(), 1);
-    assertEquals(reader.currentEntry(), closeSession);
-    assertEquals(reader.currentIndex(), 2);
+    assertEquals(reader.getCurrentEntry(), closeSession);
+    assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
 
     // Test opening a new reader and reading from the log.
-    reader = log.createReader(1, RaftLogReader.Mode.ALL);
+    reader = log.openReader(1, RaftLogReader.Mode.ALL);
     assertTrue(reader.hasNext());
     openSession = (Indexed) reader.next();
     assertEquals(openSession.index(), 1);
@@ -124,25 +124,25 @@ public class LogTest {
     assertEquals(openSession.entry().name(), "test1");
     assertEquals(openSession.entry().type(), "test");
     assertEquals(openSession.entry().timeout(), 1000);
-    assertEquals(reader.currentEntry(), openSession);
-    assertEquals(reader.currentIndex(), 1);
+    assertEquals(reader.getCurrentEntry(), openSession);
+    assertEquals(reader.getCurrentIndex(), 1);
     assertTrue(reader.hasNext());
 
     assertTrue(reader.hasNext());
-    assertEquals(reader.nextIndex(), 2);
+    assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
     assertEquals(closeSession.index(), 2);
     assertEquals(closeSession.entry().term(), 1);
     assertEquals(closeSession.entry().session(), 1);
-    assertEquals(reader.currentEntry(), closeSession);
-    assertEquals(reader.currentIndex(), 2);
+    assertEquals(reader.getCurrentEntry(), closeSession);
+    assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
 
     // Reset the reader.
     reader.reset();
 
     // Test opening a new reader and reading from the log.
-    reader = log.createReader(1, RaftLogReader.Mode.ALL);
+    reader = log.openReader(1, RaftLogReader.Mode.ALL);
     assertTrue(reader.hasNext());
     openSession = (Indexed) reader.next();
     assertEquals(openSession.index(), 1);
@@ -150,25 +150,25 @@ public class LogTest {
     assertEquals(openSession.entry().name(), "test1");
     assertEquals(openSession.entry().type(), "test");
     assertEquals(openSession.entry().timeout(), 1000);
-    assertEquals(reader.currentEntry(), openSession);
-    assertEquals(reader.currentIndex(), 1);
+    assertEquals(reader.getCurrentEntry(), openSession);
+    assertEquals(reader.getCurrentIndex(), 1);
     assertTrue(reader.hasNext());
 
     assertTrue(reader.hasNext());
-    assertEquals(reader.nextIndex(), 2);
+    assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
     assertEquals(closeSession.index(), 2);
     assertEquals(closeSession.entry().term(), 1);
     assertEquals(closeSession.entry().session(), 1);
-    assertEquals(reader.currentEntry(), closeSession);
-    assertEquals(reader.currentIndex(), 2);
+    assertEquals(reader.getCurrentEntry(), closeSession);
+    assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
 
     // Truncate the log and write a different entry.
     writer.truncate(1);
-    assertEquals(writer.nextIndex(), 2);
-    writer.append(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1), 0));
-    indexed = reader.get(2);
+    assertEquals(writer.getNextIndex(), 2);
+    writer.appendEntry(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1), 0));
+    indexed = reader.getEntry(2);
     assertEquals(indexed.index(), 2);
     assertEquals(indexed.entry().term(), 2);
 
@@ -176,13 +176,13 @@ public class LogTest {
     reader.reset(1);
 
     assertTrue(reader.hasNext());
-    assertEquals(reader.nextIndex(), 2);
+    assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
     assertEquals(closeSession.index(), 2);
     assertEquals(closeSession.entry().term(), 2);
     assertEquals(closeSession.entry().session(), 1);
-    assertEquals(reader.currentEntry(), closeSession);
-    assertEquals(reader.currentIndex(), 2);
+    assertEquals(reader.getCurrentEntry(), closeSession);
+    assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
   }
 }

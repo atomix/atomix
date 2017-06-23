@@ -71,11 +71,11 @@ public class PassiveRole extends ReserveRole {
   private void truncateUncommittedEntries() {
     if (type() == RaftServer.Role.PASSIVE) {
       final RaftLogWriter writer = context.getLogWriter();
-      writer.lock().lock();
+      writer.getLock().lock();
       try {
         writer.truncate(context.getCommitIndex());
       } finally {
-        writer.lock().unlock();
+        writer.getLock().unlock();
       }
     }
   }
@@ -102,7 +102,7 @@ public class PassiveRole extends ReserveRole {
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withSucceeded(false)
-          .withLogIndex(context.getLogWriter().lastIndex())
+          .withLogIndex(context.getLogWriter().getLastIndex())
           .build();
     } else {
       return checkPreviousEntry(request);
@@ -113,7 +113,7 @@ public class PassiveRole extends ReserveRole {
    * Checks the previous entry in the append request for consistency.
    */
   protected AppendResponse checkPreviousEntry(AppendRequest request) {
-    final long lastIndex = context.getLogWriter().lastIndex();
+    final long lastIndex = context.getLogWriter().getLastIndex();
     if (request.logIndex() != 0 && request.logIndex() > lastIndex) {
       LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().getMemberId(), request, request.logIndex(), lastIndex);
       return AppendResponse.builder()
@@ -145,7 +145,7 @@ public class PassiveRole extends ReserveRole {
 
     // If the request entries are non-empty, write them to the log.
     if (!request.entries().isEmpty()) {
-      writer.lock().lock();
+      writer.getLock().lock();
       try {
         for (Indexed<RaftLogEntry> entry : request.entries()) {
           // If the entry index is greater than the commitIndex, break the loop.
@@ -156,14 +156,14 @@ public class PassiveRole extends ReserveRole {
           // Read the existing entry from the log. If the entry does not exist in the log,
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
-          Indexed<? extends RaftLogEntry> existing = reader.get(entry.index());
+          Indexed<? extends RaftLogEntry> existing = reader.getEntry(entry.index());
           if (existing == null || existing.entry().term() != entry.entry().term()) {
-            writer.append(entry);
+            writer.appendEntry(entry);
             LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
           }
         }
       } finally {
-        writer.lock().unlock();
+        writer.getLock().unlock();
       }
     }
 
@@ -204,7 +204,7 @@ public class PassiveRole extends ReserveRole {
 
       // If the commit index is not in the log then we've fallen too far behind the leader to perform a local query.
       // Forward the request to the leader.
-      if (context.getLogWriter().lastIndex() < context.getCommitIndex()) {
+      if (context.getLogWriter().getLastIndex() < context.getCommitIndex()) {
         LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().getMemberId());
         return queryForward(request);
       }

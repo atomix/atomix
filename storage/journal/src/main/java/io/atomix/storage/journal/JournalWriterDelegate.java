@@ -30,33 +30,33 @@ public class JournalWriterDelegate<E> implements JournalWriter<E> {
   }
 
   @Override
-  public Lock lock() {
-    return delegate.lock();
+  public Lock getLock() {
+    return delegate.getLock();
   }
 
   @Override
-  public long lastIndex() {
-    return delegate.lastIndex();
+  public long getLastIndex() {
+    return delegate.getLastIndex();
   }
 
   @Override
-  public Indexed<E> lastEntry() {
-    return delegate.lastEntry();
+  public Indexed<E> getLastEntry() {
+    return delegate.getLastEntry();
   }
 
   @Override
-  public long nextIndex() {
-    return delegate.nextIndex();
+  public long getNextIndex() {
+    return delegate.getNextIndex();
   }
 
   @Override
-  public <T extends E> Indexed<T> append(T entry) {
-    return delegate.append(entry);
+  public <T extends E> Indexed<T> appendEntry(T entry) {
+    return delegate.appendEntry(entry);
   }
 
   @Override
-  public void append(Indexed<E> entry) {
-    delegate.append(entry);
+  public void appendEntry(Indexed<E> entry) {
+    delegate.appendEntry(entry);
   }
 
   @Override

@@ -29,28 +29,28 @@ public interface JournalWriter<E> extends AutoCloseable {
    *
    * @return The writer lock.
    */
-  Lock lock();
+  Lock getLock();
 
   /**
    * Returns the last written index.
    *
    * @return The last written index.
    */
-  long lastIndex();
+  long getLastIndex();
 
   /**
    * Returns the last entry written.
    *
    * @return The last entry written.
    */
-  Indexed<E> lastEntry();
+  Indexed<E> getLastEntry();
 
   /**
    * Returns the next index to be written.
    *
    * @return The next index to be written.
    */
-  long nextIndex();
+  long getNextIndex();
 
   /**
    * Appends an entry to the journal.
@@ -58,14 +58,14 @@ public interface JournalWriter<E> extends AutoCloseable {
    * @param entry The entry to append.
    * @return The appended indexed entry.
    */
-  <T extends E> Indexed<T> append(T entry);
+  <T extends E> Indexed<T> appendEntry(T entry);
 
   /**
    * Appends an indexed entry to the log.
    *
    * @param entry The indexed entry to append.
    */
-  void append(Indexed<E> entry);
+  void appendEntry(Indexed<E> entry);
 
   /**
    * Truncates the log to the given index.

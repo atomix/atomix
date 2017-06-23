@@ -49,28 +49,28 @@ public class RaftLog extends JournalDelegate<RaftLogEntry> {
     super(delegate);
     this.delegate = delegate;
     this.flushOnCommit = flushOnCommit;
-    this.writer = new RaftLogWriter(delegate.writer(), this);
+    this.writer = new RaftLogWriter(delegate.getWriter(), this);
   }
 
   @Override
-  public RaftLogWriter writer() {
+  public RaftLogWriter getWriter() {
     return writer;
   }
 
   @Override
-  public RaftLogReader createReader(long index) {
-    return createReader(index, RaftLogReader.Mode.ALL);
+  public RaftLogReader openReader(long index) {
+    return openReader(index, RaftLogReader.Mode.ALL);
   }
 
   /**
-   * Creates a new Raft log reader with the given reader mode.
+   * Opens a new Raft log reader with the given reader mode.
    *
    * @param index The index from which to begin reading entries.
    * @param mode The mode in which to read entries.
    * @return The Raft log reader.
    */
-  public RaftLogReader createReader(long index, RaftLogReader.Mode mode) {
-    return new RaftLogReader(delegate.createReader(index), this, mode);
+  public RaftLogReader openReader(long index, RaftLogReader.Mode mode) {
+    return new RaftLogReader(delegate.openReader(index), this, mode);
   }
 
   /**
@@ -78,7 +78,7 @@ public class RaftLog extends JournalDelegate<RaftLogEntry> {
    *
    * @return Indicates whether {@code flushOnCommit} is enabled for the log.
    */
-  public boolean isFlushOnCommit() {
+  boolean isFlushOnCommit() {
     return flushOnCommit;
   }
 
@@ -87,7 +87,7 @@ public class RaftLog extends JournalDelegate<RaftLogEntry> {
    *
    * @param index The index up to which to commit entries.
    */
-  void commitIndex(long index) {
+  void setCommitIndex(long index) {
     this.commitIndex = index;
   }
 
@@ -96,7 +96,7 @@ public class RaftLog extends JournalDelegate<RaftLogEntry> {
    *
    * @return The Raft log commit index.
    */
-  long commitIndex() {
+  long getCommitIndex() {
     return commitIndex;
   }
 
@@ -105,7 +105,7 @@ public class RaftLog extends JournalDelegate<RaftLogEntry> {
    */
   public static class Builder implements io.atomix.utils.Builder<RaftLog> {
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
-    private final SegmentedJournal.Builder<RaftLogEntry> journalBuilder = SegmentedJournal.builder();
+    private final SegmentedJournal.Builder<RaftLogEntry> journalBuilder = SegmentedJournal.newBuilder();
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
 
     protected Builder() {

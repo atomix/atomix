@@ -397,7 +397,7 @@ public class RaftServerContext implements AutoCloseable {
     long previousCommitIndex = this.commitIndex;
     if (commitIndex > previousCommitIndex) {
       this.commitIndex = commitIndex;
-      writer.commit(Math.min(commitIndex, writer.lastIndex()));
+      writer.commit(Math.min(commitIndex, writer.getLastIndex()));
       long configurationIndex = cluster.getConfiguration().index();
       if (configurationIndex > previousCommitIndex && configurationIndex <= commitIndex) {
         cluster.commit();
@@ -507,8 +507,8 @@ public class RaftServerContext implements AutoCloseable {
 
     // Open the log.
     log = storage.openLog();
-    writer = log.writer();
-    reader = log.createReader(1, RaftLogReader.Mode.ALL);
+    writer = log.getWriter();
+    reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
     // Open the snapshot store.
     snapshot = storage.openSnapshotStore();

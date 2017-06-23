@@ -65,7 +65,7 @@ public abstract class ActiveRole extends PassiveRole {
   protected AppendResponse checkPreviousEntry(AppendRequest request) {
     // If the request log index is positive, ensure it aligns with the local log.
     if (request.logIndex() != 0) {
-      final long lastIndex = context.getLogWriter().lastIndex();
+      final long lastIndex = context.getLogWriter().getLastIndex();
       if (request.logIndex() > lastIndex) {
         LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().getMemberId(), request, request.logIndex(), lastIndex);
         return AppendResponse.builder()
@@ -79,10 +79,10 @@ public abstract class ActiveRole extends PassiveRole {
       final RaftLogReader reader = context.getLogReader();
 
       // Lock the reader.
-      reader.lock().lock();
+      reader.getLock().lock();
       try {
         // If the previous entry term doesn't match the local previous term then reject the request.
-        Indexed<RaftLogEntry> entry = reader.get(request.logIndex());
+        Indexed<RaftLogEntry> entry = reader.getEntry(request.logIndex());
         if (entry == null || entry.entry().term() != request.logTerm()) {
           LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().getMember().getMemberId(), request, entry != null ? entry.entry().term() : "unknown");
           return AppendResponse.builder()
@@ -93,7 +93,7 @@ public abstract class ActiveRole extends PassiveRole {
               .build();
         }
       } finally {
-        reader.lock().unlock();
+        reader.getLock().unlock();
       }
     }
     return appendEntries(request);
@@ -116,20 +116,20 @@ public abstract class ActiveRole extends PassiveRole {
 
     // If the request entries are non-empty, write them to the log.
     if (!request.entries().isEmpty()) {
-      writer.lock().lock();
+      writer.getLock().lock();
       try {
         for (Indexed<RaftLogEntry> entry : request.entries()) {
           // Read the existing entry from the log. If the entry does not exist in the log,
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
-          Indexed<RaftLogEntry> existing = reader.get(entry.index());
+          Indexed<RaftLogEntry> existing = reader.getEntry(entry.index());
           if (existing == null || existing.entry().term() != entry.entry().term()) {
-            writer.append(entry);
+            writer.appendEntry(entry);
             LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
           }
         }
       } finally {
-        writer.lock().unlock();
+        writer.getLock().unlock();
       }
     }
 
@@ -281,7 +281,7 @@ public abstract class ActiveRole extends PassiveRole {
    */
   boolean isLogUpToDate(long lastIndex, long lastTerm, RaftRequest request) {
     // Read the last entry from the log.
-    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().lastEntry();
+    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().getLastEntry();
 
     // If the log is empty then vote for the candidate.
     if (lastEntry == null) {

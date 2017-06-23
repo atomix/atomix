@@ -77,7 +77,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   public RaftServerStateMachineManager(RaftServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
     this.state = checkNotNull(state, "state cannot be null");
     this.log = state.getLog();
-    this.reader = log.createReader(1, RaftLogReader.Mode.COMMITS);
+    this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadPool = threadPool;
     this.threadContext = threadContext;
     threadContext.schedule(Duration.ofMillis(COMPACT_INTERVAL_MILLIS), this::compactLog);
@@ -164,12 +164,12 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   private <T> CompletableFuture<T> applyIndex(long index) {
     threadContext.checkThread();
 
-    reader.lock().lock();
+    reader.getLock().lock();
 
     try {
       // Apply entries prior to this entry.
       while (reader.hasNext()) {
-        long nextIndex = reader.nextIndex();
+        long nextIndex = reader.getNextIndex();
 
         // If the next index is less than or equal to the given index, read and apply the entry.
         if (nextIndex < index) {
@@ -199,7 +199,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
       }
       return CompletableFuture.completedFuture(null);
     } finally {
-      reader.lock().unlock();
+      reader.getLock().unlock();
     }
   }
 
@@ -473,7 +473,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   private void compactLog() {
     // Iterate through state machines and compute the lowest stored snapshot for all state machines.
-    long snapshotIndex = state.getLogWriter().lastIndex();
+    long snapshotIndex = state.getLogWriter().getLastIndex();
     for (RaftServerStateMachineExecutor stateMachineExecutor : stateMachines.values()) {
       Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.getContext().getStateMachineId());
       if (snapshot == null) {

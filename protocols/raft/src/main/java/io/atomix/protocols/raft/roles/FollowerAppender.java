@@ -62,7 +62,7 @@ final class FollowerAppender extends AbstractAppender {
     }
     // If no AppendRequest is already being sent, send an AppendRequest.
     else if (member.canAppend() && hasMoreEntries(member)) {
-      sendAppendRequest(member, buildAppendRequest(member, Math.min(server.getCommitIndex(), server.getLogWriter().lastIndex())));
+      sendAppendRequest(member, buildAppendRequest(member, Math.min(server.getCommitIndex(), server.getLogWriter().getLastIndex())));
     }
   }
 

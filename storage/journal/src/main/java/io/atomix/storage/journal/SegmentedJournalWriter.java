@@ -31,46 +31,46 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
   public SegmentedJournalWriter(SegmentedJournal<E> journal, Lock lock) {
     this.journal = journal;
     this.lock = lock;
-    this.currentSegment = journal.lastSegment();
+    this.currentSegment = journal.getLastSegment();
     this.currentWriter = currentSegment.writer();
   }
 
   @Override
-  public Lock lock() {
+  public Lock getLock() {
     return lock;
   }
 
   @Override
-  public long lastIndex() {
-    return currentWriter.lastIndex();
+  public long getLastIndex() {
+    return currentWriter.getLastIndex();
   }
 
   @Override
-  public Indexed<E> lastEntry() {
-    return currentWriter.lastEntry();
+  public Indexed<E> getLastEntry() {
+    return currentWriter.getLastEntry();
   }
 
   @Override
-  public long nextIndex() {
-    return currentWriter.nextIndex();
+  public long getNextIndex() {
+    return currentWriter.getNextIndex();
   }
 
   @Override
-  public <T extends E> Indexed<T> append(T entry) {
+  public <T extends E> Indexed<T> appendEntry(T entry) {
     if (currentWriter.isFull()) {
-      currentSegment = journal.nextSegment();
+      currentSegment = journal.getNextSegment();
       currentWriter = currentSegment.writer();
     }
-    return currentWriter.append(entry);
+    return currentWriter.appendEntry(entry);
   }
 
   @Override
-  public void append(Indexed<E> entry) {
+  public void appendEntry(Indexed<E> entry) {
     if (currentWriter.isFull()) {
-      currentSegment = journal.nextSegment();
+      currentSegment = journal.getNextSegment();
       currentWriter = currentSegment.writer();
     }
-    currentWriter.append(entry);
+    currentWriter.appendEntry(entry);
   }
 
   @Override
@@ -79,7 +79,7 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
     while (index < currentWriter.firstIndex() - 1) {
       currentWriter.close();
       journal.removeSegment(currentSegment);
-      currentSegment = journal.lastSegment();
+      currentSegment = journal.getLastSegment();
       currentWriter = currentSegment.writer();
     }
 

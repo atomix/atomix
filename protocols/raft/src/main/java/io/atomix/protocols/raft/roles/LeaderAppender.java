@@ -58,7 +58,7 @@ final class LeaderAppender extends AbstractAppender {
     super(leader.context);
     this.leader = checkNotNull(leader, "leader cannot be null");
     this.leaderTime = System.currentTimeMillis();
-    this.leaderIndex = server.getLogWriter().nextIndex();
+    this.leaderIndex = server.getLogWriter().getNextIndex();
     this.heartbeatTime = leaderTime;
     this.heartbeatInterval = server.getHeartbeatInterval().toMillis();
   }
@@ -217,12 +217,12 @@ final class LeaderAppender extends AbstractAppender {
           sendInstallRequest(member, buildInstallRequest(member));
         }
       } else if (member.canAppend()) {
-        sendAppendRequest(member, buildAppendRequest(member, server.getLogWriter().lastIndex()));
+        sendAppendRequest(member, buildAppendRequest(member, server.getLogWriter().getLastIndex()));
       }
     }
     // If no AppendRequest is already being sent, send an AppendRequest.
     else if (member.canAppend()) {
-      sendAppendRequest(member, buildAppendRequest(member, server.getLogWriter().lastIndex()));
+      sendAppendRequest(member, buildAppendRequest(member, server.getLogWriter().getLastIndex()));
     }
   }
 
@@ -231,7 +231,7 @@ final class LeaderAppender extends AbstractAppender {
     // If the member's nextIndex is an entry in the local log then more entries can be sent.
     return member.getMember().getType() != RaftMember.Type.RESERVE
         && member.getMember().getType() != RaftMember.Type.PASSIVE
-        && member.getNextIndex() <= server.getLogWriter().lastIndex();
+        && member.getNextIndex() <= server.getLogWriter().getLastIndex();
   }
 
   /**
@@ -314,7 +314,7 @@ final class LeaderAppender extends AbstractAppender {
     // ensure all commit futures are completed and cleared.
     if (members.isEmpty()) {
       long previousCommitIndex = server.getCommitIndex();
-      long commitIndex = server.getLogWriter().lastIndex();
+      long commitIndex = server.getLogWriter().getLastIndex();
       server.setCommitIndex(commitIndex);
       completeCommits(previousCommitIndex, commitIndex);
       return;

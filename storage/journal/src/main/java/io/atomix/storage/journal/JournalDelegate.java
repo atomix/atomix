@@ -28,13 +28,13 @@ public class JournalDelegate<E> implements Journal<E> {
   }
 
   @Override
-  public JournalWriter<E> writer() {
-    return delegate.writer();
+  public JournalWriter<E> getWriter() {
+    return delegate.getWriter();
   }
 
   @Override
-  public JournalReader<E> createReader(long index) {
-    return delegate.createReader(index);
+  public JournalReader<E> openReader(long index) {
+    return delegate.openReader(index);
   }
 
   @Override

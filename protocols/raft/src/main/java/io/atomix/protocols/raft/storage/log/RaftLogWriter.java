@@ -36,8 +36,8 @@ public class RaftLogWriter extends JournalWriterDelegate<RaftLogEntry> {
    * @param index The index up to which to commit entries.
    */
   public void commit(long index) {
-    if (index > log.commitIndex()) {
-      log.commitIndex(index);
+    if (index > log.getCommitIndex()) {
+      log.setCommitIndex(index);
       if (log.isFlushOnCommit()) {
         flush();
       }
@@ -46,7 +46,7 @@ public class RaftLogWriter extends JournalWriterDelegate<RaftLogEntry> {
 
   @Override
   public void truncate(long index) {
-    if (index < log.commitIndex()) {
+    if (index < log.getCommitIndex()) {
       throw new IndexOutOfBoundsException("Cannot truncate committed index: " + index);
     }
     super.truncate(index);
