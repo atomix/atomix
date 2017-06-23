@@ -397,7 +397,7 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
   }
 
   void reset(ResetRequest request) {
-    Consumer<ResetRequest> listener = resetListeners.get(request.session());
+    Consumer<ResetRequest> listener = resetListeners.get(request.getSession());
     if (listener != null) {
       listener.accept(request);
     }

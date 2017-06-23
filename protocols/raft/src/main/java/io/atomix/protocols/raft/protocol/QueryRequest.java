@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * Query requests are submitted by clients to the Copycat cluster to commit {@link RaftQuery}s to
  * the replicated state machine. Each query request must be associated with a registered
- * {@link #session()} and have a unique {@link #sequence()} number within that session. Queries will
+ * {@link #getSession()} and have a unique {@link #getSequence()} number within that session. Queries will
  * be applied in the cluster in the order defined by the provided sequence number. Thus, sequence numbers
  * should never be skipped. In the event of a failure of a query request, the request should be resent
  * with the same sequence number. Queries are guaranteed to be applied in sequence order.
@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * query's {@link RaftQuery#getConsistencyLevel() consistency level} will be used to determine how the query should be
  * handled. If the query is received by a follower, it may be evaluated on that node if the consistency level
  * is {@link RaftQuery.ConsistencyLevel#SEQUENTIAL}, otherwise it will be forwarded to the cluster leader.
- * Queries are always guaranteed to see state progress monotonically within a single {@link #session()}
+ * Queries are always guaranteed to see state progress monotonically within a single {@link #getSession()}
  * even when switching servers.
  */
 public class QueryRequest extends OperationRequest {
@@ -49,7 +49,7 @@ public class QueryRequest extends OperationRequest {
    *
    * @return A new query request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -67,7 +67,7 @@ public class QueryRequest extends OperationRequest {
    *
    * @return The query index.
    */
-  public long index() {
+  public long getIndex() {
     return index;
   }
 
@@ -76,7 +76,7 @@ public class QueryRequest extends OperationRequest {
    *
    * @return The query consistency level.
    */
-  public RaftQuery.ConsistencyLevel consistency() {
+  public RaftQuery.ConsistencyLevel getConsistencyLevel() {
     return consistency;
   }
 

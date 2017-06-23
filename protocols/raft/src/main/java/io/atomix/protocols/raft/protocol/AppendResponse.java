@@ -32,7 +32,7 @@ public class AppendResponse extends AbstractRaftResponse {
    *
    * @return A new append response builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -52,7 +52,7 @@ public class AppendResponse extends AbstractRaftResponse {
    *
    * @return The requesting node's current term.
    */
-  public long term() {
+  public long getTerm() {
     return term;
   }
 
@@ -70,7 +70,7 @@ public class AppendResponse extends AbstractRaftResponse {
    *
    * @return The last index of the responding replica's log.
    */
-  public long logIndex() {
+  public long getLogIndex() {
     return logIndex;
   }
 

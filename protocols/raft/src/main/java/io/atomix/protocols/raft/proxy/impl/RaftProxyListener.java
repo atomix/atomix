@@ -82,8 +82,8 @@ final class RaftProxyListener {
 
     // If the request is for another session ID, this may be a session that was previously opened
     // for this client.
-    if (request.session() != state.getSessionId()) {
-      LOG.trace("{} - Inconsistent session ID: {}", state.getSessionId(), request.session());
+    if (request.getSession() != state.getSessionId()) {
+      LOG.trace("{} - Inconsistent session ID: {}", state.getSessionId(), request.getSession());
       return;
     }
 
@@ -91,17 +91,17 @@ final class RaftProxyListener {
     long eventIndex = state.getEventIndex();
 
     // If the request event index has already been processed, return.
-    if (request.eventIndex() <= eventIndex) {
-      LOG.trace("{} - Duplicate event index {}", state.getSessionId(), request.eventIndex());
+    if (request.getEventIndex() <= eventIndex) {
+      LOG.trace("{} - Duplicate event index {}", state.getSessionId(), request.getEventIndex());
       return;
     }
 
     // If the request's previous event index doesn't equal the previous received event index,
     // respond with an undefined error and the last index received. This will cause the cluster
     // to resend events starting at eventIndex + 1.
-    if (request.previousIndex() != eventIndex) {
-      LOG.trace("{} - Inconsistent event index: {}", state.getSessionId(), request.previousIndex());
-      ResetRequest resetRequest = ResetRequest.builder()
+    if (request.getPreviousIndex() != eventIndex) {
+      LOG.trace("{} - Inconsistent event index: {}", state.getSessionId(), request.getPreviousIndex());
+      ResetRequest resetRequest = ResetRequest.newBuilder()
           .withSession(state.getSessionId())
           .withIndex(eventIndex)
           .build();
@@ -110,10 +110,10 @@ final class RaftProxyListener {
     }
 
     // Store the event index. This will be used to verify that events are received in sequential order.
-    state.setEventIndex(request.eventIndex());
+    state.setEventIndex(request.getEventIndex());
 
     sequencer.sequenceEvent(request, () -> {
-      for (byte[] bytes : request.events()) {
+      for (byte[] bytes : request.getEvents()) {
         Event event = serializer.decode(bytes);
         for (EventListener listener : listeners) {
           listener.onEvent(event);

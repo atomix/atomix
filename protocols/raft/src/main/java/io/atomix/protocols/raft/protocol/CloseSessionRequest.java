@@ -25,7 +25,7 @@ public class CloseSessionRequest extends SessionRequest {
    *
    * @return A new unregister request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 

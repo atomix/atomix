@@ -33,7 +33,7 @@ public class ResetRequest extends SessionRequest {
    *
    * @return A new publish response builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -49,7 +49,7 @@ public class ResetRequest extends SessionRequest {
    *
    * @return The event index.
    */
-  public long index() {
+  public long getIndex() {
     return index;
   }
 

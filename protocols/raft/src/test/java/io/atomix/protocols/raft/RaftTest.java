@@ -1236,7 +1236,7 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a Copycat server.
    */
   private RaftServer createServer(RaftMember member) {
-    RaftServer.Builder builder = RaftServer.builder(member.getMemberId())
+    RaftServer.Builder builder = RaftServer.newBuilder(member.getMemberId())
         .withType(member.getType())
         .withProtocol(protocolFactory.newServerProtocol(member.getMemberId()))
         .withStorage(RaftStorage.newBuilder()
@@ -1257,7 +1257,7 @@ public class RaftTest extends ConcurrentTestCase {
    */
   private RaftClient createClient() throws Throwable {
     MemberId memberId = nextMemberId();
-    RaftClient client = RaftClient.builder()
+    RaftClient client = RaftClient.newBuilder()
         .withMemberId(memberId)
         .withProtocol(protocolFactory.newClientProtocol(memberId))
         .build();

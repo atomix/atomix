@@ -58,7 +58,7 @@ public class RaftProxySubmitterTest {
   public void testSubmitCommand() throws Throwable {
     RaftProxyConnection connection = mock(RaftProxyConnection.class);
     when(connection.command(any(CommandRequest.class)))
-      .thenReturn(CompletableFuture.completedFuture(CommandResponse.builder()
+      .thenReturn(CompletableFuture.completedFuture(CommandResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(10)
         .withResult("Hello world!")
@@ -96,7 +96,7 @@ public class RaftProxySubmitterTest {
     CompletableFuture<String> result1 = submitter.submit(new TestCommand());
     CompletableFuture<String> result2 = submitter.submit(new TestCommand());
 
-    future2.complete(CommandResponse.builder()
+    future2.complete(CommandResponse.newBuilder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(10)
       .withResult("Hello world again!")
@@ -109,7 +109,7 @@ public class RaftProxySubmitterTest {
     assertFalse(result1.isDone());
     assertFalse(result2.isDone());
 
-    future1.complete(CommandResponse.builder()
+    future1.complete(CommandResponse.newBuilder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(9)
       .withResult("Hello world!")
@@ -131,7 +131,7 @@ public class RaftProxySubmitterTest {
   public void testSubmitQuery() throws Throwable {
     RaftProxyConnection connection = mock(RaftProxyConnection.class);
     when(connection.query(any(QueryRequest.class)))
-      .thenReturn(CompletableFuture.completedFuture(QueryResponse.builder()
+      .thenReturn(CompletableFuture.completedFuture(QueryResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(10)
         .withResult("Hello world!")
@@ -167,7 +167,7 @@ public class RaftProxySubmitterTest {
     CompletableFuture<String> result1 = submitter.submit(new TestQuery());
     CompletableFuture<String> result2 = submitter.submit(new TestQuery());
 
-    future2.complete(QueryResponse.builder()
+    future2.complete(QueryResponse.newBuilder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(10)
       .withResult("Hello world again!")
@@ -178,7 +178,7 @@ public class RaftProxySubmitterTest {
     assertFalse(result1.isDone());
     assertFalse(result2.isDone());
 
-    future1.complete(QueryResponse.builder()
+    future1.complete(QueryResponse.newBuilder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(9)
       .withResult("Hello world!")
@@ -219,7 +219,7 @@ public class RaftProxySubmitterTest {
     assertFalse(result2.isDone());
 
     future1.completeExceptionally(new QueryException("failure"));
-    future2.complete(QueryResponse.builder()
+    future2.complete(QueryResponse.newBuilder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(10)
       .withResult("Hello world!")

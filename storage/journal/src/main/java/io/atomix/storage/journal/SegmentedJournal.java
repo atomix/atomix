@@ -196,7 +196,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     if (!segments.isEmpty()) {
       currentSegment = segments.lastEntry().getValue();
     } else {
-      JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
+      JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
           .withId(1)
           .withVersion(1)
           .withIndex(1)
@@ -231,7 +231,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     if (lastSegment != null) {
       currentSegment = lastSegment;
     } else {
-      JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
+      JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
           .withId(1)
           .withVersion(1)
           .withIndex(1)
@@ -288,7 +288,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   synchronized JournalSegment<E> getNextSegment() {
     assertOpen();
     JournalSegment lastSegment = getLastSegment();
-    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
+    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
         .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
         .withVersion(1)
         .withIndex(currentSegment.lastIndex() + 1)

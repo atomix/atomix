@@ -40,7 +40,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return A new configuration request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -63,7 +63,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The requesting node's current term.
    */
-  public long term() {
+  public long getTerm() {
     return term;
   }
 
@@ -72,7 +72,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public MemberId leader() {
+  public MemberId getLeader() {
     return leader;
   }
 
@@ -81,7 +81,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The configuration index.
    */
-  public long index() {
+  public long getIndex() {
     return index;
   }
 
@@ -90,7 +90,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The configuration timestamp.
    */
-  public long timestamp() {
+  public long getTimestamp() {
     return timestamp;
   }
 
@@ -99,7 +99,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The configuration members.
    */
-  public Collection<RaftMember> members() {
+  public Collection<RaftMember> getMembers() {
     return members;
   }
 

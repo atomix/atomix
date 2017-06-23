@@ -145,7 +145,7 @@ public final class FollowerRole extends ActiveRole {
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
       LOGGER.trace("{} - Polling {} for next term {}", context.getCluster().getMember().getMemberId(), member, context.getTerm() + 1);
-      PollRequest request = PollRequest.builder()
+      PollRequest request = PollRequest.newBuilder()
           .withTerm(context.getTerm())
           .withCandidate(context.getCluster().getMember().getMemberId())
           .withLogIndex(lastEntry != null ? lastEntry.getIndex() : 0)
@@ -158,14 +158,14 @@ public final class FollowerRole extends ActiveRole {
             LOGGER.warn("{} - {}", context.getCluster().getMember().getMemberId(), error.getMessage());
             quorum.fail();
           } else {
-            if (response.term() > context.getTerm()) {
-              context.setTerm(response.term());
+            if (response.getTerm() > context.getTerm()) {
+              context.setTerm(response.getTerm());
             }
 
             if (!response.accepted()) {
               LOGGER.trace("{} - Received rejected poll from {}", context.getCluster().getMember().getMemberId(), member);
               quorum.fail();
-            } else if (response.term() != context.getTerm()) {
+            } else if (response.getTerm() != context.getTerm()) {
               LOGGER.trace("{} - Received accepted poll for a different term from {}", context.getCluster().getMember().getMemberId(), member);
               quorum.fail();
             } else {

@@ -141,7 +141,7 @@ public final class CandidateRole extends ActiveRole {
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
       LOGGER.debug("{} - Requesting vote from {} for term {}", context.getCluster().getMember().getMemberId(), member, context.getTerm());
-      VoteRequest request = VoteRequest.builder()
+      VoteRequest request = VoteRequest.newBuilder()
           .withTerm(context.getTerm())
           .withCandidate(context.getCluster().getMember().getMemberId())
           .withLogIndex(lastEntry != null ? lastEntry.getIndex() : 0)
@@ -155,15 +155,15 @@ public final class CandidateRole extends ActiveRole {
             LOGGER.warn(error.getMessage());
             quorum.fail();
           } else {
-            if (response.term() > context.getTerm()) {
+            if (response.getTerm() > context.getTerm()) {
               LOGGER.trace("{} - Received greater term from {}", context.getCluster().getMember().getMemberId(), member);
-              context.setTerm(response.term());
+              context.setTerm(response.getTerm());
               complete.set(true);
               context.transition(RaftServer.Role.FOLLOWER);
             } else if (!response.voted()) {
               LOGGER.trace("{} - Received rejected vote from {}", context.getCluster().getMember().getMemberId(), member);
               quorum.fail();
-            } else if (response.term() != context.getTerm()) {
+            } else if (response.getTerm() != context.getTerm()) {
               LOGGER.trace("{} - Received successful vote for a different term from {}", context.getCluster().getMember().getMemberId(), member);
               quorum.fail();
             } else {
@@ -182,8 +182,8 @@ public final class CandidateRole extends ActiveRole {
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
-    if (request.term() >= context.getTerm()) {
-      context.setTerm(request.term());
+    if (request.getTerm() >= context.getTerm()) {
+      context.setTerm(request.getTerm());
       context.transition(RaftServer.Role.FOLLOWER);
     }
     return super.onAppend(request);
@@ -196,21 +196,21 @@ public final class CandidateRole extends ActiveRole {
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
-    if (updateTermAndLeader(request.term(), null)) {
+    if (updateTermAndLeader(request.getTerm(), null)) {
       CompletableFuture<VoteResponse> future = super.onVote(request);
       context.transition(RaftServer.Role.FOLLOWER);
       return future;
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (request.candidate() == context.getCluster().getMember().getMemberId()) {
-      return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
+    if (request.getCandidate() == context.getCluster().getMember().getMemberId()) {
+      return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withVoted(true)
           .build()));
     } else {
-      return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withVoted(false)

@@ -36,7 +36,7 @@ public class VoteResponse extends AbstractRaftResponse {
    *
    * @return A new vote response builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -54,7 +54,7 @@ public class VoteResponse extends AbstractRaftResponse {
    *
    * @return The responding node's current term.
    */
-  public long term() {
+  public long getTerm() {
     return term;
   }
 

@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  * Base session request.
  * <p>
  * This is the base request for session-related requests. Many client requests are handled within the
- * context of a {@link #session()} identifier.
+ * context of a {@link #getSession()} identifier.
  */
 public abstract class SessionRequest extends AbstractRaftRequest {
   protected final long session;
@@ -38,7 +38,7 @@ public abstract class SessionRequest extends AbstractRaftRequest {
    *
    * @return The session ID.
    */
-  public long session() {
+  public long getSession() {
     return session;
   }
 

@@ -21,8 +21,8 @@ import io.atomix.protocols.raft.error.RaftError;
  * Base interface for responses.
  * <p>
  * Each response has a non-null {@link RaftResponse.Status} of either {@link RaftResponse.Status#OK} or
- * {@link RaftResponse.Status#ERROR}. Responses where {@link #status()} is {@link RaftResponse.Status#ERROR}
- * may provide an optional {@link #error()} code.
+ * {@link RaftResponse.Status#ERROR}. Responses where {@link #getStatus()} is {@link RaftResponse.Status#ERROR}
+ * may provide an optional {@link #getError()} code.
  */
 public interface RaftResponse extends RaftMessage {
 
@@ -74,7 +74,6 @@ public interface RaftResponse extends RaftMessage {
     public byte id() {
       return id;
     }
-
   }
 
   /**
@@ -82,14 +81,14 @@ public interface RaftResponse extends RaftMessage {
    *
    * @return The response status.
    */
-  Status status();
+  Status getStatus();
 
   /**
    * Returns the response error if the response status is {@code Status.ERROR}
    *
    * @return The response error.
    */
-  RaftError error();
+  RaftError getError();
 
   /**
    * Response builder.

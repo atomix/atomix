@@ -83,7 +83,7 @@ public class TestRaftClientProtocol extends TestRaftProtocol implements RaftClie
   }
 
   void publish(PublishRequest request) {
-    Consumer<PublishRequest> listener = publishListeners.get(request.session());
+    Consumer<PublishRequest> listener = publishListeners.get(request.getSession());
     if (listener != null) {
       listener.accept(request);
     }

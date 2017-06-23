@@ -152,7 +152,7 @@ public class RaftServerCommunicator implements RaftServerProtocol {
 
   @Override
   public void publish(MemberId memberId, PublishRequest request) {
-    clusterCommunicator.unicast(request, context.publishSubject(request.session()), serializer::encode, NodeId.nodeId(memberId.value()));
+    clusterCommunicator.unicast(request, context.publishSubject(request.getSession()), serializer::encode, NodeId.nodeId(memberId.value()));
   }
 
   @Override

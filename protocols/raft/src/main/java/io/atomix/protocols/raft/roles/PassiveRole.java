@@ -85,7 +85,7 @@ public class PassiveRole extends ReserveRole {
   public CompletableFuture<AppendResponse> onAppend(final AppendRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.term(), request.leader());
+    updateTermAndLeader(request.getTerm(), request.getLeader());
 
     return CompletableFuture.completedFuture(logResponse(handleAppend(request)));
   }
@@ -97,9 +97,9 @@ public class PassiveRole extends ReserveRole {
     // If the request term is less than the current term then immediately
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
-    if (request.term() < context.getTerm()) {
+    if (request.getTerm() < context.getTerm()) {
       LOGGER.debug("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().getMember().getMemberId(), request, context.getTerm());
-      return AppendResponse.builder()
+      return AppendResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withSucceeded(false)
@@ -115,9 +115,9 @@ public class PassiveRole extends ReserveRole {
    */
   protected AppendResponse checkPreviousEntry(AppendRequest request) {
     final long lastIndex = context.getLogWriter().getLastIndex();
-    if (request.logIndex() != 0 && request.logIndex() > lastIndex) {
-      LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().getMemberId(), request, request.logIndex(), lastIndex);
-      return AppendResponse.builder()
+    if (request.getLogIndex() != 0 && request.getLogIndex() > lastIndex) {
+      LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().getMemberId(), request, request.getLogIndex(), lastIndex);
+      return AppendResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withSucceeded(false)
@@ -132,23 +132,23 @@ public class PassiveRole extends ReserveRole {
    */
   protected AppendResponse appendEntries(AppendRequest request) {
     // Get the last entry index or default to the request log index.
-    long lastEntryIndex = request.logIndex();
-    if (!request.entries().isEmpty()) {
-      lastEntryIndex = request.entries().get(request.entries().size() - 1).getIndex();
+    long lastEntryIndex = request.getLogIndex();
+    if (!request.getEntries().isEmpty()) {
+      lastEntryIndex = request.getEntries().get(request.getEntries().size() - 1).getIndex();
     }
 
     // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
-    long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
+    long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.getCommitIndex(), lastEntryIndex));
 
     // Get the server log reader/writer.
     final RaftLogReader reader = context.getLogReader();
     final RaftLogWriter writer = context.getLogWriter();
 
     // If the request entries are non-empty, write them to the log.
-    if (!request.entries().isEmpty()) {
+    if (!request.getEntries().isEmpty()) {
       writer.getLock().lock();
       try {
-        for (Indexed<RaftLogEntry> entry : request.entries()) {
+        for (Indexed<RaftLogEntry> entry : request.getEntries()) {
           // If the entry index is greater than the commitIndex, break the loop.
           if (entry.getIndex() > commitIndex) {
             break;
@@ -179,7 +179,7 @@ public class PassiveRole extends ReserveRole {
     // Apply commits to the state machine in batch.
     context.getStateMachine().applyAll(context.getCommitIndex());
 
-    return AppendResponse.builder()
+    return AppendResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .withTerm(context.getTerm())
         .withSucceeded(true)
@@ -193,12 +193,12 @@ public class PassiveRole extends ReserveRole {
     logRequest(request);
 
     // If the query was submitted with sequential read consistency, attempt to apply the query to the local state machine.
-    if (request.consistency() == RaftQuery.ConsistencyLevel.SEQUENTIAL) {
+    if (request.getConsistencyLevel() == RaftQuery.ConsistencyLevel.SEQUENTIAL) {
 
       // If this server has not yet applied entries up to the client's session ID, forward the
       // query to the leader. This ensures that a follower does not tell the client its session
       // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
-      if (context.getStateMachine().getLastApplied() < request.session()) {
+      if (context.getStateMachine().getLastApplied() < request.getSession()) {
         LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().getMemberId());
         return queryForward(request);
       }
@@ -211,13 +211,13 @@ public class PassiveRole extends ReserveRole {
       }
 
       final Indexed<QueryEntry> entry = new Indexed<>(
-          request.index(),
+          request.getIndex(),
           new QueryEntry(
               context.getTerm(),
               System.currentTimeMillis(),
-              request.session(),
-              request.sequence(),
-              request.bytes()), 0);
+              request.getSession(),
+              request.getSequence(),
+              request.getBytes()), 0);
 
       return applyQuery(entry).thenApply(this::logResponse);
     } else {
@@ -230,7 +230,7 @@ public class PassiveRole extends ReserveRole {
    */
   private CompletableFuture<QueryResponse> queryForward(QueryRequest request) {
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
@@ -238,7 +238,7 @@ public class PassiveRole extends ReserveRole {
 
     LOGGER.trace("{} - Forwarding {}", context.getCluster().getMember().getMemberId(), request);
     return forward(request, context.getProtocol()::query)
-        .exceptionally(error -> QueryResponse.builder()
+        .exceptionally(error -> QueryResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
             .withError(RaftError.Type.NO_LEADER_ERROR)
             .build())
@@ -260,7 +260,7 @@ public class PassiveRole extends ReserveRole {
     // indexes will be the last applied index.
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
     context.getStateMachine().<RaftOperationResult>apply(entry).whenComplete((result, error) -> {
-      completeOperation(result, QueryResponse.builder(), error, future);
+      completeOperation(result, QueryResponse.newBuilder(), error, future);
     });
     return future;
   }
@@ -303,18 +303,18 @@ public class PassiveRole extends ReserveRole {
   public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.term(), request.leader());
+    updateTermAndLeader(request.getTerm(), request.getLeader());
 
     // If the request is for a lesser term, reject the request.
-    if (request.term() < context.getTerm()) {
-      return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+    if (request.getTerm() < context.getTerm()) {
+      return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
           .build()));
     }
 
     // Get the pending snapshot for the associated snapshot ID.
-    Snapshot pendingSnapshot = pendingSnapshots.get(request.id());
+    Snapshot pendingSnapshot = pendingSnapshots.get(request.getSnapshotId());
 
     // If a snapshot is currently being received and the snapshot versions don't match, simply
     // close the existing snapshot. This is a naive implementation that assumes that the leader
@@ -322,7 +322,7 @@ public class PassiveRole extends ReserveRole {
     // where snapshots must be sent since entries can still legitimately exist prior to the snapshot,
     // and so snapshots aren't simply sent at the beginning of the follower's log, but rather the
     // leader dictates when a snapshot needs to be sent.
-    if (pendingSnapshot != null && request.index() != pendingSnapshot.getIndex()) {
+    if (pendingSnapshot != null && request.getSnapshotIndex() != pendingSnapshot.getIndex()) {
       pendingSnapshot.close();
       pendingSnapshot.delete();
       pendingSnapshot = null;
@@ -332,20 +332,20 @@ public class PassiveRole extends ReserveRole {
     // If there is no pending snapshot, create a new snapshot.
     if (pendingSnapshot == null) {
       // For new snapshots, the initial snapshot offset must be 0.
-      if (request.offset() > 0) {
-        return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+      if (request.getChunkOffset() > 0) {
+        return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
             .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
             .build()));
       }
 
-      pendingSnapshot = context.getSnapshotStore().newSnapshot(SnapshotId.of(request.id()), request.index());
+      pendingSnapshot = context.getSnapshotStore().newSnapshot(SnapshotId.of(request.getSnapshotId()), request.getSnapshotIndex());
       nextSnapshotOffset = 0;
     }
 
     // If the request offset is greater than the next expected snapshot offset, fail the request.
-    if (request.offset() > nextSnapshotOffset) {
-      return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+    if (request.getChunkOffset() > nextSnapshotOffset) {
+      return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
           .build()));
@@ -353,19 +353,19 @@ public class PassiveRole extends ReserveRole {
 
     // Write the data to the snapshot.
     try (SnapshotWriter writer = pendingSnapshot.openWriter(context.getStorage().getSerializer())) {
-      writer.write(request.data());
+      writer.write(request.getData());
     }
 
     // If the snapshot is complete, store the snapshot and reset state, otherwise update the next snapshot offset.
-    if (request.complete()) {
+    if (request.isComplete()) {
       pendingSnapshot.persist().complete();
-      pendingSnapshots.remove(request.id());
+      pendingSnapshots.remove(request.getSnapshotId());
       nextSnapshotOffset = 0;
     } else {
       nextSnapshotOffset++;
     }
 
-    return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+    return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .build()));
   }

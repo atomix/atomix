@@ -29,7 +29,7 @@ public class CloseSessionResponse extends SessionResponse {
    *
    * @return A new keep alive response builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 

@@ -95,7 +95,7 @@ final class RaftProxySequencer {
     if (requestSequence == responseSequence) {
       LOGGER.trace("{} - Completing {}", state.getSessionId(), request);
       callback.run();
-      eventIndex = request.eventIndex();
+      eventIndex = request.getEventIndex();
     } else {
       eventCallbacks.add(new EventCallback(request, callback));
       completeResponses();
@@ -157,7 +157,7 @@ final class RaftProxySequencer {
       while (eventCallback != null) {
         LOGGER.trace("{} - Completing {}", state.getSessionId(), eventCallback.request);
         eventCallback.run();
-        eventIndex = eventCallback.request.eventIndex();
+        eventIndex = eventCallback.request.getEventIndex();
         eventCallback = eventCallbacks.poll();
       }
     }
@@ -177,16 +177,16 @@ final class RaftProxySequencer {
 
     // If the response's event index is greater than the current event index, that indicates that events that were
     // published prior to the response have not yet been completed. Attempt to complete pending events.
-    long responseEventIndex = response.eventIndex();
+    long responseEventIndex = response.getEventIndex();
     if (responseEventIndex > eventIndex) {
       // For each pending event with an eventIndex less than or equal to the response eventIndex, complete the event.
       // This is safe since we know that sequenced responses should see sequential order of events.
       EventCallback eventCallback = eventCallbacks.peek();
-      while (eventCallback != null && eventCallback.request.eventIndex() <= responseEventIndex) {
+      while (eventCallback != null && eventCallback.request.getEventIndex() <= responseEventIndex) {
         eventCallbacks.remove();
         LOGGER.trace("{} - Completing {}", state.getSessionId(), eventCallback.request);
         eventCallback.run();
-        eventIndex = eventCallback.request.eventIndex();
+        eventIndex = eventCallback.request.getEventIndex();
         eventCallback = eventCallbacks.peek();
       }
 
@@ -198,8 +198,8 @@ final class RaftProxySequencer {
           // If the event's previous index is consistent with the current event index and the event
           // index is greater than the response event index, set the response event index to the
           // event's previous index.
-          if (event.request.previousIndex() <= eventIndex && event.request.eventIndex() >= response.eventIndex()) {
-            responseEventIndex = event.request.previousIndex();
+          if (event.request.getPreviousIndex() <= eventIndex && event.request.getEventIndex() >= response.getEventIndex()) {
+            responseEventIndex = event.request.getPreviousIndex();
             break;
           }
         }

@@ -216,18 +216,18 @@ public class RaftProxyConnection {
   @SuppressWarnings("unchecked")
   protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, MemberId node, RaftResponse response, Throwable error, CompletableFuture future) {
     if (error == null) {
-      if (response.status() == RaftResponse.Status.OK
-          || response.error() == RaftError.Type.COMMAND_ERROR
-          || response.error() == RaftError.Type.QUERY_ERROR
-          || response.error() == RaftError.Type.APPLICATION_ERROR
-          || response.error() == RaftError.Type.UNKNOWN_CLIENT_ERROR
-          || response.error() == RaftError.Type.UNKNOWN_SESSION_ERROR
-          || response.error() == RaftError.Type.UNKNOWN_STATE_MACHINE_ERROR
-          || response.error() == RaftError.Type.INTERNAL_ERROR) {
+      if (response.getStatus() == RaftResponse.Status.OK
+          || response.getError() == RaftError.Type.COMMAND_ERROR
+          || response.getError() == RaftError.Type.QUERY_ERROR
+          || response.getError() == RaftError.Type.APPLICATION_ERROR
+          || response.getError() == RaftError.Type.UNKNOWN_CLIENT_ERROR
+          || response.getError() == RaftError.Type.UNKNOWN_SESSION_ERROR
+          || response.getError() == RaftError.Type.UNKNOWN_STATE_MACHINE_ERROR
+          || response.getError() == RaftError.Type.INTERNAL_ERROR) {
         LOGGER.trace("{} - Received {}", name, response);
         future.complete(response);
       } else {
-        resendRequest(response.error().createException(), request, sender, node, future);
+        resendRequest(response.getError().createException(), request, sender, node, future);
       }
     } else if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
       resendRequest(error, request, sender, node, future);

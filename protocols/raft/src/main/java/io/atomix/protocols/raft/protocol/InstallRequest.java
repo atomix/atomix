@@ -30,8 +30,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Snapshot installation requests are sent by the leader to a follower when the follower indicates
  * that its log is further behind than the last snapshot taken by the leader. Snapshots are sent
  * in chunks, with each chunk being sent in a separate install request. As requests are received by
- * the follower, the snapshot is reconstructed based on the provided {@link #offset()} and other
- * metadata. The last install request will be sent with {@link #complete()} being {@code true} to
+ * the follower, the snapshot is reconstructed based on the provided {@link #getChunkOffset()} and other
+ * metadata. The last install request will be sent with {@link #isComplete()} being {@code true} to
  * indicate that all chunks of the snapshot have been sent.
  */
 public class InstallRequest extends AbstractRaftRequest {
@@ -41,7 +41,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return A new install request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -68,7 +68,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The requesting node's current term.
    */
-  public long term() {
+  public long getTerm() {
     return term;
   }
 
@@ -77,7 +77,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public MemberId leader() {
+  public MemberId getLeader() {
     return leader;
   }
 
@@ -86,7 +86,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The snapshot identifier.
    */
-  public long id() {
+  public long getSnapshotId() {
     return id;
   }
 
@@ -95,7 +95,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The snapshot index.
    */
-  public long index() {
+  public long getSnapshotIndex() {
     return index;
   }
 
@@ -104,7 +104,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The offset of the snapshot chunk.
    */
-  public int offset() {
+  public int getChunkOffset() {
     return offset;
   }
 
@@ -113,7 +113,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The snapshot data.
    */
-  public byte[] data() {
+  public byte[] getData() {
     return data;
   }
 
@@ -122,7 +122,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return Indicates whether this request is the last chunk of the snapshot.
    */
-  public boolean complete() {
+  public boolean isComplete() {
     return complete;
   }
 

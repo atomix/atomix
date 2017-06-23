@@ -32,7 +32,7 @@ public class OpenSessionResponse extends AbstractRaftResponse {
    *
    * @return A new register client response builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -50,7 +50,7 @@ public class OpenSessionResponse extends AbstractRaftResponse {
    *
    * @return The registered session ID.
    */
-  public long session() {
+  public long getSession() {
     return session;
   }
 
@@ -59,7 +59,7 @@ public class OpenSessionResponse extends AbstractRaftResponse {
    *
    * @return The session timeout.
    */
-  public long timeout() {
+  public long getTimeout() {
     return timeout;
   }
 

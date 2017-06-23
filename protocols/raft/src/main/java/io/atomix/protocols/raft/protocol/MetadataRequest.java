@@ -25,7 +25,7 @@ public class MetadataRequest extends SessionRequest {
    *
    * @return A new metadata request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 

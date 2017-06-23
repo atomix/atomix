@@ -81,7 +81,7 @@ public class RaftSessionContext implements RaftSession {
     this.protocol = server.getProtocol();
     this.executor = executor;
     this.server = server;
-    protocol.registerResetListener(id, request -> resendEvents(request.index()), executor.executor());
+    protocol.registerResetListener(id, request -> resendEvents(request.getIndex()), executor.executor());
   }
 
   @Override
@@ -459,7 +459,7 @@ public class RaftSessionContext implements RaftSession {
   private void sendEvents(EventHolder event) {
     // Only send events to the client if this server is the leader.
     if (server.isLeader()) {
-      PublishRequest request = PublishRequest.builder()
+      PublishRequest request = PublishRequest.newBuilder()
           .withSession(getSessionId())
           .withEventIndex(event.eventIndex)
           .withPreviousIndex(Math.max(event.previousIndex, completeIndex))

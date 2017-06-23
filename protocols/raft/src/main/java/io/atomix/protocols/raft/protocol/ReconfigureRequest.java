@@ -32,7 +32,7 @@ public class ReconfigureRequest extends ConfigurationRequest {
    *
    * @return A new reconfigure request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 

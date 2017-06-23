@@ -241,14 +241,14 @@ public final class LeaderRole extends ActiveRole {
     // Configuration changes should not be allowed until the leader has committed a no-op entry.
     // See https://groups.google.com/forum/#!topic/raft-dev/t4xj6dJTP6E
     if (configuring() || initializing()) {
-      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .build()));
     }
 
     // If the member is already a known member of the cluster, complete the join successfully.
-    if (context.getCluster().getMember(request.member().getMemberId()) != null) {
-      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+    if (context.getCluster().getMember(request.getMember().getMemberId()) != null) {
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withIndex(context.getClusterState().getConfiguration().getIndex())
           .withTerm(context.getClusterState().getConfiguration().getTerm())
@@ -257,7 +257,7 @@ public final class LeaderRole extends ActiveRole {
           .build()));
     }
 
-    RaftMember member = request.member();
+    RaftMember member = request.getMember();
 
     // Add the joining member to the members list. If the joining member's type is ACTIVE, join the member in the
     // PROMOTABLE state to allow it to get caught up without impacting the quorum size.
@@ -269,7 +269,7 @@ public final class LeaderRole extends ActiveRole {
       context.checkThread();
       if (isOpen()) {
         if (error == null) {
-          future.complete(logResponse(JoinResponse.builder()
+          future.complete(logResponse(JoinResponse.newBuilder()
               .withStatus(RaftResponse.Status.OK)
               .withIndex(index)
               .withTerm(context.getClusterState().getConfiguration().getTerm())
@@ -277,7 +277,7 @@ public final class LeaderRole extends ActiveRole {
               .withMembers(members)
               .build()));
         } else {
-          future.complete(logResponse(JoinResponse.builder()
+          future.complete(logResponse(JoinResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.INTERNAL_ERROR)
               .build()));
@@ -297,15 +297,15 @@ public final class LeaderRole extends ActiveRole {
     // Configuration changes should not be allowed until the leader has committed a no-op entry.
     // See https://groups.google.com/forum/#!topic/raft-dev/t4xj6dJTP6E
     if (configuring() || initializing()) {
-      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .build()));
     }
 
     // If the member is not a known member of the cluster, fail the promotion.
-    DefaultRaftMember existingMember = context.getClusterState().getMember(request.member().getMemberId());
+    DefaultRaftMember existingMember = context.getClusterState().getMember(request.getMember().getMemberId());
     if (existingMember == null) {
-      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
           .build()));
@@ -314,15 +314,15 @@ public final class LeaderRole extends ActiveRole {
     // If the configuration request index is less than the last known configuration index for
     // the leader, fail the request to ensure servers can't reconfigure an old configuration.
     if (request.index() > 0 && request.index() < context.getClusterState().getConfiguration().getIndex() || request.term() != context.getClusterState().getConfiguration().getTerm()
-        && (existingMember.getType() != request.member().getType() || existingMember.getStatus() != request.member().getStatus())) {
-      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
+        && (existingMember.getType() != request.getMember().getType() || existingMember.getStatus() != request.getMember().getStatus())) {
+      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.CONFIGURATION_ERROR)
           .build()));
     }
 
     // Update the member type.
-    existingMember.update(request.member().getType(), Instant.now());
+    existingMember.update(request.getMember().getType(), Instant.now());
 
     Collection<RaftMember> members = context.getCluster().getMembers();
 
@@ -331,7 +331,7 @@ public final class LeaderRole extends ActiveRole {
       context.checkThread();
       if (isOpen()) {
         if (error == null) {
-          future.complete(logResponse(ReconfigureResponse.builder()
+          future.complete(logResponse(ReconfigureResponse.newBuilder()
               .withStatus(RaftResponse.Status.OK)
               .withIndex(index)
               .withTerm(context.getClusterState().getConfiguration().getTerm())
@@ -339,7 +339,7 @@ public final class LeaderRole extends ActiveRole {
               .withMembers(members)
               .build()));
         } else {
-          future.complete(logResponse(ReconfigureResponse.builder()
+          future.complete(logResponse(ReconfigureResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.INTERNAL_ERROR)
               .build()));
@@ -359,20 +359,20 @@ public final class LeaderRole extends ActiveRole {
     // Configuration changes should not be allowed until the leader has committed a no-op entry.
     // See https://groups.google.com/forum/#!topic/raft-dev/t4xj6dJTP6E
     if (configuring() || initializing()) {
-      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .build()));
     }
 
     // If the leaving member is not a known member of the cluster, complete the leave successfully.
-    if (context.getCluster().getMember(request.member().getMemberId()) == null) {
-      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+    if (context.getCluster().getMember(request.getMember().getMemberId()) == null) {
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withMembers(context.getCluster().getMembers())
           .build()));
     }
 
-    RaftMember member = request.member();
+    RaftMember member = request.getMember();
 
     Collection<RaftMember> members = context.getCluster().getMembers();
     members.remove(member);
@@ -382,7 +382,7 @@ public final class LeaderRole extends ActiveRole {
       context.checkThread();
       if (isOpen()) {
         if (error == null) {
-          future.complete(logResponse(LeaveResponse.builder()
+          future.complete(logResponse(LeaveResponse.newBuilder()
               .withStatus(RaftResponse.Status.OK)
               .withIndex(index)
               .withTerm(context.getClusterState().getConfiguration().getTerm())
@@ -390,7 +390,7 @@ public final class LeaderRole extends ActiveRole {
               .withMembers(members)
               .build()));
         } else {
-          future.complete(logResponse(LeaveResponse.builder()
+          future.complete(logResponse(LeaveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.INTERNAL_ERROR)
               .build()));
@@ -407,7 +407,7 @@ public final class LeaderRole extends ActiveRole {
     // If a member sends a PollRequest to the leader, that indicates that it likely healed from
     // a network partition and may have had its status set to UNAVAILABLE by the leader. In order
     // to ensure heartbeats are immediately stored to the member, update its status if necessary.
-    RaftMemberContext member = context.getClusterState().getMemberState(request.candidate());
+    RaftMemberContext member = context.getClusterState().getMemberState(request.getCandidate());
     if (member != null) {
       member.resetFailureCount();
       if (member.getMember().getStatus() == RaftMember.Status.UNAVAILABLE) {
@@ -416,7 +416,7 @@ public final class LeaderRole extends ActiveRole {
       }
     }
 
-    return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+    return CompletableFuture.completedFuture(logResponse(PollResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .withTerm(context.getTerm())
         .withAccepted(false)
@@ -425,13 +425,13 @@ public final class LeaderRole extends ActiveRole {
 
   @Override
   public CompletableFuture<VoteResponse> onVote(final VoteRequest request) {
-    if (updateTermAndLeader(request.term(), null)) {
+    if (updateTermAndLeader(request.getTerm(), null)) {
       LOGGER.debug("{} - Received greater term", context.getCluster().getMember().getMemberId());
       context.transition(RaftServer.Role.FOLLOWER);
       return super.onVote(request);
     } else {
       logRequest(request);
-      return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withVoted(false)
@@ -442,20 +442,20 @@ public final class LeaderRole extends ActiveRole {
   @Override
   public CompletableFuture<AppendResponse> onAppend(final AppendRequest request) {
     context.checkThread();
-    if (updateTermAndLeader(request.term(), request.leader())) {
+    if (updateTermAndLeader(request.getTerm(), request.getLeader())) {
       CompletableFuture<AppendResponse> future = super.onAppend(request);
       context.transition(RaftServer.Role.FOLLOWER);
       return future;
-    } else if (request.term() < context.getTerm()) {
+    } else if (request.getTerm() < context.getTerm()) {
       logRequest(request);
-      return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(AppendResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withSucceeded(false)
           .withLogIndex(context.getLogWriter().getLastIndex())
           .build()));
     } else {
-      context.setLeader(request.leader()).transition(RaftServer.Role.FOLLOWER);
+      context.setLeader(request.getLeader()).transition(RaftServer.Role.FOLLOWER);
       return super.onAppend(request);
     }
   }
@@ -468,17 +468,17 @@ public final class LeaderRole extends ActiveRole {
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
     Indexed<MetadataEntry> entry = new Indexed<>(
         context.getStateMachine().getLastApplied(),
-        new MetadataEntry(context.getTerm(), System.currentTimeMillis(), request.session()), 0);
+        new MetadataEntry(context.getTerm(), System.currentTimeMillis(), request.getSession()), 0);
     context.getStateMachine().<RaftMetadataResult>apply(entry).whenComplete((result, error) -> {
       context.checkThread();
       if (isOpen()) {
         if (error == null) {
-          future.complete(logResponse(MetadataResponse.builder()
+          future.complete(logResponse(MetadataResponse.newBuilder()
               .withStatus(RaftResponse.Status.OK)
               .withSessions(result.getSessions())
               .build()));
         } else {
-          future.complete(logResponse(MetadataResponse.builder()
+          future.complete(logResponse(MetadataResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.INTERNAL_ERROR)
               .build()));
@@ -494,9 +494,9 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     // Get the client's server session. If the session doesn't exist, return an unknown session error.
-    RaftSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
+    RaftSessionContext session = context.getStateMachine().getSessions().getSession(request.getSession());
     if (session == null) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
           .build()));
@@ -507,8 +507,8 @@ public final class LeaderRole extends ActiveRole {
     // they were sent by the client. Note that it's possible for the session sequence number to be greater than the request
     // sequence number. In that case, it's likely that the command was submitted more than once to the
     // cluster, and the command will be deduplicated once applied to the state machine.
-    if (!session.setRequestSequence(request.sequence())) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+    if (!session.setRequestSequence(request.getSequence())) {
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.COMMAND_ERROR)
           .withLastSequence(session.getRequestSequence())
@@ -525,7 +525,7 @@ public final class LeaderRole extends ActiveRole {
     final RaftLogWriter writer = context.getLogWriter();
     writer.getLock().lock();
     try {
-      entry = writer.appendEntry(new CommandEntry(term, timestamp, request.session(), request.sequence(), request.bytes()));
+      entry = writer.appendEntry(new CommandEntry(term, timestamp, request.getSession(), request.getSequence(), request.getBytes()));
       LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.getLock().unlock();
@@ -539,11 +539,11 @@ public final class LeaderRole extends ActiveRole {
         if (commitError == null) {
           context.getStateMachine().<RaftOperationResult>apply(entry.getIndex()).whenComplete((result, error) -> {
             if (isOpen()) {
-              completeOperation(result, CommandResponse.builder(), error, future);
+              completeOperation(result, CommandResponse.newBuilder(), error, future);
             }
           });
         } else {
-          future.complete(CommandResponse.builder()
+          future.complete(CommandResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.INTERNAL_ERROR)
               .build());
@@ -561,16 +561,16 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     final Indexed<QueryEntry> entry = new Indexed<>(
-        request.index(),
+        request.getIndex(),
         new QueryEntry(
             context.getTerm(),
             System.currentTimeMillis(),
-            request.session(),
-            request.sequence(),
-            request.bytes()), 0);
+            request.getSession(),
+            request.getSequence(),
+            request.getBytes()), 0);
 
     final CompletableFuture<QueryResponse> future;
-    switch (request.consistency()) {
+    switch (request.getConsistencyLevel()) {
       case SEQUENTIAL:
         future = queryLocal(entry);
         break;
@@ -581,7 +581,7 @@ public final class LeaderRole extends ActiveRole {
         future = queryLinearizable(entry);
         break;
       default:
-        future = Futures.exceptionalFuture(new IllegalStateException("Unknown consistency level: " + request.consistency()));
+        future = Futures.exceptionalFuture(new IllegalStateException("Unknown consistency level: " + request.getConsistencyLevel()));
     }
     return future.thenApply(this::logResponse);
   }
@@ -606,7 +606,7 @@ public final class LeaderRole extends ActiveRole {
     return applyQuery(entry)
         .thenCompose(response -> appender.appendEntries()
             .thenApply(index -> response)
-            .exceptionally(error -> QueryResponse.builder()
+            .exceptionally(error -> QueryResponse.newBuilder()
                 .withStatus(RaftResponse.Status.ERROR)
                 .withError(RaftError.Type.QUERY_ERROR)
                 .build()));
@@ -620,8 +620,8 @@ public final class LeaderRole extends ActiveRole {
     // If the client submitted a session timeout, use the client's timeout, otherwise use the configured
     // default server session timeout.
     final long timeout;
-    if (request.timeout() != 0) {
-      timeout = request.timeout();
+    if (request.getTimeout() != 0) {
+      timeout = request.getTimeout();
     } else {
       timeout = context.getSessionTimeout().toMillis();
     }
@@ -633,7 +633,7 @@ public final class LeaderRole extends ActiveRole {
     final RaftLogWriter writer = context.getLogWriter();
     writer.getLock().lock();
     try {
-      entry = writer.appendEntry(new OpenSessionEntry(term, timestamp, request.member(), request.name(), request.stateMachine(), timeout));
+      entry = writer.appendEntry(new OpenSessionEntry(term, timestamp, request.getMember(), request.getName(), request.getTypeName(), timeout));
       LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.getLock().unlock();
@@ -647,23 +647,23 @@ public final class LeaderRole extends ActiveRole {
           context.getStateMachine().<Long>apply(entry.getIndex()).whenComplete((sessionId, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
-                future.complete(logResponse(OpenSessionResponse.builder()
+                future.complete(logResponse(OpenSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.OK)
                     .withSession(sessionId)
                     .withTimeout(timeout)
                     .build()));
               } else if (sessionError instanceof CompletionException && sessionError.getCause() instanceof RaftException) {
-                future.complete(logResponse(OpenSessionResponse.builder()
+                future.complete(logResponse(OpenSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withError(((RaftException) sessionError.getCause()).getType())
                     .build()));
               } else if (sessionError instanceof RaftException) {
-                future.complete(logResponse(OpenSessionResponse.builder()
+                future.complete(logResponse(OpenSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withError(((RaftException) sessionError).getType())
                     .build()));
               } else {
-                future.complete(logResponse(OpenSessionResponse.builder()
+                future.complete(logResponse(OpenSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withError(RaftError.Type.INTERNAL_ERROR)
                     .build()));
@@ -671,7 +671,7 @@ public final class LeaderRole extends ActiveRole {
             }
           });
         } else {
-          future.complete(logResponse(OpenSessionResponse.builder()
+          future.complete(logResponse(OpenSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.INTERNAL_ERROR)
               .build()));
@@ -694,7 +694,7 @@ public final class LeaderRole extends ActiveRole {
     final RaftLogWriter writer = context.getLogWriter();
     writer.getLock().lock();
     try {
-      entry = writer.appendEntry(new KeepAliveEntry(term, timestamp, request.sessionIds(), request.commandSequences(), request.eventIndexes()));
+      entry = writer.appendEntry(new KeepAliveEntry(term, timestamp, request.getSessionIds(), request.getCommandSequenceNumbers(), request.getEventIndexes()));
       LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.getLock().unlock();
@@ -708,7 +708,7 @@ public final class LeaderRole extends ActiveRole {
           context.getStateMachine().apply(entry.getIndex()).whenComplete((sessionResult, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
-                future.complete(logResponse(KeepAliveResponse.builder()
+                future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.OK)
                     .withLeader(context.getCluster().getMember().getMemberId())
                     .withMembers(context.getCluster().getMembers().stream()
@@ -716,19 +716,19 @@ public final class LeaderRole extends ActiveRole {
                         .filter(m -> m != null)
                         .collect(Collectors.toList())).build()));
               } else if (sessionError instanceof CompletionException && sessionError.getCause() instanceof RaftException) {
-                future.complete(logResponse(KeepAliveResponse.builder()
+                future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withLeader(context.getCluster().getMember().getMemberId())
                     .withError(((RaftException) sessionError.getCause()).getType())
                     .build()));
               } else if (sessionError instanceof RaftException) {
-                future.complete(logResponse(KeepAliveResponse.builder()
+                future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withLeader(context.getCluster().getMember().getMemberId())
                     .withError(((RaftException) sessionError).getType())
                     .build()));
               } else {
-                future.complete(logResponse(KeepAliveResponse.builder()
+                future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withLeader(context.getCluster().getMember().getMemberId())
                     .withError(RaftError.Type.INTERNAL_ERROR)
@@ -737,7 +737,7 @@ public final class LeaderRole extends ActiveRole {
             }
           });
         } else {
-          future.complete(logResponse(KeepAliveResponse.builder()
+          future.complete(logResponse(KeepAliveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withLeader(context.getCluster().getMember().getMemberId())
               .withError(RaftError.Type.INTERNAL_ERROR)
@@ -761,7 +761,7 @@ public final class LeaderRole extends ActiveRole {
     final RaftLogWriter writer = context.getLogWriter();
     writer.getLock().lock();
     try {
-      entry = writer.appendEntry(new CloseSessionEntry(term, timestamp, request.session()));
+      entry = writer.appendEntry(new CloseSessionEntry(term, timestamp, request.getSession()));
       LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
     } finally {
       writer.getLock().unlock();
@@ -775,21 +775,21 @@ public final class LeaderRole extends ActiveRole {
           context.getStateMachine().<Long>apply(entry.getIndex()).whenComplete((closeResult, closeError) -> {
             if (isOpen()) {
               if (closeError == null) {
-                future.complete(logResponse(CloseSessionResponse.builder()
+                future.complete(logResponse(CloseSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.OK)
                     .build()));
               } else if (closeError instanceof CompletionException && closeError.getCause() instanceof RaftException) {
-                future.complete(logResponse(CloseSessionResponse.builder()
+                future.complete(logResponse(CloseSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withError(((RaftException) closeError.getCause()).getType())
                     .build()));
               } else if (closeError instanceof RaftException) {
-                future.complete(logResponse(CloseSessionResponse.builder()
+                future.complete(logResponse(CloseSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withError(((RaftException) closeError).getType())
                     .build()));
               } else {
-                future.complete(logResponse(CloseSessionResponse.builder()
+                future.complete(logResponse(CloseSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withError(RaftError.Type.INTERNAL_ERROR)
                     .build()));
@@ -797,7 +797,7 @@ public final class LeaderRole extends ActiveRole {
             }
           });
         } else {
-          future.complete(logResponse(CloseSessionResponse.builder()
+          future.complete(logResponse(CloseSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.INTERNAL_ERROR)
               .build()));

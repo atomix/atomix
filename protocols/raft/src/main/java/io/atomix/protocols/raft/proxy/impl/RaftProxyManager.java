@@ -126,7 +126,7 @@ public class RaftProxyManager {
     checkNotNull(timeout, "timeout cannot be null");
 
     LOGGER.trace("{} - Opening session; name: {}, type: {}", clientId, name, stateMachine);
-    OpenSessionRequest request = OpenSessionRequest.builder()
+    OpenSessionRequest request = OpenSessionRequest.newBuilder()
         .withMember(nodeId)
         .withStateMachine(stateMachine)
         .withName(name)
@@ -138,10 +138,10 @@ public class RaftProxyManager {
     ThreadContext proxyContext = new ThreadPoolContext(threadPoolExecutor);
     connection.openSession(request).whenCompleteAsync((response, error) -> {
       if (error == null) {
-        if (response.status() == RaftResponse.Status.OK) {
+        if (response.getStatus() == RaftResponse.Status.OK) {
           // Create and store the proxy state.
           RaftProxyState state = new RaftProxyState(
-              response.session(), name, stateMachine, response.timeout());
+              response.getSession(), name, stateMachine, response.getTimeout());
           sessions.put(state.getSessionId(), state);
 
           // Ensure the proxy session info is reset and the session is kept alive.
@@ -163,7 +163,7 @@ public class RaftProxyManager {
 
           future.complete(proxy);
         } else {
-          future.completeExceptionally(response.error().createException());
+          future.completeExceptionally(response.getError().createException());
         }
       } else {
         future.completeExceptionally(error);
@@ -185,7 +185,7 @@ public class RaftProxyManager {
     }
 
     LOGGER.trace("Closing session {}", sessionId);
-    CloseSessionRequest request = CloseSessionRequest.builder()
+    CloseSessionRequest request = CloseSessionRequest.newBuilder()
         .withSession(sessionId)
         .build();
 
@@ -193,11 +193,11 @@ public class RaftProxyManager {
     CompletableFuture<Void> future = new CompletableFuture<>();
     connection.closeSession(request).whenComplete((response, error) -> {
       if (error == null) {
-        if (response.status() == RaftResponse.Status.OK) {
+        if (response.getStatus() == RaftResponse.Status.OK) {
           sessions.remove(sessionId);
           future.complete(null);
         } else {
-          future.completeExceptionally(response.error().createException());
+          future.completeExceptionally(response.getError().createException());
         }
       } else {
         future.completeExceptionally(error);
@@ -220,7 +220,7 @@ public class RaftProxyManager {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
 
-    KeepAliveRequest request = KeepAliveRequest.builder()
+    KeepAliveRequest request = KeepAliveRequest.newBuilder()
         .withSessionIds(new long[]{sessionId})
         .withCommandSequences(new long[]{sessionState.getCommandResponse()})
         .withEventIndexes(new long[]{sessionState.getEventIndex()})
@@ -230,10 +230,10 @@ public class RaftProxyManager {
     connection.keepAlive(request).whenComplete((response, error) -> {
       if (error == null) {
         LOGGER.trace("{} - Received {}", clientId, response);
-        if (response.status() == RaftResponse.Status.OK) {
+        if (response.getStatus() == RaftResponse.Status.OK) {
           future.complete(null);
         } else {
-          future.completeExceptionally(response.error().createException());
+          future.completeExceptionally(response.getError().createException());
         }
       } else {
         future.completeExceptionally(error);
@@ -267,7 +267,7 @@ public class RaftProxyManager {
       i++;
     }
 
-    KeepAliveRequest request = KeepAliveRequest.builder()
+    KeepAliveRequest request = KeepAliveRequest.newBuilder()
         .withSessionIds(sessionIds)
         .withCommandSequences(commandResponses)
         .withEventIndexes(eventIndexes)
@@ -279,8 +279,8 @@ public class RaftProxyManager {
         if (error == null) {
           LOGGER.trace("{} - Received {}", clientId, response);
           // If the request was successful, update the address selector and schedule the next keep-alive.
-          if (response.status() == RaftResponse.Status.OK) {
-            selectorManager.resetAll(response.leader(), response.members());
+          if (response.getStatus() == RaftResponse.Status.OK) {
+            selectorManager.resetAll(response.getLeader(), response.getMembers());
             sessions.values().forEach(s -> s.setState(RaftProxy.State.CONNECTED));
             scheduleKeepAlive();
           }

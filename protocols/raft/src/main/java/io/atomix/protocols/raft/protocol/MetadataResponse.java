@@ -36,7 +36,7 @@ public class MetadataResponse extends AbstractRaftResponse {
    *
    * @return A new metadata response builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -52,7 +52,7 @@ public class MetadataResponse extends AbstractRaftResponse {
    *
    * @return Session metadata.
    */
-  public Set<RaftSessionMetadata> sessions() {
+  public Set<RaftSessionMetadata> getSessions() {
     return sessions;
   }
 

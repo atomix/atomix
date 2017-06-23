@@ -399,7 +399,7 @@ final class LeaderAppender extends AbstractAppender {
       updateMatchIndex(member, response);
 
       // If entries were committed to the replica then check commit indexes.
-      if (!request.entries().isEmpty()) {
+      if (!request.getEntries().isEmpty()) {
         server.getThreadContext().execute(() -> commitEntries());
       }
 
@@ -409,9 +409,9 @@ final class LeaderAppender extends AbstractAppender {
       }
     }
     // If we've received a greater term, update the term and transition back to follower.
-    else if (response.term() > server.getTerm()) {
+    else if (response.getTerm() > server.getTerm()) {
       server.getThreadContext().execute(() -> {
-        server.setTerm(response.term()).setLeader(null);
+        server.setTerm(response.getTerm()).setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       });
     }
@@ -434,10 +434,10 @@ final class LeaderAppender extends AbstractAppender {
    */
   protected void handleAppendResponseError(RaftMemberContext member, AppendRequest request, AppendResponse response) {
     // If we've received a greater term, update the term and transition back to follower.
-    if (response.term() > server.getTerm()) {
+    if (response.getTerm() > server.getTerm()) {
       server.getThreadContext().execute(() -> {
         log.debug("{} - Received higher term from {}", server.getClusterState().getMember().getMemberId(), member.getMember().getMemberId());
-        server.setTerm(response.term()).setLeader(null);
+        server.setTerm(response.getTerm()).setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       });
     } else {

@@ -33,7 +33,7 @@ public class JoinResponse extends ConfigurationResponse {
    *
    * @return A new join response builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 

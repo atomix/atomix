@@ -385,7 +385,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
       RaftMemberContext member = iterator.next();
       LOGGER.debug("{} - Attempting to join via {}", getMember().getMemberId(), member.getMember().getMemberId());
 
-      JoinRequest request = JoinRequest.builder()
+      JoinRequest request = JoinRequest.newBuilder()
           .withMember(new DefaultRaftMember(getMember().getMemberId(), getMember().getType(), getMember().getStatus(), getMember().getLastUpdated()))
           .build();
       context.getProtocol().join(member.getMember().getMemberId(), request).whenComplete((response, error) -> {
@@ -393,10 +393,10 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
         cancelJoinTimer();
 
         if (error == null) {
-          if (response.status() == RaftResponse.Status.OK) {
+          if (response.getStatus() == RaftResponse.Status.OK) {
             LOGGER.info("{} - Successfully joined via {}", getMember().getMemberId(), member.getMember().getMemberId());
 
-            Configuration configuration = new Configuration(response.index(), response.term(), response.timestamp(), response.members());
+            Configuration configuration = new Configuration(response.getIndex(), response.getTerm(), response.getTimestamp(), response.getMembers());
 
             // Configure the cluster with the join response.
             // Commit the configuration as we know it was committed via the successful join response.
@@ -408,7 +408,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
             } else if (joinFuture != null) {
               joinFuture.complete(null);
             }
-          } else if (response.error() == null || response.error() == RaftError.Type.CONFIGURATION_ERROR) {
+          } else if (response.getError() == null || response.getError() == RaftError.Type.CONFIGURATION_ERROR) {
             // If the response error is null, that indicates that no error occurred but the leader was
             // in a state that was incapable of handling the join request. Attempt to join the leader
             // again after an election timeout.
@@ -496,14 +496,14 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     // Attempt to leave the cluster by submitting a LeaveRequest directly to the server state.
     // Non-leader states should forward the request to the leader if there is one. Leader states
     // will log, replicate, and commit the reconfiguration.
-    context.getRaftRole().onLeave(LeaveRequest.builder()
+    context.getRaftRole().onLeave(LeaveRequest.newBuilder()
         .withMember(getMember())
         .build()).whenComplete((response, error) -> {
       // Cancel the leave timer.
       cancelLeaveTimer();
 
-      if (error == null && response.status() == RaftResponse.Status.OK) {
-        Configuration configuration = new Configuration(response.index(), response.term(), response.timestamp(), response.members());
+      if (error == null && response.getStatus() == RaftResponse.Status.OK) {
+        Configuration configuration = new Configuration(response.getIndex(), response.getTerm(), response.getTimestamp(), response.getMembers());
 
         // Configure the cluster and commit the configuration as we know the successful response
         // indicates commitment.

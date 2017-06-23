@@ -106,7 +106,7 @@ abstract class AbstractAppender implements AutoCloseable {
     Indexed<RaftLogEntry> prevEntry = reader != null ? reader.getCurrentEntry() : null;
 
     DefaultRaftMember leader = server.getLeader();
-    return AppendRequest.builder()
+    return AppendRequest.newBuilder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.getMemberId() : null)
         .withLogIndex(prevEntry != null ? prevEntry.getIndex() : 0)
@@ -128,7 +128,7 @@ abstract class AbstractAppender implements AutoCloseable {
     final Indexed<RaftLogEntry> prevEntry = reader.getCurrentEntry();
 
     final DefaultRaftMember leader = server.getLeader();
-    AppendRequest.Builder builder = AppendRequest.builder()
+    AppendRequest.Builder builder = AppendRequest.newBuilder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.getMemberId() : null)
         .withLogIndex(prevEntry != null ? prevEntry.getIndex() : 0)
@@ -185,7 +185,7 @@ abstract class AbstractAppender implements AutoCloseable {
       member.getThreadContext().checkThread();
 
       // Complete the append to the member.
-      if (!request.entries().isEmpty()) {
+      if (!request.getEntries().isEmpty()) {
         member.completeAppend(System.currentTimeMillis() - timestamp);
       } else {
         member.completeAppend();
@@ -202,7 +202,7 @@ abstract class AbstractAppender implements AutoCloseable {
     }, member.getThreadContext());
 
     updateNextIndex(member, request);
-    if (!request.entries().isEmpty() && hasMoreEntries(member)) {
+    if (!request.getEntries().isEmpty() && hasMoreEntries(member)) {
       appendEntries(member);
     }
   }
@@ -227,7 +227,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Handles an append response.
    */
   protected void handleAppendResponse(RaftMemberContext member, AppendRequest request, AppendResponse response) {
-    if (response.status() == RaftResponse.Status.OK) {
+    if (response.getStatus() == RaftResponse.Status.OK) {
       handleAppendResponseOk(member, request, response);
     } else {
       handleAppendResponseError(member, request, response);
@@ -246,13 +246,13 @@ abstract class AbstractAppender implements AutoCloseable {
       updateMatchIndex(member, response);
 
       // If there are more entries to send then attempt to send another commit.
-      if (request.logIndex() != response.logIndex() && hasMoreEntries(member)) {
+      if (request.getLogIndex() != response.getLogIndex() && hasMoreEntries(member)) {
         appendEntries(member);
       }
     }
     // If we've received a greater term, update the term and transition back to follower.
-    else if (response.term() > server.getTerm()) {
-      server.setTerm(response.term()).setLeader(null);
+    else if (response.getTerm() > server.getTerm()) {
+      server.setTerm(response.getTerm()).setLeader(null);
       server.transition(RaftServer.Role.FOLLOWER);
     }
     // If the response failed, the follower should have provided the correct last index in their log. This helps
@@ -262,7 +262,7 @@ abstract class AbstractAppender implements AutoCloseable {
       resetNextIndex(member);
 
       // If there are more entries to send then attempt to send another commit.
-      if (response.logIndex() != request.logIndex() && hasMoreEntries(member)) {
+      if (response.getLogIndex() != request.getLogIndex() && hasMoreEntries(member)) {
         appendEntries(member);
       }
     }
@@ -277,7 +277,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // when attempting to send entries to down followers.
     int failures = member.incrementFailureCount();
     if (failures <= 3 || failures % 100 == 0) {
-      log.warn("{} - AppendRequest to {} failed: {}", server.getCluster().getMember().getMemberId(), member.getMember().getMemberId(), response.error() != null ? response.error() : "");
+      log.warn("{} - AppendRequest to {} failed: {}", server.getCluster().getMember().getMemberId(), member.getMember().getMemberId(), response.getError() != null ? response.getError() : "");
     }
   }
 
@@ -312,7 +312,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void updateMatchIndex(RaftMemberContext member, AppendResponse response) {
     // If the replica returned a valid match index then update the existing match index.
-    member.setMatchIndex(response.logIndex());
+    member.setMatchIndex(response.getLogIndex());
   }
 
   /**
@@ -320,8 +320,8 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void updateNextIndex(RaftMemberContext member, AppendRequest request) {
     // If the match index was set, update the next index to be greater than the match index if necessary.
-    if (!request.entries().isEmpty()) {
-      member.setNextIndex(request.entries().get(request.entries().size() - 1).getIndex() + 1);
+    if (!request.getEntries().isEmpty()) {
+      member.setNextIndex(request.getEntries().get(request.getEntries().size() - 1).getIndex() + 1);
     }
   }
 
@@ -329,7 +329,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Resets the match index when a response fails.
    */
   protected void resetMatchIndex(RaftMemberContext member, AppendResponse response) {
-    member.setMatchIndex(response.logIndex());
+    member.setMatchIndex(response.getLogIndex());
     log.trace("{} - Reset match index for {} to {}", server.getCluster().getMember().getMemberId(), member, member.getMatchIndex());
   }
 
@@ -356,7 +356,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected ConfigureRequest buildConfigureRequest(RaftMemberContext member) {
     DefaultRaftMember leader = server.getLeader();
-    return ConfigureRequest.builder()
+    return ConfigureRequest.newBuilder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.getMemberId() : null)
         .withIndex(server.getClusterState().getConfiguration().getIndex())
@@ -413,7 +413,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Handles a configuration response.
    */
   protected void handleConfigureResponse(RaftMemberContext member, ConfigureRequest request, ConfigureResponse response) {
-    if (response.status() == RaftResponse.Status.OK) {
+    if (response.getStatus() == RaftResponse.Status.OK) {
       handleConfigureResponseOk(member, request, response);
     } else {
       handleConfigureResponseError(member, request, response);
@@ -429,7 +429,7 @@ abstract class AbstractAppender implements AutoCloseable {
     succeedAttempt(member);
 
     // Update the member's current configuration term and index according to the installed configuration.
-    member.setConfigTerm(request.term()).setConfigIndex(request.index());
+    member.setConfigTerm(request.getTerm()).setConfigIndex(request.getIndex());
 
     // Recursively append entries to the member.
     appendEntries(member);
@@ -465,7 +465,7 @@ abstract class AbstractAppender implements AutoCloseable {
         // Create the install request, indicating whether this is the last chunk of data based on the number
         // of bytes remaining in the buffer.
         DefaultRaftMember leader = server.getLeader();
-        request = InstallRequest.builder()
+        request = InstallRequest.newBuilder()
             .withTerm(server.getTerm())
             .withLeader(leader != null ? leader.getMemberId() : null)
             .withId(snapshot.getSnapshotId().value())
@@ -532,7 +532,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Handles an install response.
    */
   protected void handleInstallResponse(RaftMemberContext member, InstallRequest request, InstallResponse response) {
-    if (response.status() == RaftResponse.Status.OK) {
+    if (response.getStatus() == RaftResponse.Status.OK) {
       handleInstallResponseOk(member, request, response);
     } else {
       handleInstallResponseError(member, request, response);
@@ -549,15 +549,15 @@ abstract class AbstractAppender implements AutoCloseable {
 
     // If the install request was completed successfully, set the member's snapshotIndex and reset
     // the next snapshot index/offset.
-    if (request.complete()) {
+    if (request.isComplete()) {
       member
           .setNextSnapshotIndex(0)
           .setNextSnapshotOffset(0)
-          .setNextIndex(request.index() + 1);
+          .setNextIndex(request.getSnapshotIndex() + 1);
     }
     // If more install requests remain, increment the member's snapshot offset.
     else {
-      member.setNextSnapshotOffset(request.offset() + 1);
+      member.setNextSnapshotOffset(request.getChunkOffset() + 1);
     }
 
     // Recursively append entries to the member.

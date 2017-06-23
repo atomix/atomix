@@ -78,13 +78,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(MetadataResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(MetadataResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::metadata)
-          .exceptionally(error -> MetadataResponse.builder()
+          .exceptionally(error -> MetadataResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -96,12 +96,12 @@ public class ReserveRole extends InactiveRole {
   public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.term(), request.leader());
+    updateTermAndLeader(request.getTerm(), request.getLeader());
 
     // Update the local commitIndex and globalIndex.
-    context.setCommitIndex(request.commitIndex());
+    context.setCommitIndex(request.getCommitIndex());
 
-    return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
+    return CompletableFuture.completedFuture(logResponse(AppendResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .withTerm(context.getTerm())
         .withSucceeded(true)
@@ -114,7 +114,7 @@ public class ReserveRole extends InactiveRole {
     context.checkThread();
     logRequest(request);
 
-    return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+    return CompletableFuture.completedFuture(logResponse(PollResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
         .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
         .build()));
@@ -124,9 +124,9 @@ public class ReserveRole extends InactiveRole {
   public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.term(), null);
+    updateTermAndLeader(request.getTerm(), null);
 
-    return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
+    return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
         .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
         .build()));
@@ -138,13 +138,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::command)
-          .exceptionally(error -> CommandResponse.builder()
+          .exceptionally(error -> CommandResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -158,13 +158,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::query)
-          .exceptionally(error -> QueryResponse.builder()
+          .exceptionally(error -> QueryResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -178,13 +178,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::keepAlive)
-          .exceptionally(error -> KeepAliveResponse.builder()
+          .exceptionally(error -> KeepAliveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -198,13 +198,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::openSession)
-          .exceptionally(error -> OpenSessionResponse.builder()
+          .exceptionally(error -> OpenSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -218,13 +218,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::closeSession)
-          .exceptionally(error -> CloseSessionResponse.builder()
+          .exceptionally(error -> CloseSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -238,13 +238,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::join)
-          .exceptionally(error -> JoinResponse.builder()
+          .exceptionally(error -> JoinResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -258,13 +258,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::reconfigure)
-          .exceptionally(error -> ReconfigureResponse.builder()
+          .exceptionally(error -> ReconfigureResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -278,13 +278,13 @@ public class ReserveRole extends InactiveRole {
     logRequest(request);
 
     if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
     } else {
       return forward(request, context.getProtocol()::leave)
-          .exceptionally(error -> LeaveResponse.builder()
+          .exceptionally(error -> LeaveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER_ERROR)
               .build())
@@ -297,7 +297,7 @@ public class ReserveRole extends InactiveRole {
     context.checkThread();
     logRequest(request);
 
-    return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+    return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
         .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
         .build()));

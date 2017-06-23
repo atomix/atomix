@@ -37,7 +37,7 @@ public class VoteRequest extends AbstractRaftRequest {
    *
    * @return A new vote request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -58,7 +58,7 @@ public class VoteRequest extends AbstractRaftRequest {
    *
    * @return The requesting node's current term.
    */
-  public long term() {
+  public long getTerm() {
     return term;
   }
 
@@ -67,7 +67,7 @@ public class VoteRequest extends AbstractRaftRequest {
    *
    * @return The candidate's address.
    */
-  public MemberId candidate() {
+  public MemberId getCandidate() {
     return candidate;
   }
 
@@ -76,7 +76,7 @@ public class VoteRequest extends AbstractRaftRequest {
    *
    * @return The candidate's last log index.
    */
-  public long logIndex() {
+  public long getLogIndex() {
     return logIndex;
   }
 
@@ -85,7 +85,7 @@ public class VoteRequest extends AbstractRaftRequest {
    *
    * @return The candidate's last log term.
    */
-  public long logTerm() {
+  public long getLogTerm() {
     return logTerm;
   }
 

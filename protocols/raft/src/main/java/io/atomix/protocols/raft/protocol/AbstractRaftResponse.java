@@ -35,12 +35,12 @@ public abstract class AbstractRaftResponse implements RaftResponse {
   }
 
   @Override
-  public Status status() {
+  public Status getStatus() {
     return status;
   }
 
   @Override
-  public RaftError error() {
+  public RaftError getError() {
     return error;
   }
 

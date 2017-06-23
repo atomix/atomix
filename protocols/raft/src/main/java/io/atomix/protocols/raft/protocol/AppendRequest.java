@@ -41,7 +41,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return A new append request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -66,7 +66,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The requesting node's current term.
    */
-  public long term() {
+  public long getTerm() {
     return term;
   }
 
@@ -75,7 +75,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public MemberId leader() {
+  public MemberId getLeader() {
     return leader;
   }
 
@@ -84,7 +84,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The index of the log entry preceding the new entry.
    */
-  public long logIndex() {
+  public long getLogIndex() {
     return logIndex;
   }
 
@@ -93,7 +93,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The index of the term preceding the new entry.
    */
-  public long logTerm() {
+  public long getLogTerm() {
     return logTerm;
   }
 
@@ -102,7 +102,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return A list of log entries.
    */
-  public List<Indexed<RaftLogEntry>> entries() {
+  public List<Indexed<RaftLogEntry>> getEntries() {
     return entries;
   }
 
@@ -111,7 +111,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The leader commit index.
    */
-  public long commitIndex() {
+  public long getCommitIndex() {
     return commitIndex;
   }
 

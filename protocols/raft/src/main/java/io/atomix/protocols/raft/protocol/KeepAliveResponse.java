@@ -39,7 +39,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    *
    * @return A new keep alive response builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -57,7 +57,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    *
    * @return The cluster leader.
    */
-  public MemberId leader() {
+  public MemberId getLeader() {
     return leader;
   }
 
@@ -66,7 +66,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    *
    * @return The cluster members.
    */
-  public Collection<MemberId> members() {
+  public Collection<MemberId> getMembers() {
     return members;
   }
 

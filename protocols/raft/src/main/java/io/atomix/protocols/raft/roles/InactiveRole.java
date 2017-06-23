@@ -69,9 +69,9 @@ public class InactiveRole extends AbstractRole {
   public CompletableFuture<ConfigureResponse> onConfigure(ConfigureRequest request) {
     context.checkThread();
     logRequest(request);
-    updateTermAndLeader(request.term(), request.leader());
+    updateTermAndLeader(request.getTerm(), request.getLeader());
 
-    Configuration configuration = new Configuration(request.index(), request.term(), request.timestamp(), request.members());
+    Configuration configuration = new Configuration(request.getIndex(), request.getTerm(), request.getTimestamp(), request.getMembers());
 
     // Configure the cluster membership. This will cause this server to transition to the
     // appropriate state if its type has changed.
@@ -84,7 +84,7 @@ public class InactiveRole extends AbstractRole {
       context.getClusterState().commit();
     }
 
-    return CompletableFuture.completedFuture(logResponse(ConfigureResponse.builder()
+    return CompletableFuture.completedFuture(logResponse(ConfigureResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .build()));
   }

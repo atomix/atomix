@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client operation request.
  * <p>
  * Operation requests are sent by clients to servers to execute operations on the replicated state
- * machine. Each operation request must be sequenced with a {@link #sequence()} number. All operations
+ * machine. Each operation request must be sequenced with a {@link #getSequence()} number. All operations
  * will be applied to replicated state machines in the sequence in which they were sent by the client.
  * Sequence numbers must always be sequential, and in the event that an operation request fails, it must
  * be resent by the client.
@@ -42,7 +42,7 @@ public abstract class OperationRequest extends SessionRequest {
    *
    * @return The request sequence number.
    */
-  public long sequence() {
+  public long getSequence() {
     return sequence;
   }
 
@@ -51,7 +51,7 @@ public abstract class OperationRequest extends SessionRequest {
    *
    * @return The request operation.
    */
-  public byte[] bytes() {
+  public byte[] getBytes() {
     return bytes;
   }
 

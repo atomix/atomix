@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * Base client operation response.
  * <p>
- * All operation responses are sent with a {@link #result()} and the {@link #index()} (or index) of the state
+ * All operation responses are sent with a {@link #getResult()} and the {@link #getIndex()} (or index) of the state
  * machine at the point at which the operation was evaluated. The version allows clients to ensure state progresses
  * monotonically when switching servers by providing the state machine version in future operation requests.
  */
@@ -48,7 +48,7 @@ public abstract class OperationResponse extends SessionResponse {
    *
    * @return The operation index.
    */
-  public long index() {
+  public long getIndex() {
     return index;
   }
 
@@ -57,7 +57,7 @@ public abstract class OperationResponse extends SessionResponse {
    *
    * @return The event index.
    */
-  public long eventIndex() {
+  public long getEventIndex() {
     return eventIndex;
   }
 
@@ -66,7 +66,7 @@ public abstract class OperationResponse extends SessionResponse {
    *
    * @return The operation result.
    */
-  public Object result() {
+  public Object getResult() {
     return result;
   }
 
@@ -77,7 +77,7 @@ public abstract class OperationResponse extends SessionResponse {
    *
    * @return The last command sequence number.
    */
-  public long lastSequence() {
+  public long getLastSequenceNumber() {
     return lastSequence;
   }
 

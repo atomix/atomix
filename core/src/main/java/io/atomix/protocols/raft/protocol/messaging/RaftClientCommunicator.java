@@ -95,7 +95,7 @@ public class RaftClientCommunicator implements RaftClientProtocol {
 
   @Override
   public void reset(ResetRequest request) {
-    clusterCommunicator.broadcast(request, context.resetSubject(request.session()), serializer::encode);
+    clusterCommunicator.broadcast(request, context.resetSubject(request.getSession()), serializer::encode);
   }
 
   @Override

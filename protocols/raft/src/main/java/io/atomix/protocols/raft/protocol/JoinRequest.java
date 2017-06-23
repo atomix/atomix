@@ -31,7 +31,7 @@ public class JoinRequest extends ConfigurationRequest {
    *
    * @return A new join request builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 

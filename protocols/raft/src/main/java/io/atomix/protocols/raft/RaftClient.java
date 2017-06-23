@@ -44,8 +44,8 @@ public interface RaftClient {
    * @return The client builder.
    */
   @SuppressWarnings("unchecked")
-  static Builder builder() {
-    return builder(Collections.EMPTY_LIST);
+  static Builder newBuilder() {
+    return newBuilder(Collections.EMPTY_LIST);
   }
 
   /**
@@ -58,8 +58,8 @@ public interface RaftClient {
    * @param cluster The cluster to which to connect.
    * @return The client builder.
    */
-  static Builder builder(MemberId... cluster) {
-    return builder(Arrays.asList(cluster));
+  static Builder newBuilder(MemberId... cluster) {
+    return newBuilder(Arrays.asList(cluster));
   }
 
   /**
@@ -72,7 +72,7 @@ public interface RaftClient {
    * @param cluster The cluster to which to connect.
    * @return The client builder.
    */
-  static Builder builder(Collection<MemberId> cluster) {
+  static Builder newBuilder(Collection<MemberId> cluster) {
     return new DefaultRaftClient.Builder(cluster);
   }
 
@@ -150,7 +150,7 @@ public interface RaftClient {
   /**
    * Builds a new Copycat client.
    * <p>
-   * New client builders should be constructed using the static {@link #builder()} factory method.
+   * New client builders should be constructed using the static {@link #newBuilder()} factory method.
    * <pre>
    *   {@code
    *     CopycatClient client = CopycatClient.builder(new Address("123.456.789.0", 5000), new Address("123.456.789.1", 5000)
