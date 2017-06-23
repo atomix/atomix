@@ -53,7 +53,7 @@ public class TransactionLog<T> {
    *
    * @return the transaction lock version
    */
-  public long version() {
+  public long getVersion() {
     return version;
   }
 
@@ -62,7 +62,7 @@ public class TransactionLog<T> {
    *
    * @return a list of transaction log records
    */
-  public List<T> records() {
+  public List<T> getRecords() {
     return records;
   }
 

@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncAtomicCounterMap<K> extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
+  default DistributedPrimitive.Type getPrimitiveType() {
     return DistributedPrimitive.Type.COUNTER_MAP;
   }
 

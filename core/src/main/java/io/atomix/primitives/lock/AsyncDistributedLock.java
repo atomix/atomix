@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncDistributedLock extends DistributedPrimitive {
 
   @Override
-  default Type primitiveType() {
+  default Type getPrimitiveType() {
     return Type.LOCK;
   }
 

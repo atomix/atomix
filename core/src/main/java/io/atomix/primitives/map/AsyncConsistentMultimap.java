@@ -39,7 +39,7 @@ import java.util.concurrent.Executor;
 public interface AsyncConsistentMultimap<K, V> extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
+  default DistributedPrimitive.Type getPrimitiveType() {
     return Type.CONSISTENT_MULTIMAP;
   }
 

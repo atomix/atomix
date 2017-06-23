@@ -23,7 +23,7 @@ import io.atomix.primitives.DistributedPrimitive;
 public interface AtomicCounterMap<K> extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
+  default DistributedPrimitive.Type getPrimitiveType() {
     return DistributedPrimitive.Type.COUNTER_MAP;
   }
 

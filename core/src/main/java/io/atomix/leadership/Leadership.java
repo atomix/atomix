@@ -56,7 +56,7 @@ public class Leadership {
    * @return leader node identifier; will be null if there is no leader
    */
   public NodeId leaderNodeId() {
-    return leader == null ? null : leader.nodeId();
+    return leader == null ? null : leader.getNodeId();
   }
 
   /**

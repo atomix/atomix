@@ -43,7 +43,7 @@ import java.util.function.Consumer;
 public interface WorkQueue<E> extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
+  default DistributedPrimitive.Type getPrimitiveType() {
     return DistributedPrimitive.Type.WORK_QUEUE;
   }
 

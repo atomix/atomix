@@ -23,7 +23,7 @@ import io.atomix.primitives.DistributedPrimitive;
 public interface AtomicIdGenerator extends DistributedPrimitive {
 
   @Override
-  default Type primitiveType() {
+  default Type getPrimitiveType() {
     return Type.ID_GENERATOR;
   }
 

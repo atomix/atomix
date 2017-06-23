@@ -25,6 +25,6 @@ public interface TransactionService {
    *
    * @return a builder for a transaction context.
    */
-  TransactionContextBuilder transactionContextBuilder();
+  TransactionContextBuilder newTransactionContextBuilder();
 
 }

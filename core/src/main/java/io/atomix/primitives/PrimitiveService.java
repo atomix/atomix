@@ -40,7 +40,7 @@ public interface PrimitiveService {
    * @param <V> value type
    * @return builder for an eventually consistent map
    */
-  <K, V> EventuallyConsistentMapBuilder<K, V> eventuallyConsistentMapBuilder();
+  <K, V> EventuallyConsistentMapBuilder<K, V> newEventuallyConsistentMapBuilder();
 
   /**
    * Creates a new ConsistentMapBuilder.
@@ -49,7 +49,7 @@ public interface PrimitiveService {
    * @param <V> value type
    * @return builder for a consistent map
    */
-  <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder();
+  <K, V> ConsistentMapBuilder<K, V> newConsistentMapBuilder();
 
   /**
    * Creates a new ConsistentMapBuilder.
@@ -57,7 +57,7 @@ public interface PrimitiveService {
    * @param <V> value type
    * @return builder for a consistent map
    */
-  <V> DocumentTreeBuilder<V> documentTreeBuilder();
+  <V> DocumentTreeBuilder<V> newDocumentTreeBuilder();
 
   /**
    * Creates a new {@code AsyncConsistentTreeMapBuilder}.
@@ -65,7 +65,7 @@ public interface PrimitiveService {
    * @param <V> value type
    * @return builder for a async consistent tree map
    */
-  <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder();
+  <V> ConsistentTreeMapBuilder<V> newConsistentTreeMapBuilder();
 
   /**
    * Creates a new {@code AsyncConsistentSetMultimapBuilder}.
@@ -74,7 +74,7 @@ public interface PrimitiveService {
    * @param <V> value type
    * @return builder for a set based async consistent multimap
    */
-  <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder();
+  <K, V> ConsistentMultimapBuilder<K, V> newConsistentMultimapBuilder();
 
   /**
    * Creates a new {@code AtomicCounterMapBuilder}.
@@ -82,7 +82,7 @@ public interface PrimitiveService {
    * @param <K> key type
    * @return builder for an atomic counter map
    */
-  <K> AtomicCounterMapBuilder<K> atomicCounterMapBuilder();
+  <K> AtomicCounterMapBuilder<K> newAtomicCounterMapBuilder();
 
   /**
    * Creates a new DistributedSetBuilder.
@@ -90,21 +90,21 @@ public interface PrimitiveService {
    * @param <E> set element type
    * @return builder for an distributed set
    */
-  <E> DistributedSetBuilder<E> setBuilder();
+  <E> DistributedSetBuilder<E> newSetBuilder();
 
   /**
    * Creates a new AtomicCounterBuilder.
    *
    * @return atomic counter builder
    */
-  AtomicCounterBuilder atomicCounterBuilder();
+  AtomicCounterBuilder newAtomicCounterBuilder();
 
   /**
    * Creates a new AtomicIdGeneratorBuilder.
    *
    * @return atomic ID generator builder
    */
-  AtomicIdGeneratorBuilder atomicIdGeneratorBuilder();
+  AtomicIdGeneratorBuilder newAtomicIdGeneratorBuilder();
 
   /**
    * Creates a new AtomicValueBuilder.
@@ -112,20 +112,20 @@ public interface PrimitiveService {
    * @param <V> atomic value type
    * @return atomic value builder
    */
-  <V> AtomicValueBuilder<V> atomicValueBuilder();
+  <V> AtomicValueBuilder<V> newAtomicValueBuilder();
 
   /**
    * Creates a new LeaderElectorBuilder.
    *
    * @return leader elector builder
    */
-  LeaderElectorBuilder leaderElectorBuilder();
+  LeaderElectorBuilder newLeaderElectorBuilder();
 
   /**
    * Creates a new DistributedLockBuilder.
    *
    * @return distributed lock builder
    */
-  DistributedLockBuilder lockBuilder();
+  DistributedLockBuilder newLockBuilder();
 
 }

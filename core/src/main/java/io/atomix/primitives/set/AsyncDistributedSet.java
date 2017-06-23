@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncDistributedSet<E> extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
+  default DistributedPrimitive.Type getPrimitiveType() {
     return DistributedPrimitive.Type.SET;
   }
 

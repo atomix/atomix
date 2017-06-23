@@ -25,7 +25,7 @@ import java.time.Duration;
 public interface DistributedLock extends DistributedPrimitive {
 
   @Override
-  default Type primitiveType() {
+  default Type getPrimitiveType() {
     return Type.LOCK;
   }
 

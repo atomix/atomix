@@ -47,7 +47,7 @@ import java.util.function.Consumer;
 public interface AsyncLeaderElector extends DistributedPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
+  default DistributedPrimitive.Type getPrimitiveType() {
     return DistributedPrimitive.Type.LEADER_ELECTOR;
   }
 

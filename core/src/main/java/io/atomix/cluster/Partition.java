@@ -28,7 +28,7 @@ public interface Partition {
    *
    * @return partition identifier
    */
-  PartitionId getId();
+  PartitionId getPartitionId();
 
   /**
    * Returns the controller nodes that are members of this partition.

@@ -26,7 +26,8 @@ public class LockEvent extends AbstractEvent<LockEvent.Type, NodeId> {
    * Lock event type.
    */
   public enum Type {
-    LOCK
+    LOCK,
+    UNLOCK,
   }
 
   public LockEvent(Type type, NodeId subject) {

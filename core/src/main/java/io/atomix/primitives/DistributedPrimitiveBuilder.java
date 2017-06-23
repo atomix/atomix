@@ -17,9 +17,6 @@ package io.atomix.primitives;
 
 import io.atomix.serializer.Serializer;
 
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
-
 /**
  * Abstract builder for distributed primitives.
  *
@@ -31,9 +28,6 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   private final DistributedPrimitive.Type type;
   private String name;
   private Serializer serializer;
-  private Supplier<Executor> executorSupplier;
-  private boolean partitionsDisabled = false;
-  private boolean meteringDisabled = false;
   private boolean readOnly = false;
   private boolean relaxedReadConsistency = false;
 
@@ -47,6 +41,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @param name primitive name
    * @return this builder
    */
+  @SuppressWarnings("unchecked")
   public B withName(String name) {
     this.name = name;
     return (B) this;
@@ -58,45 +53,9 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @param serializer serializer
    * @return this builder
    */
+  @SuppressWarnings("unchecked")
   public B withSerializer(Serializer serializer) {
     this.serializer = serializer;
-    return (B) this;
-  }
-
-  /**
-   * Sets the executor to use for asynchronous callbacks.
-   * <p>
-   * For partitioned primitives, the provided executor will be shared across all partitions.
-   *
-   * @param executor the executor to use for asynchronous callbacks
-   * @return this builder
-   */
-  public B withExecutor(Executor executor) {
-    return withExecutorSupplier(() -> executor);
-  }
-
-  /**
-   * Sets the supplier to be used to create executors.
-   * <p>
-   * When a factory is set, the supplier will be used to create a separate executor for each partition.
-   *
-   * @param executorSupplier the executor supplier
-   * @return this builder
-   */
-  public B withExecutorSupplier(Supplier<Executor> executorSupplier) {
-    this.executorSupplier = executorSupplier;
-    return (B) this;
-  }
-
-  /**
-   * Disables recording usage stats for this primitive.
-   *
-   * @return this builder
-   * @deprecated usage of this method is discouraged for most common scenarios.
-   */
-  @Deprecated
-  public B withMeteringDisabled() {
-    this.meteringDisabled = true;
     return (B) this;
   }
 
@@ -105,6 +64,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return this builder
    */
+  @SuppressWarnings("unchecked")
   public B withUpdatesDisabled() {
     this.readOnly = true;
     return (B) this;
@@ -115,27 +75,10 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return this builder
    */
+  @SuppressWarnings("unchecked")
   public B withRelaxedReadConsistency() {
     this.relaxedReadConsistency = true;
     return (B) this;
-  }
-
-  /**
-   * Returns if metering is enabled.
-   *
-   * @return {@code true} if yes; {@code false} otherwise
-   */
-  public final boolean meteringEnabled() {
-    return !meteringDisabled;
-  }
-
-  /**
-   * Returns if partitions are disabled.
-   *
-   * @return {@code true} if yes; {@code false} otherwise
-   */
-  public final boolean partitionsDisabled() {
-    return partitionsDisabled;
   }
 
   /**
@@ -143,7 +86,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return {@code true} if yes; {@code false} otherwise
    */
-  public final boolean readOnly() {
+  public final boolean isReadOnly() {
     return readOnly;
   }
 
@@ -152,7 +95,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return {@code true} if yes; {@code false} otherwise
    */
-  public final boolean relaxedReadConsistency() {
+  public final boolean isRelaxedReadConsistency() {
     return relaxedReadConsistency;
   }
 
@@ -161,17 +104,8 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return serializer
    */
-  public final Serializer serializer() {
+  public final Serializer getSerializer() {
     return serializer;
-  }
-
-  /**
-   * Returns the executor supplier.
-   *
-   * @return executor supplier
-   */
-  public final Supplier<Executor> executorSupplier() {
-    return executorSupplier;
   }
 
   /**
@@ -179,7 +113,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return primitive name
    */
-  public final String name() {
+  public final String getName() {
     return name;
   }
 
@@ -188,7 +122,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return primitive type
    */
-  public final DistributedPrimitive.Type type() {
+  public final DistributedPrimitive.Type getPrimitiveType() {
     return type;
   }
 
