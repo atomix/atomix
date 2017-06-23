@@ -393,15 +393,15 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext s : sessionManager.getSessions()) {
-        if (s.name().equals(session.name())) {
-          sessions.add(new RaftSessionMetadata(s.getSessionId(), s.name(), s.type()));
+        if (s.getName().equals(session.getName())) {
+          sessions.add(new RaftSessionMetadata(s.getSessionId(), s.getName(), s.getTypeName()));
         }
       }
       return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
     } else {
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext session : sessionManager.getSessions()) {
-        sessions.add(new RaftSessionMetadata(session.getSessionId(), session.name(), session.type()));
+        sessions.add(new RaftSessionMetadata(session.getSessionId(), session.getName(), session.getTypeName()));
       }
       return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
     }

@@ -173,7 +173,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
     for (RaftSessionContext session : sessions.sessions.values()) {
 
       // If the current timestamp minus the session timestamp is greater than the session timeout, expire the session.
-      if (timestamp - session.getTimestamp() > session.timeout()) {
+      if (timestamp - session.getTimestamp() > session.getTimeout()) {
 
         // Remove the session from the sessions list.
         sessions.remove(session);
@@ -205,7 +205,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
         writer.writeInt(sessions.sessions.size());
         for (RaftSessionContext session : sessions.sessions.values()) {
           writer.writeLong(session.getSessionId());
-          writer.writeLong(session.timeout());
+          writer.writeLong(session.getTimeout());
           writer.writeLong(session.getTimestamp());
         }
         stateMachine.snapshot(writer);

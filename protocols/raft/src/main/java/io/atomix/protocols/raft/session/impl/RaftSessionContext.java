@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
+import io.atomix.event.Event;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -65,7 +66,7 @@ public class RaftSessionContext implements RaftSession {
   private final Map<Long, List<Runnable>> indexQueries = new HashMap<>();
   private final Map<Long, RaftOperationResult> results = new HashMap<>();
   private final Queue<EventHolder> events = new LinkedList<>();
-  private EventHolder event;
+  private EventHolder currentEventList;
   private final Set<RaftSessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
 
   public RaftSessionContext(long id, MemberId member, String name, String type, long timeout, RaftServerStateMachineExecutor executor, RaftServerContext server) {
@@ -93,7 +94,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The node to which the session belongs.
    */
-  public MemberId member() {
+  public MemberId getMemberId() {
     return member;
   }
 
@@ -102,7 +103,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The session name.
    */
-  public String name() {
+  public String getName() {
     return name;
   }
 
@@ -111,7 +112,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The session type.
    */
-  public String type() {
+  public String getTypeName() {
     return type;
   }
 
@@ -120,7 +121,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The session timeout.
    */
-  public long timeout() {
+  public long getTimeout() {
     return timeout;
   }
 
@@ -369,7 +370,7 @@ public class RaftSessionContext implements RaftSession {
   }
 
   @Override
-  public void publish(Object message) {
+  public void publish(Event event) {
     // Store volatile state in a local variable.
     State state = this.state;
     checkState(state != State.EXPIRED, "session is expired");
@@ -383,23 +384,23 @@ public class RaftSessionContext implements RaftSession {
     }
 
     // If no event has been published for this index yet, create a new event holder.
-    if (this.event == null || this.event.eventIndex != executor.getContext().getCurrentIndex()) {
+    if (this.currentEventList == null || this.currentEventList.eventIndex != executor.getContext().getCurrentIndex()) {
       long previousIndex = eventIndex;
       eventIndex = executor.getContext().getCurrentIndex();
-      this.event = new EventHolder(eventIndex, previousIndex);
+      this.currentEventList = new EventHolder(eventIndex, previousIndex);
     }
 
     // Add the event to the event holder.
-    this.event.events.add(message);
+    this.currentEventList.events.add(event);
   }
 
   /**
    * Commits events for the given index.
    */
   public void commit(long index) {
-    if (event != null && event.eventIndex == index) {
-      events.add(event);
-      sendEvent(event);
+    if (currentEventList != null && currentEventList.eventIndex == index) {
+      events.add(currentEventList);
+      sendEvents(currentEventList);
     }
     setLastApplied(index);
   }
@@ -447,7 +448,7 @@ public class RaftSessionContext implements RaftSession {
   public RaftSessionContext resendEvents(long index) {
     clearEvents(index);
     for (EventHolder event : events) {
-      sendEvent(event);
+      sendEvents(event);
     }
     return this;
   }
@@ -455,7 +456,8 @@ public class RaftSessionContext implements RaftSession {
   /**
    * Sends an event to the session.
    */
-  private void sendEvent(EventHolder event) {
+  private void sendEvents(EventHolder event) {
+    // Only send events to the client if this server is the leader.
     if (server.isLeader()) {
       PublishRequest request = PublishRequest.builder()
           .withSession(getSessionId())

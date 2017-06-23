@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.session;
 
+import io.atomix.event.Event;
+
 /**
  * Provides an interface to communicating with a client via session events.
  * <p>
@@ -80,7 +82,7 @@ public interface RaftSession {
    * @throws NullPointerException                                   If {@code event} is {@code null}
    * @throws io.atomix.protocols.raft.error.UnknownSessionException If the session is closed
    */
-  void publish(Object event);
+  void publish(Event event);
 
   /**
    * Session state enums.

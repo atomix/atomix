@@ -1340,14 +1340,14 @@ public class RaftTest extends ConcurrentTestCase {
     @Override
     public void onExpire(RaftSession session) {
       if (expire != null) {
-        expire.getSession().publish("expired");
+        expire.getSession().publish(new IndexEvent(IndexEvent.Type.EXPIRED));
       }
     }
 
     @Override
     public void onClose(RaftSession session) {
       if (close != null && !session.equals(close.getSession())) {
-        close.getSession().publish("closed");
+        expire.getSession().publish(new IndexEvent(IndexEvent.Type.CLOSED));
       }
     }
 
@@ -1371,10 +1371,10 @@ public class RaftTest extends ConcurrentTestCase {
 
     public long event(RaftCommit<TestEvent> commit) {
       if (commit.getOperation().own()) {
-        commit.getSession().publish(commit.getIndex());
+        commit.getSession().publish(new IndexEvent(IndexEvent.Type.CHANGE, commit.getIndex()));
       } else {
         for (RaftSession session : getSessions()) {
-          session.publish(commit.getIndex());
+          session.publish(new IndexEvent(IndexEvent.Type.CHANGE, commit.getIndex()));
         }
       }
       return commit.getIndex();
@@ -1395,6 +1395,12 @@ public class RaftTest extends ConcurrentTestCase {
   public static class IndexEvent extends AbstractEvent<IndexEvent.Type, Long> {
     public enum Type {
       CHANGE,
+      EXPIRED,
+      CLOSED,
+    }
+
+    public IndexEvent(Type type) {
+      this(type, null);
     }
 
     public IndexEvent(Type type, Long subject) {
