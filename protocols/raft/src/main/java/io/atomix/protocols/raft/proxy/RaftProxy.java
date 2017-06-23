@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy;
 
+import io.atomix.event.Event;
+import io.atomix.event.EventListener;
 import io.atomix.protocols.raft.CommunicationStrategies;
 import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.RaftCommand;
@@ -96,7 +98,7 @@ public interface RaftProxy {
    *
    * @return The client proxy type.
    */
-  String getType();
+  String getTypeName();
 
   /**
    * Returns the session state.
@@ -191,14 +193,14 @@ public interface RaftProxy {
    * @param listener The session receive callback.
    * @throws NullPointerException if {@code event} or {@code callback} is null
    */
-  <T> void addEventListener(Consumer<T> listener);
+  <E extends Event> void addEventListener(EventListener<E> listener);
 
   /**
    * Removes an event listener.
    *
    * @param listener the event listener callback to remove
    */
-  <T> void removeEventListener(Consumer<T> listener);
+  <E extends Event> void removeEventListener(EventListener<E> listener);
 
   /**
    * Returns a boolean indicating whether the session is open.

@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy;
 
+import io.atomix.event.Event;
+import io.atomix.event.EventListener;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftQuery;
 
@@ -40,8 +42,8 @@ public class RaftProxyDelegate implements RaftProxy {
   }
 
   @Override
-  public String getType() {
-    return delegate.getType();
+  public String getTypeName() {
+    return delegate.getTypeName();
   }
 
   @Override
@@ -70,12 +72,12 @@ public class RaftProxyDelegate implements RaftProxy {
   }
 
   @Override
-  public <T> void addEventListener(Consumer<T> listener) {
+  public <E extends Event> void addEventListener(EventListener<E> listener) {
     delegate.addEventListener(listener);
   }
 
   @Override
-  public <T> void removeEventListener(Consumer<T> listener) {
+  public <E extends Event> void removeEventListener(EventListener<E> listener) {
     delegate.removeEventListener(listener);
   }
 

@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.event.AbstractEvent;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftClusterEvent;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -97,6 +98,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(TestEvent.class)
       .register(TestExpire.class)
       .register(TestClose.class)
+      .register(IndexEvent.class)
       .register(RaftQuery.ConsistencyLevel.class)
       .build());
 
@@ -800,10 +802,10 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.<Long>addEventListener(message -> {
+    session.<IndexEvent>addEventListener(event -> {
       threadAssertEquals(counter.incrementAndGet(), 3);
-      threadAssertTrue(message >= index.get());
-      index.set(message);
+      threadAssertTrue(event.getSubject() >= index.get());
+      index.set(event.getSubject());
       resume();
     });
 
@@ -1384,6 +1386,23 @@ public class RaftTest extends ConcurrentTestCase {
 
     public void expire(RaftCommit<TestExpire> commit) {
       this.expire = commit;
+    }
+  }
+
+  /**
+   * Index event.
+   */
+  public static class IndexEvent extends AbstractEvent<IndexEvent.Type, Long> {
+    public enum Type {
+      CHANGE,
+    }
+
+    public IndexEvent(Type type, Long subject) {
+      super(type, subject);
+    }
+
+    public IndexEvent(Type type, Long subject, long time) {
+      super(type, subject, time);
     }
   }
 

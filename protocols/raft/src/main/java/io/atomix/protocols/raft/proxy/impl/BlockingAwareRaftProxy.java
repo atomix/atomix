@@ -16,6 +16,8 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Maps;
+import io.atomix.event.Event;
+import io.atomix.event.EventListener;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.proxy.RaftProxy;
@@ -25,7 +27,6 @@ import io.atomix.utils.concurrent.Futures;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -34,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class BlockingAwareRaftProxy extends RaftProxyDelegate {
   private final Executor executor;
-  private final Map<Consumer, Consumer> listenerMap = Maps.newConcurrentMap();
+  private final Map<EventListener, EventListener> listenerMap = Maps.newConcurrentMap();
 
   public BlockingAwareRaftProxy(RaftProxy delegate, Executor executor) {
     super(delegate);
@@ -42,16 +43,16 @@ public class BlockingAwareRaftProxy extends RaftProxyDelegate {
   }
 
   @Override
-  public <T> void addEventListener(Consumer<T> listener) {
-    Consumer<T> wrappedListener = event -> executor.execute(() -> listener.accept(event));
+  public <E extends Event> void addEventListener(EventListener<E> listener) {
+    EventListener<E> wrappedListener = event -> executor.execute(() -> listener.onEvent(event));
     listenerMap.put(listener, wrappedListener);
     super.addEventListener(wrappedListener);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> void removeEventListener(Consumer<T> listener) {
-    Consumer<T> wrappedListener = listenerMap.remove(listener);
+  public <E extends Event> void removeEventListener(EventListener<E> listener) {
+    EventListener<E> wrappedListener = listenerMap.remove(listener);
     if (wrappedListener != null) {
       super.removeEventListener(wrappedListener);
     }

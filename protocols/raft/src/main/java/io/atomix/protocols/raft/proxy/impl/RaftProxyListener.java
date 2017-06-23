@@ -16,6 +16,8 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
+import io.atomix.event.Event;
+import io.atomix.event.EventListener;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.protocol.PublishRequest;
@@ -26,7 +28,6 @@ import io.atomix.serializer.Serializer;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -38,7 +39,7 @@ final class RaftProxyListener {
 
   private final RaftClientProtocol protocol;
   private final RaftProxyState state;
-  private final Set<Consumer> listeners = Sets.newLinkedHashSet();
+  private final Set<EventListener> listeners = Sets.newLinkedHashSet();
   private final RaftProxySequencer sequencer;
   private final Serializer serializer;
   private final Executor executor;
@@ -57,7 +58,7 @@ final class RaftProxyListener {
    *
    * @param listener the event listener callback
    */
-  public void addEventListener(Consumer listener) {
+  public void addEventListener(EventListener listener) {
     executor.execute(() -> listeners.add(listener));
   }
 
@@ -66,7 +67,7 @@ final class RaftProxyListener {
    *
    * @param listener the event listener callback
    */
-  public void removeEventListener(Consumer listener) {
+  public void removeEventListener(EventListener listener) {
     executor.execute(() -> listeners.remove(listener));
   }
 
@@ -113,9 +114,9 @@ final class RaftProxyListener {
 
     sequencer.sequenceEvent(request, () -> {
       for (byte[] bytes : request.events()) {
-        Object event = serializer.decode(bytes);
-        for (Consumer listener : listeners) {
-          listener.accept(event);
+        Event event = serializer.decode(bytes);
+        for (EventListener listener : listeners) {
+          listener.onEvent(event);
         }
       }
     });
