@@ -59,7 +59,7 @@ public class VectorClock<T extends Identifier> implements Clock<VectorTimestamp<
    *
    * @return the logical timestamp for the local identifier
    */
-  public LogicalTimestamp localTimestamp() {
+  public LogicalTimestamp getLocalTimestamp() {
     return getTime();
   }
 
@@ -69,7 +69,7 @@ public class VectorClock<T extends Identifier> implements Clock<VectorTimestamp<
    * @param identifier the identifier for which to return the timestamp
    * @return the logical timestamp for the given identifier
    */
-  public LogicalTimestamp timestamp(T identifier) {
+  public LogicalTimestamp getTimestamp(T identifier) {
     return vector.get(identifier);
   }
 
@@ -78,7 +78,7 @@ public class VectorClock<T extends Identifier> implements Clock<VectorTimestamp<
    *
    * @return a collection of identifier-timestamp pairs
    */
-  public Collection<VectorTimestamp<T>> vector() {
+  public Collection<VectorTimestamp<T>> getTimestamps() {
     return vector.values();
   }
 
@@ -109,7 +109,7 @@ public class VectorClock<T extends Identifier> implements Clock<VectorTimestamp<
   public String toString() {
     return toStringHelper(this)
         .add("time", getTime())
-        .add("vector", vector())
+        .add("vector", getTimestamps())
         .toString();
   }
 }

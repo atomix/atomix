@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  * Retry utilities.
  */
 public final class Retries {
-  static final Random random = new Random();
+  private static final Random random = new Random();
 
   /**
    * Returns a function that retries execution on failure.
