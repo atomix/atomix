@@ -13,28 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.lock;
 
-import io.atomix.event.AbstractEvent;
+import io.atomix.event.EventListener;
 
 /**
- * Lock event.
+ * Lock event listener.
  */
-public class LockEvent extends AbstractEvent<LockEvent.Type, NodeId> {
-
-  /**
-   * Lock event type.
-   */
-  public enum Type {
-    LOCK,
-    UNLOCK,
-  }
-
-  public LockEvent(Type type, NodeId subject) {
-    super(type, subject);
-  }
-
-  public LockEvent(Type type, NodeId subject, long time) {
-    super(type, subject, time);
-  }
+public interface LockEventListener extends EventListener<LockEvent> {
 }
