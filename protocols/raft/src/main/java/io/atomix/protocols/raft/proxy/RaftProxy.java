@@ -89,21 +89,21 @@ public interface RaftProxy {
    *
    * @return The client proxy name.
    */
-  String name();
+  String getName();
 
   /**
    * Returns the client proxy type.
    *
    * @return The client proxy type.
    */
-  String type();
+  String getType();
 
   /**
    * Returns the session state.
    *
    * @return The session state.
    */
-  State state();
+  State getState();
 
   /**
    * Registers a session state change listener.

@@ -35,18 +35,18 @@ public class RaftProxyDelegate implements RaftProxy {
   }
 
   @Override
-  public String name() {
-    return delegate.name();
+  public String getName() {
+    return delegate.getName();
   }
 
   @Override
-  public String type() {
-    return delegate.type();
+  public String getType() {
+    return delegate.getType();
   }
 
   @Override
-  public State state() {
-    return delegate.state();
+  public State getState() {
+    return delegate.getState();
   }
 
   @Override

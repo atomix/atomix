@@ -96,17 +96,17 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
-  public String name() {
+  public String getName() {
     return state.getSessionName();
   }
 
   @Override
-  public String type() {
+  public String getType() {
     return state.getSessionType();
   }
 
   @Override
-  public State state() {
+  public State getState() {
     return state.getState();
   }
 

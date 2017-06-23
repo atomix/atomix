@@ -219,7 +219,7 @@ public class RaftTest extends ConcurrentTestCase {
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
     Thread.sleep(Duration.ofSeconds(10).toMillis());
-    threadAssertTrue(session.state() == RaftProxy.State.CONNECTED);
+    threadAssertTrue(session.getState() == RaftProxy.State.CONNECTED);
   }
 
   /**
