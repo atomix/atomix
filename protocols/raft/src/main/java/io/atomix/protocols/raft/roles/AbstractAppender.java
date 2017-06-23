@@ -110,7 +110,7 @@ abstract class AbstractAppender implements AutoCloseable {
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.getMemberId() : null)
         .withLogIndex(prevEntry != null ? prevEntry.index() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.entry().getTerm() : 0)
         .withEntries(Collections.EMPTY_LIST)
         .withCommitIndex(server.getCommitIndex())
         .build();
@@ -132,7 +132,7 @@ abstract class AbstractAppender implements AutoCloseable {
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.getMemberId() : null)
         .withLogIndex(prevEntry != null ? prevEntry.index() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.entry().getTerm() : 0)
         .withCommitIndex(server.getCommitIndex());
 
     // Build a list of entries to send to the member.

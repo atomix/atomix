@@ -35,7 +35,7 @@ public abstract class TimestampedEntry extends RaftLogEntry {
    *
    * @return The entry timestamp.
    */
-  public long timestamp() {
+  public long getTimestamp() {
     return timestamp;
   }
 

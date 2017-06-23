@@ -41,7 +41,7 @@ public class KeepAliveEntry extends TimestampedEntry {
    *
    * @return The session identifiers.
    */
-  public long[] sessionIds() {
+  public long[] getSessionIds() {
     return sessionIds;
   }
 
@@ -50,7 +50,7 @@ public class KeepAliveEntry extends TimestampedEntry {
    *
    * @return The command sequence numbers.
    */
-  public long[] commandSequences() {
+  public long[] getCommandSequenceNumbers() {
     return commandSequences;
   }
 
@@ -59,7 +59,7 @@ public class KeepAliveEntry extends TimestampedEntry {
    *
    * @return The event indexes.
    */
-  public long[] eventIndexes() {
+  public long[] getEventIndexes() {
     return eventIndexes;
   }
 

@@ -25,14 +25,14 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Open session entry.
  */
 public class OpenSessionEntry extends TimestampedEntry {
-  private final MemberId member;
+  private final MemberId memberId;
   private final String name;
   private final String type;
   private final long timeout;
 
-  public OpenSessionEntry(long term, long timestamp, MemberId member, String name, String type, long timeout) {
+  public OpenSessionEntry(long term, long timestamp, MemberId memberId, String name, String type, long timeout) {
     super(term, timestamp);
-    this.member = member;
+    this.memberId = memberId;
     this.name = name;
     this.type = type;
     this.timeout = timeout;
@@ -43,8 +43,8 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The client node identifier.
    */
-  public MemberId member() {
-    return member;
+  public MemberId getMemberId() {
+    return memberId;
   }
 
   /**
@@ -52,7 +52,7 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The session's state machine name.
    */
-  public String name() {
+  public String getName() {
     return name;
   }
 
@@ -61,7 +61,7 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The session's state machine type name.
    */
-  public String type() {
+  public String getTypeName() {
     return type;
   }
 
@@ -70,7 +70,7 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The session timeout.
    */
-  public long timeout() {
+  public long getTimeout() {
     return timeout;
   }
 
@@ -79,7 +79,7 @@ public class OpenSessionEntry extends TimestampedEntry {
     return toStringHelper(this)
         .add("term", term)
         .add("timestamp", new Date(timestamp))
-        .add("node", member)
+        .add("node", memberId)
         .add("name", name)
         .add("type", type)
         .add("timeout", timeout)

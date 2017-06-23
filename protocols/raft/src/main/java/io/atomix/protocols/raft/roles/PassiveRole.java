@@ -157,7 +157,7 @@ public class PassiveRole extends ReserveRole {
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
           Indexed<? extends RaftLogEntry> existing = reader.getEntry(entry.index());
-          if (existing == null || existing.entry().term() != entry.entry().term()) {
+          if (existing == null || existing.entry().getTerm() != entry.entry().getTerm()) {
             writer.appendEntry(entry);
             LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
           }

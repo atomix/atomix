@@ -34,7 +34,7 @@ public abstract class RaftLogEntry {
    *
    * @return The entry term.
    */
-  public long term() {
+  public long getTerm() {
     return term;
   }
 

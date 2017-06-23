@@ -134,7 +134,7 @@ public final class FollowerRole extends ActiveRole {
 
     final long lastTerm;
     if (lastEntry != null) {
-      lastTerm = lastEntry.entry().term();
+      lastTerm = lastEntry.entry().getTerm();
     } else {
       lastTerm = 0;
     }

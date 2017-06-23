@@ -220,7 +220,7 @@ public final class LeaderRole extends ActiveRole {
     // Store the index of the configuration entry in order to prevent other configurations from
     // being logged and committed concurrently. This is an important safety property of Raft.
     configuring = entry.index();
-    context.getClusterState().configure(new Configuration(entry.index(), entry.entry().term(), entry.entry().timestamp(), entry.entry().members()));
+    context.getClusterState().configure(new Configuration(entry.index(), entry.entry().getTerm(), entry.entry().getTimestamp(), entry.entry().getMembers()));
 
     return appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
       context.checkThread();

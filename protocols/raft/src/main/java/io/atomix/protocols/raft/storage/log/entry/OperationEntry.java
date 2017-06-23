@@ -24,10 +24,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Stores a state machine operation.
  * <p>
- * Each state machine operation is stored with a client-provided {@link #sequence() sequence number}.
+ * Each state machine operation is stored with a client-provided {@link #getSequenceNumber() sequence number}.
  * The sequence number is used by state machines to apply client operations in the order in which they
  * were submitted by the client (FIFO order). Additionally, each operation is written with the leader's
- * {@link #timestamp() timestamp} at the time the entry was logged. This gives state machines an
+ * {@link #getTimestamp() timestamp} at the time the entry was logged. This gives state machines an
  * approximation of time with which to react to the application of operations to the state machine.
  */
 public abstract class OperationEntry extends SessionEntry {
@@ -45,7 +45,7 @@ public abstract class OperationEntry extends SessionEntry {
    *
    * @return The entry operation bytes.
    */
-  public byte[] bytes() {
+  public byte[] getBytes() {
     return bytes;
   }
 
@@ -54,7 +54,7 @@ public abstract class OperationEntry extends SessionEntry {
    *
    * @return The operation sequence number.
    */
-  public long sequence() {
+  public long getSequenceNumber() {
     return sequence;
   }
 

@@ -35,7 +35,7 @@ public abstract class SessionEntry extends TimestampedEntry {
    *
    * @return The session ID.
    */
-  public long session() {
+  public long getSession() {
     return session;
   }
 

@@ -83,8 +83,8 @@ public abstract class ActiveRole extends PassiveRole {
       try {
         // If the previous entry term doesn't match the local previous term then reject the request.
         Indexed<RaftLogEntry> entry = reader.getEntry(request.logIndex());
-        if (entry == null || entry.entry().term() != request.logTerm()) {
-          LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().getMember().getMemberId(), request, entry != null ? entry.entry().term() : "unknown");
+        if (entry == null || entry.entry().getTerm() != request.logTerm()) {
+          LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().getMember().getMemberId(), request, entry != null ? entry.entry().getTerm() : "unknown");
           return AppendResponse.builder()
               .withStatus(RaftResponse.Status.OK)
               .withTerm(context.getTerm())
@@ -123,7 +123,7 @@ public abstract class ActiveRole extends PassiveRole {
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
           Indexed<RaftLogEntry> existing = reader.getEntry(entry.index());
-          if (existing == null || existing.entry().term() != entry.entry().term()) {
+          if (existing == null || existing.entry().getTerm() != entry.entry().getTerm()) {
             writer.appendEntry(entry);
             LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), entry);
           }
@@ -290,8 +290,8 @@ public abstract class ActiveRole extends PassiveRole {
     }
 
     // If the candidate's last log term is lower than the local log's last entry term, reject the request.
-    if (lastTerm < lastEntry.entry().term()) {
-      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastTerm, lastEntry.entry().term());
+    if (lastTerm < lastEntry.entry().getTerm()) {
+      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastTerm, lastEntry.entry().getTerm());
       return false;
     }
 
@@ -299,7 +299,7 @@ public abstract class ActiveRole extends PassiveRole {
     // candidate's last index is less than the local log's last index. If the candidate's last log term is
     // greater than the local log's last term then it's considered up to date, and if both have the same term
     // then the candidate's last index must be greater than the local log's last index.
-    if (lastTerm == lastEntry.entry().term() && lastIndex < lastEntry.index()) {
+    if (lastTerm == lastEntry.entry().getTerm() && lastIndex < lastEntry.index()) {
       LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().getMember().getMemberId(), request, lastIndex, lastEntry.index());
       return false;
     }
