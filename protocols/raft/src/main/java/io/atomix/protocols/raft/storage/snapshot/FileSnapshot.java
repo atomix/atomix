@@ -41,29 +41,29 @@ final class FileSnapshot extends Snapshot {
   }
 
   @Override
-  public long id() {
-    return file.id();
+  public SnapshotId getSnapshotId() {
+    return file.getSnapshotId();
   }
 
   @Override
-  public long index() {
-    return file.index();
+  public long getIndex() {
+    return file.getIndex();
   }
 
   @Override
-  public long timestamp() {
-    return file.timestamp();
+  public long getTimestamp() {
+    return file.getTimestamp();
   }
 
   @Override
-  public synchronized SnapshotWriter writer(Serializer serializer) {
+  public synchronized SnapshotWriter openWriter(Serializer serializer) {
     checkWriter();
-    SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
-        .withIndex(file.index())
-        .withTimestamp(file.timestamp())
+    SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
+        .withIndex(file.getIndex())
+        .withTimestamp(file.getTimestamp())
         .build();
 
-    Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
+    Buffer buffer = FileBuffer.allocate(file.getFile(), SnapshotDescriptor.BYTES);
     descriptor.copyTo(buffer);
 
     int length = buffer.position(SnapshotDescriptor.BYTES).readInt();
@@ -78,9 +78,9 @@ final class FileSnapshot extends Snapshot {
   }
 
   @Override
-  public synchronized SnapshotReader reader(Serializer serializer) {
-    checkState(file.file().exists(), "missing snapshot file: %s", file.file());
-    Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
+  public synchronized SnapshotReader openReader(Serializer serializer) {
+    checkState(file.getFile().exists(), "missing snapshot file: %s", file.getFile());
+    Buffer buffer = FileBuffer.allocate(file.getFile(), SnapshotDescriptor.BYTES);
     SnapshotDescriptor descriptor = new SnapshotDescriptor(buffer);
     int length = buffer.position(SnapshotDescriptor.BYTES).readInt();
     return openReader(new SnapshotReader(buffer.mark().limit(SnapshotDescriptor.BYTES + Integer.BYTES + length), this, serializer), descriptor);
@@ -88,9 +88,9 @@ final class FileSnapshot extends Snapshot {
 
   @Override
   public Snapshot complete() {
-    Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
+    Buffer buffer = FileBuffer.allocate(file.getFile(), SnapshotDescriptor.BYTES);
     try (SnapshotDescriptor descriptor = new SnapshotDescriptor(buffer)) {
-      checkState(!descriptor.locked(), "cannot complete locked snapshot descriptor");
+      checkState(!descriptor.isLocked(), "cannot complete locked snapshot descriptor");
       descriptor.lock();
     }
     return super.complete();
@@ -101,10 +101,10 @@ final class FileSnapshot extends Snapshot {
    */
   @Override
   public void delete() {
-    Path path = file.file().toPath();
+    Path path = file.getFile().toPath();
     if (Files.exists(path)) {
       try {
-        Files.delete(file.file().toPath());
+        Files.delete(file.getFile().toPath());
       } catch (IOException e) {
       }
     }
@@ -113,7 +113,7 @@ final class FileSnapshot extends Snapshot {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("index", index())
+        .add("index", getIndex())
         .toString();
   }
 

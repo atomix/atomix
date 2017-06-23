@@ -104,7 +104,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
       HeartbeatMessage<T> heartbeat = new HeartbeatMessage<>(localNode, state);
       peers.forEach((node) -> {
         heartbeatToPeer(heartbeat, node);
-        FailureDetectionEvent.State currentState = nodeStates.get(node.getValue());
+        FailureDetectionEvent.State currentState = nodeStates.get(node.value());
         double phi = failureDetector.phi(node);
         if (phi >= phiFailureThreshold) {
           if (currentState == FailureDetectionEvent.State.ACTIVE) {

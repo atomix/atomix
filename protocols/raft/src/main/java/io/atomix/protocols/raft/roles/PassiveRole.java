@@ -34,6 +34,7 @@ import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
+import io.atomix.protocols.raft.storage.snapshot.SnapshotId;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.journal.Indexed;
 
@@ -321,7 +322,7 @@ public class PassiveRole extends ReserveRole {
     // where snapshots must be sent since entries can still legitimately exist prior to the snapshot,
     // and so snapshots aren't simply sent at the beginning of the follower's log, but rather the
     // leader dictates when a snapshot needs to be sent.
-    if (pendingSnapshot != null && request.index() != pendingSnapshot.index()) {
+    if (pendingSnapshot != null && request.index() != pendingSnapshot.getIndex()) {
       pendingSnapshot.close();
       pendingSnapshot.delete();
       pendingSnapshot = null;
@@ -338,7 +339,7 @@ public class PassiveRole extends ReserveRole {
             .build()));
       }
 
-      pendingSnapshot = context.getSnapshotStore().createSnapshot(request.id(), request.index());
+      pendingSnapshot = context.getSnapshotStore().newSnapshot(SnapshotId.of(request.id()), request.index());
       nextSnapshotOffset = 0;
     }
 
@@ -351,7 +352,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Write the data to the snapshot.
-    try (SnapshotWriter writer = pendingSnapshot.writer(context.getStorage().getSerializer())) {
+    try (SnapshotWriter writer = pendingSnapshot.openWriter(context.getStorage().getSerializer())) {
       writer.write(request.data());
     }
 

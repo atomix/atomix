@@ -34,7 +34,7 @@ import static com.google.common.base.Preconditions.checkState;
  * be stored in an on-heap buffer.
  * <p>
  * Snapshots are read and written by a {@link SnapshotReader} and {@link SnapshotWriter} respectively.
- * To create a reader or writer, use the {@link #reader(Serializer)} and {@link #writer(Serializer)} methods.
+ * To create a reader or writer, use the {@link #openReader(Serializer)} and {@link #openWriter(Serializer)} methods.
  * <p>
  * <pre>
  *   {@code
@@ -65,7 +65,7 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot identifier.
    */
-  public abstract long id();
+  public abstract SnapshotId getSnapshotId();
 
   /**
    * Returns the snapshot index.
@@ -74,30 +74,30 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot index.
    */
-  public abstract long index();
+  public abstract long getIndex();
 
   /**
    * Returns the snapshot timestamp.
    * <p>
-   * The timestamp is the logical state machine time at the {@link #index() index} at which the snapshot
+   * The timestamp is the logical state machine time at the {@link #getIndex() index} at which the snapshot
    * was written.
    *
    * @return The snapshot timestamp.
    */
-  public abstract long timestamp();
+  public abstract long getTimestamp();
 
   /**
-   * Returns a new snapshot writer.
+   * Opens a new snapshot writer.
    * <p>
    * Only a single {@link SnapshotWriter} per {@link Snapshot} can be created. The single writer
    * must write the snapshot in full and {@link #complete()} the snapshot to persist it to disk
-   * and make it available for {@link #reader(Serializer) reads}.
+   * and make it available for {@link #openReader(Serializer) reads}.
    *
    * @param serializer The serializer with which to write the snapshot.
    * @return A new snapshot writer.
    * @throws IllegalStateException if a writer was already created or the snapshot is {@link #complete() complete}
    */
-  public abstract SnapshotWriter writer(Serializer serializer);
+  public abstract SnapshotWriter openWriter(Serializer serializer);
 
   /**
    * Checks that the snapshot can be written.
@@ -111,7 +111,7 @@ public abstract class Snapshot implements AutoCloseable {
    */
   protected SnapshotWriter openWriter(SnapshotWriter writer, SnapshotDescriptor descriptor) {
     checkWriter();
-    checkState(!descriptor.locked(), "cannot write to locked snapshot descriptor");
+    checkState(!descriptor.isLocked(), "cannot write to locked snapshot descriptor");
     this.writer = checkNotNull(writer, "writer cannot be null");
     return writer;
   }
@@ -124,7 +124,7 @@ public abstract class Snapshot implements AutoCloseable {
   }
 
   /**
-   * Returns a new snapshot reader.
+   * Opens a new snapshot reader.
    * <p>
    * A {@link SnapshotReader} can only be created for a snapshot that has been fully written and
    * {@link #complete() completed}. Multiple concurrent readers can be created for the same snapshot
@@ -134,13 +134,13 @@ public abstract class Snapshot implements AutoCloseable {
    * @return A new snapshot reader.
    * @throws IllegalStateException if the snapshot is not {@link #complete() complete}
    */
-  public abstract SnapshotReader reader(Serializer serializer);
+  public abstract SnapshotReader openReader(Serializer serializer);
 
   /**
    * Opens the given snapshot reader.
    */
   protected SnapshotReader openReader(SnapshotReader reader, SnapshotDescriptor descriptor) {
-    checkState(descriptor.locked(), "cannot read from unlocked snapshot descriptor");
+    checkState(descriptor.isLocked(), "cannot read from unlocked snapshot descriptor");
     return reader;
   }
 
@@ -156,7 +156,7 @@ public abstract class Snapshot implements AutoCloseable {
    * <p>
    * Snapshot writers must call this method to persist a snapshot to disk. Prior to completing a
    * snapshot, failure and recovery of the parent {@link SnapshotStore} will not result in recovery
-   * of this snapshot. Additionally, no {@link #reader(Serializer) readers} can be created until the snapshot
+   * of this snapshot. Additionally, no {@link #openReader(Serializer) readers} can be created until the snapshot
    * has been completed.
    *
    * @return The completed snapshot.

@@ -15,7 +15,10 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.io.File;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -115,7 +118,7 @@ public final class SnapshotFile {
    *
    * @return The snapshot file.
    */
-  public File file() {
+  public File getFile() {
     return file;
   }
 
@@ -124,8 +127,22 @@ public final class SnapshotFile {
    *
    * @return The snapshot identifier.
    */
-  public long id() {
-    return Long.valueOf(file.getName().substring(file.getName().lastIndexOf(PART_SEPARATOR, file.getName().lastIndexOf(PART_SEPARATOR) - 1) + 1, file.getName().lastIndexOf(PART_SEPARATOR)));
+  public SnapshotId getSnapshotId() {
+    return SnapshotId.of(parseId(file.getName()));
+  }
+
+  /**
+   * Parses the snapshot identifier from the given file name.
+   *
+   * @param fileName the file name from which to parse the identifier
+   * @return the identifier from the given snapshot file name
+   */
+  @VisibleForTesting
+  static long parseId(String fileName) {
+    int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) + 1;
+    int end = fileName.lastIndexOf(PART_SEPARATOR);
+    String idString = fileName.substring(start, end);
+    return Long.parseLong(idString);
   }
 
   /**
@@ -133,8 +150,24 @@ public final class SnapshotFile {
    *
    * @return The snapshot index.
    */
-  public long index() {
-    return Long.valueOf(file.getName().substring(file.getName().lastIndexOf(PART_SEPARATOR, file.getName().lastIndexOf(PART_SEPARATOR) - 1) + 1, file.getName().lastIndexOf(PART_SEPARATOR)));
+  public long getIndex() {
+    return parseIndex(file.getName());
+  }
+
+  /**
+   * Parses the snapshot index from the given file name.
+   *
+   * @param fileName the file name from which to parse the index
+   * @return the index from the given snapshot file name
+   */
+  @VisibleForTesting
+  static long parseIndex(String fileName) {
+    int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) - 1) + 1;
+    int end = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1);
+    String indexString = fileName.substring(
+        fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) + 1,
+        fileName.lastIndexOf(PART_SEPARATOR));
+    return Long.parseLong(indexString);
   }
 
   /**
@@ -142,8 +175,27 @@ public final class SnapshotFile {
    *
    * @return The snapshot timestamp.
    */
-  public long timestamp() {
-    return Long.valueOf(file.getName().substring(file.getName().lastIndexOf(PART_SEPARATOR) + 1, file.getName().lastIndexOf(EXTENSION_SEPARATOR)));
+  public long getTimestamp() {
+    return parseTimestamp(file.getName());
+  }
+
+  /**
+   * Parses the snapshot timestamp from the given file name.
+   *
+   * @param fileName the file name from which to parse the timestamp
+   * @return the timestamp from the given snapshot file name
+   */
+  @VisibleForTesting
+  static long parseTimestamp(String fileName) {
+    int start = fileName.lastIndexOf(PART_SEPARATOR) + 1;
+    int end = fileName.lastIndexOf(EXTENSION_SEPARATOR);
+    String timestampString = fileName.substring(start, end);
+    try {
+      Date timestamp = TIMESTAMP_FORMAT.parse(timestampString);
+      return timestamp.getTime();
+    } catch (ParseException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 }

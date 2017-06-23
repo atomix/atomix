@@ -449,14 +449,14 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected InstallRequest buildInstallRequest(RaftMemberContext member) {
     Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getNextIndex());
-    if (member.getNextSnapshotIndex() != snapshot.index()) {
-      member.setNextSnapshotIndex(snapshot.index()).setNextSnapshotOffset(0);
+    if (member.getNextSnapshotIndex() != snapshot.getIndex()) {
+      member.setNextSnapshotIndex(snapshot.getIndex()).setNextSnapshotOffset(0);
     }
 
     InstallRequest request;
     synchronized (snapshot) {
       // Open a new snapshot reader.
-      try (SnapshotReader reader = snapshot.reader(server.getStorage().getSerializer())) {
+      try (SnapshotReader reader = snapshot.openReader(server.getStorage().getSerializer())) {
         // Skip to the next batch of bytes according to the snapshot chunk size and current offset.
         reader.skip(member.getNextSnapshotOffset() * MAX_BATCH_SIZE);
         byte[] data = new byte[Math.min(MAX_BATCH_SIZE, (int) reader.remaining())];
@@ -468,8 +468,8 @@ abstract class AbstractAppender implements AutoCloseable {
         request = InstallRequest.builder()
             .withTerm(server.getTerm())
             .withLeader(leader != null ? leader.getMemberId() : null)
-            .withId(snapshot.id())
-            .withIndex(snapshot.index())
+            .withId(snapshot.getSnapshotId().value())
+            .withIndex(snapshot.getIndex())
             .withOffset(member.getNextSnapshotOffset())
             .withData(data)
             .withComplete(!reader.hasRemaining())

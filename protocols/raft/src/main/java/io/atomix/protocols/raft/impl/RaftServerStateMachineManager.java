@@ -479,7 +479,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
       if (snapshot == null) {
         return;
       } else {
-        snapshotIndex = Math.min(snapshotIndex, snapshot.index());
+        snapshotIndex = Math.min(snapshotIndex, snapshot.getIndex());
       }
     }
 

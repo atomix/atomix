@@ -38,7 +38,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    *
    * @return The descriptor builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder(HeapBuffer.allocate(BYTES));
   }
 
@@ -49,7 +49,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    * @return The descriptor builder.
    * @throws NullPointerException if {@code buffer} is null
    */
-  public static Builder builder(Buffer buffer) {
+  public static Builder newBuilder(Buffer buffer) {
     return new Builder(buffer);
   }
 
@@ -76,7 +76,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    *
    * @return The snapshot identifier.
    */
-  public long id() {
+  public long getId() {
     return id;
   }
 
@@ -85,7 +85,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    *
    * @return The snapshot index.
    */
-  public long index() {
+  public long getIndex() {
     return index;
   }
 
@@ -94,7 +94,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    *
    * @return The snapshot timestamp.
    */
-  public long timestamp() {
+  public long getTimestamp() {
     return timestamp;
   }
 
@@ -105,7 +105,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    *
    * @return Indicates whether the snapshot has been locked.
    */
-  public boolean locked() {
+  public boolean isLocked() {
     return locked;
   }
 

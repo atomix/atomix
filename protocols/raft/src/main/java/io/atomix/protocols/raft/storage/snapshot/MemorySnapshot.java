@@ -40,22 +40,22 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public long id() {
-    return descriptor.id();
+  public SnapshotId getSnapshotId() {
+    return SnapshotId.of(descriptor.getId());
   }
 
   @Override
-  public long index() {
-    return descriptor.index();
+  public long getIndex() {
+    return descriptor.getIndex();
   }
 
   @Override
-  public long timestamp() {
-    return descriptor.timestamp();
+  public long getTimestamp() {
+    return descriptor.getTimestamp();
   }
 
   @Override
-  public SnapshotWriter writer(Serializer serializer) {
+  public SnapshotWriter openWriter(Serializer serializer) {
     checkWriter();
     return new SnapshotWriter(buffer.reset().slice(), this, serializer);
   }
@@ -67,15 +67,15 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public synchronized SnapshotReader reader(Serializer serializer) {
+  public synchronized SnapshotReader openReader(Serializer serializer) {
     return openReader(new SnapshotReader(buffer.reset().slice(), this, serializer), descriptor);
   }
 
   @Override
   public Snapshot persist() {
     if (store.storage.getStorageLevel() != StorageLevel.MEMORY) {
-      try (Snapshot newSnapshot = store.createSnapshot(id(), index())) {
-        try (SnapshotWriter newSnapshotWriter = newSnapshot.writer(store.storage.getSerializer())) {
+      try (Snapshot newSnapshot = store.newSnapshot(getSnapshotId(), getIndex())) {
+        try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter(store.storage.getSerializer())) {
           buffer.flip();
           newSnapshotWriter.write(buffer.array(), 0, buffer.remaining());
         }
@@ -99,7 +99,7 @@ final class MemorySnapshot extends Snapshot {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("index", index())
+        .add("index", getIndex())
         .toString();
   }
 

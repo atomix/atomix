@@ -49,7 +49,7 @@ public class VectorTimestamp<T extends Identifier> extends LogicalTimestamp {
     VectorTimestamp that = (VectorTimestamp) o;
 
     return ComparisonChain.start()
-        .compare(this.identifier.getValue(), that.identifier.getValue())
+        .compare(this.identifier.value(), that.identifier.value())
         .compare(this.value(), that.value())
         .result();
   }

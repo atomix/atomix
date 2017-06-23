@@ -258,7 +258,7 @@ public class DefaultRaftServer implements RaftServer {
 
       // If the server name is null, set it to the member ID.
       if (name == null) {
-        name = localMemberId.getValue();
+        name = localMemberId.value();
       }
 
       // If the storage is not configured, create a new Storage instance with the configured serializer.

@@ -200,8 +200,8 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
     if (pendingSnapshot == null && snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS) {
       LOGGER.info("{} - Taking snapshot {}", server.getCluster().getMember().getMemberId(), index);
       context.update(index, timestamp, RaftServerStateMachineContext.Type.SNAPSHOT);
-      pendingSnapshot = server.getSnapshotStore().createTemporarySnapshot(context.getStateMachineId(), index);
-      try (SnapshotWriter writer = pendingSnapshot.writer(serializer())) {
+      pendingSnapshot = server.getSnapshotStore().newTemporarySnapshot(context.getStateMachineId(), index);
+      try (SnapshotWriter writer = pendingSnapshot.openWriter(serializer())) {
         writer.writeInt(sessions.sessions.size());
         for (RaftSessionContext session : sessions.sessions.values()) {
           writer.writeLong(session.getSessionId());
@@ -234,12 +234,12 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
       }
 
       // If the lowest completed index for all sessions is greater than the snapshot index, complete the snapshot.
-      if (lastCompleted >= pendingSnapshot.index()) {
-        LOGGER.debug("{} - Completing snapshot {}", server.getCluster().getMember().getMemberId(), pendingSnapshot.index());
+      if (lastCompleted >= pendingSnapshot.getIndex()) {
+        LOGGER.debug("{} - Completing snapshot {}", server.getCluster().getMember().getMemberId(), pendingSnapshot.getIndex());
         pendingSnapshot.complete();
 
         // Update the snapshot index to ensure we don't simply install the same snapshot.
-        snapshotIndex = pendingSnapshot.index();
+        snapshotIndex = pendingSnapshot.getIndex();
 
         // Reset the pending snapshot.
         pendingSnapshot = null;
@@ -252,9 +252,9 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
    */
   private void maybeInstallSnapshot(long index) {
     Snapshot snapshot = server.getSnapshotStore().getSnapshotById(context.getStateMachineId());
-    if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() <= index) {
-      LOGGER.info("{} - Installing snapshot {}", server.getCluster().getMember().getMemberId(), snapshot.index());
-      try (SnapshotReader reader = snapshot.reader(serializer())) {
+    if (snapshot != null && snapshot.getIndex() > snapshotIndex && snapshot.getIndex() <= index) {
+      LOGGER.info("{} - Installing snapshot {}", server.getCluster().getMember().getMemberId(), snapshot.getIndex());
+      try (SnapshotReader reader = snapshot.openReader(serializer())) {
         int sessionCount = reader.readInt();
         sessions.sessions.clear();
         for (int i = 0; i < sessionCount; i++) {
@@ -271,12 +271,12 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
               this,
               server);
           session.setTimestamp(sessionTimestamp);
-          session.setLastApplied(snapshot.index());
+          session.setLastApplied(snapshot.getIndex());
           sessions.sessions.put(sessionId, session);
         }
         stateMachine.install(reader);
       }
-      snapshotIndex = snapshot.index();
+      snapshotIndex = snapshot.getIndex();
     }
   }
 
