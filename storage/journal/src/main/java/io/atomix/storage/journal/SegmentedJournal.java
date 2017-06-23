@@ -101,7 +101,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The segment file name prefix.
    */
-  public String getName() {
+  public String name() {
     return name;
   }
 
@@ -114,7 +114,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The storage directory.
    */
-  public File getDirectory() {
+  public File directory() {
     return directory;
   }
 
@@ -125,7 +125,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The storage level.
    */
-  public StorageLevel getStorageLevel() {
+  public StorageLevel storageLevel() {
     return storageLevel;
   }
 
@@ -137,7 +137,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The maximum segment size in bytes.
    */
-  public int getMaxSegmentSize() {
+  public int maxSegmentSize() {
     return maxSegmentSize;
   }
 
@@ -149,7 +149,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The maximum number of entries per segment.
    */
-  public int getMaxEntriesPerSegment() {
+  public int maxEntriesPerSegment() {
     return maxEntriesPerSegment;
   }
 
@@ -161,7 +161,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The entry buffer size.
    */
-  public int getEntryBufferSize() {
+  public int entryBufferSize() {
     return entryBufferSize;
   }
 
@@ -170,7 +170,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return The journal entry buffer.
    */
-  JournalEntryBuffer<E> getBuffer() {
+  JournalEntryBuffer<E> buffer() {
     return buffer;
   }
 

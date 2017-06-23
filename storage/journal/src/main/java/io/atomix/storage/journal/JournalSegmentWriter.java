@@ -204,7 +204,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     this.lastEntry = indexedEntry;
 
     // Store the entry in the journal buffer and return the indexed entry.
-    journal.getBuffer().append(indexedEntry);
+    journal.buffer().append(indexedEntry);
     return (Indexed<T>) indexedEntry;
   }
 

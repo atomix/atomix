@@ -93,7 +93,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     }
 
     // If the entry is in the journal buffer, update the current entry and return it.
-    Indexed<E> bufferedEntry = journal.getBuffer().get(index);
+    Indexed<E> bufferedEntry = journal.buffer().get(index);
     if (bufferedEntry != null) {
       this.currentEntry = bufferedEntry;
       readNext();
@@ -167,7 +167,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     final long index = getNextIndex();
 
     // If the entry is in the journal buffer, store it as the next entry and return.
-    Indexed<E> bufferedEntry = journal.getBuffer().get(index);
+    Indexed<E> bufferedEntry = journal.buffer().get(index);
     if (bufferedEntry != null) {
       nextEntry = bufferedEntry;
       return;
