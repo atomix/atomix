@@ -55,7 +55,7 @@ public class PassiveRole extends ReserveRole {
   }
 
   @Override
-  public RaftServer.Role type() {
+  public RaftServer.Role getRole() {
     return RaftServer.Role.PASSIVE;
   }
 
@@ -70,7 +70,7 @@ public class PassiveRole extends ReserveRole {
    * Truncates uncommitted entries from the log.
    */
   private void truncateUncommittedEntries() {
-    if (type() == RaftServer.Role.PASSIVE) {
+    if (getRole() == RaftServer.Role.PASSIVE) {
       final RaftLogWriter writer = context.getLogWriter();
       writer.getLock().lock();
       try {
@@ -82,7 +82,7 @@ public class PassiveRole extends ReserveRole {
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(final AppendRequest request) {
+  public CompletableFuture<AppendResponse> onAppend(final AppendRequest request) {
     context.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
@@ -188,7 +188,7 @@ public class PassiveRole extends ReserveRole {
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(QueryRequest request) {
+  public CompletableFuture<QueryResponse> onQuery(QueryRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -300,7 +300,7 @@ public class PassiveRole extends ReserveRole {
   }
 
   @Override
-  public CompletableFuture<InstallResponse> install(InstallRequest request) {
+  public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
     context.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());

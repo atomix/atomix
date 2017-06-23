@@ -55,7 +55,7 @@ public final class FollowerRole extends ActiveRole {
   }
 
   @Override
-  public RaftServer.Role type() {
+  public RaftServer.Role getRole() {
     return RaftServer.Role.FOLLOWER;
   }
 
@@ -179,22 +179,22 @@ public final class FollowerRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<InstallResponse> install(InstallRequest request) {
-    CompletableFuture<InstallResponse> future = super.install(request);
+  public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
+    CompletableFuture<InstallResponse> future = super.onInstall(request);
     resetHeartbeatTimeout();
     return future;
   }
 
   @Override
-  public CompletableFuture<ConfigureResponse> configure(ConfigureRequest request) {
-    CompletableFuture<ConfigureResponse> future = super.configure(request);
+  public CompletableFuture<ConfigureResponse> onConfigure(ConfigureRequest request) {
+    CompletableFuture<ConfigureResponse> future = super.onConfigure(request);
     resetHeartbeatTimeout();
     return future;
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(AppendRequest request) {
-    CompletableFuture<AppendResponse> future = super.append(request);
+  public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
+    CompletableFuture<AppendResponse> future = super.onAppend(request);
 
     // Reset the heartbeat timeout.
     resetHeartbeatTimeout();

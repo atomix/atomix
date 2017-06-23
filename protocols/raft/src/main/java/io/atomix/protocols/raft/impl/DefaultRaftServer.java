@@ -77,7 +77,7 @@ public class DefaultRaftServer implements RaftServer {
 
   @Override
   public Role getRole() {
-    return context.getState();
+    return context.getRole();
   }
 
   @Override

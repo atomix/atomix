@@ -496,7 +496,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     // Attempt to leave the cluster by submitting a LeaveRequest directly to the server state.
     // Non-leader states should forward the request to the leader if there is one. Leader states
     // will log, replicate, and commit the reconfiguration.
-    context.getServerState().leave(LeaveRequest.builder()
+    context.getRaftRole().onLeave(LeaveRequest.builder()
         .withMember(getMember())
         .build()).whenComplete((response, error) -> {
       // Cancel the leave timer.

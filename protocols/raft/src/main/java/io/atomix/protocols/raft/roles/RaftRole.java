@@ -58,7 +58,7 @@ public interface RaftRole extends Managed<RaftRole> {
    *
    * @return The server state type.
    */
-  RaftServer.Role type();
+  RaftServer.Role getRole();
 
   /**
    * Handles a metadata request.
@@ -66,7 +66,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<MetadataResponse> metadata(MetadataRequest request);
+  CompletableFuture<MetadataResponse> onMetadata(MetadataRequest request);
 
   /**
    * Handles an open session request.
@@ -74,7 +74,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request);
+  CompletableFuture<OpenSessionResponse> onOpenSession(OpenSessionRequest request);
 
   /**
    * Handles a keep alive request.
@@ -82,7 +82,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request);
+  CompletableFuture<KeepAliveResponse> onKeepAlive(KeepAliveRequest request);
 
   /**
    * Handles a close session request.
@@ -90,7 +90,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request);
+  CompletableFuture<CloseSessionResponse> onCloseSession(CloseSessionRequest request);
 
   /**
    * Handles a configure request.
@@ -98,7 +98,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<ConfigureResponse> configure(ConfigureRequest request);
+  CompletableFuture<ConfigureResponse> onConfigure(ConfigureRequest request);
 
   /**
    * Handles an install request.
@@ -106,7 +106,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<InstallResponse> install(InstallRequest request);
+  CompletableFuture<InstallResponse> onInstall(InstallRequest request);
 
   /**
    * Handles a join request.
@@ -114,7 +114,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<JoinResponse> join(JoinRequest request);
+  CompletableFuture<JoinResponse> onJoin(JoinRequest request);
 
   /**
    * Handles a configure request.
@@ -122,7 +122,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<ReconfigureResponse> reconfigure(ReconfigureRequest request);
+  CompletableFuture<ReconfigureResponse> onReconfigure(ReconfigureRequest request);
 
   /**
    * Handles a leave request.
@@ -130,7 +130,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<LeaveResponse> leave(LeaveRequest request);
+  CompletableFuture<LeaveResponse> onLeave(LeaveRequest request);
 
   /**
    * Handles an append request.
@@ -138,7 +138,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<AppendResponse> append(AppendRequest request);
+  CompletableFuture<AppendResponse> onAppend(AppendRequest request);
 
   /**
    * Handles a poll request.
@@ -146,7 +146,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<PollResponse> poll(PollRequest request);
+  CompletableFuture<PollResponse> onPoll(PollRequest request);
 
   /**
    * Handles a vote request.
@@ -154,7 +154,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<VoteResponse> vote(VoteRequest request);
+  CompletableFuture<VoteResponse> onVote(VoteRequest request);
 
   /**
    * Handles a command request.
@@ -162,7 +162,7 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<CommandResponse> command(CommandRequest request);
+  CompletableFuture<CommandResponse> onCommand(CommandRequest request);
 
   /**
    * Handles a query request.
@@ -170,6 +170,6 @@ public interface RaftRole extends Managed<RaftRole> {
    * @param request The request to handle.
    * @return A completable future to be completed with the request response.
    */
-  CompletableFuture<QueryResponse> query(QueryRequest request);
+  CompletableFuture<QueryResponse> onQuery(QueryRequest request);
 
 }

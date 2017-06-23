@@ -43,7 +43,7 @@ public abstract class ActiveRole extends PassiveRole {
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(final AppendRequest request) {
+  public CompletableFuture<AppendResponse> onAppend(final AppendRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -153,7 +153,7 @@ public abstract class ActiveRole extends PassiveRole {
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(PollRequest request) {
+  public CompletableFuture<PollResponse> onPoll(PollRequest request) {
     context.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), null);
@@ -190,7 +190,7 @@ public abstract class ActiveRole extends PassiveRole {
   }
 
   @Override
-  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
+  public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
     context.checkThread();
     logRequest(request);
 

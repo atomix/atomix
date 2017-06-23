@@ -59,21 +59,21 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public RaftServer.Role type() {
+  public RaftServer.Role getRole() {
     return RaftServer.Role.RESERVE;
   }
 
   @Override
   public CompletableFuture<RaftRole> open() {
     return super.open().thenRun(() -> {
-      if (type() == RaftServer.Role.RESERVE) {
+      if (getRole() == RaftServer.Role.RESERVE) {
         context.reset();
       }
     }).thenApply(v -> this);
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
+  public CompletableFuture<MetadataResponse> onMetadata(MetadataRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -93,7 +93,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(AppendRequest request) {
+  public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
     context.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
@@ -110,7 +110,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(PollRequest request) {
+  public CompletableFuture<PollResponse> onPoll(PollRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -121,7 +121,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
+  public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
     context.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), null);
@@ -133,7 +133,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(CommandRequest request) {
+  public CompletableFuture<CommandResponse> onCommand(CommandRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -153,7 +153,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(QueryRequest request) {
+  public CompletableFuture<QueryResponse> onQuery(QueryRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -173,7 +173,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+  public CompletableFuture<KeepAliveResponse> onKeepAlive(KeepAliveRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -193,7 +193,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
+  public CompletableFuture<OpenSessionResponse> onOpenSession(OpenSessionRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -213,7 +213,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
+  public CompletableFuture<CloseSessionResponse> onCloseSession(CloseSessionRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -233,7 +233,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<JoinResponse> join(JoinRequest request) {
+  public CompletableFuture<JoinResponse> onJoin(JoinRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -253,7 +253,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<ReconfigureResponse> reconfigure(ReconfigureRequest request) {
+  public CompletableFuture<ReconfigureResponse> onReconfigure(ReconfigureRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -273,7 +273,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+  public CompletableFuture<LeaveResponse> onLeave(LeaveRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -293,7 +293,7 @@ public class ReserveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<InstallResponse> install(InstallRequest request) {
+  public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -306,7 +306,7 @@ public class ReserveRole extends InactiveRole {
   @Override
   public CompletableFuture<Void> close() {
     return super.close().thenRun(() -> {
-      if (type() == RaftServer.Role.RESERVE) {
+      if (getRole() == RaftServer.Role.RESERVE) {
         context.reset();
       }
     });

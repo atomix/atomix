@@ -86,7 +86,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public RaftServer.Role type() {
+  public RaftServer.Role getRole() {
     return RaftServer.Role.LEADER;
   }
 
@@ -123,7 +123,7 @@ public final class LeaderRole extends ActiveRole {
     final RaftLogWriter writer = context.getLogWriter();
     writer.getLock().lock();
     try {
-      Indexed<RaftLogEntry> indexed = writer.appendEntry(new InitializeEntry(term, appender.time()));
+      Indexed<RaftLogEntry> indexed = writer.appendEntry(new InitializeEntry(term, appender.getTime()));
       LOGGER.debug("{} - Appended {}", context.getCluster().getMember().getMemberId(), indexed.index());
     } finally {
       writer.getLock().unlock();
@@ -142,7 +142,7 @@ public final class LeaderRole extends ActiveRole {
     // we force entries to be appended up to the leader's no-op entry. The LeaderAppender will ensure
     // that the commitIndex is not increased until the no-op entry (appender.index()) is committed.
     CompletableFuture<Void> future = new CompletableFuture<>();
-    appender.appendEntries(appender.index()).whenComplete((resultIndex, error) -> {
+    appender.appendEntries(appender.getIndex()).whenComplete((resultIndex, error) -> {
       context.checkThread();
       if (isOpen()) {
         if (error == null) {
@@ -196,7 +196,7 @@ public final class LeaderRole extends ActiveRole {
     // If the leader index is 0 or is greater than the commitIndex, do not allow configuration changes.
     // Configuration changes should not be allowed until the leader has committed a no-op entry.
     // See https://groups.google.com/forum/#!topic/raft-dev/t4xj6dJTP6E
-    return appender.index() == 0 || context.getCommitIndex() < appender.index();
+    return appender.getIndex() == 0 || context.getCommitIndex() < appender.getIndex();
   }
 
   /**
@@ -232,7 +232,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<JoinResponse> join(final JoinRequest request) {
+  public CompletableFuture<JoinResponse> onJoin(final JoinRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -288,7 +288,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<ReconfigureResponse> reconfigure(final ReconfigureRequest request) {
+  public CompletableFuture<ReconfigureResponse> onReconfigure(final ReconfigureRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -350,7 +350,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<LeaveResponse> leave(final LeaveRequest request) {
+  public CompletableFuture<LeaveResponse> onLeave(final LeaveRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -401,7 +401,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(final PollRequest request) {
+  public CompletableFuture<PollResponse> onPoll(final PollRequest request) {
     logRequest(request);
 
     // If a member sends a PollRequest to the leader, that indicates that it likely healed from
@@ -424,11 +424,11 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
+  public CompletableFuture<VoteResponse> onVote(final VoteRequest request) {
     if (updateTermAndLeader(request.term(), null)) {
       LOGGER.debug("{} - Received greater term", context.getCluster().getMember().getMemberId());
       context.transition(RaftServer.Role.FOLLOWER);
-      return super.vote(request);
+      return super.onVote(request);
     } else {
       logRequest(request);
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
@@ -440,10 +440,10 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(final AppendRequest request) {
+  public CompletableFuture<AppendResponse> onAppend(final AppendRequest request) {
     context.checkThread();
     if (updateTermAndLeader(request.term(), request.leader())) {
-      CompletableFuture<AppendResponse> future = super.append(request);
+      CompletableFuture<AppendResponse> future = super.onAppend(request);
       context.transition(RaftServer.Role.FOLLOWER);
       return future;
     } else if (request.term() < context.getTerm()) {
@@ -456,12 +456,12 @@ public final class LeaderRole extends ActiveRole {
           .build()));
     } else {
       context.setLeader(request.leader()).transition(RaftServer.Role.FOLLOWER);
-      return super.append(request);
+      return super.onAppend(request);
     }
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
+  public CompletableFuture<MetadataResponse> onMetadata(MetadataRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -489,7 +489,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(final CommandRequest request) {
+  public CompletableFuture<CommandResponse> onCommand(final CommandRequest request) {
     context.checkThread();
     logRequest(request);
 
@@ -554,7 +554,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(final QueryRequest request) {
+  public CompletableFuture<QueryResponse> onQuery(final QueryRequest request) {
     final long timestamp = System.currentTimeMillis();
 
     context.checkThread();
@@ -613,7 +613,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
+  public CompletableFuture<OpenSessionResponse> onOpenSession(OpenSessionRequest request) {
     final long term = context.getTerm();
     final long timestamp = System.currentTimeMillis();
 
@@ -683,7 +683,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+  public CompletableFuture<KeepAliveResponse> onKeepAlive(KeepAliveRequest request) {
     final long term = context.getTerm();
     final long timestamp = System.currentTimeMillis();
 
@@ -750,7 +750,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
+  public CompletableFuture<CloseSessionResponse> onCloseSession(CloseSessionRequest request) {
     final long term = context.getTerm();
     final long timestamp = System.currentTimeMillis();
 

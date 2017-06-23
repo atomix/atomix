@@ -50,7 +50,7 @@ public final class CandidateRole extends ActiveRole {
   }
 
   @Override
-  public RaftServer.Role type() {
+  public RaftServer.Role getRole() {
     return RaftServer.Role.CANDIDATE;
   }
 
@@ -177,7 +177,7 @@ public final class CandidateRole extends ActiveRole {
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(AppendRequest request) {
+  public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
     context.checkThread();
 
     // If the request indicates a term that is greater than the current term then
@@ -186,18 +186,18 @@ public final class CandidateRole extends ActiveRole {
       context.setTerm(request.term());
       context.transition(RaftServer.Role.FOLLOWER);
     }
-    return super.append(request);
+    return super.onAppend(request);
   }
 
   @Override
-  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
+  public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
     context.checkThread();
     logRequest(request);
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
     if (updateTermAndLeader(request.term(), null)) {
-      CompletableFuture<VoteResponse> future = super.vote(request);
+      CompletableFuture<VoteResponse> future = super.onVote(request);
       context.transition(RaftServer.Role.FOLLOWER);
       return future;
     }

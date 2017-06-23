@@ -83,7 +83,7 @@ public class RaftServerContext implements AutoCloseable {
   private RaftServerStateMachineManager stateMachine;
   protected final ScheduledExecutorService threadPool;
   protected final ThreadContext stateContext;
-  protected RaftRole state = new InactiveRole(this);
+  protected RaftRole role = new InactiveRole(this);
   private Duration electionTimeout = Duration.ofMillis(500);
   private Duration sessionTimeout = Duration.ofMillis(5000);
   private Duration heartbeatInterval = Duration.ofMillis(150);
@@ -434,12 +434,12 @@ public class RaftServerContext implements AutoCloseable {
   }
 
   /**
-   * Returns the current state.
+   * Returns the current server role.
    *
-   * @return The current state.
+   * @return The current server role.
    */
-  public RaftServer.Role getState() {
-    return state.type();
+  public RaftServer.Role getRole() {
+    return role.getRole();
   }
 
   /**
@@ -447,8 +447,8 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The current server state.
    */
-  public RaftRole getServerState() {
-    return state;
+  public RaftRole getRaftRole() {
+    return role;
   }
 
   /**
@@ -538,19 +538,19 @@ public class RaftServerContext implements AutoCloseable {
    * Registers server handlers on the configured protocol.
    */
   private void registerHandlers(RaftServerProtocol protocol) {
-    protocol.registerOpenSessionHandler(request -> runOnContext(() -> state.openSession(request)));
-    protocol.registerCloseSessionHandler(request -> runOnContext(() -> state.closeSession(request)));
-    protocol.registerKeepAliveHandler(request -> runOnContext(() -> state.keepAlive(request)));
-    protocol.registerConfigureHandler(request -> runOnContext(() -> state.configure(request)));
-    protocol.registerInstallHandler(request -> runOnContext(() -> state.install(request)));
-    protocol.registerJoinHandler(request -> runOnContext(() -> state.join(request)));
-    protocol.registerReconfigureHandler(request -> runOnContext(() -> state.reconfigure(request)));
-    protocol.registerLeaveHandler(request -> runOnContext(() -> state.leave(request)));
-    protocol.registerAppendHandler(request -> runOnContext(() -> state.append(request)));
-    protocol.registerPollHandler(request -> runOnContext(() -> state.poll(request)));
-    protocol.registerVoteHandler(request -> runOnContext(() -> state.vote(request)));
-    protocol.registerCommandHandler(request -> runOnContext(() -> state.command(request)));
-    protocol.registerQueryHandler(request -> runOnContext(() -> state.query(request)));
+    protocol.registerOpenSessionHandler(request -> runOnContext(() -> role.onOpenSession(request)));
+    protocol.registerCloseSessionHandler(request -> runOnContext(() -> role.onCloseSession(request)));
+    protocol.registerKeepAliveHandler(request -> runOnContext(() -> role.onKeepAlive(request)));
+    protocol.registerConfigureHandler(request -> runOnContext(() -> role.onConfigure(request)));
+    protocol.registerInstallHandler(request -> runOnContext(() -> role.onInstall(request)));
+    protocol.registerJoinHandler(request -> runOnContext(() -> role.onJoin(request)));
+    protocol.registerReconfigureHandler(request -> runOnContext(() -> role.onReconfigure(request)));
+    protocol.registerLeaveHandler(request -> runOnContext(() -> role.onLeave(request)));
+    protocol.registerAppendHandler(request -> runOnContext(() -> role.onAppend(request)));
+    protocol.registerPollHandler(request -> runOnContext(() -> role.onPoll(request)));
+    protocol.registerVoteHandler(request -> runOnContext(() -> role.onVote(request)));
+    protocol.registerCommandHandler(request -> runOnContext(() -> role.onCommand(request)));
+    protocol.registerQueryHandler(request -> runOnContext(() -> role.onQuery(request)));
   }
 
   private <T extends RaftRequest, U extends RaftResponse> CompletableFuture<U> runOnContext(Supplier<CompletableFuture<U>> function) {
@@ -592,22 +592,22 @@ public class RaftServerContext implements AutoCloseable {
   public void transition(RaftMember.Type type) {
     switch (type) {
       case ACTIVE:
-        if (!(state instanceof ActiveRole)) {
+        if (!(role instanceof ActiveRole)) {
           transition(RaftServer.Role.FOLLOWER);
         }
         break;
       case PASSIVE:
-        if (this.state.type() != RaftServer.Role.PASSIVE) {
+        if (this.role.getRole() != RaftServer.Role.PASSIVE) {
           transition(RaftServer.Role.PASSIVE);
         }
         break;
       case RESERVE:
-        if (this.state.type() != RaftServer.Role.RESERVE) {
+        if (this.role.getRole() != RaftServer.Role.RESERVE) {
           transition(RaftServer.Role.RESERVE);
         }
         break;
       default:
-        if (this.state.type() != RaftServer.Role.INACTIVE) {
+        if (this.role.getRole() != RaftServer.Role.INACTIVE) {
           transition(RaftServer.Role.INACTIVE);
         }
         break;
@@ -620,7 +620,7 @@ public class RaftServerContext implements AutoCloseable {
   public void transition(RaftServer.Role role) {
     checkThread();
 
-    if (this.state != null && role == this.state.type()) {
+    if (this.role != null && role == this.role.getRole()) {
       return;
     }
 
@@ -628,20 +628,20 @@ public class RaftServerContext implements AutoCloseable {
 
     // Close the old state.
     try {
-      this.state.close().get();
+      this.role.close().get();
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException("failed to close Raft state", e);
     }
 
     // Force state transitions to occur synchronously in order to prevent race conditions.
     try {
-      this.state = createState(role);
-      this.state.open().get();
+      this.role = createState(role);
+      this.role.open().get();
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException("failed to initialize Raft state", e);
     }
 
-    stateChangeListeners.forEach(l -> l.accept(this.state.type()));
+    stateChangeListeners.forEach(l -> l.accept(this.role.getRole()));
   }
 
   /**

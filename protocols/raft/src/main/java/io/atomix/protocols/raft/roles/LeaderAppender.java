@@ -68,7 +68,7 @@ final class LeaderAppender extends AbstractAppender {
    *
    * @return The current commit time.
    */
-  public long time() {
+  public long getTime() {
     return heartbeatTime;
   }
 
@@ -77,7 +77,7 @@ final class LeaderAppender extends AbstractAppender {
    *
    * @return The leader index.
    */
-  public long index() {
+  public long getIndex() {
     return leaderIndex;
   }
 
@@ -86,7 +86,7 @@ final class LeaderAppender extends AbstractAppender {
    *
    * @return The current quorum index.
    */
-  private int quorumIndex() {
+  private int getQuorumIndex() {
     return server.getClusterState().getQuorum() - 2;
   }
 
@@ -241,8 +241,8 @@ final class LeaderAppender extends AbstractAppender {
    * the cluster was contacted based on the index of a majority of the members. So, in a list of 3 ACTIVE
    * members, index 1 (the second member) will be used to determine the commit time in a sorted members list.
    */
-  private long heartbeatTime() {
-    int quorumIndex = quorumIndex();
+  private long getHeartbeatTime() {
+    int quorumIndex = getQuorumIndex();
     if (quorumIndex >= 0) {
       return server.getClusterState().getActiveMemberStates((m1, m2) -> Long.compare(m2.getHeartbeatTime(), m1.getHeartbeatTime())).get(quorumIndex).getHeartbeatTime();
     }
@@ -275,7 +275,7 @@ final class LeaderAppender extends AbstractAppender {
       // Sort the list of commit times. Use the quorum index to get the last time the majority of the cluster
       // was contacted. If the current heartbeatFuture's time is less than the commit time then trigger the
       // commit future and reset it to the next commit future.
-      if (heartbeatTime <= heartbeatTime()) {
+      if (heartbeatTime <= getHeartbeatTime()) {
         heartbeatFuture.complete(null);
         completeHeartbeat();
       }
@@ -321,7 +321,7 @@ final class LeaderAppender extends AbstractAppender {
     }
 
     // Calculate the current commit index as the median matchIndex.
-    long commitIndex = members.get(quorumIndex()).getMatchIndex();
+    long commitIndex = members.get(getQuorumIndex()).getMatchIndex();
 
     // If the commit index has increased then update the commit index. Note that in order to ensure
     // the leader completeness property holds, we verify that the commit index is greater than or equal to
@@ -466,7 +466,7 @@ final class LeaderAppender extends AbstractAppender {
       // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
       // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
       // that a partition occurred and transition back to the FOLLOWER state.
-      if (System.currentTimeMillis() - Math.max(heartbeatTime(), leaderTime) > server.getElectionTimeout().toMillis() * 2) {
+      if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > server.getElectionTimeout().toMillis() * 2) {
         log.warn("{} - Suspected network partition. Stepping down", server.getCluster().getMember().getMemberId());
         server.setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);

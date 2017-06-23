@@ -61,12 +61,12 @@ public class InactiveRole extends AbstractRole {
   }
 
   @Override
-  public RaftServer.Role type() {
+  public RaftServer.Role getRole() {
     return RaftServer.Role.INACTIVE;
   }
 
   @Override
-  public CompletableFuture<ConfigureResponse> configure(ConfigureRequest request) {
+  public CompletableFuture<ConfigureResponse> onConfigure(ConfigureRequest request) {
     context.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
@@ -90,67 +90,67 @@ public class InactiveRole extends AbstractRole {
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
+  public CompletableFuture<MetadataResponse> onMetadata(MetadataRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+  public CompletableFuture<KeepAliveResponse> onKeepAlive(KeepAliveRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
+  public CompletableFuture<OpenSessionResponse> onOpenSession(OpenSessionRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
+  public CompletableFuture<CloseSessionResponse> onCloseSession(CloseSessionRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<InstallResponse> install(InstallRequest request) {
+  public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<JoinResponse> join(JoinRequest request) {
+  public CompletableFuture<JoinResponse> onJoin(JoinRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<ReconfigureResponse> reconfigure(ReconfigureRequest request) {
+  public CompletableFuture<ReconfigureResponse> onReconfigure(ReconfigureRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+  public CompletableFuture<LeaveResponse> onLeave(LeaveRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(AppendRequest request) {
+  public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(PollRequest request) {
+  public CompletableFuture<PollResponse> onPoll(PollRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
+  public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(CommandRequest request) {
+  public CompletableFuture<CommandResponse> onCommand(CommandRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(QueryRequest request) {
+  public CompletableFuture<QueryResponse> onQuery(QueryRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
