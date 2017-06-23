@@ -198,17 +198,13 @@ public class SegmentedJournal<E> implements Journal<E> {
     } else {
       JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
           .withId(1)
-          .withVersion(1)
           .withIndex(1)
           .withMaxSegmentSize(maxSegmentSize)
           .withMaxEntries(maxEntriesPerSegment)
           .build();
 
-      descriptor.lock();
-
       currentSegment = createSegment(descriptor);
       currentSegment.descriptor().update(System.currentTimeMillis());
-      currentSegment.descriptor().lock();
 
       segments.put(1L, currentSegment);
     }
@@ -233,12 +229,10 @@ public class SegmentedJournal<E> implements Journal<E> {
     } else {
       JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
           .withId(1)
-          .withVersion(1)
           .withIndex(1)
           .withMaxSegmentSize(maxSegmentSize)
           .withMaxEntries(maxEntriesPerSegment)
           .build();
-      descriptor.lock();
 
       currentSegment = createSegment(descriptor);
 
@@ -290,12 +284,10 @@ public class SegmentedJournal<E> implements Journal<E> {
     JournalSegment lastSegment = getLastSegment();
     JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
         .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
-        .withVersion(1)
         .withIndex(currentSegment.lastIndex() + 1)
         .withMaxSegmentSize(maxSegmentSize)
         .withMaxEntries(maxEntriesPerSegment)
         .build();
-    descriptor.lock();
 
     currentSegment = createSegment(descriptor);
 
@@ -482,68 +474,57 @@ public class SegmentedJournal<E> implements Journal<E> {
         JournalSegmentFile segmentFile = new JournalSegmentFile(file);
         JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
 
-        // Valid segments will have been locked. Segments that resulting from failures during log cleaning will be
-        // unlocked and should ultimately be deleted from disk.
-        if (descriptor.locked()) {
+        // Load the segment.
+        JournalSegment segment = loadSegment(descriptor.id(), descriptor.version());
 
-          // Load the segment.
-          JournalSegment segment = loadSegment(descriptor.id(), descriptor.version());
+        // If a segment with an equal or lower index has already been loaded, ensure this segment is not superseded
+        // by the earlier segment. This can occur due to segments being combined during log compaction.
+        Map.Entry<Long, JournalSegment> previousEntry = segments.floorEntry(segment.index());
+        if (previousEntry != null) {
 
-          // If a segment with an equal or lower index has already been loaded, ensure this segment is not superseded
-          // by the earlier segment. This can occur due to segments being combined during log compaction.
-          Map.Entry<Long, JournalSegment> previousEntry = segments.floorEntry(segment.index());
-          if (previousEntry != null) {
+          // If an existing descriptor exists with a lower index than this segment's first index, check to determine
+          // whether this segment's first index is contained in that existing index. If it is, determine which segment
+          // should take precedence based on segment versions.
+          JournalSegment previousSegment = previousEntry.getValue();
 
-            // If an existing descriptor exists with a lower index than this segment's first index, check to determine
-            // whether this segment's first index is contained in that existing index. If it is, determine which segment
-            // should take precedence based on segment versions.
-            JournalSegment previousSegment = previousEntry.getValue();
-
-            // If the two segments start at the same index, the segment with the higher version number is used.
-            if (previousSegment.index() == segment.index()) {
-              if (segment.descriptor().version() > previousSegment.descriptor().version()) {
-                LOGGER.debug("Replaced segment {} with newer version: {} ({})", previousSegment.descriptor().id(), segment.descriptor().version(), segmentFile.file().getName());
-                segments.remove(previousEntry.getKey());
-                previousSegment.close();
-                previousSegment.delete();
-              } else {
-                segment.close();
-                segment.delete();
-                continue;
-              }
-            }
-            // If the existing segment's entries overlap with the loaded segment's entries, the existing segment always
-            // supersedes the loaded segment. Log compaction processes ensure this is always the case.
-            else if (previousSegment.index() + previousSegment.length() > segment.index()) {
+          // If the two segments start at the same index, the segment with the higher version number is used.
+          if (previousSegment.index() == segment.index()) {
+            if (segment.descriptor().version() > previousSegment.descriptor().version()) {
+              LOGGER.debug("Replaced segment {} with newer version: {} ({})", previousSegment.descriptor().id(), segment.descriptor().version(), segmentFile.file().getName());
+              segments.remove(previousEntry.getKey());
+              previousSegment.close();
+              previousSegment.delete();
+            } else {
               segment.close();
               segment.delete();
               continue;
             }
           }
-
-          // Add the segment to the segments list.
-          LOGGER.debug("Found segment: {} ({})", segment.descriptor().id(), segmentFile.file().getName());
-          segments.put(segment.index(), segment);
-
-          // Ensure any segments later in the log with which this segment overlaps are removed.
-          Map.Entry<Long, JournalSegment> nextEntry = segments.higherEntry(segment.index());
-          while (nextEntry != null) {
-            if (nextEntry.getValue().index() < segment.index() + segment.length()) {
-              segments.remove(nextEntry.getKey());
-              nextEntry = segments.higherEntry(segment.index());
-            } else {
-              break;
-            }
+          // If the existing segment's entries overlap with the loaded segment's entries, the existing segment always
+          // supersedes the loaded segment. Log compaction processes ensure this is always the case.
+          else if (previousSegment.index() + previousSegment.length() > segment.index()) {
+            segment.close();
+            segment.delete();
+            continue;
           }
+        }
 
-          descriptor.close();
+        // Add the segment to the segments list.
+        LOGGER.debug("Found segment: {} ({})", segment.descriptor().id(), segmentFile.file().getName());
+        segments.put(segment.index(), segment);
+
+        // Ensure any segments later in the log with which this segment overlaps are removed.
+        Map.Entry<Long, JournalSegment> nextEntry = segments.higherEntry(segment.index());
+        while (nextEntry != null) {
+          if (nextEntry.getValue().index() < segment.index() + segment.length()) {
+            segments.remove(nextEntry.getKey());
+            nextEntry = segments.higherEntry(segment.index());
+          } else {
+            break;
+          }
         }
-        // If the segment descriptor wasn't locked, close and delete the descriptor.
-        else {
-          LOGGER.debug("Deleting unlocked segment: {}-{} ({})", descriptor.id(), descriptor.version(), segmentFile.file().getName());
-          descriptor.close();
-          descriptor.delete();
-        }
+
+        descriptor.close();
       }
     }
 

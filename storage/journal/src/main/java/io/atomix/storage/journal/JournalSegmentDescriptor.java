@@ -56,23 +56,24 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class JournalSegmentDescriptor implements AutoCloseable {
   public static final int BYTES = 64;
 
+  // Current segment version.
+  private static final int VERSION = 1;
+
   // The lengths of each field in the header.
-  private static final int ID_LENGTH = Bytes.LONG;    // 64-bit signed integer
-  private static final int VERSION_LENGTH = Bytes.LONG;    // 64-bit signed integer
-  private static final int INDEX_LENGTH = Bytes.LONG;    // 64-bit signed integer
-  private static final int MAX_SIZE_LENGTH = Bytes.INTEGER; // 32-bit unsigned integer
+  private static final int VERSION_LENGTH = Bytes.INTEGER;     // 32-bit signed integer
+  private static final int ID_LENGTH = Bytes.LONG;             // 64-bit signed integer
+  private static final int INDEX_LENGTH = Bytes.LONG;          // 64-bit signed integer
+  private static final int MAX_SIZE_LENGTH = Bytes.INTEGER;    // 32-bit unsigned integer
   private static final int MAX_ENTRIES_LENGTH = Bytes.INTEGER; // 32-bit signed integer
-  private static final int UPDATED_LENGTH = Bytes.LONG;    // 64-bit signed integer
-  private static final int LOCKED_LENGTH = Bytes.BOOLEAN; // 8-bit boolean
+  private static final int UPDATED_LENGTH = Bytes.LONG;        // 64-bit signed integer
 
   // The positions of each field in the header.
-  private static final long ID_POSITION = 0;                                         // 0
-  private static final long VERSION_POSITION = ID_POSITION + ID_LENGTH;                   // 8
-  private static final long INDEX_POSITION = VERSION_POSITION + VERSION_LENGTH;         // 16
-  private static final long MAX_SIZE_POSITION = INDEX_POSITION + INDEX_LENGTH;             // 24
-  private static final long MAX_ENTRIES_POSITION = MAX_SIZE_POSITION + MAX_SIZE_LENGTH;       // 28
-  private static final long UPDATED_POSITION = MAX_ENTRIES_POSITION + MAX_ENTRIES_LENGTH; // 32
-  private static final long LOCKED_POSITION = UPDATED_POSITION + UPDATED_LENGTH;         // 40
+  private static final long VERSION_POSITION = 0;                                         // 0
+  private static final long ID_POSITION = VERSION_POSITION + VERSION_LENGTH;              // 4
+  private static final long INDEX_POSITION = ID_POSITION + ID_LENGTH;                     // 12
+  private static final long MAX_SIZE_POSITION = INDEX_POSITION + INDEX_LENGTH;            // 20
+  private static final long MAX_ENTRIES_POSITION = MAX_SIZE_POSITION + MAX_SIZE_LENGTH;   // 24
+  private static final long UPDATED_POSITION = MAX_ENTRIES_POSITION + MAX_ENTRIES_LENGTH; // 28
 
   /**
    * Returns a descriptor builder.
@@ -97,8 +98,8 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   }
 
   Buffer buffer;
+  private final int version;
   private final long id;
-  private final long version;
   private final long index;
   private final long maxSegmentSize;
   private final int maxEntries;
@@ -110,14 +111,25 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    */
   public JournalSegmentDescriptor(Buffer buffer) {
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
+    this.version = buffer.readInt();
     this.id = buffer.readLong();
-    this.version = buffer.readLong();
     this.index = buffer.readLong();
     this.maxSegmentSize = buffer.readUnsignedInt();
     this.maxEntries = buffer.readInt();
     this.updated = buffer.readLong();
     this.locked = buffer.readBoolean();
     buffer.skip(BYTES - buffer.position()); // 64 bytes reserved for the header
+  }
+
+  /**
+   * Returns the segment version.
+   * <p>
+   * Versions are monotonically increasing starting at {@code 1}.
+   *
+   * @return The segment version.
+   */
+  public int version() {
+    return version;
   }
 
   /**
@@ -130,18 +142,6 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    */
   public long id() {
     return id;
-  }
-
-  /**
-   * Returns the segment version.
-   * <p>
-   * Versions are monotonically increasing starting at {@code 1}. Versions will only be incremented whenever the segment
-   * is rewritten to another memory/disk space, e.g. after log compaction.
-   *
-   * @return The segment version.
-   */
-  public long version() {
-    return version;
   }
 
   /**
@@ -198,26 +198,6 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   }
 
   /**
-   * Returns whether the segment has been locked by commitment.
-   * <p>
-   * Segments will be locked once all entries have been committed to the segment. The lock state of each segment is used
-   * to determine log compaction and recovery behavior.
-   *
-   * @return Indicates whether the segment has been locked.
-   */
-  public boolean locked() {
-    return locked;
-  }
-
-  /**
-   * Locks the segment.
-   */
-  public void lock() {
-    buffer.writeBoolean(LOCKED_POSITION, true).flush();
-    locked = true;
-  }
-
-  /**
    * Copies the segment to a new buffer.
    */
   JournalSegmentDescriptor copyTo(Buffer buffer) {
@@ -253,11 +233,10 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id)
         .add("version", version)
+        .add("id", id)
         .add("index", index)
         .add("updated", updated)
-        .add("locked", locked)
         .toString();
   }
 
@@ -268,7 +247,8 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
     private final Buffer buffer;
 
     private Builder(Buffer buffer) {
-      this.buffer = checkNotNull(buffer, "buffer cannot be null");
+      this.buffer = checkNotNull(buffer, "buffer cannot be null")
+          .writeLong(VERSION_POSITION, VERSION);
     }
 
     /**
@@ -278,18 +258,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withId(long id) {
-      buffer.writeLong(0, id);
-      return this;
-    }
-
-    /**
-     * Sets the segment version.
-     *
-     * @param version The segment version.
-     * @return The segment descriptor builder.
-     */
-    public Builder withVersion(long version) {
-      buffer.writeLong(8, version);
+      buffer.writeLong(ID_POSITION, id);
       return this;
     }
 
@@ -300,7 +269,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withIndex(long index) {
-      buffer.writeLong(16, index);
+      buffer.writeLong(INDEX_POSITION, index);
       return this;
     }
 
@@ -311,7 +280,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withMaxSegmentSize(long maxSegmentSize) {
-      buffer.writeUnsignedInt(24, maxSegmentSize);
+      buffer.writeUnsignedInt(MAX_SIZE_POSITION, maxSegmentSize);
       return this;
     }
 
@@ -322,7 +291,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withMaxEntries(int maxEntries) {
-      buffer.writeInt(28, maxEntries);
+      buffer.writeInt(MAX_ENTRIES_POSITION, maxEntries);
       return this;
     }
 
@@ -332,9 +301,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The built segment descriptor.
      */
     public JournalSegmentDescriptor build() {
-      return new JournalSegmentDescriptor(buffer.writeLong(32, 0).rewind());
+      return new JournalSegmentDescriptor(buffer.rewind());
     }
-
   }
-
 }
