@@ -359,8 +359,8 @@ abstract class AbstractAppender implements AutoCloseable {
     return ConfigureRequest.builder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.getMemberId() : null)
-        .withIndex(server.getClusterState().getConfiguration().index())
-        .withTime(server.getClusterState().getConfiguration().time())
+        .withIndex(server.getClusterState().getConfiguration().getIndex())
+        .withTime(server.getClusterState().getConfiguration().getTime())
         .withMembers(server.getClusterState().getConfiguration().members())
         .build();
   }

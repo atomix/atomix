@@ -85,7 +85,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
     // Iterate through members in the new configuration and add remote members.
     if (configuration != null) {
-      Instant updateTime = Instant.ofEpochMilli(configuration.time());
+      Instant updateTime = Instant.ofEpochMilli(configuration.getTime());
       for (RaftMember member : configuration.members()) {
         if (member.equals(this.member)) {
           this.members.add(this.member);
@@ -472,7 +472,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
         joinFuture.completeExceptionally(new IllegalStateException("failed to join cluster"));
 
       // If there are no remote members to leave, simply transition the server to INACTIVE.
-      if (getActiveMemberStates().isEmpty() && configuration.index() <= context.getCommitIndex()) {
+      if (getActiveMemberStates().isEmpty() && configuration.getIndex() <= context.getCommitIndex()) {
         LOGGER.trace("{} - Single member cluster. Transitioning directly to inactive.", getMember().getMemberId());
         context.transition(RaftServer.Role.INACTIVE);
         leaveFuture.complete(null);
@@ -552,7 +552,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     }
 
     // If the local stored configuration is older than the committed configuration, overwrite it.
-    if (context.getMetaStore().loadConfiguration().index() < configuration.index()) {
+    if (context.getMetaStore().loadConfiguration().getIndex() < configuration.getIndex()) {
       context.getMetaStore().storeConfiguration(configuration);
     }
     return this;
@@ -569,11 +569,11 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
     // If the configuration index is less than the currently configured index, ignore it.
     // Configurations can be persisted and applying old configurations can revert newer configurations.
-    if (this.configuration != null && configuration.index() <= this.configuration.index()) {
+    if (this.configuration != null && configuration.getIndex() <= this.configuration.getIndex()) {
       return this;
     }
 
-    Instant time = Instant.ofEpochMilli(configuration.time());
+    Instant time = Instant.ofEpochMilli(configuration.getTime());
 
     // Iterate through members in the new configuration, add any missing members, and update existing members.
     boolean transition = false;
@@ -653,7 +653,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     this.configuration = configuration;
 
     // Store the configuration if it's already committed.
-    if (context.getCommitIndex() >= configuration.index()) {
+    if (context.getCommitIndex() >= configuration.getIndex()) {
       context.getMetaStore().storeConfiguration(configuration);
     }
 

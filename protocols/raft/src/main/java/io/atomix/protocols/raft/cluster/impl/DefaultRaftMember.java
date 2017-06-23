@@ -196,8 +196,8 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
     // Non-leader states should forward the request to the leader if there is one. Leader states
     // will log, replicate, and commit the reconfiguration.
     cluster.getContext().getServerState().reconfigure(ReconfigureRequest.builder()
-        .withIndex(cluster.getConfiguration().index())
-        .withTerm(cluster.getConfiguration().term())
+        .withIndex(cluster.getConfiguration().getIndex())
+        .withTerm(cluster.getConfiguration().getTerm())
         .withMember(new DefaultRaftMember(id, type, status, updated))
         .build()).whenComplete((response, error) -> {
       if (error == null) {

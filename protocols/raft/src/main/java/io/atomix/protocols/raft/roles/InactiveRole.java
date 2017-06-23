@@ -80,7 +80,7 @@ public class InactiveRole extends AbstractRole {
     // If the configuration is already committed, commit it to disk.
     // Check against the actual cluster Configuration rather than the received configuration in
     // case the received configuration was an older configuration that was not applied.
-    if (context.getCommitIndex() >= context.getClusterState().getConfiguration().index()) {
+    if (context.getCommitIndex() >= context.getClusterState().getConfiguration().getIndex()) {
       context.getClusterState().commit();
     }
 

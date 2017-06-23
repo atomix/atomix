@@ -250,9 +250,9 @@ public final class LeaderRole extends ActiveRole {
     if (context.getCluster().getMember(request.member().getMemberId()) != null) {
       return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
           .withStatus(RaftResponse.Status.OK)
-          .withIndex(context.getClusterState().getConfiguration().index())
-          .withTerm(context.getClusterState().getConfiguration().term())
-          .withTime(context.getClusterState().getConfiguration().time())
+          .withIndex(context.getClusterState().getConfiguration().getIndex())
+          .withTerm(context.getClusterState().getConfiguration().getTerm())
+          .withTime(context.getClusterState().getConfiguration().getTime())
           .withMembers(context.getCluster().getMembers())
           .build()));
     }
@@ -272,8 +272,8 @@ public final class LeaderRole extends ActiveRole {
           future.complete(logResponse(JoinResponse.builder()
               .withStatus(RaftResponse.Status.OK)
               .withIndex(index)
-              .withTerm(context.getClusterState().getConfiguration().term())
-              .withTime(context.getClusterState().getConfiguration().time())
+              .withTerm(context.getClusterState().getConfiguration().getTerm())
+              .withTime(context.getClusterState().getConfiguration().getTime())
               .withMembers(members)
               .build()));
         } else {
@@ -313,7 +313,7 @@ public final class LeaderRole extends ActiveRole {
 
     // If the configuration request index is less than the last known configuration index for
     // the leader, fail the request to ensure servers can't reconfigure an old configuration.
-    if (request.index() > 0 && request.index() < context.getClusterState().getConfiguration().index() || request.term() != context.getClusterState().getConfiguration().term()
+    if (request.index() > 0 && request.index() < context.getClusterState().getConfiguration().getIndex() || request.term() != context.getClusterState().getConfiguration().getTerm()
         && (existingMember.getType() != request.member().getType() || existingMember.getStatus() != request.member().getStatus())) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
@@ -334,8 +334,8 @@ public final class LeaderRole extends ActiveRole {
           future.complete(logResponse(ReconfigureResponse.builder()
               .withStatus(RaftResponse.Status.OK)
               .withIndex(index)
-              .withTerm(context.getClusterState().getConfiguration().term())
-              .withTime(context.getClusterState().getConfiguration().time())
+              .withTerm(context.getClusterState().getConfiguration().getTerm())
+              .withTime(context.getClusterState().getConfiguration().getTime())
               .withMembers(members)
               .build()));
         } else {
@@ -385,8 +385,8 @@ public final class LeaderRole extends ActiveRole {
           future.complete(logResponse(LeaveResponse.builder()
               .withStatus(RaftResponse.Status.OK)
               .withIndex(index)
-              .withTerm(context.getClusterState().getConfiguration().term())
-              .withTime(context.getClusterState().getConfiguration().time())
+              .withTerm(context.getClusterState().getConfiguration().getTerm())
+              .withTime(context.getClusterState().getConfiguration().getTime())
               .withMembers(members)
               .build()));
         } else {

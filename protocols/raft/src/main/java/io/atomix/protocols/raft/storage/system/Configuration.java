@@ -49,7 +49,7 @@ public class Configuration {
    *
    * @return The configuration index.
    */
-  public long index() {
+  public long getIndex() {
     return index;
   }
 
@@ -60,7 +60,7 @@ public class Configuration {
    *
    * @return The configuration term.
    */
-  public long term() {
+  public long getTerm() {
     return term;
   }
 
@@ -69,7 +69,7 @@ public class Configuration {
    *
    * @return The time at which the configuration was committed.
    */
-  public long time() {
+  public long getTime() {
     return time;
   }
 

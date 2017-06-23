@@ -398,7 +398,7 @@ public class RaftServerContext implements AutoCloseable {
     if (commitIndex > previousCommitIndex) {
       this.commitIndex = commitIndex;
       writer.commit(Math.min(commitIndex, writer.getLastIndex()));
-      long configurationIndex = cluster.getConfiguration().index();
+      long configurationIndex = cluster.getConfiguration().getIndex();
       if (configurationIndex > previousCommitIndex && configurationIndex <= commitIndex) {
         cluster.commit();
       }
