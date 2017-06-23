@@ -26,20 +26,20 @@ public interface Event<T extends Enum, S> {
    *
    * @return timestamp in milliseconds
    */
-  long getTime();
+  long time();
 
   /**
    * Returns the type of the event.
    *
    * @return event type
    */
-  T getType();
+  T type();
 
   /**
    * Returns the subject of the event.
    *
    * @return subject to which this event pertains
    */
-  S getSubject();
+  S subject();
 
 }

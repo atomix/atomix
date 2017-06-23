@@ -297,8 +297,8 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftServer server = servers.get(0);
     server.getCluster().addListener(event -> {
-      if (event.getType() == RaftClusterEvent.Type.JOIN) {
-        event.getSubject().addStatusChangeListener(s -> {
+      if (event.type() == RaftClusterEvent.Type.JOIN) {
+        event.subject().addStatusChangeListener(s -> {
           threadAssertEquals(s, RaftMember.Status.UNAVAILABLE);
           resume();
         });
@@ -327,9 +327,9 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftMember reserveMember = nextMember(RaftMember.Type.RESERVE);
     passive.getCluster().addListener(event -> {
-      if (event.getType() == RaftClusterEvent.Type.JOIN) {
-        threadAssertEquals(event.getSubject().getMemberId(), reserveMember.getMemberId());
-        event.getSubject().addStatusChangeListener(s -> {
+      if (event.type() == RaftClusterEvent.Type.JOIN) {
+        threadAssertEquals(event.subject().getMemberId(), reserveMember.getMemberId());
+        event.subject().addStatusChangeListener(s -> {
           threadAssertEquals(s, RaftMember.Status.UNAVAILABLE);
           resume();
         });
@@ -399,9 +399,9 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftServer server = servers.get(0);
     server.getCluster().addListener(event -> {
-      if (event.getType() == RaftClusterEvent.Type.JOIN) {
-        threadAssertEquals(event.getSubject().getMemberId(), member.getMemberId());
-        threadAssertEquals(event.getSubject().getType(), type);
+      if (event.type() == RaftClusterEvent.Type.JOIN) {
+        threadAssertEquals(event.subject().getMemberId(), member.getMemberId());
+        threadAssertEquals(event.subject().getType(), type);
         resume();
       }
     });
@@ -804,8 +804,8 @@ public class RaftTest extends ConcurrentTestCase {
     RaftProxy session = createSession(client);
     session.<IndexEvent>addEventListener(event -> {
       threadAssertEquals(counter.incrementAndGet(), 3);
-      threadAssertTrue(event.getSubject() >= index.get());
-      index.set(event.getSubject());
+      threadAssertTrue(event.subject() >= index.get());
+      index.set(event.subject());
       resume();
     });
 

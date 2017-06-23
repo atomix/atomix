@@ -52,17 +52,17 @@ public class AbstractEvent<T extends Enum, S> implements Event<T, S> {
   }
 
   @Override
-  public long getTime() {
+  public long time() {
     return time;
   }
 
   @Override
-  public T getType() {
+  public T type() {
     return type;
   }
 
   @Override
-  public S getSubject() {
+  public S subject() {
     return subject;
   }
 
@@ -70,8 +70,8 @@ public class AbstractEvent<T extends Enum, S> implements Event<T, S> {
   public String toString() {
     return toStringHelper(this)
         .add("time", new Date(time))
-        .add("type", getType())
-        .add("subject", getSubject())
+        .add("type", type())
+        .add("subject", subject())
         .toString();
   }
 }

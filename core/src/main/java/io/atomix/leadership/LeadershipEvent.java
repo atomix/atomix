@@ -83,7 +83,7 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
 
   @Override
   public int hashCode() {
-    return Objects.hash(getType(), getSubject(), getTime());
+    return Objects.hash(type(), subject(), time());
   }
 
   @Override
@@ -93,9 +93,9 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
     }
     if (obj instanceof LeadershipEvent) {
       final LeadershipEvent other = (LeadershipEvent) obj;
-      return Objects.equals(this.getType(), other.getType()) &&
-          Objects.equals(this.getSubject(), other.getSubject()) &&
-          Objects.equals(this.getTime(), other.getTime());
+      return Objects.equals(this.type(), other.type()) &&
+          Objects.equals(this.subject(), other.subject()) &&
+          Objects.equals(this.time(), other.time());
     }
     return false;
   }
@@ -103,9 +103,9 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this.getClass())
-        .add("type", getType())
-        .add("subject", getSubject())
-        .add("time", getTime())
+        .add("type", type())
+        .add("subject", subject())
+        .add("time", time())
         .toString();
   }
 }

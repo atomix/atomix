@@ -46,17 +46,17 @@ public class GossipEvent<K, V> implements Event<GossipEvent.Type, K> {
   }
 
   @Override
-  public long getTime() {
+  public long time() {
     return time;
   }
 
   @Override
-  public Type getType() {
+  public Type type() {
     return Type.UPDATE;
   }
 
   @Override
-  public K getSubject() {
+  public K subject() {
     return subject;
   }
 

@@ -104,7 +104,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
   @Override
   public void process(GossipEvent<K, V> event) {
     GossipUpdate<K, V> update = new GossipUpdate<>(
-        event.getSubject(),
+        event.subject(),
         event.value(),
         logicalClock.increment());
 
@@ -114,11 +114,11 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
       if (tombstonesDisabled) {
         updates.remove(update.subject());
       } else {
-        updates.put(event.getSubject(), update);
+        updates.put(event.subject(), update);
         notifyPeers(update);
       }
     } else {
-      updates.put(event.getSubject(), update);
+      updates.put(event.subject(), update);
       notifyPeers(update);
     }
     post(event);
