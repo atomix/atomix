@@ -36,7 +36,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
- * Default Copycat client implementation.
+ * Default Raft client implementation.
  */
 public class DefaultRaftClient implements RaftClient {
   private final String clientId;
@@ -115,7 +115,7 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   /**
-   * Default Copycat session builder.
+   * Default Raft session builder.
    */
   private class SessionBuilder extends RaftProxy.Builder {
     @Override

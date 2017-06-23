@@ -44,9 +44,9 @@ public abstract class AbstractRole implements RaftRole {
   }
 
   /**
-   * Returns the Copycat state represented by this state.
+   * Returns the Raft state represented by this state.
    *
-   * @return The Copycat state represented by this state.
+   * @return The Raft state represented by this state.
    */
   public abstract RaftServer.Role getRole();
 

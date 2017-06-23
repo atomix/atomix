@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Default Copycat metadata.
+ * Default Raft metadata.
  */
 public class DefaultRaftMetadataClient implements RaftMetadataClient {
   private final NodeSelectorManager selectorManager;

@@ -15,6 +15,6 @@
  */
 
 /**
- * Standalone segmented log for Copycat's <a href="https://raftconsensus.github.io/">Raft</a> implementation.
+ * Standalone segmented log for Raft's <a href="https://raftconsensus.github.io/">Raft</a> implementation.
  */
 package io.atomix.protocols.raft.storage;

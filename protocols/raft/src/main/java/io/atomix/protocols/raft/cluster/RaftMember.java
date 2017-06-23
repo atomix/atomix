@@ -20,9 +20,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Represents a member of a Copycat cluster.
+ * Represents a member of a Raft cluster.
  * <p>
- * This interface provides metadata and operations related to a specific member of a Copycat cluster.
+ * This interface provides metadata and operations related to a specific member of a Raft cluster.
  * Each server in a {@link RaftCluster} has a view of the cluster state and can reference and operate on
  * specific members of the cluster via this API.
  * <p>

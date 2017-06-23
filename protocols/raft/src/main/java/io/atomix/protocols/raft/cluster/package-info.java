@@ -15,6 +15,6 @@
  */
 
 /**
- * Interfaces for managing and interacting with the Copycat cluster.
+ * Interfaces for managing and interacting with the Raft cluster.
  */
 package io.atomix.protocols.raft.cluster;

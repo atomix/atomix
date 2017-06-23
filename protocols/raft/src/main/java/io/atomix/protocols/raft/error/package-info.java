@@ -17,7 +17,7 @@
 /**
  * Provides error constants and exceptions associated with the Raft consensus protocol.
  * <p>
- * Copycat protocol errors are designed to be transported across networks in the most efficient manner possible. Each protocol exception
+ * Raft protocol errors are designed to be transported across networks in the most efficient manner possible. Each protocol exception
  * is associated with a 1-byte identifier. Rather than serializing complete {@link java.lang.Exception} objects, the protocol exception is
  * sent using only its identifier and the exception is recreated by the receiving side of a connection.
  */

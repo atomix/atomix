@@ -171,7 +171,7 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   /**
-   * Shuts down the server without leaving the Copycat cluster.
+   * Shuts down the server without leaving the Raft cluster.
    *
    * @return A completable future to be completed once the server has been shutdown.
    */
@@ -194,7 +194,7 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   /**
-   * Leaves the Copycat cluster.
+   * Leaves the Raft cluster.
    *
    * @return A completable future to be completed once the server has left the cluster.
    */

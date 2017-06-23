@@ -25,7 +25,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Client command request.
  * <p>
- * Command requests are submitted by clients to the Copycat cluster to commit commands to
+ * Command requests are submitted by clients to the Raft cluster to commit commands to
  * the replicated state machine. Each command request must be associated with a registered
  * {@link #getSession()} and have a unique {@link #getSequence()} number within that session. Commands will
  * be applied in the cluster in the order defined by the provided sequence number. Thus, sequence numbers

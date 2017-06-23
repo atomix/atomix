@@ -23,7 +23,7 @@ import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
  * Support for periodically persisting {@link RaftStateMachine} snapshots to disk.
  * <p>
  * To store a state machine's state, simply implement the {@link #snapshot(SnapshotWriter)} method and write the
- * complete state machine state to the snapshot via the {@link SnapshotWriter}. Copycat will periodically invoke
+ * complete state machine state to the snapshot via the {@link SnapshotWriter}. Raft will periodically invoke
  * the method to take a new snapshot of the state machine's state when the underlying log rotates segments.
  * <p>
  * <pre>

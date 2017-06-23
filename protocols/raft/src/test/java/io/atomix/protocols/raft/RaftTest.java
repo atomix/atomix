@@ -1191,7 +1191,7 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
-   * Creates a set of Copycat servers.
+   * Creates a set of Raft servers.
    */
   private List<RaftServer> createServers(int nodes) throws Throwable {
     List<RaftServer> servers = new ArrayList<>();
@@ -1212,7 +1212,7 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
-   * Creates a set of Copycat servers.
+   * Creates a set of Raft servers.
    */
   private List<RaftServer> createServers(int live, int total) throws Throwable {
     List<RaftServer> servers = new ArrayList<>();
@@ -1233,7 +1233,7 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
-   * Creates a Copycat server.
+   * Creates a Raft server.
    */
   private RaftServer createServer(RaftMember member) {
     RaftServer.Builder builder = RaftServer.newBuilder(member.getMemberId())
@@ -1253,7 +1253,7 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
-   * Creates a Copycat client.
+   * Creates a Raft client.
    */
   private RaftClient createClient() throws Throwable {
     MemberId memberId = nextMemberId();

@@ -64,7 +64,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  * </pre>
  * Snapshots don't necessarily represent the beginning of the log. Typical Raft implementations take a
- * snapshot of the state machine state and then clear their logs up to that point. However, in Copycat
+ * snapshot of the state machine state and then clear their logs up to that point. However, in Raft
  * a snapshot may actually only represent a subset of the state machine's state.
  */
 public class SnapshotStore implements AutoCloseable {

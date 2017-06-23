@@ -28,7 +28,7 @@ public interface RaftCommit<T extends RaftOperation> {
    * Returns the commit index.
    * <p>
    * This is the index at which the committed {@link RaftOperation} was written in the Raft log.
-   * Copycat guarantees that this index will be unique for {@link RaftCommand} commits and will be the same for all
+   * Raft guarantees that this index will be unique for {@link RaftCommand} commits and will be the same for all
    * instances of the given operation on all servers in the cluster.
    * <p>
    * For {@link RaftQuery} operations, the returned {@code index} may actually be representative of the last committed
@@ -43,7 +43,7 @@ public interface RaftCommit<T extends RaftOperation> {
    * Returns the session that submitted the operation.
    * <p>
    * The returned {@link RaftSession} is representative of the session that submitted the operation
-   * that resulted in this {@link RaftCommit}. The session can be used to {@link RaftSession#publish(Object)}
+   * that resulted in this {@link RaftCommit}. The session can be used to {@link RaftSession#publish(io.atomix.event.Event)}
    * event messages to the client.
    *
    * @return The session that created the commit.

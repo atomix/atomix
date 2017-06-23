@@ -24,11 +24,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Copycat server cluster API.
+ * Raft server cluster API.
  * <p>
- * This class provides the view of the Copycat cluster from the perspective of a single server. When a
- * {@link RaftServer CopycatServer} is started, the server will form a cluster
- * with other servers. Each Copycat cluster consists of some set of {@link #getMembers() members}, and each
+ * This class provides the view of the Raft cluster from the perspective of a single server. When a
+ * {@link RaftServer RaftServer} is started, the server will form a cluster
+ * with other servers. Each Raft cluster consists of some set of {@link #getMembers() members}, and each
  * {@link RaftMember} represents a single server in the cluster. Users can use the {@code Cluster} to react to
  * state changes in the underlying Raft algorithm via the various listeners.
  * <p>
@@ -43,7 +43,7 @@ import java.util.function.Consumer;
  * necessarily be consistent with cluster membership from the perspective of other nodes. The only consistent
  * membership list is on the {@link #getLeader() leader} node.
  * <h2>Cluster management</h2>
- * Users can use the {@code Cluster} to manage the Copycat cluster membership. Typically, servers join the
+ * Users can use the {@code Cluster} to manage the Raft cluster membership. Typically, servers join the
  * cluster by calling {@link RaftServer#bootstrap(MemberId...)}  or {@link #join(MemberId...)},
  * but in the event that a server fails permanently and thus cannot remove itself, other nodes can remove arbitrary servers.
  * <p>
@@ -105,7 +105,7 @@ public interface RaftCluster {
    *   });
    *   }
    * </pre>
-   * The {@link RaftMember} provided to the callback represents the member that was elected leader. Copycat guarantees that this member is
+   * The {@link RaftMember} provided to the callback represents the member that was elected leader. Raft guarantees that this member is
    * a member of the {@link RaftCluster}. When a leader election callback is called, the correct {@link #getTerm()} for the leader is guaranteed
    * to have already been set. Thus, to get the term for the provided leader, simply read the cluster {@link #getTerm()}.
    *
@@ -226,7 +226,7 @@ public interface RaftCluster {
    * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
    * the server leaves the cluster will its configuration and log be reset.
    * <p>
-   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * In order to preserve safety during configuration changes, Raft leaders do not allow concurrent configuration
    * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
    * member being {@link RaftMember#promote() promoted} or {@link RaftMember#demote() demoted}) is under way, the local
    * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
@@ -260,7 +260,7 @@ public interface RaftCluster {
    * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
    * the server leaves the cluster will its configuration and log be reset.
    * <p>
-   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * In order to preserve safety during configuration changes, Raft leaders do not allow concurrent configuration
    * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
    * member being {@link RaftMember#promote() promoted} or {@link RaftMember#demote() demoted}) is under way, the local
    * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
@@ -282,7 +282,7 @@ public interface RaftCluster {
    * to the cluster leader. The leader will replicate and commit the configuration change in order to remove the
    * leaving server from the cluster and notify each member of the leaving server.
    * <p>
-   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * In order to preserve safety during configuration changes, Raft leaders do not allow concurrent configuration
    * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
    * member being {@link RaftMember#promote() promoted} or {@link RaftMember#demote() demoted}) is under way, the local
    * server will retry attempts to leave the cluster until successful. The server will continuously attempt to

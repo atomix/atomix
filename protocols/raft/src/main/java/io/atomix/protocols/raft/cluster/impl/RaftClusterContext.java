@@ -55,7 +55,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
- * Manages the persistent state of the Copycat cluster from the perspective of a single server.
+ * Manages the persistent state of the Raft cluster from the perspective of a single server.
  */
 public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftClusterContext.class);

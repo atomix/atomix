@@ -30,14 +30,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Provides an interface for submitting operations to the Copycat cluster.
+ * Provides an interface for submitting operations to the Raft cluster.
  */
 public interface RaftClient {
 
   /**
-   * Returns a new Copycat client builder.
+   * Returns a new Raft client builder.
    * <p>
-   * The provided set of members will be used to connect to the Copycat cluster. The members list does not have to represent
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
    * the complete list of servers in the cluster, but it must have at least one reachable member that can communicate with
    * the cluster's leader.
    *
@@ -49,9 +49,9 @@ public interface RaftClient {
   }
 
   /**
-   * Returns a new Copycat client builder.
+   * Returns a new Raft client builder.
    * <p>
-   * The provided set of members will be used to connect to the Copycat cluster. The members list does not have to represent
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
    * the complete list of servers in the cluster, but it must have at least one reachable member that can communicate with
    * the cluster's leader.
    *
@@ -63,9 +63,9 @@ public interface RaftClient {
   }
 
   /**
-   * Returns a new Copycat client builder.
+   * Returns a new Raft client builder.
    * <p>
-   * The provided set of members will be used to connect to the Copycat cluster. The members list does not have to represent
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
    * the complete list of servers in the cluster, but it must have at least one reachable member that can communicate with
    * the cluster's leader.
    *
@@ -84,9 +84,9 @@ public interface RaftClient {
   String getClientId();
 
   /**
-   * Returns the Copycat metadata.
+   * Returns the Raft metadata.
    *
-   * @return The Copycat metadata.
+   * @return The Raft metadata.
    */
   RaftMetadataClient getMetadataClient();
 
@@ -98,7 +98,7 @@ public interface RaftClient {
   RaftProxy.Builder newProxyBuilder();
 
   /**
-   * Connects the client to Copycat cluster via the default server address.
+   * Connects the client to Raft cluster via the default server address.
    * <p>
    * If the client was built with a default cluster list, the default server addresses will be used. Otherwise, the client
    * will attempt to connect to localhost:8700.
@@ -113,7 +113,7 @@ public interface RaftClient {
   }
 
   /**
-   * Connects the client to Copycat cluster via the provided server addresses.
+   * Connects the client to Raft cluster via the provided server addresses.
    * <p>
    * The client will connect to servers in the cluster according to the pattern specified by the configured
    * {@link CommunicationStrategy}.
@@ -130,7 +130,7 @@ public interface RaftClient {
   }
 
   /**
-   * Connects the client to Copycat cluster via the provided server addresses.
+   * Connects the client to Raft cluster via the provided server addresses.
    * <p>
    * The client will connect to servers in the cluster according to the pattern specified by the configured
    * {@link CommunicationStrategy}.
@@ -148,12 +148,12 @@ public interface RaftClient {
   CompletableFuture<Void> close();
 
   /**
-   * Builds a new Copycat client.
+   * Builds a new Raft client.
    * <p>
    * New client builders should be constructed using the static {@link #newBuilder()} factory method.
    * <pre>
    *   {@code
-   *     CopycatClient client = CopycatClient.builder(new Address("123.456.789.0", 5000), new Address("123.456.789.1", 5000)
+   *     RaftClient client = RaftClient.builder(new Address("123.456.789.0", 5000), new Address("123.456.789.1", 5000)
    *       .withTransport(new NettyTransport())
    *       .build();
    *   }

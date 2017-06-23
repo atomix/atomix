@@ -42,7 +42,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * State machines are responsible for handling {@link RaftOperation operations} submitted to the Raft cluster and
  * filtering {@link RaftCommit committed} operations out of the Raft log. The most important rule of state machines is
- * that <em>state machines must be deterministic</em> in order to maintain Copycat's consistency guarantees. That is,
+ * that <em>state machines must be deterministic</em> in order to maintain Raft's consistency guarantees. That is,
  * state machines must not change their behavior based on external influences and have no side effects. Users should
  * <em>never</em> use {@code System} time to control behavior within a state machine.
  * <p>
@@ -129,16 +129,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  *   }
  * </pre>
- * Attempts to {@link RaftSession#publish(Object) publish}
+ * Attempts to {@link RaftSession#publish(io.atomix.event.Event) publish}
  * events during the execution will result in an {@link IllegalStateException}.
  * <p>
- * Even though state machines on multiple servers may appear to publish the same event, Copycat's protocol ensures that only
+ * Even though state machines on multiple servers may appear to publish the same event, Raft's protocol ensures that only
  * one server ever actually sends the event. Still, it's critical that all state machines publish all events to ensure
  * consistency and fault tolerance. In the event that a server fails after publishing a session event, the client will transparently
  * reconnect to another server and retrieve lost event messages.
  * <p>
  * <h3>Snapshotting</h3>
- * On top of Copycat's log cleaning algorithm mentioned above, Copycat provides a mechanism for storing and loading
+ * Atomix's implementation of the Raft protocol provides a mechanism for storing and loading
  * snapshots of a state machine's state. Snapshots are images of the state machine's state stored at a specific
  * point in logical time (an {@code index}). To support snapshotting, state machine implementations should implement
  * the {@link Snapshottable} interface.
@@ -158,9 +158,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  *   }
  * </pre>
- * For snapshottable state machines, Copycat will periodically request a {@link io.atomix.protocols.raft.storage.snapshot.Snapshot Snapshot}
+ * For snapshottable state machines, Raft will periodically request a {@link io.atomix.protocols.raft.storage.snapshot.Snapshot Snapshot}
  * of the state machine's state by calling the {@link Snapshottable#snapshot(io.atomix.protocols.raft.storage.snapshot.SnapshotWriter)}
- * method. Once the state machine has written a snapshot of its state, Copycat will automatically remove all commands
+ * method. Once the state machine has written a snapshot of its state, Raft will automatically remove all commands
  * associated with the state machine from the underlying log.
  *
  * @see RaftCommit

@@ -51,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   Address address = new Address("123.456.789.0", 5000);
  *   Collection<Address> members = Arrays.asList(new Address("123.456.789.1", 5000), new Address("123.456.789.2", 5000));
  *
- *   CopycatServer server = CopycatServer.builder(address)
+ *   RaftServer server = RaftServer.builder(address)
  *     .withStateMachine(MyStateMachine::new)
  *     .build();
  *   }
@@ -69,7 +69,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * memory instead of disk, configure the {@link StorageLevel}.
  * <pre>
  * {@code
- * CopycatServer server = CopycatServer.builder(address)
+ * RaftServer server = RaftServer.builder(address)
  *   .withStateMachine(MyStateMachine::new)
  *   .withStorage(Storage.builder()
  *     .withDirectory(new File("logs"))
@@ -86,7 +86,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * a single server to which additional servers can be joined.
  * <pre>
  *   {@code
- *   CompletableFuture<CopycatServer> future = server.bootstrap();
+ *   CompletableFuture<RaftServer> future = server.bootstrap();
  *   future.thenRun(() -> {
  *     System.out.println("Server bootstrapped!");
  *   });
@@ -103,7 +103,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *       new Address("123.456.789.2", 5000)
  *     );
  *
- *     CompletableFuture<CopycatServer> future = server.bootstrap(cluster);
+ *     CompletableFuture<RaftServer> future = server.bootstrap(cluster);
  *     future.thenRun(() -> {
  *       System.out.println("Cluster bootstrapped");
  *     });
@@ -117,7 +117,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * existing cluster.
  * <pre>
  *   {@code
- *     CopycatServer server = CopycatServer.builder(new Address("123.456.789.3", 5000))
+ *     RaftServer server = RaftServer.builder(new Address("123.456.789.3", 5000))
  *       .withTransport(NettyTransport.builder().withThreads(4).build())
  *       .build();
  *
@@ -127,7 +127,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *       new Address("123.456.789.2", 5000)
  *     );
  *
- *     CompletableFuture<CopycatServer> future = server.join(cluster);
+ *     CompletableFuture<RaftServer> future = server.join(cluster);
  *     future.thenRun(() -> {
  *       System.out.println("Server joined successfully!");
  *     });
@@ -135,7 +135,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * </pre>
  * <h2>Server types</h2>
  * Servers form new clusters and join existing clusters as active Raft voting members by default. However, for
- * large deployments Copycat also supports alternative types of nodes which are configured by setting the server
+ * large deployments Raft also supports alternative types of nodes which are configured by setting the server
  * {@link RaftMember.Type}. For example, the {@link RaftMember.Type#PASSIVE PASSIVE} server type does not participate
  * directly in the Raft consensus algorithm and instead receives state changes via an asynchronous gossip protocol.
  * This allows passive members to scale sequential reads beyond the typical three- or five-node Raft cluster. The
@@ -146,7 +146,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * {@link Builder#withType(RaftMember.Type)} setter:
  * <pre>
  *   {@code
- *   CopycatServer server = CopycatServer.builder(address)
+ *   RaftServer server = RaftServer.builder(address)
  *     .withType(Member.Type.PASSIVE)
  *     .withTransport(new NettyTransport())
  *     .build();
@@ -159,7 +159,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public interface RaftServer {
 
   /**
-   * Returns a new Copycat server builder using the default host:port.
+   * Returns a new Raft server builder using the default host:port.
    * <p>
    * The server will be constructed at 0.0.0.0:8700.
    *
@@ -170,7 +170,7 @@ public interface RaftServer {
   }
 
   /**
-   * Returns a new Copycat server builder.
+   * Returns a new Raft server builder.
    * <p>
    * The provided {@link MemberId} is the address to which to bind the server being constructed.
    *
@@ -182,7 +182,7 @@ public interface RaftServer {
   }
 
   /**
-   * Copycat server state types.
+   * Raft server state types.
    * <p>
    * States represent the context of the server's internal state machine. Throughout the lifetime of a server,
    * the server will periodically transition between states based on requests, responses, and timeouts.
@@ -394,7 +394,7 @@ public interface RaftServer {
    * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
    * the server leaves the cluster will its configuration and log be reset.
    * <p>
-   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * In order to preserve safety during configuration changes, Raft leaders do not allow concurrent configuration
    * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
    * member being {@link RaftMember#promote() promoted} or {@link RaftMember#demote() demoted}) is under way, the local
    * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
@@ -426,7 +426,7 @@ public interface RaftServer {
    * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
    * the server leaves the cluster will its configuration and log be reset.
    * <p>
-   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * In order to preserve safety during configuration changes, Raft leaders do not allow concurrent configuration
    * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
    * member being {@link RaftMember#promote() promoted} or {@link RaftMember#demote() demoted}) is under way, the local
    * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
@@ -445,35 +445,35 @@ public interface RaftServer {
   boolean isRunning();
 
   /**
-   * Shuts down the server without leaving the Copycat cluster.
+   * Shuts down the server without leaving the Raft cluster.
    *
    * @return A completable future to be completed once the server has been shutdown.
    */
   CompletableFuture<Void> shutdown();
 
   /**
-   * Leaves the Copycat cluster.
+   * Leaves the Raft cluster.
    *
    * @return A completable future to be completed once the server has left the cluster.
    */
   CompletableFuture<Void> leave();
 
   /**
-   * Builds a single-use Copycat server.
+   * Builds a single-use Raft server.
    * <p>
    * This builder should be used to programmatically configure and construct a new {@link RaftServer} instance.
-   * The builder provides methods for configuring all aspects of a Copycat server. The {@code CopycatServer.Builder}
+   * The builder provides methods for configuring all aspects of a Raft server. The {@code RaftServer.Builder}
    * class cannot be instantiated directly. To create a new builder, use one of the
    * {@link RaftServer#newBuilder(MemberId) server builder factory} methods.
    * <pre>
    *   {@code
-   *   CopycatServer.Builder builder = CopycatServer.builder(address);
+   *   RaftServer.Builder builder = RaftServer.builder(address);
    *   }
    * </pre>
    * Once the server has been configured, use the {@link #build()} method to build the server instance:
    * <pre>
    *   {@code
-   *   CopycatServer server = CopycatServer.builder(address)
+   *   RaftServer server = RaftServer.builder(address)
    *     ...
    *     .build();
    *   }
@@ -484,7 +484,7 @@ public interface RaftServer {
    * its state when necessary.
    * <pre>
    *   {@code
-   *   CopycatServer server = CopycatServer.builder(address)
+   *   RaftServer server = RaftServer.builder(address)
    *     .withStateMachine(MyStateMachine::new)
    *     .build();
    *   }

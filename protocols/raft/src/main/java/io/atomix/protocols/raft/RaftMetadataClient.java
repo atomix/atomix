@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Copycat metadata.
+ * Raft metadata.
  */
 public interface RaftMetadataClient {
 

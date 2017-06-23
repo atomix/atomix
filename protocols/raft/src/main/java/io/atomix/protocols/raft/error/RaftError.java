@@ -16,9 +16,9 @@
 package io.atomix.protocols.raft.error;
 
 /**
- * Base type for Copycat protocol errors.
+ * Base type for Raft protocol errors.
  * <p>
- * Copycat errors are passed on the wire in lieu of exceptions to reduce the overhead of serialization.
+ * Raft errors are passed on the wire in lieu of exceptions to reduce the overhead of serialization.
  * Each error is identifiable by an error ID which is used to serialize and deserialize errors.
  */
 public interface RaftError {

@@ -60,7 +60,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Manages the volatile state and state transitions of a Copycat server.
+ * Manages the volatile state and state transitions of a Raft server.
  * <p>
  * This class is the primary vehicle for managing the state of a server. All state that is shared across roles (i.e. follower, candidate, leader)
  * is stored in the cluster state. This includes Raft-specific state like the current leader and term, the log, and the cluster configuration.
@@ -99,7 +99,7 @@ public class RaftServerContext implements AutoCloseable {
     this.storage = checkNotNull(storage, "storage cannot be null");
     this.threadContext = checkNotNull(threadContext, "threadContext cannot be null");
     this.registry = checkNotNull(registry, "registry cannot be null");
-    this.stateContext = new SingleThreadContext(String.format("copycat-server-%s-%s-state", localMemberId, name));
+    this.stateContext = new SingleThreadContext(String.format("raft-server-%s-%s-state", localMemberId, name));
     this.threadPool = checkNotNull(threadPool, "threadPool cannot be null");
 
     // Open the meta store.

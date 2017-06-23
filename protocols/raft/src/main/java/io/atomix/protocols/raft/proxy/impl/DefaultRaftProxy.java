@@ -34,9 +34,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Handles submitting state machine {@link RaftCommand commands} and {@link RaftQuery queries} to the Copycat cluster.
+ * Handles submitting state machine {@link RaftCommand commands} and {@link RaftQuery queries} to the Raft cluster.
  * <p>
- * The client session is responsible for maintaining a client's connection to a Copycat cluster and coordinating
+ * The client session is responsible for maintaining a client's connection to a Raft cluster and coordinating
  * the submission of {@link RaftCommand commands} and {@link RaftQuery queries} to various nodes in the cluster. Client
  * sessions are single-use objects that represent the context within which a cluster can guarantee linearizable
  * semantics for state machine operations. When a session is opened, the session will register

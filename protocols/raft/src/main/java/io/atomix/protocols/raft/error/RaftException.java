@@ -16,9 +16,9 @@
 package io.atomix.protocols.raft.error;
 
 /**
- * Base Copycat protocol exception.
+ * Base Raft protocol exception.
  * <p>
- * This is the base exception type for all Copycat protocol exceptions. Protocol exceptions must be
+ * This is the base exception type for all Raft protocol exceptions. Protocol exceptions must be
  * associated with a {@link RaftError.Type} which is used for more efficient serialization.
  */
 public abstract class RaftException extends RuntimeException {

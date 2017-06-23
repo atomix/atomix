@@ -28,7 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Client query request.
  * <p>
- * Query requests are submitted by clients to the Copycat cluster to commit {@link RaftQuery}s to
+ * Query requests are submitted by clients to the Raft cluster to commit {@link RaftQuery}s to
  * the replicated state machine. Each query request must be associated with a registered
  * {@link #getSession()} and have a unique {@link #getSequence()} number within that session. Queries will
  * be applied in the cluster in the order defined by the provided sequence number. Thus, sequence numbers

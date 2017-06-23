@@ -15,7 +15,7 @@
  */
 
 /**
- * Core interfaces for operating on replicated state machines in the Copycat cluster.
+ * Core interfaces for operating on replicated state machines in the Raft cluster.
  * <p>
  * The interfaces in this package are shared by both clients and servers. They are the interfaces through which clients and servers communicate
  * state change and query information with one another.

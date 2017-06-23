@@ -33,12 +33,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Copycat client proxy.
+ * Raft client proxy.
  */
 public interface RaftProxy {
 
   /**
-   * Indicates the state of the client's communication with the Copycat cluster.
+   * Indicates the state of the client's communication with the Raft cluster.
    * <p>
    * Throughout the lifetime of a client, the client will transition through various states according to its
    * ability to communicate with the cluster within the context of a {@link RaftProxy}. In some cases, client
@@ -122,7 +122,7 @@ public interface RaftProxy {
   void removeStateChangeListener(Consumer<State> listener);
 
   /**
-   * Submits an operation to the Copycat cluster.
+   * Submits an operation to the Raft cluster.
    * <p>
    * This method is provided for convenience. The submitted {@link RaftOperation} must be an instance
    * of {@link RaftCommand} or {@link RaftQuery}.
@@ -145,7 +145,7 @@ public interface RaftProxy {
   }
 
   /**
-   * Submits a command to the Copycat cluster.
+   * Submits a command to the Raft cluster.
    * <p>
    * Commands are used to alter state machine state. All commands will be forwarded to the current cluster leader.
    * Once a leader receives the command, it will write the command to its internal {@code Log} and replicate it to a majority
@@ -168,7 +168,7 @@ public interface RaftProxy {
   <T> CompletableFuture<T> submit(RaftCommand<T> command);
 
   /**
-   * Submits a query to the Copycat cluster.
+   * Submits a query to the Raft cluster.
    * <p>
    * Queries are used to read state machine state. The behavior of query submissions is primarily dependent on the
    * query's {@link RaftQuery.ConsistencyLevel}. For {@link RaftQuery.ConsistencyLevel#LINEARIZABLE}
@@ -217,7 +217,7 @@ public interface RaftProxy {
   CompletableFuture<Void> close();
 
   /**
-   * Copycat session builder.
+   * Raft session builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<RaftProxy> {
     protected String name;
