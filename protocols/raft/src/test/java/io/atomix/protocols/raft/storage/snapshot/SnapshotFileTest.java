@@ -71,4 +71,9 @@ public class SnapshotFileTest {
     assertEquals(SnapshotFile.parseTimestamp(fileName), SnapshotFile.TIMESTAMP_FORMAT.parse(SnapshotFile.TIMESTAMP_FORMAT.format(3)).getTime());
   }
 
+  public void testTimestampDecoder() throws Exception {
+    String timestampString = "20170624151018";
+    SnapshotFile.TIMESTAMP_FORMAT.parse(timestampString);
+  }
+
 }

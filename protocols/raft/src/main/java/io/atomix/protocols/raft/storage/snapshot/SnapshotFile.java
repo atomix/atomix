@@ -203,11 +203,13 @@ public final class SnapshotFile {
     int start = fileName.lastIndexOf(PART_SEPARATOR) + 1;
     int end = fileName.lastIndexOf(EXTENSION_SEPARATOR);
     String timestampString = fileName.substring(start, end);
-    try {
-      Date timestamp = TIMESTAMP_FORMAT.parse(timestampString);
-      return timestamp.getTime();
-    } catch (ParseException e) {
-      throw new RuntimeException(e);
+    synchronized (TIMESTAMP_FORMAT) {
+      try {
+        Date timestamp = TIMESTAMP_FORMAT.parse(timestampString);
+        return timestamp.getTime();
+      } catch (ParseException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 

@@ -1348,7 +1348,7 @@ public class RaftTest extends ConcurrentTestCase {
     @Override
     public void onClose(RaftSession session) {
       if (close != null && !session.equals(close.session())) {
-        expire.session().publish(new IndexEvent(IndexEvent.Type.CLOSED));
+        close.session().publish(new IndexEvent(IndexEvent.Type.CLOSED));
       }
     }
 
