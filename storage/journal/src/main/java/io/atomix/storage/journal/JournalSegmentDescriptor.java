@@ -15,6 +15,7 @@
  */
 package io.atomix.storage.journal;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.Bytes;
 import io.atomix.storage.buffer.FileBuffer;
@@ -57,7 +58,8 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   public static final int BYTES = 64;
 
   // Current segment version.
-  private static final int VERSION = 1;
+  @VisibleForTesting
+  static final int VERSION = 1;
 
   // The lengths of each field in the header.
   private static final int VERSION_LENGTH = Bytes.INTEGER;     // 32-bit signed integer
@@ -202,8 +204,8 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    */
   JournalSegmentDescriptor copyTo(Buffer buffer) {
     this.buffer = buffer
+        .writeInt(version)
         .writeLong(id)
-        .writeLong(version)
         .writeLong(index)
         .writeUnsignedInt(maxSegmentSize)
         .writeInt(maxEntries)
@@ -248,7 +250,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
 
     private Builder(Buffer buffer) {
       this.buffer = checkNotNull(buffer, "buffer cannot be null")
-          .writeLong(VERSION_POSITION, VERSION);
+          .writeInt(VERSION_POSITION, VERSION);
     }
 
     /**
