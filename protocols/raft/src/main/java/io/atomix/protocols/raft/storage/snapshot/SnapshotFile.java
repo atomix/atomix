@@ -28,7 +28,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Represents a snapshot file on disk.
  */
 public final class SnapshotFile {
-  private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
+  @VisibleForTesting
+  static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
   private static final char PART_SEPARATOR = '-';
   private static final char EXTENSION_SEPARATOR = '.';
   private static final String EXTENSION = "snapshot";
@@ -58,7 +59,7 @@ public final class SnapshotFile {
     String[] parts = fileName.split(String.valueOf(PART_SEPARATOR));
 
     // The total number of file name parts should be at least 4.
-    if (parts.length >= 4) {
+    if (parts.length < 4) {
       return false;
     }
 
@@ -102,8 +103,22 @@ public final class SnapshotFile {
   /**
    * Creates a snapshot file for the given directory, log name, and snapshot index.
    */
+  @VisibleForTesting
   static File createSnapshotFile(String name, File directory, long id, long index, long timestamp) {
-    return new File(directory, String.format("%s-%d-%d-%s.%s", checkNotNull(name, "name cannot be null"), id, index, TIMESTAMP_FORMAT.format(new Date(timestamp)), EXTENSION));
+    return new File(directory, createSnapshotFileName(name, id, index, timestamp));
+  }
+
+  /**
+   * Creates a snapshot file name from the given parameters.
+   */
+  @VisibleForTesting
+  static String createSnapshotFileName(String name, long id, long index, long timestamp) {
+    return String.format("%s-%d-%d-%s.%s",
+        checkNotNull(name, "name cannot be null"),
+        id,
+        index,
+        TIMESTAMP_FORMAT.format(new Date(timestamp)),
+        EXTENSION);
   }
 
   /**
@@ -139,8 +154,8 @@ public final class SnapshotFile {
    */
   @VisibleForTesting
   static long parseId(String fileName) {
-    int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) + 1;
-    int end = fileName.lastIndexOf(PART_SEPARATOR);
+    int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) - 1) + 1;
+    int end = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1);
     String idString = fileName.substring(start, end);
     return Long.parseLong(idString);
   }
@@ -162,8 +177,8 @@ public final class SnapshotFile {
    */
   @VisibleForTesting
   static long parseIndex(String fileName) {
-    int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) - 1) + 1;
-    int end = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1);
+    int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) + 1;
+    int end = fileName.lastIndexOf(PART_SEPARATOR);
     String indexString = fileName.substring(start, end);
     return Long.parseLong(indexString);
   }
