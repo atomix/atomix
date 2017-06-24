@@ -99,6 +99,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(TestExpire.class)
       .register(TestClose.class)
       .register(IndexEvent.class)
+      .register(IndexEvent.Type.class)
       .register(RaftQuery.ConsistencyLevel.class)
       .build());
 
@@ -690,9 +691,9 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(event -> {
+    session.<IndexEvent>addEventListener(event -> {
       threadAssertEquals(count.incrementAndGet(), 2L);
-      threadAssertEquals(index.get(), event);
+      threadAssertEquals(index.get(), event.subject());
       resume();
     });
 
@@ -846,8 +847,8 @@ public class RaftTest extends ConcurrentTestCase {
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
 
-    session.addEventListener(event -> {
-      threadAssertEquals(index.get(), event);
+    session.<IndexEvent>addEventListener(event -> {
+      threadAssertEquals(index.get(), event.subject());
       try {
         threadAssertTrue(index.get() <= session.submit(new TestQuery(RaftQuery.ConsistencyLevel.LINEARIZABLE)).get(5, TimeUnit.SECONDS));
       } catch (InterruptedException | TimeoutException | ExecutionException e) {
@@ -917,8 +918,8 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(message -> {
-      threadAssertNotNull(message);
+    session.addEventListener(event -> {
+      threadAssertNotNull(event);
       resume();
     });
 
@@ -966,8 +967,8 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(message -> {
-      threadAssertNotNull(message);
+    session.addEventListener(event -> {
+      threadAssertNotNull(event);
       resume();
     });
 
@@ -1015,8 +1016,8 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(message -> {
-      threadAssertNotNull(message);
+    session.addEventListener(event -> {
+      threadAssertNotNull(event);
       resume();
     });
 
@@ -1064,18 +1065,18 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(message -> {
-      threadAssertNotNull(message);
+    session.addEventListener(event -> {
+      threadAssertNotNull(event);
       resume();
     });
 
-    createSession(createClient()).addEventListener(message -> {
-      threadAssertNotNull(message);
+    createSession(createClient()).addEventListener(event -> {
+      threadAssertNotNull(event);
       resume();
     });
 
-    createSession(createClient()).addEventListener(message -> {
-      threadAssertNotNull(message);
+    createSession(createClient()).addEventListener(event -> {
+      threadAssertNotNull(event);
       resume();
     });
 
@@ -1120,8 +1121,8 @@ public class RaftTest extends ConcurrentTestCase {
     RaftProxy session1 = createSession(client1);
     RaftClient client2 = createClient();
     createSession(client2);
-    session1.addEventListener(event -> {
-      if (event.equals("expired")) {
+    session1.<IndexEvent>addEventListener(event -> {
+      if (event.type() == IndexEvent.Type.EXPIRED) {
         resume();
       }
     });
@@ -1162,8 +1163,8 @@ public class RaftTest extends ConcurrentTestCase {
     RaftClient client2 = createClient();
     session1.submit(new TestClose()).thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 1);
-    session1.addEventListener(e -> {
-      if (e.equals("closed")) {
+    session1.<IndexEvent>addEventListener(event -> {
+      if (event.type() == IndexEvent.Type.CLOSED) {
         resume();
       }
     });
