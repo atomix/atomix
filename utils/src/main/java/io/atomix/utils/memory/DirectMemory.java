@@ -28,11 +28,11 @@ public class DirectMemory extends NativeMemory {
    * @param size The count of the memory to allocate.
    * @return The allocated memory.
    */
-  public static DirectMemory allocate(long size) {
+  public static DirectMemory allocate(int size) {
     return new DirectMemoryAllocator().allocate(size);
   }
 
-  public DirectMemory(long address, long size, DirectMemoryAllocator allocator) {
+  public DirectMemory(long address, int size, DirectMemoryAllocator allocator) {
     super(address, size, allocator);
   }
 

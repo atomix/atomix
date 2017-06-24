@@ -38,7 +38,7 @@ public class NativeMemory implements Memory {
    * @param size The count of the memory to allocate.
    * @return The allocated memory.
    */
-  public static NativeMemory allocate(long size) {
+  public static NativeMemory allocate(int size) {
     return new DirectMemoryAllocator().allocate(size);
   }
 
@@ -64,11 +64,11 @@ public class NativeMemory implements Memory {
   }
 
   private long address;
-  private final long size;
+  private final int size;
   protected final MemoryAllocator allocator;
 
   @SuppressWarnings("unchecked")
-  protected NativeMemory(long address, long size, MemoryAllocator<? extends NativeMemory> allocator) {
+  protected NativeMemory(long address, int size, MemoryAllocator<? extends NativeMemory> allocator) {
     if (allocator == null)
       throw new NullPointerException("allocator cannot be null");
     this.address = address;
@@ -88,19 +88,19 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public final long address(long offset) {
+  public final long address(int offset) {
     return address + offset;
   }
 
   /**
    * Returns the address for a byte within an offset.
    */
-  private long address(long offset, int b) {
+  private long address(int offset, int b) {
     return address + offset + b;
   }
 
   @Override
-  public long size() {
+  public int size() {
     return size;
   }
 
@@ -121,16 +121,16 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public byte getByte(long offset) {
+  public byte getByte(int offset) {
     return UNSAFE.getByte(address(offset));
   }
 
-  private byte getByte(long offset, int pos) {
+  private byte getByte(int offset, int pos) {
     return UNSAFE.getByte(address(offset, pos));
   }
 
   @Override
-  public char getChar(long offset) {
+  public char getChar(int offset) {
     if (UNALIGNED) {
       return UNSAFE.getChar(address(offset));
     } else if (BIG_ENDIAN) {
@@ -143,7 +143,7 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public short getShort(long offset) {
+  public short getShort(int offset) {
     if (UNALIGNED) {
       return UNSAFE.getShort(address(offset));
     } else if (BIG_ENDIAN) {
@@ -156,7 +156,7 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public int getInt(long offset) {
+  public int getInt(int offset) {
     if (UNALIGNED) {
       return UNSAFE.getInt(address(offset));
     } else if (BIG_ENDIAN) {
@@ -173,7 +173,7 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public long getLong(long offset) {
+  public long getLong(int offset) {
     if (UNALIGNED) {
       return UNSAFE.getLong(address(offset));
     } else if (BIG_ENDIAN) {
@@ -198,28 +198,28 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public float getFloat(long offset) {
+  public float getFloat(int offset) {
     return Float.intBitsToFloat(getInt(offset));
   }
 
   @Override
-  public double getDouble(long offset) {
+  public double getDouble(int offset) {
     return Double.longBitsToDouble(getLong(offset));
   }
 
   @Override
-  public void putByte(long offset, byte b) {
+  public void putByte(int offset, byte b) {
     UNSAFE.putByte(address(offset), b);
   }
 
-  private void putByte(long offset, int pos, byte b) {
+  private void putByte(int offset, int pos, byte b) {
     UNSAFE.putByte(address(offset, pos), b);
   }
 
   @Override
-  public void putChar(long offset, char c) {
+  public void putChar(int offset, char c) {
     if (UNALIGNED) {
-      putChar(address(offset), c);
+      putChar(offset, c);
     } else if (BIG_ENDIAN) {
       putByte(offset, (byte) (c >>> 8));
       putByte(offset, 1, (byte) c);
@@ -230,7 +230,7 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public void putShort(long offset, short s) {
+  public void putShort(int offset, short s) {
     if (UNALIGNED) {
       UNSAFE.putShort(address(offset), s);
     } else if (BIG_ENDIAN) {
@@ -243,7 +243,7 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public void putInt(long offset, int i) {
+  public void putInt(int offset, int i) {
     if (UNALIGNED) {
       UNSAFE.putInt(address(offset), i);
     } else if (BIG_ENDIAN) {
@@ -260,7 +260,7 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public void putLong(long offset, long l) {
+  public void putLong(int offset, long l) {
     if (UNALIGNED) {
       UNSAFE.putLong(address(offset), l);
     } else if (BIG_ENDIAN) {
@@ -285,12 +285,12 @@ public class NativeMemory implements Memory {
   }
 
   @Override
-  public void putFloat(long offset, float f) {
+  public void putFloat(int offset, float f) {
     putInt(offset, Float.floatToRawIntBits(f));
   }
 
   @Override
-  public void putDouble(long offset, double d) {
+  public void putDouble(int offset, double d) {
     putLong(offset, Double.doubleToRawLongBits(d));
   }
 

@@ -35,7 +35,7 @@ public class UnsafeHeapBytes extends AbstractBytes {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed count for
    *                                  an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    */
-  public static UnsafeHeapBytes allocate(long size) {
+  public static UnsafeHeapBytes allocate(int size) {
     if (size > HeapMemory.MAX_SIZE)
       throw new IllegalArgumentException("size cannot for HeapBytes cannot be greater than " + HeapMemory.MAX_SIZE);
     return new UnsafeHeapBytes(HeapMemory.allocate(size));
@@ -91,12 +91,12 @@ public class UnsafeHeapBytes extends AbstractBytes {
   }
 
   @Override
-  public long size() {
+  public int size() {
     return memory.size();
   }
 
   @Override
-  public Bytes resize(long newSize) {
+  public Bytes resize(int newSize) {
     this.memory = memory.allocator().reallocate(memory, newSize);
     return this;
   }
@@ -107,18 +107,18 @@ public class UnsafeHeapBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes zero(long offset) {
+  public Bytes zero(int offset) {
     return zero(offset, memory.size() - offset);
   }
 
   @Override
-  public Bytes zero(long offset, long length) {
+  public Bytes zero(int offset, int length) {
     memory.unsafe().setMemory(memory.array(), memory.address(offset), length, (byte) 0);
     return this;
   }
 
   @Override
-  public Bytes read(long position, Bytes bytes, long offset, long length) {
+  public Bytes read(int position, Bytes bytes, int offset, int length) {
     checkRead(position, length);
     if (bytes instanceof UnsafeHeapBytes) {
       memory.unsafe().copyMemory(memory.array(), memory.address(position), ((UnsafeHeapBytes) bytes).memory.array(), ((UnsafeHeapBytes) bytes).memory.address(offset), length);
@@ -133,44 +133,44 @@ public class UnsafeHeapBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes read(long position, byte[] bytes, long offset, long length) {
+  public Bytes read(int position, byte[] bytes, int offset, int length) {
     checkRead(position, length);
     memory.unsafe().copyMemory(memory.array(), memory.address(position), bytes, memory.address(offset), length);
     return this;
   }
 
   @Override
-  public int readByte(long offset) {
+  public int readByte(int offset) {
     checkRead(offset, BYTE);
     return memory.getByte(offset);
   }
 
   @Override
-  public int readUnsignedByte(long offset) {
+  public int readUnsignedByte(int offset) {
     checkRead(offset, BYTE);
     return memory.getByte(offset) & 0xFF;
   }
 
   @Override
-  public char readChar(long offset) {
+  public char readChar(int offset) {
     checkRead(offset, CHARACTER);
     return memory.getChar(offset);
   }
 
   @Override
-  public short readShort(long offset) {
+  public short readShort(int offset) {
     checkRead(offset, SHORT);
     return memory.getShort(offset);
   }
 
   @Override
-  public int readUnsignedShort(long offset) {
+  public int readUnsignedShort(int offset) {
     checkRead(offset, SHORT);
     return memory.getShort(offset) & 0xFFFF;
   }
 
   @Override
-  public int readMedium(long offset) {
+  public int readMedium(int offset) {
     checkRead(offset, MEDIUM);
     return (memory.getByte(offset)) << 16
         | (memory.getByte(offset + 1) & 0xff) << 8
@@ -178,7 +178,7 @@ public class UnsafeHeapBytes extends AbstractBytes {
   }
 
   @Override
-  public int readUnsignedMedium(long offset) {
+  public int readUnsignedMedium(int offset) {
     checkRead(offset, MEDIUM);
     return (memory.getByte(offset) & 0xff) << 16
         | (memory.getByte(offset + 1) & 0xff) << 8
@@ -186,43 +186,43 @@ public class UnsafeHeapBytes extends AbstractBytes {
   }
 
   @Override
-  public int readInt(long offset) {
+  public int readInt(int offset) {
     checkRead(offset, INTEGER);
     return memory.getInt(offset);
   }
 
   @Override
-  public long readUnsignedInt(long offset) {
+  public long readUnsignedInt(int offset) {
     checkRead(offset, INTEGER);
     return memory.getInt(offset) & 0xFFFFFFFFL;
   }
 
   @Override
-  public long readLong(long offset) {
+  public long readLong(int offset) {
     checkRead(offset, LONG);
     return memory.getLong(offset);
   }
 
   @Override
-  public float readFloat(long offset) {
+  public float readFloat(int offset) {
     checkRead(offset, FLOAT);
     return memory.getFloat(offset);
   }
 
   @Override
-  public double readDouble(long offset) {
+  public double readDouble(int offset) {
     checkRead(offset, DOUBLE);
     return memory.getDouble(offset);
   }
 
   @Override
-  public boolean readBoolean(long offset) {
+  public boolean readBoolean(int offset) {
     checkRead(offset, BOOLEAN);
     return memory.getByte(offset) == (byte) 1;
   }
 
   @Override
-  public Bytes write(long position, Bytes bytes, long offset, long length) {
+  public Bytes write(int position, Bytes bytes, int offset, int length) {
     checkWrite(position, length);
     if (bytes.size() < length)
       throw new IllegalArgumentException("length is greater than provided byte array size");
@@ -240,7 +240,7 @@ public class UnsafeHeapBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes write(long position, byte[] bytes, long offset, long length) {
+  public Bytes write(int position, byte[] bytes, int offset, int length) {
     checkWrite(position, length);
     if (bytes.length < length)
       throw new IllegalArgumentException("length is greater than provided byte array length");
@@ -249,42 +249,42 @@ public class UnsafeHeapBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes writeByte(long offset, int b) {
+  public Bytes writeByte(int offset, int b) {
     checkWrite(offset, BYTE);
     memory.putByte(offset, (byte) b);
     return this;
   }
 
   @Override
-  public Bytes writeUnsignedByte(long offset, int b) {
+  public Bytes writeUnsignedByte(int offset, int b) {
     checkWrite(offset, BYTE);
     memory.putByte(offset, (byte) b);
     return this;
   }
 
   @Override
-  public Bytes writeChar(long offset, char c) {
+  public Bytes writeChar(int offset, char c) {
     checkWrite(offset, CHARACTER);
     memory.putChar(offset, c);
     return this;
   }
 
   @Override
-  public Bytes writeShort(long offset, short s) {
+  public Bytes writeShort(int offset, short s) {
     checkWrite(offset, SHORT);
     memory.putShort(offset, s);
     return this;
   }
 
   @Override
-  public Bytes writeUnsignedShort(long offset, int s) {
+  public Bytes writeUnsignedShort(int offset, int s) {
     checkWrite(offset, SHORT);
     memory.putShort(offset, (short) s);
     return this;
   }
 
   @Override
-  public Bytes writeMedium(long offset, int m) {
+  public Bytes writeMedium(int offset, int m) {
     memory.putByte(offset, (byte) (m >>> 16));
     memory.putByte(offset + 1, (byte) (m >>> 8));
     memory.putByte(offset + 2, (byte) m);
@@ -292,47 +292,47 @@ public class UnsafeHeapBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes writeUnsignedMedium(long offset, int m) {
+  public Bytes writeUnsignedMedium(int offset, int m) {
     return writeMedium(offset, m);
   }
 
   @Override
-  public Bytes writeInt(long offset, int i) {
+  public Bytes writeInt(int offset, int i) {
     checkWrite(offset, INTEGER);
     memory.putInt(offset, i);
     return this;
   }
 
   @Override
-  public Bytes writeUnsignedInt(long offset, long i) {
+  public Bytes writeUnsignedInt(int offset, long i) {
     checkWrite(offset, INTEGER);
     memory.putInt(offset, (int) i);
     return this;
   }
 
   @Override
-  public Bytes writeLong(long offset, long l) {
+  public Bytes writeLong(int offset, long l) {
     checkWrite(offset, LONG);
     memory.putLong(offset, l);
     return this;
   }
 
   @Override
-  public Bytes writeFloat(long offset, float f) {
+  public Bytes writeFloat(int offset, float f) {
     checkWrite(offset, FLOAT);
     memory.putFloat(offset, f);
     return this;
   }
 
   @Override
-  public Bytes writeDouble(long offset, double d) {
+  public Bytes writeDouble(int offset, double d) {
     checkWrite(offset, DOUBLE);
     memory.putDouble(offset, d);
     return this;
   }
 
   @Override
-  public Bytes writeBoolean(long offset, boolean b) {
+  public Bytes writeBoolean(int offset, boolean b) {
     checkWrite(offset, BOOLEAN);
     memory.putByte(offset, b ? (byte) 1 : (byte) 0);
     return this;

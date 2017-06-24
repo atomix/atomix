@@ -41,9 +41,9 @@ public class MappedBytes extends ByteBufferBytes {
    * @return The mapped buffer.
    * @throws NullPointerException     If {@code file} is {@code null}
    * @throws IllegalArgumentException If {@code count} is greater than {@link io.atomix.utils.memory.MappedMemory#MAX_SIZE}
-   * @see #allocate(File, FileChannel.MapMode, long)
+   * @see #allocate(File, FileChannel.MapMode, int)
    */
-  public static MappedBytes allocate(File file, long size) {
+  public static MappedBytes allocate(File file, int size) {
     return allocate(file, FileChannel.MapMode.READ_WRITE, size);
   }
 
@@ -59,9 +59,9 @@ public class MappedBytes extends ByteBufferBytes {
    * @return The mapped buffer.
    * @throws NullPointerException     If {@code file} is {@code null}
    * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
-   * @see #allocate(File, long)
+   * @see #allocate(File, int)
    */
-  public static MappedBytes allocate(File file, FileChannel.MapMode mode, long size) {
+  public static MappedBytes allocate(File file, FileChannel.MapMode mode, int size) {
     if (file == null)
       throw new NullPointerException("file cannot be null");
     if (mode == null)
@@ -90,7 +90,7 @@ public class MappedBytes extends ByteBufferBytes {
   }
 
   @Override
-  protected ByteBuffer newByteBuffer(long size) {
+  protected ByteBuffer newByteBuffer(int size) {
     try {
       return randomAccessFile.getChannel().map(mode, 0, size);
     } catch (IOException e) {

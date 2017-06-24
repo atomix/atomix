@@ -39,7 +39,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param offset The offset at which to start zeroing out bytes.
    * @return The written bytes.
    */
-  T zero(long offset);
+  T zero(int offset);
 
   /**
    * Zeros out bytes starting at the given offset up to the given length.
@@ -48,7 +48,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param length THe total number of bytes to zero out.
    * @return The written bytes.
    */
-  T zero(long offset, long length);
+  T zero(int offset, int length);
 
   /**
    * Writes an array of bytes to the buffer.
@@ -59,7 +59,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param length    The number of bytes from the provided byte array to write to the buffer.
    * @return The written buffer.
    */
-  T write(long offset, Bytes src, long srcOffset, long length);
+  T write(int offset, Bytes src, int srcOffset, int length);
 
   /**
    * Writes an array of bytes to the buffer.
@@ -70,7 +70,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param length    The number of bytes from the provided byte array to write to the buffer.
    * @return The written buffer.
    */
-  T write(long offset, byte[] src, long srcOffset, long length);
+  T write(int offset, byte[] src, int srcOffset, int length);
 
   /**
    * Writes a byte to the buffer at the given offset.
@@ -79,7 +79,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param b      The byte to write.
    * @return The written buffer.
    */
-  T writeByte(long offset, int b);
+  T writeByte(int offset, int b);
 
   /**
    * Writes an unsigned byte to the buffer at the given position.
@@ -88,7 +88,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param b      The byte to write.
    * @return The written buffer.
    */
-  T writeUnsignedByte(long offset, int b);
+  T writeUnsignedByte(int offset, int b);
 
   /**
    * Writes a 16-bit character to the buffer at the given offset.
@@ -97,7 +97,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param c      The character to write.
    * @return The written buffer.
    */
-  T writeChar(long offset, char c);
+  T writeChar(int offset, char c);
 
   /**
    * Writes a 16-bit signed integer to the buffer at the given offset.
@@ -106,7 +106,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param s      The short to write.
    * @return The written buffer.
    */
-  T writeShort(long offset, short s);
+  T writeShort(int offset, short s);
 
   /**
    * Writes a 16-bit unsigned integer to the buffer at the given offset.
@@ -115,7 +115,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param s      The short to write.
    * @return The written buffer.
    */
-  T writeUnsignedShort(long offset, int s);
+  T writeUnsignedShort(int offset, int s);
 
   /**
    * Writes a 24-bit signed integer to the buffer at the given offset.
@@ -124,7 +124,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param m      The short to write.
    * @return The written buffer.
    */
-  T writeMedium(long offset, int m);
+  T writeMedium(int offset, int m);
 
   /**
    * Writes a 24-bit unsigned integer to the buffer at the given offset.
@@ -133,7 +133,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param m      The short to write.
    * @return The written buffer.
    */
-  T writeUnsignedMedium(long offset, int m);
+  T writeUnsignedMedium(int offset, int m);
 
   /**
    * Writes a 32-bit signed integer to the buffer at the given offset.
@@ -142,7 +142,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param i      The integer to write.
    * @return The written buffer.
    */
-  T writeInt(long offset, int i);
+  T writeInt(int offset, int i);
 
   /**
    * Writes a 32-bit unsigned integer to the buffer at the given offset.
@@ -151,7 +151,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param i      The integer to write.
    * @return The written buffer.
    */
-  T writeUnsignedInt(long offset, long i);
+  T writeUnsignedInt(int offset, long i);
 
   /**
    * Writes a 64-bit signed integer to the buffer at the given offset.
@@ -160,7 +160,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param l      The long to write.
    * @return The written buffer.
    */
-  T writeLong(long offset, long l);
+  T writeLong(int offset, long l);
 
   /**
    * Writes a single-precision 32-bit floating point number to the buffer at the given offset.
@@ -169,7 +169,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param f      The float to write.
    * @return The written buffer.
    */
-  T writeFloat(long offset, float f);
+  T writeFloat(int offset, float f);
 
   /**
    * Writes a double-precision 64-bit floating point number to the buffer at the given offset.
@@ -178,7 +178,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param d      The double to write.
    * @return The written buffer.
    */
-  T writeDouble(long offset, double d);
+  T writeDouble(int offset, double d);
 
   /**
    * Writes a 1 byte boolean to the buffer at the given offset.
@@ -187,7 +187,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param b      The boolean to write.
    * @return The written buffer.
    */
-  T writeBoolean(long offset, boolean b);
+  T writeBoolean(int offset, boolean b);
 
   /**
    * Writes a string to the buffer at the given offset.
@@ -196,7 +196,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param s      The string to write.
    * @return The written buffer.
    */
-  T writeString(long offset, String s);
+  T writeString(int offset, String s);
 
   /**
    * Writes a string to the buffer at the given offset.
@@ -206,7 +206,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param charset The character set with which to encode the string.
    * @return The written buffer.
    */
-  T writeString(long offset, String s, Charset charset);
+  T writeString(int offset, String s, Charset charset);
 
   /**
    * Writes a UTF-8 string to the buffer at the given offset.
@@ -215,7 +215,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @param s      The string to write.
    * @return The written buffer.
    */
-  T writeUTF8(long offset, String s);
+  T writeUTF8(int offset, String s);
 
   /**
    * Flushes the bytes to the underlying persistence layer.

@@ -34,8 +34,8 @@ public class HeapBuffer extends ByteBufferBuffer {
    * bytes are written to the buffer. The underlying {@link UnsafeDirectBytes} will be initialized to the next power of {@code 2}.
    *
    * @return The direct buffer.
-   * @see HeapBuffer#allocate(long)
-   * @see HeapBuffer#allocate(long, long)
+   * @see HeapBuffer#allocate(int)
+   * @see HeapBuffer#allocate(int, int)
    */
   public static HeapBuffer allocate() {
     return allocate(DEFAULT_INITIAL_CAPACITY, HeapMemory.MAX_SIZE);
@@ -53,9 +53,9 @@ public class HeapBuffer extends ByteBufferBuffer {
    * @throws IllegalArgumentException If {@code capacity} is greater than the maximum allowed count for
    *                                  a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    * @see HeapBuffer#allocate()
-   * @see HeapBuffer#allocate(long, long)
+   * @see HeapBuffer#allocate(int, int)
    */
-  public static HeapBuffer allocate(long initialCapacity) {
+  public static HeapBuffer allocate(int initialCapacity) {
     return allocate(initialCapacity, HeapMemory.MAX_SIZE);
   }
 
@@ -73,9 +73,9 @@ public class HeapBuffer extends ByteBufferBuffer {
    * @throws IllegalArgumentException If {@code capacity} or {@code maxCapacity} is greater than the maximum
    *                                  allowed count for a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    * @see HeapBuffer#allocate()
-   * @see HeapBuffer#allocate(long)
+   * @see HeapBuffer#allocate(int)
    */
-  public static HeapBuffer allocate(long initialCapacity, long maxCapacity) {
+  public static HeapBuffer allocate(int initialCapacity, int maxCapacity) {
     if (initialCapacity > maxCapacity)
       throw new IllegalArgumentException("initial capacity cannot be greater than maximum capacity");
     return new HeapBuffer(HeapBytes.allocate((int) Math.min(Memory.Util.toPow2(initialCapacity), HeapMemory.MAX_SIZE)), 0, initialCapacity, maxCapacity);
@@ -95,7 +95,7 @@ public class HeapBuffer extends ByteBufferBuffer {
 
   private final HeapBytes bytes;
 
-  protected HeapBuffer(HeapBytes bytes, long offset, long initialCapacity, long maxCapacity) {
+  protected HeapBuffer(HeapBytes bytes, int offset, int initialCapacity, int maxCapacity) {
     super(bytes, offset, initialCapacity, maxCapacity, null);
     this.bytes = bytes;
   }

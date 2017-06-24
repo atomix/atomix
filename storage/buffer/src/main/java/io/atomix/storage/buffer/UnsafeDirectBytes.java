@@ -35,7 +35,7 @@ public class UnsafeDirectBytes extends NativeBytes {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed count for
    *                                  a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    */
-  public static UnsafeDirectBytes allocate(long size) {
+  public static UnsafeDirectBytes allocate(int size) {
     return new UnsafeDirectBytes(DirectMemory.allocate(size));
   }
 

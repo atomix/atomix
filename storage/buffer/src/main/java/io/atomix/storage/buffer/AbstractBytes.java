@@ -43,7 +43,7 @@ public abstract class AbstractBytes implements Bytes {
   /**
    * Checks that the offset is within the bounds of the buffer.
    */
-  protected void checkOffset(long offset) {
+  protected void checkOffset(int offset) {
     checkOpen();
     if (offset < 0 || offset > size())
       throw new IndexOutOfBoundsException();
@@ -52,9 +52,9 @@ public abstract class AbstractBytes implements Bytes {
   /**
    * Checks bounds for a read.
    */
-  protected long checkRead(long offset, long length) {
+  protected int checkRead(int offset, int length) {
     checkOffset(offset);
-    long position = offset + length;
+    int position = offset + length;
     if (position > size())
       throw new BufferUnderflowException();
     return position;
@@ -63,9 +63,9 @@ public abstract class AbstractBytes implements Bytes {
   /**
    * Checks bounds for a write.
    */
-  protected long checkWrite(long offset, long length) {
+  protected int checkWrite(int offset, int length) {
     checkOffset(offset);
-    long position = offset + length;
+    int position = offset + length;
     if (position > size())
       throw new BufferOverflowException();
     return position;
@@ -99,46 +99,46 @@ public abstract class AbstractBytes implements Bytes {
   }
 
   @Override
-  public boolean readBoolean(long offset) {
+  public boolean readBoolean(int offset) {
     return readByte(offset) == 1;
   }
 
   @Override
-  public int readUnsignedByte(long offset) {
+  public int readUnsignedByte(int offset) {
     return readByte(offset) & 0xFF;
   }
 
   @Override
-  public int readUnsignedShort(long offset) {
+  public int readUnsignedShort(int offset) {
     return readShort(offset) & 0xFFFF;
   }
 
   @Override
-  public int readMedium(long offset) {
+  public int readMedium(int offset) {
     return (readByte(offset)) << 16
         | (readByte(offset + 1) & 0xff) << 8
         | (readByte(offset + 2) & 0xff);
   }
 
   @Override
-  public int readUnsignedMedium(long offset) {
+  public int readUnsignedMedium(int offset) {
     return (readByte(offset) & 0xff) << 16
         | (readByte(offset + 1) & 0xff) << 8
         | (readByte(offset + 2) & 0xff);
   }
 
   @Override
-  public long readUnsignedInt(long offset) {
+  public long readUnsignedInt(int offset) {
     return readInt(offset) & 0xFFFFFFFFL;
   }
 
   @Override
-  public String readString(long offset) {
+  public String readString(int offset) {
     return readString(offset, Charset.defaultCharset());
   }
 
   @Override
-  public String readString(long offset, Charset charset) {
+  public String readString(int offset, Charset charset) {
     if (readBoolean(offset)) {
       byte[] bytes = new byte[readUnsignedShort(offset + BYTE)];
       read(offset + BYTE + SHORT, bytes, 0, bytes.length);
@@ -148,27 +148,27 @@ public abstract class AbstractBytes implements Bytes {
   }
 
   @Override
-  public String readUTF8(long offset) {
+  public String readUTF8(int offset) {
     return readString(offset, StandardCharsets.UTF_8);
   }
 
   @Override
-  public Bytes writeBoolean(long offset, boolean b) {
+  public Bytes writeBoolean(int offset, boolean b) {
     return writeByte(offset, b ? 1 : 0);
   }
 
   @Override
-  public Bytes writeUnsignedByte(long offset, int b) {
+  public Bytes writeUnsignedByte(int offset, int b) {
     return writeByte(offset, (byte) b);
   }
 
   @Override
-  public Bytes writeUnsignedShort(long offset, int s) {
+  public Bytes writeUnsignedShort(int offset, int s) {
     return writeShort(offset, (short) s);
   }
 
   @Override
-  public Bytes writeMedium(long offset, int m) {
+  public Bytes writeMedium(int offset, int m) {
     writeByte(offset, (byte) (m >>> 16));
     writeByte(offset + 1, (byte) (m >>> 8));
     writeByte(offset + 2, (byte) m);
@@ -176,22 +176,22 @@ public abstract class AbstractBytes implements Bytes {
   }
 
   @Override
-  public Bytes writeUnsignedMedium(long offset, int m) {
+  public Bytes writeUnsignedMedium(int offset, int m) {
     return writeMedium(offset, m);
   }
 
   @Override
-  public Bytes writeUnsignedInt(long offset, long i) {
+  public Bytes writeUnsignedInt(int offset, long i) {
     return writeInt(offset, (int) i);
   }
 
   @Override
-  public Bytes writeString(long offset, String s) {
+  public Bytes writeString(int offset, String s) {
     return writeString(offset, s, Charset.defaultCharset());
   }
 
   @Override
-  public Bytes writeString(long offset, String s, Charset charset) {
+  public Bytes writeString(int offset, String s, Charset charset) {
     if (s == null) {
       return writeBoolean(offset, Boolean.FALSE);
     } else {
@@ -203,7 +203,7 @@ public abstract class AbstractBytes implements Bytes {
   }
 
   @Override
-  public Bytes writeUTF8(long offset, String s) {
+  public Bytes writeUTF8(int offset, String s) {
     return writeString(offset, s, StandardCharsets.UTF_8);
   }
 

@@ -35,7 +35,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param length    The total number of bytes to read.
    * @return The buffer.
    */
-  T read(long offset, Bytes dst, long dstOffset, long length);
+  T read(int offset, Bytes dst, int dstOffset, int length);
 
   /**
    * Reads bytes into the given byte array starting at the given offset up to the given length.
@@ -46,7 +46,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param length    The total number of bytes to read.
    * @return The buffer.
    */
-  T read(long offset, byte[] dst, long dstOffset, long length);
+  T read(int offset, byte[] dst, int dstOffset, int length);
 
   /**
    * Reads a byte from the buffer at the given offset.
@@ -54,7 +54,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the byte.
    * @return The read byte.
    */
-  int readByte(long offset);
+  int readByte(int offset);
 
   /**
    * Reads an unsigned byte from the buffer at the given offset.
@@ -62,7 +62,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the byte.
    * @return The read unsigned byte.
    */
-  int readUnsignedByte(long offset);
+  int readUnsignedByte(int offset);
 
   /**
    * Reads a 16-bit character from the buffer at the given offset.
@@ -70,7 +70,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the character.
    * @return The read character.
    */
-  char readChar(long offset);
+  char readChar(int offset);
 
   /**
    * Reads a 16-bit signed integer from the buffer at the given offset.
@@ -78,7 +78,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the short.
    * @return The read short.
    */
-  short readShort(long offset);
+  short readShort(int offset);
 
   /**
    * Reads a 16-bit unsigned integer from the buffer at the given offset.
@@ -86,7 +86,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the short.
    * @return The read short.
    */
-  int readUnsignedShort(long offset);
+  int readUnsignedShort(int offset);
 
   /**
    * Reads a 24-bit signed integer from the buffer at the given offset.
@@ -94,7 +94,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the integer.
    * @return The read medium.
    */
-  int readMedium(long offset);
+  int readMedium(int offset);
 
   /**
    * Reads a 24-bin unsigned integer from the buffer at the given offset.
@@ -102,7 +102,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the integer.
    * @return The read medium.
    */
-  int readUnsignedMedium(long offset);
+  int readUnsignedMedium(int offset);
 
   /**
    * Reads a 32-bit signed integer from the buffer at the given offset.
@@ -110,7 +110,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the integer.
    * @return The read integer.
    */
-  int readInt(long offset);
+  int readInt(int offset);
 
   /**
    * Reads a 32-bit unsigned integer from the buffer at the given offset.
@@ -118,7 +118,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the integer.
    * @return The read integer.
    */
-  long readUnsignedInt(long offset);
+  long readUnsignedInt(int offset);
 
   /**
    * Reads a 64-bit signed integer from the buffer at the given offset.
@@ -126,7 +126,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the long.
    * @return The read long.
    */
-  long readLong(long offset);
+  long readLong(int offset);
 
   /**
    * Reads a single-precision 32-bit floating point number from the buffer at the given offset.
@@ -134,7 +134,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the float.
    * @return The read float.
    */
-  float readFloat(long offset);
+  float readFloat(int offset);
 
   /**
    * Reads a double-precision 64-bit floating point number from the buffer at the given offset.
@@ -142,7 +142,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the double.
    * @return The read double.
    */
-  double readDouble(long offset);
+  double readDouble(int offset);
 
   /**
    * Reads a 1 byte boolean from the buffer at the given offset.
@@ -150,7 +150,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the boolean.
    * @return The read boolean.
    */
-  boolean readBoolean(long offset);
+  boolean readBoolean(int offset);
 
   /**
    * Reads a string from the buffer at the given offset.
@@ -158,7 +158,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the string.
    * @return The read string.
    */
-  String readString(long offset);
+  String readString(int offset);
 
   /**
    * Reads a string from the buffer at the given offset.
@@ -167,7 +167,7 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param charset The character set with which to decode the string.
    * @return The read string.
    */
-  String readString(long offset, Charset charset);
+  String readString(int offset, Charset charset);
 
   /**
    * Reads a UTF-8 string from the buffer at the given offset.
@@ -175,6 +175,6 @@ public interface BytesInput<T extends BytesInput<T>> {
    * @param offset The offset at which to read the string.
    * @return The read string.
    */
-  String readUTF8(long offset);
+  String readUTF8(int offset);
 
 }

@@ -30,7 +30,7 @@ public class PooledDirectAllocator extends PooledAllocator {
   }
 
   @Override
-  protected long maxCapacity() {
-    return Long.MAX_VALUE;
+  protected int maxCapacity() {
+    return Integer.MAX_VALUE;
   }
 }

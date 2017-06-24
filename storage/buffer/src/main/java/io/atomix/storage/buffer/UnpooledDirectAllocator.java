@@ -23,13 +23,13 @@ package io.atomix.storage.buffer;
 public class UnpooledDirectAllocator extends UnpooledAllocator {
 
   @Override
-  public Buffer allocate(long initialCapacity, long maxCapacity) {
+  public Buffer allocate(int initialCapacity, int maxCapacity) {
     return DirectBuffer.allocate(initialCapacity, maxCapacity);
   }
 
   @Override
-  protected long maxCapacity() {
-    return Long.MAX_VALUE;
+  protected int maxCapacity() {
+    return Integer.MAX_VALUE;
   }
 
 }

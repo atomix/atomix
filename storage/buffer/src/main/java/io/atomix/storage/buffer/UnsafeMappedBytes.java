@@ -48,9 +48,9 @@ public class UnsafeMappedBytes extends NativeBytes {
    * @return The mapped buffer.
    * @throws NullPointerException     If {@code file} is {@code null}
    * @throws IllegalArgumentException If {@code count} is greater than {@link MappedMemory#MAX_SIZE}
-   * @see UnsafeMappedBytes#allocate(File, FileChannel.MapMode, long)
+   * @see UnsafeMappedBytes#allocate(File, FileChannel.MapMode, int)
    */
-  public static UnsafeMappedBytes allocate(File file, long size) {
+  public static UnsafeMappedBytes allocate(File file, int size) {
     return allocate(file, MappedMemoryAllocator.DEFAULT_MAP_MODE, size);
   }
 
@@ -66,9 +66,9 @@ public class UnsafeMappedBytes extends NativeBytes {
    * @return The mapped buffer.
    * @throws NullPointerException     If {@code file} is {@code null}
    * @throws IllegalArgumentException If {@code count} is greater than {@link MappedMemory#MAX_SIZE}
-   * @see UnsafeMappedBytes#allocate(File, long)
+   * @see UnsafeMappedBytes#allocate(File, int)
    */
-  public static UnsafeMappedBytes allocate(File file, FileChannel.MapMode mode, long size) {
+  public static UnsafeMappedBytes allocate(File file, FileChannel.MapMode mode, int size) {
     if (file == null)
       throw new NullPointerException("file cannot be null");
     if (mode == null)

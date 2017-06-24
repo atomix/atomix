@@ -42,10 +42,10 @@ public abstract class ByteBufferBytes extends AbstractBytes {
    * @param size the buffer size
    * @return a newly allocated byte buffer
    */
-  protected abstract ByteBuffer newByteBuffer(long size);
+  protected abstract ByteBuffer newByteBuffer(int size);
 
   @Override
-  public Bytes resize(long newSize) {
+  public Bytes resize(int newSize) {
     ByteBuffer oldBuffer = buffer;
     ByteBuffer newBuffer = newByteBuffer(newSize);
     oldBuffer.position(0).limit(buffer.capacity());
@@ -75,7 +75,7 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   }
 
   @Override
-  public long size() {
+  public int size() {
     return buffer.capacity();
   }
 
@@ -92,12 +92,12 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   /**
    * Returns the index for the given offset.
    */
-  private int index(long offset) {
+  private int index(int offset) {
     return (int) offset;
   }
 
   @Override
-  public Bytes zero(long offset) {
+  public Bytes zero(int offset) {
     for (int i = index(offset); i < buffer.capacity(); i++) {
       buffer.put(i, (byte) 0);
     }
@@ -105,7 +105,7 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes zero(long offset, long length) {
+  public Bytes zero(int offset, int length) {
     for (int i = index(offset); i < offset + length; i++) {
       buffer.put(i, (byte) 0);
     }
@@ -113,7 +113,7 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes read(long position, byte[] bytes, long offset, long length) {
+  public Bytes read(int position, byte[] bytes, int offset, int length) {
     for (int i = 0; i < length; i++) {
       bytes[index(offset) + i] = (byte) readByte(position + i);
     }
@@ -121,7 +121,7 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes read(long position, Bytes bytes, long offset, long length) {
+  public Bytes read(int position, Bytes bytes, int offset, int length) {
     for (int i = 0; i < length; i++) {
       bytes.writeByte(offset + i, readByte(position + i));
     }
@@ -129,7 +129,7 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes write(long position, byte[] bytes, long offset, long length) {
+  public Bytes write(int position, byte[] bytes, int offset, int length) {
     for (int i = 0; i < length; i++) {
       buffer.put((int) position + i, (byte) bytes[index(offset) + i]);
     }
@@ -137,7 +137,7 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes write(long position, Bytes bytes, long offset, long length) {
+  public Bytes write(int position, Bytes bytes, int offset, int length) {
     for (int i = 0; i < length; i++) {
       buffer.put((int) position + i, (byte) bytes.readByte(offset + i));
     }
@@ -145,78 +145,78 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   }
 
   @Override
-  public int readByte(long offset) {
+  public int readByte(int offset) {
     return buffer.get(index(offset));
   }
 
   @Override
-  public char readChar(long offset) {
+  public char readChar(int offset) {
     return buffer.getChar(index(offset));
   }
 
   @Override
-  public short readShort(long offset) {
+  public short readShort(int offset) {
     return buffer.getShort(index(offset));
   }
 
   @Override
-  public int readInt(long offset) {
+  public int readInt(int offset) {
     return buffer.getInt(index(offset));
   }
 
   @Override
-  public long readLong(long offset) {
+  public long readLong(int offset) {
     return buffer.getLong(index(offset));
   }
 
   @Override
-  public float readFloat(long offset) {
+  public float readFloat(int offset) {
     return buffer.getFloat(index(offset));
   }
 
   @Override
-  public double readDouble(long offset) {
+  public double readDouble(int offset) {
     return buffer.getDouble(index(offset));
   }
 
   @Override
-  public Bytes writeByte(long offset, int b) {
+  public Bytes writeByte(int offset, int b) {
     buffer.put(index(offset), (byte) b);
     return this;
   }
 
   @Override
-  public Bytes writeChar(long offset, char c) {
+  public Bytes writeChar(int offset, char c) {
     buffer.putChar(index(offset), c);
     return this;
   }
 
   @Override
-  public Bytes writeShort(long offset, short s) {
+  public Bytes writeShort(int offset, short s) {
     buffer.putShort(index(offset), s);
     return this;
   }
 
   @Override
-  public Bytes writeInt(long offset, int i) {
+  public Bytes writeInt(int offset, int i) {
     buffer.putInt(index(offset), i);
     return this;
   }
 
   @Override
-  public Bytes writeLong(long offset, long l) {
+  public Bytes writeLong(int offset, long l) {
     buffer.putLong(index(offset), l);
     return this;
   }
 
   @Override
-  public Bytes writeFloat(long offset, float f) {
+  public Bytes writeFloat(int offset, float f) {
     buffer.putFloat(index(offset), f);
     return this;
   }
 
   @Override
-  public Bytes writeDouble(long offset, double d) {
+  public Bytes writeDouble(int offset, double d) {
     buffer.putDouble(index(offset), d);
     return this;
   }

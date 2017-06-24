@@ -31,8 +31,8 @@ public class PooledHeapAllocator extends PooledAllocator {
   }
 
   @Override
-  protected long maxCapacity() {
-    return HeapMemory.MAX_SIZE;
+  protected int maxCapacity() {
+    return Integer.MAX_VALUE;
   }
 
 }

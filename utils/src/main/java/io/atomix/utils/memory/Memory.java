@@ -42,14 +42,14 @@ public interface Memory {
    * @param offset The offset for which to return the address.
    * @return The memory address for the given offset.
    */
-  long address(long offset);
+  long address(int offset);
 
   /**
    * Returns the memory count.
    *
    * @return The memory count.
    */
-  long size();
+  int size();
 
   /**
    * Fetches a byte from the given memory offset.
@@ -57,7 +57,7 @@ public interface Memory {
    * @param offset The offset from which to fetch the byte.
    * @return The fetched byte.
    */
-  byte getByte(long offset);
+  byte getByte(int offset);
 
   /**
    * Fetches a character from the given memory offset.
@@ -65,7 +65,7 @@ public interface Memory {
    * @param offset The offset from which to fetch the character.
    * @return The fetched character.
    */
-  char getChar(long offset);
+  char getChar(int offset);
 
   /**
    * Fetches a short from the given memory offset.
@@ -73,7 +73,7 @@ public interface Memory {
    * @param offset The offset from which to fetch the short.
    * @return The fetched short.
    */
-  short getShort(long offset);
+  short getShort(int offset);
 
   /**
    * Fetches an integer from the given memory offset.
@@ -81,7 +81,7 @@ public interface Memory {
    * @param offset The offset from which to fetch the integer.
    * @return The fetched integer.
    */
-  int getInt(long offset);
+  int getInt(int offset);
 
   /**
    * Fetches a long from the given memory offset.
@@ -89,7 +89,7 @@ public interface Memory {
    * @param offset The offset from which to fetch the long.
    * @return The fetched long.
    */
-  long getLong(long offset);
+  long getLong(int offset);
 
   /**
    * Fetches a float from the given memory offset.
@@ -97,7 +97,7 @@ public interface Memory {
    * @param offset The offset from which to fetch the float.
    * @return The fetched float.
    */
-  float getFloat(long offset);
+  float getFloat(int offset);
 
   /**
    * Fetches a double from the given memory offset.
@@ -105,7 +105,7 @@ public interface Memory {
    * @param offset The offset from which to fetch the double.
    * @return The fetched double.
    */
-  double getDouble(long offset);
+  double getDouble(int offset);
 
   /**
    * Stores a byte at the given memory offset.
@@ -113,7 +113,7 @@ public interface Memory {
    * @param offset The offset at which to store the byte.
    * @param b      The byte to store.
    */
-  void putByte(long offset, byte b);
+  void putByte(int offset, byte b);
 
   /**
    * Stores a character at the given memory offset.
@@ -121,7 +121,7 @@ public interface Memory {
    * @param offset The offset at which to store the character.
    * @param c      The character to store.
    */
-  void putChar(long offset, char c);
+  void putChar(int offset, char c);
 
   /**
    * Stores a short at the given memory offset.
@@ -129,7 +129,7 @@ public interface Memory {
    * @param offset The offset at which to store the short.
    * @param s      The short to store.
    */
-  void putShort(long offset, short s);
+  void putShort(int offset, short s);
 
   /**
    * Stores an integer at the given memory offset.
@@ -137,7 +137,7 @@ public interface Memory {
    * @param offset The offset at which to store the integer.
    * @param i      The integer to store.
    */
-  void putInt(long offset, int i);
+  void putInt(int offset, int i);
 
   /**
    * Stores a long at the given memory offset.
@@ -145,7 +145,7 @@ public interface Memory {
    * @param offset The offset at which to store the long.
    * @param l      The long to store.
    */
-  void putLong(long offset, long l);
+  void putLong(int offset, long l);
 
   /**
    * Stores a float at the given memory offset.
@@ -153,7 +153,7 @@ public interface Memory {
    * @param offset The offset at which to store the float.
    * @param f      The float to store.
    */
-  void putFloat(long offset, float f);
+  void putFloat(int offset, float f);
 
   /**
    * Stores a double at the given memory offset.
@@ -161,7 +161,7 @@ public interface Memory {
    * @param offset The offset at which to store the double.
    * @param d      The double to store.
    */
-  void putDouble(long offset, double d);
+  void putDouble(int offset, double d);
 
   /**
    * Copies the memory to a distinct memory address.
@@ -188,20 +188,20 @@ public interface Memory {
     /**
      * Returns a boolean indicating whether the given count is a power of 2.
      */
-    public static boolean isPow2(long size) {
+    public static boolean isPow2(int size) {
       return size > 0 & (size & (size - 1)) == 0;
     }
 
     /**
      * Rounds the count to the nearest power of two.
      */
-    public static long toPow2(long size) {
+    public static int toPow2(int size) {
       if ((size & (size - 1)) == 0)
         return size;
       int i = 128;
       while (i < size) {
         i *= 2;
-        if (i <= 0) return 1L << 62;
+        if (i <= 0) return 1 << 30;
       }
       return i;
     }

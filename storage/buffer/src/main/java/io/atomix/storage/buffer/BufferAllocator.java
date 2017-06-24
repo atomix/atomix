@@ -35,7 +35,7 @@ public interface BufferAllocator {
    * @param initialCapacity The initial buffer capacity.
    * @return The allocated buffer.
    */
-  Buffer allocate(long initialCapacity);
+  Buffer allocate(int initialCapacity);
 
   /**
    * Allocates a new buffer.
@@ -44,6 +44,6 @@ public interface BufferAllocator {
    * @param maxCapacity     The maximum buffer capacity.
    * @return The allocated buffer.
    */
-  Buffer allocate(long initialCapacity, long maxCapacity);
+  Buffer allocate(int initialCapacity, int maxCapacity);
 
 }

@@ -32,7 +32,7 @@ public class SwappedBuffer extends AbstractBuffer {
     this.root = root;
   }
 
-  public SwappedBuffer(Buffer buffer, long offset, long initialCapacity, long maxCapacity, ReferenceManager<Buffer> referenceManager) {
+  public SwappedBuffer(Buffer buffer, int offset, int initialCapacity, int maxCapacity, ReferenceManager<Buffer> referenceManager) {
     super(buffer.bytes().order(buffer.order() == ByteOrder.BIG_ENDIAN ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN), offset, initialCapacity, maxCapacity, referenceManager);
     this.root = buffer instanceof SwappedBuffer ? ((SwappedBuffer) buffer).root : buffer;
     root.acquire();
@@ -63,7 +63,7 @@ public class SwappedBuffer extends AbstractBuffer {
   }
 
   @Override
-  protected void compact(long from, long to, long length) {
+  protected void compact(int from, int to, int length) {
     if (root instanceof AbstractBuffer) {
       ((AbstractBuffer) root).compact(from, to, length);
     }

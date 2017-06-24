@@ -41,7 +41,7 @@ public class UnsafeDirectBufferPool extends BufferPool {
     @Override
     public Buffer createReference(ReferenceManager<Buffer> manager) {
       UnsafeDirectBuffer buffer = new UnsafeDirectBuffer(UnsafeDirectBytes.allocate(1024), manager);
-      buffer.reset(0, 1024, Long.MAX_VALUE);
+      buffer.reset(0, 1024, Integer.MAX_VALUE);
       return buffer;
     }
   }

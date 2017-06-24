@@ -57,7 +57,7 @@ public class BufferInputStream extends InputStream {
 
   @Override
   public long skip(long n) throws IOException {
-    long skipped = Math.min(n, buffer.remaining());
+    int skipped = (int) Math.min(n, buffer.remaining());
     buffer.skip(skipped);
     return skipped;
   }

@@ -36,8 +36,8 @@ public class UnsafeHeapBuffer extends AbstractBuffer {
    * to the next power of {@code 2}.
    *
    * @return The heap buffer.
-   * @see UnsafeHeapBuffer#allocate(long)
-   * @see UnsafeHeapBuffer#allocate(long, long)
+   * @see UnsafeHeapBuffer#allocate(int)
+   * @see UnsafeHeapBuffer#allocate(int, int)
    */
   public static UnsafeHeapBuffer allocate() {
     return allocate(DEFAULT_INITIAL_CAPACITY, HeapMemory.MAX_SIZE);
@@ -55,9 +55,9 @@ public class UnsafeHeapBuffer extends AbstractBuffer {
    * @throws IllegalArgumentException If {@code capacity} is greater than the maximum allowed capacity for
    *                                  an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    * @see UnsafeHeapBuffer#allocate()
-   * @see UnsafeHeapBuffer#allocate(long, long)
+   * @see UnsafeHeapBuffer#allocate(int, int)
    */
-  public static UnsafeHeapBuffer allocate(long initialCapacity) {
+  public static UnsafeHeapBuffer allocate(int initialCapacity) {
     return allocate(initialCapacity, HeapMemory.MAX_SIZE);
   }
 
@@ -75,9 +75,9 @@ public class UnsafeHeapBuffer extends AbstractBuffer {
    * @throws IllegalArgumentException If {@code initialCapacity} or {@code maxCapacity} is greater than the
    *                                  maximum allowed count for an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    * @see UnsafeHeapBuffer#allocate()
-   * @see UnsafeHeapBuffer#allocate(long)
+   * @see UnsafeHeapBuffer#allocate(int)
    */
-  public static UnsafeHeapBuffer allocate(long initialCapacity, long maxCapacity) {
+  public static UnsafeHeapBuffer allocate(int initialCapacity, int maxCapacity) {
     if (initialCapacity > maxCapacity)
       throw new IllegalArgumentException("initial capacity cannot be greater than maximum capacity");
     if (initialCapacity > HeapMemory.MAX_SIZE)
@@ -106,13 +106,13 @@ public class UnsafeHeapBuffer extends AbstractBuffer {
     this.bytes = bytes;
   }
 
-  protected UnsafeHeapBuffer(UnsafeHeapBytes bytes, long offset, long initialCapacity, long maxCapacity) {
+  protected UnsafeHeapBuffer(UnsafeHeapBytes bytes, int offset, int initialCapacity, int maxCapacity) {
     super(bytes, offset, initialCapacity, maxCapacity, null);
     this.bytes = bytes;
   }
 
   @Override
-  protected void compact(long from, long to, long length) {
+  protected void compact(int from, int to, int length) {
     bytes.memory.unsafe().copyMemory(bytes.memory.array(), bytes.memory.address(from), bytes.memory.array(), bytes.memory.address(to), length);
     bytes.memory.unsafe().setMemory(bytes.memory.array(), bytes.memory.address(from), length, (byte) 0);
   }

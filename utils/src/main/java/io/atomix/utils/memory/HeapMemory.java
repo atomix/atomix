@@ -23,8 +23,8 @@ import sun.misc.Unsafe;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class HeapMemory implements Memory {
-  public static final long ARRAY_BASE_OFFSET = NativeMemory.UNSAFE.arrayBaseOffset(byte[].class);
-  public static final long MAX_SIZE = Integer.MAX_VALUE;
+  public static final int ARRAY_BASE_OFFSET = NativeMemory.UNSAFE.arrayBaseOffset(byte[].class);
+  public static final int MAX_SIZE = Integer.MAX_VALUE;
 
   /**
    * Allocates heap memory via {@link HeapMemoryAllocator}.
@@ -34,9 +34,7 @@ public class HeapMemory implements Memory {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed count for
    *                                  an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    */
-  public static HeapMemory allocate(long size) {
-    if (size > MAX_SIZE)
-      throw new IllegalArgumentException("size cannot be greater than " + MAX_SIZE);
+  public static HeapMemory allocate(int size) {
     return new HeapMemoryAllocator().allocate(size);
   }
 
@@ -84,12 +82,12 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public final long address(long offset) {
+  public final long address(int offset) {
     return ARRAY_BASE_OFFSET + offset;
   }
 
   @Override
-  public long size() {
+  public int size() {
     return array.length;
   }
 
@@ -116,7 +114,7 @@ public class HeapMemory implements Memory {
    *
    * @return The array base offset.
    */
-  public final long offset() {
+  public final int offset() {
     return ARRAY_BASE_OFFSET;
   }
 
@@ -128,12 +126,12 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public byte getByte(long offset) {
+  public byte getByte(int offset) {
     return NativeMemory.UNSAFE.getByte(array, address(offset));
   }
 
   @Override
-  public char getChar(long offset) {
+  public char getChar(int offset) {
     if (NativeMemory.BIG_ENDIAN) {
       return NativeMemory.UNSAFE.getChar(array, address(offset));
     } else {
@@ -142,7 +140,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public short getShort(long offset) {
+  public short getShort(int offset) {
     if (NativeMemory.BIG_ENDIAN) {
       return NativeMemory.UNSAFE.getShort(array, address(offset));
     } else {
@@ -151,7 +149,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public int getInt(long offset) {
+  public int getInt(int offset) {
     if (NativeMemory.BIG_ENDIAN) {
       return NativeMemory.UNSAFE.getInt(array, address(offset));
     } else {
@@ -160,7 +158,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public long getLong(long offset) {
+  public long getLong(int offset) {
     if (NativeMemory.BIG_ENDIAN) {
       return NativeMemory.UNSAFE.getLong(array, address(offset));
     } else {
@@ -169,7 +167,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public float getFloat(long offset) {
+  public float getFloat(int offset) {
     if (NativeMemory.BIG_ENDIAN) {
       return NativeMemory.UNSAFE.getFloat(array, address(offset));
     } else {
@@ -178,7 +176,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public double getDouble(long offset) {
+  public double getDouble(int offset) {
     if (NativeMemory.BIG_ENDIAN) {
       return NativeMemory.UNSAFE.getDouble(array, address(offset));
     } else {
@@ -187,12 +185,12 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public void putByte(long offset, byte b) {
+  public void putByte(int offset, byte b) {
     NativeMemory.UNSAFE.putByte(array, address(offset), b);
   }
 
   @Override
-  public void putChar(long offset, char c) {
+  public void putChar(int offset, char c) {
     if (NativeMemory.BIG_ENDIAN) {
       NativeMemory.UNSAFE.putChar(array, address(offset), c);
     } else {
@@ -201,7 +199,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public void putShort(long offset, short s) {
+  public void putShort(int offset, short s) {
     if (NativeMemory.BIG_ENDIAN) {
       NativeMemory.UNSAFE.putShort(array, address(offset), s);
     } else {
@@ -210,7 +208,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public void putInt(long offset, int i) {
+  public void putInt(int offset, int i) {
     if (NativeMemory.BIG_ENDIAN) {
       NativeMemory.UNSAFE.putInt(array, address(offset), i);
     } else {
@@ -219,7 +217,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public void putLong(long offset, long l) {
+  public void putLong(int offset, long l) {
     if (NativeMemory.BIG_ENDIAN) {
       NativeMemory.UNSAFE.putLong(array, address(offset), l);
     } else {
@@ -228,7 +226,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public void putFloat(long offset, float f) {
+  public void putFloat(int offset, float f) {
     if (NativeMemory.BIG_ENDIAN) {
       NativeMemory.UNSAFE.putFloat(array, address(offset), f);
     } else {
@@ -237,7 +235,7 @@ public class HeapMemory implements Memory {
   }
 
   @Override
-  public void putDouble(long offset, double d) {
+  public void putDouble(int offset, double d) {
     if (NativeMemory.BIG_ENDIAN) {
       NativeMemory.UNSAFE.putDouble(array, address(offset), d);
     } else {

@@ -65,17 +65,17 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   private static final int VERSION_LENGTH = Bytes.INTEGER;     // 32-bit signed integer
   private static final int ID_LENGTH = Bytes.LONG;             // 64-bit signed integer
   private static final int INDEX_LENGTH = Bytes.LONG;          // 64-bit signed integer
-  private static final int MAX_SIZE_LENGTH = Bytes.INTEGER;    // 32-bit unsigned integer
+  private static final int MAX_SIZE_LENGTH = Bytes.INTEGER;    // 32-bit signed integer
   private static final int MAX_ENTRIES_LENGTH = Bytes.INTEGER; // 32-bit signed integer
   private static final int UPDATED_LENGTH = Bytes.LONG;        // 64-bit signed integer
 
   // The positions of each field in the header.
-  private static final long VERSION_POSITION = 0;                                         // 0
-  private static final long ID_POSITION = VERSION_POSITION + VERSION_LENGTH;              // 4
-  private static final long INDEX_POSITION = ID_POSITION + ID_LENGTH;                     // 12
-  private static final long MAX_SIZE_POSITION = INDEX_POSITION + INDEX_LENGTH;            // 20
-  private static final long MAX_ENTRIES_POSITION = MAX_SIZE_POSITION + MAX_SIZE_LENGTH;   // 24
-  private static final long UPDATED_POSITION = MAX_ENTRIES_POSITION + MAX_ENTRIES_LENGTH; // 28
+  private static final int VERSION_POSITION = 0;                                         // 0
+  private static final int ID_POSITION = VERSION_POSITION + VERSION_LENGTH;              // 4
+  private static final int INDEX_POSITION = ID_POSITION + ID_LENGTH;                     // 12
+  private static final int MAX_SIZE_POSITION = INDEX_POSITION + INDEX_LENGTH;            // 20
+  private static final int MAX_ENTRIES_POSITION = MAX_SIZE_POSITION + MAX_SIZE_LENGTH;   // 24
+  private static final int UPDATED_POSITION = MAX_ENTRIES_POSITION + MAX_ENTRIES_LENGTH; // 28
 
   /**
    * Returns a descriptor builder.
@@ -103,7 +103,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   private final int version;
   private final long id;
   private final long index;
-  private final long maxSegmentSize;
+  private final int maxSegmentSize;
   private final int maxEntries;
   private volatile long updated;
   private volatile boolean locked;
@@ -116,7 +116,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
     this.version = buffer.readInt();
     this.id = buffer.readLong();
     this.index = buffer.readLong();
-    this.maxSegmentSize = buffer.readUnsignedInt();
+    this.maxSegmentSize = buffer.readInt();
     this.maxEntries = buffer.readInt();
     this.updated = buffer.readLong();
     this.locked = buffer.readBoolean();
@@ -163,7 +163,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    *
    * @return The maximum allowed count of the segment.
    */
-  public long maxSegmentSize() {
+  public int maxSegmentSize() {
     return maxSegmentSize;
   }
 
@@ -207,7 +207,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
         .writeInt(version)
         .writeLong(id)
         .writeLong(index)
-        .writeUnsignedInt(maxSegmentSize)
+        .writeInt(maxSegmentSize)
         .writeInt(maxEntries)
         .writeLong(updated)
         .writeBoolean(locked)
@@ -281,8 +281,8 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @param maxSegmentSize The maximum count of the segment.
      * @return The segment descriptor builder.
      */
-    public Builder withMaxSegmentSize(long maxSegmentSize) {
-      buffer.writeUnsignedInt(MAX_SIZE_POSITION, maxSegmentSize);
+    public Builder withMaxSegmentSize(int maxSegmentSize) {
+      buffer.writeInt(MAX_SIZE_POSITION, maxSegmentSize);
       return this;
     }
 

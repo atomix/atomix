@@ -35,11 +35,11 @@ public class UnsafeDirectBuffer extends NativeBuffer {
    * bytes are written to the buffer. The underlying {@link UnsafeDirectBytes} will be initialized to the next power of {@code 2}.
    *
    * @return The direct buffer.
-   * @see UnsafeDirectBuffer#allocate(long)
-   * @see UnsafeDirectBuffer#allocate(long, long)
+   * @see UnsafeDirectBuffer#allocate(int)
+   * @see UnsafeDirectBuffer#allocate(int, int)
    */
   public static UnsafeDirectBuffer allocate() {
-    return allocate(DEFAULT_INITIAL_CAPACITY, Long.MAX_VALUE);
+    return allocate(DEFAULT_INITIAL_CAPACITY, Integer.MAX_VALUE);
   }
 
   /**
@@ -54,10 +54,10 @@ public class UnsafeDirectBuffer extends NativeBuffer {
    * @throws IllegalArgumentException If {@code capacity} is greater than the maximum allowed count for
    *                                  a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    * @see UnsafeDirectBuffer#allocate()
-   * @see UnsafeDirectBuffer#allocate(long, long)
+   * @see UnsafeDirectBuffer#allocate(int, int)
    */
-  public static UnsafeDirectBuffer allocate(long initialCapacity) {
-    return allocate(initialCapacity, Long.MAX_VALUE);
+  public static UnsafeDirectBuffer allocate(int initialCapacity) {
+    return allocate(initialCapacity, Integer.MAX_VALUE);
   }
 
   /**
@@ -74,15 +74,15 @@ public class UnsafeDirectBuffer extends NativeBuffer {
    * @throws IllegalArgumentException If {@code capacity} or {@code maxCapacity} is greater than the maximum
    *                                  allowed count for a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    * @see UnsafeDirectBuffer#allocate()
-   * @see UnsafeDirectBuffer#allocate(long)
+   * @see UnsafeDirectBuffer#allocate(int)
    */
-  public static UnsafeDirectBuffer allocate(long initialCapacity, long maxCapacity) {
+  public static UnsafeDirectBuffer allocate(int initialCapacity, int maxCapacity) {
     if (initialCapacity > maxCapacity)
       throw new IllegalArgumentException("initial capacity cannot be greater than maximum capacity");
     return new UnsafeDirectBuffer(new UnsafeDirectBytes(DirectMemory.allocate(Memory.Util.toPow2(initialCapacity))), 0, initialCapacity, maxCapacity);
   }
 
-  protected UnsafeDirectBuffer(UnsafeDirectBytes bytes, long offset, long initialCapacity, long maxCapacity) {
+  protected UnsafeDirectBuffer(UnsafeDirectBytes bytes, int offset, int initialCapacity, int maxCapacity) {
     super(bytes, offset, initialCapacity, maxCapacity);
   }
 

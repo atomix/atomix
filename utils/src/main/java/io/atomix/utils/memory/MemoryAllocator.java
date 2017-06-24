@@ -31,7 +31,7 @@ public interface MemoryAllocator<T extends Memory> {
    * @param size The count of the memory to allocate.
    * @return The allocated memory.
    */
-  T allocate(long size);
+  T allocate(int size);
 
   /**
    * Reallocates the given memory.
@@ -43,6 +43,6 @@ public interface MemoryAllocator<T extends Memory> {
    * @param size   The count to which to reallocate the given memory.
    * @return The reallocated memory.
    */
-  T reallocate(T memory, long size);
+  T reallocate(T memory, int size);
 
 }

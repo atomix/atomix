@@ -37,7 +37,7 @@ public class BitArray implements AutoCloseable {
   public static BitArray allocate(long bits) {
     if (!(bits > 0 & (bits & (bits - 1)) == 0))
       throw new IllegalArgumentException("size must be a power of 2");
-    return new BitArray(UnsafeHeapBytes.allocate(Math.max(bits / 8 + 8, 8)), bits);
+    return new BitArray(UnsafeHeapBytes.allocate((int) Math.max(bits / 8 + 8, 8)), bits);
   }
 
   private final UnsafeHeapBytes bytes;
@@ -57,8 +57,8 @@ public class BitArray implements AutoCloseable {
   /**
    * Returns the offset of the long that stores the bit for the given index.
    */
-  private long offset(long index) {
-    return (index / 64) * 8;
+  private int offset(long index) {
+    return (int) (index / 64) * 8;
   }
 
   /**
@@ -122,7 +122,7 @@ public class BitArray implements AutoCloseable {
    * @return The resized bit array.
    */
   public BitArray resize(long size) {
-    bytes.resize(Math.max(size / 8 + 8, 8));
+    bytes.resize((int) Math.max(size / 8 + 8, 8));
     this.size = size;
     return this;
   }

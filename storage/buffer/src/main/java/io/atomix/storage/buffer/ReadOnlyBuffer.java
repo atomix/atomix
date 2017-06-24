@@ -53,7 +53,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  protected void compact(long from, long to, long length) {
+  protected void compact(int from, int to, int length) {
     throw new ReadOnlyBufferException();
   }
 
@@ -74,12 +74,12 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer zero(long offset, long length) {
+  public Buffer zero(int offset, int length) {
     throw new ReadOnlyBufferException();
   }
 
   @Override
-  public Buffer zero(long offset) {
+  public Buffer zero(int offset) {
     throw new ReadOnlyBufferException();
   }
 
@@ -89,7 +89,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeBoolean(long offset, boolean b) {
+  public Buffer writeBoolean(int offset, boolean b) {
     throw new ReadOnlyBufferException();
   }
 
@@ -104,12 +104,12 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer write(Bytes bytes, long offset, long length) {
+  public Buffer write(Bytes bytes, int offset, int length) {
     throw new ReadOnlyBufferException();
   }
 
   @Override
-  public Buffer write(long offset, Bytes bytes, long srcOffset, long length) {
+  public Buffer write(int offset, Bytes bytes, int srcOffset, int length) {
     throw new ReadOnlyBufferException();
   }
 
@@ -119,12 +119,12 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer write(byte[] bytes, long offset, long length) {
+  public Buffer write(byte[] bytes, int offset, int length) {
     throw new ReadOnlyBufferException();
   }
 
   @Override
-  public Buffer write(long offset, byte[] bytes, long srcOffset, long length) {
+  public Buffer write(int offset, byte[] bytes, int srcOffset, int length) {
     throw new ReadOnlyBufferException();
   }
 
@@ -134,7 +134,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeByte(long offset, int b) {
+  public Buffer writeByte(int offset, int b) {
     throw new ReadOnlyBufferException();
   }
 
@@ -144,7 +144,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeUnsignedByte(long offset, int b) {
+  public Buffer writeUnsignedByte(int offset, int b) {
     throw new ReadOnlyBufferException();
   }
 
@@ -154,7 +154,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeChar(long offset, char c) {
+  public Buffer writeChar(int offset, char c) {
     throw new ReadOnlyBufferException();
   }
 
@@ -164,7 +164,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeShort(long offset, short s) {
+  public Buffer writeShort(int offset, short s) {
     throw new ReadOnlyBufferException();
   }
 
@@ -174,7 +174,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeUnsignedShort(long offset, int s) {
+  public Buffer writeUnsignedShort(int offset, int s) {
     throw new ReadOnlyBufferException();
   }
 
@@ -184,7 +184,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeMedium(long offset, int m) {
+  public Buffer writeMedium(int offset, int m) {
     throw new ReadOnlyBufferException();
   }
 
@@ -194,7 +194,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeUnsignedMedium(long offset, int m) {
+  public Buffer writeUnsignedMedium(int offset, int m) {
     throw new ReadOnlyBufferException();
   }
 
@@ -204,7 +204,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeInt(long offset, int i) {
+  public Buffer writeInt(int offset, int i) {
     throw new ReadOnlyBufferException();
   }
 
@@ -214,7 +214,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeUnsignedInt(long offset, long i) {
+  public Buffer writeUnsignedInt(int offset, long i) {
     throw new ReadOnlyBufferException();
   }
 
@@ -224,7 +224,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeLong(long offset, long l) {
+  public Buffer writeLong(int offset, long l) {
     throw new ReadOnlyBufferException();
   }
 
@@ -234,7 +234,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeFloat(long offset, float f) {
+  public Buffer writeFloat(int offset, float f) {
     throw new ReadOnlyBufferException();
   }
 
@@ -244,7 +244,7 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public Buffer writeDouble(long offset, double d) {
+  public Buffer writeDouble(int offset, double d) {
     throw new ReadOnlyBufferException();
   }
 

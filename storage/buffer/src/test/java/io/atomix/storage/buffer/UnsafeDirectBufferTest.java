@@ -26,12 +26,12 @@ import org.testng.annotations.Test;
 public class UnsafeDirectBufferTest extends BufferTest {
 
   @Override
-  protected Buffer createBuffer(long capacity) {
+  protected Buffer createBuffer(int capacity) {
     return UnsafeDirectBuffer.allocate(capacity);
   }
 
   @Override
-  protected Buffer createBuffer(long capacity, long maxCapacity) {
+  protected Buffer createBuffer(int capacity, int maxCapacity) {
     return UnsafeDirectBuffer.allocate(capacity, maxCapacity);
   }
 

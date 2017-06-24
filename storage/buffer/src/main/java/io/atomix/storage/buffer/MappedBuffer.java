@@ -38,13 +38,13 @@ public class MappedBuffer extends ByteBufferBuffer {
    * @return The mapped buffer.
    * @throws NullPointerException If {@code file} is {@code null}
    * @see #allocate(File, FileChannel.MapMode)
-   * @see #allocate(File, long)
-   * @see #allocate(File, FileChannel.MapMode, long)
-   * @see #allocate(File, long, long)
-   * @see #allocate(File, FileChannel.MapMode, long, long)
+   * @see #allocate(File, int)
+   * @see #allocate(File, FileChannel.MapMode, int)
+   * @see #allocate(File, int, int)
+   * @see #allocate(File, FileChannel.MapMode, int, int)
    */
   public static MappedBuffer allocate(File file) {
-    return allocate(file, FileChannel.MapMode.READ_WRITE, DEFAULT_INITIAL_CAPACITY, Long.MAX_VALUE);
+    return allocate(file, FileChannel.MapMode.READ_WRITE, DEFAULT_INITIAL_CAPACITY, Integer.MAX_VALUE);
   }
 
   /**
@@ -62,13 +62,13 @@ public class MappedBuffer extends ByteBufferBuffer {
    * @return The mapped buffer.
    * @throws NullPointerException If {@code file} is {@code null}
    * @see #allocate(File)
-   * @see #allocate(File, long)
-   * @see #allocate(File, FileChannel.MapMode, long)
-   * @see #allocate(File, long, long)
-   * @see #allocate(File, FileChannel.MapMode, long, long)
+   * @see #allocate(File, int)
+   * @see #allocate(File, FileChannel.MapMode, int)
+   * @see #allocate(File, int, int)
+   * @see #allocate(File, FileChannel.MapMode, int, int)
    */
   public static MappedBuffer allocate(File file, FileChannel.MapMode mode) {
-    return allocate(file, mode, DEFAULT_INITIAL_CAPACITY, Long.MAX_VALUE);
+    return allocate(file, mode, DEFAULT_INITIAL_CAPACITY, Integer.MAX_VALUE);
   }
 
   /**
@@ -87,11 +87,11 @@ public class MappedBuffer extends ByteBufferBuffer {
    * @throws IllegalArgumentException If the {@code capacity} is greater than {@link Integer#MAX_VALUE}.
    * @see #allocate(File)
    * @see #allocate(File, FileChannel.MapMode)
-   * @see #allocate(File, FileChannel.MapMode, long)
-   * @see #allocate(File, long, long)
-   * @see #allocate(File, FileChannel.MapMode, long, long)
+   * @see #allocate(File, FileChannel.MapMode, int)
+   * @see #allocate(File, int, int)
+   * @see #allocate(File, FileChannel.MapMode, int, int)
    */
-  public static MappedBuffer allocate(File file, long capacity) {
+  public static MappedBuffer allocate(File file, int capacity) {
     return allocate(file, FileChannel.MapMode.READ_WRITE, capacity, capacity);
   }
 
@@ -112,11 +112,11 @@ public class MappedBuffer extends ByteBufferBuffer {
    * @throws IllegalArgumentException If the {@code capacity} is greater than {@link Integer#MAX_VALUE}.
    * @see #allocate(File)
    * @see #allocate(File, FileChannel.MapMode)
-   * @see #allocate(File, long)
-   * @see #allocate(File, long, long)
-   * @see #allocate(File, FileChannel.MapMode, long, long)
+   * @see #allocate(File, int)
+   * @see #allocate(File, int, int)
+   * @see #allocate(File, FileChannel.MapMode, int, int)
    */
-  public static MappedBuffer allocate(File file, FileChannel.MapMode mode, long capacity) {
+  public static MappedBuffer allocate(File file, FileChannel.MapMode mode, int capacity) {
     return allocate(file, mode, capacity, capacity);
   }
 
@@ -128,7 +128,7 @@ public class MappedBuffer extends ByteBufferBuffer {
    * <p>
    * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link UnsafeMappedBytes} will be
    * initialized to the next power of {@code 2}. As bytes are written to the buffer, the buffer's capacity will double
-   * as long as {@code maxCapacity > capacity}.
+   * as int as {@code maxCapacity > capacity}.
    *
    * @param file            The file to map into memory. If the file doesn't exist it will be automatically created.
    * @param initialCapacity The initial capacity of the buffer.
@@ -139,11 +139,11 @@ public class MappedBuffer extends ByteBufferBuffer {
    *                                  {@link Integer#MAX_VALUE}.
    * @see #allocate(File)
    * @see #allocate(File, FileChannel.MapMode)
-   * @see #allocate(File, long)
-   * @see #allocate(File, FileChannel.MapMode, long)
-   * @see #allocate(File, FileChannel.MapMode, long, long)
+   * @see #allocate(File, int)
+   * @see #allocate(File, FileChannel.MapMode, int)
+   * @see #allocate(File, FileChannel.MapMode, int, int)
    */
-  public static MappedBuffer allocate(File file, long initialCapacity, long maxCapacity) {
+  public static MappedBuffer allocate(File file, int initialCapacity, int maxCapacity) {
     return allocate(file, FileChannel.MapMode.READ_WRITE, initialCapacity, maxCapacity);
   }
 
@@ -155,7 +155,7 @@ public class MappedBuffer extends ByteBufferBuffer {
    * <p>
    * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link UnsafeMappedBytes} will be
    * initialized to the next power of {@code 2}. As bytes are written to the buffer, the buffer's capacity will double
-   * as long as {@code maxCapacity > capacity}.
+   * as int as {@code maxCapacity > capacity}.
    *
    * @param file            The file to map into memory. If the file doesn't exist it will be automatically created.
    * @param mode            The mode with which to map the file.
@@ -167,11 +167,11 @@ public class MappedBuffer extends ByteBufferBuffer {
    *                                  {@link Integer#MAX_VALUE}.
    * @see #allocate(File)
    * @see #allocate(File, FileChannel.MapMode)
-   * @see #allocate(File, long)
-   * @see #allocate(File, FileChannel.MapMode, long)
-   * @see #allocate(File, long, long)
+   * @see #allocate(File, int)
+   * @see #allocate(File, FileChannel.MapMode, int)
+   * @see #allocate(File, int, int)
    */
-  public static MappedBuffer allocate(File file, FileChannel.MapMode mode, long initialCapacity, long maxCapacity) {
+  public static MappedBuffer allocate(File file, FileChannel.MapMode mode, int initialCapacity, int maxCapacity) {
     if (file == null)
       throw new NullPointerException("file cannot be null");
     if (mode == null)
@@ -185,7 +185,7 @@ public class MappedBuffer extends ByteBufferBuffer {
     return new MappedBuffer(MappedBytes.allocate(file, initialCapacity), 0, initialCapacity, maxCapacity);
   }
 
-  protected MappedBuffer(MappedBytes bytes, long offset, long initialCapacity, long maxCapacity) {
+  protected MappedBuffer(MappedBytes bytes, int offset, int initialCapacity, int maxCapacity) {
     super(bytes, offset, initialCapacity, maxCapacity, null);
   }
 

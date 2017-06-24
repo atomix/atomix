@@ -41,12 +41,12 @@ public class WrappedBytes extends AbstractBytes {
   }
 
   @Override
-  public long size() {
+  public int size() {
     return bytes.size();
   }
 
   @Override
-  public Bytes resize(long newSize) {
+  public Bytes resize(int newSize) {
     return bytes.resize(newSize);
   }
 
@@ -62,202 +62,202 @@ public class WrappedBytes extends AbstractBytes {
   }
 
   @Override
-  public Bytes zero(long offset) {
+  public Bytes zero(int offset) {
     bytes.zero(offset);
     return this;
   }
 
   @Override
-  public Bytes zero(long offset, long length) {
+  public Bytes zero(int offset, int length) {
     bytes.zero(offset, length);
     return this;
   }
 
   @Override
-  public Bytes read(long offset, Bytes dst, long dstOffset, long length) {
+  public Bytes read(int offset, Bytes dst, int dstOffset, int length) {
     bytes.read(offset, dst, dstOffset, length);
     return this;
   }
 
   @Override
-  public Bytes read(long offset, byte[] dst, long dstOffset, long length) {
+  public Bytes read(int offset, byte[] dst, int dstOffset, int length) {
     bytes.read(offset, dst, dstOffset, length);
     return this;
   }
 
   @Override
-  public int readByte(long offset) {
+  public int readByte(int offset) {
     return bytes.readByte(offset);
   }
 
   @Override
-  public int readUnsignedByte(long offset) {
+  public int readUnsignedByte(int offset) {
     return bytes.readUnsignedByte(offset);
   }
 
   @Override
-  public char readChar(long offset) {
+  public char readChar(int offset) {
     return bytes.readChar(offset);
   }
 
   @Override
-  public short readShort(long offset) {
+  public short readShort(int offset) {
     return bytes.readShort(offset);
   }
 
   @Override
-  public int readUnsignedShort(long offset) {
+  public int readUnsignedShort(int offset) {
     return bytes.readUnsignedShort(offset);
   }
 
   @Override
-  public int readMedium(long offset) {
+  public int readMedium(int offset) {
     return bytes.readMedium(offset);
   }
 
   @Override
-  public int readUnsignedMedium(long offset) {
+  public int readUnsignedMedium(int offset) {
     return bytes.readUnsignedMedium(offset);
   }
 
   @Override
-  public int readInt(long offset) {
+  public int readInt(int offset) {
     return bytes.readInt(offset);
   }
 
   @Override
-  public long readUnsignedInt(long offset) {
+  public long readUnsignedInt(int offset) {
     return bytes.readUnsignedInt(offset);
   }
 
   @Override
-  public long readLong(long offset) {
+  public long readLong(int offset) {
     return bytes.readLong(offset);
   }
 
   @Override
-  public float readFloat(long offset) {
+  public float readFloat(int offset) {
     return bytes.readFloat(offset);
   }
 
   @Override
-  public double readDouble(long offset) {
+  public double readDouble(int offset) {
     return bytes.readDouble(offset);
   }
 
   @Override
-  public boolean readBoolean(long offset) {
+  public boolean readBoolean(int offset) {
     return bytes.readBoolean(offset);
   }
 
   @Override
-  public String readString(long offset) {
+  public String readString(int offset) {
     return bytes.readString(offset);
   }
 
   @Override
-  public String readUTF8(long offset) {
+  public String readUTF8(int offset) {
     return bytes.readUTF8(offset);
   }
 
   @Override
-  public Bytes write(long offset, Bytes src, long srcOffset, long length) {
+  public Bytes write(int offset, Bytes src, int srcOffset, int length) {
     bytes.write(offset, src, srcOffset, length);
     return this;
   }
 
   @Override
-  public Bytes write(long offset, byte[] src, long srcOffset, long length) {
+  public Bytes write(int offset, byte[] src, int srcOffset, int length) {
     bytes.write(offset, src, srcOffset, length);
     return this;
   }
 
   @Override
-  public Bytes writeByte(long offset, int b) {
+  public Bytes writeByte(int offset, int b) {
     bytes.writeByte(offset, b);
     return this;
   }
 
   @Override
-  public Bytes writeUnsignedByte(long offset, int b) {
+  public Bytes writeUnsignedByte(int offset, int b) {
     bytes.writeUnsignedByte(offset, b);
     return this;
   }
 
   @Override
-  public Bytes writeChar(long offset, char c) {
+  public Bytes writeChar(int offset, char c) {
     bytes.writeChar(offset, c);
     return this;
   }
 
   @Override
-  public Bytes writeShort(long offset, short s) {
+  public Bytes writeShort(int offset, short s) {
     bytes.writeShort(offset, s);
     return this;
   }
 
   @Override
-  public Bytes writeUnsignedShort(long offset, int s) {
+  public Bytes writeUnsignedShort(int offset, int s) {
     bytes.writeUnsignedShort(offset, s);
     return this;
   }
 
   @Override
-  public Bytes writeMedium(long offset, int m) {
+  public Bytes writeMedium(int offset, int m) {
     bytes.writeMedium(offset, m);
     return this;
   }
 
   @Override
-  public Bytes writeUnsignedMedium(long offset, int m) {
+  public Bytes writeUnsignedMedium(int offset, int m) {
     bytes.writeUnsignedMedium(offset, m);
     return this;
   }
 
   @Override
-  public Bytes writeInt(long offset, int i) {
+  public Bytes writeInt(int offset, int i) {
     bytes.writeInt(offset, i);
     return this;
   }
 
   @Override
-  public Bytes writeUnsignedInt(long offset, long i) {
+  public Bytes writeUnsignedInt(int offset, long i) {
     bytes.writeUnsignedInt(offset, i);
     return this;
   }
 
   @Override
-  public Bytes writeLong(long offset, long l) {
+  public Bytes writeLong(int offset, long l) {
     bytes.writeLong(offset, l);
     return this;
   }
 
   @Override
-  public Bytes writeFloat(long offset, float f) {
+  public Bytes writeFloat(int offset, float f) {
     bytes.writeFloat(offset, f);
     return this;
   }
 
   @Override
-  public Bytes writeDouble(long offset, double d) {
+  public Bytes writeDouble(int offset, double d) {
     bytes.writeDouble(offset, d);
     return this;
   }
 
   @Override
-  public Bytes writeBoolean(long offset, boolean b) {
+  public Bytes writeBoolean(int offset, boolean b) {
     bytes.writeBoolean(offset, b);
     return this;
   }
 
   @Override
-  public Bytes writeString(long offset, String s) {
+  public Bytes writeString(int offset, String s) {
     bytes.writeString(offset, s);
     return this;
   }
 
   @Override
-  public Bytes writeUTF8(long offset, String s) {
+  public Bytes writeUTF8(int offset, String s) {
     bytes.writeUTF8(offset, s);
     return this;
   }

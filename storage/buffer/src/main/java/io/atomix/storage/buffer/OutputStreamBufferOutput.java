@@ -72,7 +72,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
   }
 
   @Override
-  public BufferOutput<?> write(Bytes bytes, long offset, long length) {
+  public BufferOutput<?> write(Bytes bytes, int offset, int length) {
     if (bytes instanceof UnsafeHeapBytes) {
       try {
         os.write(((UnsafeHeapBytes) bytes).array(), (int) offset, (int) length);
@@ -92,7 +92,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
   }
 
   @Override
-  public BufferOutput<?> write(byte[] bytes, long offset, long length) {
+  public BufferOutput<?> write(byte[] bytes, int offset, int length) {
     try {
       os.write(bytes, (int) offset, (int) length);
     } catch (IOException e) {

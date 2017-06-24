@@ -43,7 +43,7 @@ public class MappedMemory extends NativeMemory {
    * @return The mapped memory.
    * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
    */
-  public static MappedMemory allocate(File file, long size) {
+  public static MappedMemory allocate(File file, int size) {
     return new MappedMemoryAllocator(file).allocate(size);
   }
 
@@ -56,7 +56,7 @@ public class MappedMemory extends NativeMemory {
    * @return The mapped memory.
    * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
    */
-  public static MappedMemory allocate(File file, FileChannel.MapMode mode, long size) {
+  public static MappedMemory allocate(File file, FileChannel.MapMode mode, int size) {
     if (size > MAX_SIZE)
       throw new IllegalArgumentException("size cannot be greater than " + MAX_SIZE);
     return new MappedMemoryAllocator(file, mode).allocate(size);

@@ -87,9 +87,7 @@ public class MappedMemoryAllocator implements MemoryAllocator<MappedMemory> {
   }
 
   @Override
-  public MappedMemory allocate(long size) {
-    if (size > MappedMemory.MAX_SIZE)
-      throw new IllegalArgumentException("mapped memory size cannot be greater than " + MappedMemory.MAX_SIZE);
+  public MappedMemory allocate(int size) {
     try {
       if (file.length() < size)
         file.setLength(size);
@@ -101,7 +99,7 @@ public class MappedMemoryAllocator implements MemoryAllocator<MappedMemory> {
   }
 
   @Override
-  public MappedMemory reallocate(MappedMemory memory, long size) {
+  public MappedMemory reallocate(MappedMemory memory, int size) {
     MappedMemory newMemory = allocate(size);
     memory.free();
     return newMemory;

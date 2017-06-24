@@ -35,14 +35,14 @@ public interface BufferInput<T extends BufferInput<?>> extends AutoCloseable {
    *
    * @return The buffer's current position.
    */
-  long position();
+  int position();
 
   /**
    * Returns the number of bytes remaining in the input.
    *
    * @return The number of bytes remaining in the input.
    */
-  long remaining();
+  int remaining();
 
   /**
    * Returns a boolean value indicating whether the input has bytes remaining.
@@ -57,7 +57,7 @@ public interface BufferInput<T extends BufferInput<?>> extends AutoCloseable {
    * @param bytes The number of bytes to attempt to skip.
    * @return The skipped input.
    */
-  T skip(long bytes);
+  T skip(int bytes);
 
   /**
    * Reads bytes into the given byte array.
@@ -82,7 +82,7 @@ public interface BufferInput<T extends BufferInput<?>> extends AutoCloseable {
    * @param offset The offset at which to write bytes into the given buffer
    * @return The buffer.
    */
-  T read(Bytes bytes, long offset, long length);
+  T read(Bytes bytes, int offset, int length);
 
   /**
    * Reads bytes into the given byte array starting at current position up to the given length.
@@ -91,7 +91,7 @@ public interface BufferInput<T extends BufferInput<?>> extends AutoCloseable {
    * @param offset The offset at which to write bytes into the given buffer
    * @return The buffer.
    */
-  T read(byte[] bytes, long offset, long length);
+  T read(byte[] bytes, int offset, int length);
 
   /**
    * Reads bytes into the given buffer.

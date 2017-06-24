@@ -34,8 +34,8 @@ public class DirectBuffer extends ByteBufferBuffer {
    * bytes are written to the buffer. The underlying {@link UnsafeDirectBytes} will be initialized to the next power of {@code 2}.
    *
    * @return The direct buffer.
-   * @see DirectBuffer#allocate(long)
-   * @see DirectBuffer#allocate(long, long)
+   * @see DirectBuffer#allocate(int)
+   * @see DirectBuffer#allocate(int, int)
    */
   public static DirectBuffer allocate() {
     return allocate(DEFAULT_INITIAL_CAPACITY, HeapMemory.MAX_SIZE);
@@ -53,9 +53,9 @@ public class DirectBuffer extends ByteBufferBuffer {
    * @throws IllegalArgumentException If {@code capacity} is greater than the maximum allowed count for
    *                                  a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    * @see DirectBuffer#allocate()
-   * @see DirectBuffer#allocate(long, long)
+   * @see DirectBuffer#allocate(int, int)
    */
-  public static DirectBuffer allocate(long initialCapacity) {
+  public static DirectBuffer allocate(int initialCapacity) {
     return allocate(initialCapacity, HeapMemory.MAX_SIZE);
   }
 
@@ -73,15 +73,15 @@ public class DirectBuffer extends ByteBufferBuffer {
    * @throws IllegalArgumentException If {@code capacity} or {@code maxCapacity} is greater than the maximum
    *                                  allowed count for a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    * @see DirectBuffer#allocate()
-   * @see DirectBuffer#allocate(long)
+   * @see DirectBuffer#allocate(int)
    */
-  public static DirectBuffer allocate(long initialCapacity, long maxCapacity) {
+  public static DirectBuffer allocate(int initialCapacity, int maxCapacity) {
     if (initialCapacity > maxCapacity)
       throw new IllegalArgumentException("initial capacity cannot be greater than maximum capacity");
     return new DirectBuffer(DirectBytes.allocate((int) Math.min(Memory.Util.toPow2(initialCapacity), HeapMemory.MAX_SIZE)), 0, initialCapacity, maxCapacity);
   }
 
-  protected DirectBuffer(DirectBytes bytes, long offset, long initialCapacity, long maxCapacity) {
+  protected DirectBuffer(DirectBytes bytes, int offset, int initialCapacity, int maxCapacity) {
     super(bytes, offset, initialCapacity, maxCapacity, null);
   }
 

@@ -36,12 +36,12 @@ public class MappedBufferTest extends BufferTest {
   }
   
   @Override
-  protected Buffer createBuffer(long capacity) {
+  protected Buffer createBuffer(int capacity) {
     return MappedBuffer.allocate(FileTesting.createFile(), capacity);
   }
 
   @Override
-  protected Buffer createBuffer(long capacity, long maxCapacity) {
+  protected Buffer createBuffer(int capacity, int maxCapacity) {
     return MappedBuffer.allocate(FileTesting.createFile(), capacity, maxCapacity);
   }
 

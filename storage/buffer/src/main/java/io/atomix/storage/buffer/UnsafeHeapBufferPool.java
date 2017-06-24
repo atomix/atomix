@@ -42,7 +42,7 @@ public class UnsafeHeapBufferPool extends BufferPool {
     @Override
     public Buffer createReference(ReferenceManager<Buffer> manager) {
       UnsafeHeapBuffer buffer = new UnsafeHeapBuffer(UnsafeHeapBytes.allocate(1024), manager);
-      buffer.reset(0, 1024, Long.MAX_VALUE);
+      buffer.reset(0, 1024, Integer.MAX_VALUE);
       return buffer;
     }
   }

@@ -39,12 +39,12 @@ public class FileBuffer extends AbstractBuffer {
    *
    * @param file The file to allocate.
    * @return The allocated buffer.
-   * @see FileBuffer#allocate(File, long)
-   * @see FileBuffer#allocate(File, long, long)
-   * @see FileBuffer#allocate(File, String, long, long)
+   * @see FileBuffer#allocate(File, int)
+   * @see FileBuffer#allocate(File, int, int)
+   * @see FileBuffer#allocate(File, String, int, int)
    */
   public static FileBuffer allocate(File file) {
-    return allocate(file, FileBytes.DEFAULT_MODE, DEFAULT_INITIAL_CAPACITY, Long.MAX_VALUE);
+    return allocate(file, FileBytes.DEFAULT_MODE, DEFAULT_INITIAL_CAPACITY, Integer.MAX_VALUE);
   }
 
   /**
@@ -57,11 +57,11 @@ public class FileBuffer extends AbstractBuffer {
    * @param initialCapacity The initial capacity of the bytes to allocate.
    * @return The allocated buffer.
    * @see FileBuffer#allocate(File)
-   * @see FileBuffer#allocate(File, long, long)
-   * @see FileBuffer#allocate(File, String, long, long)
+   * @see FileBuffer#allocate(File, int, int)
+   * @see FileBuffer#allocate(File, String, int, int)
    */
-  public static FileBuffer allocate(File file, long initialCapacity) {
-    return allocate(file, FileBytes.DEFAULT_MODE, initialCapacity, Long.MAX_VALUE);
+  public static FileBuffer allocate(File file, int initialCapacity) {
+    return allocate(file, FileBytes.DEFAULT_MODE, initialCapacity, Integer.MAX_VALUE);
   }
 
   /**
@@ -77,10 +77,10 @@ public class FileBuffer extends AbstractBuffer {
    * @param maxCapacity     The maximum allowed capacity of the buffer.
    * @return The allocated buffer.
    * @see FileBuffer#allocate(File)
-   * @see FileBuffer#allocate(File, long)
-   * @see FileBuffer#allocate(File, String, long, long)
+   * @see FileBuffer#allocate(File, int)
+   * @see FileBuffer#allocate(File, String, int, int)
    */
-  public static FileBuffer allocate(File file, long initialCapacity, long maxCapacity) {
+  public static FileBuffer allocate(File file, int initialCapacity, int maxCapacity) {
     return allocate(file, FileBytes.DEFAULT_MODE, initialCapacity, maxCapacity);
   }
 
@@ -97,16 +97,16 @@ public class FileBuffer extends AbstractBuffer {
    * @param maxCapacity     The maximum allowed capacity of the buffer.
    * @return The allocated buffer.
    * @see FileBuffer#allocate(File)
-   * @see FileBuffer#allocate(File, long)
-   * @see FileBuffer#allocate(File, long, long)
+   * @see FileBuffer#allocate(File, int)
+   * @see FileBuffer#allocate(File, int, int)
    */
-  public static FileBuffer allocate(File file, String mode, long initialCapacity, long maxCapacity) {
+  public static FileBuffer allocate(File file, String mode, int initialCapacity, int maxCapacity) {
     return new FileBuffer(new FileBytes(file, mode, Memory.Util.toPow2(initialCapacity)), 0, initialCapacity, maxCapacity);
   }
 
   private final FileBytes bytes;
 
-  private FileBuffer(FileBytes bytes, long offset, long initialCapacity, long maxCapacity) {
+  private FileBuffer(FileBytes bytes, int offset, int initialCapacity, int maxCapacity) {
     super(bytes, offset, initialCapacity, maxCapacity, null);
     this.bytes = bytes;
   }
@@ -129,7 +129,7 @@ public class FileBuffer extends AbstractBuffer {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
    *                                  {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
-  public UnsafeMappedBuffer map(long size) {
+  public UnsafeMappedBuffer map(int size) {
     return map(position(), size, FileChannel.MapMode.READ_WRITE);
   }
 
@@ -142,7 +142,7 @@ public class FileBuffer extends AbstractBuffer {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
    *                                  {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
-  public UnsafeMappedBuffer map(long size, FileChannel.MapMode mode) {
+  public UnsafeMappedBuffer map(int size, FileChannel.MapMode mode) {
     return map(position(), size, mode);
   }
 
@@ -156,7 +156,7 @@ public class FileBuffer extends AbstractBuffer {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
    *                                  {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
-  public UnsafeMappedBuffer map(long offset, long size) {
+  public UnsafeMappedBuffer map(int offset, int size) {
     return map(offset, size, FileChannel.MapMode.READ_WRITE);
   }
 
@@ -170,16 +170,16 @@ public class FileBuffer extends AbstractBuffer {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
    *                                  {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
-  public UnsafeMappedBuffer map(long offset, long size, FileChannel.MapMode mode) {
+  public UnsafeMappedBuffer map(int offset, int size, FileChannel.MapMode mode) {
     return new UnsafeMappedBuffer(((FileBytes) bytes).map(offset, size, mode), 0, size, size);
   }
 
   @Override
-  protected void compact(long from, long to, long length) {
+  protected void compact(int from, int to, int length) {
     byte[] bytes = new byte[1024];
-    long position = from;
+    int position = from;
     while (position < from + length) {
-      long size = Math.min((from + length) - position, 1024);
+      int size = Math.min((from + length) - position, 1024);
       this.bytes.read(position, bytes, 0, size);
       this.bytes.write(0, bytes, 0, size);
       position += size;

@@ -40,7 +40,7 @@ import static io.atomix.storage.buffer.Bytes.SHORT;
  */
 public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
   private final DataInputStream is;
-  private long position;
+  private int position;
 
   public InputStreamBufferInput(InputStream is) {
     this(new DataInputStream(is));
@@ -53,12 +53,12 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
   }
 
   @Override
-  public long position() {
+  public int position() {
     return position;
   }
 
   @Override
-  public long remaining() {
+  public int remaining() {
     try {
       return is.available();
     } catch (IOException e) {
@@ -72,7 +72,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
   }
 
   @Override
-  public BufferInput<?> skip(long bytes) {
+  public BufferInput<?> skip(int bytes) {
     try {
       position += is.skip(bytes);
     } catch (IOException e) {
@@ -114,7 +114,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
   }
 
   @Override
-  public BufferInput<?> read(Bytes bytes, long offset, long length) {
+  public BufferInput<?> read(Bytes bytes, int offset, int length) {
     if (bytes instanceof UnsafeHeapBytes) {
       try {
         position += is.read(bytes.array(), (int) offset, (int) length);
@@ -124,8 +124,8 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
     } else {
       byte[] buffer = new byte[1024];
       try {
-        long position = offset;
-        long remaining = length;
+        int position = offset;
+        int remaining = length;
         int read;
         while ((read = is.read(buffer)) != -1) {
           bytes.write(position, buffer, 0, Math.min(read, remaining));
@@ -140,7 +140,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
   }
 
   @Override
-  public BufferInput<?> read(byte[] bytes, long offset, long length) {
+  public BufferInput<?> read(byte[] bytes, int offset, int length) {
     try {
       position += is.read(bytes, (int) offset, (int) length);
     } catch (IOException e) {

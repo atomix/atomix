@@ -30,12 +30,12 @@ import static org.testng.Assert.assertEquals;
 public class DirectBufferTest extends BufferTest {
 
   @Override
-  protected Buffer createBuffer(long capacity) {
+  protected Buffer createBuffer(int capacity) {
     return DirectBuffer.allocate(capacity);
   }
 
   @Override
-  protected Buffer createBuffer(long capacity, long maxCapacity) {
+  protected Buffer createBuffer(int capacity, int maxCapacity) {
     return DirectBuffer.allocate(capacity, maxCapacity);
   }
 

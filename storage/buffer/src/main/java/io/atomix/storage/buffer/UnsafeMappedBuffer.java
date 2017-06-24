@@ -33,7 +33,7 @@ import java.nio.channels.FileChannel;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class UnsafeMappedBuffer extends NativeBuffer {
-  private static final long DEFAULT_INITIAL_CAPACITY = 1024 * 1024 * 16;
+  private static final int DEFAULT_INITIAL_CAPACITY = 1024 * 1024 * 16;
 
   /**
    * Allocates a dynamic capacity mapped buffer in {@link FileChannel.MapMode#READ_WRITE} mode with an initial capacity
@@ -48,13 +48,13 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    * @return The mapped buffer.
    * @throws NullPointerException If {@code file} is {@code null}
    * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode)
-   * @see UnsafeMappedBuffer#allocate(File, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long)
-   * @see UnsafeMappedBuffer#allocate(File, long, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long, long)
+   * @see UnsafeMappedBuffer#allocate(File, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int)
+   * @see UnsafeMappedBuffer#allocate(File, int, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int, int)
    */
   public static UnsafeMappedBuffer allocate(File file) {
-    return allocate(file, MappedMemoryAllocator.DEFAULT_MAP_MODE, DEFAULT_INITIAL_CAPACITY, Long.MAX_VALUE);
+    return allocate(file, MappedMemoryAllocator.DEFAULT_MAP_MODE, DEFAULT_INITIAL_CAPACITY, Integer.MAX_VALUE);
   }
 
   /**
@@ -72,13 +72,13 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    * @return The mapped buffer.
    * @throws NullPointerException If {@code file} is {@code null}
    * @see UnsafeMappedBuffer#allocate(File)
-   * @see UnsafeMappedBuffer#allocate(File, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long)
-   * @see UnsafeMappedBuffer#allocate(File, long, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long, long)
+   * @see UnsafeMappedBuffer#allocate(File, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int)
+   * @see UnsafeMappedBuffer#allocate(File, int, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int, int)
    */
   public static UnsafeMappedBuffer allocate(File file, FileChannel.MapMode mode) {
-    return allocate(file, mode, DEFAULT_INITIAL_CAPACITY, Long.MAX_VALUE);
+    return allocate(file, mode, DEFAULT_INITIAL_CAPACITY, Integer.MAX_VALUE);
   }
 
   /**
@@ -97,11 +97,11 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    * @throws IllegalArgumentException If the {@code capacity} is greater than {@link Integer#MAX_VALUE}.
    * @see UnsafeMappedBuffer#allocate(File)
    * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long)
-   * @see UnsafeMappedBuffer#allocate(File, long, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long, long)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int)
+   * @see UnsafeMappedBuffer#allocate(File, int, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int, int)
    */
-  public static UnsafeMappedBuffer allocate(File file, long capacity) {
+  public static UnsafeMappedBuffer allocate(File file, int capacity) {
     return allocate(file, MappedMemoryAllocator.DEFAULT_MAP_MODE, capacity, capacity);
   }
 
@@ -122,11 +122,11 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    * @throws IllegalArgumentException If the {@code capacity} is greater than {@link Integer#MAX_VALUE}.
    * @see UnsafeMappedBuffer#allocate(File)
    * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode)
-   * @see UnsafeMappedBuffer#allocate(File, long)
-   * @see UnsafeMappedBuffer#allocate(File, long, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long, long)
+   * @see UnsafeMappedBuffer#allocate(File, int)
+   * @see UnsafeMappedBuffer#allocate(File, int, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int, int)
    */
-  public static UnsafeMappedBuffer allocate(File file, FileChannel.MapMode mode, long capacity) {
+  public static UnsafeMappedBuffer allocate(File file, FileChannel.MapMode mode, int capacity) {
     return allocate(file, mode, capacity, capacity);
   }
 
@@ -138,7 +138,7 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    * <p>
    * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link UnsafeMappedBytes} will be
    * initialized to the next power of {@code 2}. As bytes are written to the buffer, the buffer's capacity will double
-   * as long as {@code maxCapacity > capacity}.
+   * as int as {@code maxCapacity > capacity}.
    *
    * @param file            The file to map into memory. If the file doesn't exist it will be automatically created.
    * @param initialCapacity The initial capacity of the buffer.
@@ -149,11 +149,11 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    *                                  {@link Integer#MAX_VALUE}.
    * @see UnsafeMappedBuffer#allocate(File)
    * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode)
-   * @see UnsafeMappedBuffer#allocate(File, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long, long)
+   * @see UnsafeMappedBuffer#allocate(File, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int, int)
    */
-  public static UnsafeMappedBuffer allocate(File file, long initialCapacity, long maxCapacity) {
+  public static UnsafeMappedBuffer allocate(File file, int initialCapacity, int maxCapacity) {
     return allocate(file, MappedMemoryAllocator.DEFAULT_MAP_MODE, initialCapacity, maxCapacity);
   }
 
@@ -165,7 +165,7 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    * <p>
    * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link UnsafeMappedBytes} will be
    * initialized to the next power of {@code 2}. As bytes are written to the buffer, the buffer's capacity will double
-   * as long as {@code maxCapacity > capacity}.
+   * as int as {@code maxCapacity > capacity}.
    *
    * @param file            The file to map into memory. If the file doesn't exist it will be automatically created.
    * @param mode            The mode with which to map the file.
@@ -177,11 +177,11 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    *                                  {@link Integer#MAX_VALUE}.
    * @see UnsafeMappedBuffer#allocate(File)
    * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode)
-   * @see UnsafeMappedBuffer#allocate(File, long)
-   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, long)
-   * @see UnsafeMappedBuffer#allocate(File, long, long)
+   * @see UnsafeMappedBuffer#allocate(File, int)
+   * @see UnsafeMappedBuffer#allocate(File, FileChannel.MapMode, int)
+   * @see UnsafeMappedBuffer#allocate(File, int, int)
    */
-  public static UnsafeMappedBuffer allocate(File file, FileChannel.MapMode mode, long initialCapacity, long maxCapacity) {
+  public static UnsafeMappedBuffer allocate(File file, FileChannel.MapMode mode, int initialCapacity, int maxCapacity) {
     if (file == null)
       throw new NullPointerException("file cannot be null");
     if (mode == null)
@@ -199,7 +199,7 @@ public class UnsafeMappedBuffer extends NativeBuffer {
     super(bytes, referenceManager);
   }
 
-  UnsafeMappedBuffer(UnsafeMappedBytes bytes, long offset, long initialCapacity, long maxCapacity) {
+  UnsafeMappedBuffer(UnsafeMappedBytes bytes, int offset, int initialCapacity, int maxCapacity) {
     super(bytes, offset, initialCapacity, maxCapacity);
   }
 

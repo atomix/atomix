@@ -30,12 +30,12 @@ import static org.testng.Assert.assertEquals;
 public class UnsafeHeapBufferTest extends BufferTest {
 
   @Override
-  protected Buffer createBuffer(long capacity) {
+  protected Buffer createBuffer(int capacity) {
     return UnsafeHeapBuffer.allocate(capacity);
   }
 
   @Override
-  protected Buffer createBuffer(long capacity, long maxCapacity) {
+  protected Buffer createBuffer(int capacity, int maxCapacity) {
     return UnsafeHeapBuffer.allocate(capacity, maxCapacity);
   }
 

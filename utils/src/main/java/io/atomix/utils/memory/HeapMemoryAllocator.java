@@ -23,14 +23,14 @@ package io.atomix.utils.memory;
 public class HeapMemoryAllocator implements MemoryAllocator<HeapMemory> {
 
   @Override
-  public HeapMemory allocate(long size) {
+  public HeapMemory allocate(int size) {
     if (size > Integer.MAX_VALUE)
       throw new IllegalArgumentException("size cannot be greater than " + Integer.MAX_VALUE);
     return new HeapMemory(new byte[(int) size], this);
   }
 
   @Override
-  public HeapMemory reallocate(HeapMemory memory, long size) {
+  public HeapMemory reallocate(HeapMemory memory, int size) {
     HeapMemory copy = allocate(size);
     NativeMemory.UNSAFE.copyMemory(memory.array(), HeapMemory.ARRAY_BASE_OFFSET, copy.array(), HeapMemory.ARRAY_BASE_OFFSET, Math.min(size, memory.size()));
     memory.free();

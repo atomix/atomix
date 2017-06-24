@@ -34,12 +34,12 @@ public abstract class BufferTest {
   /**
    * Creates a new test buffer.
    */
-  protected abstract Buffer createBuffer(long capacity);
+  protected abstract Buffer createBuffer(int capacity);
 
   /**
    * Creates a new test buffer.
    */
-  protected abstract Buffer createBuffer(long capacity, long maxCapacity);
+  protected abstract Buffer createBuffer(int capacity, int maxCapacity);
 
   public void testPosition() {
     Buffer buffer = createBuffer(8);

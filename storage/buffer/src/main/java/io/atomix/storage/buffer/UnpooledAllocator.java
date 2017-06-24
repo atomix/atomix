@@ -27,7 +27,7 @@ public abstract class UnpooledAllocator implements BufferAllocator {
    *
    * @return The maximum buffer capacity.
    */
-  protected abstract long maxCapacity();
+  protected abstract int maxCapacity();
 
   @Override
   public Buffer allocate() {
@@ -35,7 +35,7 @@ public abstract class UnpooledAllocator implements BufferAllocator {
   }
 
   @Override
-  public Buffer allocate(long capacity) {
+  public Buffer allocate(int capacity) {
     return allocate(capacity, capacity);
   }
 
