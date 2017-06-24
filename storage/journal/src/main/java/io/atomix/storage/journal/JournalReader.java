@@ -54,23 +54,6 @@ public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
   long getNextIndex();
 
   /**
-   * Returns the entry at the given index.
-   *
-   * @param index The entry index.
-   * @return The entry at the given index or {@code null} if the entry doesn't exist.
-   * @throws IndexOutOfBoundsException if the given index is outside the range of the journal
-   */
-  Indexed<E> getEntry(long index);
-
-  /**
-   * Resets the reader to the given index.
-   *
-   * @param index The index to which to reset the reader.
-   * @return The last entry read at the reset index.
-   */
-  Indexed<E> reset(long index);
-
-  /**
    * Returns whether the reader has a next entry to read.
    *
    * @return Whether the reader has a next entry to read.
@@ -90,6 +73,13 @@ public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
    * Resets the reader to the start.
    */
   void reset();
+
+  /**
+   * Resets the reader to the given index.
+   *
+   * @param index The index to which to reset the reader.
+   */
+  void reset(long index);
 
   @Override
   void close();

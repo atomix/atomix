@@ -110,7 +110,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
 
   @Override
   public long getLastIndex() {
-    return lastEntry != null ? lastEntry.getIndex() : descriptor.index() - 1;
+    return lastEntry != null ? lastEntry.index() : descriptor.index() - 1;
   }
 
   @Override
@@ -121,7 +121,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
   @Override
   public long getNextIndex() {
     if (lastEntry != null) {
-      return lastEntry.getIndex() + 1;
+      return lastEntry.index() + 1;
     } else {
       return firstIndex;
     }
@@ -164,24 +164,24 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public void appendEntry(Indexed<E> entry) {
+  public void append(Indexed<E> entry) {
     final long nextIndex = getNextIndex();
 
     // If the entry's index is greater than the next index in the segment, skip some entries.
-    if (entry.getIndex() > nextIndex) {
+    if (entry.index() > nextIndex) {
       throw new IndexOutOfBoundsException("Entry index is not sequential");
     }
 
     // If the entry's index is less than the next index, truncate the segment.
-    if (entry.getIndex() < nextIndex) {
-      truncate(entry.getIndex() - 1);
+    if (entry.index() < nextIndex) {
+      truncate(entry.index() - 1);
     }
-    appendEntry(entry.getEntry());
+    append(entry.entry());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends E> Indexed<T> appendEntry(T entry) {
+  public <T extends E> Indexed<T> append(T entry) {
     // Store the entry index.
     final long index = getNextIndex();
 
@@ -202,9 +202,6 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     // Update the last entry with the correct index/term/length.
     Indexed<E> indexedEntry = new Indexed<>(index, entry, length);
     this.lastEntry = indexedEntry;
-
-    // Store the entry in the journal buffer and return the indexed entry.
-    journal.buffer().append(indexedEntry);
     return (Indexed<T>) indexedEntry;
   }
 

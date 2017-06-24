@@ -68,12 +68,14 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
   }
 
   @Override
-  public Indexed<E> getEntry(long index) {
-    return reset(index);
+  public void reset() {
+    currentReader.close();
+    currentSegment = journal.getFirstSegment();
+    currentReader = currentSegment.createReader();
   }
 
   @Override
-  public Indexed<E> reset(long index) {
+  public void reset(long index) {
     if (index < currentReader.firstIndex()) {
       currentSegment = journal.getPreviousSegment(currentSegment.index());
       while (currentSegment != null) {
@@ -84,14 +86,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
         }
       }
     }
-    return currentReader.reset(index);
-  }
-
-  @Override
-  public void reset() {
-    currentReader.close();
-    currentSegment = journal.getFirstSegment();
-    currentReader = currentSegment.createReader();
+    currentReader.reset(index);
   }
 
   @Override

@@ -58,14 +58,14 @@ public interface JournalWriter<E> extends AutoCloseable {
    * @param entry The entry to append.
    * @return The appended indexed entry.
    */
-  <T extends E> Indexed<T> appendEntry(T entry);
+  <T extends E> Indexed<T> append(T entry);
 
   /**
    * Appends an indexed entry to the log.
    *
    * @param entry The indexed entry to append.
    */
-  void appendEntry(Indexed<E> entry);
+  void append(Indexed<E> entry);
 
   /**
    * Truncates the log to the given index.

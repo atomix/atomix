@@ -134,7 +134,7 @@ public final class FollowerRole extends ActiveRole {
 
     final long lastTerm;
     if (lastEntry != null) {
-      lastTerm = lastEntry.getEntry().term();
+      lastTerm = lastEntry.entry().term();
     } else {
       lastTerm = 0;
     }
@@ -148,7 +148,7 @@ public final class FollowerRole extends ActiveRole {
       PollRequest request = PollRequest.newBuilder()
           .withTerm(context.getTerm())
           .withCandidate(context.getCluster().getMember().memberId())
-          .withLogIndex(lastEntry != null ? lastEntry.getIndex() : 0)
+          .withLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLogTerm(lastTerm)
           .build();
       context.getProtocol().poll(member.memberId(), request).whenCompleteAsync((response, error) -> {

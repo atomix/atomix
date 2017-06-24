@@ -98,7 +98,7 @@ public class AppendResponse extends AbstractRaftResponse {
           .add("status", status)
           .add("term", term)
           .add("succeeded", succeeded)
-          .add("previousLogIndex", logIndex)
+          .add("prevLogIndex", logIndex)
           .toString();
     } else {
       return toStringHelper(this)
@@ -148,7 +148,7 @@ public class AppendResponse extends AbstractRaftResponse {
      * @throws IllegalArgumentException if {@code index} is negative
      */
     public Builder withLogIndex(long logIndex) {
-      checkArgument(logIndex >= 0, "previousLogIndex must be positive");
+      checkArgument(logIndex >= 0, "prevLogIndex must be positive");
       this.logIndex = logIndex;
       return this;
     }
@@ -158,7 +158,7 @@ public class AppendResponse extends AbstractRaftResponse {
       super.validate();
       if (status == Status.OK) {
         checkArgument(term > 0, "term must be positive");
-        checkArgument(logIndex >= 0, "previousLogIndex must be positive");
+        checkArgument(logIndex >= 0, "prevLogIndex must be positive");
       }
     }
 

@@ -43,14 +43,14 @@ public class VoteRequest extends AbstractRaftRequest {
 
   private final long term;
   private final MemberId candidate;
-  private final long logIndex;
-  private final long logTerm;
+  private final long lastLogIndex;
+  private final long lastLogTerm;
 
-  public VoteRequest(long term, MemberId candidate, long logIndex, long logTerm) {
+  public VoteRequest(long term, MemberId candidate, long lastLogIndex, long lastLogTerm) {
     this.term = term;
     this.candidate = candidate;
-    this.logIndex = logIndex;
-    this.logTerm = logTerm;
+    this.lastLogIndex = lastLogIndex;
+    this.lastLogTerm = lastLogTerm;
   }
 
   /**
@@ -77,7 +77,7 @@ public class VoteRequest extends AbstractRaftRequest {
    * @return The candidate's last log index.
    */
   public long lastLogIndex() {
-    return logIndex;
+    return lastLogIndex;
   }
 
   /**
@@ -86,12 +86,12 @@ public class VoteRequest extends AbstractRaftRequest {
    * @return The candidate's last log term.
    */
   public long lastLogTerm() {
-    return logTerm;
+    return lastLogTerm;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), term, candidate, logIndex, logTerm);
+    return Objects.hash(getClass(), term, candidate, lastLogIndex, lastLogTerm);
   }
 
   @Override
@@ -100,8 +100,8 @@ public class VoteRequest extends AbstractRaftRequest {
       VoteRequest request = (VoteRequest) object;
       return request.term == term
           && request.candidate == candidate
-          && request.logIndex == logIndex
-          && request.logTerm == logTerm;
+          && request.lastLogIndex == lastLogIndex
+          && request.lastLogTerm == lastLogTerm;
     }
     return false;
   }
@@ -111,8 +111,8 @@ public class VoteRequest extends AbstractRaftRequest {
     return toStringHelper(this)
         .add("term", term)
         .add("candidate", candidate)
-        .add("lastLogIndex", logIndex)
-        .add("lastLogTerm", logTerm)
+        .add("lastLogIndex", lastLogIndex)
+        .add("lastLogTerm", lastLogTerm)
         .toString();
   }
 

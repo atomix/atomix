@@ -50,13 +50,13 @@ public class JournalWriterDelegate<E> implements JournalWriter<E> {
   }
 
   @Override
-  public <T extends E> Indexed<T> appendEntry(T entry) {
-    return delegate.appendEntry(entry);
+  public <T extends E> Indexed<T> append(T entry) {
+    return delegate.append(entry);
   }
 
   @Override
-  public void appendEntry(Indexed<E> entry) {
-    delegate.appendEntry(entry);
+  public void append(Indexed<E> entry) {
+    delegate.append(entry);
   }
 
   @Override

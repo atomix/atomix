@@ -177,7 +177,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
         if (nextIndex < index) {
           Indexed<RaftLogEntry> entry = reader.next();
           applyEntry(entry);
-          setLastApplied(entry.getIndex());
+          setLastApplied(entry.index());
         }
         // If the next index is equal to the applied index, apply it and return the result.
         else if (nextIndex == index) {
@@ -185,7 +185,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
           // simply update the last applied index and return a null result.
           try {
             Indexed<RaftLogEntry> entry = reader.next();
-            if (entry.getIndex() != index) {
+            if (entry.index() != index) {
               throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
             }
             return applyEntry(entry);
@@ -247,21 +247,21 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   @SuppressWarnings("unchecked")
   private <T> CompletableFuture<T> applyEntry(Indexed<? extends RaftLogEntry> entry) {
     LOGGER.trace("{} - Applying {}", state.getCluster().getMember().memberId(), entry);
-    if (entry.getType() == QueryEntry.class) {
+    if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());
-    } else if (entry.getType() == CommandEntry.class) {
+    } else if (entry.type() == CommandEntry.class) {
       return (CompletableFuture<T>) applyCommand(entry.cast());
-    } else if (entry.getType() == OpenSessionEntry.class) {
+    } else if (entry.type() == OpenSessionEntry.class) {
       return (CompletableFuture<T>) applyOpenSession(entry.cast());
-    } else if (entry.getType() == KeepAliveEntry.class) {
+    } else if (entry.type() == KeepAliveEntry.class) {
       return (CompletableFuture<T>) applyKeepAlive(entry.cast());
-    } else if (entry.getType() == CloseSessionEntry.class) {
+    } else if (entry.type() == CloseSessionEntry.class) {
       return (CompletableFuture<T>) applyCloseSession(entry.cast());
-    } else if (entry.getType() == MetadataEntry.class) {
+    } else if (entry.type() == MetadataEntry.class) {
       return (CompletableFuture<T>) applyMetadata(entry.cast());
-    } else if (entry.getType() == InitializeEntry.class) {
+    } else if (entry.type() == InitializeEntry.class) {
       return (CompletableFuture<T>) applyInitialize(entry.cast());
-    } else if (entry.getType() == ConfigurationEntry.class) {
+    } else if (entry.type() == ConfigurationEntry.class) {
       return (CompletableFuture<T>) applyConfiguration(entry.cast());
     }
     return Futures.exceptionalFuture(new InternalException("Unknown entry type"));
@@ -313,9 +313,9 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   private CompletableFuture<Void> applyKeepAlive(Indexed<KeepAliveEntry> entry) {
     // Store the session/command/event sequence and event index instead of acquiring a reference to the entry.
-    long[] sessionIds = entry.getEntry().sessionIds();
-    long[] commandSequences = entry.getEntry().commandSequenceNumbers();
-    long[] eventIndexes = entry.getEntry().eventIndexes();
+    long[] sessionIds = entry.entry().sessionIds();
+    long[] commandSequences = entry.entry().commandSequenceNumbers();
+    long[] eventIndexes = entry.entry().eventIndexes();
 
     for (int i = 0; i < sessionIds.length; i++) {
       long sessionId = sessionIds[i];
@@ -324,7 +324,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
       RaftSessionContext session = sessionManager.getSession(sessionId);
       if (session != null) {
-        session.getStateMachineExecutor().keepAlive(entry.getIndex(), entry.getEntry().timestamp(), session, commandSequence, eventIndex);
+        session.getStateMachineExecutor().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex);
       }
     }
     return CompletableFuture.completedFuture(null);
@@ -335,52 +335,52 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   private CompletableFuture<Long> applyOpenSession(Indexed<OpenSessionEntry> entry) {
     // Get the state machine executor or create one if it doesn't already exist.
-    RaftServerStateMachineExecutor stateMachineExecutor = stateMachines.get(entry.getEntry().name());
+    RaftServerStateMachineExecutor stateMachineExecutor = stateMachines.get(entry.entry().name());
     if (stateMachineExecutor == null) {
-      Supplier<RaftStateMachine> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.getEntry().typeName());
+      Supplier<RaftStateMachine> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().typeName());
       if (stateMachineSupplier == null) {
-        return Futures.exceptionalFuture(new UnknownStateMachineException("Unknown state machine type " + entry.getEntry().typeName()));
+        return Futures.exceptionalFuture(new UnknownStateMachineException("Unknown state machine type " + entry.entry().typeName()));
       }
 
-      StateMachineId stateMachineId = StateMachineId.from(entry.getIndex());
+      StateMachineId stateMachineId = StateMachineId.from(entry.index());
       stateMachineExecutor = new RaftServerStateMachineExecutor(
           stateMachineId,
-          entry.getEntry().name(),
-          entry.getEntry().typeName(),
+          entry.entry().name(),
+          entry.entry().typeName(),
           stateMachineSupplier.get(),
           state,
           sessionManager,
           new ThreadPoolContext(threadPool),
           new ThreadPoolContext(threadPool));
-      stateMachines.put(entry.getEntry().name(), stateMachineExecutor);
+      stateMachines.put(entry.entry().name(), stateMachineExecutor);
     }
 
-    SessionId sessionId = SessionId.from(entry.getIndex());
+    SessionId sessionId = SessionId.from(entry.index());
     RaftSessionContext session = new RaftSessionContext(
         sessionId,
-        entry.getEntry().memberId(),
-        entry.getEntry().name(),
-        entry.getEntry().typeName(),
-        entry.getEntry().timeout(),
+        entry.entry().memberId(),
+        entry.entry().name(),
+        entry.entry().typeName(),
+        entry.entry().timeout(),
         stateMachineExecutor,
         state);
-    return stateMachineExecutor.openSession(entry.getIndex(), entry.getEntry().timestamp(), session);
+    return stateMachineExecutor.openSession(entry.index(), entry.entry().timestamp(), session);
   }
 
   /**
    * Applies a close session entry to the state machine.
    */
   private CompletableFuture<Void> applyCloseSession(Indexed<CloseSessionEntry> entry) {
-    RaftSessionContext session = sessionManager.getSession(entry.getEntry().session());
+    RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
     // If the server session is null, the session either never existed or already expired.
     if (session == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + entry.getEntry().session()));
+      return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + entry.entry().session()));
     }
 
     // Get the state machine executor associated with the session and unregister the session.
     RaftServerStateMachineExecutor stateMachineExecutor = session.getStateMachineExecutor();
-    return stateMachineExecutor.closeSession(entry.getIndex(), entry.getEntry().timestamp(), session);
+    return stateMachineExecutor.closeSession(entry.index(), entry.entry().timestamp(), session);
   }
 
   /**
@@ -388,12 +388,12 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   private CompletableFuture<RaftMetadataResult> applyMetadata(Indexed<MetadataEntry> entry) {
     // If the session ID is non-zero, read the metadata for the associated state machine.
-    if (entry.getEntry().session() > 0) {
-      RaftSessionContext session = sessionManager.getSession(entry.getEntry().session());
+    if (entry.entry().session() > 0) {
+      RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
       // If the session is null, return an UnknownSessionException.
       if (session == null) {
-        return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + entry.getEntry().session()));
+        return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + entry.entry().session()));
       }
 
       Set<RaftSessionMetadata> sessions = new HashSet<>();
@@ -429,17 +429,17 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   private CompletableFuture<RaftOperationResult> applyCommand(Indexed<CommandEntry> entry) {
     // First check to ensure that the session exists.
-    RaftSessionContext session = sessionManager.getSession(entry.getEntry().session());
+    RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
     // If the session is null, return an UnknownSessionException. Commands applied to the state machine must
     // have a session. We ensure that session register/unregister entries are not compacted from the log
     // until all associated commands have been cleaned.
     if (session == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + entry.getEntry().session()));
+      return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + entry.entry().session()));
     }
 
     // Execute the command using the state machine associated with the session.
-    return session.getStateMachineExecutor().executeCommand(entry.getIndex(), entry.getEntry().sequenceNumber(), entry.getEntry().timestamp(), session, entry.getEntry().bytes());
+    return session.getStateMachineExecutor().executeCommand(entry.index(), entry.entry().sequenceNumber(), entry.entry().timestamp(), session, entry.entry().bytes());
   }
 
   /**
@@ -461,16 +461,16 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    * fault-tolerance and consistency across the cluster.
    */
   private CompletableFuture<RaftOperationResult> applyQuery(Indexed<QueryEntry> entry) {
-    RaftSessionContext session = sessionManager.getSession(entry.getEntry().session());
+    RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
     // If the session is null then that indicates that the session already timed out or it never existed.
     // Return with an UnknownSessionException.
     if (session == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getEntry().session()));
+      return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.entry().session()));
     }
 
     // Execute the query using the state machine associated with the session.
-    return session.getStateMachineExecutor().executeQuery(entry.getIndex(), entry.getEntry().sequenceNumber(), entry.getEntry().timestamp(), session, entry.getEntry().bytes());
+    return session.getStateMachineExecutor().executeQuery(entry.index(), entry.entry().sequenceNumber(), entry.entry().timestamp(), session, entry.entry().bytes());
   }
 
   /**

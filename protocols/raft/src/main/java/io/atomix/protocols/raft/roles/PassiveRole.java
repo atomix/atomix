@@ -29,13 +29,12 @@ import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
-import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.time.WallClockTimestamp;
 
@@ -87,85 +86,107 @@ public class PassiveRole extends ReserveRole {
     context.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
-
-    return CompletableFuture.completedFuture(logResponse(handleAppend(request)));
+    return handleAppend(request);
   }
 
   /**
-   * Handles an append request.
+   * Handles an AppendRequest.
    */
-  protected AppendResponse handleAppend(AppendRequest request) {
-    // If the request term is less than the current term then immediately
-    // reply false and return our current term. The leader will receive
-    // the updated term and step down.
+  protected CompletableFuture<AppendResponse> handleAppend(final AppendRequest request) {
+    CompletableFuture<AppendResponse> future = new CompletableFuture<>();
+
+    final RaftLogWriter writer = context.getLogWriter();
+    writer.getLock().lock();
+    try {
+      // Check that the term of the given request matches the local term or update the term.
+      if (!checkTerm(request, writer, future)) {
+        return future;
+      }
+
+      // Check that the previous index/term matches the local log's last entry.
+      if (!checkPreviousEntry(request, writer, future)) {
+        return future;
+      }
+
+      // Append the entries to the log.
+      appendEntries(request, writer, future);
+    } finally {
+      writer.getLock().unlock();
+    }
+    return future;
+  }
+
+  /**
+   * Checks the leader's term of the given AppendRequest, returning a boolean indicating whether to continue
+   * handling the request.
+   */
+  protected boolean checkTerm(AppendRequest request, RaftLogWriter writer, CompletableFuture<AppendResponse> future) {
     if (request.term() < context.getTerm()) {
       LOGGER.debug("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().getMember().memberId(), request, context.getTerm());
-      return AppendResponse.newBuilder()
-          .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
-          .withSucceeded(false)
-          .withLogIndex(context.getLogWriter().getLastIndex())
-          .build();
+      return failAppend(writer.getLastIndex(), future);
+    }
+    return true;
+  }
+
+  /**
+   * Checks the previous index of the given AppendRequest, returning a boolean indicating whether to continue
+   * handling the request.
+   */
+  protected boolean checkPreviousEntry(AppendRequest request, RaftLogWriter writer, CompletableFuture<AppendResponse> future) {
+    // Get the last entry written to the log.
+    Indexed<RaftLogEntry> lastEntry = writer.getLastEntry();
+
+    // If the local log is non-empty...
+    if (lastEntry != null) {
+      // If the previous log index is greater than the last entry index, fail the attempt.
+      if (request.prevLogIndex() > lastEntry.index()) {
+        LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().memberId(), request, request.prevLogIndex(), lastEntry.index());
+        return failAppend(0, future);
+      }
+
+      // If the previous log index is less than the last entry index, fail the attempt.
+      if (request.prevLogIndex() < lastEntry.index()) {
+        LOGGER.debug("{} - Rejected {}: Previous index ({}) is less than the local log's last index ({})", context.getCluster().getMember().memberId(), request, request.prevLogIndex(), lastEntry.index());
+        return failAppend(lastEntry.index(), future);
+      }
+
+      // If the previous log term doesn't equal the last entry term, fail the append, sending the prior entry.
+      if (request.prevLogTerm() != lastEntry.entry().term()) {
+        LOGGER.debug("{} - Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", context.getCluster().getMember().memberId(), request, request.prevLogTerm(), lastEntry.entry().term());
+        return failAppend(lastEntry.index() - 1, future);
+      }
     } else {
-      return checkPreviousEntry(request);
+      // If the previous log index is set and the last entry is null, fail the append.
+      if (request.prevLogIndex() > 0) {
+        LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index (0)", context.getCluster().getMember().memberId(), request, request.prevLogIndex());
+        return failAppend(0, future);
+      }
     }
+    return true;
   }
 
   /**
-   * Checks the previous entry in the append request for consistency.
+   * Appends entries from the given AppendRequest.
    */
-  protected AppendResponse checkPreviousEntry(AppendRequest request) {
-    final long lastIndex = context.getLogWriter().getLastIndex();
-    if (request.previousLogIndex() != 0 && request.previousLogIndex() > lastIndex) {
-      LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().getMember().memberId(), request, request.previousLogIndex(), lastIndex);
-      return AppendResponse.newBuilder()
-          .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
-          .withSucceeded(false)
-          .withLogIndex(lastIndex)
-          .build();
-    }
-    return appendEntries(request);
-  }
-
-  /**
-   * Appends entries to the local log.
-   */
-  protected AppendResponse appendEntries(AppendRequest request) {
-    // Get the last entry index or default to the request log index.
-    long lastEntryIndex = request.previousLogIndex();
-    if (!request.entries().isEmpty()) {
-      lastEntryIndex = request.entries().get(request.entries().size() - 1).getIndex();
-    }
+  protected void appendEntries(AppendRequest request, RaftLogWriter writer, CompletableFuture<AppendResponse> future) {
+    // Compute the last entry index from the previous log index and request entry count.
+    final long lastEntryIndex = request.prevLogIndex() + request.entries().size();
 
     // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
-    long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
+    final long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
 
-    // Get the server log reader/writer.
-    final RaftLogReader reader = context.getLogReader();
-    final RaftLogWriter writer = context.getLogWriter();
+    // Track the last log index while entries are appended.
+    long lastLogIndex = request.prevLogIndex();
 
-    // If the request entries are non-empty, write them to the log.
-    if (!request.entries().isEmpty()) {
-      writer.getLock().lock();
-      try {
-        for (Indexed<RaftLogEntry> entry : request.entries()) {
-          // If the entry index is greater than the commitIndex, break the loop.
-          if (entry.getIndex() > commitIndex) {
-            break;
-          }
+    // Iterate through entries and append them.
+    for (RaftLogEntry entry : request.entries()) {
+      // If the entry index is greater than the commitIndex, break the loop.
+      writer.append(entry);
+      LOGGER.trace("{} - Appended {}", context.getCluster().getMember().memberId(), entry);
 
-          // Read the existing entry from the log. If the entry does not exist in the log,
-          // append it. If the entry's term is different than the term of the entry in the log,
-          // overwrite the entry in the log. This will force the log to be truncated if necessary.
-          Indexed<? extends RaftLogEntry> existing = reader.getEntry(entry.getIndex());
-          if (existing == null || existing.getEntry().term() != entry.getEntry().term()) {
-            writer.appendEntry(entry);
-            LOGGER.debug("{} - Appended {}", context.getCluster().getMember().memberId(), entry);
-          }
-        }
-      } finally {
-        writer.getLock().unlock();
+      // If the last log index meets the commitIndex, break the append loop to avoid appending uncommitted entries.
+      if (++lastLogIndex == commitIndex) {
+        break;
       }
     }
 
@@ -180,12 +201,48 @@ public class PassiveRole extends ReserveRole {
     // Apply commits to the state machine in batch.
     context.getStateMachine().applyAll(context.getCommitIndex());
 
-    return AppendResponse.newBuilder()
+    // Return a successful append response.
+    succeedAppend(lastLogIndex, future);
+  }
+
+  /**
+   * Returns a failed append response.
+   *
+   * @param lastLogIndex the last log index
+   * @param future the append response future
+   * @return the append response status
+   */
+  protected boolean failAppend(long lastLogIndex, CompletableFuture<AppendResponse> future) {
+    return completeAppend(false, lastLogIndex, future);
+  }
+
+  /**
+   * Returns a successful append response.
+   *
+   * @param lastLogIndex the last log index
+   * @param future the append response future
+   * @return the append response status
+   */
+  protected boolean succeedAppend(long lastLogIndex, CompletableFuture<AppendResponse> future) {
+    return completeAppend(true, lastLogIndex, future);
+  }
+
+  /**
+   * Returns a successful append response.
+   *
+   * @param succeeded whether the append succeeded
+   * @param lastLogIndex the last log index
+   * @param future the append response future
+   * @return the append response status
+   */
+  protected boolean completeAppend(boolean succeeded, long lastLogIndex, CompletableFuture<AppendResponse> future) {
+    future.complete(logResponse(AppendResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .withTerm(context.getTerm())
-        .withSucceeded(true)
-        .withLogIndex(lastEntryIndex)
-        .build();
+        .withSucceeded(succeeded)
+        .withLogIndex(lastLogIndex)
+        .build()));
+    return succeeded;
   }
 
   @Override

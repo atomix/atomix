@@ -50,16 +50,6 @@ public class JournalReaderDelegate<E> implements JournalReader<E> {
   }
 
   @Override
-  public Indexed<E> getEntry(long index) {
-    return delegate.getEntry(index);
-  }
-
-  @Override
-  public Indexed<E> reset(long index) {
-    return delegate.reset(index);
-  }
-
-  @Override
   public boolean hasNext() {
     return delegate.hasNext();
   }
@@ -72,6 +62,11 @@ public class JournalReaderDelegate<E> implements JournalReader<E> {
   @Override
   public void reset() {
     delegate.reset();
+  }
+
+  @Override
+  public void reset(long index) {
+    delegate.reset(index);
   }
 
   @Override

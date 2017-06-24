@@ -82,24 +82,25 @@ public class LogTest {
     // Append a couple entries.
     Indexed<RaftLogEntry> indexed;
     assertEquals(writer.getNextIndex(), 1);
-    indexed = writer.appendEntry(new OpenSessionEntry(1, System.currentTimeMillis(), MemberId.from("client"), "test1", "test", 1000));
-    assertEquals(indexed.getIndex(), 1);
+    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), MemberId.from("client"), "test1", "test", 1000));
+    assertEquals(indexed.index(), 1);
 
     assertEquals(writer.getNextIndex(), 2);
-    writer.appendEntry(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1), 0));
-    indexed = reader.getEntry(2);
-    assertEquals(indexed.getIndex(), 2);
+    writer.append(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1), 0));
+    reader.reset(2);
+    indexed = reader.next();
+    assertEquals(indexed.index(), 2);
     assertFalse(reader.hasNext());
 
     // Test reading the register entry.
     Indexed<OpenSessionEntry> openSession;
     reader.reset();
     openSession = (Indexed) reader.next();
-    assertEquals(openSession.getIndex(), 1);
-    assertEquals(openSession.getEntry().term(), 1);
-    assertEquals(openSession.getEntry().name(), "test1");
-    assertEquals(openSession.getEntry().typeName(), "test");
-    assertEquals(openSession.getEntry().timeout(), 1000);
+    assertEquals(openSession.index(), 1);
+    assertEquals(openSession.entry().term(), 1);
+    assertEquals(openSession.entry().name(), "test1");
+    assertEquals(openSession.entry().typeName(), "test");
+    assertEquals(openSession.entry().timeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
 
@@ -108,9 +109,9 @@ public class LogTest {
     assertTrue(reader.hasNext());
     assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
-    assertEquals(closeSession.getIndex(), 2);
-    assertEquals(closeSession.getEntry().term(), 1);
-    assertEquals(closeSession.getEntry().session(), 1);
+    assertEquals(closeSession.index(), 2);
+    assertEquals(closeSession.entry().term(), 1);
+    assertEquals(closeSession.entry().session(), 1);
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
@@ -119,11 +120,11 @@ public class LogTest {
     reader = log.openReader(1, RaftLogReader.Mode.ALL);
     assertTrue(reader.hasNext());
     openSession = (Indexed) reader.next();
-    assertEquals(openSession.getIndex(), 1);
-    assertEquals(openSession.getEntry().term(), 1);
-    assertEquals(openSession.getEntry().name(), "test1");
-    assertEquals(openSession.getEntry().typeName(), "test");
-    assertEquals(openSession.getEntry().timeout(), 1000);
+    assertEquals(openSession.index(), 1);
+    assertEquals(openSession.entry().term(), 1);
+    assertEquals(openSession.entry().name(), "test1");
+    assertEquals(openSession.entry().typeName(), "test");
+    assertEquals(openSession.entry().timeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
     assertTrue(reader.hasNext());
@@ -131,9 +132,9 @@ public class LogTest {
     assertTrue(reader.hasNext());
     assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
-    assertEquals(closeSession.getIndex(), 2);
-    assertEquals(closeSession.getEntry().term(), 1);
-    assertEquals(closeSession.getEntry().session(), 1);
+    assertEquals(closeSession.index(), 2);
+    assertEquals(closeSession.entry().term(), 1);
+    assertEquals(closeSession.entry().session(), 1);
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
@@ -145,11 +146,11 @@ public class LogTest {
     reader = log.openReader(1, RaftLogReader.Mode.ALL);
     assertTrue(reader.hasNext());
     openSession = (Indexed) reader.next();
-    assertEquals(openSession.getIndex(), 1);
-    assertEquals(openSession.getEntry().term(), 1);
-    assertEquals(openSession.getEntry().name(), "test1");
-    assertEquals(openSession.getEntry().typeName(), "test");
-    assertEquals(openSession.getEntry().timeout(), 1000);
+    assertEquals(openSession.index(), 1);
+    assertEquals(openSession.entry().term(), 1);
+    assertEquals(openSession.entry().name(), "test1");
+    assertEquals(openSession.entry().typeName(), "test");
+    assertEquals(openSession.entry().timeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
     assertTrue(reader.hasNext());
@@ -157,9 +158,9 @@ public class LogTest {
     assertTrue(reader.hasNext());
     assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
-    assertEquals(closeSession.getIndex(), 2);
-    assertEquals(closeSession.getEntry().term(), 1);
-    assertEquals(closeSession.getEntry().session(), 1);
+    assertEquals(closeSession.index(), 2);
+    assertEquals(closeSession.entry().term(), 1);
+    assertEquals(closeSession.entry().session(), 1);
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
@@ -167,20 +168,21 @@ public class LogTest {
     // Truncate the log and write a different entry.
     writer.truncate(1);
     assertEquals(writer.getNextIndex(), 2);
-    writer.appendEntry(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1), 0));
-    indexed = reader.getEntry(2);
-    assertEquals(indexed.getIndex(), 2);
-    assertEquals(indexed.getEntry().term(), 2);
+    writer.append(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1), 0));
+    reader.reset(2);
+    indexed = reader.next();
+    assertEquals(indexed.index(), 2);
+    assertEquals(indexed.entry().term(), 2);
 
     // Reset the reader to a specific index and read the last entry again.
-    reader.reset(1);
+    reader.reset(2);
 
     assertTrue(reader.hasNext());
     assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
-    assertEquals(closeSession.getIndex(), 2);
-    assertEquals(closeSession.getEntry().term(), 2);
-    assertEquals(closeSession.getEntry().session(), 1);
+    assertEquals(closeSession.index(), 2);
+    assertEquals(closeSession.entry().term(), 2);
+    assertEquals(closeSession.entry().session(), 1);
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());

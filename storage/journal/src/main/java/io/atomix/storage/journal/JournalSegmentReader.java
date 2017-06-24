@@ -15,9 +15,9 @@
  */
 package io.atomix.storage.journal;
 
+import io.atomix.serializer.Serializer;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.serializer.Serializer;
 
 import java.nio.BufferUnderflowException;
 import java.util.NoSuchElementException;
@@ -63,7 +63,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
   @Override
   public long getCurrentIndex() {
-    return currentEntry != null ? currentEntry.getIndex() : 0;
+    return currentEntry != null ? currentEntry.index() : 0;
   }
 
   @Override
@@ -73,53 +73,15 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
   @Override
   public long getNextIndex() {
-    return currentEntry != null ? currentEntry.getIndex() + 1 : firstIndex;
+    return currentEntry != null ? currentEntry.index() + 1 : firstIndex;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public Indexed<E> getEntry(long index) {
-    // If the current entry is set, use it to determine whether to reset the reader.
-    if (currentEntry != null) {
-      // If the index matches the current entry index, return the current entry.
-      if (index == currentEntry.getIndex()) {
-        return currentEntry;
-      }
-
-      // If the index is less than the current entry index, reset the reader.
-      if (index < currentEntry.getIndex()) {
-        reset();
-      }
-    }
-
-    // If the entry is in the journal buffer, update the current entry and return it.
-    Indexed<E> bufferedEntry = journal.buffer().get(index);
-    if (bufferedEntry != null) {
-      this.currentEntry = bufferedEntry;
-      readNext();
-      return bufferedEntry;
-    }
-
-    // Seek to the given index.
-    while (hasNext()) {
-      if (nextEntry.getIndex() <= index) {
-        next();
-      } else {
-        break;
-      }
-    }
-
-    // If the current entry's index matches the given index, return it. Otherwise, return null.
-    if (currentEntry != null && index == currentEntry.getIndex()) {
-      return currentEntry;
-    }
-    return null;
-  }
-
-  @Override
-  public Indexed<E> reset(long index) {
+  public void reset(long index) {
     reset();
-    return getEntry(index);
+    while (getNextIndex() < index && hasNext()) {
+      next();
+    }
   }
 
   @Override
@@ -166,13 +128,6 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     // Compute the index of the next entry in the segment.
     final long index = getNextIndex();
 
-    // If the entry is in the journal buffer, store it as the next entry and return.
-    Indexed<E> bufferedEntry = journal.buffer().get(index);
-    if (bufferedEntry != null) {
-      nextEntry = bufferedEntry;
-      return;
-    }
-
     // Mark the buffer so it can be reset if necessary.
     buffer.mark();
 
@@ -188,7 +143,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
       }
 
       // Read the checksum of the entry.
-      long checksum = memory.readUnsignedInt();
+      long checksum = buffer.readUnsignedInt();
 
       // Read the entry into memory.
       buffer.read(memory.clear().limit(length));

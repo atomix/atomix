@@ -39,7 +39,7 @@ final class JournalEntryBuffer<E> {
    * @return The entry buffer.
    */
   public JournalEntryBuffer append(Indexed<E> entry) {
-    buffer.set(offset(entry.getIndex()), entry);
+    buffer.set(offset(entry.index()), entry);
     return this;
   }
 
@@ -51,7 +51,7 @@ final class JournalEntryBuffer<E> {
    */
   public Indexed<E> get(long index) {
     Indexed<E> entry = buffer.get(offset(index));
-    return entry != null && entry.getIndex() == index ? entry : null;
+    return entry != null && entry.index() == index ? entry : null;
   }
 
   /**

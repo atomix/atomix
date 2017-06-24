@@ -17,7 +17,6 @@ package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.storage.journal.Indexed;
 
 import java.util.Arrays;
 import java.util.List;
@@ -47,16 +46,16 @@ public class AppendRequest extends AbstractRaftRequest {
 
   private final long term;
   private final MemberId leader;
-  private final long logIndex;
-  private final long logTerm;
-  private final List<Indexed<RaftLogEntry>> entries;
+  private final long prevLogIndex;
+  private final long prevLogTerm;
+  private final List<RaftLogEntry> entries;
   private final long commitIndex;
 
-  public AppendRequest(long term, MemberId leader, long logIndex, long logTerm, List<Indexed<RaftLogEntry>> entries, long commitIndex) {
+  public AppendRequest(long term, MemberId leader, long prevLogIndex, long prevLogTerm, List<RaftLogEntry> entries, long commitIndex) {
     this.term = term;
     this.leader = leader;
-    this.logIndex = logIndex;
-    this.logTerm = logTerm;
+    this.prevLogIndex = prevLogIndex;
+    this.prevLogTerm = prevLogTerm;
     this.entries = entries;
     this.commitIndex = commitIndex;
   }
@@ -84,8 +83,8 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The index of the log entry preceding the new entry.
    */
-  public long previousLogIndex() {
-    return logIndex;
+  public long prevLogIndex() {
+    return prevLogIndex;
   }
 
   /**
@@ -93,8 +92,8 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The index of the term preceding the new entry.
    */
-  public long previousLogTerm() {
-    return logTerm;
+  public long prevLogTerm() {
+    return prevLogTerm;
   }
 
   /**
@@ -102,7 +101,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return A list of log entries.
    */
-  public List<Indexed<RaftLogEntry>> entries() {
+  public List<RaftLogEntry> entries() {
     return entries;
   }
 
@@ -117,7 +116,7 @@ public class AppendRequest extends AbstractRaftRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), term, leader, logIndex, logTerm, entries, commitIndex);
+    return Objects.hash(getClass(), term, leader, prevLogIndex, prevLogTerm, entries, commitIndex);
   }
 
   @Override
@@ -126,8 +125,8 @@ public class AppendRequest extends AbstractRaftRequest {
       AppendRequest request = (AppendRequest) object;
       return request.term == term
           && request.leader == leader
-          && request.logIndex == logIndex
-          && request.logTerm == logTerm
+          && request.prevLogIndex == prevLogIndex
+          && request.prevLogTerm == prevLogTerm
           && request.entries.equals(entries)
           && request.commitIndex == commitIndex;
     }
@@ -139,8 +138,8 @@ public class AppendRequest extends AbstractRaftRequest {
     return toStringHelper(this)
         .add("term", term)
         .add("leader", leader)
-        .add("previousLogIndex", logIndex)
-        .add("previousLogTerm", logTerm)
+        .add("prevLogIndex", prevLogIndex)
+        .add("prevLogTerm", prevLogTerm)
         .add("entries", entries.size())
         .add("commitIndex", commitIndex)
         .toString();
@@ -154,7 +153,7 @@ public class AppendRequest extends AbstractRaftRequest {
     private MemberId leader;
     private long logIndex;
     private long logTerm;
-    private List<Indexed<RaftLogEntry>> entries;
+    private List<RaftLogEntry> entries;
     private long commitIndex = -1;
 
     /**
@@ -190,7 +189,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if the {@code index} is not positive
      */
     public Builder withLogIndex(long logIndex) {
-      checkArgument(logIndex >= 0, "previousLogIndex must be positive");
+      checkArgument(logIndex >= 0, "prevLogIndex must be positive");
       this.logIndex = logIndex;
       return this;
     }
@@ -203,7 +202,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if the {@code term} is not positive
      */
     public Builder withLogTerm(long logTerm) {
-      checkArgument(logTerm >= 0, "previousLogTerm must be positive");
+      checkArgument(logTerm >= 0, "prevLogTerm must be positive");
       this.logTerm = logTerm;
       return this;
     }
@@ -215,7 +214,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @return The append request builder.
      * @throws NullPointerException if {@code entries} is null
      */
-    public Builder withEntries(Indexed<RaftLogEntry>... entries) {
+    public Builder withEntries(RaftLogEntry... entries) {
       return withEntries(Arrays.asList(checkNotNull(entries, "entries cannot be null")));
     }
 
@@ -227,7 +226,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @throws NullPointerException if {@code entries} is null
      */
     @SuppressWarnings("unchecked")
-    public Builder withEntries(List<Indexed<RaftLogEntry>> entries) {
+    public Builder withEntries(List<RaftLogEntry> entries) {
       this.entries = checkNotNull(entries, "entries cannot be null");
       return this;
     }
@@ -239,7 +238,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @return The request builder.
      * @throws NullPointerException if {@code entry} is {@code null}
      */
-    public Builder addEntry(Indexed<RaftLogEntry> entry) {
+    public Builder addEntry(RaftLogEntry entry) {
       this.entries.add(checkNotNull(entry, "entry"));
       return this;
     }
@@ -262,8 +261,8 @@ public class AppendRequest extends AbstractRaftRequest {
       super.validate();
       checkArgument(term > 0, "term must be positive");
       checkNotNull(leader, "leader cannot be null");
-      checkArgument(logIndex >= 0, "previousLogIndex must be positive");
-      checkArgument(logTerm >= 0, "previousLogTerm must be positive");
+      checkArgument(logIndex >= 0, "prevLogIndex must be positive");
+      checkArgument(logTerm >= 0, "prevLogTerm must be positive");
       checkNotNull(entries, "entries cannot be null");
       checkArgument(commitIndex >= 0, "commitIndex must be positive");
     }

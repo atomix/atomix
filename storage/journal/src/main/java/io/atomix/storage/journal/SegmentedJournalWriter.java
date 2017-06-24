@@ -56,21 +56,21 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
   }
 
   @Override
-  public <T extends E> Indexed<T> appendEntry(T entry) {
+  public <T extends E> Indexed<T> append(T entry) {
     if (currentWriter.isFull()) {
       currentSegment = journal.getNextSegment();
       currentWriter = currentSegment.writer();
     }
-    return currentWriter.appendEntry(entry);
+    return currentWriter.append(entry);
   }
 
   @Override
-  public void appendEntry(Indexed<E> entry) {
+  public void append(Indexed<E> entry) {
     if (currentWriter.isFull()) {
       currentSegment = journal.getNextSegment();
       currentWriter = currentSegment.writer();
     }
-    currentWriter.appendEntry(entry);
+    currentWriter.append(entry);
   }
 
   @Override

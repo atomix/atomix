@@ -109,8 +109,8 @@ abstract class AbstractAppender implements AutoCloseable {
     return AppendRequest.newBuilder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
-        .withLogIndex(prevEntry != null ? prevEntry.getIndex() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.getEntry().term() : 0)
+        .withLogIndex(prevEntry != null ? prevEntry.index() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
         .withEntries(Collections.EMPTY_LIST)
         .withCommitIndex(server.getCommitIndex())
         .build();
@@ -131,12 +131,12 @@ abstract class AbstractAppender implements AutoCloseable {
     AppendRequest.Builder builder = AppendRequest.newBuilder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
-        .withLogIndex(prevEntry != null ? prevEntry.getIndex() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.getEntry().term() : 0)
+        .withLogIndex(prevEntry != null ? prevEntry.index() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
         .withCommitIndex(server.getCommitIndex());
 
     // Build a list of entries to send to the member.
-    final List<Indexed<RaftLogEntry>> entries = new ArrayList<>();
+    final List<RaftLogEntry> entries = new ArrayList<>();
 
     // Build a list of entries up to the MAX_BATCH_SIZE. Note that entries in the log may
     // be null if they've been compacted and the member to which we're sending entries is just
@@ -160,8 +160,8 @@ abstract class AbstractAppender implements AutoCloseable {
 
       // Otherwise, read the next entry and add it to the batch.
       Indexed<RaftLogEntry> entry = reader.next();
-      entries.add(entry);
-      size += entry.getSize();
+      entries.add(entry.entry());
+      size += entry.size();
       if (nextIndex == lastIndex || size >= MAX_BATCH_SIZE) {
         break;
       }
@@ -246,7 +246,7 @@ abstract class AbstractAppender implements AutoCloseable {
       updateMatchIndex(member, response);
 
       // If there are more entries to send then attempt to send another commit.
-      if (request.previousLogIndex() != response.lastLogIndex() && hasMoreEntries(member)) {
+      if (request.prevLogIndex() != response.lastLogIndex() && hasMoreEntries(member)) {
         appendEntries(member);
       }
     }
@@ -262,7 +262,7 @@ abstract class AbstractAppender implements AutoCloseable {
       resetNextIndex(member);
 
       // If there are more entries to send then attempt to send another commit.
-      if (response.lastLogIndex() != request.previousLogIndex() && hasMoreEntries(member)) {
+      if (response.lastLogIndex() != request.prevLogIndex() && hasMoreEntries(member)) {
         appendEntries(member);
       }
     }
@@ -321,7 +321,7 @@ abstract class AbstractAppender implements AutoCloseable {
   protected void updateNextIndex(RaftMemberContext member, AppendRequest request) {
     // If the match index was set, update the next index to be greater than the match index if necessary.
     if (!request.entries().isEmpty()) {
-      member.setNextIndex(request.entries().get(request.entries().size() - 1).getIndex() + 1);
+      member.setNextIndex(request.prevLogIndex() + request.entries().size() + 1);
     }
   }
 
@@ -341,7 +341,7 @@ abstract class AbstractAppender implements AutoCloseable {
     reader.getLock().lock();
     try {
       if (member.getMatchIndex() != 0) {
-        reader.reset(member.getMatchIndex());
+        reader.reset(member.getMatchIndex() + 1);
       } else {
         reader.reset();
       }

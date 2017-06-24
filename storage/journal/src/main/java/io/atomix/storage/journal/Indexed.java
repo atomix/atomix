@@ -36,7 +36,7 @@ public class Indexed<E> {
    *
    * @return The entry index.
    */
-  public long getIndex() {
+  public long index() {
     return index;
   }
 
@@ -45,7 +45,7 @@ public class Indexed<E> {
    *
    * @return The indexed entry.
    */
-  public E getEntry() {
+  public E entry() {
     return entry;
   }
 
@@ -54,7 +54,7 @@ public class Indexed<E> {
    *
    * @return The serialized entry size.
    */
-  public int getSize() {
+  public int size() {
     return size;
   }
 
@@ -63,7 +63,7 @@ public class Indexed<E> {
    *
    * @return The entry class.
    */
-  public Class<?> getType() {
+  public Class<?> type() {
     return entry.getClass();
   }
 
