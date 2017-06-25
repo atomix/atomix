@@ -191,14 +191,12 @@ public class RaftPerformanceTest implements Runnable {
   private void runProxy(RaftProxy proxy, CompletableFuture<Void> future) {
     int count = totalOperations.incrementAndGet();
     if (count > TOTAL_OPERATIONS) {
-      System.out.println("COMPLETE");
       future.complete(null);
     } else if (count % 10 < WRITE_RATIO) {
       proxy.submit(new Put(randomKey(), UUID.randomUUID().toString())).whenComplete((result, error) -> {
         if (error == null) {
           writeCount.incrementAndGet();
         }
-        System.out.println(writeCount.get());
         runProxy(proxy, future);
       });
     } else {
@@ -206,7 +204,6 @@ public class RaftPerformanceTest implements Runnable {
         if (error == null) {
           readCount.incrementAndGet();
         }
-        System.out.println(readCount.get());
         runProxy(proxy, future);
       });
     }

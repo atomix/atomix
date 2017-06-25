@@ -26,6 +26,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
   private final SegmentedJournal<E> journal;
   private final Lock lock;
   private JournalSegment<E> currentSegment;
+  private Indexed<E> previousEntry;
   private JournalSegmentReader<E> currentReader;
 
   public SegmentedJournalReader(SegmentedJournal<E> journal, Lock lock, long index) {
@@ -54,12 +55,23 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
 
   @Override
   public long getCurrentIndex() {
-    return currentReader.getCurrentIndex();
+    long currentIndex = currentReader.getCurrentIndex();
+    if (currentIndex != 0) {
+      return currentIndex;
+    }
+    if (previousEntry != null) {
+      return previousEntry.index();
+    }
+    return 0;
   }
 
   @Override
   public Indexed<E> getCurrentEntry() {
-    return currentReader.getCurrentEntry();
+    Indexed<E> currentEntry = currentReader.getCurrentEntry();
+    if (currentEntry != null) {
+      return currentEntry;
+    }
+    return previousEntry;
   }
 
   @Override
@@ -72,6 +84,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
     currentReader.close();
     currentSegment = journal.getFirstSegment();
     currentReader = currentSegment.createReader();
+    previousEntry = null;
   }
 
   @Override
@@ -87,6 +100,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
       }
     }
     currentReader.reset(index);
+    previousEntry = currentReader.getCurrentEntry();
   }
 
   @Override
@@ -103,6 +117,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
 
   @Override
   public Indexed<E> next() {
+    previousEntry = currentReader.getCurrentEntry();
     return currentReader.next();
   }
 
