@@ -104,7 +104,7 @@ public class DefaultRaftClient implements RaftClient {
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    return sessionManager.close();
+    return sessionManager.close().thenRunAsync(threadPoolExecutor::shutdownNow);
   }
 
   @Override
