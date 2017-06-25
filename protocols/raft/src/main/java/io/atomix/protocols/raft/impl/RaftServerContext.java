@@ -51,13 +51,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Manages the volatile state and state transitions of a Raft server.
@@ -93,14 +96,16 @@ public class RaftServerContext implements AutoCloseable {
   private long commitIndex;
 
   @SuppressWarnings("unchecked")
-  public RaftServerContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftStateMachineRegistry registry, ScheduledExecutorService threadPool, ThreadContext threadContext) {
+  public RaftServerContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftStateMachineRegistry registry, int threadPoolSize) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
-    this.threadContext = checkNotNull(threadContext, "threadContext cannot be null");
     this.registry = checkNotNull(registry, "registry cannot be null");
-    this.stateContext = new SingleThreadContext(String.format("raft-server-%s-%s-state", localMemberId, name));
-    this.threadPool = checkNotNull(threadPool, "threadPool cannot be null");
+
+    String baseThreadName = String.format("raft-server-%s-%s", localMemberId, name);
+    this.threadContext = new SingleThreadContext(namedThreads(baseThreadName, LOGGER));
+    this.stateContext = new SingleThreadContext(namedThreads(baseThreadName + "-state", LOGGER));
+    this.threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads(baseThreadName + "-%d", LOGGER));
 
     // Open the meta store.
     CountDownLatch metaLatch = new CountDownLatch(1);
@@ -692,6 +697,13 @@ public class RaftServerContext implements AutoCloseable {
     // Close the state machine and thread context.
     stateMachine.close();
     threadContext.close();
+    stateContext.close();
+    threadPool.shutdownNow();
+
+    try {
+      threadPool.awaitTermination(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+    }
   }
 
   /**

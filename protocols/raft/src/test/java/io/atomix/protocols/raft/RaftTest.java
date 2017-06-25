@@ -1038,7 +1038,7 @@ public class RaftTest extends ConcurrentTestCase {
     RaftServer leader = servers.stream().filter(s -> s.getRole() == RaftServer.Role.LEADER).findFirst().get();
     leader.shutdown().get(10, TimeUnit.SECONDS);
 
-    await(30000, 2);
+    await(30000);
 
     for (int i = 0 ; i < 10; i++) {
       session.submit(new TestEvent(true)).thenAccept(result -> {

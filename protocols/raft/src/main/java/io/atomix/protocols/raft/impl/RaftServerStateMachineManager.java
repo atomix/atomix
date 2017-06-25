@@ -494,6 +494,6 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
   @Override
   public void close() {
-    threadContext.close();
+    // Don't close the thread context here since state machines can be reused.
   }
 }
