@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.utils.ArraySizeHashPrinter;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -165,7 +166,7 @@ public class InstallRequest extends AbstractRaftRequest {
         .add("id", id)
         .add("index", index)
         .add("offset", offset)
-        .add("data", data)
+        .add("data", ArraySizeHashPrinter.of(data))
         .add("complete", complete)
         .toString();
   }

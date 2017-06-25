@@ -424,6 +424,7 @@ public class PassiveRole extends ReserveRole {
       nextSnapshotOffset = 0;
     } else {
       nextSnapshotOffset++;
+      pendingSnapshots.put(request.snapshotId(), pendingSnapshot);
     }
 
     return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()

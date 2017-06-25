@@ -230,7 +230,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
    * Completes a state machine snapshot.
    */
   private synchronized void maybeCompleteSnapshot(long index) {
-    if (pendingSnapshot != null) {
+    if (pendingSnapshot != null && pendingSnapshot.isPersisted()) {
       // Compute the lowest completed index for all sessions that belong to this state machine.
       long lastCompleted = index;
       for (RaftSessionContext session : sessions.getSessions()) {

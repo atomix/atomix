@@ -178,6 +178,13 @@ public abstract class Snapshot implements AutoCloseable {
   }
 
   /**
+   * Returns whether the snapshot is persisted.
+   *
+   * @return Whether the snapshot is persisted.
+   */
+  public abstract boolean isPersisted();
+
+  /**
    * Closes the snapshot.
    */
   @Override
