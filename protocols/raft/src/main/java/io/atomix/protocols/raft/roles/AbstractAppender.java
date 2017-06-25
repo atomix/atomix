@@ -340,8 +340,9 @@ abstract class AbstractAppender implements AutoCloseable {
     final RaftLogReader reader = member.getLogReader();
     reader.getLock().lock();
     try {
+      member.setNextIndex(member.getMatchIndex() + 1);
       if (member.getMatchIndex() != 0) {
-        reader.reset(member.getMatchIndex() + 1);
+        reader.reset(member.getNextIndex());
       } else {
         reader.reset();
       }
@@ -429,7 +430,8 @@ abstract class AbstractAppender implements AutoCloseable {
     succeedAttempt(member);
 
     // Update the member's current configuration term and index according to the installed configuration.
-    member.setConfigTerm(request.term()).setConfigIndex(request.index());
+    member.setConfigTerm(request.term());
+    member.setConfigIndex(request.index());
 
     // Recursively append entries to the member.
     appendEntries(member);
@@ -450,7 +452,8 @@ abstract class AbstractAppender implements AutoCloseable {
   protected InstallRequest buildInstallRequest(RaftMemberContext member) {
     Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getNextIndex());
     if (member.getNextSnapshotIndex() != snapshot.index()) {
-      member.setNextSnapshotIndex(snapshot.index()).setNextSnapshotOffset(0);
+      member.setNextSnapshotIndex(snapshot.index());
+      member.setNextSnapshotOffset(0);
     }
 
     InstallRequest request;
@@ -522,7 +525,8 @@ abstract class AbstractAppender implements AutoCloseable {
   protected void handleInstallResponseFailure(RaftMemberContext member, InstallRequest request, Throwable error) {
     // Reset the member's snapshot index and offset to resend the snapshot from the start
     // once a connection to the member is re-established.
-    member.setNextSnapshotIndex(0).setNextSnapshotOffset(0);
+    member.setNextSnapshotIndex(0);
+    member.setNextSnapshotOffset(0);
 
     // Log the failed attempt to contact the member.
     failAttempt(member, error);
@@ -550,10 +554,9 @@ abstract class AbstractAppender implements AutoCloseable {
     // If the install request was completed successfully, set the member's snapshotIndex and reset
     // the next snapshot index/offset.
     if (request.complete()) {
-      member
-          .setNextSnapshotIndex(0)
-          .setNextSnapshotOffset(0)
-          .setNextIndex(request.snapshotIndex() + 1);
+      member.setNextSnapshotIndex(0);
+      member.setNextSnapshotOffset(0);
+      member.setNextIndex(request.snapshotIndex() + 1);
     }
     // If more install requests remain, increment the member's snapshot offset.
     else {
@@ -570,7 +573,8 @@ abstract class AbstractAppender implements AutoCloseable {
   @SuppressWarnings("unused")
   protected void handleInstallResponseError(RaftMemberContext member, InstallRequest request, InstallResponse response) {
     log.warn("{} - Failed to install {}", server.getCluster().getMember().memberId(), member.getMember().memberId());
-    member.setNextSnapshotIndex(0).setNextSnapshotOffset(0);
+    member.setNextSnapshotIndex(0);
+    member.setNextSnapshotOffset(0);
   }
 
   @Override

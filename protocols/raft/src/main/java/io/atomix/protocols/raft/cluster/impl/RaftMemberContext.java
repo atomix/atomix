@@ -119,11 +119,9 @@ public final class RaftMemberContext {
    * Sets the member term.
    *
    * @param term The member term.
-   * @return The member state.
    */
-  public RaftMemberContext setConfigTerm(long term) {
+  public void setConfigTerm(long term) {
     this.term = term;
-    return this;
   }
 
   /**
@@ -157,11 +155,9 @@ public final class RaftMemberContext {
    * Sets the member's next snapshot index.
    *
    * @param nextSnapshotIndex The member's next snapshot index.
-   * @return The member state.
    */
-  public RaftMemberContext setNextSnapshotIndex(long nextSnapshotIndex) {
+  public void setNextSnapshotIndex(long nextSnapshotIndex) {
     this.nextSnapshotIndex = nextSnapshotIndex;
-    return this;
   }
 
   /**
@@ -177,11 +173,9 @@ public final class RaftMemberContext {
    * Sets the member's snapshot offset.
    *
    * @param nextSnapshotOffset The member's snapshot offset.
-   * @return The member state.
    */
-  public RaftMemberContext setNextSnapshotOffset(int nextSnapshotOffset) {
+  public void setNextSnapshotOffset(int nextSnapshotOffset) {
     this.nextSnapshotOffset = nextSnapshotOffset;
-    return this;
   }
 
   /**
@@ -216,12 +210,10 @@ public final class RaftMemberContext {
    * Sets the member's next index.
    *
    * @param nextIndex The member's next index.
-   * @return The member state.
    */
-  public RaftMemberContext setNextIndex(long nextIndex) {
+  public void setNextIndex(long nextIndex) {
     checkArgument(nextIndex > 0, "nextIndex must be positive");
     this.nextIndex = nextIndex;
-    return this;
   }
 
   /**
@@ -416,7 +408,7 @@ public final class RaftMemberContext {
     private final long[] buffer;
     private int position;
 
-    public TimeBuffer(int size) {
+    TimeBuffer(int size) {
       this.buffer = new long[size];
     }
 
@@ -425,7 +417,7 @@ public final class RaftMemberContext {
      *
      * @param time The request round trip time to record.
      */
-    public void record(long time) {
+    void record(long time) {
       buffer[position++] = time;
       if (position >= buffer.length) {
         position = 0;
@@ -437,7 +429,7 @@ public final class RaftMemberContext {
      *
      * @return The average of all recorded round trip times.
      */
-    public long average() {
+    long average() {
       long total = 0;
       for (long time : buffer) {
         if (time > 0) {
@@ -450,7 +442,7 @@ public final class RaftMemberContext {
     /**
      * Resets the recorded round trip times.
      */
-    public void reset() {
+    void reset() {
       for (int i = 0; i < buffer.length; i++) {
         buffer[i] = 0;
       }
