@@ -23,6 +23,9 @@ import io.atomix.utils.memory.Memory;
 import java.io.File;
 import java.nio.channels.FileChannel;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Memory mapped file buffer.
  * <p>
@@ -182,17 +185,10 @@ public class UnsafeMappedBuffer extends NativeBuffer {
    * @see UnsafeMappedBuffer#allocate(File, int, int)
    */
   public static UnsafeMappedBuffer allocate(File file, FileChannel.MapMode mode, int initialCapacity, int maxCapacity) {
-    if (file == null)
-      throw new NullPointerException("file cannot be null");
-    if (mode == null)
-      mode = MappedMemoryAllocator.DEFAULT_MAP_MODE;
-    if (initialCapacity > maxCapacity)
-      throw new IllegalArgumentException("initial capacity cannot be greater than maximum capacity");
-    if (initialCapacity > MappedMemory.MAX_SIZE)
-      throw new IllegalArgumentException("initial capacity for MappedBuffer cannot be greater than " + MappedMemory.MAX_SIZE);
-    if (maxCapacity > MappedMemory.MAX_SIZE)
-      throw new IllegalArgumentException("maximum capacity for MappedBuffer cannot be greater than " + MappedMemory.MAX_SIZE);
-    return new UnsafeMappedBuffer(new UnsafeMappedBytes(file, MappedMemory.allocate(file, mode, Memory.Util.toPow2(initialCapacity))), 0, initialCapacity, maxCapacity);
+    checkNotNull(file, "file cannot be null");
+    checkNotNull(mode, "mode cannot be null");
+    checkArgument(initialCapacity <= maxCapacity, "initial capacity cannot be greater than maximum capacity");
+    return new UnsafeMappedBuffer(new UnsafeMappedBytes(file, MappedMemory.allocate(file, mode, (int) Math.min(Memory.Util.toPow2(initialCapacity), maxCapacity))), 0, initialCapacity, maxCapacity);
   }
 
   protected UnsafeMappedBuffer(UnsafeMappedBytes bytes, ReferenceManager<Buffer> referenceManager) {

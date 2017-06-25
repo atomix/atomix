@@ -99,7 +99,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
     return new Builder(buffer);
   }
 
-  Buffer buffer;
+  private volatile Buffer buffer;
   private final int version;
   private final long id;
   private final long index;
@@ -121,6 +121,15 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
     this.updated = buffer.readLong();
     this.locked = buffer.readBoolean();
     buffer.skip(BYTES - buffer.position()); // 64 bytes reserved for the header
+  }
+
+  /**
+   * Returns the segment buffer.
+   *
+   * @return the segment buffer.
+   */
+  Buffer buffer() {
+    return buffer;
   }
 
   /**

@@ -204,7 +204,7 @@ public abstract class AbstractBuffer implements Buffer {
     } else if (capacity != this.capacity) {
       // It's possible that the bytes could already meet the requirements of the capacity.
       if (offset(capacity) > bytes.size()) {
-        bytes.resize(Memory.Util.toPow2(offset(capacity)));
+        bytes.resize((int) Math.min(Memory.Util.toPow2(offset(capacity)), Integer.MAX_VALUE));
       }
       this.capacity = capacity;
     }
@@ -229,7 +229,7 @@ public abstract class AbstractBuffer implements Buffer {
       throw new IllegalArgumentException("position cannot be greater than capacity");
     }
     if (position > capacity)
-      capacity(Math.min(maxCapacity, Memory.Util.toPow2(position)));
+      capacity((int) Math.min(maxCapacity, Memory.Util.toPow2(position)));
     this.position = position;
     return this;
   }

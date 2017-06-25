@@ -18,6 +18,9 @@ package io.atomix.storage.buffer;
 import java.io.File;
 import java.nio.channels.FileChannel;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Direct {@link java.nio.ByteBuffer} based buffer.
  *
@@ -172,17 +175,10 @@ public class MappedBuffer extends ByteBufferBuffer {
    * @see #allocate(File, int, int)
    */
   public static MappedBuffer allocate(File file, FileChannel.MapMode mode, int initialCapacity, int maxCapacity) {
-    if (file == null)
-      throw new NullPointerException("file cannot be null");
-    if (mode == null)
-      mode = FileChannel.MapMode.READ_WRITE;
-    if (initialCapacity > maxCapacity)
-      throw new IllegalArgumentException("initial capacity cannot be greater than maximum capacity");
-    if (initialCapacity > Integer.MAX_VALUE)
-      throw new IllegalArgumentException("initial capacity for MappedBuffer cannot be greater than " + Integer.MAX_VALUE);
-    if (maxCapacity > Integer.MAX_VALUE)
-      throw new IllegalArgumentException("maximum capacity for MappedBuffer cannot be greater than " + Integer.MAX_VALUE);
-    return new MappedBuffer(MappedBytes.allocate(file, initialCapacity), 0, initialCapacity, maxCapacity);
+    checkNotNull(file, "file cannot be null");
+    checkNotNull(mode, "mode cannot be null");
+    checkArgument(initialCapacity <= maxCapacity, "initial capacity cannot be greater than maximum capacity");
+    return new MappedBuffer(MappedBytes.allocate(file, mode, initialCapacity), 0, initialCapacity, maxCapacity);
   }
 
   protected MappedBuffer(MappedBytes bytes, int offset, int initialCapacity, int maxCapacity) {

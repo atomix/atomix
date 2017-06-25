@@ -19,6 +19,8 @@ import io.atomix.utils.concurrent.ReferenceManager;
 import io.atomix.utils.memory.HeapMemory;
 import io.atomix.utils.memory.Memory;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * Heap byte buffer implementation.
  *
@@ -78,13 +80,8 @@ public class UnsafeHeapBuffer extends AbstractBuffer {
    * @see UnsafeHeapBuffer#allocate(int)
    */
   public static UnsafeHeapBuffer allocate(int initialCapacity, int maxCapacity) {
-    if (initialCapacity > maxCapacity)
-      throw new IllegalArgumentException("initial capacity cannot be greater than maximum capacity");
-    if (initialCapacity > HeapMemory.MAX_SIZE)
-      throw new IllegalArgumentException("initial capacity for HeapBuffer cannot be greater than " + HeapMemory.MAX_SIZE);
-    if (maxCapacity > HeapMemory.MAX_SIZE)
-      throw new IllegalArgumentException("maximum capacity for HeapBuffer cannot be greater than " + HeapMemory.MAX_SIZE);
-    return new UnsafeHeapBuffer(new UnsafeHeapBytes(HeapMemory.allocate(Memory.Util.toPow2(initialCapacity))), 0, initialCapacity, maxCapacity);
+    checkArgument(initialCapacity <= maxCapacity, "initial capacity cannot be greater than maximum capacity");
+    return new UnsafeHeapBuffer(new UnsafeHeapBytes(HeapMemory.allocate((int) Math.min(Memory.Util.toPow2(initialCapacity), maxCapacity))), 0, initialCapacity, maxCapacity);
   }
 
   /**

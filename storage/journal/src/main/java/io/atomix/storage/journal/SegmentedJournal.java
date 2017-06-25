@@ -343,12 +343,6 @@ public class SegmentedJournal<E> implements Journal<E> {
     switch (storageLevel) {
       case MEMORY:
         return createMemorySegment(descriptor);
-      case MAPPED:
-        if (descriptor.version() == 1) {
-          return createMappedSegment(descriptor);
-        } else {
-          return createDiskSegment(descriptor);
-        }
       case DISK:
         return createDiskSegment(descriptor);
       default:
@@ -372,22 +366,10 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   private JournalSegment<E> createDiskSegment(JournalSegmentDescriptor descriptor) {
     File segmentFile = JournalSegmentFile.createSegmentFile(name, directory, descriptor.id(), descriptor.version());
-    Buffer buffer = FileBuffer.allocate(segmentFile, Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
-    descriptor.copyTo(buffer);
-    JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
-    LOGGER.debug("Created segment: {}", segment);
-    return segment;
-  }
-
-  /**
-   * Creates a new segment.
-   */
-  private JournalSegment<E> createMappedSegment(JournalSegmentDescriptor descriptor) {
-    File segmentFile = JournalSegmentFile.createSegmentFile(name, directory, descriptor.id(), descriptor.version());
     Buffer buffer = MappedBuffer.allocate(segmentFile, Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
     descriptor.copyTo(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
-    LOGGER.debug("Created segment: {}", segment);
+    LOGGER.debug("Created disk segment: {}", segment);
     return segment;
   }
 
@@ -399,7 +381,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     Buffer buffer = HeapBuffer.allocate(Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
     descriptor.copyTo(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
-    LOGGER.debug("Created segment: {}", segment);
+    LOGGER.debug("Created memory segment: {}", segment);
     return segment;
   }
 
@@ -410,8 +392,6 @@ public class SegmentedJournal<E> implements Journal<E> {
     switch (storageLevel) {
       case MEMORY:
         return loadMemorySegment(segmentId, segmentVersion);
-      case MAPPED:
-        return loadMappedSegment(segmentId, segmentVersion);
       case DISK:
         return loadDiskSegment(segmentId, segmentVersion);
       default:
@@ -424,22 +404,10 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   private JournalSegment<E> loadDiskSegment(long segmentId, long segmentVersion) {
     File file = JournalSegmentFile.createSegmentFile(name, directory, segmentId, segmentVersion);
-    Buffer buffer = FileBuffer.allocate(file, Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
-    JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);
-    JournalSegment<E> segment = newSegment(new JournalSegmentFile(file), descriptor);
-    LOGGER.debug("Loaded file segment: {} ({})", descriptor.id(), file.getName());
-    return segment;
-  }
-
-  /**
-   * Loads a segment.
-   */
-  private JournalSegment<E> loadMappedSegment(long segmentId, long segmentVersion) {
-    File file = JournalSegmentFile.createSegmentFile(name, directory, segmentId, segmentVersion);
     Buffer buffer = MappedBuffer.allocate(file, Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
     JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(file), descriptor);
-    LOGGER.debug("Loaded mapped segment: {} ({})", descriptor.id(), file.getName());
+    LOGGER.debug("Loaded disk segment: {} ({})", descriptor.id(), file.getName());
     return segment;
   }
 
@@ -540,18 +508,6 @@ public class SegmentedJournal<E> implements Journal<E> {
     }
 
     return segments.values();
-  }
-
-  /**
-   * Opens a segment
-   */
-  Buffer openSegment(JournalSegmentDescriptor descriptor, String mode) {
-    switch (storageLevel) {
-      case DISK:
-        return ((FileBuffer) descriptor.buffer).duplicate(mode).skip(JournalSegmentDescriptor.BYTES).slice();
-      default:
-        return descriptor.buffer.slice();
-    }
   }
 
   /**

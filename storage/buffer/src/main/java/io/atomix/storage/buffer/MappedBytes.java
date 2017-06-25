@@ -62,15 +62,8 @@ public class MappedBytes extends ByteBufferBytes {
    * @see #allocate(File, int)
    */
   public static MappedBytes allocate(File file, FileChannel.MapMode mode, int size) {
-    if (file == null)
-      throw new NullPointerException("file cannot be null");
-    if (mode == null)
-      mode = FileChannel.MapMode.READ_WRITE;
-    if (size > Integer.MAX_VALUE)
-      throw new IllegalArgumentException("size for MappedBytes cannot be greater than " + Integer.MAX_VALUE);
-
-    RandomAccessFile randomAccessFile = createFile(file, mode);
     try {
+      RandomAccessFile randomAccessFile = new RandomAccessFile(file, parseMode(mode));
       MappedByteBuffer buffer = randomAccessFile.getChannel().map(mode, 0, size);
       return new MappedBytes(file, randomAccessFile, buffer, mode);
     } catch (IOException e) {
@@ -126,18 +119,6 @@ public class MappedBytes extends ByteBufferBytes {
     try {
       close();
       Files.delete(file.toPath());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private static RandomAccessFile createFile(File file, FileChannel.MapMode mode) {
-    if (file == null)
-      throw new NullPointerException("file cannot be null");
-    if (mode == null)
-      mode = FileChannel.MapMode.READ_WRITE;
-    try {
-      return new RandomAccessFile(file, parseMode(mode));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

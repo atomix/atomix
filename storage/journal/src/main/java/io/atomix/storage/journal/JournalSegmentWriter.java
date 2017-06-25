@@ -53,7 +53,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
   public JournalSegmentWriter(SegmentedJournal<E> journal, JournalSegmentDescriptor descriptor, Serializer serializer) {
     this.journal = journal;
     this.descriptor = descriptor;
-    this.buffer = journal.openSegment(descriptor, "rw");
+    this.buffer = descriptor.buffer().slice();
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
     reset(0);

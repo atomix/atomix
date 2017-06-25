@@ -41,7 +41,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
   public JournalSegmentReader(SegmentedJournal<E> journal, JournalSegmentDescriptor descriptor, Serializer serializer) {
     this.journal = journal;
-    this.buffer = journal.openSegment(descriptor, "r");
+    this.buffer = descriptor.buffer().slice();
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
     readNext();

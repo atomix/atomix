@@ -19,6 +19,8 @@ import io.atomix.utils.concurrent.ReferenceManager;
 import io.atomix.utils.memory.DirectMemory;
 import io.atomix.utils.memory.Memory;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * Direct {@link java.nio.ByteBuffer} based buffer.
  *
@@ -77,9 +79,8 @@ public class UnsafeDirectBuffer extends NativeBuffer {
    * @see UnsafeDirectBuffer#allocate(int)
    */
   public static UnsafeDirectBuffer allocate(int initialCapacity, int maxCapacity) {
-    if (initialCapacity > maxCapacity)
-      throw new IllegalArgumentException("initial capacity cannot be greater than maximum capacity");
-    return new UnsafeDirectBuffer(new UnsafeDirectBytes(DirectMemory.allocate(Memory.Util.toPow2(initialCapacity))), 0, initialCapacity, maxCapacity);
+    checkArgument(initialCapacity <= maxCapacity, "initial capacity cannot be greater than maximum capacity");
+    return new UnsafeDirectBuffer(new UnsafeDirectBytes(DirectMemory.allocate((int) Math.min(Memory.Util.toPow2(initialCapacity), maxCapacity))), 0, initialCapacity, maxCapacity);
   }
 
   protected UnsafeDirectBuffer(UnsafeDirectBytes bytes, int offset, int initialCapacity, int maxCapacity) {

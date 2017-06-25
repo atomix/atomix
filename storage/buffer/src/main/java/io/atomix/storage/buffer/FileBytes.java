@@ -15,13 +15,13 @@
  */
 package io.atomix.storage.buffer;
 
-import io.atomix.utils.memory.MappedMemoryAllocator;
 import io.atomix.utils.memory.Memory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 
@@ -78,7 +78,7 @@ public class FileBytes extends AbstractBytes {
    * @return The allocated buffer.
    */
   public static FileBytes allocate(File file, String mode, int size) {
-    return new FileBytes(file, mode, Memory.Util.toPow2(size));
+    return new FileBytes(file, mode, (int) Math.min(Memory.Util.toPow2(size), Integer.MAX_VALUE));
   }
 
   private final File file;
@@ -159,8 +159,8 @@ public class FileBytes extends AbstractBytes {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
    *                                  {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
-  public UnsafeMappedBytes map(int offset, int size) {
-    return map(offset, size, FileChannel.MapMode.READ_WRITE);
+  public MappedBytes map(int offset, int size) {
+    return map(offset, size, parseMode(mode));
   }
 
   /**
@@ -173,8 +173,27 @@ public class FileBytes extends AbstractBytes {
    * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
    *                                  {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
-  public UnsafeMappedBytes map(int offset, int size, FileChannel.MapMode mode) {
-    return new UnsafeMappedBytes(file, new MappedMemoryAllocator(randomAccessFile, mode, offset).allocate(size));
+  public MappedBytes map(int offset, int size, FileChannel.MapMode mode) {
+    MappedByteBuffer mappedByteBuffer = mapFile(randomAccessFile, offset, size, mode);
+    return new MappedBytes(file, randomAccessFile, mappedByteBuffer, mode);
+  }
+
+  private static MappedByteBuffer mapFile(RandomAccessFile randomAccessFile, int offset, int size, FileChannel.MapMode mode) {
+    try {
+      return randomAccessFile.getChannel().map(mode, offset, size);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static FileChannel.MapMode parseMode(String mode) {
+    switch (mode) {
+      case "r":
+        return FileChannel.MapMode.READ_ONLY;
+      case "rw":
+      default:
+        return FileChannel.MapMode.READ_WRITE;
+    }
   }
 
   @Override
