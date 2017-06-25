@@ -148,8 +148,8 @@ public final class FollowerRole extends ActiveRole {
       PollRequest request = PollRequest.newBuilder()
           .withTerm(context.getTerm())
           .withCandidate(context.getCluster().getMember().memberId())
-          .withLogIndex(lastEntry != null ? lastEntry.index() : 0)
-          .withLogTerm(lastTerm)
+          .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
+          .withLastLogTerm(lastTerm)
           .build();
       context.getProtocol().poll(member.memberId(), request).whenCompleteAsync((response, error) -> {
         context.checkThread();

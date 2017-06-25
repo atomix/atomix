@@ -184,26 +184,26 @@ public class AppendRequest extends AbstractRaftRequest {
     /**
      * Sets the request last log index.
      *
-     * @param logIndex The request last log index.
+     * @param prevLogIndex The request last log index.
      * @return The append request builder.
      * @throws IllegalArgumentException if the {@code index} is not positive
      */
-    public Builder withLogIndex(long logIndex) {
-      checkArgument(logIndex >= 0, "prevLogIndex must be positive");
-      this.logIndex = logIndex;
+    public Builder withPrevLogIndex(long prevLogIndex) {
+      checkArgument(prevLogIndex >= 0, "prevLogIndex must be positive");
+      this.logIndex = prevLogIndex;
       return this;
     }
 
     /**
      * Sets the request last log term.
      *
-     * @param logTerm The request last log term.
+     * @param prevLogTerm The request last log term.
      * @return The append request builder.
      * @throws IllegalArgumentException if the {@code term} is not positive
      */
-    public Builder withLogTerm(long logTerm) {
-      checkArgument(logTerm >= 0, "prevLogTerm must be positive");
-      this.logTerm = logTerm;
+    public Builder withPrevLogTerm(long prevLogTerm) {
+      checkArgument(prevLogTerm >= 0, "prevLogTerm must be positive");
+      this.logTerm = prevLogTerm;
       return this;
     }
 

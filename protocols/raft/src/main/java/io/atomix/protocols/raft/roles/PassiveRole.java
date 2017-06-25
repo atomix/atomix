@@ -240,7 +240,7 @@ public class PassiveRole extends ReserveRole {
         .withStatus(RaftResponse.Status.OK)
         .withTerm(context.getTerm())
         .withSucceeded(succeeded)
-        .withLogIndex(lastLogIndex)
+        .withLastLogIndex(lastLogIndex)
         .build()));
     return succeeded;
   }

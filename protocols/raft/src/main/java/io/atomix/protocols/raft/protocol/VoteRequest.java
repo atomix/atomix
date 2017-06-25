@@ -122,8 +122,8 @@ public class VoteRequest extends AbstractRaftRequest {
   public static class Builder extends AbstractRaftRequest.Builder<Builder, VoteRequest> {
     private long term = -1;
     private MemberId candidate;
-    private long logIndex = -1;
-    private long logTerm = -1;
+    private long lastLogIndex = -1;
+    private long lastLogTerm = -1;
 
     /**
      * Sets the request term.
@@ -157,9 +157,9 @@ public class VoteRequest extends AbstractRaftRequest {
      * @return The poll request builder.
      * @throws IllegalArgumentException if {@code index} is negative
      */
-    public Builder withLogIndex(long logIndex) {
+    public Builder withLastLogIndex(long logIndex) {
       checkArgument(logIndex >= 0, "lastLogIndex must be positive");
-      this.logIndex = logIndex;
+      this.lastLogIndex = logIndex;
       return this;
     }
 
@@ -170,9 +170,9 @@ public class VoteRequest extends AbstractRaftRequest {
      * @return The poll request builder.
      * @throws IllegalArgumentException if {@code term} is negative
      */
-    public Builder withLogTerm(long logTerm) {
+    public Builder withLastLogTerm(long logTerm) {
       checkArgument(logTerm >= 0, "lastLogTerm must be positive");
-      this.logTerm = logTerm;
+      this.lastLogTerm = logTerm;
       return this;
     }
 
@@ -181,14 +181,14 @@ public class VoteRequest extends AbstractRaftRequest {
       super.validate();
       checkArgument(term >= 0, "term must be positive");
       checkNotNull(candidate, "candidate cannot be null");
-      checkArgument(logIndex >= 0, "lastLogIndex must be positive");
-      checkArgument(logTerm >= 0, "lastLogTerm must be positive");
+      checkArgument(lastLogIndex >= 0, "lastLogIndex must be positive");
+      checkArgument(lastLogTerm >= 0, "lastLogTerm must be positive");
     }
 
     @Override
     public VoteRequest build() {
       validate();
-      return new VoteRequest(term, candidate, logIndex, logTerm);
+      return new VoteRequest(term, candidate, lastLogIndex, lastLogTerm);
     }
   }
 }

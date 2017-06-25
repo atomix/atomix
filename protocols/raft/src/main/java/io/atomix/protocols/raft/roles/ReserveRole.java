@@ -105,7 +105,7 @@ public class ReserveRole extends InactiveRole {
         .withStatus(RaftResponse.Status.OK)
         .withTerm(context.getTerm())
         .withSucceeded(true)
-        .withLogIndex(0)
+        .withLastLogIndex(0)
         .build()));
   }
 

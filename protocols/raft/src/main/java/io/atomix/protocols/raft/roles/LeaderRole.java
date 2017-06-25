@@ -452,7 +452,7 @@ public final class LeaderRole extends ActiveRole {
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
           .withSucceeded(false)
-          .withLogIndex(context.getLogWriter().getLastIndex())
+          .withLastLogIndex(context.getLogWriter().getLastIndex())
           .build()));
     } else {
       context.setLeader(request.leader()).transition(RaftServer.Role.FOLLOWER);

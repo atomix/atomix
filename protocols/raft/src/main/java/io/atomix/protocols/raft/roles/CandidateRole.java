@@ -144,8 +144,8 @@ public final class CandidateRole extends ActiveRole {
       VoteRequest request = VoteRequest.newBuilder()
           .withTerm(context.getTerm())
           .withCandidate(context.getCluster().getMember().memberId())
-          .withLogIndex(lastEntry != null ? lastEntry.index() : 0)
-          .withLogTerm(lastTerm)
+          .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
+          .withLastLogTerm(lastTerm)
           .build();
 
       context.getProtocol().vote(member.memberId(), request).whenCompleteAsync((response, error) -> {
