@@ -25,6 +25,11 @@ The current _master_ branch is the current working branch for Atomix 2.0 develop
 * Transactions
 * etc
 
+### Sponsors
+
+Thank you to the [Open Networking Foundation](https://www.opennetworking.org/) and [ONOS](http://onosproject.org/)
+for continued support of Atomix!
+
 YourKit supports open source projects with its full-featured Java Profiler.
 YourKit, LLC is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/)
 and [YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/),
