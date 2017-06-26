@@ -430,6 +430,7 @@ public class RaftPerformanceTest implements Runnable {
   private RaftServer createServer(RaftMember member) throws UnknownHostException {
     Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
     NettyMessagingManager messagingManager = new NettyMessagingManager(endpoint);
+    messagingManagers.add(messagingManager);
     endpointMap.put(member.memberId(), endpoint);
 
     RaftServer.Builder builder = RaftServer.newBuilder(member.memberId())
