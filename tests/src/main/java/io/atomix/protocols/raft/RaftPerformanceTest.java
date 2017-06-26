@@ -37,6 +37,7 @@ import io.atomix.protocols.raft.protocol.KeepAliveRequest;
 import io.atomix.protocols.raft.protocol.KeepAliveResponse;
 import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.LeaveResponse;
+import io.atomix.protocols.raft.protocol.LocalRaftProtocolFactory;
 import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
@@ -47,8 +48,10 @@ import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftClientMessagingProtocol;
+import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.RaftServerMessagingProtocol;
+import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.ResetRequest;
@@ -105,6 +108,17 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class RaftPerformanceTest implements Runnable {
+
+  private static final boolean USE_NETTY = true;
+
+  private static final int ITERATIONS = 10;
+
+  private static final int TOTAL_OPERATIONS = 100000;
+  private static final int WRITE_RATIO = 5;
+  private static final int NUM_CLIENTS = 5;
+
+  private static final RaftQuery.ConsistencyLevel QUERY_CONSISTENCY = RaftQuery.ConsistencyLevel.LINEARIZABLE;
+  private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategies.ANY;
 
   /**
    * Runs the test.
@@ -198,20 +212,12 @@ public class RaftPerformanceTest implements Runnable {
       .register(RaftQuery.ConsistencyLevel.class)
       .build());
 
-  private static final int ITERATIONS = 10;
-
-  private static final int TOTAL_OPERATIONS = 100000;
-  private static final int WRITE_RATIO = 5;
-  private static final int NUM_CLIENTS = 5;
-
-  private static final RaftQuery.ConsistencyLevel QUERY_CONSISTENCY = RaftQuery.ConsistencyLevel.LINEARIZABLE;
-  private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategies.ANY;
-
   private int nextId;
   private int port = 5000;
   private List<RaftMember> members = new ArrayList<>();
   private List<RaftClient> clients = new ArrayList<>();
   private List<RaftServer> servers = new ArrayList<>();
+  private LocalRaftProtocolFactory protocolFactory;
   private List<NettyMessagingManager> messagingManagers = new ArrayList<>();
   private Map<MemberId, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private static final String[] KEYS = new String[1024];
@@ -322,6 +328,7 @@ public class RaftPerformanceTest implements Runnable {
     servers = new ArrayList<>();
     messagingManagers = new ArrayList<>();
     endpointMap = new ConcurrentHashMap<>();
+    protocolFactory = new LocalRaftProtocolFactory(protocolSerializer);
   }
 
   /**
@@ -428,14 +435,20 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a Raft server.
    */
   private RaftServer createServer(RaftMember member) throws UnknownHostException {
-    Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-    NettyMessagingManager messagingManager = new NettyMessagingManager(endpoint);
-    messagingManagers.add(messagingManager);
-    endpointMap.put(member.memberId(), endpoint);
+    RaftServerProtocol protocol;
+    if (USE_NETTY) {
+      Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
+      NettyMessagingManager messagingManager = new NettyMessagingManager(endpoint);
+      messagingManagers.add(messagingManager);
+      endpointMap.put(member.memberId(), endpoint);
+      protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
+    } else {
+      protocol = protocolFactory.newServerProtocol(member.memberId());
+    }
 
     RaftServer.Builder builder = RaftServer.newBuilder(member.memberId())
         .withType(member.getType())
-        .withProtocol(new RaftServerMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get))
+        .withProtocol(protocol)
         .withStorage(RaftStorage.newBuilder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.memberId())))
@@ -454,13 +467,20 @@ public class RaftPerformanceTest implements Runnable {
    */
   private RaftClient createClient() throws Exception {
     MemberId memberId = nextMemberId();
-    Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-    NettyMessagingManager messagingManager = new NettyMessagingManager(endpoint);
-    endpointMap.put(memberId, endpoint);
+
+    RaftClientProtocol protocol;
+    if (USE_NETTY) {
+      Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
+      NettyMessagingManager messagingManager = new NettyMessagingManager(endpoint);
+      endpointMap.put(memberId, endpoint);
+      protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
+    } else {
+      protocol = protocolFactory.newClientProtocol(memberId);
+    }
 
     RaftClient client = RaftClient.newBuilder()
         .withMemberId(memberId)
-        .withProtocol(new RaftClientMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get))
+        .withProtocol(protocol)
         .build();
 
     client.connect(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).join();
