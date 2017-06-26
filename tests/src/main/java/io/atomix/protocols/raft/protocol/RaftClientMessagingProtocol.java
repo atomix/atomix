@@ -15,91 +15,71 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import com.google.common.collect.Maps;
+import io.atomix.messaging.Endpoint;
+import io.atomix.messaging.MessagingService;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.utils.concurrent.Futures;
+import io.atomix.serializer.Serializer;
 
-import java.net.ConnectException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
- * Test Raft client protocol.
+ * Raft client messaging service protocol.
  */
-public class LocalRaftClientProtocol extends LocalRaftProtocol implements RaftClientProtocol {
-  private final Map<Long, Consumer<PublishRequest>> publishListeners = Maps.newConcurrentMap();
-
-  public LocalRaftClientProtocol(MemberId memberId, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
-    super(servers, clients);
-    clients.put(memberId, this);
-  }
-
-  private CompletableFuture<LocalRaftServerProtocol> getServer(MemberId memberId) {
-    LocalRaftServerProtocol server = server(memberId);
-    if (server != null) {
-      return Futures.completedFuture(server);
-    } else {
-      return Futures.exceptionalFuture(new ConnectException());
-    }
+public class RaftClientMessagingProtocol extends RaftMessagingProtocol implements RaftClientProtocol {
+  public RaftClientMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<MemberId, Endpoint> endpointProvider) {
+    super(messagingService, serializer, endpointProvider);
   }
 
   @Override
   public CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.openSession(request));
+    return sendAndReceive(memberId, "open-session", request);
   }
 
   @Override
   public CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.closeSession(request));
+    return sendAndReceive(memberId, "close-session", request);
   }
 
   @Override
   public CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.keepAlive(request));
+    return sendAndReceive(memberId, "keep-alive", request);
   }
 
   @Override
   public CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.query(request));
+    return sendAndReceive(memberId, "query", request);
   }
 
   @Override
   public CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.command(request));
+    return sendAndReceive(memberId, "command", request);
   }
 
   @Override
   public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.metadata(request));
+    return sendAndReceive(memberId, "metadata", request);
   }
 
   @Override
   public void reset(Collection<MemberId> members, ResetRequest request) {
-    members.forEach(memberId -> {
-      LocalRaftServerProtocol server = server(memberId);
-      if (server != null) {
-        server.reset(request);
-      }
-    });
-  }
-
-  void publish(PublishRequest request) {
-    Consumer<PublishRequest> listener = publishListeners.get(request.session());
-    if (listener != null) {
-      listener.accept(request);
+    for (MemberId memberId : members) {
+      sendAsync(memberId, String.format("reset-%d", request.session()), request);
     }
   }
 
   @Override
   public void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor) {
-    publishListeners.put(sessionId, request -> executor.execute(() -> listener.accept(request)));
+    messagingService.registerHandler(String.format("publish-%d", sessionId), (e, p) -> {
+      listener.accept(serializer.decode(p));
+    }, executor);
   }
 
   @Override
   public void unregisterPublishListener(long sessionId) {
-    publishListeners.remove(sessionId);
+    messagingService.unregisterHandler(String.format("publish-%d", sessionId));
   }
 }

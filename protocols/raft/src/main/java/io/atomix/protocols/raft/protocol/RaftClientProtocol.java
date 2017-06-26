@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.cluster.MemberId;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -81,11 +82,12 @@ public interface RaftClientProtocol {
   CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request);
 
   /**
-   * Broadcasts a reset request to all nodes in the cluster.
+   * Multicasts a reset request to all nodes in the cluster.
    *
-   * @param request the reset request to broadcast
+   * @param members the members to which to send the request
+   * @param request the reset request to multicast
    */
-  void reset(ResetRequest request);
+  void reset(Collection<MemberId> members, ResetRequest request);
 
   /**
    * Registers a publish request listener.

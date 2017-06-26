@@ -38,14 +38,16 @@ final class RaftProxyListener {
   private static final Logger LOG = LoggerFactory.getLogger(RaftProxyListener.class);
 
   private final RaftClientProtocol protocol;
+  private final NodeSelector nodeSelector;
   private final RaftProxyState state;
   private final Set<EventListener> listeners = Sets.newLinkedHashSet();
   private final RaftProxySequencer sequencer;
   private final Serializer serializer;
   private final Executor executor;
 
-  public RaftProxyListener(RaftClientProtocol protocol, RaftProxyState state, RaftProxySequencer sequencer, Serializer serializer, Executor executor) {
+  public RaftProxyListener(RaftClientProtocol protocol, NodeSelector nodeSelector, RaftProxyState state, RaftProxySequencer sequencer, Serializer serializer, Executor executor) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
+    this.nodeSelector = checkNotNull(nodeSelector, "nodeSelector cannot be null");
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
@@ -105,7 +107,7 @@ final class RaftProxyListener {
           .withSession(state.getSessionId())
           .withIndex(eventIndex)
           .build();
-      protocol.reset(resetRequest);
+      protocol.reset(nodeSelector.servers(), resetRequest);
       return;
     }
 

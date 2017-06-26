@@ -84,6 +84,7 @@ public class DefaultRaftProxy implements RaftProxy {
     RaftProxySequencer sequencer = new RaftProxySequencer(state);
     this.proxyListener = new RaftProxyListener(
         protocol,
+        selectorManager.createSelector(CommunicationStrategies.ANY),
         state,
         sequencer,
         serializer,

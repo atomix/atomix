@@ -37,9 +37,12 @@ import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.serializer.Serializer;
 
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Raft client protocol that uses a cluster communicator.
@@ -94,8 +97,9 @@ public class RaftClientCommunicator implements RaftClientProtocol {
   }
 
   @Override
-  public void reset(ResetRequest request) {
-    clusterCommunicator.broadcast(request, context.resetSubject(request.session()), serializer::encode);
+  public void reset(Collection<MemberId> members, ResetRequest request) {
+    Set<NodeId> nodes = members.stream().map(m -> NodeId.from(m.id())).collect(Collectors.toSet());
+    clusterCommunicator.multicast(request, context.resetSubject(request.session()), serializer::encode, nodes);
   }
 
   @Override
