@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.protocol;
 
 import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.serializer.Serializer;
 
 import java.util.Map;
 
@@ -24,8 +25,13 @@ import java.util.Map;
  * Test Raft protocol factory.
  */
 public class LocalRaftProtocolFactory {
+  private final Serializer serializer;
   private final Map<MemberId, LocalRaftServerProtocol> servers = Maps.newConcurrentMap();
   private final Map<MemberId, LocalRaftClientProtocol> clients = Maps.newConcurrentMap();
+
+  public LocalRaftProtocolFactory(Serializer serializer) {
+    this.serializer = serializer;
+  }
 
   /**
    * Returns a new test client protocol.
@@ -34,7 +40,7 @@ public class LocalRaftProtocolFactory {
    * @return a new test client protocol
    */
   public RaftClientProtocol newClientProtocol(MemberId memberId) {
-    return new LocalRaftClientProtocol(memberId, servers, clients);
+    return new LocalRaftClientProtocol(memberId, serializer, servers, clients);
   }
 
   /**
@@ -44,6 +50,6 @@ public class LocalRaftProtocolFactory {
    * @return a new test server protocol
    */
   public RaftServerProtocol newServerProtocol(MemberId memberId) {
-    return new LocalRaftServerProtocol(memberId, servers, clients);
+    return new LocalRaftServerProtocol(memberId, serializer, servers, clients);
   }
 }

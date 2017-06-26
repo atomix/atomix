@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.Map;
@@ -24,12 +25,26 @@ import java.util.Map;
  * Base class for Raft protocol.
  */
 public abstract class LocalRaftProtocol {
+  private final Serializer serializer;
   private final Map<MemberId, LocalRaftServerProtocol> servers;
   private final Map<MemberId, LocalRaftClientProtocol> clients;
 
-  public LocalRaftProtocol(Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
+  public LocalRaftProtocol(Serializer serializer, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
+    this.serializer = serializer;
     this.servers = servers;
     this.clients = clients;
+  }
+
+  <T> T copy(T value) {
+    return serializer.decode(serializer.encode(value));
+  }
+
+  byte[] encode(Object value) {
+    return serializer.encode(value);
+  }
+
+  <T> T decode(byte[] bytes) {
+    return serializer.decode(bytes);
   }
 
   LocalRaftServerProtocol server(MemberId memberId) {

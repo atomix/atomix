@@ -18,6 +18,7 @@ package io.atomix.protocols.raft.protocol;
 import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 
 import java.net.ConnectException;
@@ -47,8 +48,8 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
   private Function<AppendRequest, CompletableFuture<AppendResponse>> appendHandler;
   private final Map<Long, Consumer<ResetRequest>> resetListeners = Maps.newConcurrentMap();
 
-  public LocalRaftServerProtocol(MemberId memberId, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
-    super(servers, clients);
+  public LocalRaftServerProtocol(MemberId memberId, Serializer serializer, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
+    super(serializer, servers, clients);
     servers.put(memberId, this);
   }
 
@@ -72,82 +73,82 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
 
   @Override
   public CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.openSession(request));
+    return getServer(memberId).thenCompose(listener -> listener.openSession(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.closeSession(request));
+    return getServer(memberId).thenCompose(listener -> listener.closeSession(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.keepAlive(request));
+    return getServer(memberId).thenCompose(listener -> listener.keepAlive(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.query(request));
+    return getServer(memberId).thenCompose(listener -> listener.query(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.command(request));
+    return getServer(memberId).thenCompose(listener -> listener.command(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.metadata(request));
+    return getServer(memberId).thenCompose(listener -> listener.metadata(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<JoinResponse> join(MemberId memberId, JoinRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.join(request));
+    return getServer(memberId).thenCompose(listener -> listener.join(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<LeaveResponse> leave(MemberId memberId, LeaveRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.leave(request));
+    return getServer(memberId).thenCompose(listener -> listener.leave(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<ConfigureResponse> configure(MemberId memberId, ConfigureRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.configure(request));
+    return getServer(memberId).thenCompose(listener -> listener.configure(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<ReconfigureResponse> reconfigure(MemberId memberId, ReconfigureRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.reconfigure(request));
+    return getServer(memberId).thenCompose(listener -> listener.reconfigure(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<InstallResponse> install(MemberId memberId, InstallRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.install(request));
+    return getServer(memberId).thenCompose(listener -> listener.install(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<PollResponse> poll(MemberId memberId, PollRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.poll(request));
+    return getServer(memberId).thenCompose(listener -> listener.poll(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<VoteResponse> vote(MemberId memberId, VoteRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.vote(request));
+    return getServer(memberId).thenCompose(listener -> listener.vote(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<AppendResponse> append(MemberId memberId, AppendRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.append(request));
+    return getServer(memberId).thenCompose(listener -> listener.append(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public void publish(MemberId memberId, PublishRequest request) {
-    getClient(memberId).thenAccept(protocol -> protocol.publish(request));
+    getClient(memberId).thenAccept(protocol -> protocol.publish(request.session(), encode(request)));
   }
 
-  CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
+  CompletableFuture<byte[]> openSession(byte[] request) {
     if (openSessionHandler != null) {
-      return openSessionHandler.apply(request);
+      return openSessionHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -163,9 +164,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.openSessionHandler = null;
   }
 
-  CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
+  CompletableFuture<byte[]> closeSession(byte[] request) {
     if (closeSessionHandler != null) {
-      return closeSessionHandler.apply(request);
+      return closeSessionHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -181,9 +182,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.closeSessionHandler = null;
   }
 
-  CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+  CompletableFuture<byte[]> keepAlive(byte[] request) {
     if (keepAliveHandler != null) {
-      return keepAliveHandler.apply(request);
+      return keepAliveHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -199,9 +200,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.keepAliveHandler = null;
   }
 
-  CompletableFuture<QueryResponse> query(QueryRequest request) {
+  CompletableFuture<byte[]> query(byte[] request) {
     if (queryHandler != null) {
-      return queryHandler.apply(request);
+      return queryHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -217,9 +218,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.queryHandler = null;
   }
 
-  CompletableFuture<CommandResponse> command(CommandRequest request) {
+  CompletableFuture<byte[]> command(byte[] request) {
     if (commandHandler != null) {
-      return commandHandler.apply(request);
+      return commandHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -235,9 +236,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.commandHandler = null;
   }
 
-  CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
+  CompletableFuture<byte[]> metadata(byte[] request) {
     if (metadataHandler != null) {
-      return metadataHandler.apply(request);
+      return metadataHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -253,9 +254,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.metadataHandler = null;
   }
 
-  CompletableFuture<JoinResponse> join(JoinRequest request) {
+  CompletableFuture<byte[]> join(byte[] request) {
     if (joinHandler != null) {
-      return joinHandler.apply(request);
+      return joinHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -271,9 +272,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.joinHandler = null;
   }
 
-  CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+  CompletableFuture<byte[]> leave(byte[] request) {
     if (leaveHandler != null) {
-      return leaveHandler.apply(request);
+      return leaveHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -289,9 +290,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.leaveHandler = null;
   }
 
-  CompletableFuture<ConfigureResponse> configure(ConfigureRequest request) {
+  CompletableFuture<byte[]> configure(byte[] request) {
     if (configureHandler != null) {
-      return configureHandler.apply(request);
+      return configureHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -307,9 +308,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.configureHandler = null;
   }
 
-  CompletableFuture<ReconfigureResponse> reconfigure(ReconfigureRequest request) {
+  CompletableFuture<byte[]> reconfigure(byte[] request) {
     if (reconfigureHandler != null) {
-      return reconfigureHandler.apply(request);
+      return reconfigureHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -325,9 +326,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.reconfigureHandler = null;
   }
 
-  CompletableFuture<InstallResponse> install(InstallRequest request) {
+  CompletableFuture<byte[]> install(byte[] request) {
     if (installHandler != null) {
-      return installHandler.apply(request);
+      return installHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -343,9 +344,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.installHandler = null;
   }
 
-  CompletableFuture<PollResponse> poll(PollRequest request) {
+  CompletableFuture<byte[]> poll(byte[] request) {
     if (pollHandler != null) {
-      return pollHandler.apply(request);
+      return pollHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -361,9 +362,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.pollHandler = null;
   }
 
-  CompletableFuture<VoteResponse> vote(VoteRequest request) {
+  CompletableFuture<byte[]> vote(byte[] request) {
     if (voteHandler != null) {
-      return voteHandler.apply(request);
+      return voteHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -379,9 +380,9 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.voteHandler = null;
   }
 
-  CompletableFuture<AppendResponse> append(AppendRequest request) {
+  CompletableFuture<byte[]> append(byte[] request) {
     if (appendHandler != null) {
-      return appendHandler.apply(request);
+      return appendHandler.apply(decode(request)).thenApply(this::encode);
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -397,10 +398,10 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     this.appendHandler = null;
   }
 
-  void reset(ResetRequest request) {
-    Consumer<ResetRequest> listener = resetListeners.get(request.session());
+  void reset(long sessionId, byte[] request) {
+    Consumer<ResetRequest> listener = resetListeners.get(sessionId);
     if (listener != null) {
-      listener.accept(request);
+      listener.accept(decode(request));
     }
   }
 

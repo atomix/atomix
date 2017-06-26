@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.protocol;
 
 import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 
 import java.net.ConnectException;
@@ -32,8 +33,8 @@ import java.util.function.Consumer;
 public class LocalRaftClientProtocol extends LocalRaftProtocol implements RaftClientProtocol {
   private final Map<Long, Consumer<PublishRequest>> publishListeners = Maps.newConcurrentMap();
 
-  public LocalRaftClientProtocol(MemberId memberId, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
-    super(servers, clients);
+  public LocalRaftClientProtocol(MemberId memberId, Serializer serializer, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
+    super(serializer, servers, clients);
     clients.put(memberId, this);
   }
 
@@ -48,32 +49,32 @@ public class LocalRaftClientProtocol extends LocalRaftProtocol implements RaftCl
 
   @Override
   public CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.openSession(request));
+    return getServer(memberId).thenCompose(protocol -> protocol.openSession(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.closeSession(request));
+    return getServer(memberId).thenCompose(protocol -> protocol.closeSession(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.keepAlive(request));
+    return getServer(memberId).thenCompose(protocol -> protocol.keepAlive(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.query(request));
+    return getServer(memberId).thenCompose(protocol -> protocol.query(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.command(request));
+    return getServer(memberId).thenCompose(protocol -> protocol.command(encode(request))).thenApply(this::decode);
   }
 
   @Override
   public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.metadata(request));
+    return getServer(memberId).thenCompose(protocol -> protocol.metadata(encode(request))).thenApply(this::decode);
   }
 
   @Override
@@ -81,15 +82,15 @@ public class LocalRaftClientProtocol extends LocalRaftProtocol implements RaftCl
     members.forEach(memberId -> {
       LocalRaftServerProtocol server = server(memberId);
       if (server != null) {
-        server.reset(request);
+        server.reset(request.session(), encode(request));
       }
     });
   }
 
-  void publish(PublishRequest request) {
-    Consumer<PublishRequest> listener = publishListeners.get(request.session());
+  void publish(long sessionId, byte[] request) {
+    Consumer<PublishRequest> listener = publishListeners.get(sessionId);
     if (listener != null) {
-      listener.accept(request);
+      listener.accept(decode(request));
     }
   }
 
