@@ -37,6 +37,7 @@
     <kryo.version>4.0.0</kryo.version>
     <commons.lang3.version>3.5</commons.lang3.version>
     <commons.math3.version>3.6.1</commons.math3.version>
+    <netty.version>4.1.8.Final</netty.version>
 
     <!-- Maven plugins -->
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
