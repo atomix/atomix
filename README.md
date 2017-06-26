@@ -25,7 +25,7 @@ The current _master_ branch is the current working branch for Atomix 2.0 develop
 * Transactions
 * etc
 
-### Sponsors
+### Acknowledgements
 
 Thank you to the [Open Networking Foundation](https://www.opennetworking.org/) and [ONOS](http://onosproject.org/)
 for continued support of Atomix!
