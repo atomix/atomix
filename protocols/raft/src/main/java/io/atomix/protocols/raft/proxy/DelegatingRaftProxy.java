@@ -30,10 +30,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft proxy delegate.
  */
-public class RaftProxyDelegate implements RaftProxy {
+public class DelegatingRaftProxy implements RaftProxy {
   private final RaftProxy delegate;
 
-  public RaftProxyDelegate(RaftProxy delegate) {
+  public DelegatingRaftProxy(RaftProxy delegate) {
     this.delegate = checkNotNull(delegate, "delegate cannot be null");
   }
 

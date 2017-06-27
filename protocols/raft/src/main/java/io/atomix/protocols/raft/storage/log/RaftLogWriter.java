@@ -17,12 +17,12 @@ package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.journal.JournalWriter;
-import io.atomix.storage.journal.JournalWriterDelegate;
+import io.atomix.storage.journal.DelegatingJournalWriter;
 
 /**
  * Raft log writer.
  */
-public class RaftLogWriter extends JournalWriterDelegate<RaftLogEntry> {
+public class RaftLogWriter extends DelegatingJournalWriter<RaftLogEntry> {
   private final RaftLog log;
 
   public RaftLogWriter(JournalWriter<RaftLogEntry> delegate, RaftLog log) {

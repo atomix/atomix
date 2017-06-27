@@ -13,65 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.storage.journal;
+package io.atomix.protocols.raft;
 
-import java.util.concurrent.locks.Lock;
+import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.proxy.RaftProxy;
+
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Journal writer delegate.
+ * Delegating Raft client.
  */
-public class JournalWriterDelegate<E> implements JournalWriter<E> {
-  private final JournalWriter<E> delegate;
+public class DelegatingRaftClient implements RaftClient {
+  private final RaftClient delegate;
 
-  public JournalWriterDelegate(JournalWriter<E> delegate) {
+  public DelegatingRaftClient(RaftClient delegate) {
     this.delegate = delegate;
   }
 
   @Override
-  public Lock getLock() {
-    return delegate.getLock();
+  public String clientId() {
+    return delegate.clientId();
   }
 
   @Override
-  public long getLastIndex() {
-    return delegate.getLastIndex();
+  public RaftMetadataClient metadata() {
+    return delegate.metadata();
   }
 
   @Override
-  public Indexed<E> getLastEntry() {
-    return delegate.getLastEntry();
+  public RaftProxy.Builder newProxyBuilder() {
+    return delegate.newProxyBuilder();
   }
 
   @Override
-  public long getNextIndex() {
-    return delegate.getNextIndex();
+  public CompletableFuture<RaftClient> connect(Collection<MemberId> members) {
+    return delegate.connect(members);
   }
 
   @Override
-  public <T extends E> Indexed<T> append(T entry) {
-    return delegate.append(entry);
-  }
-
-  @Override
-  public void append(Indexed<E> entry) {
-    delegate.append(entry);
-  }
-
-  @Override
-  public void truncate(long index) {
-    delegate.truncate(index);
-  }
-
-  @Override
-  public void flush() {
-    delegate.flush();
-  }
-
-  @Override
-  public void close() {
-    delegate.close();
+  public CompletableFuture<Void> close() {
+    return delegate.close();
   }
 
   @Override

@@ -15,36 +15,58 @@
  */
 package io.atomix.storage.journal;
 
+import java.util.concurrent.locks.Lock;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Journal delegate.
+ * Journal writer delegate.
  */
-public class JournalDelegate<E> implements Journal<E> {
-  private final Journal<E> delegate;
+public class DelegatingJournalWriter<E> implements JournalWriter<E> {
+  private final JournalWriter<E> delegate;
 
-  public JournalDelegate(Journal<E> delegate) {
+  public DelegatingJournalWriter(JournalWriter<E> delegate) {
     this.delegate = delegate;
   }
 
   @Override
-  public JournalWriter<E> writer() {
-    return delegate.writer();
+  public Lock getLock() {
+    return delegate.getLock();
   }
 
   @Override
-  public JournalReader<E> openReader(long index) {
-    return delegate.openReader(index);
+  public long getLastIndex() {
+    return delegate.getLastIndex();
   }
 
   @Override
-  public boolean isOpen() {
-    return delegate.isOpen();
+  public Indexed<E> getLastEntry() {
+    return delegate.getLastEntry();
   }
 
   @Override
-  public void compact(long index) {
-    delegate.compact(index);
+  public long getNextIndex() {
+    return delegate.getNextIndex();
+  }
+
+  @Override
+  public <T extends E> Indexed<T> append(T entry) {
+    return delegate.append(entry);
+  }
+
+  @Override
+  public void append(Indexed<E> entry) {
+    delegate.append(entry);
+  }
+
+  @Override
+  public void truncate(long index) {
+    delegate.truncate(index);
+  }
+
+  @Override
+  public void flush() {
+    delegate.flush();
   }
 
   @Override

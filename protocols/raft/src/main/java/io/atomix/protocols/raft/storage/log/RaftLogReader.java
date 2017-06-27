@@ -17,12 +17,12 @@ package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.journal.JournalReader;
-import io.atomix.storage.journal.JournalReaderDelegate;
+import io.atomix.storage.journal.DelegatingJournalReader;
 
 /**
  * Raft log reader.
  */
-public class RaftLogReader extends JournalReaderDelegate<RaftLogEntry> {
+public class RaftLogReader extends DelegatingJournalReader<RaftLogEntry> {
 
   /**
    * Raft log reader mode.

@@ -13,49 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
-
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.proxy.RaftProxy;
-
-import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
+package io.atomix.storage.journal;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Raft client delegate.
+ * Delegating journal.
  */
-public class RaftClientDelegate implements RaftClient {
-  private final RaftClient delegate;
+public class DelegatingJournal<E> implements Journal<E> {
+  private final Journal<E> delegate;
 
-  public RaftClientDelegate(RaftClient delegate) {
+  public DelegatingJournal(Journal<E> delegate) {
     this.delegate = delegate;
   }
 
   @Override
-  public String clientId() {
-    return delegate.clientId();
+  public JournalWriter<E> writer() {
+    return delegate.writer();
   }
 
   @Override
-  public RaftMetadataClient metadata() {
-    return delegate.metadata();
+  public JournalReader<E> openReader(long index) {
+    return delegate.openReader(index);
   }
 
   @Override
-  public RaftProxy.Builder newProxyBuilder() {
-    return delegate.newProxyBuilder();
+  public boolean isOpen() {
+    return delegate.isOpen();
   }
 
   @Override
-  public CompletableFuture<RaftClient> connect(Collection<MemberId> members) {
-    return delegate.connect(members);
+  public void compact(long index) {
+    delegate.compact(index);
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    return delegate.close();
+  public void close() {
+    delegate.close();
   }
 
   @Override

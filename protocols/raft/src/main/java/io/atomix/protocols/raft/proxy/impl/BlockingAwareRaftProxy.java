@@ -21,7 +21,7 @@ import io.atomix.event.EventListener;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.proxy.RaftProxy;
-import io.atomix.protocols.raft.proxy.RaftProxyDelegate;
+import io.atomix.protocols.raft.proxy.DelegatingRaftProxy;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Map;
@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft proxy delegate that completes futures on a thread pool.
  */
-public class BlockingAwareRaftProxy extends RaftProxyDelegate {
+public class BlockingAwareRaftProxy extends DelegatingRaftProxy {
   private final Executor executor;
   private final Map<EventListener, EventListener> listenerMap = Maps.newConcurrentMap();
 

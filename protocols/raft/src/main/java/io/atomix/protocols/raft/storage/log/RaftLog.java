@@ -19,7 +19,7 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Journal;
-import io.atomix.storage.journal.JournalDelegate;
+import io.atomix.storage.journal.DelegatingJournal;
 import io.atomix.storage.journal.SegmentedJournal;
 
 import java.io.File;
@@ -27,7 +27,7 @@ import java.io.File;
 /**
  * Raft log.
  */
-public class RaftLog extends JournalDelegate<RaftLogEntry> {
+public class RaftLog extends DelegatingJournal<RaftLogEntry> {
 
   /**
    * Returns a new Raft log builder.

@@ -22,10 +22,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Journal reader delegate.
  */
-public class JournalReaderDelegate<E> implements JournalReader<E> {
+public class DelegatingJournalReader<E> implements JournalReader<E> {
   private final JournalReader<E> delegate;
 
-  public JournalReaderDelegate(JournalReader<E> delegate) {
+  public DelegatingJournalReader(JournalReader<E> delegate) {
     this.delegate = delegate;
   }
 
