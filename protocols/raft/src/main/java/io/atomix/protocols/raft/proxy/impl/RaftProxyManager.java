@@ -257,7 +257,6 @@ public class RaftProxyManager {
     long[] sessionIds = new long[sessions.size()];
     long[] commandResponses = new long[sessions.size()];
     long[] eventIndexes = new long[sessions.size()];
-    long[] connections = new long[sessions.size()];
 
     int i = 0;
     for (RaftProxyState sessionState : sessions.values()) {
