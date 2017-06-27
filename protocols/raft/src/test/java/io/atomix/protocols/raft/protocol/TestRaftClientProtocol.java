@@ -20,6 +20,7 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.utils.concurrent.Futures;
 
 import java.net.ConnectException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -76,9 +77,12 @@ public class TestRaftClientProtocol extends TestRaftProtocol implements RaftClie
   }
 
   @Override
-  public void reset(ResetRequest request) {
-    servers().forEach(protocol -> {
-      protocol.reset(request);
+  public void reset(Collection<MemberId> members, ResetRequest request) {
+    members.forEach(member -> {
+      TestRaftServerProtocol server = server(member);
+      if (server != null) {
+        server.reset(request);
+      }
     });
   }
 
