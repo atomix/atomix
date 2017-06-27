@@ -34,7 +34,7 @@ import io.atomix.utils.concurrent.ThreadPoolContext;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
@@ -44,6 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -253,17 +254,36 @@ public class RaftProxyManager {
    * Sends a keep-alive request to the cluster.
    */
   private synchronized void keepAliveSessions(boolean retryOnFailure) {
-    Map<Long, RaftProxyState> sessions = new HashMap<>(this.sessions);
-    long[] sessionIds = new long[sessions.size()];
-    long[] commandResponses = new long[sessions.size()];
-    long[] eventIndexes = new long[sessions.size()];
+    final long currentTime = System.currentTimeMillis();
 
+    // Filter the list of sessions that need keep-alive requests to be sent.
+    // If a session has been recently updated (a command has recently been committed via the session)
+    // then sending a keep-alive for the session is redundant.
+    List<RaftProxyState> needKeepAlive = sessions.values()
+        .stream()
+        .filter(s -> currentTime - s.getLastUpdated() > s.getSessionTimeout() / 2)
+        .collect(Collectors.toList());
+
+    // If no sessions need keep-alives to be sent, skip and reschedule the keep-alive.
+    if (needKeepAlive.isEmpty()) {
+      scheduleKeepAlive();
+      return;
+    }
+
+    // Allocate session IDs, command response sequence numbers, and event index arrays.
+    long[] sessionIds = new long[needKeepAlive.size()];
+    long[] commandResponses = new long[needKeepAlive.size()];
+    long[] eventIndexes = new long[needKeepAlive.size()];
+
+    // For each session that needs to be kept alive, populate batch request arrays.
     int i = 0;
-    for (RaftProxyState sessionState : sessions.values()) {
-      sessionIds[i] = sessionState.getSessionId();
-      commandResponses[i] = sessionState.getCommandResponse();
-      eventIndexes[i] = sessionState.getEventIndex();
-      i++;
+    for (RaftProxyState sessionState : needKeepAlive) {
+      if (currentTime - sessionState.getLastUpdated() > sessionState.getSessionTimeout() / 2) {
+        sessionIds[i] = sessionState.getSessionId();
+        commandResponses[i] = sessionState.getCommandResponse();
+        eventIndexes[i] = sessionState.getEventIndex();
+        i++;
+      }
     }
 
     KeepAliveRequest request = KeepAliveRequest.newBuilder()
@@ -280,7 +300,7 @@ public class RaftProxyManager {
           // If the request was successful, update the address selector and schedule the next keep-alive.
           if (response.status() == RaftResponse.Status.OK) {
             selectorManager.resetAll(response.leader(), response.members());
-            sessions.values().forEach(s -> s.setState(RaftProxy.State.CONNECTED));
+            needKeepAlive.forEach(s -> s.setState(RaftProxy.State.CONNECTED));
             scheduleKeepAlive();
           }
           // If a leader is still set in the address selector, unset the leader and attempt to send another keep-alive.
@@ -291,7 +311,7 @@ public class RaftProxyManager {
           }
           // If no leader was set, set the session state to unstable and schedule another keep-alive.
           else {
-            sessions.values().forEach(s -> s.setState(RaftProxy.State.SUSPENDED));
+            needKeepAlive.forEach(s -> s.setState(RaftProxy.State.SUSPENDED));
             selectorManager.resetAll();
             scheduleKeepAlive();
           }
@@ -304,7 +324,7 @@ public class RaftProxyManager {
         }
         // If no leader was set, set the session state to unstable and schedule another keep-alive.
         else {
-          sessions.values().forEach(s -> s.setState(RaftProxy.State.SUSPENDED));
+          needKeepAlive.forEach(s -> s.setState(RaftProxy.State.SUSPENDED));
           selectorManager.resetAll();
           scheduleKeepAlive();
         }

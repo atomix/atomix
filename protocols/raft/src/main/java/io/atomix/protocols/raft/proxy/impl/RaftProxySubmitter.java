@@ -317,6 +317,8 @@ final class RaftProxySubmitter {
    * Command operation attempt.
    */
   private final class CommandAttempt<T> extends OperationAttempt<CommandRequest, CommandResponse, T> {
+    private final long time = System.currentTimeMillis();
+
     public CommandAttempt(long sequence, CommandRequest request, CompletableFuture<T> future) {
       super(sequence, 1, request, future);
     }
@@ -389,6 +391,7 @@ final class RaftProxySubmitter {
     @SuppressWarnings("unchecked")
     protected void complete(CommandResponse response) {
       sequence(response, () -> {
+        state.setLastUpdated(time);
         state.setCommandResponse(request.sequenceNumber());
         state.setResponseIndex(response.index());
         future.complete((T) response.result());

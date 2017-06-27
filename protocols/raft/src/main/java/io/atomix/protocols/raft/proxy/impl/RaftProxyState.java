@@ -37,6 +37,7 @@ public final class RaftProxyState {
   private volatile long commandResponse;
   private long responseIndex;
   private volatile long eventIndex;
+  private volatile long lastUpdated;
   private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
 
   RaftProxyState(long sessionId, String name, String type, long timeout) {
@@ -215,4 +216,21 @@ public final class RaftProxyState {
     return eventIndex;
   }
 
+  /**
+   * Sets the last time the session was updated.
+   *
+   * @param lastUpdated The last time the session was updated.
+   */
+  public void setLastUpdated(long lastUpdated) {
+    this.lastUpdated = lastUpdated;
+  }
+
+  /**
+   * Returns the last time the session was updated.
+   *
+   * @return The last time the session was updated.
+   */
+  public long getLastUpdated() {
+    return lastUpdated;
+  }
 }
