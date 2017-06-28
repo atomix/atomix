@@ -58,8 +58,8 @@ public class BlockingAwareRaftProxy extends DelegatingRaftProxy {
   }
 
   @Override
-  public CompletableFuture<byte[]> submit(RaftOperation operation) {
-    return Futures.blockingAwareFuture(super.submit(operation), executor);
+  public CompletableFuture<byte[]> execute(RaftOperation operation) {
+    return Futures.blockingAwareFuture(super.execute(operation), executor);
   }
 
   @Override

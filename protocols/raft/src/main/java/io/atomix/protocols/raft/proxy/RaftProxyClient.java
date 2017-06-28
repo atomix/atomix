@@ -20,6 +20,7 @@ import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.storage.buffer.HeapBytes;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -120,25 +121,36 @@ public interface RaftProxyClient {
   void removeStateChangeListener(Consumer<State> listener);
 
   /**
-   * Submits an operation to the cluster.
-   *
-   * @param operation the operation to submit
-   * @return a future to be completed with the operation result
-   * @throws NullPointerException if {@code operation} is null
-   */
-  CompletableFuture<byte[]> submit(RaftOperation operation);
-
-  /**
-   * Submits an operation to the Raft cluster.
+   * Executes an operation to the Raft cluster.
    *
    * @param operationId the operation identifier
-   * @param operation   the operation to submit
    * @return a completable future to be completed with the operation result
    * @throws NullPointerException if {@code command} is null
    */
-  default CompletableFuture<byte[]> submit(OperationId operationId, byte[] operation) {
-    return submit(new RaftOperation(operationId, operation));
+  default CompletableFuture<byte[]> execute(OperationId operationId) {
+    return execute(new RaftOperation(operationId, HeapBytes.EMPTY));
   }
+
+  /**
+   * Executes an operation to the Raft cluster.
+   *
+   * @param operationId the operation identifier
+   * @param operation   the operation to execute
+   * @return a completable future to be completed with the operation result
+   * @throws NullPointerException if {@code command} is null
+   */
+  default CompletableFuture<byte[]> execute(OperationId operationId, byte[] operation) {
+    return execute(new RaftOperation(operationId, operation));
+  }
+
+  /**
+   * Executes an operation to the cluster.
+   *
+   * @param operation the operation to execute
+   * @return a future to be completed with the operation result
+   * @throws NullPointerException if {@code operation} is null
+   */
+  CompletableFuture<byte[]> execute(RaftOperation operation);
 
   /**
    * Adds a session event listener.

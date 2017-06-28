@@ -128,7 +128,7 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
-  public CompletableFuture<byte[]> submit(RaftOperation operation) {
+  public CompletableFuture<byte[]> execute(RaftOperation operation) {
     return proxySubmitter.submit(operation);
   }
 

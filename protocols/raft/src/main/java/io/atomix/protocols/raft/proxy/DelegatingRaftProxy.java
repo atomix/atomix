@@ -71,8 +71,8 @@ public class DelegatingRaftProxy implements RaftProxy {
   }
 
   @Override
-  public CompletableFuture<byte[]> submit(RaftOperation operation) {
-    return delegate.submit(operation);
+  public CompletableFuture<byte[]> execute(RaftOperation operation) {
+    return delegate.execute(operation);
   }
 
   @Override

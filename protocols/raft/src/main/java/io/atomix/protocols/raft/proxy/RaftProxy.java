@@ -20,7 +20,6 @@ import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.storage.buffer.HeapBytes;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -45,52 +44,52 @@ public interface RaftProxy extends RaftProxyClient {
    * @throws NullPointerException if {@code operation} is null
    */
   default CompletableFuture<Void> submit(OperationId operationId) {
-    return submit(operationId, HeapBytes.EMPTY).thenApply(r -> null);
+    return execute(operationId).thenApply(r -> null);
   }
 
   /**
    * Submits an empty operation to the Raft cluster.
    *
    * @param operationId the operation identifier
-   * @param decoder   the operation result decoder
-   * @param <R>       the operation result type
+   * @param decoder     the operation result decoder
+   * @param <R>         the operation result type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
    * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <R> CompletableFuture<R> submit(OperationId operationId, Function<byte[], R> decoder) {
-    return submit(operationId, HeapBytes.EMPTY).thenApply(decoder);
+    return execute(operationId).thenApply(decoder);
   }
 
   /**
    * Submits an operation to the Raft cluster.
    *
    * @param operationId the operation identifier
-   * @param encoder   the operation encoder
-   * @param <T>       the operation type
+   * @param encoder     the operation encoder
+   * @param <T>         the operation type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
    * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <T> CompletableFuture<Void> submit(OperationId operationId, Function<T, byte[]> encoder, T operation) {
-    return submit(operationId, encoder.apply(operation)).thenApply(r -> null);
+    return execute(operationId, encoder.apply(operation)).thenApply(r -> null);
   }
 
   /**
    * Submits an operation to the Raft cluster.
    *
    * @param operationId the operation identifier
-   * @param encoder   the operation encoder
+   * @param encoder     the operation encoder
    * @param operation   the operation to submit
-   * @param decoder   the operation result decoder
-   * @param <T>       the operation type
-   * @param <R>       the operation result type
+   * @param decoder     the operation result decoder
+   * @param <T>         the operation type
+   * @param <R>         the operation result type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
    * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <T, R> CompletableFuture<R> submit(OperationId operationId, Function<T, byte[]> encoder, T operation, Function<byte[], R> decoder) {
-    return submit(operationId, encoder.apply(operation)).thenApply(decoder);
+    return execute(operationId, encoder.apply(operation)).thenApply(decoder);
   }
 
   /**
