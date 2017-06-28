@@ -15,13 +15,14 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.event.Event;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
+import io.atomix.protocols.raft.OperationType;
+import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.impl.RaftOperationResult;
+import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
-import io.atomix.protocols.raft.impl.RaftServerStateMachineContext;
 import io.atomix.protocols.raft.impl.RaftServerStateMachineExecutor;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
@@ -38,7 +39,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -52,6 +52,7 @@ public class RaftSessionContext implements RaftSession {
   private final MemberId member;
   private final String name;
   private final String type;
+  private final ReadConsistency readConsistency;
   private final long timeout;
   private final RaftServerProtocol protocol;
   private final RaftServerStateMachineExecutor executor;
@@ -66,16 +67,25 @@ public class RaftSessionContext implements RaftSession {
   private long completeIndex;
   private final Map<Long, List<Runnable>> sequenceQueries = new HashMap<>();
   private final Map<Long, List<Runnable>> indexQueries = new HashMap<>();
-  private final Map<Long, RaftOperationResult> results = new HashMap<>();
+  private final Map<Long, OperationResult> results = new HashMap<>();
   private final Queue<EventHolder> events = new LinkedList<>();
   private EventHolder currentEventList;
   private final Set<RaftSessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
 
-  public RaftSessionContext(SessionId id, MemberId member, String name, String type, long timeout, RaftServerStateMachineExecutor executor, RaftServerContext server) {
+  public RaftSessionContext(
+      SessionId id,
+      MemberId member,
+      String name,
+      String type,
+      ReadConsistency readConsistency,
+      long timeout,
+      RaftServerStateMachineExecutor executor,
+      RaftServerContext server) {
     this.id = id;
     this.member = member;
     this.name = name;
     this.type = type;
+    this.readConsistency = readConsistency;
     this.timeout = timeout;
     this.eventIndex = id.id();
     this.completeIndex = id.id();
@@ -96,7 +106,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The node to which the session belongs.
    */
-  public MemberId getMemberId() {
+  public MemberId memberId() {
     return member;
   }
 
@@ -105,7 +115,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The session name.
    */
-  public String getName() {
+  public String name() {
     return name;
   }
 
@@ -114,8 +124,17 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The session type.
    */
-  public String getTypeName() {
+  public String typeName() {
     return type;
+  }
+
+  /**
+   * Returns the session's read consistency.
+   *
+   * @return The session's read consistency.
+   */
+  public ReadConsistency readConsistency() {
+    return readConsistency;
   }
 
   /**
@@ -123,7 +142,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The session timeout.
    */
-  public long getTimeout() {
+  public long timeout() {
     return timeout;
   }
 
@@ -330,7 +349,7 @@ public class RaftSessionContext implements RaftSession {
    * @param sequence The result sequence number.
    * @param result   The result.
    */
-  public void registerResult(long sequence, RaftOperationResult result) {
+  public void registerResult(long sequence, OperationResult result) {
     results.put(sequence, result);
   }
 
@@ -358,7 +377,7 @@ public class RaftSessionContext implements RaftSession {
    * @param sequence The response sequence.
    * @return The response.
    */
-  public RaftOperationResult getResult(long sequence) {
+  public OperationResult getResult(long sequence) {
     return results.get(sequence);
   }
 
@@ -372,12 +391,12 @@ public class RaftSessionContext implements RaftSession {
   }
 
   @Override
-  public void publish(Event event) {
+  public void publish(RaftEvent event) {
     // Store volatile state in a local variable.
     State state = this.state;
     checkState(state != State.EXPIRED, "session is expired");
     checkState(state != State.CLOSED, "session is closed");
-    checkState(executor.getContext().context() == RaftServerStateMachineContext.Type.COMMAND, "session events can only be published during command execution");
+    checkState(executor.getContext().getOperationType() == OperationType.COMMAND, "session events can only be published during command execution");
 
     // If the client acked an index greater than the current event sequence number since we know the
     // client must have received it from another server.
@@ -426,9 +445,8 @@ public class RaftSessionContext implements RaftSession {
    * Clears events up to the given sequence.
    *
    * @param index The index to clear.
-   * @return The server session.
    */
-  private RaftSessionContext clearEvents(long index) {
+  private void clearEvents(long index) {
     if (index > completeIndex) {
       EventHolder event = events.peek();
       while (event != null && event.eventIndex <= index) {
@@ -438,21 +456,18 @@ public class RaftSessionContext implements RaftSession {
       }
       completeIndex = index;
     }
-    return this;
   }
 
   /**
    * Resends events from the given sequence.
    *
    * @param index The index from which to resend events.
-   * @return The server session.
    */
-  public RaftSessionContext resendEvents(long index) {
+  public void resendEvents(long index) {
     clearEvents(index);
     for (EventHolder event : events) {
       sendEvents(event);
     }
-    return this;
   }
 
   /**
@@ -465,9 +480,7 @@ public class RaftSessionContext implements RaftSession {
           .withSession(sessionId().id())
           .withEventIndex(event.eventIndex)
           .withPreviousIndex(Math.max(event.previousIndex, completeIndex))
-          .withEvents(event.events.stream()
-              .map(e -> executor.serializer().encode(e))
-              .collect(Collectors.toList()))
+          .withEvents(event.events)
           .build();
 
       LOGGER.trace("{} - Sending {}", id, request);
@@ -514,7 +527,7 @@ public class RaftSessionContext implements RaftSession {
   private static class EventHolder {
     private final long eventIndex;
     private final long previousIndex;
-    private final List<Object> events = new LinkedList<>();
+    private final List<RaftEvent> events = new LinkedList<>();
 
     private EventHolder(long eventIndex, long previousIndex) {
       this.eventIndex = eventIndex;

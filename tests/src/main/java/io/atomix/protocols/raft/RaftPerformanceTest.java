@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
+import com.google.common.collect.Maps;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.netty.NettyMessagingManager;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -117,7 +118,7 @@ public class RaftPerformanceTest implements Runnable {
   private static final int WRITE_RATIO = 5;
   private static final int NUM_CLIENTS = 5;
 
-  private static final RaftQuery.ConsistencyLevel QUERY_CONSISTENCY = RaftQuery.ConsistencyLevel.LINEARIZABLE;
+  private static final ReadConsistency READ_CONSISTENCY = ReadConsistency.LINEARIZABLE;
   private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategies.ANY;
 
   /**
@@ -160,7 +161,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(ResetRequest.class)
       .register(RaftResponse.Status.class)
       .register(RaftError.Type.class)
-      .register(RaftQuery.ConsistencyLevel.class)
+      .register(ReadConsistency.class)
       .register(byte[].class)
       .register(long[].class)
       .register(CloseSessionEntry.class)
@@ -171,6 +172,10 @@ public class RaftPerformanceTest implements Runnable {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
+      .register(RaftOperation.class)
+      .register(OperationId.class)
+      .register(OperationType.class)
+      .register(ReadConsistency.class)
       .register(ArrayList.class)
       .register(Collections.emptyList().getClass())
       .register(HashSet.class)
@@ -192,6 +197,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
+      .register(ReadConsistency.class)
       .register(ArrayList.class)
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
@@ -205,11 +211,8 @@ public class RaftPerformanceTest implements Runnable {
       .build());
 
   private static final Serializer clientSerializer = Serializer.using(KryoNamespace.newBuilder()
-      .register(Put.class)
-      .register(Get.class)
-      .register(Index.class)
-      .register(Remove.class)
-      .register(RaftQuery.ConsistencyLevel.class)
+      .register(ReadConsistency.class)
+      .register(Maps.immutableEntry("", "").getClass())
       .build());
 
   private int nextId;
@@ -297,14 +300,15 @@ public class RaftPerformanceTest implements Runnable {
     if (count > TOTAL_OPERATIONS) {
       future.complete(null);
     } else if (count % 10 < WRITE_RATIO) {
-      proxy.submit(new Put(randomKey(), UUID.randomUUID().toString())).whenComplete((result, error) -> {
-        if (error == null) {
-          writeCount.incrementAndGet();
-        }
-        runProxy(proxy, future);
-      });
+      proxy.submit(PUT, clientSerializer::encode, Maps.immutableEntry(randomKey(), UUID.randomUUID().toString()))
+          .whenComplete((result, error) -> {
+            if (error == null) {
+              writeCount.incrementAndGet();
+            }
+            runProxy(proxy, future);
+          });
     } else {
-      proxy.submit(new Get(randomKey(), QUERY_CONSISTENCY)).whenComplete((result, error) -> {
+      proxy.submit(GET, clientSerializer::encode, randomKey()).whenComplete((result, error) -> {
         if (error == null) {
           readCount.incrementAndGet();
         }
@@ -495,19 +499,25 @@ public class RaftPerformanceTest implements Runnable {
     return client.newProxyBuilder()
         .withName("test")
         .withType("test")
-        .withSerializer(clientSerializer)
+        .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build();
   }
 
+  private static final OperationId PUT = OperationId.command("put");
+  private static final OperationId GET = OperationId.query("get");
+  private static final OperationId REMOVE = OperationId.command("remove");
+  private static final OperationId INDEX = OperationId.command("index");
+
   /**
    * Performance test state machine.
    */
-  public class PerformanceStateMachine extends RaftStateMachine implements Snapshottable {
+  public class PerformanceStateMachine extends RaftStateMachine {
     private Map<String, String> map = new HashMap<>();
 
-    PerformanceStateMachine() {
-      super(clientSerializer);
+    @Override
+    protected void configure(StateMachineExecutor executor) {
+
     }
 
     @Override
@@ -530,68 +540,22 @@ public class RaftPerformanceTest implements Runnable {
       }
     }
 
-    public long put(RaftCommit<Put> commit) {
-      map.put(commit.operation().key, commit.operation().value);
+    public long put(RaftCommit<Map.Entry<String, String>> commit) {
+      map.put(commit.value().getKey(), commit.value().getValue());
       return commit.index();
     }
 
-    public String get(RaftCommit<Get> commit) {
-      return map.get(commit.operation().key);
+    public String get(RaftCommit<String> commit) {
+      return map.get(commit.value());
     }
 
-    public long remove(RaftCommit<Remove> commit) {
-      map.remove(commit.operation().key);
+    public long remove(RaftCommit<String> commit) {
+      map.remove(commit.value());
       return commit.index();
     }
 
-    public long index(RaftCommit<Index> commit) {
+    public long index(RaftCommit<Void> commit) {
       return commit.index();
-    }
-  }
-
-  public static class Put implements RaftCommand<Long> {
-    public String key;
-    public String value;
-
-    public Put(String key, String value) {
-      this.key = key;
-      this.value = value;
-    }
-  }
-
-  public static class Get implements RaftQuery<String> {
-    public String key;
-    private ConsistencyLevel consistency;
-
-    public Get(String key, ConsistencyLevel consistency) {
-      this.key = key;
-      this.consistency = consistency;
-    }
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return consistency;
-    }
-  }
-
-  public static class Index implements RaftQuery<Long> {
-    private ConsistencyLevel consistency;
-
-    public Index(ConsistencyLevel consistency) {
-      this.consistency = consistency;
-    }
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return consistency;
-    }
-  }
-
-  public static class Remove implements RaftCommand<Long> {
-    public String key;
-
-    public Remove(String key) {
-      this.key = key;
     }
   }
 

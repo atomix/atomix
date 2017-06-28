@@ -15,14 +15,16 @@
  */
 package io.atomix.protocols.raft.proxy;
 
-import io.atomix.event.Event;
-import io.atomix.event.EventListener;
-import io.atomix.protocols.raft.RaftCommand;
-import io.atomix.protocols.raft.RaftQuery;
+import com.google.common.collect.Maps;
+import io.atomix.protocols.raft.EventType;
+import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.session.SessionId;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -32,6 +34,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DelegatingRaftProxy implements RaftProxy {
   private final RaftProxy delegate;
+  private final Map<EventType, Map<Object, Consumer<RaftEvent>>> typedEventListeners = Maps.newConcurrentMap();
 
   public DelegatingRaftProxy(RaftProxy delegate) {
     this.delegate = checkNotNull(delegate, "delegate cannot be null");
@@ -68,23 +71,67 @@ public class DelegatingRaftProxy implements RaftProxy {
   }
 
   @Override
-  public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
-    return delegate.submit(command);
+  public CompletableFuture<byte[]> submit(RaftOperation operation) {
+    return delegate.submit(operation);
   }
 
   @Override
-  public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
-    return delegate.submit(query);
+  public void addListener(Consumer<RaftEvent> listener) {
+    delegate.addListener(listener);
   }
 
   @Override
-  public <E extends Event> void addEventListener(EventListener<E> listener) {
-    delegate.addEventListener(listener);
+  public void removeListener(Consumer<RaftEvent> listener) {
+    delegate.removeListener(listener);
   }
 
   @Override
-  public <E extends Event> void removeEventListener(EventListener<E> listener) {
-    delegate.removeEventListener(listener);
+  public void addListener(EventType eventType, Runnable listener) {
+    Consumer<RaftEvent> wrappedListener = e -> {
+      if (e.type().equals(eventType)) {
+        listener.run();
+      }
+    };
+    typedEventListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
+    addListener(wrappedListener);
+  }
+
+  @Override
+  public void addListener(EventType eventType, Consumer<byte[]> listener) {
+    Consumer<RaftEvent> wrappedListener = e -> {
+      if (e.type().equals(eventType)) {
+        listener.accept(e.value());
+      }
+    };
+    typedEventListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
+    addListener(wrappedListener);
+  }
+
+  @Override
+  public <T> void addListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener) {
+    Consumer<RaftEvent> wrappedListener = e -> {
+      if (e.type().equals(eventType)) {
+        listener.accept(decoder.apply(e.value()));
+      }
+    };
+    typedEventListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
+    addListener(wrappedListener);
+  }
+
+  @Override
+  public void removeListener(EventType eventType, Runnable listener) {
+    Consumer<RaftEvent> eventListener =
+        typedEventListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap())
+            .remove(listener);
+    removeListener(eventListener);
+  }
+
+  @Override
+  public void removeListener(EventType eventType, Consumer listener) {
+    Consumer<RaftEvent> eventListener =
+        typedEventListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap())
+            .remove(listener);
+    removeListener(eventListener);
   }
 
   @Override

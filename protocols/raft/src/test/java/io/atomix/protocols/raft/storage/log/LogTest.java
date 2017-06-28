@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log;
 
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -82,7 +83,7 @@ public class LogTest {
     // Append a couple entries.
     Indexed<RaftLogEntry> indexed;
     assertEquals(writer.getNextIndex(), 1);
-    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), MemberId.from("client"), "test1", "test", 1000));
+    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), MemberId.from("client"), "test1", "test", ReadConsistency.LINEARIZABLE, 1000));
     assertEquals(indexed.index(), 1);
 
     assertEquals(writer.getNextIndex(), 2);

@@ -16,18 +16,17 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.event.Event;
-import io.atomix.event.EventListener;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
+import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
-import io.atomix.serializer.Serializer;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -40,17 +39,15 @@ final class RaftProxyListener {
   private final RaftClientProtocol protocol;
   private final NodeSelector nodeSelector;
   private final RaftProxyState state;
-  private final Set<EventListener> listeners = Sets.newLinkedHashSet();
+  private final Set<Consumer<RaftEvent>> listeners = Sets.newLinkedHashSet();
   private final RaftProxySequencer sequencer;
-  private final Serializer serializer;
   private final Executor executor;
 
-  public RaftProxyListener(RaftClientProtocol protocol, NodeSelector nodeSelector, RaftProxyState state, RaftProxySequencer sequencer, Serializer serializer, Executor executor) {
+  public RaftProxyListener(RaftClientProtocol protocol, NodeSelector nodeSelector, RaftProxyState state, RaftProxySequencer sequencer, Executor executor) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.nodeSelector = checkNotNull(nodeSelector, "nodeSelector cannot be null");
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
-    this.serializer = checkNotNull(serializer, "serializer cannot be null");
     this.executor = checkNotNull(executor, "executor cannot be null");
     protocol.registerPublishListener(state.getSessionId(), this::handlePublish, executor);
   }
@@ -60,7 +57,7 @@ final class RaftProxyListener {
    *
    * @param listener the event listener callback
    */
-  public void addEventListener(EventListener listener) {
+  public void addEventListener(Consumer<RaftEvent> listener) {
     executor.execute(() -> listeners.add(listener));
   }
 
@@ -69,7 +66,7 @@ final class RaftProxyListener {
    *
    * @param listener the event listener callback
    */
-  public void removeEventListener(EventListener listener) {
+  public void removeEventListener(Consumer<RaftEvent> listener) {
     executor.execute(() -> listeners.remove(listener));
   }
 
@@ -115,10 +112,9 @@ final class RaftProxyListener {
     state.setEventIndex(request.eventIndex());
 
     sequencer.sequenceEvent(request, () -> {
-      for (byte[] bytes : request.events()) {
-        Event event = serializer.decode(bytes);
-        for (EventListener listener : listeners) {
-          listener.onEvent(event);
+      for (RaftEvent event : request.events()) {
+        for (Consumer<RaftEvent> listener : listeners) {
+          listener.accept(event);
         }
       }
     });

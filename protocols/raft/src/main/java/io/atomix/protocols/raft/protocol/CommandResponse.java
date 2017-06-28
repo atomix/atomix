@@ -39,7 +39,7 @@ public class CommandResponse extends OperationResponse {
     return new Builder();
   }
 
-  public CommandResponse(Status status, RaftError error, long index, long eventIndex, Object result, long lastSequence) {
+  public CommandResponse(Status status, RaftError error, long index, long eventIndex, byte[] result, long lastSequence) {
     super(status, error, index, eventIndex, result, lastSequence);
   }
 

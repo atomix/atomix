@@ -15,9 +15,8 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.protocols.raft.RaftOperation;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -47,13 +46,13 @@ public class CommandRequest extends OperationRequest {
     return new Builder();
   }
 
-  public CommandRequest(long session, long sequence, byte[] bytes) {
-    super(session, sequence, bytes);
+  public CommandRequest(long session, long sequence, RaftOperation operation) {
+    super(session, sequence, operation);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), session, sequence, bytes);
+    return Objects.hash(getClass(), session, sequence);
   }
 
   @Override
@@ -62,7 +61,7 @@ public class CommandRequest extends OperationRequest {
       CommandRequest request = (CommandRequest) object;
       return request.session == session
           && request.sequence == sequence
-          && Arrays.equals(request.bytes, bytes);
+          && request.operation.equals(operation);
     }
     return false;
   }
@@ -72,7 +71,7 @@ public class CommandRequest extends OperationRequest {
     return toStringHelper(this)
         .add("session", session)
         .add("sequence", sequence)
-        .add("bytes", ArraySizeHashPrinter.of(bytes))
+        .add("operation", operation)
         .toString();
   }
 
@@ -83,7 +82,7 @@ public class CommandRequest extends OperationRequest {
     @Override
     public CommandRequest build() {
       validate();
-      return new CommandRequest(session, sequence, bytes);
+      return new CommandRequest(session, sequence, operation);
     }
   }
 }

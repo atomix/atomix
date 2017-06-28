@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.RaftServer;
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.error.RaftException;
-import io.atomix.protocols.raft.impl.RaftOperationResult;
+import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -29,6 +29,7 @@ import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
@@ -250,16 +251,23 @@ public class PassiveRole extends ReserveRole {
     context.checkThread();
     logRequest(request);
 
-    // If the query was submitted with sequential read consistency, attempt to apply the query to the local state machine.
-    if (request.consistencyLevel() == RaftQuery.ConsistencyLevel.SEQUENTIAL) {
+    // If this server has not yet applied entries up to the client's session ID, forward the
+    // query to the leader. This ensures that a follower does not tell the client its session
+    // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
+    if (context.getStateMachine().getLastApplied() < request.session()) {
+      LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().memberId());
+      return queryForward(request);
+    }
 
-      // If this server has not yet applied entries up to the client's session ID, forward the
-      // query to the leader. This ensures that a follower does not tell the client its session
-      // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
-      if (context.getStateMachine().getLastApplied() < request.session()) {
-        LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().memberId());
-        return queryForward(request);
-      }
+    // Look up the client's session.
+    RaftSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
+    if (session == null) {
+      LOGGER.trace("{} - State out of sync, forwarding query to leader", context.getCluster().getMember().memberId());
+      return queryForward(request);
+    }
+
+    // If the session's consistency level is SEQUENTIAL, handle the request here, otherwise forward it.
+    if (session.readConsistency() == ReadConsistency.SEQUENTIAL) {
 
       // If the commit index is not in the log then we've fallen too far behind the leader to perform a local query.
       // Forward the request to the leader.
@@ -275,7 +283,7 @@ public class PassiveRole extends ReserveRole {
               System.currentTimeMillis(),
               request.session(),
               request.sequenceNumber(),
-              request.bytes()), 0);
+              request.operation()), 0);
 
       return applyQuery(entry).thenApply(this::logResponse);
     } else {
@@ -317,7 +325,7 @@ public class PassiveRole extends ReserveRole {
     // In the case of the leader, the state machine is always up to date, so no queries will be queued and all query
     // indexes will be the last applied index.
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    context.getStateMachine().<RaftOperationResult>apply(entry).whenComplete((result, error) -> {
+    context.getStateMachine().<OperationResult>apply(entry).whenComplete((result, error) -> {
       completeOperation(result, QueryResponse.newBuilder(), error, future);
     });
     return future;
@@ -326,13 +334,13 @@ public class PassiveRole extends ReserveRole {
   /**
    * Completes an operation.
    */
-  protected <T extends OperationResponse> void completeOperation(RaftOperationResult result, OperationResponse.Builder<?, T> builder, Throwable error, CompletableFuture<T> future) {
+  protected <T extends OperationResponse> void completeOperation(OperationResult result, OperationResponse.Builder<?, T> builder, Throwable error, CompletableFuture<T> future) {
     if (isOpen()) {
       if (result != null) {
         builder.withIndex(result.index());
         builder.withEventIndex(result.eventIndex());
-        if (result.result() instanceof Exception) {
-          error = (Exception) result.result();
+        if (result.failed()) {
+          error = result.error();
         }
       }
 
@@ -413,7 +421,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Write the data to the snapshot.
-    try (SnapshotWriter writer = pendingSnapshot.openWriter(context.getStorage().serializer())) {
+    try (SnapshotWriter writer = pendingSnapshot.openWriter()) {
       writer.write(request.data());
     }
 

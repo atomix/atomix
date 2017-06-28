@@ -19,10 +19,12 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClockTimestamp;
 
+import java.util.function.Function;
+
 /**
  * Represents the committed state and metadata of a Raft state machine operation.
  */
-public interface RaftCommit<T extends RaftOperation> {
+public interface RaftCommit<T> {
 
   /**
    * Returns the commit index.
@@ -43,7 +45,7 @@ public interface RaftCommit<T extends RaftOperation> {
    * Returns the session that submitted the operation.
    * <p>
    * The returned {@link RaftSession} is representative of the session that submitted the operation
-   * that resulted in this {@link RaftCommit}. The session can be used to {@link RaftSession#publish(io.atomix.event.Event)}
+   * that resulted in this {@link RaftCommit}. The session can be used to {@link RaftSession#publish(RaftEvent)}
    * event messages to the client.
    *
    * @return The session that created the commit.
@@ -73,45 +75,33 @@ public interface RaftCommit<T extends RaftOperation> {
   WallClockTimestamp wallClockTime();
 
   /**
-   * Returns the commit type.
-   * <p>
-   * This is the {@link Class} returned by the committed operation's {@link Object#getClass()} method.
+   * Returns the operation identifier.
    *
-   * @return The commit type.
+   * @return the operation identifier
    */
-  Class<T> type();
+  OperationId operation();
 
   /**
    * Returns the operation submitted by the client.
    *
    * @return The operation submitted by the client.
    */
-  T operation();
+  T value();
 
   /**
-   * Returns the command submitted by the client.
-   * <p>
-   * This method is an alias for the {@link #operation()} method. It is intended to aid with clarity in code.
-   * This method does <em>not</em> perform any type checking of the operation to ensure it is in fact a
-   * {@link RaftCommand} object.
+   * Converts the commit from one type to another.
    *
-   * @return The command submitted by the client.
+   * @param transcoder the transcoder with which to transcode the commit value
+   * @param <U> the output commit value type
+   * @return the mapped commit
    */
-  default T command() {
-    return operation();
-  }
+  <U> RaftCommit<U> map(Function<T, U> transcoder);
 
   /**
-   * Returns the query submitted by the client.
-   * <p>
-   * This method is an alias for the {@link #operation()} method. It is intended to aid with clarity in code.
-   * This method does <em>not</em> perform any type checking of the operation to ensure it is in fact a
-   * {@link RaftQuery} object.
+   * Converts the commit to a null valued commit.
    *
-   * @return The query submitted by the client.
+   * @return the mapped commit
    */
-  default T query() {
-    return operation();
-  }
+  RaftCommit<Void> mapToNull();
 
 }

@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.Objects;
@@ -39,13 +40,15 @@ public class OpenSessionRequest extends AbstractRaftRequest {
 
   private final MemberId member;
   private final String name;
-  private final String stateMachine;
+  private final String typeName;
+  private final ReadConsistency readConsistency;
   private final long timeout;
 
-  public OpenSessionRequest(MemberId member, String name, String stateMachine, long timeout) {
+  public OpenSessionRequest(MemberId member, String name, String typeName, ReadConsistency readConsistency, long timeout) {
     this.member = member;
     this.name = name;
-    this.stateMachine = stateMachine;
+    this.typeName = typeName;
+    this.readConsistency = readConsistency;
     this.timeout = timeout;
   }
 
@@ -73,7 +76,16 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    * @return The state machine type.
    */
   public String typeName() {
-    return stateMachine;
+    return typeName;
+  }
+
+  /**
+   * Returns the session read consistency level.
+   *
+   * @return The session's read consistency.
+   */
+  public ReadConsistency readConsistency() {
+    return readConsistency;
   }
 
   /**
@@ -87,7 +99,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), name, stateMachine, timeout);
+    return Objects.hash(getClass(), name, typeName, timeout);
   }
 
   @Override
@@ -96,7 +108,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
       OpenSessionRequest request = (OpenSessionRequest) object;
       return request.member.equals(member)
           && request.name.equals(name)
-          && request.stateMachine.equals(stateMachine)
+          && request.typeName.equals(typeName)
+          && request.readConsistency == readConsistency
           && request.timeout == timeout;
     }
     return false;
@@ -107,7 +120,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     return toStringHelper(this)
         .add("node", member)
         .add("name", name)
-        .add("stateMachine", stateMachine)
+        .add("typeName", typeName)
+        .add("readConsistency", readConsistency)
         .add("timeout", timeout)
         .toString();
   }
@@ -118,7 +132,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
   public static class Builder extends AbstractRaftRequest.Builder<Builder, OpenSessionRequest> {
     private MemberId member;
     private String name;
-    private String stateMachine;
+    private String typeName;
+    private ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
     private long timeout;
 
     /**
@@ -146,14 +161,26 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     }
 
     /**
-     * Sets the state machine type.
+     * Sets the state machine type name.
      *
-     * @param stateMachine The state machine type.
+     * @param typeName The state machine type name.
      * @return The open session request builder.
      * @throws NullPointerException if {@code type} is {@code null}
      */
-    public Builder withStateMachine(String stateMachine) {
-      this.stateMachine = checkNotNull(stateMachine, "stateMachine cannot be null");
+    public Builder withTypeName(String typeName) {
+      this.typeName = checkNotNull(typeName, "typeName cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the session read consistency.
+     *
+     * @param readConsistency the session read consistency
+     * @return the session request builder
+     * @throws NullPointerException if the {@code readConsistency} is null
+     */
+    public Builder withReadConsistency(ReadConsistency readConsistency) {
+      this.readConsistency = checkNotNull(readConsistency, "readConsistency cannot be null");
       return this;
     }
 
@@ -175,7 +202,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
       super.validate();
       checkNotNull(member, "client cannot be null");
       checkNotNull(name, "name cannot be null");
-      checkNotNull(stateMachine, "stateMachine cannot be null");
+      checkNotNull(typeName, "typeName cannot be null");
       checkArgument(timeout >= 0, "timeout must be positive");
     }
 
@@ -185,7 +212,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     public OpenSessionRequest build() {
       validate();
-      return new OpenSessionRequest(member, name, stateMachine, timeout);
+      return new OpenSessionRequest(member, name, typeName, readConsistency, timeout);
     }
   }
 }

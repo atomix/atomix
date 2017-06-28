@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-present Open Networking Laboratory
+ * Copyright 2017-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,40 +15,42 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.utils.ArraySizeHashPrinter;
+
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Base type for Raft state operations.
+ * Raft event.
  */
-public class RaftOperation {
-  protected final OperationId id;
-  protected final byte[] value;
+public class RaftEvent {
+  private final EventType type;
+  private final byte[] value;
 
-  protected RaftOperation() {
-    this.id = null;
+  protected RaftEvent() {
+    this.type = null;
     this.value = null;
   }
 
-  public RaftOperation(OperationId id, byte[] value) {
-    this.id = id;
+  public RaftEvent(EventType type, byte[] value) {
+    this.type = type;
     this.value = value;
   }
 
   /**
-   * Returns the operation identifier.
+   * Returns the event type identifier.
    *
-   * @return the operation identifier
+   * @return the event type identifier
    */
-  public OperationId id() {
-    return id;
+  public EventType type() {
+    return type;
   }
 
   /**
-   * Returns the operation value.
+   * Returns the event value.
    *
-   * @return the operation value
+   * @return the event value
    */
   public byte[] value() {
     return value;
@@ -56,14 +58,14 @@ public class RaftOperation {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), id, value);
+    return Objects.hash(getClass(), type, value);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof RaftOperation) {
-      RaftOperation operation = (RaftOperation) object;
-      return Objects.equals(operation.id, id) && Objects.equals(operation.value, value);
+    if (object instanceof RaftEvent) {
+      RaftEvent event = (RaftEvent) object;
+      return Objects.equals(event.type, type) && Objects.equals(event.value, value);
     }
     return false;
   }
@@ -71,8 +73,8 @@ public class RaftOperation {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id)
-        .add("value", value)
+        .add("type", type)
+        .add("value", ArraySizeHashPrinter.of(value))
         .toString();
   }
 }

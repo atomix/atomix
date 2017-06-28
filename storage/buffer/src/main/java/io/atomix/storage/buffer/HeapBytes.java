@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
  * {@link ByteBuffer} based heap bytes.
  */
 public class HeapBytes extends ByteBufferBytes {
+  public static final byte[] EMPTY = new byte[0];
 
   /**
    * Allocates a new heap byte array.

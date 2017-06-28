@@ -62,6 +62,11 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
 
   private static final Logger log = LoggerFactory.getLogger(KryoNamespace.class);
 
+  /**
+   * Default Kryo namespace.
+   */
+  public static Namespace DEFAULT = newBuilder().build();
+
   private final KryoPool pool = new KryoPool.Builder(this)
       .softReferences()
       .build();

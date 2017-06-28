@@ -29,13 +29,12 @@ import static com.google.common.base.Preconditions.checkState;
  * the state machine state, the snapshot will be written to a single file represented by this interface.
  * Snapshots are backed by a {@link io.atomix.storage.buffer.Buffer} dictated by the parent
  * {@link io.atomix.storage.StorageLevel} configuration. Snapshots for file-based storage
- * levels like {@link io.atomix.storage.StorageLevel#DISK DISK} and
- * {@link io.atomix.storage.StorageLevel#MAPPED MAPPED} will be stored in a {@link java.io.RandomAccessFile}
+ * levels like {@link io.atomix.storage.StorageLevel#DISK DISK} will be stored in a disk
  * backed buffer, and {@link io.atomix.storage.StorageLevel#MEMORY MEMORY} snapshots will
  * be stored in an on-heap buffer.
  * <p>
  * Snapshots are read and written by a {@link SnapshotReader} and {@link SnapshotWriter} respectively.
- * To create a reader or writer, use the {@link #openReader(Serializer)} and {@link #openWriter(Serializer)} methods.
+ * To create a reader or writer, use the {@link #openReader()} and {@link #openWriter()} methods.
  * <p>
  * <pre>
  *   {@code
@@ -91,13 +90,12 @@ public abstract class Snapshot implements AutoCloseable {
    * <p>
    * Only a single {@link SnapshotWriter} per {@link Snapshot} can be created. The single writer
    * must write the snapshot in full and {@link #complete()} the snapshot to persist it to disk
-   * and make it available for {@link #openReader(Serializer) reads}.
+   * and make it available for {@link #openReader() reads}.
    *
-   * @param serializer The serializer with which to write the snapshot.
    * @return A new snapshot writer.
    * @throws IllegalStateException if a writer was already created or the snapshot is {@link #complete() complete}
    */
-  public abstract SnapshotWriter openWriter(Serializer serializer);
+  public abstract SnapshotWriter openWriter();
 
   /**
    * Checks that the snapshot can be written.
@@ -130,11 +128,10 @@ public abstract class Snapshot implements AutoCloseable {
    * {@link #complete() completed}. Multiple concurrent readers can be created for the same snapshot
    * since completed snapshots are immutable.
    *
-   * @param serializer The serializer with which to read the snapshot.
    * @return A new snapshot reader.
    * @throws IllegalStateException if the snapshot is not {@link #complete() complete}
    */
-  public abstract SnapshotReader openReader(Serializer serializer);
+  public abstract SnapshotReader openReader();
 
   /**
    * Opens the given snapshot reader.
@@ -156,7 +153,7 @@ public abstract class Snapshot implements AutoCloseable {
    * <p>
    * Snapshot writers must call this method to persist a snapshot to disk. Prior to completing a
    * snapshot, failure and recovery of the parent {@link SnapshotStore} will not result in recovery
-   * of this snapshot. Additionally, no {@link #openReader(Serializer) readers} can be created until the snapshot
+   * of this snapshot. Additionally, no {@link #openReader() readers} can be created until the snapshot
    * has been completed.
    *
    * @return The completed snapshot.

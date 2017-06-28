@@ -21,8 +21,8 @@ import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.error.RaftException;
+import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftMetadataResult;
-import io.atomix.protocols.raft.impl.RaftOperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -525,7 +525,7 @@ public final class LeaderRole extends ActiveRole {
     final RaftLogWriter writer = context.getLogWriter();
     writer.getLock().lock();
     try {
-      entry = writer.append(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.bytes()));
+      entry = writer.append(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation()));
       LOGGER.debug("{} - Appended {}", context.getCluster().getMember().memberId(), entry);
     } finally {
       writer.getLock().unlock();
@@ -537,7 +537,7 @@ public final class LeaderRole extends ActiveRole {
       if (isOpen()) {
         // If the command was successfully committed, apply it to the state machine.
         if (commitError == null) {
-          context.getStateMachine().<RaftOperationResult>apply(entry.index()).whenComplete((result, error) -> {
+          context.getStateMachine().<OperationResult>apply(entry.index()).whenComplete((result, error) -> {
             if (isOpen()) {
               completeOperation(result, CommandResponse.newBuilder(), error, future);
             }
@@ -555,10 +555,28 @@ public final class LeaderRole extends ActiveRole {
 
   @Override
   public CompletableFuture<QueryResponse> onQuery(final QueryRequest request) {
-    final long timestamp = System.currentTimeMillis();
-
     context.checkThread();
     logRequest(request);
+
+    // If this server has not yet applied entries up to the client's session ID, forward the
+    // query to the leader. This ensures that a follower does not tell the client its session
+    // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
+    if (context.getStateMachine().getLastApplied() < request.session()) {
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
+          .build()));
+    }
+
+    // Look up the client's session.
+    RaftSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
+    if (session == null) {
+      LOGGER.warn("{} - Unknown session {}", context.getCluster().getMember().memberId(), request.session());
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
+          .build()));
+    }
 
     final Indexed<QueryEntry> entry = new Indexed<>(
         request.index(),
@@ -567,10 +585,10 @@ public final class LeaderRole extends ActiveRole {
             System.currentTimeMillis(),
             request.session(),
             request.sequenceNumber(),
-            request.bytes()), 0);
+            request.operation()), 0);
 
     final CompletableFuture<QueryResponse> future;
-    switch (request.consistencyLevel()) {
+    switch (session.readConsistency()) {
       case SEQUENTIAL:
         future = queryLocal(entry);
         break;
@@ -581,7 +599,8 @@ public final class LeaderRole extends ActiveRole {
         future = queryLinearizable(entry);
         break;
       default:
-        future = Futures.exceptionalFuture(new IllegalStateException("Unknown consistency level: " + request.consistencyLevel()));
+        future = Futures.exceptionalFuture(new IllegalStateException("Unknown consistency level: " + session.readConsistency()));
+        break;
     }
     return future.thenApply(this::logResponse);
   }
@@ -633,7 +652,7 @@ public final class LeaderRole extends ActiveRole {
     final RaftLogWriter writer = context.getLogWriter();
     writer.getLock().lock();
     try {
-      entry = writer.append(new OpenSessionEntry(term, timestamp, request.member(), request.name(), request.typeName(), timeout));
+      entry = writer.append(new OpenSessionEntry(term, timestamp, request.member(), request.name(), request.typeName(), request.readConsistency(), timeout));
       LOGGER.debug("{} - Appended {}", context.getCluster().getMember().memberId(), entry);
     } finally {
       writer.getLock().unlock();

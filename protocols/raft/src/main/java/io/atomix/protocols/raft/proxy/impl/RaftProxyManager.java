@@ -19,6 +19,7 @@ import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.CommunicationStrategies;
 import io.atomix.protocols.raft.CommunicationStrategy;
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -27,7 +28,6 @@ import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
-import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
@@ -116,21 +116,21 @@ public class RaftProxyManager {
   public CompletableFuture<RaftProxy> openSession(
       String name,
       String stateMachine,
+      ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
-      Serializer serializer,
       Executor executor,
       Duration timeout) {
     checkNotNull(name, "name cannot be null");
     checkNotNull(stateMachine, "stateMachine cannot be null");
     checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
-    checkNotNull(serializer, "serializer cannot be null");
     checkNotNull(timeout, "timeout cannot be null");
 
     LOGGER.trace("{} - Opening session; name: {}, type: {}", clientId, name, stateMachine);
     OpenSessionRequest request = OpenSessionRequest.newBuilder()
         .withMember(nodeId)
-        .withStateMachine(stateMachine)
+        .withTypeName(stateMachine)
         .withName(name)
+        .withReadConsistency(readConsistency)
         .withTimeout(timeout.toMillis())
         .build();
 
@@ -156,7 +156,6 @@ public class RaftProxyManager {
               selectorManager,
               this,
               communicationStrategy,
-              serializer,
               proxyContext);
 
           Executor eventExecutor = executor != null ? executor : new ThreadPoolContext(threadPoolExecutor);

@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.protocol;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.serializer.Serializer;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -49,10 +48,6 @@ public abstract class LocalRaftProtocol {
 
   LocalRaftServerProtocol server(MemberId memberId) {
     return servers.get(memberId);
-  }
-
-  Collection<LocalRaftServerProtocol> servers() {
-    return servers.values();
   }
 
   LocalRaftClientProtocol client(MemberId memberId) {

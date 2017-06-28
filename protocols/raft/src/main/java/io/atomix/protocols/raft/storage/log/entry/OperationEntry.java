@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.protocols.raft.RaftOperation;
 
 import java.util.Date;
 
@@ -32,21 +32,21 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public abstract class OperationEntry extends SessionEntry {
   protected final long sequence;
-  protected final byte[] bytes;
+  protected final RaftOperation operation;
 
-  public OperationEntry(long term, long timestamp, long session, long sequence, byte[] bytes) {
+  public OperationEntry(long term, long timestamp, long session, long sequence, RaftOperation operation) {
     super(term, timestamp, session);
     this.sequence = sequence;
-    this.bytes = bytes;
+    this.operation = operation;
   }
 
   /**
-   * Returns the entry operation bytes.
+   * Returns the entry operation.
    *
-   * @return The entry operation bytes.
+   * @return The entry operation.
    */
-  public byte[] bytes() {
-    return bytes;
+  public RaftOperation operation() {
+    return operation;
   }
 
   /**
@@ -65,7 +65,7 @@ public abstract class OperationEntry extends SessionEntry {
         .add("timestamp", new Date(timestamp))
         .add("session", session)
         .add("sequence", sequence)
-        .add("operation", ArraySizeHashPrinter.of(bytes))
+        .add("operation", operation)
         .toString();
   }
 }

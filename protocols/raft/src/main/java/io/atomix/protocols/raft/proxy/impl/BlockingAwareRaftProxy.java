@@ -16,17 +16,16 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.event.Event;
-import io.atomix.event.EventListener;
-import io.atomix.protocols.raft.RaftCommand;
-import io.atomix.protocols.raft.RaftQuery;
-import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.proxy.DelegatingRaftProxy;
+import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,7 +34,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class BlockingAwareRaftProxy extends DelegatingRaftProxy {
   private final Executor executor;
-  private final Map<EventListener, EventListener> listenerMap = Maps.newConcurrentMap();
+  private final Map<Consumer<State>, Consumer<State>> stateChangeListeners = Maps.newConcurrentMap();
+  private final Map<Consumer<RaftEvent>, Consumer<RaftEvent>> eventListeners = Maps.newConcurrentMap();
 
   public BlockingAwareRaftProxy(RaftProxy delegate, Executor executor) {
     super(delegate);
@@ -43,28 +43,37 @@ public class BlockingAwareRaftProxy extends DelegatingRaftProxy {
   }
 
   @Override
-  public <E extends Event> void addEventListener(EventListener<E> listener) {
-    EventListener<E> wrappedListener = event -> executor.execute(() -> listener.onEvent(event));
-    listenerMap.put(listener, wrappedListener);
-    super.addEventListener(wrappedListener);
+  public void addStateChangeListener(Consumer<State> listener) {
+    Consumer<State> wrappedListener = state -> executor.execute(() -> listener.accept(state));
+    stateChangeListeners.put(listener, wrappedListener);
+    super.addStateChangeListener(wrappedListener);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <E extends Event> void removeEventListener(EventListener<E> listener) {
-    EventListener<E> wrappedListener = listenerMap.remove(listener);
+  public void removeStateChangeListener(Consumer<State> listener) {
+    Consumer<State> wrappedListener = stateChangeListeners.remove(listener);
     if (wrappedListener != null) {
-      super.removeEventListener(wrappedListener);
+      super.removeStateChangeListener(wrappedListener);
     }
   }
 
   @Override
-  public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
-    return Futures.blockingAwareFuture(super.submit(command), executor);
+  public CompletableFuture<byte[]> submit(RaftOperation operation) {
+    return Futures.blockingAwareFuture(super.submit(operation), executor);
   }
 
   @Override
-  public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
-    return Futures.blockingAwareFuture(super.submit(query), executor);
+  public void addListener(Consumer<RaftEvent> listener) {
+    Consumer<RaftEvent> wrappedListener = e -> executor.execute(() -> listener.accept(e));
+    eventListeners.put(listener, wrappedListener);
+    super.addListener(wrappedListener);
+  }
+
+  @Override
+  public void removeListener(Consumer<RaftEvent> listener) {
+    Consumer<RaftEvent> wrappedListener = eventListeners.remove(listener);
+    if (wrappedListener != null) {
+      super.removeListener(wrappedListener);
+    }
   }
 }

@@ -17,8 +17,8 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
-import io.atomix.protocols.raft.RaftCommand;
-import io.atomix.protocols.raft.RaftQuery;
+import io.atomix.protocols.raft.OperationId;
+import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.error.CommandException;
 import io.atomix.protocols.raft.error.QueryException;
 import io.atomix.protocols.raft.error.RaftError;
@@ -31,7 +31,7 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
-import io.atomix.serializer.Serializer;
+import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.net.ConnectException;
@@ -65,7 +65,6 @@ final class RaftProxySubmitter {
   private final RaftProxyState state;
   private final RaftProxySequencer sequencer;
   private final RaftProxyManager manager;
-  private final Serializer serializer;
   private final ThreadContext context;
   private final Map<Long, OperationAttempt> attempts = new LinkedHashMap<>();
   private final AtomicLong keepAliveIndex = new AtomicLong();
@@ -76,39 +75,44 @@ final class RaftProxySubmitter {
       RaftProxyState state,
       RaftProxySequencer sequencer,
       RaftProxyManager manager,
-      Serializer serializer,
       ThreadContext context) {
     this.leaderConnection = checkNotNull(leaderConnection, "leaderConnection");
     this.sessionConnection = checkNotNull(sessionConnection, "sessionConnection");
     this.state = checkNotNull(state, "state");
     this.sequencer = checkNotNull(sequencer, "sequencer");
     this.manager = checkNotNull(manager, "manager");
-    this.serializer = checkNotNull(serializer, "serializer cannot be null");
     this.context = checkNotNull(context, "context cannot be null");
   }
 
   /**
-   * Submits a command to the cluster.
+   * Submits a operation to the cluster.
    *
-   * @param command The command to submit.
-   * @param <T>     The command result type.
+   * @param operation   The operation to submit.
    * @return A completable future to be completed once the command has been submitted.
    */
-  public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    context.execute(() -> submitCommand(command, future));
+  public CompletableFuture<byte[]> submit(RaftOperation operation) {
+    CompletableFuture<byte[]> future = new CompletableFuture<>();
+    switch (operation.id().type()) {
+      case COMMAND:
+        context.execute(() -> submitCommand(operation, future));
+        break;
+      case QUERY:
+        context.execute(() -> submitQuery(operation, future));
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown operation type " + operation.id().type());
+    }
     return future;
   }
 
   /**
    * Submits a command to the cluster.
    */
-  private <T> void submitCommand(RaftCommand<T> command, CompletableFuture<T> future) {
-    byte[] bytes = serializer.encode(command);
+  private void submitCommand(RaftOperation operation, CompletableFuture<byte[]> future) {
     CommandRequest request = CommandRequest.newBuilder()
         .withSession(state.getSessionId())
         .withSequence(state.nextCommandRequest())
-        .withBytes(bytes)
+        .withOperation(operation)
         .build();
     submitCommand(request, future);
   }
@@ -116,34 +120,19 @@ final class RaftProxySubmitter {
   /**
    * Submits a command request to the cluster.
    */
-  private <T> void submitCommand(CommandRequest request, CompletableFuture<T> future) {
-    submit(new CommandAttempt<>(sequencer.nextRequest(), request, future));
-  }
-
-  /**
-   * Submits a query to the cluster.
-   *
-   * @param query The query to submit.
-   * @param <T>   The query result type.
-   * @return A completable future to be completed once the query has been submitted.
-   */
-  public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    context.execute(() -> submitQuery(query, future));
-    return future;
+  private <T> void submitCommand(CommandRequest request, CompletableFuture<byte[]> future) {
+    submit(new CommandAttempt(sequencer.nextRequest(), request, future));
   }
 
   /**
    * Submits a query to the cluster.
    */
-  private <T> void submitQuery(RaftQuery<T> query, CompletableFuture<T> future) {
-    byte[] bytes = serializer.encode(query);
+  private <T> void submitQuery(RaftOperation operation, CompletableFuture<byte[]> future) {
     QueryRequest request = QueryRequest.newBuilder()
         .withSession(state.getSessionId())
         .withSequence(state.getCommandRequest())
+        .withOperation(operation)
         .withIndex(state.getResponseIndex())
-        .withBytes(bytes)
-        .withConsistency(query.consistency())
         .build();
     submitQuery(request, future);
   }
@@ -151,8 +140,8 @@ final class RaftProxySubmitter {
   /**
    * Submits a query request to the cluster.
    */
-  private <T> void submitQuery(QueryRequest request, CompletableFuture<T> future) {
-    submit(new QueryAttempt<>(sequencer.nextRequest(), request, future));
+  private void submitQuery(QueryRequest request, CompletableFuture<byte[]> future) {
+    submit(new QueryAttempt(sequencer.nextRequest(), request, future));
   }
 
   /**
@@ -160,7 +149,7 @@ final class RaftProxySubmitter {
    *
    * @param attempt The attempt to submit.
    */
-  private <T extends OperationRequest, U extends OperationResponse, V> void submit(OperationAttempt<T, U, V> attempt) {
+  private <T extends OperationRequest, U extends OperationResponse, V> void submit(OperationAttempt<T, U> attempt) {
     if (state.getState() == RaftProxy.State.CLOSED) {
       attempt.fail(new UnknownSessionException("session closed"));
     } else {
@@ -180,7 +169,7 @@ final class RaftProxySubmitter {
    * operation attempts and retrying commands where the sequence number is greater than the given
    * {@code commandSequence} number and the attempt number is less than or equal to the version.
    */
-  private void resubmit(long commandSequence, OperationAttempt<?, ?, ?> attempt) {
+  private void resubmit(long commandSequence, OperationAttempt<?, ?> attempt) {
     // If the client's response sequence number is greater than the given command sequence number,
     // the cluster likely has a new leader, and we need to reset the sequencing in the leader by
     // sending a keep-alive request.
@@ -222,13 +211,13 @@ final class RaftProxySubmitter {
   /**
    * Operation attempt.
    */
-  private abstract class OperationAttempt<T extends OperationRequest, U extends OperationResponse, V> implements BiConsumer<U, Throwable> {
+  private abstract class OperationAttempt<T extends OperationRequest, U extends OperationResponse> implements BiConsumer<U, Throwable> {
     protected final long sequence;
     protected final int attempt;
     protected final T request;
-    protected final CompletableFuture<V> future;
+    protected final CompletableFuture<byte[]> future;
 
-    protected OperationAttempt(long sequence, int attempt, T request, CompletableFuture<V> future) {
+    protected OperationAttempt(long sequence, int attempt, T request, CompletableFuture<byte[]> future) {
       this.sequence = sequence;
       this.attempt = attempt;
       this.request = request;
@@ -245,7 +234,7 @@ final class RaftProxySubmitter {
      *
      * @return The next instance of the attempt.
      */
-    protected abstract OperationAttempt<T, U, V> next();
+    protected abstract OperationAttempt<T, U> next();
 
     /**
      * Returns a new instance of the default exception for the operation.
@@ -316,14 +305,14 @@ final class RaftProxySubmitter {
   /**
    * Command operation attempt.
    */
-  private final class CommandAttempt<T> extends OperationAttempt<CommandRequest, CommandResponse, T> {
+  private final class CommandAttempt extends OperationAttempt<CommandRequest, CommandResponse> {
     private final long time = System.currentTimeMillis();
 
-    public CommandAttempt(long sequence, CommandRequest request, CompletableFuture<T> future) {
+    public CommandAttempt(long sequence, CommandRequest request, CompletableFuture<byte[]> future) {
       super(sequence, 1, request, future);
     }
 
-    public CommandAttempt(long sequence, int attempt, CommandRequest request, CompletableFuture<T> future) {
+    public CommandAttempt(long sequence, int attempt, CommandRequest request, CompletableFuture<byte[]> future) {
       super(sequence, attempt, request, future);
     }
 
@@ -333,8 +322,8 @@ final class RaftProxySubmitter {
     }
 
     @Override
-    protected OperationAttempt<CommandRequest, CommandResponse, T> next() {
-      return new CommandAttempt<>(sequence, this.attempt + 1, request, future);
+    protected OperationAttempt<CommandRequest, CommandResponse> next() {
+      return new CommandAttempt(sequence, this.attempt + 1, request, future);
     }
 
     @Override
@@ -381,9 +370,9 @@ final class RaftProxySubmitter {
         CommandRequest request = CommandRequest.newBuilder()
             .withSession(this.request.session())
             .withSequence(this.request.sequenceNumber())
-            .withBytes(new byte[0])
+            .withOperation(new RaftOperation(OperationId.NOOP, HeapBytes.EMPTY))
             .build();
-        context.execute(() -> submit(new CommandAttempt<>(sequence, this.attempt + 1, request, future)));
+        context.execute(() -> submit(new CommandAttempt(sequence, this.attempt + 1, request, future)));
       }
     }
 
@@ -394,7 +383,7 @@ final class RaftProxySubmitter {
         state.setLastUpdated(time);
         state.setCommandResponse(request.sequenceNumber());
         state.setResponseIndex(response.index());
-        future.complete((T) response.result());
+        future.complete(response.result());
       });
     }
   }
@@ -402,12 +391,12 @@ final class RaftProxySubmitter {
   /**
    * Query operation attempt.
    */
-  private final class QueryAttempt<T> extends OperationAttempt<QueryRequest, QueryResponse, T> {
-    public QueryAttempt(long sequence, QueryRequest request, CompletableFuture<T> future) {
+  private final class QueryAttempt extends OperationAttempt<QueryRequest, QueryResponse> {
+    public QueryAttempt(long sequence, QueryRequest request, CompletableFuture<byte[]> future) {
       super(sequence, 1, request, future);
     }
 
-    public QueryAttempt(long sequence, int attempt, QueryRequest request, CompletableFuture<T> future) {
+    public QueryAttempt(long sequence, int attempt, QueryRequest request, CompletableFuture<byte[]> future) {
       super(sequence, attempt, request, future);
     }
 
@@ -417,8 +406,8 @@ final class RaftProxySubmitter {
     }
 
     @Override
-    protected OperationAttempt<QueryRequest, QueryResponse, T> next() {
-      return new QueryAttempt<>(sequence, this.attempt + 1, request, future);
+    protected OperationAttempt<QueryRequest, QueryResponse> next() {
+      return new QueryAttempt(sequence, this.attempt + 1, request, future);
     }
 
     @Override
@@ -445,7 +434,7 @@ final class RaftProxySubmitter {
     protected void complete(QueryResponse response) {
       sequence(response, () -> {
         state.setResponseIndex(response.index());
-        future.complete((T) response.result());
+        future.complete(response.result());
       });
     }
   }

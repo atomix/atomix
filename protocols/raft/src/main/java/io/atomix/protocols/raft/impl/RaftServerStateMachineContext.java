@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.StateMachineContext;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
@@ -29,19 +30,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Server state machine context.
  */
 public class RaftServerStateMachineContext implements StateMachineContext {
-
-  /**
-   * Context type.
-   */
-  public enum Type {
-    COMMAND,
-    QUERY,
-    SNAPSHOT,
-  }
-
   private final StateMachineId id;
   private final String name;
-  private final String type;
+  private final String typeName;
   private final RaftServerStateMachineSessions sessions;
   private final LogicalClock logicalClock = new LogicalClock() {
     @Override
@@ -56,23 +47,23 @@ public class RaftServerStateMachineContext implements StateMachineContext {
     }
   };
   private long timestamp;
-  private Type context;
+  private OperationType operationType;
   private long index;
 
-  RaftServerStateMachineContext(StateMachineId id, String name, String type, RaftServerStateMachineSessions sessions) {
+  RaftServerStateMachineContext(StateMachineId id, String name, String typeName, RaftServerStateMachineSessions sessions) {
     this.id = id;
     this.name = name;
-    this.type = type;
+    this.typeName = typeName;
     this.sessions = sessions;
   }
 
   /**
    * Updates the state machine context.
    */
-  public void update(long index, long timestamp, Type context) {
+  public void update(long index, long timestamp, OperationType type) {
     this.index = index;
     this.timestamp = timestamp;
-    this.context = context;
+    this.operationType = type;
   }
 
   /**
@@ -88,8 +79,8 @@ public class RaftServerStateMachineContext implements StateMachineContext {
   /**
    * Returns the current context type.
    */
-  public Type context() {
-    return context;
+  public OperationType getOperationType() {
+    return operationType;
   }
 
   @Override
@@ -104,7 +95,7 @@ public class RaftServerStateMachineContext implements StateMachineContext {
 
   @Override
   public String typeName() {
-    return type;
+    return typeName;
   }
 
   @Override

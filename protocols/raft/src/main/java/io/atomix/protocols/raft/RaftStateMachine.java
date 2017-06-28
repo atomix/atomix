@@ -15,24 +15,13 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.protocols.raft.error.CommandException;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
-import io.atomix.serializer.Serializer;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;
 import io.atomix.utils.concurrent.Scheduler;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -130,7 +119,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  *   }
  * </pre>
- * Attempts to {@link RaftSession#publish(io.atomix.event.Event) publish}
+ * Attempts to {@link RaftSession#publish(RaftEvent) publish}
  * events during the execution will result in an {@link IllegalStateException}.
  * <p>
  * Even though state machines on multiple servers may appear to publish the same event, Raft's protocol ensures that only
@@ -168,23 +157,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see StateMachineContext
  * @see StateMachineExecutor
  */
-public abstract class RaftStateMachine implements Snapshottable {
-  private final Serializer serializer;
+public abstract class RaftStateMachine implements Snapshottable, RaftSessionListener {
   private StateMachineExecutor executor;
   private StateMachineContext context;
-
-  protected RaftStateMachine(Serializer serializer) {
-    this.serializer = serializer;
-  }
-
-  /**
-   * Returns the state machine serializer.
-   *
-   * @return The state machine serializer.
-   */
-  public Serializer getSerializer() {
-    return serializer;
-  }
 
   /**
    * Initializes the state machine.
@@ -195,9 +170,6 @@ public abstract class RaftStateMachine implements Snapshottable {
   public void init(StateMachineExecutor executor) {
     this.executor = checkNotNull(executor, "executor cannot be null");
     this.context = executor.getContext();
-    if (this instanceof RaftSessionListener) {
-      executor.getContext().sessions().addListener((RaftSessionListener) this);
-    }
     configure(executor);
   }
 
@@ -210,9 +182,7 @@ public abstract class RaftStateMachine implements Snapshottable {
    *
    * @param executor The state machine executor.
    */
-  protected void configure(StateMachineExecutor executor) {
-    registerOperations();
-  }
+  protected abstract void configure(StateMachineExecutor executor);
 
   /**
    * Returns the state machine scheduler.
@@ -277,133 +247,25 @@ public abstract class RaftStateMachine implements Snapshottable {
     return context.sessions();
   }
 
+  @Override
+  public void onOpen(RaftSession session) {
+
+  }
+
+  @Override
+  public void onExpire(RaftSession session) {
+
+  }
+
+  @Override
+  public void onClose(RaftSession session) {
+
+  }
+
   /**
    * Closes the state machine.
    */
   public void close() {
 
   }
-
-  /**
-   * Registers operations for the class.
-   */
-  private void registerOperations() {
-    Class<?> type = getClass();
-    for (Method method : type.getMethods()) {
-      if (isOperationMethod(method)) {
-        registerMethod(method);
-      }
-    }
-  }
-
-  /**
-   * Returns a boolean value indicating whether the given method is an operation method.
-   */
-  private boolean isOperationMethod(Method method) {
-    Class<?>[] paramTypes = method.getParameterTypes();
-    return paramTypes.length == 1 && paramTypes[0] == RaftCommit.class;
-  }
-
-  /**
-   * Registers an operation for the given method.
-   */
-  private void registerMethod(Method method) {
-    Type genericType = method.getGenericParameterTypes()[0];
-    Class<?> argumentType = resolveArgument(genericType);
-    if (argumentType != null && RaftOperation.class.isAssignableFrom(argumentType)) {
-      registerMethod(argumentType, method);
-    }
-  }
-
-  /**
-   * Resolves the generic argument for the given type.
-   */
-  private Class<?> resolveArgument(Type type) {
-    if (type instanceof ParameterizedType) {
-      ParameterizedType paramType = (ParameterizedType) type;
-      return resolveClass(paramType.getActualTypeArguments()[0]);
-    } else if (type instanceof TypeVariable) {
-      return resolveClass(type);
-    } else if (type instanceof Class) {
-      TypeVariable<?>[] typeParams = ((Class<?>) type).getTypeParameters();
-      return resolveClass(typeParams[0]);
-    }
-    return null;
-  }
-
-  /**
-   * Resolves the generic class for the given type.
-   */
-  private Class<?> resolveClass(Type type) {
-    if (type instanceof Class) {
-      return (Class<?>) type;
-    } else if (type instanceof ParameterizedType) {
-      return resolveClass(((ParameterizedType) type).getRawType());
-    } else if (type instanceof WildcardType) {
-      Type[] bounds = ((WildcardType) type).getUpperBounds();
-      if (bounds.length > 0) {
-        return (Class<?>) bounds[0];
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Registers the given method for the given operation type.
-   */
-  private void registerMethod(Class<?> type, Method method) {
-    Class<?> returnType = method.getReturnType();
-    if (returnType == void.class || returnType == Void.class) {
-      registerVoidMethod(type, method);
-    } else {
-      registerValueMethod(type, method);
-    }
-  }
-
-  /**
-   * Registers an operation with a void return value.
-   */
-  @SuppressWarnings("unchecked")
-  private void registerVoidMethod(Class type, Method method) {
-    executor.register(type, wrapVoidMethod(method));
-  }
-
-  /**
-   * Wraps a void method.
-   */
-  private Consumer wrapVoidMethod(Method method) {
-    return c -> {
-      try {
-        method.invoke(this, c);
-      } catch (InvocationTargetException e) {
-        throw new CommandException(e);
-      } catch (IllegalAccessException e) {
-        throw new AssertionError(e);
-      }
-    };
-  }
-
-  /**
-   * Registers an operation with a non-void return value.
-   */
-  @SuppressWarnings("unchecked")
-  private void registerValueMethod(Class type, Method method) {
-    executor.register(type, wrapValueMethod(method));
-  }
-
-  /**
-   * Wraps a value method.
-   */
-  private Function wrapValueMethod(Method method) {
-    return c -> {
-      try {
-        return method.invoke(this, c);
-      } catch (InvocationTargetException e) {
-        throw new CommandException(e);
-      } catch (IllegalAccessException e) {
-        throw new AssertionError(e);
-      }
-    };
-  }
-
 }

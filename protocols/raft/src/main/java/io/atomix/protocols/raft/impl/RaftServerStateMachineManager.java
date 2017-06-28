@@ -361,6 +361,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
         entry.entry().memberId(),
         entry.entry().name(),
         entry.entry().typeName(),
+        entry.entry().readConsistency(),
         entry.entry().timeout(),
         stateMachineExecutor,
         state);
@@ -398,15 +399,15 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext s : sessionManager.getSessions()) {
-        if (s.getName().equals(session.getName())) {
-          sessions.add(new RaftSessionMetadata(s.sessionId(), s.getName(), s.getTypeName()));
+        if (s.name().equals(session.name())) {
+          sessions.add(new RaftSessionMetadata(s.sessionId(), s.name(), s.typeName()));
         }
       }
       return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
     } else {
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext session : sessionManager.getSessions()) {
-        sessions.add(new RaftSessionMetadata(session.sessionId(), session.getName(), session.getTypeName()));
+        sessions.add(new RaftSessionMetadata(session.sessionId(), session.name(), session.typeName()));
       }
       return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
     }
@@ -427,7 +428,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    * received in sequential order. The reason for this assumption is because leaders always sequence
    * commands as they're written to the log, so no sequence number will be skipped.
    */
-  private CompletableFuture<RaftOperationResult> applyCommand(Indexed<CommandEntry> entry) {
+  private CompletableFuture<OperationResult> applyCommand(Indexed<CommandEntry> entry) {
     // First check to ensure that the session exists.
     RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
@@ -439,7 +440,13 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     }
 
     // Execute the command using the state machine associated with the session.
-    return session.getStateMachineExecutor().executeCommand(entry.index(), entry.entry().sequenceNumber(), entry.entry().timestamp(), session, entry.entry().bytes());
+    return session.getStateMachineExecutor()
+        .executeCommand(
+            entry.index(),
+            entry.entry().sequenceNumber(),
+            entry.entry().timestamp(),
+            session,
+            entry.entry().operation());
   }
 
   /**
@@ -460,7 +467,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    * publishing of session events. Events require commands to be written to the Raft log to ensure
    * fault-tolerance and consistency across the cluster.
    */
-  private CompletableFuture<RaftOperationResult> applyQuery(Indexed<QueryEntry> entry) {
+  private CompletableFuture<OperationResult> applyQuery(Indexed<QueryEntry> entry) {
     RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
     // If the session is null then that indicates that the session already timed out or it never existed.
@@ -470,7 +477,13 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     }
 
     // Execute the query using the state machine associated with the session.
-    return session.getStateMachineExecutor().executeQuery(entry.index(), entry.entry().sequenceNumber(), entry.entry().timestamp(), session, entry.entry().bytes());
+    return session.getStateMachineExecutor()
+        .executeQuery(
+            entry.index(),
+            entry.entry().sequenceNumber(),
+            entry.entry().timestamp(),
+            session,
+            entry.entry().operation());
   }
 
   /**

@@ -16,7 +16,9 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.error.RaftError;
+import io.atomix.utils.ArraySizeHashPrinter;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -32,10 +34,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 public abstract class OperationResponse extends SessionResponse {
   protected final long index;
   protected final long eventIndex;
-  protected final Object result;
+  protected final byte[] result;
   protected final long lastSequence;
 
-  public OperationResponse(Status status, RaftError error, long index, long eventIndex, Object result, long lastSequence) {
+  public OperationResponse(Status status, RaftError error, long index, long eventIndex, byte[] result, long lastSequence) {
     super(status, error);
     this.index = index;
     this.eventIndex = eventIndex;
@@ -66,7 +68,7 @@ public abstract class OperationResponse extends SessionResponse {
    *
    * @return The operation result.
    */
-  public Object result() {
+  public byte[] result() {
     return result;
   }
 
@@ -95,7 +97,7 @@ public abstract class OperationResponse extends SessionResponse {
           && response.index == index
           && response.eventIndex == eventIndex
           && response.lastSequence == lastSequence
-          && Objects.equals(response.result, result);
+          && Arrays.equals(response.result, result);
     }
     return false;
   }
@@ -107,7 +109,7 @@ public abstract class OperationResponse extends SessionResponse {
           .add("status", status)
           .add("index", index)
           .add("eventIndex", eventIndex)
-          .add("result", result)
+          .add("result", ArraySizeHashPrinter.of(result))
           .add("lastSequence", lastSequence)
           .toString();
     } else {
@@ -124,7 +126,7 @@ public abstract class OperationResponse extends SessionResponse {
   public static abstract class Builder<T extends Builder<T, U>, U extends OperationResponse> extends SessionResponse.Builder<T, U> {
     protected long index;
     protected long eventIndex;
-    protected Object result;
+    protected byte[] result;
     protected long lastSequence;
 
     /**
@@ -163,7 +165,7 @@ public abstract class OperationResponse extends SessionResponse {
      * @throws NullPointerException if {@code result} is null
      */
     @SuppressWarnings("unchecked")
-    public T withResult(Object result) {
+    public T withResult(byte[] result) {
       this.result = result;
       return (T) this;
     }

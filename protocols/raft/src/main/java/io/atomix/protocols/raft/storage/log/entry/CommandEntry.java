@@ -15,11 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.utils.ArraySizeHashPrinter;
-
-import java.util.Date;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
+import io.atomix.protocols.raft.RaftOperation;
 
 /**
  * Stores a state machine command.
@@ -28,18 +24,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * client along with information relevant to sequencing the command in the server state machine.
  */
 public class CommandEntry extends OperationEntry {
-  public CommandEntry(long term, long timestamp, long session, long sequence, byte[] bytes) {
-    super(term, timestamp, session, sequence, bytes);
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("term", term)
-        .add("timestamp", new Date(timestamp))
-        .add("session", session)
-        .add("sequence", sequence)
-        .add("command", ArraySizeHashPrinter.of(bytes))
-        .toString();
+  public CommandEntry(long term, long timestamp, long session, long sequence, RaftOperation operation) {
+    super(term, timestamp, session, sequence, operation);
   }
 }

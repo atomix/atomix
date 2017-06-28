@@ -15,20 +15,18 @@
  */
 package io.atomix.protocols.raft.proxy;
 
-import io.atomix.event.Event;
-import io.atomix.event.EventListener;
 import io.atomix.protocols.raft.CommunicationStrategies;
 import io.atomix.protocols.raft.CommunicationStrategy;
-import io.atomix.protocols.raft.RaftCommand;
-import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.protocols.raft.RaftQuery;
-import io.atomix.protocols.raft.session.SessionId;
-import io.atomix.serializer.Serializer;
+import io.atomix.protocols.raft.EventType;
+import io.atomix.protocols.raft.OperationId;
+import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.storage.buffer.HeapBytes;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -36,179 +34,83 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft client proxy.
  */
-public interface RaftProxy {
+public interface RaftProxy extends RaftProxyClient {
 
   /**
-   * Indicates the state of the client's communication with the Raft cluster.
-   * <p>
-   * Throughout the lifetime of a client, the client will transition through various states according to its
-   * ability to communicate with the cluster within the context of a {@link RaftProxy}. In some cases, client
-   * state changes may be indicative of a loss of guarantees. Users of the client should
-   * {@link RaftProxy#addStateChangeListener(Consumer) watch the state of the client} to determine when guarantees
-   * are lost and react to changes in the client's ability to communicate with the cluster.
-   * <p>
-   * <pre>
-   *   {@code
-   *   client.onStateChange(state -> {
-   *     switch (state) {
-   *       case CONNECTED:
-   *         // The client is healthy
-   *         break;
-   *       case SUSPENDED:
-   *         // The client cannot connect to the cluster and operations may be unsafe
-   *         break;
-   *       case CLOSED:
-   *         // The client has been closed and pending operations have failed
-   *         break;
-   *     }
-   *   });
-   *   }
-   * </pre>
-   * So long as the client is in the {@link #CONNECTED} state, all guarantees with respect to reads and writes will
-   * be maintained, and a loss of the {@code CONNECTED} state may indicate a loss of linearizability. See the specific
-   * states for more info.
+   * Submits an empty operation to the Raft cluster, awaiting a void result.
+   *
+   * @param operationId the operation identifier
+   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
+   * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it. The future will always be completed on the
+   * @throws NullPointerException if {@code operation} is null
    */
-  enum State {
-
-    /**
-     * Indicates that the client is connected and its session is open.
-     */
-    CONNECTED,
-
-    /**
-     * Indicates that the client is suspended and its session may or may not be expired.
-     */
-    SUSPENDED,
-
-    /**
-     * Indicates that the client is closed.
-     */
-    CLOSED
-
+  default CompletableFuture<Void> submit(OperationId operationId) {
+    return submit(operationId, HeapBytes.EMPTY).thenApply(r -> null);
   }
 
   /**
-   * Returns the client proxy name.
+   * Submits an empty operation to the Raft cluster.
    *
-   * @return The client proxy name.
+   * @param operationId the operation identifier
+   * @param decoder   the operation result decoder
+   * @param <R>       the operation result type
+   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
+   * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
+   * @throws NullPointerException if {@code operation} is null
    */
-  String name();
-
-  /**
-   * Returns the client proxy type.
-   *
-   * @return The client proxy type.
-   */
-  String typeName();
-
-  /**
-   * Returns the proxy session identifier.
-   *
-   * @return The proxy session identifier
-   */
-  SessionId sessionId();
-
-  /**
-   * Returns the session state.
-   *
-   * @return The session state.
-   */
-  State getState();
-
-  /**
-   * Registers a session state change listener.
-   *
-   * @param listener The callback to call when the session state changes.
-   */
-  void addStateChangeListener(Consumer<State> listener);
-
-  /**
-   * Removes a state change listener.
-   *
-   * @param listener the state change listener to remove
-   */
-  void removeStateChangeListener(Consumer<State> listener);
+  default <R> CompletableFuture<R> submit(OperationId operationId, Function<byte[], R> decoder) {
+    return submit(operationId, HeapBytes.EMPTY).thenApply(decoder);
+  }
 
   /**
    * Submits an operation to the Raft cluster.
-   * <p>
-   * This method is provided for convenience. The submitted {@link RaftOperation} must be an instance
-   * of {@link RaftCommand} or {@link RaftQuery}.
    *
-   * @param operation The operation to submit.
-   * @param <T>       The operation result type.
-   * @return A completable future to be completed with the operation result.
-   * @throws IllegalArgumentException If the {@link RaftOperation} is not an instance of {@link RaftCommand} or {@link RaftQuery}.
-   * @throws NullPointerException     if {@code operation} is null
+   * @param operationId the operation identifier
+   * @param encoder   the operation encoder
+   * @param <T>       the operation type
+   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
+   * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
+   * @throws NullPointerException if {@code operation} is null
    */
-  default <T> CompletableFuture<T> submit(RaftOperation<T> operation) {
-    checkNotNull(operation, "operation cannot be null");
-    if (operation instanceof RaftCommand) {
-      return submit((RaftCommand<T>) operation);
-    } else if (operation instanceof RaftQuery) {
-      return submit((RaftQuery<T>) operation);
-    } else {
-      throw new IllegalArgumentException("unknown operation type");
-    }
+  default <T> CompletableFuture<Void> submit(OperationId operationId, Function<T, byte[]> encoder, T operation) {
+    return submit(operationId, encoder.apply(operation)).thenApply(r -> null);
   }
 
   /**
-   * Submits a command to the Raft cluster.
-   * <p>
-   * Commands are used to alter state machine state. All commands will be forwarded to the current cluster leader.
-   * Once a leader receives the command, it will write the command to its internal {@code Log} and replicate it to a majority
-   * of the cluster. Once the command has been replicated to a majority of the cluster, it will apply the command to its
-   * {@code StateMachine} and respond with the result.
-   * <p>
-   * Once the command has been applied to a server state machine, the returned {@link CompletableFuture}
-   * will be completed with the state machine output.
-   * <p>
-   * Note that all client submissions are guaranteed to be completed in the same order in which they were sent (program order)
-   * and on the same thread. This does not, however, mean that they'll be applied to the server-side replicated state machine
-   * in that order.
+   * Submits an operation to the Raft cluster.
    *
-   * @param command The command to submit.
-   * @param <T>     The command result type.
-   * @return A completable future to be completed with the command result. The future is guaranteed to be completed after all
-   * {@link RaftCommand} or {@link RaftQuery} submission futures that preceded it. The future will always be completed on the
-   * @throws NullPointerException if {@code command} is null
+   * @param operationId the operation identifier
+   * @param encoder   the operation encoder
+   * @param operation   the operation to submit
+   * @param decoder   the operation result decoder
+   * @param <T>       the operation type
+   * @param <R>       the operation result type
+   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
+   * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
+   * @throws NullPointerException if {@code operation} is null
    */
-  <T> CompletableFuture<T> submit(RaftCommand<T> command);
-
-  /**
-   * Submits a query to the Raft cluster.
-   * <p>
-   * Queries are used to read state machine state. The behavior of query submissions is primarily dependent on the
-   * query's {@link RaftQuery.ConsistencyLevel}. For {@link RaftQuery.ConsistencyLevel#LINEARIZABLE}
-   * and {@link RaftQuery.ConsistencyLevel#LINEARIZABLE_LEASE} consistency levels, queries will be forwarded
-   * to the cluster leader. For lower consistency levels, queries are allowed to read from followers. All queries are executed
-   * by applying queries to an internal server state machine.
-   * <p>
-   * Once the query has been applied to a server state machine, the returned {@link CompletableFuture}
-   * will be completed with the state machine output.
-   *
-   * @param query The query to submit.
-   * @param <T>   The query result type.
-   * @return A completable future to be completed with the query result. The future is guaranteed to be completed after all
-   * {@link RaftCommand} or {@link RaftQuery} submission futures that preceded it. The future will always be completed on the
-   * @throws NullPointerException if {@code query} is null
-   */
-  <T> CompletableFuture<T> submit(RaftQuery<T> query);
+  default <T, R> CompletableFuture<R> submit(OperationId operationId, Function<T, byte[]> encoder, T operation, Function<byte[], R> decoder) {
+    return submit(operationId, encoder.apply(operation)).thenApply(decoder);
+  }
 
   /**
    * Adds an event listener.
    *
-   * @param listener The session receive callback.
-   * @throws NullPointerException if {@code event} or {@code callback} is null
+   * @param eventType the event type identifier.
+   * @param decoder   the event decoder.
+   * @param listener  the event listener.
+   * @param <T>       the event value type.
    */
-  <E extends Event> void addEventListener(EventListener<E> listener);
+  <T> void addListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener);
 
   /**
    * Removes an event listener.
    *
-   * @param listener the event listener callback to remove
+   * @param eventType the event type identifier
+   * @param listener  the event listener to remove
    */
-  <E extends Event> void removeEventListener(EventListener<E> listener);
+  @Override
+  void removeListener(EventType eventType, Consumer listener);
 
   /**
    * Returns a boolean indicating whether the session is open.
@@ -230,7 +132,7 @@ public interface RaftProxy {
   abstract class Builder implements io.atomix.utils.Builder<RaftProxy> {
     protected String name;
     protected String type;
-    protected Serializer serializer;
+    protected ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
     protected Executor executor;
     protected CommunicationStrategy communicationStrategy = CommunicationStrategies.LEADER;
     protected Duration timeout = Duration.ofMillis(0);
@@ -253,18 +155,18 @@ public interface RaftProxy {
      * @return The session builder.
      */
     public Builder withType(String type) {
-      this.type = checkNotNull(type, "type");
+      this.type = checkNotNull(type, "type cannot be null");
       return this;
     }
 
     /**
-     * Sets the session serializer.
+     * Sets the session's read consistency level.
      *
-     * @param serializer the session serializer
-     * @return the session builder
+     * @param consistency the session's read consistency level
+     * @return the proxy builder
      */
-    public Builder withSerializer(Serializer serializer) {
-      this.serializer = checkNotNull(serializer, "serializer cannot be null");
+    public Builder withReadConsistency(ReadConsistency consistency) {
+      this.readConsistency = checkNotNull(consistency, "consistency cannot be null");
       return this;
     }
 
@@ -312,7 +214,6 @@ public interface RaftProxy {
      * @throws NullPointerException     if the timeout is null
      */
     public Builder withTimeout(Duration timeout) {
-      checkNotNull(serializer, "serializer cannot be null");
       checkArgument(!checkNotNull(timeout).isNegative(), "timeout must be positive");
       this.timeout = timeout;
       return this;

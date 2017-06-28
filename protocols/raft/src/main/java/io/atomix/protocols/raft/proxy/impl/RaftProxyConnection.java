@@ -40,6 +40,7 @@ import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 
@@ -199,7 +200,7 @@ public class RaftProxyConnection {
    * Resends a request due to a request failure, resetting the connection if necessary.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends RaftRequest> void resendRequest(Throwable cause, T request, BiFunction sender, MemberId node, CompletableFuture future) {
+  protected <T extends RaftRequest> void retryRequest(Throwable cause, T request, BiFunction sender, MemberId node, CompletableFuture future) {
     // If the connection has not changed, reset it and connect to the next server.
     if (this.node == node) {
       LOGGER.trace("{} - Resetting connection. Reason: {}", name, cause);
@@ -227,13 +228,18 @@ public class RaftProxyConnection {
         LOGGER.trace("{} - Received {}", name, response);
         future.complete(response);
       } else {
-        resendRequest(response.error().createException(), request, sender, node, future);
+        retryRequest(response.error().createException(), request, sender, node, future);
       }
-    } else if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
-      resendRequest(error, request, sender, node, future);
     } else {
-      LOGGER.debug("{} - {} failed! Reason: {}", name, request, error);
-      future.completeExceptionally(error);
+      if (error instanceof CompletionException) {
+        error = error.getCause();
+      }
+      if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
+        retryRequest(error, request, sender, node, future);
+      } else {
+        LOGGER.debug("{} - {} failed! Reason: {}", name, request, error);
+        future.completeExceptionally(error);
+      }
     }
   }
 

@@ -39,7 +39,7 @@ public class QueryResponse extends OperationResponse {
     return new Builder();
   }
 
-  public QueryResponse(Status status, RaftError error, long index, long eventIndex, Object result, long lastSequence) {
+  public QueryResponse(Status status, RaftError error, long index, long eventIndex, byte[] result, long lastSequence) {
     super(status, error, index, eventIndex, result, lastSequence);
   }
 

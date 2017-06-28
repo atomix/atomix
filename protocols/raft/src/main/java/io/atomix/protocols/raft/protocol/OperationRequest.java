@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.protocols.raft.RaftOperation;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -29,12 +31,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class OperationRequest extends SessionRequest {
   protected final long sequence;
-  protected final byte[] bytes;
+  protected final RaftOperation operation;
 
-  protected OperationRequest(long session, long sequence, byte[] bytes) {
+  protected OperationRequest(long session, long sequence, RaftOperation operation) {
     super(session);
     this.sequence = sequence;
-    this.bytes = bytes;
+    this.operation = operation;
   }
 
   /**
@@ -47,12 +49,12 @@ public abstract class OperationRequest extends SessionRequest {
   }
 
   /**
-   * Returns the request operation.
+   * Returns the operation.
    *
-   * @return The request operation.
+   * @return The operation.
    */
-  public byte[] bytes() {
-    return bytes;
+  public RaftOperation operation() {
+    return operation;
   }
 
   /**
@@ -60,7 +62,7 @@ public abstract class OperationRequest extends SessionRequest {
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends OperationRequest> extends SessionRequest.Builder<T, U> {
     protected long sequence;
-    protected byte[] bytes;
+    protected RaftOperation operation;
 
     /**
      * Sets the request sequence number.
@@ -77,23 +79,23 @@ public abstract class OperationRequest extends SessionRequest {
     }
 
     /**
-     * Sets the request bytes.
+     * Sets the request operation.
      *
-     * @param bytes The request operation bytes.
+     * @param operation The operation.
      * @return The request builder.
-     * @throws NullPointerException if the request {@code bytes} are {@code null}
+     * @throws NullPointerException if the request {@code operation} is {@code null}
      */
     @SuppressWarnings("unchecked")
-    public T withBytes(byte[] bytes) {
-      this.bytes = checkNotNull(bytes, "bytes cannot be null");
+    public T withOperation(RaftOperation operation) {
+      this.operation = checkNotNull(operation, "operation cannot be null");
       return (T) this;
     }
 
     @Override
     protected void validate() {
       super.validate();
-      checkNotNull(bytes, "bytes cannot be null");
       checkArgument(sequence >= 0, "sequence must be positive");
+      checkNotNull(operation, "operation cannot be null");
     }
   }
 }

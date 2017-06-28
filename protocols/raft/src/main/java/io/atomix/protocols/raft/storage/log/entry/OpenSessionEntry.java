@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.Date;
@@ -28,13 +29,15 @@ public class OpenSessionEntry extends TimestampedEntry {
   private final MemberId memberId;
   private final String name;
   private final String type;
+  private final ReadConsistency readConsistency;
   private final long timeout;
 
-  public OpenSessionEntry(long term, long timestamp, MemberId memberId, String name, String type, long timeout) {
+  public OpenSessionEntry(long term, long timestamp, MemberId memberId, String name, String type, ReadConsistency readConsistency, long timeout) {
     super(term, timestamp);
     this.memberId = memberId;
     this.name = name;
     this.type = type;
+    this.readConsistency = readConsistency;
     this.timeout = timeout;
   }
 
@@ -66,6 +69,15 @@ public class OpenSessionEntry extends TimestampedEntry {
   }
 
   /**
+   * Returns the session read consistency level.
+   *
+   * @return The session's read consistency level.
+   */
+  public ReadConsistency readConsistency() {
+    return readConsistency;
+  }
+
+  /**
    * Returns the session timeout.
    *
    * @return The session timeout.
@@ -82,6 +94,7 @@ public class OpenSessionEntry extends TimestampedEntry {
         .add("node", memberId)
         .add("name", name)
         .add("type", type)
+        .add("readConsistency", readConsistency)
         .add("timeout", timeout)
         .toString();
   }

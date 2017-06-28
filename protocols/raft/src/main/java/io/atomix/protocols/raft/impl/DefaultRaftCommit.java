@@ -15,28 +15,34 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.RaftCommit;
-import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.ArraySizeHashPrinter;
+
+import java.util.Objects;
+import java.util.function.Function;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Server commit.
  */
-public class DefaultRaftCommit implements RaftCommit<RaftOperation<?>> {
+public class DefaultRaftCommit<T> implements RaftCommit<T> {
   private final long index;
   private final RaftSession session;
   private final long timestamp;
-  private final RaftOperation operation;
+  private final OperationId operation;
+  private final T value;
 
-  public DefaultRaftCommit(long index, RaftOperation operation, RaftSession session, long timestamp) {
+  public DefaultRaftCommit(long index, OperationId operation, T value, RaftSession session, long timestamp) {
     this.index = index;
     this.session = session;
     this.timestamp = timestamp;
     this.operation = operation;
+    this.value = value;
   }
 
   @Override
@@ -60,14 +66,40 @@ public class DefaultRaftCommit implements RaftCommit<RaftOperation<?>> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public Class type() {
-    return operation != null ? operation.getClass() : null;
+  public OperationId operation() {
+    return operation;
   }
 
   @Override
-  public RaftOperation<?> operation() {
-    return operation;
+  public T value() {
+    return value;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(RaftCommit.class, index, session.sessionId(), operation);
+  }
+
+  @Override
+  public <U> RaftCommit<U> map(Function<T, U> transcoder) {
+    return new DefaultRaftCommit<>(index, operation, transcoder.apply(value), session, timestamp);
+  }
+
+  @Override
+  public RaftCommit<Void> mapToNull() {
+    return new DefaultRaftCommit<>(index, operation, null, session, timestamp);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof RaftCommit) {
+      RaftCommit commit = (RaftCommit) object;
+      return commit.index() == index
+          && commit.session().equals(session)
+          && commit.operation().equals(operation)
+          && Objects.equals(commit.value(), value);
+    }
+    return false;
   }
 
   @Override
@@ -77,7 +109,7 @@ public class DefaultRaftCommit implements RaftCommit<RaftOperation<?>> {
         .add("session", session)
         .add("time", wallClockTime())
         .add("operation", operation)
+        .add("value", value instanceof byte[] ? ArraySizeHashPrinter.of((byte[]) value) : value)
         .toString();
   }
-
 }

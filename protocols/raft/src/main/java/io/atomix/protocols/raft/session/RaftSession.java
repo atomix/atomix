@@ -16,6 +16,11 @@
 package io.atomix.protocols.raft.session;
 
 import io.atomix.event.Event;
+import io.atomix.protocols.raft.EventType;
+import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.storage.buffer.HeapBytes;
+
+import java.util.function.Function;
 
 /**
  * Provides an interface to communicating with a client via session events.
@@ -76,13 +81,44 @@ public interface RaftSession {
   void removeListener(RaftSessionEventListener listener);
 
   /**
-   * Publishes a {@code null} named event to the session.
+   * Publishes an empty event to the session.
    *
-   * @param event The event to publish.
-   * @throws NullPointerException                                   If {@code event} is {@code null}
-   * @throws io.atomix.protocols.raft.error.UnknownSessionException If the session is closed
+   * @param eventType the event type
    */
-  void publish(Event event);
+  default void publish(EventType eventType) {
+    publish(new RaftEvent(eventType, HeapBytes.EMPTY));
+  }
+
+  /**
+   * Publishes an event to the session.
+   *
+   * @param eventType the event identifier
+   * @param event the event value
+   * @param encoder the event value encoder
+   * @param <T> the event type
+   */
+  default <T> void publish(EventType eventType, T event, Function<T, byte[]> encoder) {
+    publish(eventType, encoder.apply(event));
+  }
+
+  /**
+   * Publishes an event to the session.
+   *
+   * @param eventType the event identifier
+   * @param event the event to publish
+   * @throws NullPointerException if the event is {@code null}
+   */
+  default void publish(EventType eventType, byte[] event) {
+    publish(new RaftEvent(eventType, event));
+  }
+
+  /**
+   * Publishes an event to the session.
+   *
+   * @param event the event to publish
+   * @param <T> the event value type
+   */
+  void publish(RaftEvent event);
 
   /**
    * Session state enums.

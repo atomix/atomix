@@ -15,12 +15,11 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.protocols.raft.RaftEvent;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -49,9 +48,9 @@ public class PublishRequest extends SessionRequest {
 
   private final long eventIndex;
   private final long previousIndex;
-  private final List<byte[]> events;
+  private final List<RaftEvent> events;
 
-  public PublishRequest(long session, long eventIndex, long previousIndex, List<byte[]> events) {
+  public PublishRequest(long session, long eventIndex, long previousIndex, List<RaftEvent> events) {
     super(session);
     this.eventIndex = eventIndex;
     this.previousIndex = previousIndex;
@@ -81,7 +80,7 @@ public class PublishRequest extends SessionRequest {
    *
    * @return The request events.
    */
-  public List<byte[]> events() {
+  public List<RaftEvent> events() {
     return events;
   }
 
@@ -108,7 +107,7 @@ public class PublishRequest extends SessionRequest {
         .add("session", session)
         .add("eventIndex", eventIndex)
         .add("previousIndex", previousIndex)
-        .add("events", events.stream().map(ArraySizeHashPrinter::of).collect(Collectors.toList()))
+        .add("events", events)
         .toString();
   }
 
@@ -118,7 +117,7 @@ public class PublishRequest extends SessionRequest {
   public static class Builder extends SessionRequest.Builder<Builder, PublishRequest> {
     private long eventIndex;
     private long previousIndex;
-    private List<byte[]> events;
+    private List<RaftEvent> events;
 
     /**
      * Sets the event index.
@@ -152,7 +151,7 @@ public class PublishRequest extends SessionRequest {
      * @param events The request events.
      * @return The publish request builder.
      */
-    public Builder withEvents(byte[]... events) {
+    public Builder withEvents(RaftEvent... events) {
       return withEvents(Arrays.asList(checkNotNull(events, "events cannot be null")));
     }
 
@@ -162,7 +161,7 @@ public class PublishRequest extends SessionRequest {
      * @param events The request events.
      * @return The publish request builder.
      */
-    public Builder withEvents(List<byte[]> events) {
+    public Builder withEvents(List<RaftEvent> events) {
       this.events = checkNotNull(events, "events cannot be null");
       return this;
     }

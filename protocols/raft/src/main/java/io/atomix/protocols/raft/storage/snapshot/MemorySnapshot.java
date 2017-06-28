@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.time.WallClockTimestamp;
@@ -56,9 +55,9 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public SnapshotWriter openWriter(Serializer serializer) {
+  public SnapshotWriter openWriter() {
     checkWriter();
-    return new SnapshotWriter(buffer.reset().slice(), this, serializer);
+    return new SnapshotWriter(buffer.reset().slice(), this);
   }
 
   @Override
@@ -68,15 +67,15 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public synchronized SnapshotReader openReader(Serializer serializer) {
-    return openReader(new SnapshotReader(buffer.reset().slice(), this, serializer), descriptor);
+  public synchronized SnapshotReader openReader() {
+    return openReader(new SnapshotReader(buffer.reset().slice(), this), descriptor);
   }
 
   @Override
   public Snapshot persist() {
     if (store.storage.storageLevel() != StorageLevel.MEMORY) {
       try (Snapshot newSnapshot = store.newSnapshot(snapshotId(), index(), timestamp())) {
-        try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter(store.storage.serializer())) {
+        try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter()) {
           buffer.flip();
           newSnapshotWriter.write(buffer.array(), 0, buffer.remaining());
         }

@@ -17,7 +17,6 @@ package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
-import io.atomix.serializer.Serializer;
 import io.atomix.time.WallClockTimestamp;
 
 import java.io.IOException;
@@ -57,7 +56,7 @@ final class FileSnapshot extends Snapshot {
   }
 
   @Override
-  public synchronized SnapshotWriter openWriter(Serializer serializer) {
+  public synchronized SnapshotWriter openWriter() {
     checkWriter();
     SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
         .withIndex(file.index())
@@ -68,7 +67,7 @@ final class FileSnapshot extends Snapshot {
     descriptor.copyTo(buffer);
 
     int length = buffer.position(SnapshotDescriptor.BYTES).readInt();
-    return openWriter(new SnapshotWriter(buffer.skip(length).mark(), this, serializer), descriptor);
+    return openWriter(new SnapshotWriter(buffer.skip(length).mark(), this), descriptor);
   }
 
   @Override
@@ -79,12 +78,12 @@ final class FileSnapshot extends Snapshot {
   }
 
   @Override
-  public synchronized SnapshotReader openReader(Serializer serializer) {
+  public synchronized SnapshotReader openReader() {
     checkState(file.file().exists(), "missing snapshot file: %s", file.file());
     Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
     SnapshotDescriptor descriptor = new SnapshotDescriptor(buffer);
     int length = buffer.position(SnapshotDescriptor.BYTES).readInt();
-    return openReader(new SnapshotReader(buffer.mark().limit(SnapshotDescriptor.BYTES + Integer.BYTES + length), this, serializer), descriptor);
+    return openReader(new SnapshotReader(buffer.mark().limit(SnapshotDescriptor.BYTES + Integer.BYTES + length), this), descriptor);
   }
 
   @Override

@@ -15,11 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.utils.ArraySizeHashPrinter;
-
-import java.util.Date;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
+import io.atomix.protocols.raft.RaftOperation;
 
 /**
  * Represents a state machine query.
@@ -30,18 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * are used to sequence queries as they're applied to the user state machine.
  */
 public class QueryEntry extends OperationEntry {
-  public QueryEntry(long term, long timestamp, long session, long sequence, byte[] bytes) {
-    super(term, timestamp, session, sequence, bytes);
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("term", term)
-        .add("timestamp", new Date(timestamp))
-        .add("session", session)
-        .add("sequence", sequence)
-        .add("query", ArraySizeHashPrinter.of(bytes))
-        .toString();
+  public QueryEntry(long term, long timestamp, long session, long sequence, RaftOperation operation) {
+    super(term, timestamp, session, sequence, operation);
   }
 }

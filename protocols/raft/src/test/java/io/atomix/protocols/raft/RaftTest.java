@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.event.AbstractEvent;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftClusterEvent;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -80,6 +79,10 @@ public class RaftTest extends ConcurrentTestCase {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
+      .register(RaftOperation.class)
+      .register(OperationId.class)
+      .register(OperationType.class)
+      .register(ReadConsistency.class)
       .register(ArrayList.class)
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
@@ -92,16 +95,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(long[].class)
       .build());
 
-  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.newBuilder()
-      .register(TestCommand.class)
-      .register(TestQuery.class)
-      .register(TestEvent.class)
-      .register(TestExpire.class)
-      .register(TestClose.class)
-      .register(IndexEvent.class)
-      .register(IndexEvent.Type.class)
-      .register(RaftQuery.ConsistencyLevel.class)
-      .build());
+  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.DEFAULT);
 
   protected volatile int nextId;
   protected volatile List<RaftMember> members;
@@ -168,7 +162,7 @@ public class RaftTest extends ConcurrentTestCase {
    */
   private void submit(RaftProxy session, int count, int total) {
     if (count < total) {
-      session.submit(new TestCommand()).whenComplete((result, error) -> {
+      session.submit(WRITE).whenComplete((result, error) -> {
         threadAssertNull(error);
         submit(session, count + 1, total);
       });
@@ -479,10 +473,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.submit(new TestCommand()).thenAccept(result -> {
-      threadAssertNotNull(result);
-      resume();
-    });
+    session.submit(WRITE).thenRun(this::resume);
 
     await(30000);
   }
@@ -516,10 +507,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.submit(new TestCommand()).thenAccept(result -> {
-      threadAssertNotNull(result);
-      resume();
-    });
+    session.submit(WRITE).thenRun(this::resume);
 
     await(30000);
   }
@@ -528,119 +516,116 @@ public class RaftTest extends ConcurrentTestCase {
    * Tests submitting a query.
    */
   public void testOneNodeSubmitQueryWithSequentialConsistency() throws Throwable {
-    testSubmitQuery(1, RaftQuery.ConsistencyLevel.SEQUENTIAL);
+    testSubmitQuery(1, ReadConsistency.SEQUENTIAL);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testOneNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
-    testSubmitQuery(1, RaftQuery.ConsistencyLevel.LINEARIZABLE_LEASE);
+    testSubmitQuery(1, ReadConsistency.LINEARIZABLE_LEASE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testOneNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
-    testSubmitQuery(1, RaftQuery.ConsistencyLevel.LINEARIZABLE);
+    testSubmitQuery(1, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testTwoNodeSubmitQueryWithSequentialConsistency() throws Throwable {
-    testSubmitQuery(2, RaftQuery.ConsistencyLevel.SEQUENTIAL);
+    testSubmitQuery(2, ReadConsistency.SEQUENTIAL);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testTwoNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
-    testSubmitQuery(2, RaftQuery.ConsistencyLevel.LINEARIZABLE_LEASE);
+    testSubmitQuery(2, ReadConsistency.LINEARIZABLE_LEASE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testTwoNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
-    testSubmitQuery(2, RaftQuery.ConsistencyLevel.LINEARIZABLE);
+    testSubmitQuery(2, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testThreeNodeSubmitQueryWithSequentialConsistency() throws Throwable {
-    testSubmitQuery(3, RaftQuery.ConsistencyLevel.SEQUENTIAL);
+    testSubmitQuery(3, ReadConsistency.SEQUENTIAL);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testThreeNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
-    testSubmitQuery(3, RaftQuery.ConsistencyLevel.LINEARIZABLE_LEASE);
+    testSubmitQuery(3, ReadConsistency.LINEARIZABLE_LEASE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testThreeNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
-    testSubmitQuery(3, RaftQuery.ConsistencyLevel.LINEARIZABLE);
+    testSubmitQuery(3, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testFourNodeSubmitQueryWithSequentialConsistency() throws Throwable {
-    testSubmitQuery(4, RaftQuery.ConsistencyLevel.SEQUENTIAL);
+    testSubmitQuery(4, ReadConsistency.SEQUENTIAL);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testFourNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
-    testSubmitQuery(4, RaftQuery.ConsistencyLevel.LINEARIZABLE_LEASE);
+    testSubmitQuery(4, ReadConsistency.LINEARIZABLE_LEASE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testFourNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
-    testSubmitQuery(4, RaftQuery.ConsistencyLevel.LINEARIZABLE);
+    testSubmitQuery(4, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testFiveNodeSubmitQueryWithSequentialConsistency() throws Throwable {
-    testSubmitQuery(5, RaftQuery.ConsistencyLevel.SEQUENTIAL);
+    testSubmitQuery(5, ReadConsistency.SEQUENTIAL);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testFiveNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
-    testSubmitQuery(5, RaftQuery.ConsistencyLevel.LINEARIZABLE_LEASE);
+    testSubmitQuery(5, ReadConsistency.LINEARIZABLE_LEASE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testFiveNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
-    testSubmitQuery(5, RaftQuery.ConsistencyLevel.LINEARIZABLE);
+    testSubmitQuery(5, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Tests submitting a query with a configured consistency level.
    */
-  private void testSubmitQuery(int nodes, RaftQuery.ConsistencyLevel consistency) throws Throwable {
+  private void testSubmitQuery(int nodes, ReadConsistency consistency) throws Throwable {
     createServers(nodes);
 
     RaftClient client = createClient();
-    RaftProxy session = createSession(client);
-    session.submit(new TestQuery(consistency)).thenAccept(result -> {
-      threadAssertNotNull(result);
-      resume();
-    });
+    RaftProxy session = createSession(client, consistency);
+    session.submit(READ).thenRun(this::resume);
 
     await(30000);
   }
@@ -691,18 +676,19 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.<IndexEvent>addEventListener(event -> {
+    session.<Long>addListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(count.incrementAndGet(), 2L);
-      threadAssertEquals(index.get(), event.subject());
+      threadAssertEquals(index.get(), event);
       resume();
     });
 
-    session.submit(new TestEvent(true)).thenAccept(result -> {
-      threadAssertNotNull(result);
-      threadAssertEquals(count.incrementAndGet(), 1L);
-      index.set(result);
-      resume();
-    });
+    session.<Boolean, Long>submit(EVENT, clientSerializer::encode, true, clientSerializer::decode)
+        .thenAccept(result -> {
+          threadAssertNotNull(result);
+          threadAssertEquals(count.incrementAndGet(), 1L);
+          index.set(result);
+          resume();
+        });
 
     await(30000, 2);
   }
@@ -750,23 +736,20 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(event -> {
+    session.addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
-    createSession(createClient()).addEventListener(event -> {
+    createSession(createClient()).addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
-    createSession(createClient()).addEventListener(event -> {
+    createSession(createClient()).addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    session.submit(new TestEvent(false)).thenAccept(result -> {
-      threadAssertNotNull(result);
-      resume();
-    });
+    session.submit(EVENT, clientSerializer::encode, false).thenRun(this::resume);
 
     await(30000, 4);
   }
@@ -775,27 +758,27 @@ public class RaftTest extends ConcurrentTestCase {
    * Tests that operations are properly sequenced on the client.
    */
   public void testSequenceLinearizableOperations() throws Throwable {
-    testSequenceOperations(5, RaftQuery.ConsistencyLevel.LINEARIZABLE);
+    testSequenceOperations(5, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Tests that operations are properly sequenced on the client.
    */
   public void testSequenceBoundedLinearizableOperations() throws Throwable {
-    testSequenceOperations(5, RaftQuery.ConsistencyLevel.LINEARIZABLE_LEASE);
+    testSequenceOperations(5, ReadConsistency.LINEARIZABLE_LEASE);
   }
 
   /**
    * Tests that operations are properly sequenced on the client.
    */
   public void testSequenceSequentialOperations() throws Throwable {
-    testSequenceOperations(5, RaftQuery.ConsistencyLevel.SEQUENTIAL);
+    testSequenceOperations(5, ReadConsistency.SEQUENTIAL);
   }
 
   /**
    * Tests submitting a linearizable event that publishes to all sessions.
    */
-  private void testSequenceOperations(int nodes, RaftQuery.ConsistencyLevel consistency) throws Throwable {
+  private void testSequenceOperations(int nodes, ReadConsistency consistency) throws Throwable {
     createServers(nodes);
 
     AtomicInteger counter = new AtomicInteger();
@@ -803,21 +786,21 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.<IndexEvent>addEventListener(event -> {
+    session.<Long>addListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(counter.incrementAndGet(), 3);
-      threadAssertTrue(event.subject() >= index.get());
-      index.set(event.subject());
+      threadAssertTrue(event >= index.get());
+      index.set(event);
       resume();
     });
 
-    session.submit(new TestCommand()).thenAccept(result -> {
+    session.<Long>submit(WRITE, clientSerializer::decode).thenAccept(result -> {
       threadAssertNotNull(result);
       threadAssertEquals(counter.incrementAndGet(), 1);
       threadAssertTrue(index.compareAndSet(0, result));
       resume();
     });
 
-    session.submit(new TestEvent(true)).thenAccept(result -> {
+    session.<Boolean, Long>submit(EVENT, clientSerializer::encode, true, clientSerializer::decode).thenAccept(result -> {
       threadAssertNotNull(result);
       threadAssertEquals(counter.incrementAndGet(), 2);
       threadAssertTrue(result > index.get());
@@ -825,7 +808,7 @@ public class RaftTest extends ConcurrentTestCase {
       resume();
     });
 
-    session.submit(new TestQuery(consistency)).thenAccept(result -> {
+    session.<Long>submit(READ, clientSerializer::decode).thenAccept(result -> {
       threadAssertNotNull(result);
       threadAssertEquals(counter.incrementAndGet(), 4);
       long i = index.get();
@@ -847,21 +830,23 @@ public class RaftTest extends ConcurrentTestCase {
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
 
-    session.<IndexEvent>addEventListener(event -> {
-      threadAssertEquals(index.get(), event.subject());
+    session.<Long>addListener(CHANGE_EVENT, clientSerializer::decode, event -> {
+      threadAssertEquals(index.get(), event);
       try {
-        threadAssertTrue(index.get() <= session.submit(new TestQuery(RaftQuery.ConsistencyLevel.LINEARIZABLE)).get(5, TimeUnit.SECONDS));
+        threadAssertTrue(index.get() <= session.<Long>submit(READ, clientSerializer::decode)
+            .get(5, TimeUnit.SECONDS));
       } catch (InterruptedException | TimeoutException | ExecutionException e) {
         threadFail(e);
       }
       resume();
     });
 
-    session.submit(new TestEvent(true)).thenAccept(result -> {
-      threadAssertNotNull(result);
-      index.compareAndSet(0, result);
-      resume();
-    });
+    session.<Boolean, Long>submit(EVENT, clientSerializer::encode, true, clientSerializer::decode)
+        .thenAccept(result -> {
+          threadAssertNotNull(result);
+          index.compareAndSet(0, result);
+          resume();
+        });
 
     await(10000, 2);
   }
@@ -881,16 +866,13 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(message -> {
+    session.addListener(message -> {
       threadAssertNotNull(message);
       resume();
     });
 
     for (int i = 0 ; i < 10; i++) {
-      session.submit(new TestEvent(true)).thenAccept(result -> {
-        threadAssertNotNull(result);
-        resume();
-      });
+      session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
     }
@@ -918,16 +900,13 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(event -> {
+    session.addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     for (int i = 0; i < 10; i++) {
-      session.submit(new TestEvent(true)).thenAccept(result -> {
-        threadAssertNotNull(result);
-        resume();
-      });
+      session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
     }
@@ -936,10 +915,7 @@ public class RaftTest extends ConcurrentTestCase {
     leader.shutdown().get(10, TimeUnit.SECONDS);
 
     for (int i = 0; i < 10; i++) {
-      session.submit(new TestEvent(true)).thenAccept(result -> {
-        threadAssertNotNull(result);
-        resume();
-      });
+      session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
     }
@@ -967,24 +943,18 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(event -> {
+    session.addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     for (int i = 0 ; i < 10; i++) {
-      session.submit(new TestEvent(true)).thenAccept(result -> {
-        threadAssertNotNull(result);
-        resume();
-      });
+      session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
     }
 
-    session.submit(new TestEvent(true)).thenAccept(result -> {
-      threadAssertNotNull(result);
-      resume();
-    });
+    session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
     RaftServer follower = servers.stream().filter(s -> s.getRole() == RaftServer.Role.FOLLOWER).findFirst().get();
     follower.shutdown().get(10, TimeUnit.SECONDS);
@@ -992,10 +962,7 @@ public class RaftTest extends ConcurrentTestCase {
     await(30000, 2);
 
     for (int i = 0 ; i < 10; i++) {
-      session.submit(new TestEvent(true)).thenAccept(result -> {
-        threadAssertNotNull(result);
-        resume();
-      });
+      session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
     }
@@ -1016,24 +983,18 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(event -> {
+    session.addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     for (int i = 0 ; i < 10; i++) {
-      session.submit(new TestEvent(true)).thenAccept(result -> {
-        threadAssertNotNull(result);
-        resume();
-      });
+      session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
     }
 
-    session.submit(new TestEvent(true)).thenAccept(result -> {
-      threadAssertNotNull(result);
-      resume();
-    });
+    session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
     RaftServer leader = servers.stream().filter(s -> s.getRole() == RaftServer.Role.LEADER).findFirst().get();
     leader.shutdown().get(10, TimeUnit.SECONDS);
@@ -1041,10 +1002,7 @@ public class RaftTest extends ConcurrentTestCase {
     await(30000);
 
     for (int i = 0 ; i < 10; i++) {
-      session.submit(new TestEvent(true)).thenAccept(result -> {
-        threadAssertNotNull(result);
-        resume();
-      });
+      session.submit(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
     }
@@ -1065,26 +1023,23 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addEventListener(event -> {
+    session.addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    createSession(createClient()).addEventListener(event -> {
+    createSession(createClient()).addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    createSession(createClient()).addEventListener(event -> {
+    createSession(createClient()).addListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     for (int i = 0; i < 10; i++) {
-      session.submit(new TestEvent(false)).thenAccept(result -> {
-        threadAssertNotNull(result);
-        resume();
-      });
+      session.submit(EVENT, clientSerializer::encode, false).thenRun(this::resume);
 
       await(10000, 4);
     }
@@ -1121,12 +1076,8 @@ public class RaftTest extends ConcurrentTestCase {
     RaftProxy session1 = createSession(client1);
     RaftClient client2 = createClient();
     createSession(client2);
-    session1.<IndexEvent>addEventListener(event -> {
-      if (event.type() == IndexEvent.Type.EXPIRED) {
-        resume();
-      }
-    });
-    session1.submit(new TestExpire()).thenRun(this::resume);
+    session1.addListener(EXPIRE_EVENT, this::resume);
+    session1.submit(EXPIRE).thenRun(this::resume);
     client2.close().thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 3);
   }
@@ -1161,13 +1112,9 @@ public class RaftTest extends ConcurrentTestCase {
     RaftClient client1 = createClient();
     RaftProxy session1 = createSession(client1);
     RaftClient client2 = createClient();
-    session1.submit(new TestClose()).thenRun(this::resume);
+    session1.submit(CLOSE).thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 1);
-    session1.<IndexEvent>addEventListener(event -> {
-      if (event.type() == IndexEvent.Type.CLOSED) {
-        resume();
-      }
-    });
+    session1.addListener(CLOSE_EVENT, this::resume);
     createSession(client2).close().thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 2);
   }
@@ -1272,10 +1219,17 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a test session.
    */
   private RaftProxy createSession(RaftClient client) {
+    return createSession(client, ReadConsistency.LINEARIZABLE);
+  }
+
+  /**
+   * Creates a test session.
+   */
+  private RaftProxy createSession(RaftClient client, ReadConsistency consistency) {
     return client.newProxyBuilder()
         .withName("test")
         .withType("test")
-        .withSerializer(clientSerializer)
+        .withReadConsistency(consistency)
         .build();
   }
 
@@ -1322,33 +1276,44 @@ public class RaftTest extends ConcurrentTestCase {
     protocolFactory = new TestRaftProtocolFactory();
   }
 
+  private static final OperationId WRITE = OperationId.command("write");
+  private static final OperationId EVENT = OperationId.command("event");
+  private static final OperationId EXPIRE = OperationId.command("expire");
+  private static final OperationId CLOSE = OperationId.command("close");
+
+  private static final OperationId READ = OperationId.query("read");
+
+  private static final EventType CHANGE_EVENT = EventType.from("change");
+  private static final EventType EXPIRE_EVENT = EventType.from("expire");
+  private static final EventType CLOSE_EVENT = EventType.from("close");
+
   /**
    * Test state machine.
    */
   public static class TestStateMachine extends RaftStateMachine implements RaftSessionListener, Snapshottable {
-    private RaftCommit<TestExpire> expire;
-    private RaftCommit<TestClose> close;
-
-    protected TestStateMachine() {
-      super(RaftTest.clientSerializer);
-    }
+    private RaftCommit<Void> expire;
+    private RaftCommit<Void> close;
 
     @Override
-    public void onOpen(RaftSession session) {
-
+    protected void configure(StateMachineExecutor executor) {
+      executor.register(WRITE, this::write, clientSerializer::encode);
+      executor.register(READ, this::read, clientSerializer::encode);
+      executor.register(EVENT, clientSerializer::decode, this::event, clientSerializer::encode);
+      executor.register(CLOSE, this::close);
+      executor.register(EXPIRE, this::expire);
     }
 
     @Override
     public void onExpire(RaftSession session) {
       if (expire != null) {
-        expire.session().publish(new IndexEvent(IndexEvent.Type.EXPIRED));
+        expire.session().publish(EXPIRE_EVENT);
       }
     }
 
     @Override
     public void onClose(RaftSession session) {
       if (close != null && !session.equals(close.session())) {
-        close.session().publish(new IndexEvent(IndexEvent.Type.CLOSED));
+        close.session().publish(CLOSE_EVENT);
       }
     }
 
@@ -1362,104 +1327,32 @@ public class RaftTest extends ConcurrentTestCase {
       assert reader.readLong() == 10;
     }
 
-    public long command(RaftCommit<TestCommand> commit) {
+    protected long write(RaftCommit<Void> commit) {
       return commit.index();
     }
 
-    public long query(RaftCommit<TestQuery> commit) {
+    protected long read(RaftCommit<Void> commit) {
       return commit.index();
     }
 
-    public long event(RaftCommit<TestEvent> commit) {
-      if (commit.operation().own()) {
-        commit.session().publish(new IndexEvent(IndexEvent.Type.CHANGE, commit.index()));
+    protected long event(RaftCommit<Boolean> commit) {
+      if (commit.value()) {
+        commit.session().publish(CHANGE_EVENT, commit.index(), clientSerializer::encode);
       } else {
         for (RaftSession session : getSessions()) {
-          session.publish(new IndexEvent(IndexEvent.Type.CHANGE, commit.index()));
+          session.publish(CHANGE_EVENT, commit.index(), clientSerializer::encode);
         }
       }
       return commit.index();
     }
 
-    public void close(RaftCommit<TestClose> commit) {
+    public void close(RaftCommit<Void> commit) {
       this.close = commit;
     }
 
-    public void expire(RaftCommit<TestExpire> commit) {
+    public void expire(RaftCommit<Void> commit) {
       this.expire = commit;
     }
-  }
-
-  /**
-   * Index event.
-   */
-  public static class IndexEvent extends AbstractEvent<IndexEvent.Type, Long> {
-    public enum Type {
-      CHANGE,
-      EXPIRED,
-      CLOSED,
-    }
-
-    public IndexEvent(Type type) {
-      this(type, null);
-    }
-
-    public IndexEvent(Type type, Long subject) {
-      super(type, subject);
-    }
-
-    public IndexEvent(Type type, Long subject, long time) {
-      super(type, subject, time);
-    }
-  }
-
-  /**
-   * Test command.
-   */
-  public static class TestCommand implements RaftCommand<Long> {
-  }
-
-  /**
-   * Test query.
-   */
-  public static class TestQuery implements RaftQuery<Long> {
-    private ConsistencyLevel consistency;
-
-    public TestQuery(ConsistencyLevel consistency) {
-      this.consistency = consistency;
-    }
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return consistency;
-    }
-  }
-
-  /**
-   * Test event.
-   */
-  public static class TestEvent implements RaftCommand<Long> {
-    private boolean own;
-
-    public TestEvent(boolean own) {
-      this.own = own;
-    }
-
-    public boolean own() {
-      return own;
-    }
-  }
-
-  /**
-   * Test event.
-   */
-  public static class TestExpire implements RaftCommand<Void> {
-  }
-
-  /**
-   * Test event.
-   */
-  public static class TestClose implements RaftCommand<Void> {
   }
 
   /**

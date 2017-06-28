@@ -15,12 +15,12 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
+import com.google.common.base.Function;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.Bytes;
-import io.atomix.serializer.Serializer;
 
 import java.nio.charset.Charset;
 
@@ -34,18 +34,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * or disk based on the configured {@link StorageLevel}.
  * <p>
  * In addition to standard {@link BufferInput} methods, snapshot readers support reading serializable objects
- * from the snapshot via the {@link #readObject()} method. Serializable types must be registered on the
+ * from the snapshot via the {@link #readObject(Function)} method. Serializable types must be registered on the
  * {@link RaftServer} serializer to be supported in snapshots.
  */
 public class SnapshotReader implements BufferInput<SnapshotReader> {
   private final Buffer buffer;
   private final Snapshot snapshot;
-  private final Serializer serializer;
 
-  SnapshotReader(Buffer buffer, Snapshot snapshot, Serializer serializer) {
+  SnapshotReader(Buffer buffer, Snapshot snapshot) {
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.snapshot = checkNotNull(snapshot, "snapshot cannot be null");
-    this.serializer = checkNotNull(serializer, "serializer cannot be null");
   }
 
   @Override
@@ -72,12 +70,13 @@ public class SnapshotReader implements BufferInput<SnapshotReader> {
   /**
    * Reads an object from the buffer.
    *
-   * @param <T> The type of the object to read.
-   * @return The read object.
+   * @param decoder the object decoder
+   * @param <T> the type of the object to read
+   * @return the read object.
    */
-  public <T> T readObject() {
+  public <T> T readObject(Function<byte[], T> decoder) {
     byte[] bytes = buffer.readBytes(buffer.readInt());
-    return serializer.decode(bytes);
+    return decoder.apply(bytes);
   }
 
   @Override
