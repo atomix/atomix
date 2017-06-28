@@ -1337,10 +1337,10 @@ public class RaftTest extends ConcurrentTestCase {
 
     protected long event(RaftCommit<Boolean> commit) {
       if (commit.value()) {
-        commit.session().publish(CHANGE_EVENT, commit.index(), clientSerializer::encode);
+        commit.session().publish(CHANGE_EVENT, clientSerializer::encode, commit.index());
       } else {
         for (RaftSession session : getSessions()) {
-          session.publish(CHANGE_EVENT, commit.index(), clientSerializer::encode);
+          session.publish(CHANGE_EVENT, clientSerializer::encode, commit.index());
         }
       }
       return commit.index();
