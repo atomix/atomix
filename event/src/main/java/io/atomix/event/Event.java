@@ -18,7 +18,7 @@ package io.atomix.event;
 /**
  * Abstraction of an of a time-stamped event pertaining to an arbitrary subject.
  */
-public interface Event<T extends Enum, S> {
+public interface Event<T, S> {
 
   /**
    * Returns the timestamp of when the event occurred, given in milliseconds
