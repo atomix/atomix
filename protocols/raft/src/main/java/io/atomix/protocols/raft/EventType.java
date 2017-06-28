@@ -15,12 +15,13 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.protocols.raft.impl.DefaultEventType;
 import io.atomix.utils.Identifier;
 
 /**
  * Raft event identifier.
  */
-public class EventType extends Identifier<String> {
+public interface EventType extends Identifier<String> {
 
   /**
    * Creates a new Raft event identifier.
@@ -28,14 +29,7 @@ public class EventType extends Identifier<String> {
    * @param name the event name
    * @return the event identifier
    */
-  public static EventType from(String name) {
-    return new EventType(name);
-  }
-
-  private EventType() {
-  }
-
-  private EventType(String value) {
-    super(value);
+  static EventType from(String name) {
+    return new DefaultEventType(name);
   }
 }

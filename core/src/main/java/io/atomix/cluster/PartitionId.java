@@ -16,12 +16,12 @@
 package io.atomix.cluster;
 
 import com.google.common.base.Preconditions;
-import io.atomix.utils.Identifier;
+import io.atomix.utils.AbstractIdentifier;
 
 /**
  * {@link Partition} identifier.
  */
-public class PartitionId extends Identifier<Integer> implements Comparable<PartitionId> {
+public class PartitionId extends AbstractIdentifier<Integer> implements Comparable<PartitionId> {
 
   /**
    * Creates a partition identifier from an integer.

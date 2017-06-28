@@ -19,6 +19,7 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftClusterEvent;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
+import io.atomix.protocols.raft.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.session.RaftSession;
@@ -80,7 +81,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
       .register(RaftOperation.class)
-      .register(OperationId.class)
+      .register(DefaultOperationId.class)
       .register(OperationType.class)
       .register(ReadConsistency.class)
       .register(ArrayList.class)

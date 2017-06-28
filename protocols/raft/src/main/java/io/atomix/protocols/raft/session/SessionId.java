@@ -15,12 +15,12 @@
  */
 package io.atomix.protocols.raft.session;
 
-import io.atomix.utils.Identifier;
+import io.atomix.utils.AbstractIdentifier;
 
 /**
  * Session identifier.
  */
-public class SessionId extends Identifier<Long> {
+public class SessionId extends AbstractIdentifier<Long> {
 
   /**
    * Returns a new session ID from the given identifier.

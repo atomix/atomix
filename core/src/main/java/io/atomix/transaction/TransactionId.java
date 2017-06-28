@@ -15,12 +15,12 @@
  */
 package io.atomix.transaction;
 
-import io.atomix.utils.Identifier;
+import io.atomix.utils.AbstractIdentifier;
 
 /**
  * Transaction identifier.
  */
-public final class TransactionId extends Identifier<String> {
+public final class TransactionId extends AbstractIdentifier<String> {
 
   /**
    * Creates a new transaction identifier.

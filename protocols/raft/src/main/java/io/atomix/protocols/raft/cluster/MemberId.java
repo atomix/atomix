@@ -15,12 +15,12 @@
  */
 package io.atomix.protocols.raft.cluster;
 
-import io.atomix.utils.Identifier;
+import io.atomix.utils.AbstractIdentifier;
 
 /**
  * Raft member ID.
  */
-public final class MemberId extends Identifier<String> implements Comparable<MemberId> {
+public final class MemberId extends AbstractIdentifier<String> implements Comparable<MemberId> {
 
   /**
    * Constructor for serialization.

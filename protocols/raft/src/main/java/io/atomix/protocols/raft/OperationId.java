@@ -15,15 +15,14 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.protocols.raft.impl.DefaultOperationId;
 import io.atomix.utils.Identifier;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Raft operation identifier.
  */
-public class OperationId extends Identifier<String> {
-  public static final OperationId NOOP = new OperationId(OperationType.COMMAND);
+public interface OperationId extends Identifier<String> {
+  OperationId NOOP = new DefaultOperationId(OperationType.COMMAND);
 
   /**
    * Returns a new command operation identifier.
@@ -31,7 +30,7 @@ public class OperationId extends Identifier<String> {
    * @param id the command identifier
    * @return the operation identifier
    */
-  public static OperationId command(String id) {
+  static OperationId command(String id) {
     return from(id, OperationType.COMMAND);
   }
 
@@ -41,7 +40,7 @@ public class OperationId extends Identifier<String> {
    * @param id the query identifier
    * @return the operation identifier
    */
-  public static OperationId query(String id) {
+  static OperationId query(String id) {
     return from(id, OperationType.QUERY);
   }
 
@@ -52,23 +51,8 @@ public class OperationId extends Identifier<String> {
    * @param type the operation type
    * @return the operation identifier
    */
-  public static OperationId from(String id, OperationType type) {
-    return new OperationId(id, type);
-  }
-
-  private final OperationType type;
-
-  protected OperationId() {
-    this.type = null;
-  }
-
-  private OperationId(OperationType type) {
-    this.type = type;
-  }
-
-  protected OperationId(String id, OperationType type) {
-    super(id);
-    this.type = type;
+  static OperationId from(String id, OperationType type) {
+    return new DefaultOperationId(id, type);
   }
 
   /**
@@ -76,15 +60,5 @@ public class OperationId extends Identifier<String> {
    *
    * @return the operation type
    */
-  public OperationType type() {
-    return type;
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("id", id())
-        .add("type", type())
-        .toString();
-  }
+  OperationType type();
 }

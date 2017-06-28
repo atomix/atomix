@@ -13,36 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.snapshot;
+package io.atomix.protocols.raft.impl;
 
+import io.atomix.protocols.raft.EventType;
 import io.atomix.utils.AbstractIdentifier;
 
 /**
- * Snapshot identifier.
+ * Default Raft event identifier.
  */
-public class StateMachineId extends AbstractIdentifier<Long> {
-
-  /**
-   * Creates a snapshot ID from the given number.
-   *
-   * @param id the number from which to create the identifier
-   * @return the snapshot identifier
-   */
-  public static StateMachineId from(long id) {
-    return new StateMachineId(id);
+public class DefaultEventType extends AbstractIdentifier<String> implements EventType {
+  private DefaultEventType() {
   }
 
-  /**
-   * Creates a snapshot ID from the given string.
-   *
-   * @param id the string from which to create the identifier
-   * @return the snapshot identifier
-   */
-  public static StateMachineId from(String id) {
-    return from(Long.parseLong(id));
-  }
-
-  public StateMachineId(Long value) {
+  public DefaultEventType(String value) {
     super(value);
   }
 }

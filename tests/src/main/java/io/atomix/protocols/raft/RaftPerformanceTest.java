@@ -22,6 +22,7 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.error.RaftError;
+import io.atomix.protocols.raft.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -173,7 +174,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
       .register(RaftOperation.class)
-      .register(OperationId.class)
+      .register(DefaultOperationId.class)
       .register(OperationType.class)
       .register(ReadConsistency.class)
       .register(ArrayList.class)

@@ -15,12 +15,12 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.utils.Identifier;
+import io.atomix.utils.AbstractIdentifier;
 
 /**
  * Controller cluster identity.
  */
-public final class NodeId extends Identifier<String> implements Comparable<NodeId> {
+public final class NodeId extends AbstractIdentifier<String> implements Comparable<NodeId> {
 
   /**
    * Constructor for serialization.
