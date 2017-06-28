@@ -101,7 +101,7 @@ public interface RaftProxy extends RaftProxyClient {
    * @param listener  the event listener.
    * @param <T>       the event value type.
    */
-  <T> void addListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener);
+  <T> void addEventListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener);
 
   /**
    * Removes an event listener.

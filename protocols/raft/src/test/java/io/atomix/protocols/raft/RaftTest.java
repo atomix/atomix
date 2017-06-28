@@ -676,7 +676,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.<Long>addListener(CHANGE_EVENT, clientSerializer::decode, event -> {
+    session.<Long>addEventListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(count.incrementAndGet(), 2L);
       threadAssertEquals(index.get(), event);
       resume();
@@ -786,7 +786,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.<Long>addListener(CHANGE_EVENT, clientSerializer::decode, event -> {
+    session.<Long>addEventListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(counter.incrementAndGet(), 3);
       threadAssertTrue(event >= index.get());
       index.set(event);
@@ -830,7 +830,7 @@ public class RaftTest extends ConcurrentTestCase {
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
 
-    session.<Long>addListener(CHANGE_EVENT, clientSerializer::decode, event -> {
+    session.<Long>addEventListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(index.get(), event);
       try {
         threadAssertTrue(index.get() <= session.<Long>submit(READ, clientSerializer::decode)

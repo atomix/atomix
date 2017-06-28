@@ -165,7 +165,7 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
-  public <T> void addListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener) {
+  public <T> void addEventListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener) {
     Consumer<RaftEvent> wrappedListener = e -> {
       if (e.type().equals(eventType)) {
         listener.accept(decoder.apply(e.value()));
