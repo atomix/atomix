@@ -110,7 +110,7 @@ public interface RaftProxy extends RaftProxyClient {
    * @param listener  the event listener to remove
    */
   @Override
-  void removeListener(EventType eventType, Consumer listener);
+  void removeEventListener(EventType eventType, Consumer listener);
 
   /**
    * Returns a boolean indicating whether the session is open.

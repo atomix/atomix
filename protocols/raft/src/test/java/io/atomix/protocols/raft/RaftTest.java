@@ -736,15 +736,15 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addListener(event -> {
+    session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
-    createSession(createClient()).addListener(event -> {
+    createSession(createClient()).addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
-    createSession(createClient()).addListener(event -> {
+    createSession(createClient()).addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
@@ -866,7 +866,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addListener(message -> {
+    session.addEventListener(message -> {
       threadAssertNotNull(message);
       resume();
     });
@@ -900,7 +900,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addListener(event -> {
+    session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
@@ -943,7 +943,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addListener(event -> {
+    session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
@@ -983,7 +983,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addListener(event -> {
+    session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
@@ -1023,17 +1023,17 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    session.addListener(event -> {
+    session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    createSession(createClient()).addListener(event -> {
+    createSession(createClient()).addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    createSession(createClient()).addListener(event -> {
+    createSession(createClient()).addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
@@ -1076,7 +1076,7 @@ public class RaftTest extends ConcurrentTestCase {
     RaftProxy session1 = createSession(client1);
     RaftClient client2 = createClient();
     createSession(client2);
-    session1.addListener(EXPIRE_EVENT, this::resume);
+    session1.addEventListener(EXPIRE_EVENT, this::resume);
     session1.submit(EXPIRE).thenRun(this::resume);
     client2.close().thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 3);
@@ -1114,7 +1114,7 @@ public class RaftTest extends ConcurrentTestCase {
     RaftClient client2 = createClient();
     session1.submit(CLOSE).thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 1);
-    session1.addListener(CLOSE_EVENT, this::resume);
+    session1.addEventListener(CLOSE_EVENT, this::resume);
     createSession(client2).close().thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 2);
   }

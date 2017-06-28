@@ -133,35 +133,35 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
-  public void addListener(Consumer<RaftEvent> listener) {
+  public void addEventListener(Consumer<RaftEvent> listener) {
     proxyListener.addEventListener(listener);
   }
 
   @Override
-  public void removeListener(Consumer<RaftEvent> listener) {
+  public void removeEventListener(Consumer<RaftEvent> listener) {
     proxyListener.removeEventListener(listener);
   }
 
   @Override
-  public void addListener(EventType eventType, Runnable listener) {
+  public void addEventListener(EventType eventType, Runnable listener) {
     Consumer<RaftEvent> wrappedListener = e -> {
       if (e.type().equals(eventType)) {
         listener.run();
       }
     };
     eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
-    addListener(wrappedListener);
+    addEventListener(wrappedListener);
   }
 
   @Override
-  public void addListener(EventType eventType, Consumer<byte[]> listener) {
+  public void addEventListener(EventType eventType, Consumer<byte[]> listener) {
     Consumer<RaftEvent> wrappedListener = e -> {
       if (e.type().equals(eventType)) {
         listener.accept(e.value());
       }
     };
     eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
-    addListener(wrappedListener);
+    addEventListener(wrappedListener);
   }
 
   @Override
@@ -172,23 +172,23 @@ public class DefaultRaftProxy implements RaftProxy {
       }
     };
     eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
-    addListener(wrappedListener);
+    addEventListener(wrappedListener);
   }
 
   @Override
-  public void removeListener(EventType eventType, Runnable listener) {
+  public void removeEventListener(EventType eventType, Runnable listener) {
     Consumer<RaftEvent> eventListener =
         eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap())
             .remove(listener);
-    removeListener(eventListener);
+    removeEventListener(eventListener);
   }
 
   @Override
-  public void removeListener(EventType eventType, Consumer listener) {
+  public void removeEventListener(EventType eventType, Consumer listener) {
     Consumer<RaftEvent> eventListener =
         eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap())
             .remove(listener);
-    removeListener(eventListener);
+    removeEventListener(eventListener);
   }
 
   @Override

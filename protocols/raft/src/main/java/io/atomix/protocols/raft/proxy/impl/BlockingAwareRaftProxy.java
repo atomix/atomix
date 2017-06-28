@@ -63,17 +63,17 @@ public class BlockingAwareRaftProxy extends DelegatingRaftProxy {
   }
 
   @Override
-  public void addListener(Consumer<RaftEvent> listener) {
+  public void addEventListener(Consumer<RaftEvent> listener) {
     Consumer<RaftEvent> wrappedListener = e -> executor.execute(() -> listener.accept(e));
     eventListeners.put(listener, wrappedListener);
-    super.addListener(wrappedListener);
+    super.addEventListener(wrappedListener);
   }
 
   @Override
-  public void removeListener(Consumer<RaftEvent> listener) {
+  public void removeEventListener(Consumer<RaftEvent> listener) {
     Consumer<RaftEvent> wrappedListener = eventListeners.remove(listener);
     if (wrappedListener != null) {
-      super.removeListener(wrappedListener);
+      super.removeEventListener(wrappedListener);
     }
   }
 }

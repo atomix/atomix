@@ -145,14 +145,14 @@ public interface RaftProxyClient {
    *
    * @param listener the event listener to add
    */
-  void addListener(Consumer<RaftEvent> listener);
+  void addEventListener(Consumer<RaftEvent> listener);
 
   /**
    * Removes a session event listener.
    *
    * @param listener the event listener to remove
    */
-  void removeListener(Consumer<RaftEvent> listener);
+  void removeEventListener(Consumer<RaftEvent> listener);
 
   /**
    * Adds an empty session event listener.
@@ -160,7 +160,7 @@ public interface RaftProxyClient {
    * @param eventType the event type
    * @param listener  the event listener to add
    */
-  void addListener(EventType eventType, Runnable listener);
+  void addEventListener(EventType eventType, Runnable listener);
 
   /**
    * Adds a session event listener.
@@ -168,7 +168,7 @@ public interface RaftProxyClient {
    * @param eventType the event type identifier
    * @param listener  the event listener to add
    */
-  void addListener(EventType eventType, Consumer<byte[]> listener);
+  void addEventListener(EventType eventType, Consumer<byte[]> listener);
 
   /**
    * Removes an empty session event listener.
@@ -176,7 +176,7 @@ public interface RaftProxyClient {
    * @param eventType the event type
    * @param listener  the event listener to add
    */
-  void removeListener(EventType eventType, Runnable listener);
+  void removeEventListener(EventType eventType, Runnable listener);
 
   /**
    * Removes a session event listener.
@@ -184,6 +184,6 @@ public interface RaftProxyClient {
    * @param eventType the event type identifier
    * @param listener  the event listener to remove
    */
-  void removeListener(EventType eventType, Consumer<byte[]> listener);
+  void removeEventListener(EventType eventType, Consumer<byte[]> listener);
 
 }
