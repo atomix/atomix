@@ -73,7 +73,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   private final RaftLog log;
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
-  private final Map<String, RaftServerStateMachineExecutor> stateMachines = new HashMap<>();
+  private final Map<String, RaftServerStateMachineContext> stateMachines = new HashMap<>();
   private volatile long lastApplied;
 
   public RaftServerStateMachineManager(RaftServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
@@ -324,7 +324,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
       RaftSessionContext session = sessionManager.getSession(sessionId);
       if (session != null) {
-        session.getStateMachineExecutor().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex);
+        session.getStateMachineContext().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex);
       }
     }
     return CompletableFuture.completedFuture(null);
@@ -335,7 +335,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   private CompletableFuture<Long> applyOpenSession(Indexed<OpenSessionEntry> entry) {
     // Get the state machine executor or create one if it doesn't already exist.
-    RaftServerStateMachineExecutor stateMachineExecutor = stateMachines.get(entry.entry().name());
+    RaftServerStateMachineContext stateMachineExecutor = stateMachines.get(entry.entry().name());
     if (stateMachineExecutor == null) {
       Supplier<RaftStateMachine> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().typeName());
       if (stateMachineSupplier == null) {
@@ -343,7 +343,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
       }
 
       StateMachineId stateMachineId = StateMachineId.from(entry.index());
-      stateMachineExecutor = new RaftServerStateMachineExecutor(
+      stateMachineExecutor = new RaftServerStateMachineContext(
           stateMachineId,
           entry.entry().name(),
           entry.entry().typeName(),
@@ -380,7 +380,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     }
 
     // Get the state machine executor associated with the session and unregister the session.
-    RaftServerStateMachineExecutor stateMachineExecutor = session.getStateMachineExecutor();
+    RaftServerStateMachineContext stateMachineExecutor = session.getStateMachineContext();
     return stateMachineExecutor.closeSession(entry.index(), entry.entry().timestamp(), session);
   }
 
@@ -440,7 +440,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     }
 
     // Execute the command using the state machine associated with the session.
-    return session.getStateMachineExecutor()
+    return session.getStateMachineContext()
         .executeCommand(
             entry.index(),
             entry.entry().sequenceNumber(),
@@ -477,7 +477,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     }
 
     // Execute the query using the state machine associated with the session.
-    return session.getStateMachineExecutor()
+    return session.getStateMachineContext()
         .executeQuery(
             entry.index(),
             entry.entry().sequenceNumber(),
@@ -492,8 +492,8 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   private void compactLog() {
     // Iterate through state machines and compute the lowest stored snapshot for all state machines.
     long snapshotIndex = state.getLogWriter().getLastIndex();
-    for (RaftServerStateMachineExecutor stateMachineExecutor : stateMachines.values()) {
-      Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.getContext().stateMachineId());
+    for (RaftServerStateMachineContext stateMachineExecutor : stateMachines.values()) {
+      Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.stateMachineId());
       if (snapshot == null) {
         return;
       } else {

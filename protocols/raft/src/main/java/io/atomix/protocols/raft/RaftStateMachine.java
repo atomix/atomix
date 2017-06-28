@@ -18,12 +18,6 @@ package io.atomix.protocols.raft;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
-import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
-import io.atomix.time.LogicalClock;
-import io.atomix.time.WallClock;
-import io.atomix.utils.concurrent.Scheduler;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Base class for user-provided Raft state machines.
@@ -42,7 +36,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * <h3>State machine operations</h3>
  * State machine operations are implemented as methods on the state machine. Operations can be automatically detected
- * by the state machine during setup or can be explicitly registered by overriding the {@link #configure(StateMachineExecutor)}
+ * by the state machine during setup or can be explicitly registered by overriding the {@link #configure(RaftOperationExecutor)}
  * method. Each operation method must take a single {@link RaftCommit} argument for a specific operation type.
  * <pre>
  *   {@code
@@ -86,11 +80,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * that will be sent back to the client.
  * <p>
  * <h3>Deterministic scheduling</h3>
- * The {@link StateMachineExecutor} is responsible for executing state machine operations sequentially and provides an
+ * The {@link RaftOperationExecutor} is responsible for executing state machine operations sequentially and provides an
  * interface similar to that of {@link java.util.concurrent.ScheduledExecutorService} to allow state machines to schedule
  * time-based callbacks. Because of the determinism requirement, scheduled callbacks are guaranteed to be executed
  * deterministically as well. The executor can be accessed via the {@link #executor} field.
- * See the {@link StateMachineExecutor} documentation for more information.
+ * See the {@link RaftOperationExecutor} documentation for more information.
  * <pre>
  *   {@code
  *   public void putWithTtl(Commit<PutWithTtl> commit) {
@@ -155,117 +149,29 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @see RaftCommit
  * @see StateMachineContext
- * @see StateMachineExecutor
+ * @see RaftOperationExecutor
  */
-public abstract class RaftStateMachine implements Snapshottable, RaftSessionListener {
-  private StateMachineExecutor executor;
-  private StateMachineContext context;
+public interface RaftStateMachine extends Snapshottable, RaftSessionListener {
 
   /**
    * Initializes the state machine.
    *
-   * @param executor The state machine executor.
+   * @param context The state machine context.
    * @throws NullPointerException if {@code context} is null
    */
-  public void init(StateMachineExecutor executor) {
-    this.executor = checkNotNull(executor, "executor cannot be null");
-    this.context = executor.getContext();
-    configure(executor);
-  }
+  void init(StateMachineContext context);
 
   /**
-   * Configures the state machine.
-   * <p>
-   * By default, this method will configure state machine operations by extracting public methods with
-   * a single {@link RaftCommit} parameter via reflection. Override this method to explicitly register
-   * state machine operations via the provided {@link StateMachineExecutor}.
+   * Applies a commit to the state machine.
    *
-   * @param executor The state machine executor.
+   * @param commit the commit to apply
+   * @return the commit result
    */
-  protected abstract void configure(StateMachineExecutor executor);
-
-  /**
-   * Returns the state machine scheduler.
-   *
-   * @return The state machine scheduler.
-   */
-  protected Scheduler getScheduler() {
-    return executor;
-  }
-
-  /**
-   * Returns the unique state machine identifier.
-   *
-   * @return The unique state machine identifier.
-   */
-  protected StateMachineId getStateMachineId() {
-    return context.stateMachineId();
-  }
-
-  /**
-   * Returns the unique state machine name.
-   *
-   * @return The unique state machine name.
-   */
-  protected String getStateMachineName() {
-    return context.name();
-  }
-
-  /**
-   * Returns the state machine's current index.
-   *
-   * @return The state machine's current index.
-   */
-  protected long getCurrentIndex() {
-    return context.currentIndex();
-  }
-
-  /**
-   * Returns the state machine's wall clock.
-   *
-   * @return The state machine's wall clock.
-   */
-  protected WallClock getWallClock() {
-    return context.wallClock();
-  }
-
-  /**
-   * Returns the state machine's logical clock.
-   *
-   * @return The state machine's logical clock.
-   */
-  protected LogicalClock getLogicalClock() {
-    return context.logicalClock();
-  }
-
-  /**
-   * Returns the sessions registered with the state machines.
-   *
-   * @return The state machine's sessions.
-   */
-  protected RaftSessions getSessions() {
-    return context.sessions();
-  }
-
-  @Override
-  public void onOpen(RaftSession session) {
-
-  }
-
-  @Override
-  public void onExpire(RaftSession session) {
-
-  }
-
-  @Override
-  public void onClose(RaftSession session) {
-
-  }
+  byte[] apply(RaftCommit<byte[]> commit);
 
   /**
    * Closes the state machine.
    */
-  public void close() {
-
+  default void close() {
   }
 }

@@ -54,13 +54,20 @@ public interface StateMachineContext {
   /**
    * Returns the current state machine index.
    * <p>
-   * The state index is indicative of the index of the current {@link RaftCommand}
-   * being applied to the server state machine. If a {@link RaftQuery} is being applied,
+   * The state index is indicative of the index of the current operation
+   * being applied to the server state machine. If a query is being applied,
    * the index of the last command applied will be used.
    *
    * @return The current state machine index.
    */
   long currentIndex();
+
+  /**
+   * Returns the current operation type.
+   *
+   * @return the current operation type
+   */
+  OperationType currentOperation();
 
   /**
    * Returns the state machine's logical clock.

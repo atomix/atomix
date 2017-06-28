@@ -61,7 +61,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see RaftStateMachine
  * @see StateMachineContext
  */
-public interface StateMachineExecutor extends ThreadContext {
+public interface RaftOperationExecutor extends ThreadContext {
 
   /**
    * Returns the state machine context.
@@ -73,6 +73,14 @@ public interface StateMachineExecutor extends ThreadContext {
    * @return The state machine context.
    */
   StateMachineContext getContext();
+
+  /**
+   * Applies the given commit to the executor.
+   *
+   * @param commit the commit to apply
+   * @return the commit result
+   */
+  byte[] apply(RaftCommit<byte[]> commit);
 
   /**
    * Registers a operation callback.

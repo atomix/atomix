@@ -513,11 +513,11 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Performance test state machine.
    */
-  public class PerformanceStateMachine extends RaftStateMachine {
+  public class PerformanceStateMachine extends RaftService {
     private Map<String, String> map = new HashMap<>();
 
     @Override
-    protected void configure(StateMachineExecutor executor) {
+    protected void configure(RaftOperationExecutor executor) {
 
     }
 

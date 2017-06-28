@@ -23,7 +23,7 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
-import io.atomix.protocols.raft.impl.RaftServerStateMachineExecutor;
+import io.atomix.protocols.raft.impl.RaftServerStateMachineContext;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.session.RaftSession;
@@ -55,7 +55,7 @@ public class RaftSessionContext implements RaftSession {
   private final ReadConsistency readConsistency;
   private final long timeout;
   private final RaftServerProtocol protocol;
-  private final RaftServerStateMachineExecutor executor;
+  private final RaftServerStateMachineContext context;
   private final RaftServerContext server;
   private volatile State state = State.OPEN;
   private long timestamp;
@@ -79,7 +79,7 @@ public class RaftSessionContext implements RaftSession {
       String type,
       ReadConsistency readConsistency,
       long timeout,
-      RaftServerStateMachineExecutor executor,
+      RaftServerStateMachineContext context,
       RaftServerContext server) {
     this.id = id;
     this.member = member;
@@ -91,9 +91,9 @@ public class RaftSessionContext implements RaftSession {
     this.completeIndex = id.id();
     this.lastApplied = id.id();
     this.protocol = server.getProtocol();
-    this.executor = executor;
+    this.context = context;
     this.server = server;
-    protocol.registerResetListener(id, request -> resendEvents(request.index()), executor.executor());
+    protocol.registerResetListener(id, request -> resendEvents(request.index()), context.executor());
   }
 
   @Override
@@ -147,12 +147,12 @@ public class RaftSessionContext implements RaftSession {
   }
 
   /**
-   * Returns the state machine executor associated with the session.
+   * Returns the state machine context associated with the session.
    *
-   * @return The state machine executor associated with the session.
+   * @return The state machine context associated with the session.
    */
-  public RaftServerStateMachineExecutor getStateMachineExecutor() {
-    return executor;
+  public RaftServerStateMachineContext getStateMachineContext() {
+    return context;
   }
 
   /**
@@ -396,18 +396,18 @@ public class RaftSessionContext implements RaftSession {
     State state = this.state;
     checkState(state != State.EXPIRED, "session is expired");
     checkState(state != State.CLOSED, "session is closed");
-    checkState(executor.getContext().getOperationType() == OperationType.COMMAND, "session events can only be published during command execution");
+    checkState(context.currentOperation() == OperationType.COMMAND, "session events can only be published during command execution");
 
     // If the client acked an index greater than the current event sequence number since we know the
     // client must have received it from another server.
-    if (completeIndex > executor.getContext().currentIndex()) {
+    if (completeIndex > context.currentIndex()) {
       return;
     }
 
     // If no event has been published for this index yet, create a new event holder.
-    if (this.currentEventList == null || this.currentEventList.eventIndex != executor.getContext().currentIndex()) {
+    if (this.currentEventList == null || this.currentEventList.eventIndex != context.currentIndex()) {
       long previousIndex = eventIndex;
-      eventIndex = executor.getContext().currentIndex();
+      eventIndex = context.currentIndex();
       this.currentEventList = new EventHolder(eventIndex, previousIndex);
     }
 

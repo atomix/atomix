@@ -68,7 +68,7 @@ public interface RaftCommit<T> {
    * commit times are guaranteed to progress monotonically, never going back in time.
    * <p>
    * Users should <em>never</em> use {@code System} time to control behavior in a state machine and should instead rely
-   * upon {@link RaftCommit} times or use the {@link StateMachineExecutor} for time-based controls.
+   * upon {@link RaftCommit} times or use the {@link RaftOperationExecutor} for time-based controls.
    *
    * @return The commit time.
    */

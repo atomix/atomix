@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Laboratory
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,94 +13,124 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.logging.Logger;
+import io.atomix.logging.LoggerFactory;
+import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
+import io.atomix.protocols.raft.RaftCommit;
+import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.RaftStateMachine;
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.StateMachineContext;
+import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.error.UnknownSessionException;
+import io.atomix.protocols.raft.session.RaftSessionListener;
+import io.atomix.protocols.raft.session.RaftSessions;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
+import io.atomix.protocols.raft.session.impl.RaftSessionManager;
+import io.atomix.protocols.raft.storage.snapshot.Snapshot;
+import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
+import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.concurrent.ThreadContext;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import java.util.concurrent.CompletableFuture;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Server state machine context.
+ * Raft server state machine executor.
  */
 public class RaftServerStateMachineContext implements StateMachineContext {
-  private final StateMachineId id;
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerStateMachineContext.class);
+  private static final long SNAPSHOT_INTERVAL_MILLIS = 1000 * 60 * 10;
+
+  private final StateMachineId stateMachineId;
   private final String name;
   private final String typeName;
+  private final RaftStateMachine stateMachine;
+  private final RaftServerContext server;
   private final RaftServerStateMachineSessions sessions;
+  private final ThreadContext stateMachineExecutor;
+  private final ThreadContext snapshotExecutor;
+  private volatile Snapshot pendingSnapshot;
+  private long snapshotTime;
+  private long snapshotIndex;
+  private long currentIndex;
+  private long currentTimestamp;
+  private OperationType currentOperation;
   private final LogicalClock logicalClock = new LogicalClock() {
     @Override
     public LogicalTimestamp getTime() {
-      return new LogicalTimestamp(index);
+      return new LogicalTimestamp(currentIndex);
     }
   };
   private final WallClock wallClock = new WallClock() {
     @Override
     public WallClockTimestamp getTime() {
-      return new WallClockTimestamp(timestamp);
+      return new WallClockTimestamp(currentTimestamp);
     }
   };
-  private long timestamp;
-  private OperationType operationType;
-  private long index;
 
-  RaftServerStateMachineContext(StateMachineId id, String name, String typeName, RaftServerStateMachineSessions sessions) {
-    this.id = id;
-    this.name = name;
-    this.typeName = typeName;
-    this.sessions = sessions;
+  RaftServerStateMachineContext(
+      StateMachineId id,
+      String name,
+      String typeName,
+      RaftStateMachine stateMachine,
+      RaftServerContext server,
+      RaftSessionManager sessionManager,
+      ThreadContext stateMachineExecutor,
+      ThreadContext snapshotExecutor) {
+    this.stateMachineId = checkNotNull(id);
+    this.name = checkNotNull(name);
+    this.typeName = checkNotNull(typeName);
+    this.stateMachine = checkNotNull(stateMachine);
+    this.server = checkNotNull(server);
+    this.sessions = new RaftServerStateMachineSessions(sessionManager);
+    this.stateMachineExecutor = checkNotNull(stateMachineExecutor);
+    this.snapshotExecutor = checkNotNull(snapshotExecutor);
+    init();
   }
 
   /**
-   * Updates the state machine context.
+   * Initializes the state machine.
    */
-  public void update(long index, long timestamp, OperationType type) {
-    this.index = index;
-    this.timestamp = timestamp;
-    this.operationType = type;
-  }
-
-  /**
-   * Commits the state machine index.
-   */
-  public void commit() {
-    long index = this.index;
-    for (RaftSessionContext session : sessions.getSessions()) {
-      session.commit(index);
-    }
-  }
-
-  /**
-   * Returns the current context type.
-   */
-  public OperationType getOperationType() {
-    return operationType;
+  private void init() {
+    sessions.addListener(stateMachine);
+    stateMachine.init(this);
   }
 
   @Override
   public StateMachineId stateMachineId() {
-    return id;
+    return null;
   }
 
   @Override
   public String name() {
-    return name;
+    return null;
   }
 
   @Override
   public String typeName() {
-    return typeName;
+    return null;
   }
 
   @Override
   public long currentIndex() {
-    return index;
+    return currentIndex;
+  }
+
+  @Override
+  public OperationType currentOperation() {
+    return currentOperation;
   }
 
   @Override
@@ -114,15 +144,477 @@ public class RaftServerStateMachineContext implements StateMachineContext {
   }
 
   @Override
-  public RaftServerStateMachineSessions sessions() {
+  public RaftSessions sessions() {
     return sessions;
   }
 
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("index", index)
-        .add("time", wallClock)
-        .toString();
+  /**
+   * Returns the state machine executor.
+   *
+   * @return The state machine executor.
+   */
+  public ThreadContext executor() {
+    return stateMachineExecutor;
+  }
+
+  /**
+   * Sets the current state machine operation type.
+   *
+   * @param operation the current state machine operation type
+   */
+  private void setOperation(OperationType operation) {
+    this.currentOperation = operation;
+  }
+
+  /**
+   * Executes scheduled callbacks based on the provided time.
+   */
+  private void tick(long index, long timestamp) {
+    this.currentIndex = index;
+    this.currentTimestamp = Math.max(currentTimestamp, timestamp);
+
+    // Set the current operation type to COMMAND to allow events to be sent.
+    setOperation(OperationType.COMMAND);
+
+    // If the pending snapshot is non-null, attempt to complete the snapshot.
+    if (pendingSnapshot != null) {
+      maybeCompleteSnapshot(index);
+    }
+
+    // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+    maybeInstallSnapshot(index);
+
+    // Expire sessions that have timed out.
+    expireSessions(currentTimestamp);
+  }
+
+  /**
+   * Expires sessions that have timed out.
+   */
+  private void expireSessions(long timestamp) {
+    // Iterate through registered sessions.
+    for (RaftSessionContext session : sessions.getSessions()) {
+
+      // If the current timestamp minus the session timestamp is greater than the session timeout, expire the session.
+      if (timestamp - session.getTimestamp() > session.timeout()) {
+
+        // Remove the session from the sessions list.
+        sessions.remove(session);
+
+        // Expire the session.
+        session.expire();
+
+        // Iterate through and invoke session listeners.
+        for (RaftSessionListener listener : sessions.getListeners()) {
+          listener.onExpire(session);
+        }
+      }
+    }
+  }
+
+  /**
+   * Takes a snapshot of the state machine.
+   */
+  private synchronized void maybeTakeSnapshot(long index, long timestamp) {
+    if (pendingSnapshot == null && snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS) {
+      LOGGER.info("{} - Taking snapshot {}", server.getCluster().getMember().memberId(), index);
+      pendingSnapshot = server.getSnapshotStore()
+          .newTemporarySnapshot(stateMachineId, index, WallClockTimestamp.from(timestamp));
+      try (SnapshotWriter writer = pendingSnapshot.openWriter()) {
+        writer.writeInt(sessions.getSessions().size());
+        for (RaftSessionContext session : sessions.getSessions()) {
+          writer.writeLong(session.sessionId().id());
+          writer.writeString(session.memberId().id());
+          writer.writeString(session.readConsistency().name());
+          writer.writeLong(session.timeout());
+          writer.writeLong(session.getTimestamp());
+        }
+        stateMachine.snapshot(writer);
+      }
+      snapshotTime = System.currentTimeMillis();
+
+      snapshotExecutor.execute(() -> {
+        synchronized (this) {
+          if (pendingSnapshot != null) {
+            pendingSnapshot = pendingSnapshot.persist();
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Completes a state machine snapshot.
+   */
+  private synchronized void maybeCompleteSnapshot(long index) {
+    if (pendingSnapshot != null && pendingSnapshot.isPersisted()) {
+      // Compute the lowest completed index for all sessions that belong to this state machine.
+      long lastCompleted = index;
+      for (RaftSessionContext session : sessions.getSessions()) {
+        lastCompleted = Math.min(lastCompleted, session.getLastCompleted());
+      }
+
+      // If the lowest completed index for all sessions is greater than the snapshot index, complete the snapshot.
+      if (lastCompleted >= pendingSnapshot.index()) {
+        LOGGER.debug("{} - Completing snapshot {}", server.getCluster().getMember().memberId(), pendingSnapshot.index());
+        pendingSnapshot.complete();
+
+        // Update the snapshot index to ensure we don't simply install the same snapshot.
+        snapshotIndex = pendingSnapshot.index();
+
+        // Reset the pending snapshot.
+        pendingSnapshot = null;
+      }
+    }
+  }
+
+  /**
+   * Installs a snapshot if one exists.
+   */
+  private void maybeInstallSnapshot(long index) {
+    Snapshot snapshot = server.getSnapshotStore().getSnapshotById(stateMachineId);
+    if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() <= index) {
+      LOGGER.info("{} - Installing snapshot {}", server.getCluster().getMember().memberId(), snapshot.index());
+      try (SnapshotReader reader = snapshot.openReader()) {
+        int sessionCount = reader.readInt();
+        sessions.clear();
+        for (int i = 0; i < sessionCount; i++) {
+          SessionId sessionId = SessionId.from(reader.readLong());
+          MemberId node = MemberId.from(reader.readString());
+          ReadConsistency readConsistency = ReadConsistency.valueOf(reader.readString());
+          long sessionTimeout = reader.readLong();
+          long sessionTimestamp = reader.readLong();
+          RaftSessionContext session = new RaftSessionContext(
+              sessionId,
+              node,
+              name,
+              typeName,
+              readConsistency,
+              sessionTimeout,
+              this,
+              server);
+          session.setTimestamp(sessionTimestamp);
+          session.setLastApplied(snapshot.index());
+          sessions.add(session);
+        }
+        stateMachine.install(reader);
+      }
+      snapshotIndex = snapshot.index();
+    }
+  }
+
+  /**
+   * Registers the given session.
+   *
+   * @param index     The index of the registration.
+   * @param timestamp The timestamp of the registration.
+   * @param session   The session to register.
+   */
+  CompletableFuture<Long> openSession(long index, long timestamp, RaftSessionContext session) {
+    CompletableFuture<Long> future = new CompletableFuture<>();
+    stateMachineExecutor.execute(() -> {
+      // Update the session's timestamp to prevent it from being expired.
+      session.setTimestamp(timestamp);
+
+      // Update the state machine index/timestamp and expire sessions if necessary.
+      tick(index, timestamp);
+
+      // Add the session to the sessions list.
+      sessions.add(session);
+
+      // Iterate through and invoke session listeners.
+      for (RaftSessionListener listener : sessions.getListeners()) {
+        listener.onOpen(session);
+      }
+
+      // Commit the index, causing events to be sent to clients if necessary.
+      commit();
+
+      // Complete the future.
+      future.complete(session.sessionId().id());
+    });
+    return future;
+  }
+
+  /**
+   * Keeps the given session alive.
+   *
+   * @param index           The index of the keep-alive.
+   * @param timestamp       The timestamp of the keep-alive.
+   * @param session         The session to keep-alive.
+   * @param commandSequence The session command sequence number.
+   * @param eventIndex      The session event index.
+   */
+  CompletableFuture<Void> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    stateMachineExecutor.execute(() -> {
+      // Update the session's timestamp to prevent it from being expired.
+      session.setTimestamp(timestamp);
+
+      // Update the state machine index/timestamp and expire sessions if necessary.
+      tick(index, timestamp);
+
+      // Clear results cached in the session.
+      session.clearResults(commandSequence);
+
+      // Resend missing events starting from the last received event index.
+      session.resendEvents(eventIndex);
+
+      // Update the session's request sequence number. The command sequence number will be applied
+      // iff the existing request sequence number is less than the command sequence number. This must
+      // be applied to ensure that request sequence numbers are reset after a leader change since leaders
+      // track request sequence numbers in local memory.
+      session.resetRequestSequence(commandSequence);
+
+      // Update the sessions' command sequence number. The command sequence number will be applied
+      // iff the existing sequence number is less than the keep-alive command sequence number. This should
+      // not be the case under normal operation since the command sequence number in keep-alive requests
+      // represents the highest sequence for which a client has received a response (the command has already
+      // been completed), but since the log compaction algorithm can exclude individual entries from replication,
+      // the command sequence number must be applied for keep-alive requests to reset the sequence number in
+      // the event the last command for the session was cleaned/compacted from the log.
+      session.setCommandSequence(commandSequence);
+
+      // Set the last applied index for the session. This will cause queries to be triggered if enqueued.
+      session.setLastApplied(index);
+
+      // Commit the index, causing events to be sent to clients if necessary.
+      commit();
+
+      // Complete the future.
+      future.complete(null);
+    });
+    return future;
+  }
+
+  /**
+   * Unregister the given session.
+   *
+   * @param index     The index of the unregister.
+   * @param timestamp The timestamp of the unregister.
+   * @param session   The session to unregister.
+   */
+  CompletableFuture<Void> closeSession(long index, long timestamp, RaftSessionContext session) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    stateMachineExecutor.execute(() -> {
+      // Update the session's timestamp to prevent it from being expired.
+      session.setTimestamp(timestamp);
+
+      // Update the state machine index/timestamp and expire sessions if necessary.
+      tick(index, timestamp);
+
+      // Remove the session from the sessions list.
+      sessions.remove(session);
+
+      // Close the session.
+      session.close();
+
+      // Iterate through and invoke session listeners.
+      for (RaftSessionListener listener : sessions.getListeners()) {
+        listener.onClose(session);
+      }
+
+      // Commit the index, causing events to be sent to clients if necessary.
+      commit();
+
+      // Complete the future.
+      future.complete(null);
+    });
+    return future;
+  }
+
+  /**
+   * Executes the given command on the state machine.
+   *
+   * @param index     The index of the command.
+   * @param timestamp The timestamp of the command.
+   * @param sequence  The command sequence number.
+   * @param session   The session that submitted the command.
+   * @param operation   The command to execute.
+   * @return A future to be completed with the command result.
+   */
+  CompletableFuture<OperationResult> executeCommand(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
+    CompletableFuture<OperationResult> future = new CompletableFuture<>();
+    stateMachineExecutor.execute(() -> executeCommand(index, sequence, timestamp, session, operation, future));
+    return future;
+  }
+
+  /**
+   * Executes a command on the state machine thread.
+   */
+  private void executeCommand(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+    // Update the session's timestamp to prevent it from being expired.
+    session.setTimestamp(timestamp);
+
+    // Update the state machine index/timestamp and expire sessions if necessary.
+    tick(index, timestamp);
+
+    // If the session is not open, fail the request.
+    if (!session.getState().active()) {
+      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.sessionId()));
+      return;
+    }
+
+    // If the command's sequence number is less than the next session sequence number then that indicates that
+    // we've received a command that was previously applied to the state machine. Ensure linearizability by
+    // returning the cached response instead of applying it to the user defined state machine.
+    if (sequence > 0 && sequence < session.nextCommandSequence()) {
+      sequenceCommand(sequence, session, future);
+    }
+    // If we've made it this far, the command must have been applied in the proper order as sequenced by the
+    // session. This should be the case for most commands applied to the state machine.
+    else {
+      // Execute the command in the state machine thread. Once complete, the CompletableFuture callback will be completed
+      // in the state machine thread. Register the result in that thread and then complete the future in the caller's thread.
+      applyCommand(index, sequence, timestamp, operation, session, future);
+
+      // Update the session timestamp and command sequence number. This is done in the caller's thread since all
+      // timestamp/index/sequence checks are done in this thread prior to executing operations on the state machine thread.
+      session.setCommandSequence(sequence);
+
+      // Take a snapshot if the command count has surpassed the snapshot command count.
+      maybeTakeSnapshot(index, timestamp);
+    }
+  }
+
+  /**
+   * Loads and returns a cached command result according to the sequence number.
+   */
+  private void sequenceCommand(long sequence, RaftSessionContext session, CompletableFuture<OperationResult> future) {
+    OperationResult result = session.getResult(sequence);
+    if (result == null) {
+      LOGGER.debug("Missing command result for {}:{}", session.sessionId(), sequence);
+    }
+    future.complete(result);
+  }
+
+  /**
+   * Applies the given commit to the state machine.
+   */
+  private void applyCommand(long index, long sequence, long timestamp, RaftOperation operation, RaftSessionContext session, CompletableFuture<OperationResult> future) {
+    // Ignore no-op commands.
+    if (operation.id().equals(OperationId.NOOP)) {
+      future.complete(OperationResult.noop(index, session.getEventIndex()));
+      return;
+    }
+
+    RaftCommit<byte[]> commit = new DefaultRaftCommit<>(index, operation.id(), operation.value(), session, timestamp);
+
+    long eventIndex = session.getEventIndex();
+
+    OperationResult result;
+    try {
+      // Execute the state machine operation and get the result.
+      byte[] output = stateMachine.apply(commit);
+
+      // Store the result for linearizability and complete the command.
+      result = OperationResult.succeeded(index, eventIndex, output);
+    } catch (Exception e) {
+      // If an exception occurs during execution of the command, store the exception.
+      result = OperationResult.failed(index, eventIndex, e);
+    }
+
+    // Once the operation has been applied to the state machine, commit events published by the command.
+    // The state machine context will build a composite future for events published to all sessions.
+    commit();
+
+    // Register the result in the session to ensure retries receive the same output for the command.
+    session.registerResult(sequence, result);
+
+    // Complete the command.
+    future.complete(result);
+  }
+
+  /**
+   * Executes the given query on the state machine.
+   *
+   * @param index     The index of the query.
+   * @param sequence  The query sequence number.
+   * @param timestamp The timestamp of the query.
+   * @param session   The session that submitted the query.
+   * @param operation     The query to execute.
+   * @return A future to be completed with the query result.
+   */
+  CompletableFuture<OperationResult> executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
+    CompletableFuture<OperationResult> future = new CompletableFuture<>();
+    stateMachineExecutor.execute(() -> executeQuery(index, sequence, timestamp, session, operation, future));
+    return future;
+  }
+
+  /**
+   * Executes a query on the state machine thread.
+   */
+  private void executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+    // If the session is not open, fail the request.
+    if (!session.getState().active()) {
+      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.sessionId()));
+      return;
+    }
+
+    // Otherwise, sequence the query.
+    sequenceQuery(index, sequence, timestamp, session, operation, future);
+  }
+
+  /**
+   * Sequences the given query.
+   */
+  private void sequenceQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+    // If the query's sequence number is greater than the session's current sequence number, queue the request for
+    // handling once the state machine is caught up.
+    if (sequence > session.getCommandSequence()) {
+      session.registerSequenceQuery(sequence, () -> indexQuery(index, timestamp, session, operation, future));
+    } else {
+      indexQuery(index, timestamp, session, operation, future);
+    }
+  }
+
+  /**
+   * Ensures the given query is applied after the appropriate index.
+   */
+  private void indexQuery(long index, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+    // If the query index is greater than the session's last applied index, queue the request for handling once the
+    // state machine is caught up.
+    if (index > session.getLastApplied()) {
+      session.registerIndexQuery(index, () -> applyQuery(index, timestamp, session, operation, future));
+    } else {
+      applyQuery(index, timestamp, session, operation, future);
+    }
+  }
+
+  /**
+   * Applies a query to the state machine.
+   */
+  private void applyQuery(long index, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+    // If the session is not open, fail the request.
+    if (!session.getState().active()) {
+      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.sessionId()));
+      return;
+    }
+
+    // Set the current operation type to QUERY to prevent events from being sent to clients.
+    setOperation(OperationType.QUERY);
+
+    RaftCommit<byte[]> commit = new DefaultRaftCommit<>(session.getLastApplied(), operation.id(), operation.value(), session, timestamp);
+
+    long eventIndex = session.getEventIndex();
+
+    OperationResult result;
+    try {
+      result = OperationResult.succeeded(index, eventIndex, stateMachine.apply(commit));
+    } catch (Exception e) {
+      result = OperationResult.failed(index, eventIndex, e);
+    }
+    future.complete(result);
+  }
+
+  /**
+   * Commits the application of a command to the state machine.
+   */
+  @SuppressWarnings("unchecked")
+  private void commit() {
+    long index = this.currentIndex;
+    for (RaftSessionContext session : sessions.getSessions()) {
+      session.commit(index);
+    }
   }
 }

@@ -23,7 +23,6 @@ import io.atomix.protocols.raft.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.session.RaftSession;
-import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
@@ -1291,12 +1290,12 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Test state machine.
    */
-  public static class TestStateMachine extends RaftStateMachine implements RaftSessionListener, Snapshottable {
+  public static class TestStateMachine extends RaftService {
     private RaftCommit<Void> expire;
     private RaftCommit<Void> close;
 
     @Override
-    protected void configure(StateMachineExecutor executor) {
+    protected void configure(RaftOperationExecutor executor) {
       executor.register(WRITE, this::write, clientSerializer::encode);
       executor.register(READ, this::read, clientSerializer::encode);
       executor.register(EVENT, clientSerializer::decode, this::event, clientSerializer::encode);
