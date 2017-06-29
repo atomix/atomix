@@ -18,8 +18,8 @@ package io.atomix.protocols.raft.storage.log;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
-import io.atomix.storage.journal.Journal;
 import io.atomix.storage.journal.DelegatingJournal;
+import io.atomix.storage.journal.Journal;
 import io.atomix.storage.journal.SegmentedJournal;
 
 import java.io.File;
@@ -208,22 +208,6 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
      */
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       journalBuilder.withMaxEntriesPerSegment(maxEntriesPerSegment);
-      return this;
-    }
-
-    /**
-     * Sets the entry buffer size.
-     * <p>
-     * The entry buffer size dictates the number of entries to hold in memory at the tail of the log. Increasing
-     * the buffer size increases the number of entries that will be held in memory and thus implies greater memory
-     * consumption, but server performance may be improved due to reduced disk access.
-     *
-     * @param entryBufferSize The entry buffer size.
-     * @return The storage builder.
-     * @throws IllegalArgumentException if the buffer size is not positive
-     */
-    public Builder withEntryBufferSize(int entryBufferSize) {
-      journalBuilder.withEntryBufferSize(entryBufferSize);
       return this;
     }
 

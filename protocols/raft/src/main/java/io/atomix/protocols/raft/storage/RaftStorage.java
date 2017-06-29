@@ -258,7 +258,6 @@ public class RaftStorage {
         .withSerializer(serializer)
         .withMaxSegmentSize(maxSegmentSize)
         .withMaxEntriesPerSegment(maxEntriesPerSegment)
-        .withEntryBufferSize(entryBufferSize)
         .build();
   }
 
@@ -434,7 +433,7 @@ public class RaftStorage {
      */
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       checkArgument(maxEntriesPerSegment > 0, "max entries per segment must be positive");
-      checkArgument(maxEntriesPerSegment > DEFAULT_MAX_ENTRIES_PER_SEGMENT,
+      checkArgument(maxEntriesPerSegment <= DEFAULT_MAX_ENTRIES_PER_SEGMENT,
           "max entries per segment cannot be greater than " + DEFAULT_MAX_ENTRIES_PER_SEGMENT);
       this.maxEntriesPerSegment = maxEntriesPerSegment;
       return this;

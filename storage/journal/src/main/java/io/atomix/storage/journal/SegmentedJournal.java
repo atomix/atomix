@@ -16,14 +16,14 @@
 package io.atomix.storage.journal;
 
 import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collection;
@@ -64,9 +64,6 @@ public class SegmentedJournal<E> implements Journal<E> {
   private final Serializer serializer;
   private final int maxSegmentSize;
   private final int maxEntriesPerSegment;
-  private final int entryBufferSize;
-
-  private final JournalEntryBuffer<E> buffer;
 
   private final NavigableMap<Long, JournalSegment<E>> segments = new ConcurrentSkipListMap<>();
   private final Collection<SegmentedJournalReader<E>> readers = Sets.newConcurrentHashSet();
@@ -82,16 +79,13 @@ public class SegmentedJournal<E> implements Journal<E> {
       File directory,
       Serializer serializer,
       int maxSegmentSize,
-      int maxEntriesPerSegment,
-      int entryBufferSize) {
+      int maxEntriesPerSegment) {
     this.name = checkNotNull(name, "name cannot be null");
     this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
     this.directory = checkNotNull(directory, "directory cannot be null");
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
     this.maxSegmentSize = maxSegmentSize;
     this.maxEntriesPerSegment = maxEntriesPerSegment;
-    this.entryBufferSize = entryBufferSize;
-    this.buffer = new JournalEntryBuffer<>(entryBufferSize);
     open();
     this.writer = openWriter();
   }
@@ -151,27 +145,6 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   public int maxEntriesPerSegment() {
     return maxEntriesPerSegment;
-  }
-
-  /**
-   * Returns the entry buffer size.
-   * <p>
-   * The entry buffer size dictates the number of entries that will be held in memory for read operations
-   * at the tail of the journal.
-   *
-   * @return The entry buffer size.
-   */
-  public int entryBufferSize() {
-    return entryBufferSize;
-  }
-
-  /**
-   * Returns the journal entry buffer.
-   *
-   * @return The journal entry buffer.
-   */
-  JournalEntryBuffer<E> buffer() {
-    return buffer;
   }
 
   /**
@@ -573,7 +546,6 @@ public class SegmentedJournal<E> implements Journal<E> {
     private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
-    private static final int DEFAULT_ENTRY_BUFFER_SIZE = 1024;
 
     protected String name = DEFAULT_NAME;
     protected StorageLevel storageLevel = StorageLevel.DISK;
@@ -581,7 +553,6 @@ public class SegmentedJournal<E> implements Journal<E> {
     protected Serializer serializer;
     protected int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
     protected int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
-    protected int entryBufferSize = DEFAULT_ENTRY_BUFFER_SIZE;
 
     protected Builder() {
     }
@@ -690,30 +661,13 @@ public class SegmentedJournal<E> implements Journal<E> {
     }
 
     /**
-     * Sets the entry buffer size.
-     * <p>
-     * The entry buffer size dictates the number of entries to hold in memory at the tail of the log. Increasing
-     * the buffer size increases the number of entries that will be held in memory and thus implies greater memory
-     * consumption, but server performance may be improved due to reduced disk access.
-     *
-     * @param entryBufferSize The entry buffer size.
-     * @return The storage builder.
-     * @throws IllegalArgumentException if the buffer size is not positive
-     */
-    public Builder withEntryBufferSize(int entryBufferSize) {
-      checkArgument(entryBufferSize > 0, "entryBufferSize must be positive");
-      this.entryBufferSize = entryBufferSize;
-      return this;
-    }
-
-    /**
      * Builds the journal.
      *
      * @return The built storage configuration.
      */
     @Override
     public SegmentedJournal<E> build() {
-      return new SegmentedJournal<>(name, storageLevel, directory, serializer, maxSegmentSize, maxEntriesPerSegment, entryBufferSize);
+      return new SegmentedJournal<>(name, storageLevel, directory, serializer, maxSegmentSize, maxEntriesPerSegment);
     }
   }
 }
