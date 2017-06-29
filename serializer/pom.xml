@@ -29,6 +29,5 @@
   <modules>
     <module>api</module>
     <module>kryo</module>
-    <module>kryo-namespaces</module>
   </modules>
 </project>
