@@ -129,14 +129,6 @@ public final class Futures {
 
     BlockingAwareFuture<T> newFuture = new BlockingAwareFuture<T>();
     future.whenComplete((result, error) -> {
-      Runnable completer = () -> {
-        if (future.isCompletedExceptionally()) {
-          newFuture.completeExceptionally(error);
-        } else {
-          newFuture.complete(result);
-        }
-      };
-
       if (newFuture.isBlocked()) {
         if (error == null) {
           newFuture.complete(result);
