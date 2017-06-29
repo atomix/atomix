@@ -45,13 +45,13 @@ public class AppendRequest extends AbstractRaftRequest {
   }
 
   private final long term;
-  private final MemberId leader;
+  private final String leader;
   private final long prevLogIndex;
   private final long prevLogTerm;
   private final List<RaftLogEntry> entries;
   private final long commitIndex;
 
-  public AppendRequest(long term, MemberId leader, long prevLogIndex, long prevLogTerm, List<RaftLogEntry> entries, long commitIndex) {
+  public AppendRequest(long term, String leader, long prevLogIndex, long prevLogTerm, List<RaftLogEntry> entries, long commitIndex) {
     this.term = term;
     this.leader = leader;
     this.prevLogIndex = prevLogIndex;
@@ -75,7 +75,7 @@ public class AppendRequest extends AbstractRaftRequest {
    * @return The leader's address.
    */
   public MemberId leader() {
-    return leader;
+    return MemberId.from(leader);
   }
 
   /**
@@ -150,7 +150,7 @@ public class AppendRequest extends AbstractRaftRequest {
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, AppendRequest> {
     private long term;
-    private MemberId leader;
+    private String leader;
     private long logIndex;
     private long logTerm;
     private List<RaftLogEntry> entries;
@@ -177,7 +177,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if the {@code leader} is not positive
      */
     public Builder withLeader(MemberId leader) {
-      this.leader = checkNotNull(leader, "leader cannot be null");
+      this.leader = checkNotNull(leader, "leader cannot be null").id();
       return this;
     }
 

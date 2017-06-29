@@ -42,11 +42,11 @@ public class VoteRequest extends AbstractRaftRequest {
   }
 
   private final long term;
-  private final MemberId candidate;
+  private final String candidate;
   private final long lastLogIndex;
   private final long lastLogTerm;
 
-  public VoteRequest(long term, MemberId candidate, long lastLogIndex, long lastLogTerm) {
+  public VoteRequest(long term, String candidate, long lastLogIndex, long lastLogTerm) {
     this.term = term;
     this.candidate = candidate;
     this.lastLogIndex = lastLogIndex;
@@ -68,7 +68,7 @@ public class VoteRequest extends AbstractRaftRequest {
    * @return The candidate's address.
    */
   public MemberId candidate() {
-    return candidate;
+    return MemberId.from(candidate);
   }
 
   /**
@@ -121,7 +121,7 @@ public class VoteRequest extends AbstractRaftRequest {
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, VoteRequest> {
     private long term = -1;
-    private MemberId candidate;
+    private String candidate;
     private long lastLogIndex = -1;
     private long lastLogTerm = -1;
 
@@ -146,7 +146,7 @@ public class VoteRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if {@code candidate} is not positive
      */
     public Builder withCandidate(MemberId candidate) {
-      this.candidate = checkNotNull(candidate, "candidate cannot be null");
+      this.candidate = checkNotNull(candidate, "candidate cannot be null").id();
       return this;
     }
 

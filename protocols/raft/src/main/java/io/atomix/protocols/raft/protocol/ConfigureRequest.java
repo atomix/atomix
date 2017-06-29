@@ -45,12 +45,12 @@ public class ConfigureRequest extends AbstractRaftRequest {
   }
 
   private final long term;
-  private final MemberId leader;
+  private final String leader;
   private final long index;
   private final long timestamp;
   private final Collection<RaftMember> members;
 
-  public ConfigureRequest(long term, MemberId leader, long index, long timestamp, Collection<RaftMember> members) {
+  public ConfigureRequest(long term, String leader, long index, long timestamp, Collection<RaftMember> members) {
     this.term = term;
     this.leader = leader;
     this.index = index;
@@ -73,7 +73,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    * @return The leader's address.
    */
   public MemberId leader() {
-    return leader;
+    return MemberId.from(leader);
   }
 
   /**
@@ -137,7 +137,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, ConfigureRequest> {
     private long term;
-    private MemberId leader;
+    private String leader;
     private long index;
     private long timestamp;
     private Collection<RaftMember> members;
@@ -163,7 +163,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
      * @throws IllegalArgumentException if the {@code leader} is not positive
      */
     public Builder withLeader(MemberId leader) {
-      this.leader = checkNotNull(leader, "leader cannot be null");
+      this.leader = checkNotNull(leader, "leader cannot be null").id();
       return this;
     }
 
