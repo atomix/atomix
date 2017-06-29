@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.protocol;
 
 import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 
 import java.net.ConnectException;
@@ -94,12 +95,12 @@ public class TestRaftClientProtocol extends TestRaftProtocol implements RaftClie
   }
 
   @Override
-  public void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor) {
-    publishListeners.put(sessionId, request -> executor.execute(() -> listener.accept(request)));
+  public void registerPublishListener(SessionId sessionId, Consumer<PublishRequest> listener, Executor executor) {
+    publishListeners.put(sessionId.id(), request -> executor.execute(() -> listener.accept(request)));
   }
 
   @Override
-  public void unregisterPublishListener(long sessionId) {
-    publishListeners.remove(sessionId);
+  public void unregisterPublishListener(SessionId sessionId) {
+    publishListeners.remove(sessionId.id());
   }
 }

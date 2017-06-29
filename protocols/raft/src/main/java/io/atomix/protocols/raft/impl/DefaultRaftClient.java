@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -24,6 +23,7 @@ import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 import io.atomix.utils.concurrent.ThreadPoolContext;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -120,7 +120,7 @@ public class DefaultRaftClient implements RaftClient {
   private class SessionBuilder extends RaftProxy.Builder {
     @Override
     public RaftProxy build() {
-      return sessionManager.openSession(name, type, readConsistency, communicationStrategy, executor, timeout).join();
+      return sessionManager.openSession(serviceName, serviceType, readConsistency, communicationStrategy, executor, timeout).join();
     }
   }
 

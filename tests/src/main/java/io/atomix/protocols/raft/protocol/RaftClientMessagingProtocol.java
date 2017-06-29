@@ -18,6 +18,7 @@ package io.atomix.protocols.raft.protocol;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.serializer.Serializer;
 
 import java.util.Collection;
@@ -72,14 +73,14 @@ public class RaftClientMessagingProtocol extends RaftMessagingProtocol implement
   }
 
   @Override
-  public void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor) {
-    messagingService.registerHandler(String.format("publish-%d", sessionId), (e, p) -> {
+  public void registerPublishListener(SessionId sessionId, Consumer<PublishRequest> listener, Executor executor) {
+    messagingService.registerHandler(String.format("publish-%d", sessionId.id()), (e, p) -> {
       listener.accept(serializer.decode(p));
     }, executor);
   }
 
   @Override
-  public void unregisterPublishListener(long sessionId) {
-    messagingService.unregisterHandler(String.format("publish-%d", sessionId));
+  public void unregisterPublishListener(SessionId sessionId) {
+    messagingService.unregisterHandler(String.format("publish-%d", sessionId.id()));
   }
 }

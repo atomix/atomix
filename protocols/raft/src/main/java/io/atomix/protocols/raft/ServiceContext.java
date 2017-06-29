@@ -25,10 +25,10 @@ import io.atomix.time.WallClock;
  * State machine context.
  * <p>
  * The context is reflective of the current position and state of the Raft state machine. In particular,
- * it exposes the current approximate {@link StateMachineContext#wallClock() time} and all open
+ * it exposes the current approximate {@link ServiceContext#wallClock() time} and all open
  * {@link RaftSessions}.
  */
-public interface StateMachineContext {
+public interface ServiceContext {
 
   /**
    * Returns the state machine identifier.
@@ -42,14 +42,14 @@ public interface StateMachineContext {
    *
    * @return The state machine name.
    */
-  String name();
+  ServiceName serviceName();
 
   /**
    * Returns the state machine type.
    *
    * @return The state machine type.
    */
-  String typeName();
+  ServiceType serviceType();
 
   /**
    * Returns the current state machine index.

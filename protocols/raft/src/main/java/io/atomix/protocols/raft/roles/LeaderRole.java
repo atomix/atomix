@@ -652,7 +652,7 @@ public final class LeaderRole extends ActiveRole {
     final RaftLogWriter writer = context.getLogWriter();
     writer.getLock().lock();
     try {
-      entry = writer.append(new OpenSessionEntry(term, timestamp, request.member(), request.name(), request.typeName(), request.readConsistency(), timeout));
+      entry = writer.append(new OpenSessionEntry(term, timestamp, request.member(), request.serviceName(), request.serviceType(), request.readConsistency(), timeout));
       LOGGER.debug("{} - Appended {}", context.getCluster().getMember().memberId(), entry);
     } finally {
       writer.getLock().unlock();

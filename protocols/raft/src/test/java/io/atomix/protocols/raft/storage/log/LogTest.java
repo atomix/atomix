@@ -83,7 +83,7 @@ public class LogTest {
     // Append a couple entries.
     Indexed<RaftLogEntry> indexed;
     assertEquals(writer.getNextIndex(), 1);
-    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), MemberId.from("client"), "test1", "test", ReadConsistency.LINEARIZABLE, 1000));
+    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), "client", "test1", "test", ReadConsistency.LINEARIZABLE, 1000));
     assertEquals(indexed.index(), 1);
 
     assertEquals(writer.getNextIndex(), 2);
@@ -99,8 +99,8 @@ public class LogTest {
     openSession = (Indexed) reader.next();
     assertEquals(openSession.index(), 1);
     assertEquals(openSession.entry().term(), 1);
-    assertEquals(openSession.entry().name(), "test1");
-    assertEquals(openSession.entry().typeName(), "test");
+    assertEquals(openSession.entry().serviceName(), "test1");
+    assertEquals(openSession.entry().serviceType(), "test");
     assertEquals(openSession.entry().timeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
@@ -123,8 +123,8 @@ public class LogTest {
     openSession = (Indexed) reader.next();
     assertEquals(openSession.index(), 1);
     assertEquals(openSession.entry().term(), 1);
-    assertEquals(openSession.entry().name(), "test1");
-    assertEquals(openSession.entry().typeName(), "test");
+    assertEquals(openSession.entry().serviceName(), "test1");
+    assertEquals(openSession.entry().serviceType(), "test");
     assertEquals(openSession.entry().timeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
@@ -149,8 +149,8 @@ public class LogTest {
     openSession = (Indexed) reader.next();
     assertEquals(openSession.index(), 1);
     assertEquals(openSession.entry().term(), 1);
-    assertEquals(openSession.entry().name(), "test1");
-    assertEquals(openSession.entry().typeName(), "test");
+    assertEquals(openSession.entry().serviceName(), "test1");
+    assertEquals(openSession.entry().serviceType(), "test");
     assertEquals(openSession.entry().timeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);

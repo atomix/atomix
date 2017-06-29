@@ -16,15 +16,15 @@
 
 package io.atomix.protocols.raft.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.StateMachineContext;
+import io.atomix.protocols.raft.ServiceContext;
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.session.RaftSessionListener;
@@ -41,6 +41,8 @@ import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.ThreadContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -49,13 +51,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft server state machine executor.
  */
-public class RaftServerStateMachineContext implements StateMachineContext {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerStateMachineContext.class);
+public class RaftServerServiceContext implements ServiceContext {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerServiceContext.class);
   private static final long SNAPSHOT_INTERVAL_MILLIS = 1000 * 60 * 10;
 
   private final StateMachineId stateMachineId;
-  private final String name;
-  private final String typeName;
+  private final ServiceName serviceName;
+  private final ServiceType serviceType;
   private final RaftStateMachine stateMachine;
   private final RaftServerContext server;
   private final RaftServerStateMachineSessions sessions;
@@ -80,18 +82,18 @@ public class RaftServerStateMachineContext implements StateMachineContext {
     }
   };
 
-  RaftServerStateMachineContext(
+  RaftServerServiceContext(
       StateMachineId id,
-      String name,
-      String typeName,
+      ServiceName serviceName,
+      ServiceType serviceType,
       RaftStateMachine stateMachine,
       RaftServerContext server,
       RaftSessionManager sessionManager,
       ThreadContext stateMachineExecutor,
       ThreadContext snapshotExecutor) {
     this.stateMachineId = checkNotNull(id);
-    this.name = checkNotNull(name);
-    this.typeName = checkNotNull(typeName);
+    this.serviceName = checkNotNull(serviceName);
+    this.serviceType = checkNotNull(serviceType);
     this.stateMachine = checkNotNull(stateMachine);
     this.server = checkNotNull(server);
     this.sessions = new RaftServerStateMachineSessions(sessionManager);
@@ -110,17 +112,17 @@ public class RaftServerStateMachineContext implements StateMachineContext {
 
   @Override
   public StateMachineId stateMachineId() {
-    return null;
+    return stateMachineId;
   }
 
   @Override
-  public String name() {
-    return null;
+  public ServiceName serviceName() {
+    return serviceName;
   }
 
   @Override
-  public String typeName() {
-    return null;
+  public ServiceType serviceType() {
+    return serviceType;
   }
 
   @Override
@@ -287,8 +289,8 @@ public class RaftServerStateMachineContext implements StateMachineContext {
           RaftSessionContext session = new RaftSessionContext(
               sessionId,
               node,
-              name,
-              typeName,
+              serviceName,
+              serviceType,
               readConsistency,
               sessionTimeout,
               this,

@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.error.CommandException;
@@ -33,6 +31,8 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
@@ -110,7 +110,7 @@ final class RaftProxySubmitter {
    */
   private void submitCommand(RaftOperation operation, CompletableFuture<byte[]> future) {
     CommandRequest request = CommandRequest.newBuilder()
-        .withSession(state.getSessionId())
+        .withSession(state.getSessionId().id())
         .withSequence(state.nextCommandRequest())
         .withOperation(operation)
         .build();
@@ -129,7 +129,7 @@ final class RaftProxySubmitter {
    */
   private <T> void submitQuery(RaftOperation operation, CompletableFuture<byte[]> future) {
     QueryRequest request = QueryRequest.newBuilder()
-        .withSession(state.getSessionId())
+        .withSession(state.getSessionId().id())
         .withSequence(state.getCommandRequest())
         .withOperation(operation)
         .withIndex(state.getResponseIndex())
@@ -178,7 +178,7 @@ final class RaftProxySubmitter {
     long responseSequence = state.getCommandResponse();
     if (commandSequence < responseSequence && keepAliveIndex.get() != responseSequence) {
       keepAliveIndex.set(responseSequence);
-      manager.resetIndexes(state.getSessionId()).whenCompleteAsync((result, error) -> {
+      manager.resetIndexes(state.getSessionId().id()).whenCompleteAsync((result, error) -> {
         if (error == null) {
           resubmit(responseSequence, attempt);
         } else {

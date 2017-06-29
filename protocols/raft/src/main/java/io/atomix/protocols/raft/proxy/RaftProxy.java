@@ -20,6 +20,8 @@ import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -129,8 +131,8 @@ public interface RaftProxy extends RaftProxyClient {
    * Raft session builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<RaftProxy> {
-    protected String name;
-    protected String type;
+    protected ServiceName serviceName;
+    protected ServiceType serviceType;
     protected ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
     protected Executor executor;
     protected CommunicationStrategy communicationStrategy = CommunicationStrategies.LEADER;
@@ -139,22 +141,42 @@ public interface RaftProxy extends RaftProxyClient {
     /**
      * Sets the session name.
      *
-     * @param name The session name.
+     * @param serviceName The service name.
      * @return The session builder.
      */
-    public Builder withName(String name) {
-      this.name = checkNotNull(name, "name cannot be null");
+    public Builder withServiceName(String serviceName) {
+      return withServiceName(ServiceName.from(serviceName));
+    }
+
+    /**
+     * Sets the session name.
+     *
+     * @param serviceName The service name.
+     * @return The session builder.
+     */
+    public Builder withServiceName(ServiceName serviceName) {
+      this.serviceName = checkNotNull(serviceName, "serviceName cannot be null");
       return this;
     }
 
     /**
-     * Sets the session type.
+     * Sets the service type.
      *
-     * @param type The session type.
+     * @param serviceType The service type.
      * @return The session builder.
      */
-    public Builder withType(String type) {
-      this.type = checkNotNull(type, "type cannot be null");
+    public Builder withServiceType(String serviceType) {
+      return withServiceType(ServiceType.from(serviceType));
+    }
+
+    /**
+     * Sets the service type.
+     *
+     * @param serviceType The service type.
+     * @return The session builder.
+     */
+    public Builder withServiceType(ServiceType serviceType) {
+      this.serviceType = checkNotNull(serviceType, "serviceType cannot be null");
       return this;
     }
 

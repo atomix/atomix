@@ -15,7 +15,10 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -27,9 +30,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client state.
  */
 public final class RaftProxyState {
-  private final long sessionId;
-  private final String name;
-  private final String type;
+  private final SessionId sessionId;
+  private final ServiceName name;
+  private final ServiceType type;
   private final long timeout;
   private volatile RaftProxy.State state = RaftProxy.State.CONNECTED;
   private Long suspendedTime;
@@ -40,13 +43,13 @@ public final class RaftProxyState {
   private volatile long lastUpdated;
   private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
 
-  RaftProxyState(long sessionId, String name, String type, long timeout) {
+  RaftProxyState(SessionId sessionId, ServiceName name, ServiceType type, long timeout) {
     this.sessionId = sessionId;
     this.name = name;
     this.type = type;
     this.timeout = timeout;
-    this.responseIndex = sessionId;
-    this.eventIndex = sessionId;
+    this.responseIndex = sessionId.id();
+    this.eventIndex = sessionId.id();
   }
 
   /**
@@ -54,7 +57,7 @@ public final class RaftProxyState {
    *
    * @return The client session ID.
    */
-  public long getSessionId() {
+  public SessionId getSessionId() {
     return sessionId;
   }
 
@@ -63,7 +66,7 @@ public final class RaftProxyState {
    *
    * @return The session name.
    */
-  public String getSessionName() {
+  public ServiceName getServiceName() {
     return name;
   }
 
@@ -72,7 +75,7 @@ public final class RaftProxyState {
    *
    * @return The session type.
    */
-  public String getSessionType() {
+  public ServiceType getServiceType() {
     return type;
   }
 

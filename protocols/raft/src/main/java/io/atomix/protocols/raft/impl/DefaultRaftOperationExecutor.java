@@ -19,7 +19,6 @@ import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftOperationExecutor;
-import io.atomix.protocols.raft.StateMachineContext;
 import io.atomix.protocols.raft.error.ApplicationException;
 import io.atomix.utils.concurrent.Scheduled;
 import org.slf4j.Logger;
@@ -43,22 +42,12 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRaftOperationExecutor.class);
-  private final StateMachineContext context;
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
   private final List<ScheduledTask> complete = new ArrayList<>();
   private final Map<OperationId, Function<RaftCommit<byte[]>, byte[]>> operations = new HashMap<>();
   private OperationType operationType;
   private long timestamp;
-
-  public DefaultRaftOperationExecutor(StateMachineContext context) {
-    this.context = checkNotNull(context, "context cannot be null");
-  }
-
-  @Override
-  public StateMachineContext getContext() {
-    return context;
-  }
 
   /**
    * Sets the current operation type.

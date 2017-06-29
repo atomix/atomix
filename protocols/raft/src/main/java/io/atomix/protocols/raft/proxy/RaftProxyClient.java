@@ -19,6 +19,8 @@ import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.storage.buffer.HeapBytes;
 
@@ -79,25 +81,25 @@ public interface RaftProxyClient {
   }
 
   /**
+   * Returns the proxy session identifier.
+   *
+   * @return The proxy session identifier
+   */
+  SessionId sessionId();
+
+  /**
    * Returns the client proxy name.
    *
    * @return The client proxy name.
    */
-  String name();
+  ServiceName serviceName();
 
   /**
    * Returns the client proxy type.
    *
    * @return The client proxy type.
    */
-  String typeName();
-
-  /**
-   * Returns the proxy session identifier.
-   *
-   * @return The proxy session identifier
-   */
-  SessionId sessionId();
+  ServiceType serviceType();
 
   /**
    * Returns the session state.

@@ -148,7 +148,7 @@ import io.atomix.protocols.raft.session.RaftSessions;
  * associated with the state machine from the underlying log.
  *
  * @see RaftCommit
- * @see StateMachineContext
+ * @see ServiceContext
  * @see RaftOperationExecutor
  */
 public interface RaftStateMachine extends Snapshottable, RaftSessionListener {
@@ -159,7 +159,7 @@ public interface RaftStateMachine extends Snapshottable, RaftSessionListener {
    * @param context The state machine context.
    * @throws NullPointerException if {@code context} is null
    */
-  void init(StateMachineContext context);
+  void init(ServiceContext context);
 
   /**
    * Applies a commit to the state machine.

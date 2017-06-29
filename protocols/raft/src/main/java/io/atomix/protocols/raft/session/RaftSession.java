@@ -17,6 +17,10 @@ package io.atomix.protocols.raft.session;
 
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.storage.buffer.HeapBytes;
 
 import java.util.function.Function;
@@ -52,6 +56,41 @@ public interface RaftSession {
    * @return The session identifier.
    */
   SessionId sessionId();
+
+  /**
+   * Returns the session's service name.
+   *
+   * @return The session's service name.
+   */
+  ServiceName serviceName();
+
+  /**
+   * Returns the session's service type.
+   *
+   * @return The session's service type.
+   */
+  ServiceType serviceType();
+
+  /**
+   * Returns the member identifier to which the session belongs.
+   *
+   * @return The member to which the session belongs.
+   */
+  MemberId memberId();
+
+  /**
+   * Returns the session's read consistency.
+   *
+   * @return The session's read consistency.
+   */
+  ReadConsistency readConsistency();
+
+  /**
+   * Returns the session timeout.
+   *
+   * @return The session timeout.
+   */
+  long timeout();
 
   /**
    * Returns the session state.

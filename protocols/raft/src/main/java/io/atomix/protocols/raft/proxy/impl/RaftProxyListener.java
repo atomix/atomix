@@ -16,12 +16,12 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -81,7 +81,7 @@ final class RaftProxyListener {
 
     // If the request is for another session ID, this may be a session that was previously opened
     // for this client.
-    if (request.session() != state.getSessionId()) {
+    if (request.session() != state.getSessionId().id()) {
       LOG.trace("{} - Inconsistent session ID: {}", state.getSessionId(), request.session());
       return;
     }
@@ -101,7 +101,7 @@ final class RaftProxyListener {
     if (request.previousIndex() != eventIndex) {
       LOG.trace("{} - Inconsistent event index: {}", state.getSessionId(), request.previousIndex());
       ResetRequest resetRequest = ResetRequest.newBuilder()
-          .withSession(state.getSessionId())
+          .withSession(state.getSessionId().id())
           .withIndex(eventIndex)
           .build();
       protocol.reset(nodeSelector.servers(), resetRequest);

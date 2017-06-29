@@ -15,21 +15,23 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
-import io.atomix.protocols.raft.impl.RaftServerStateMachineContext;
+import io.atomix.protocols.raft.impl.RaftServerServiceContext;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionEvent;
 import io.atomix.protocols.raft.session.RaftSessionEventListener;
 import io.atomix.protocols.raft.session.SessionId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -48,14 +50,14 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class RaftSessionContext implements RaftSession {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionContext.class);
-  private final SessionId id;
+  private final SessionId sessionId;
   private final MemberId member;
-  private final String name;
-  private final String type;
+  private final ServiceName serviceName;
+  private final ServiceType serviceType;
   private final ReadConsistency readConsistency;
   private final long timeout;
   private final RaftServerProtocol protocol;
-  private final RaftServerStateMachineContext context;
+  private final RaftServerServiceContext context;
   private final RaftServerContext server;
   private volatile State state = State.OPEN;
   private long timestamp;
@@ -73,75 +75,55 @@ public class RaftSessionContext implements RaftSession {
   private final Set<RaftSessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
 
   public RaftSessionContext(
-      SessionId id,
+      SessionId sessionId,
       MemberId member,
-      String name,
-      String type,
+      ServiceName serviceName,
+      ServiceType serviceType,
       ReadConsistency readConsistency,
       long timeout,
-      RaftServerStateMachineContext context,
+      RaftServerServiceContext context,
       RaftServerContext server) {
-    this.id = id;
+    this.sessionId = sessionId;
     this.member = member;
-    this.name = name;
-    this.type = type;
+    this.serviceName = serviceName;
+    this.serviceType = serviceType;
     this.readConsistency = readConsistency;
     this.timeout = timeout;
-    this.eventIndex = id.id();
-    this.completeIndex = id.id();
-    this.lastApplied = id.id();
+    this.eventIndex = sessionId.id();
+    this.completeIndex = sessionId.id();
+    this.lastApplied = sessionId.id();
     this.protocol = server.getProtocol();
     this.context = context;
     this.server = server;
-    protocol.registerResetListener(id, request -> resendEvents(request.index()), context.executor());
+    protocol.registerResetListener(sessionId, request -> resendEvents(request.index()), context.executor());
   }
 
   @Override
   public SessionId sessionId() {
-    return id;
+    return sessionId;
   }
 
-  /**
-   * Returns the node to which the session belongs.
-   *
-   * @return The node to which the session belongs.
-   */
+  @Override
+  public ServiceName serviceName() {
+    return serviceName;
+  }
+
+  @Override
+  public ServiceType serviceType() {
+    return serviceType;
+  }
+
+  @Override
   public MemberId memberId() {
     return member;
   }
 
-  /**
-   * Returns the session name.
-   *
-   * @return The session name.
-   */
-  public String name() {
-    return name;
-  }
-
-  /**
-   * Returns the session type.
-   *
-   * @return The session type.
-   */
-  public String typeName() {
-    return type;
-  }
-
-  /**
-   * Returns the session's read consistency.
-   *
-   * @return The session's read consistency.
-   */
+  @Override
   public ReadConsistency readConsistency() {
     return readConsistency;
   }
 
-  /**
-   * Returns the session timeout.
-   *
-   * @return The session timeout.
-   */
+  @Override
   public long timeout() {
     return timeout;
   }
@@ -151,7 +133,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The state machine context associated with the session.
    */
-  public RaftServerStateMachineContext getStateMachineContext() {
+  public RaftServerServiceContext getStateMachineContext() {
     return context;
   }
 
@@ -186,7 +168,7 @@ public class RaftSessionContext implements RaftSession {
   private void setState(State state) {
     if (this.state != state) {
       this.state = state;
-      LOGGER.debug("{} - State changed: {}", id, state);
+      LOGGER.debug("{} - State changed: {}", sessionId, state);
       switch (state) {
         case OPEN:
           eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.OPEN, this, getTimestamp())));
@@ -483,7 +465,7 @@ public class RaftSessionContext implements RaftSession {
           .withEvents(event.events)
           .build();
 
-      LOGGER.trace("{} - Sending {}", id, request);
+      LOGGER.trace("{} - Sending {}", sessionId, request);
       protocol.publish(member, request);
     }
   }
@@ -493,7 +475,7 @@ public class RaftSessionContext implements RaftSession {
    */
   public void expire() {
     setState(State.EXPIRED);
-    protocol.unregisterResetListener(id);
+    protocol.unregisterResetListener(sessionId);
   }
 
   /**
@@ -501,23 +483,23 @@ public class RaftSessionContext implements RaftSession {
    */
   public void close() {
     setState(State.CLOSED);
-    protocol.unregisterResetListener(id);
+    protocol.unregisterResetListener(sessionId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), id);
+    return Objects.hash(getClass(), sessionId);
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof RaftSession && ((RaftSession) object).sessionId() == id;
+    return object instanceof RaftSession && ((RaftSession) object).sessionId() == sessionId;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id)
+        .add("id", sessionId)
         .toString();
   }
 

@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.CommunicationStrategies;
 import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -28,9 +28,12 @@ import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -55,18 +58,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RaftProxyManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxyManager.class);
   private final String clientId;
-  private final MemberId nodeId;
+  private final MemberId memberId;
   private final RaftClientProtocol protocol;
   private final RaftProxyConnection connection;
   private final ScheduledExecutorService threadPoolExecutor;
   private final NodeSelectorManager selectorManager;
-  private final Map<Long, RaftProxyState> sessions = new ConcurrentHashMap<>();
+  private final Map<SessionId, RaftProxyState> sessions = new ConcurrentHashMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
   private ScheduledFuture<?> keepAliveFuture;
 
-  public RaftProxyManager(String clientId, MemberId nodeId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
+  public RaftProxyManager(String clientId, MemberId memberId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
-    this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
+    this.memberId = checkNotNull(memberId, "nodeId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
     this.connection = new RaftProxyConnection(
@@ -107,29 +110,29 @@ public class RaftProxyManager {
   /**
    * Opens a new session.
    *
-   * @param name                  The session name.
-   * @param stateMachine          The session type.
+   * @param serviceName           The session name.
+   * @param serviceType           The session type.
    * @param communicationStrategy The strategy with which to communicate with servers.
    * @param timeout               The session timeout.
    * @return A completable future to be completed once the session has been opened.
    */
   public CompletableFuture<RaftProxy> openSession(
-      String name,
-      String stateMachine,
+      ServiceName serviceName,
+      ServiceType serviceType,
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
       Executor executor,
       Duration timeout) {
-    checkNotNull(name, "name cannot be null");
-    checkNotNull(stateMachine, "stateMachine cannot be null");
+    checkNotNull(serviceName, "naserviceNameme cannot be null");
+    checkNotNull(serviceType, "serviceType cannot be null");
     checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
     checkNotNull(timeout, "timeout cannot be null");
 
-    LOGGER.trace("{} - Opening session; name: {}, type: {}", clientId, name, stateMachine);
+    LOGGER.trace("{} - Opening session; name: {}, type: {}", clientId, serviceName, serviceType);
     OpenSessionRequest request = OpenSessionRequest.newBuilder()
-        .withMember(nodeId)
-        .withTypeName(stateMachine)
-        .withName(name)
+        .withMemberId(memberId)
+        .withServiceName(serviceName)
+        .withServiceType(serviceType)
         .withReadConsistency(readConsistency)
         .withTimeout(timeout.toMillis())
         .build();
@@ -142,7 +145,10 @@ public class RaftProxyManager {
         if (response.status() == RaftResponse.Status.OK) {
           // Create and store the proxy state.
           RaftProxyState state = new RaftProxyState(
-              response.session(), name, stateMachine, response.timeout());
+              SessionId.from(response.session()),
+              serviceName,
+              serviceType,
+              response.timeout());
           sessions.put(state.getSessionId(), state);
 
           // Ensure the proxy session info is reset and the session is kept alive.
@@ -178,7 +184,7 @@ public class RaftProxyManager {
    * @param sessionId The session identifier.
    * @return A completable future to be completed once the session is closed.
    */
-  public CompletableFuture<Void> closeSession(long sessionId) {
+  public CompletableFuture<Void> closeSession(SessionId sessionId) {
     RaftProxyState state = sessions.get(sessionId);
     if (state == null) {
       return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + sessionId));
@@ -186,7 +192,7 @@ public class RaftProxyManager {
 
     LOGGER.trace("Closing session {}", sessionId);
     CloseSessionRequest request = CloseSessionRequest.newBuilder()
-        .withSession(sessionId)
+        .withSession(sessionId.id())
         .build();
 
     LOGGER.trace("Sending {}", request);
@@ -278,7 +284,7 @@ public class RaftProxyManager {
     int i = 0;
     for (RaftProxyState sessionState : needKeepAlive) {
       if (currentTime - sessionState.getLastUpdated() > sessionState.getSessionTimeout() / 2) {
-        sessionIds[i] = sessionState.getSessionId();
+        sessionIds[i] = sessionState.getSessionId().id();
         commandResponses[i] = sessionState.getCommandResponse();
         eventIndexes[i] = sessionState.getEventIndex();
         i++;

@@ -35,6 +35,7 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.serializer.Serializer;
 
 import java.util.Collection;
@@ -103,12 +104,12 @@ public class RaftClientCommunicator implements RaftClientProtocol {
   }
 
   @Override
-  public void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor) {
-    clusterCommunicator.addSubscriber(context.publishSubject(sessionId), serializer::decode, listener, executor);
+  public void registerPublishListener(SessionId sessionId, Consumer<PublishRequest> listener, Executor executor) {
+    clusterCommunicator.addSubscriber(context.publishSubject(sessionId.id()), serializer::decode, listener, executor);
   }
 
   @Override
-  public void unregisterPublishListener(long sessionId) {
-    clusterCommunicator.removeSubscriber(context.publishSubject(sessionId));
+  public void unregisterPublishListener(SessionId sessionId) {
+    clusterCommunicator.removeSubscriber(context.publishSubject(sessionId.id()));
   }
 }

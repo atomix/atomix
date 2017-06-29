@@ -88,7 +88,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
 
   @Override
   public CompletableFuture<Set<RaftSessionMetadata>> getSessions(String type) {
-    return getMetadata().thenApply(response -> response.sessions().stream().filter(s -> s.typeName().equals(type)).collect(Collectors.toSet()));
+    return getMetadata().thenApply(response -> response.sessions().stream().filter(s -> s.serviceType().equals(type)).collect(Collectors.toSet()));
   }
 
 }

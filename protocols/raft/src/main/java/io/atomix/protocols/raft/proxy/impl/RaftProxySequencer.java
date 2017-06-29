@@ -16,10 +16,10 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -208,7 +208,7 @@ final class RaftProxySequencer {
 
     // If after completing pending events the eventIndex is greater than or equal to the response's eventIndex, complete the response.
     // Note that the event protocol initializes the eventIndex to the session ID.
-    if (responseEventIndex <= eventIndex || (eventIndex == 0 && responseEventIndex == state.getSessionId())) {
+    if (responseEventIndex <= eventIndex || (eventIndex == 0 && responseEventIndex == state.getSessionId().id())) {
       LOGGER.trace("{} - Completing {}", state.getSessionId(), response);
       callback.run();
       return true;

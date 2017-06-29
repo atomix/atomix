@@ -59,20 +59,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * not be deterministic.
  *
  * @see RaftStateMachine
- * @see StateMachineContext
+ * @see ServiceContext
  */
 public interface RaftOperationExecutor extends ThreadContext {
-
-  /**
-   * Returns the state machine context.
-   * <p>
-   * The context is reflective of the current position and state of the Raft state machine. In particular,
-   * it exposes the current approximate {@link StateMachineContext#wallClock() time} and all open
-   * {@link io.atomix.protocols.raft.session.RaftSessions}.
-   *
-   * @return The state machine context.
-   */
-  StateMachineContext getContext();
 
   /**
    * Applies the given commit to the executor.

@@ -498,8 +498,8 @@ public class RaftPerformanceTest implements Runnable {
    */
   private RaftProxy createProxy(RaftClient client) {
     return client.newProxyBuilder()
-        .withName("test")
-        .withType("test")
+        .withServiceName("test")
+        .withServiceType("test")
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build();

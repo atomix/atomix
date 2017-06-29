@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -96,13 +97,13 @@ public interface RaftClientProtocol {
    * @param listener  the listener to register
    * @param executor  the executor with which to execute the listener callback
    */
-  void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor);
+  void registerPublishListener(SessionId sessionId, Consumer<PublishRequest> listener, Executor executor);
 
   /**
    * Unregisters the publish request listener for the given session.
    *
    * @param sessionId the session for which to unregister the listener
    */
-  void unregisterPublishListener(long sessionId);
+  void unregisterPublishListener(SessionId sessionId);
 
 }

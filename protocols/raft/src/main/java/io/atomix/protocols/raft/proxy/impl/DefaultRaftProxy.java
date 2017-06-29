@@ -21,6 +21,8 @@ import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.session.SessionId;
@@ -98,18 +100,18 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
-  public String name() {
-    return state.getSessionName();
+  public ServiceName serviceName() {
+    return state.getServiceName();
   }
 
   @Override
-  public String typeName() {
-    return state.getSessionType();
+  public ServiceType serviceType() {
+    return state.getServiceType();
   }
 
   @Override
   public SessionId sessionId() {
-    return SessionId.from(state.getSessionId());
+    return state.getSessionId();
   }
 
   @Override
@@ -205,7 +207,7 @@ public class DefaultRaftProxy implements RaftProxy {
   @Override
   public int hashCode() {
     int hashCode = 31;
-    long id = state.getSessionId();
+    long id = state.getSessionId().id();
     hashCode = 37 * hashCode + (int) (id ^ (id >>> 32));
     return hashCode;
   }

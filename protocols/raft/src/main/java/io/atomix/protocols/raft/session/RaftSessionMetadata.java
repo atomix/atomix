@@ -15,6 +15,9 @@
  */
 package io.atomix.protocols.raft.session;
 
+import io.atomix.protocols.raft.ServiceName;
+import io.atomix.protocols.raft.ServiceType;
+
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -24,11 +27,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft session metadata.
  */
 public final class RaftSessionMetadata {
-  private final SessionId id;
+  private final long id;
   private final String name;
   private final String type;
 
-  public RaftSessionMetadata(SessionId id, String name, String type) {
+  public RaftSessionMetadata(long id, String name, String type) {
     this.id = id;
     this.name = checkNotNull(name, "name cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
@@ -40,7 +43,7 @@ public final class RaftSessionMetadata {
    * @return The globally unique session identifier.
    */
   public SessionId sessionId() {
-    return id;
+    return SessionId.from(id);
   }
 
   /**
@@ -48,8 +51,8 @@ public final class RaftSessionMetadata {
    *
    * @return The session name.
    */
-  public String name() {
-    return name;
+  public ServiceName serviceName() {
+    return ServiceName.from(name);
   }
 
   /**
@@ -57,8 +60,8 @@ public final class RaftSessionMetadata {
    *
    * @return The session type.
    */
-  public String typeName() {
-    return type;
+  public ServiceType serviceType() {
+    return ServiceType.from(type);
   }
 
   @Override

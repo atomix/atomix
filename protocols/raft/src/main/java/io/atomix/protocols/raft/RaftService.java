@@ -27,13 +27,13 @@ import io.atomix.utils.concurrent.Scheduler;
  * Raft service.
  */
 public abstract class RaftService implements RaftStateMachine {
-  private StateMachineContext context;
+  private ServiceContext context;
   private RaftOperationExecutor executor;
 
   @Override
-  public void init(StateMachineContext context) {
+  public void init(ServiceContext context) {
     this.context = context;
-    this.executor = new DefaultRaftOperationExecutor(context);
+    this.executor = new DefaultRaftOperationExecutor();
     configure(executor);
   }
 
@@ -52,6 +52,15 @@ public abstract class RaftService implements RaftStateMachine {
    * @param executor The state machine executor.
    */
   protected abstract void configure(RaftOperationExecutor executor);
+
+  /**
+   * Returns the service context.
+   *
+   * @return the service context
+   */
+  protected ServiceContext getContext() {
+    return context;
+  }
 
   /**
    * Returns the state machine scheduler.
@@ -76,8 +85,8 @@ public abstract class RaftService implements RaftStateMachine {
    *
    * @return The unique state machine name.
    */
-  protected String getStateMachineName() {
-    return context.name();
+  protected ServiceName getServiceName() {
+    return context.serviceName();
   }
 
   /**

@@ -16,7 +16,6 @@
 package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.Date;
 
@@ -26,17 +25,17 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Open session entry.
  */
 public class OpenSessionEntry extends TimestampedEntry {
-  private final MemberId memberId;
-  private final String name;
-  private final String type;
+  private final String memberId;
+  private final String serviceName;
+  private final String serviceType;
   private final ReadConsistency readConsistency;
   private final long timeout;
 
-  public OpenSessionEntry(long term, long timestamp, MemberId memberId, String name, String type, ReadConsistency readConsistency, long timeout) {
+  public OpenSessionEntry(long term, long timestamp, String memberId, String serviceName, String serviceType, ReadConsistency readConsistency, long timeout) {
     super(term, timestamp);
     this.memberId = memberId;
-    this.name = name;
-    this.type = type;
+    this.serviceName = serviceName;
+    this.serviceType = serviceType;
     this.readConsistency = readConsistency;
     this.timeout = timeout;
   }
@@ -46,7 +45,7 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The client node identifier.
    */
-  public MemberId memberId() {
+  public String memberId() {
     return memberId;
   }
 
@@ -55,8 +54,8 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The session's state machine name.
    */
-  public String name() {
-    return name;
+  public String serviceName() {
+    return serviceName;
   }
 
   /**
@@ -64,8 +63,8 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The session's state machine type name.
    */
-  public String typeName() {
-    return type;
+  public String serviceType() {
+    return serviceType;
   }
 
   /**
@@ -92,8 +91,8 @@ public class OpenSessionEntry extends TimestampedEntry {
         .add("term", term)
         .add("timestamp", new Date(timestamp))
         .add("node", memberId)
-        .add("name", name)
-        .add("type", type)
+        .add("serviceName", serviceName)
+        .add("serviceType", serviceType)
         .add("readConsistency", readConsistency)
         .add("timeout", timeout)
         .toString();
