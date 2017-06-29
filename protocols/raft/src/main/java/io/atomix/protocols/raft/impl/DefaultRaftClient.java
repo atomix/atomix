@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.cluster.MemberId;

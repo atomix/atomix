@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;

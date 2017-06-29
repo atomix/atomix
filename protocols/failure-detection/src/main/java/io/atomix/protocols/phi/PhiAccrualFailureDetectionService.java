@@ -17,8 +17,8 @@ package io.atomix.protocols.phi;
 
 import com.google.common.collect.Maps;
 import io.atomix.event.AbstractListenerManager;
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.atomix.protocols.phi.protocol.FailureDetectionProtocol;
 import io.atomix.protocols.phi.protocol.HeartbeatMessage;
 import io.atomix.utils.Identifier;

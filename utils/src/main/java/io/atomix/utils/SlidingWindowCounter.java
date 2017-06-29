@@ -15,8 +15,8 @@
  */
 package io.atomix.utils;
 
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -16,8 +16,8 @@
 
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;

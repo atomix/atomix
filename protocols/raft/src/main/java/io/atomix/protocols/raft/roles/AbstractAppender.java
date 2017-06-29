@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;

@@ -16,7 +16,7 @@
 package io.atomix.utils.concurrent;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.atomix.logging.Logger;
+import org.slf4j.Logger;
 
 import java.util.concurrent.ThreadFactory;
 

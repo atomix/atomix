@@ -16,8 +16,8 @@
 package io.atomix.storage.journal;
 
 import com.google.common.collect.Sets;
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;

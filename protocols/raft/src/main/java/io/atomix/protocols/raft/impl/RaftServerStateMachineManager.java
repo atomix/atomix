@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.error.InternalException;
 import io.atomix.protocols.raft.error.UnknownSessionException;

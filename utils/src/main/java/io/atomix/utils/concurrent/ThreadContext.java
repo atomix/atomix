@@ -15,8 +15,6 @@
  */
 package io.atomix.utils.concurrent;
 
-import io.atomix.logging.Logger;
-
 import java.util.concurrent.Executor;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -72,13 +70,6 @@ public interface ThreadContext extends AutoCloseable, Executor, Scheduler {
   default void checkThread() {
     checkState(currentContext() == this, "not on a Catalyst thread");
   }
-
-  /**
-   * Returns the context logger.
-   *
-   * @return The context logger.
-   */
-  Logger logger();
 
   /**
    * Closes the context.

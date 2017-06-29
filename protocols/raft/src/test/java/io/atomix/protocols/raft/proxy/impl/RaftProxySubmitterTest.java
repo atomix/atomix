@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.logging.Logger;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.error.QueryException;
@@ -291,11 +290,6 @@ public class RaftProxySubmitterTest {
    * Test thread context.
    */
   private static class TestContext implements ThreadContext {
-    @Override
-    public Logger logger() {
-      return null;
-    }
-
     @Override
     public Scheduled schedule(Duration delay, Runnable callback) {
       return null;

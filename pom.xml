@@ -81,7 +81,6 @@
   <modules>
     <module>core</module>
     <module>event</module>
-    <module>logging</module>
     <module>messaging</module>
     <module>protocols</module>
     <module>serializer</module>
@@ -92,6 +91,11 @@
   </modules>
 
   <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>

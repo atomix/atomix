@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 

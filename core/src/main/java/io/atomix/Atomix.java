@@ -15,11 +15,10 @@
  */
 package io.atomix;
 
-import io.atomix.lock.LockService;
-import io.atomix.cluster.LogicalClockService;
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.LogicalClockService;
 import io.atomix.leadership.LeadershipService;
-import io.atomix.logging.LoggingService;
+import io.atomix.lock.LockService;
 import io.atomix.partition.PartitionService;
 import io.atomix.primitives.PrimitiveService;
 import io.atomix.transaction.TransactionService;
@@ -77,12 +76,5 @@ public interface Atomix {
    * @return the logical clock service
    */
   LogicalClockService getLogicalClockService();
-
-  /**
-   * Returns the logging service.
-   *
-   * @return the logging service
-   */
-  LoggingService getLoggingService();
 
 }

@@ -15,15 +15,15 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
-import io.atomix.protocols.raft.RaftOperationExecutor;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
+import io.atomix.protocols.raft.RaftOperationExecutor;
 import io.atomix.protocols.raft.StateMachineContext;
 import io.atomix.protocols.raft.error.ApplicationException;
 import io.atomix.utils.concurrent.Scheduled;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -53,11 +53,6 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
 
   public DefaultRaftOperationExecutor(StateMachineContext context) {
     this.context = checkNotNull(context, "context cannot be null");
-  }
-
-  @Override
-  public Logger logger() {
-    return LOGGER;
   }
 
   @Override
@@ -119,7 +114,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
     operations.put(operationId, callback);
-    logger().debug("Registered operation callback {}", operationId);
+    LOGGER.debug("Registered operation callback {}", operationId);
   }
 
   @Override
@@ -137,7 +132,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
       try {
         return callback.apply(commit);
       } catch (Exception e) {
-        logger().warn("State machine operation failed: {}", e);
+        LOGGER.warn("State machine operation failed: {}", e);
         throw new ApplicationException(e, "An application error occurred");
       } finally {
         runTasks();
@@ -167,14 +162,14 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
   @Override
   public Scheduled schedule(Duration delay, Runnable callback) {
     checkOperation(OperationType.COMMAND, "callbacks can only be scheduled during command execution");
-    logger().trace("Scheduled callback {} with delay {}", callback, delay);
+    LOGGER.trace("Scheduled callback {} with delay {}", callback, delay);
     return new ScheduledTask(callback, delay.toMillis()).schedule();
   }
 
   @Override
   public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
     checkOperation(OperationType.COMMAND, "callbacks can only be scheduled during command execution");
-    logger().trace("Scheduled repeating callback {} with initial delay {} and interval {}", callback, initialDelay, interval);
+    LOGGER.trace("Scheduled repeating callback {} with initial delay {} and interval {}", callback, initialDelay, interval);
     return new ScheduledTask(callback, initialDelay.toMillis(), interval.toMillis()).schedule();
   }
 

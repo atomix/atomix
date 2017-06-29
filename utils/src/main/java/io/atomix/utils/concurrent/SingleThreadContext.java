@@ -15,8 +15,8 @@
  */
 package io.atomix.utils.concurrent;
 
-import io.atomix.logging.Logger;
-import io.atomix.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
@@ -103,11 +103,6 @@ public class SingleThreadContext implements ThreadContext {
       throw new IllegalStateException("failed to initialize thread state", e);
     }
     return thread.get();
-  }
-
-  @Override
-  public Logger logger() {
-    return LOGGER;
   }
 
   @Override
