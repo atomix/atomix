@@ -16,10 +16,9 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.protocols.raft.OperationId;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.ServiceType;
-import io.atomix.protocols.raft.error.QueryException;
-import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
@@ -220,7 +219,7 @@ public class RaftProxySubmitterTest {
     assertFalse(result1.isDone());
     assertFalse(result2.isDone());
 
-    future1.completeExceptionally(new QueryException("failure"));
+    future1.completeExceptionally(new RaftException.QueryFailure("failure"));
     future2.complete(QueryResponse.newBuilder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(10)
@@ -256,7 +255,7 @@ public class RaftProxySubmitterTest {
 
     assertFalse(result.isDone());
 
-    future.completeExceptionally(new UnknownSessionException("unknown session"));
+    future.completeExceptionally(new RaftException.UnknownSession("unknown session"));
 
     assertTrue(result.isCompletedExceptionally());
   }
@@ -283,7 +282,7 @@ public class RaftProxySubmitterTest {
 
     assertFalse(result.isDone());
 
-    future.completeExceptionally(new UnknownSessionException("unknown session"));
+    future.completeExceptionally(new RaftException.UnknownSession("unknown session"));
 
     assertTrue(result.isCompletedExceptionally());
   }

@@ -16,10 +16,8 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.base.Throwables;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.protocols.raft.error.QueryException;
-import io.atomix.protocols.raft.error.UnknownClientException;
-import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.proxy.DelegatingRaftProxyClient;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
@@ -49,9 +47,9 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
       e instanceof ConnectException
       || e instanceof TimeoutException
       || e instanceof ClosedChannelException
-      || e instanceof QueryException
-      || e instanceof UnknownClientException
-      || e instanceof UnknownSessionException;
+      || e instanceof RaftException.QueryFailure
+      || e instanceof RaftException.UnknownClient
+      || e instanceof RaftException.UnknownSession;
 
   public RetryingRaftProxyClient(RaftProxyClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
     super(delegate);
@@ -64,7 +62,7 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
   @Override
   public CompletableFuture<byte[]> execute(RaftOperation operation) {
     if (getState() == RaftProxy.State.CLOSED) {
-      return Futures.exceptionalFuture(new UnknownSessionException("Session is closed"));
+      return Futures.exceptionalFuture(new RaftException.Unavailable("Cluster is unavailable"));
     }
     CompletableFuture<byte[]> future = new CompletableFuture<>();
     execute(operation, 1, future);

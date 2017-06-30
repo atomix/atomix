@@ -15,10 +15,10 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.KeepAliveRequest;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
@@ -180,7 +180,7 @@ public class RaftProxyManager {
   public CompletableFuture<Void> closeSession(SessionId sessionId) {
     RaftProxyState state = sessions.get(sessionId);
     if (state == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + sessionId));
+      return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + sessionId));
     }
 
     LOGGER.trace("Closing session {}", sessionId);

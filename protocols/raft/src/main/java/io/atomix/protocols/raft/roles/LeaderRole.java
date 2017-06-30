@@ -19,8 +19,8 @@ import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
-import io.atomix.protocols.raft.error.RaftError;
-import io.atomix.protocols.raft.error.RaftException;
+import io.atomix.protocols.raft.RaftError;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftMetadataResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
@@ -279,7 +279,7 @@ public final class LeaderRole extends ActiveRole {
         } else {
           future.complete(logResponse(JoinResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.INTERNAL_ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR)
               .build()));
         }
       }
@@ -307,7 +307,7 @@ public final class LeaderRole extends ActiveRole {
     if (existingMember == null) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
+          .withError(RaftError.Type.UNKNOWN_SESSION)
           .build()));
     }
 
@@ -341,7 +341,7 @@ public final class LeaderRole extends ActiveRole {
         } else {
           future.complete(logResponse(ReconfigureResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.INTERNAL_ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR)
               .build()));
         }
       }
@@ -392,7 +392,7 @@ public final class LeaderRole extends ActiveRole {
         } else {
           future.complete(logResponse(LeaveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.INTERNAL_ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR)
               .build()));
         }
       }
@@ -480,7 +480,7 @@ public final class LeaderRole extends ActiveRole {
         } else {
           future.complete(logResponse(MetadataResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.INTERNAL_ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR)
               .build()));
         }
       }
@@ -498,7 +498,7 @@ public final class LeaderRole extends ActiveRole {
     if (session == null) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
+          .withError(RaftError.Type.UNKNOWN_SESSION)
           .build()));
     }
 
@@ -510,7 +510,7 @@ public final class LeaderRole extends ActiveRole {
     if (!session.setRequestSequence(request.sequenceNumber())) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.COMMAND_ERROR)
+          .withError(RaftError.Type.COMMAND_FAILURE)
           .withLastSequence(session.getRequestSequence())
           .build()));
     }
@@ -545,7 +545,7 @@ public final class LeaderRole extends ActiveRole {
         } else {
           future.complete(CommandResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.INTERNAL_ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR)
               .build());
         }
       }
@@ -564,7 +564,7 @@ public final class LeaderRole extends ActiveRole {
     if (context.getStateMachine().getLastApplied() < request.session()) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
+          .withError(RaftError.Type.UNKNOWN_SESSION)
           .build()));
     }
 
@@ -574,7 +574,7 @@ public final class LeaderRole extends ActiveRole {
       LOGGER.warn("{} - Unknown session {}", context.getCluster().getMember().memberId(), request.session());
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
+          .withError(RaftError.Type.UNKNOWN_SESSION)
           .build()));
     }
 
@@ -627,7 +627,7 @@ public final class LeaderRole extends ActiveRole {
             .thenApply(index -> response)
             .exceptionally(error -> QueryResponse.newBuilder()
                 .withStatus(RaftResponse.Status.ERROR)
-                .withError(RaftError.Type.QUERY_ERROR)
+                .withError(RaftError.Type.QUERY_FAILURE)
                 .build()));
   }
 
@@ -684,7 +684,7 @@ public final class LeaderRole extends ActiveRole {
               } else {
                 future.complete(logResponse(OpenSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.INTERNAL_ERROR)
+                    .withError(RaftError.Type.PROTOCOL_ERROR)
                     .build()));
               }
             }
@@ -692,7 +692,7 @@ public final class LeaderRole extends ActiveRole {
         } else {
           future.complete(logResponse(OpenSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.INTERNAL_ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR)
               .build()));
         }
       }
@@ -750,7 +750,7 @@ public final class LeaderRole extends ActiveRole {
                 future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withLeader(context.getCluster().getMember().memberId())
-                    .withError(RaftError.Type.INTERNAL_ERROR)
+                    .withError(RaftError.Type.PROTOCOL_ERROR)
                     .build()));
               }
             }
@@ -759,7 +759,7 @@ public final class LeaderRole extends ActiveRole {
           future.complete(logResponse(KeepAliveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withLeader(context.getCluster().getMember().memberId())
-              .withError(RaftError.Type.INTERNAL_ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR)
               .build()));
         }
       }
@@ -810,7 +810,7 @@ public final class LeaderRole extends ActiveRole {
               } else {
                 future.complete(logResponse(CloseSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.INTERNAL_ERROR)
+                    .withError(RaftError.Type.PROTOCOL_ERROR)
                     .build()));
               }
             }
@@ -818,7 +818,7 @@ public final class LeaderRole extends ActiveRole {
         } else {
           future.complete(logResponse(CloseSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.INTERNAL_ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR)
               .build()));
         }
       }

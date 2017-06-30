@@ -18,8 +18,8 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperationExecutor;
-import io.atomix.protocols.raft.error.ApplicationException;
 import io.atomix.utils.concurrent.Scheduled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +122,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
         return callback.apply(commit);
       } catch (Exception e) {
         LOGGER.warn("State machine operation failed: {}", e);
-        throw new ApplicationException(e, "An application error occurred");
+        throw new RaftException.ApplicationException(e);
       } finally {
         runTasks();
       }

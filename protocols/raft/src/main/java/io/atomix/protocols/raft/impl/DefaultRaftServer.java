@@ -15,17 +15,16 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.error.ConfigurationException;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.utils.concurrent.Futures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -248,7 +247,7 @@ public class DefaultRaftServer implements RaftServer {
     @Override
     public RaftServer build() {
       if (stateMachineRegistry.size() == 0) {
-        throw new ConfigurationException("No state machines registered");
+        throw new IllegalStateException("No state machines registered");
       }
 
       // If the server name is null, set it to the member ID.

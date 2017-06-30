@@ -15,12 +15,10 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.error.InternalException;
-import io.atomix.protocols.raft.error.UnknownSessionException;
-import io.atomix.protocols.raft.error.UnknownStateMachineException;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
@@ -266,7 +264,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     } else if (entry.type() == ConfigurationEntry.class) {
       return (CompletableFuture<T>) applyConfiguration(entry.cast());
     }
-    return Futures.exceptionalFuture(new InternalException("Unknown entry type"));
+    return Futures.exceptionalFuture(new RaftException.ProtocolException("Unknown entry type"));
   }
 
   /**
@@ -341,7 +339,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     if (stateMachineExecutor == null) {
       Supplier<RaftStateMachine> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().serviceType());
       if (stateMachineSupplier == null) {
-        return Futures.exceptionalFuture(new UnknownStateMachineException("Unknown state machine type " + entry.entry().serviceType()));
+        return Futures.exceptionalFuture(new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType()));
       }
 
       StateMachineId stateMachineId = StateMachineId.from(entry.index());
@@ -378,7 +376,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
     // If the server session is null, the session either never existed or already expired.
     if (session == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + entry.entry().session()));
+      return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + entry.entry().session()));
     }
 
     // Get the state machine executor associated with the session and unregister the session.
@@ -396,7 +394,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
       // If the session is null, return an UnknownSessionException.
       if (session == null) {
-        return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + entry.entry().session()));
+        return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + entry.entry().session()));
       }
 
       Set<RaftSessionMetadata> sessions = new HashSet<>();
@@ -438,7 +436,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     // have a session. We ensure that session register/unregister entries are not compacted from the log
     // until all associated commands have been cleaned.
     if (session == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + entry.entry().session()));
+      return Futures.exceptionalFuture(new RaftException.UnknownSession("unknown session: " + entry.entry().session()));
     }
 
     // Execute the command using the state machine associated with the session.
@@ -475,7 +473,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     // If the session is null then that indicates that the session already timed out or it never existed.
     // Return with an UnknownSessionException.
     if (session == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.entry().session()));
+      return Futures.exceptionalFuture(new RaftException.UnknownSession("unknown session " + entry.entry().session()));
     }
 
     // Execute the query using the state machine associated with the session.

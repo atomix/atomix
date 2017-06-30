@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.error.RaftError;
+import io.atomix.protocols.raft.RaftError;
 
 import java.util.Collection;
 import java.util.Objects;

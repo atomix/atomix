@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
-import io.atomix.protocols.raft.error.InternalException;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.ConfigureRequest;
@@ -266,7 +266,7 @@ final class LeaderAppender extends AbstractAppender {
       // ACTIVE members are considered. A member could have been transitioned to another state while the
       // heartbeat was being sent.
       if (member.getMember().getType() == RaftMember.Type.ACTIVE && ++heartbeatFailures > votingMemberSize - quorumSize) {
-        heartbeatFuture.completeExceptionally(new InternalException("Failed to reach consensus"));
+        heartbeatFuture.completeExceptionally(new RaftException.ProtocolException("Failed to reach consensus"));
         completeHeartbeat();
       }
     } else {

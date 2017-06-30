@@ -15,16 +15,16 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
-import io.atomix.protocols.raft.error.NoLeaderException;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.utils.concurrent.Futures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
@@ -85,7 +85,7 @@ public abstract class AbstractRole implements RaftRole {
     CompletableFuture<U> future = new CompletableFuture<>();
     DefaultRaftMember leader = context.getLeader();
     if (leader == null) {
-      return Futures.exceptionalFuture(new NoLeaderException("No leader found"));
+      return Futures.exceptionalFuture(new RaftException.NoLeader("No leader found"));
     }
 
     function.apply(leader.memberId(), request).whenComplete((response, error) -> {

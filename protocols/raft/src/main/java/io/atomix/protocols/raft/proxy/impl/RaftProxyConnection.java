@@ -15,10 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.CloseSessionResponse;
 import io.atomix.protocols.raft.protocol.CommandRequest;
@@ -35,6 +33,8 @@ import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.utils.concurrent.ThreadContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
@@ -43,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -51,6 +52,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class RaftProxyConnection {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxyConnection.class);
+  private static final Predicate<RaftResponse> COMPLETE_PREDICATE = response ->
+      response.status() == RaftResponse.Status.OK
+          || response.error() == RaftError.Type.COMMAND_FAILURE
+          || response.error() == RaftError.Type.QUERY_FAILURE
+          || response.error() == RaftError.Type.APPLICATION_ERROR
+          || response.error() == RaftError.Type.UNKNOWN_CLIENT
+          || response.error() == RaftError.Type.UNKNOWN_SESSION
+          || response.error() == RaftError.Type.UNKNOWN_SERVICE
+          || response.error() == RaftError.Type.PROTOCOL_ERROR;
 
   private final String name;
   private final RaftClientProtocol protocol;
@@ -217,14 +227,7 @@ public class RaftProxyConnection {
   @SuppressWarnings("unchecked")
   protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, MemberId node, RaftResponse response, Throwable error, CompletableFuture future) {
     if (error == null) {
-      if (response.status() == RaftResponse.Status.OK
-          || response.error() == RaftError.Type.COMMAND_ERROR
-          || response.error() == RaftError.Type.QUERY_ERROR
-          || response.error() == RaftError.Type.APPLICATION_ERROR
-          || response.error() == RaftError.Type.UNKNOWN_CLIENT_ERROR
-          || response.error() == RaftError.Type.UNKNOWN_SESSION_ERROR
-          || response.error() == RaftError.Type.UNKNOWN_STATE_MACHINE_ERROR
-          || response.error() == RaftError.Type.INTERNAL_ERROR) {
+      if (COMPLETE_PREDICATE.test(response)) {
         LOGGER.trace("{} - Received {}", name, response);
         future.complete(response);
       } else {

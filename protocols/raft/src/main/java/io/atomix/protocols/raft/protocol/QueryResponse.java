@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.error.RaftError;
+import io.atomix.protocols.raft.RaftError;
 
 /**
  * Client query response.

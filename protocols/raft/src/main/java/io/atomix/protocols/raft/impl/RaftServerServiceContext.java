@@ -19,13 +19,13 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.ServiceContext;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.session.SessionId;
@@ -452,7 +452,7 @@ public class RaftServerServiceContext implements ServiceContext {
 
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
-      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.sessionId()));
+      future.completeExceptionally(new RaftException.UnknownSession("Unknown session: " + session.sessionId()));
       return;
     }
 
@@ -548,7 +548,7 @@ public class RaftServerServiceContext implements ServiceContext {
   private void executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
-      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.sessionId()));
+      future.completeExceptionally(new RaftException.UnknownSession("Unknown session: " + session.sessionId()));
       return;
     }
 
@@ -588,7 +588,7 @@ public class RaftServerServiceContext implements ServiceContext {
   private void applyQuery(long index, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
-      future.completeExceptionally(new UnknownSessionException("Unknown session: " + session.sessionId()));
+      future.completeExceptionally(new RaftException.UnknownSession("Unknown session: " + session.sessionId()));
       return;
     }
 

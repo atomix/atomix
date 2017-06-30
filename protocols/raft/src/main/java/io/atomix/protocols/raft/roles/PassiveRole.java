@@ -17,8 +17,8 @@ package io.atomix.protocols.raft.roles;
 
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.error.RaftError;
-import io.atomix.protocols.raft.error.RaftException;
+import io.atomix.protocols.raft.RaftError;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
@@ -298,7 +298,7 @@ public class PassiveRole extends ReserveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     }
 
@@ -306,7 +306,7 @@ public class PassiveRole extends ReserveRole {
     return forward(request, context.getProtocol()::query)
         .exceptionally(error -> QueryResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
-            .withError(RaftError.Type.NO_LEADER_ERROR)
+            .withError(RaftError.Type.NO_LEADER)
             .build())
         .thenApply(this::logResponse);
   }
@@ -359,7 +359,7 @@ public class PassiveRole extends ReserveRole {
       } else {
         LOGGER.warn("An unexpected error occurred: {}", error);
         future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-            .withError(RaftError.Type.INTERNAL_ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR)
             .build());
       }
     }
@@ -375,7 +375,7 @@ public class PassiveRole extends ReserveRole {
     if (request.term() < context.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
           .build()));
     }
 
@@ -401,7 +401,7 @@ public class PassiveRole extends ReserveRole {
       if (request.chunkOffset() > 0) {
         return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
-            .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+            .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
             .build()));
       }
 
@@ -416,7 +416,7 @@ public class PassiveRole extends ReserveRole {
     if (request.chunkOffset() > nextSnapshotOffset) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
           .build()));
     }
 

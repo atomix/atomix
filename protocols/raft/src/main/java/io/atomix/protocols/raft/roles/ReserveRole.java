@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.protocols.raft.error.RaftError;
+import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -80,13 +80,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(MetadataResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::metadata)
           .exceptionally(error -> MetadataResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -116,7 +116,7 @@ public class ReserveRole extends InactiveRole {
 
     return CompletableFuture.completedFuture(logResponse(PollResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
         .build()));
   }
 
@@ -128,7 +128,7 @@ public class ReserveRole extends InactiveRole {
 
     return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
         .build()));
   }
 
@@ -140,13 +140,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::command)
           .exceptionally(error -> CommandResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -160,13 +160,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::query)
           .exceptionally(error -> QueryResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -180,13 +180,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::keepAlive)
           .exceptionally(error -> KeepAliveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -200,13 +200,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::openSession)
           .exceptionally(error -> OpenSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -220,13 +220,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::closeSession)
           .exceptionally(error -> CloseSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -240,13 +240,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(JoinResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::join)
           .exceptionally(error -> JoinResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -260,13 +260,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::reconfigure)
           .exceptionally(error -> ReconfigureResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -280,13 +280,13 @@ public class ReserveRole extends InactiveRole {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(LeaveResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, context.getProtocol()::leave)
           .exceptionally(error -> LeaveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .withError(RaftError.Type.NO_LEADER)
               .build())
           .thenApply(this::logResponse);
     }
@@ -299,7 +299,7 @@ public class ReserveRole extends InactiveRole {
 
     return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
         .build()));
   }
 

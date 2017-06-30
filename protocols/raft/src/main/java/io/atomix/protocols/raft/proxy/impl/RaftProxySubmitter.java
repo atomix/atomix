@@ -16,11 +16,9 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.protocols.raft.OperationId;
+import io.atomix.protocols.raft.RaftError;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.protocols.raft.error.CommandException;
-import io.atomix.protocols.raft.error.QueryException;
-import io.atomix.protocols.raft.error.RaftError;
-import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.OperationRequest;
@@ -29,6 +27,7 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
 import org.slf4j.Logger;
@@ -59,6 +58,9 @@ final class RaftProxySubmitter {
       e instanceof ConnectException
           || e instanceof TimeoutException
           || e instanceof ClosedChannelException;
+  private static final Predicate<Throwable> CLOSED_PREDICATE = e ->
+      e instanceof RaftException.ClosedSession
+          || e instanceof RaftException.UnknownSession;
 
   private final RaftProxyConnection leaderConnection;
   private final RaftProxyConnection sessionConnection;
@@ -151,7 +153,7 @@ final class RaftProxySubmitter {
    */
   private <T extends OperationRequest, U extends OperationResponse, V> void submit(OperationAttempt<T, U> attempt) {
     if (state.getState() == RaftProxy.State.CLOSED) {
-      attempt.fail(new UnknownSessionException("session closed"));
+      attempt.fail(new RaftException.ClosedSession("session closed"));
     } else {
       LOG.trace("{} - Sending {}", state.getSessionId(), attempt.request);
       attempts.put(attempt.sequence, attempt);
@@ -202,7 +204,7 @@ final class RaftProxySubmitter {
    */
   public CompletableFuture<Void> close() {
     for (OperationAttempt attempt : new ArrayList<>(attempts.values())) {
-      attempt.fail(new UnknownSessionException("session closed"));
+      attempt.fail(new RaftException.ClosedSession("session closed"));
     }
     attempts.clear();
     return CompletableFuture.completedFuture(null);
@@ -328,7 +330,7 @@ final class RaftProxySubmitter {
 
     @Override
     protected Throwable defaultException() {
-      return new CommandException("failed to complete command");
+      return new RaftException.CommandFailure("failed to complete command");
     }
 
     @Override
@@ -340,15 +342,19 @@ final class RaftProxySubmitter {
         }
         // COMMAND_ERROR indicates that the command was received by the leader out of sequential order.
         // We need to resend commands starting at the provided lastSequence number.
-        else if (response.error() == RaftError.Type.COMMAND_ERROR) {
+        else if (response.error() == RaftError.Type.COMMAND_FAILURE) {
           resubmit(response.lastSequenceNumber(), this);
+        }
+        // If the request failed with a PROTOCOL_ERROR, we need to ensure sequencing of operations is still maintained.
+        else if (response.error() == RaftError.Type.PROTOCOL_ERROR) {
+          completeWithNoOp(response.error().createException());
         }
         // The following exceptions need to be handled at a higher level by the client or the user.
         else if (response.error() == RaftError.Type.APPLICATION_ERROR
-            || response.error() == RaftError.Type.UNKNOWN_CLIENT_ERROR
-            || response.error() == RaftError.Type.UNKNOWN_SESSION_ERROR
-            || response.error() == RaftError.Type.UNKNOWN_STATE_MACHINE_ERROR
-            || response.error() == RaftError.Type.INTERNAL_ERROR) {
+            || response.error() == RaftError.Type.UNKNOWN_CLIENT
+            || response.error() == RaftError.Type.UNKNOWN_SESSION
+            || response.error() == RaftError.Type.UNKNOWN_SERVICE
+            || response.error() == RaftError.Type.CLOSED_SESSION) {
           complete(response.error().createException());
         }
         // For all other errors, use fibonacci backoff to resubmit the command.
@@ -365,15 +371,29 @@ final class RaftProxySubmitter {
     @Override
     public void fail(Throwable cause) {
       super.fail(cause);
-      if (cause instanceof UnknownSessionException) {
-        state.setState(RaftProxy.State.CLOSED);
-        CommandRequest request = CommandRequest.newBuilder()
-            .withSession(this.request.session())
-            .withSequence(this.request.sequenceNumber())
-            .withOperation(new RaftOperation(OperationId.NOOP, HeapBytes.EMPTY))
-            .build();
-        context.execute(() -> submit(new CommandAttempt(sequence, this.attempt + 1, request, future)));
+
+      // If the session has been closed, update the client's state.
+      if (CLOSED_PREDICATE.test(cause)) {
+        state.setState(RaftProxyClient.State.CLOSED);
       }
+      // Otherwise, resend the request with a NOOP command. This is necessary to ensure that sequence
+      // numbers are not skipped which could otherwise prevent the client from progressing.
+      else {
+        completeWithNoOp(cause);
+      }
+    }
+
+    /**
+     * Sends a no-op command using this command's sequence number.
+     */
+    private void completeWithNoOp(Throwable cause) {
+      CommandRequest noOpRequest = CommandRequest.newBuilder()
+          .withSession(request.session())
+          .withSequence(request.sequenceNumber())
+          .withOperation(new RaftOperation(OperationId.NOOP, HeapBytes.EMPTY))
+          .build();
+      context.execute(() -> submit(new CommandAttempt(sequence, attempt + 1, noOpRequest, new CompletableFuture<>())));
+      complete(cause);
     }
 
     @Override
@@ -412,7 +432,7 @@ final class RaftProxySubmitter {
 
     @Override
     protected Throwable defaultException() {
-      return new QueryException("failed to complete query");
+      return new RaftException.QueryFailure("failed to complete query");
     }
 
     @Override
