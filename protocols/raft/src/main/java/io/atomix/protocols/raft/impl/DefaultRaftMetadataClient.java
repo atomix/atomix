@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.protocols.raft.CommunicationStrategies;
+import io.atomix.protocols.raft.proxy.CommunicationStrategies;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;

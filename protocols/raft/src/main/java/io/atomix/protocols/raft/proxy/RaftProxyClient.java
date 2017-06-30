@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.proxy;
 
-import io.atomix.protocols.raft.CommunicationStrategies;
-import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftOperation;
