@@ -161,7 +161,9 @@ public class RaftPerformanceTest implements Runnable {
       .register(PublishRequest.class)
       .register(ResetRequest.class)
       .register(RaftResponse.Status.class)
+      .register(RaftError.class)
       .register(RaftError.Type.class)
+      .register(RaftOperation.class)
       .register(ReadConsistency.class)
       .register(byte[].class)
       .register(long[].class)
@@ -198,6 +200,9 @@ public class RaftPerformanceTest implements Runnable {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
+      .register(RaftOperation.class)
+      .register(DefaultOperationId.class)
+      .register(OperationType.class)
       .register(ReadConsistency.class)
       .register(ArrayList.class)
       .register(HashSet.class)
@@ -518,7 +523,10 @@ public class RaftPerformanceTest implements Runnable {
 
     @Override
     protected void configure(RaftOperationExecutor executor) {
-
+      executor.register(PUT, clientSerializer::decode, this::put, clientSerializer::encode);
+      executor.register(GET, clientSerializer::decode, this::get, clientSerializer::encode);
+      executor.register(REMOVE, clientSerializer::decode, this::remove, clientSerializer::encode);
+      executor.register(INDEX, this::index, clientSerializer::encode);
     }
 
     @Override
@@ -541,21 +549,21 @@ public class RaftPerformanceTest implements Runnable {
       }
     }
 
-    public long put(RaftCommit<Map.Entry<String, String>> commit) {
+    protected long put(RaftCommit<Map.Entry<String, String>> commit) {
       map.put(commit.value().getKey(), commit.value().getValue());
       return commit.index();
     }
 
-    public String get(RaftCommit<String> commit) {
+    protected String get(RaftCommit<String> commit) {
       return map.get(commit.value());
     }
 
-    public long remove(RaftCommit<String> commit) {
+    protected long remove(RaftCommit<String> commit) {
       map.remove(commit.value());
       return commit.index();
     }
 
-    public long index(RaftCommit<Void> commit) {
+    protected long index(RaftCommit<Void> commit) {
       return commit.index();
     }
   }
