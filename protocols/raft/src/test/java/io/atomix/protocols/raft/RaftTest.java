@@ -1227,7 +1227,7 @@ public class RaftTest extends ConcurrentTestCase {
    */
   private RaftProxy createSession(RaftClient client, ReadConsistency consistency) {
     return client.newProxyBuilder()
-        .withServiceName("test")
+        .withName("test")
         .withServiceType("test")
         .withReadConsistency(consistency)
         .build();

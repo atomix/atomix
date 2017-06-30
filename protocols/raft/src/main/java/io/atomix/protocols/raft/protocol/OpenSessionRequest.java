@@ -16,7 +16,6 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 
@@ -157,8 +156,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
      * @return The open session request builder.
      * @throws NullPointerException if {@code serviceName} is {@code null}
      */
-    public Builder withServiceName(ServiceName serviceName) {
-      this.serviceName = checkNotNull(serviceName, "serviceName cannot be null").id();
+    public Builder withServiceName(String serviceName) {
+      this.serviceName = checkNotNull(serviceName, "serviceName cannot be null");
       return this;
     }
 

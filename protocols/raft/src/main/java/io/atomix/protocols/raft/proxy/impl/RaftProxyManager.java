@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.proxy.impl;
 import io.atomix.protocols.raft.CommunicationStrategies;
 import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.UnknownSessionException;
@@ -117,7 +116,7 @@ public class RaftProxyManager {
    * @return A completable future to be completed once the session has been opened.
    */
   public CompletableFuture<RaftProxy> openSession(
-      ServiceName serviceName,
+      String serviceName,
       ServiceType serviceType,
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,

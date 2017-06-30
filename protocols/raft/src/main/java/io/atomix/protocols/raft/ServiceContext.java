@@ -42,7 +42,7 @@ public interface ServiceContext {
    *
    * @return The state machine name.
    */
-  ServiceName serviceName();
+  String serviceName();
 
   /**
    * Returns the state machine type.

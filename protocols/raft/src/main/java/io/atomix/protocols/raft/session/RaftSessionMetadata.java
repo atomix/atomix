@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.session;
 
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 
 import java.util.Objects;
@@ -51,8 +50,8 @@ public final class RaftSessionMetadata {
    *
    * @return The session name.
    */
-  public ServiceName serviceName() {
-    return ServiceName.from(name);
+  public String serviceName() {
+    return name;
   }
 
   /**

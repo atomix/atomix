@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.session;
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.storage.buffer.HeapBytes;
@@ -62,7 +61,7 @@ public interface RaftSession {
    *
    * @return The session's service name.
    */
-  ServiceName serviceName();
+  String serviceName();
 
   /**
    * Returns the session's service type.

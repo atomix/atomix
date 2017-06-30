@@ -23,7 +23,6 @@ import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.ServiceContext;
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.UnknownSessionException;
@@ -56,7 +55,7 @@ public class RaftServerServiceContext implements ServiceContext {
   private static final long SNAPSHOT_INTERVAL_MILLIS = 1000 * 60 * 10;
 
   private final StateMachineId stateMachineId;
-  private final ServiceName serviceName;
+  private final String name;
   private final ServiceType serviceType;
   private final RaftStateMachine stateMachine;
   private final RaftServerContext server;
@@ -84,7 +83,7 @@ public class RaftServerServiceContext implements ServiceContext {
 
   RaftServerServiceContext(
       StateMachineId id,
-      ServiceName serviceName,
+      String name,
       ServiceType serviceType,
       RaftStateMachine stateMachine,
       RaftServerContext server,
@@ -92,7 +91,7 @@ public class RaftServerServiceContext implements ServiceContext {
       ThreadContext stateMachineExecutor,
       ThreadContext snapshotExecutor) {
     this.stateMachineId = checkNotNull(id);
-    this.serviceName = checkNotNull(serviceName);
+    this.name = checkNotNull(name);
     this.serviceType = checkNotNull(serviceType);
     this.stateMachine = checkNotNull(stateMachine);
     this.server = checkNotNull(server);
@@ -116,8 +115,8 @@ public class RaftServerServiceContext implements ServiceContext {
   }
 
   @Override
-  public ServiceName serviceName() {
-    return serviceName;
+  public String serviceName() {
+    return name;
   }
 
   @Override
@@ -289,7 +288,7 @@ public class RaftServerServiceContext implements ServiceContext {
           RaftSessionContext session = new RaftSessionContext(
               sessionId,
               node,
-              serviceName,
+              name,
               serviceType,
               readConsistency,
               sessionTimeout,

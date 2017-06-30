@@ -85,7 +85,7 @@ public abstract class RaftService implements RaftStateMachine {
    *
    * @return The unique state machine name.
    */
-  protected ServiceName getServiceName() {
+  protected String getName() {
     return context.serviceName();
   }
 

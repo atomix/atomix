@@ -16,7 +16,6 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftStateMachine;
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.InternalException;
@@ -348,7 +347,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
       StateMachineId stateMachineId = StateMachineId.from(entry.index());
       stateMachineExecutor = new RaftServerServiceContext(
           stateMachineId,
-          ServiceName.from(entry.entry().serviceName()),
+          entry.entry().serviceName(),
           ServiceType.from(entry.entry().serviceType()),
           stateMachineSupplier.get(),
           state,
@@ -362,7 +361,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     RaftSessionContext session = new RaftSessionContext(
         sessionId,
         MemberId.from(entry.entry().memberId()),
-        ServiceName.from(entry.entry().serviceName()),
+        entry.entry().serviceName(),
         ServiceType.from(entry.entry().serviceType()),
         entry.entry().readConsistency(),
         entry.entry().timeout(),
@@ -403,14 +402,14 @@ public class RaftServerStateMachineManager implements AutoCloseable {
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext s : sessionManager.getSessions()) {
         if (s.serviceName().equals(session.serviceName())) {
-          sessions.add(new RaftSessionMetadata(s.sessionId().id(), s.serviceName().id(), s.serviceType().id()));
+          sessions.add(new RaftSessionMetadata(s.sessionId().id(), s.serviceName(), s.serviceType().id()));
         }
       }
       return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
     } else {
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext session : sessionManager.getSessions()) {
-        sessions.add(new RaftSessionMetadata(session.sessionId().id(), session.serviceName().id(), session.serviceType().id()));
+        sessions.add(new RaftSessionMetadata(session.sessionId().id(), session.serviceName(), session.serviceType().id()));
       }
       return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
     }

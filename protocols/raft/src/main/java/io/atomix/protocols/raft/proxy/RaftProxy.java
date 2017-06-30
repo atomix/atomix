@@ -20,7 +20,6 @@ import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 
 import java.time.Duration;
@@ -131,7 +130,7 @@ public interface RaftProxy extends RaftProxyClient {
    * Raft session builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<RaftProxy> {
-    protected ServiceName serviceName;
+    protected String name;
     protected ServiceType serviceType;
     protected ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
     protected Executor executor;
@@ -141,21 +140,11 @@ public interface RaftProxy extends RaftProxyClient {
     /**
      * Sets the session name.
      *
-     * @param serviceName The service name.
+     * @param name The service name.
      * @return The session builder.
      */
-    public Builder withServiceName(String serviceName) {
-      return withServiceName(ServiceName.from(serviceName));
-    }
-
-    /**
-     * Sets the session name.
-     *
-     * @param serviceName The service name.
-     * @return The session builder.
-     */
-    public Builder withServiceName(ServiceName serviceName) {
-      this.serviceName = checkNotNull(serviceName, "serviceName cannot be null");
+    public Builder withName(String name) {
+      this.name = checkNotNull(name, "name cannot be null");
       return this;
     }
 

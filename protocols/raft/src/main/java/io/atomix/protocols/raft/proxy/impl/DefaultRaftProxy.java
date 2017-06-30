@@ -21,7 +21,6 @@ import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
@@ -100,7 +99,7 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
-  public ServiceName serviceName() {
+  public String name() {
     return state.getServiceName();
   }
 

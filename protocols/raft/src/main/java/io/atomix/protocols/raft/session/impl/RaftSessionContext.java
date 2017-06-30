@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.session.impl;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.OperationResult;
@@ -52,7 +51,7 @@ public class RaftSessionContext implements RaftSession {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionContext.class);
   private final SessionId sessionId;
   private final MemberId member;
-  private final ServiceName serviceName;
+  private final String name;
   private final ServiceType serviceType;
   private final ReadConsistency readConsistency;
   private final long timeout;
@@ -77,7 +76,7 @@ public class RaftSessionContext implements RaftSession {
   public RaftSessionContext(
       SessionId sessionId,
       MemberId member,
-      ServiceName serviceName,
+      String name,
       ServiceType serviceType,
       ReadConsistency readConsistency,
       long timeout,
@@ -85,7 +84,7 @@ public class RaftSessionContext implements RaftSession {
       RaftServerContext server) {
     this.sessionId = sessionId;
     this.member = member;
-    this.serviceName = serviceName;
+    this.name = name;
     this.serviceType = serviceType;
     this.readConsistency = readConsistency;
     this.timeout = timeout;
@@ -104,8 +103,8 @@ public class RaftSessionContext implements RaftSession {
   }
 
   @Override
-  public ServiceName serviceName() {
-    return serviceName;
+  public String serviceName() {
+    return name;
   }
 
   @Override

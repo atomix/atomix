@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.ServiceName;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.session.SessionId;
@@ -31,8 +30,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class RaftProxyState {
   private final SessionId sessionId;
-  private final ServiceName name;
-  private final ServiceType type;
+  private final String serviceName;
+  private final ServiceType serviceType;
   private final long timeout;
   private volatile RaftProxy.State state = RaftProxy.State.CONNECTED;
   private Long suspendedTime;
@@ -43,10 +42,10 @@ public final class RaftProxyState {
   private volatile long lastUpdated;
   private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
 
-  RaftProxyState(SessionId sessionId, ServiceName name, ServiceType type, long timeout) {
+  RaftProxyState(SessionId sessionId, String serviceName, ServiceType serviceType, long timeout) {
     this.sessionId = sessionId;
-    this.name = name;
-    this.type = type;
+    this.serviceName = serviceName;
+    this.serviceType = serviceType;
     this.timeout = timeout;
     this.responseIndex = sessionId.id();
     this.eventIndex = sessionId.id();
@@ -66,8 +65,8 @@ public final class RaftProxyState {
    *
    * @return The session name.
    */
-  public ServiceName getServiceName() {
-    return name;
+  public String getServiceName() {
+    return serviceName;
   }
 
   /**
@@ -76,7 +75,7 @@ public final class RaftProxyState {
    * @return The session type.
    */
   public ServiceType getServiceType() {
-    return type;
+    return serviceType;
   }
 
   /**
