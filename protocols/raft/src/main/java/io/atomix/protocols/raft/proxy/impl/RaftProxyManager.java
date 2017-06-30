@@ -27,6 +27,7 @@ import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -115,7 +116,7 @@ public class RaftProxyManager {
    * @param timeout               The session timeout.
    * @return A completable future to be completed once the session has been opened.
    */
-  public CompletableFuture<RaftProxy> openSession(
+  public CompletableFuture<RaftProxyClient> openSession(
       String serviceName,
       ServiceType serviceType,
       ReadConsistency readConsistency,
@@ -137,7 +138,7 @@ public class RaftProxyManager {
         .build();
 
     LOGGER.trace("{} - Sending {}", clientId, request);
-    CompletableFuture<RaftProxy> future = new CompletableFuture<>();
+    CompletableFuture<RaftProxyClient> future = new CompletableFuture<>();
     ThreadContext proxyContext = new ThreadPoolContext(threadPoolExecutor);
     connection.openSession(request).whenCompleteAsync((response, error) -> {
       if (error == null) {
@@ -154,8 +155,8 @@ public class RaftProxyManager {
           keepAliveSessions();
 
           // Create the proxy wrapped in an executor delegate and complete the open future.
-          RaftProxy proxy;
-          proxy = new DefaultRaftProxy(
+          RaftProxyClient client;
+          client = new DefaultRaftProxyClient(
               state,
               protocol,
               selectorManager,
@@ -164,9 +165,9 @@ public class RaftProxyManager {
               proxyContext);
 
           Executor eventExecutor = executor != null ? executor : new ThreadPoolContext(threadPoolExecutor);
-          proxy = new BlockingAwareRaftProxy(proxy, eventExecutor);
+          client = new BlockingAwareRaftProxyClient(client, eventExecutor);
 
-          future.complete(proxy);
+          future.complete(client);
         } else {
           future.completeExceptionally(response.error().createException());
         }

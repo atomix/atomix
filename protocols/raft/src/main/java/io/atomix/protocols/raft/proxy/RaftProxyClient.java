@@ -168,38 +168,6 @@ public interface RaftProxyClient {
   void removeEventListener(Consumer<RaftEvent> listener);
 
   /**
-   * Adds an empty session event listener.
-   *
-   * @param eventType the event type
-   * @param listener  the event listener to add
-   */
-  void addEventListener(EventType eventType, Runnable listener);
-
-  /**
-   * Adds a session event listener.
-   *
-   * @param eventType the event type identifier
-   * @param listener  the event listener to add
-   */
-  void addEventListener(EventType eventType, Consumer<byte[]> listener);
-
-  /**
-   * Removes an empty session event listener.
-   *
-   * @param eventType the event type
-   * @param listener  the event listener to add
-   */
-  void removeEventListener(EventType eventType, Runnable listener);
-
-  /**
-   * Removes a session event listener.
-   *
-   * @param eventType the event type identifier
-   * @param listener  the event listener to remove
-   */
-  void removeEventListener(EventType eventType, Consumer<byte[]> listener);
-
-  /**
    * Returns a boolean indicating whether the session is open.
    *
    * @return Indicates whether the session is open.

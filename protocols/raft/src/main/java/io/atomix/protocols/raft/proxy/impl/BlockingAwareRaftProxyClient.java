@@ -18,8 +18,9 @@ package io.atomix.protocols.raft.proxy.impl;
 import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.protocols.raft.proxy.DelegatingRaftProxy;
+import io.atomix.protocols.raft.proxy.DelegatingRaftProxyClient;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Map;
@@ -32,12 +33,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft proxy delegate that completes futures on a thread pool.
  */
-public class BlockingAwareRaftProxy extends DelegatingRaftProxy {
+public class BlockingAwareRaftProxyClient extends DelegatingRaftProxyClient {
   private final Executor executor;
   private final Map<Consumer<State>, Consumer<State>> stateChangeListeners = Maps.newConcurrentMap();
   private final Map<Consumer<RaftEvent>, Consumer<RaftEvent>> eventListeners = Maps.newConcurrentMap();
 
-  public BlockingAwareRaftProxy(RaftProxy delegate, Executor executor) {
+  public BlockingAwareRaftProxyClient(RaftProxyClient delegate, Executor executor) {
     super(delegate);
     this.executor = checkNotNull(executor, "executor cannot be null");
   }
