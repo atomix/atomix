@@ -45,11 +45,11 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
 
   private final Predicate<Throwable> retryableCheck = e ->
       e instanceof ConnectException
-      || e instanceof TimeoutException
-      || e instanceof ClosedChannelException
-      || e instanceof RaftException.QueryFailure
-      || e instanceof RaftException.UnknownClient
-      || e instanceof RaftException.UnknownSession;
+          || e instanceof TimeoutException
+          || e instanceof ClosedChannelException
+          || e instanceof RaftException.QueryFailure
+          || e instanceof RaftException.UnknownClient
+          || e instanceof RaftException.UnknownSession;
 
   public RetryingRaftProxyClient(RaftProxyClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
     super(delegate);

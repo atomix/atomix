@@ -36,110 +36,114 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft proxy that supports recovery.
  */
 public class RecoveringRaftProxyClient implements RaftProxyClient {
-    private final Logger log = LoggerFactory.getLogger(RecoveringRaftProxyClient.class);
-    private final RaftProxyClient.Builder proxyClientBuilder;
-    private RaftProxyClient client;
-    private volatile RaftProxy.State state = State.CLOSED;
-    private final Set<Consumer<State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
-    private final Set<Consumer<RaftEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
+  private final Logger log = LoggerFactory.getLogger(RecoveringRaftProxyClient.class);
+  private final RaftProxyClient.Builder proxyClientBuilder;
+  private RaftProxyClient client;
+  private volatile RaftProxy.State state = State.CLOSED;
+  private final Set<Consumer<State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
+  private final Set<Consumer<RaftEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
+  private boolean recover = true;
 
-    public RecoveringRaftProxyClient(RaftProxyClient.Builder proxyClientBuilder) {
-        this.proxyClientBuilder = checkNotNull(proxyClientBuilder);
+  public RecoveringRaftProxyClient(RaftProxyClient.Builder proxyClientBuilder) {
+    this.proxyClientBuilder = checkNotNull(proxyClientBuilder);
+    openSession();
+  }
+
+  @Override
+  public SessionId sessionId() {
+    return client.sessionId();
+  }
+
+  @Override
+  public String name() {
+    return client.name();
+  }
+
+  @Override
+  public ServiceType serviceType() {
+    return client.serviceType();
+  }
+
+  @Override
+  public State getState() {
+    return state;
+  }
+
+  /**
+   * Sets the session state.
+   *
+   * @param state the session state
+   */
+  private synchronized void onStateChange(State state) {
+    if (this.state != state) {
+      log.debug("State changed: {}", state);
+      this.state = state;
+      stateChangeListeners.forEach(l -> l.accept(state));
+
+      // If the session was closed then reopen it.
+      if (state == State.CLOSED) {
         openSession();
+      }
     }
+  }
 
-    @Override
-    public SessionId sessionId() {
-        return client.sessionId();
+  @Override
+  public void addStateChangeListener(Consumer<State> listener) {
+    stateChangeListeners.add(listener);
+  }
+
+  @Override
+  public void removeStateChangeListener(Consumer<State> listener) {
+    stateChangeListeners.remove(listener);
+  }
+
+  /**
+   * Opens the session.
+   */
+  private synchronized void openSession() {
+    log.debug("Opening session");
+    if (recover) {
+      client = proxyClientBuilder.build();
+      onStateChange(State.CONNECTED);
+      client.addStateChangeListener(this::onStateChange);
+      eventListeners.forEach(client::addEventListener);
     }
+  }
 
-    @Override
-    public String name() {
-        return client.name();
-    }
+  @Override
+  public CompletableFuture<byte[]> execute(RaftOperation operation) {
+    return client.execute(operation);
+  }
 
-    @Override
-    public ServiceType serviceType() {
-        return client.serviceType();
-    }
+  @Override
+  public void addEventListener(Consumer<RaftEvent> consumer) {
+    eventListeners.add(consumer);
+    client.addEventListener(consumer);
+  }
 
-    @Override
-    public State getState() {
-        return state;
-    }
+  @Override
+  public void removeEventListener(Consumer<RaftEvent> consumer) {
+    eventListeners.remove(consumer);
+    client.removeEventListener(consumer);
+  }
 
-    /**
-     * Sets the session state.
-     *
-     * @param state the session state
-     */
-    private synchronized void onStateChange(State state) {
-        if (this.state != state) {
-            log.debug("State changed: {}", state);
-            this.state = state;
-            stateChangeListeners.forEach(l -> l.accept(state));
+  @Override
+  public boolean isOpen() {
+    return state == State.CONNECTED;
+  }
 
-            // If the session was closed then reopen it.
-            if (state == State.CLOSED) {
-                openSession();
-            }
-        }
-    }
+  @Override
+  public synchronized CompletableFuture<Void> close() {
+    recover = false;
+    return client.close();
+  }
 
-    @Override
-    public void addStateChangeListener(Consumer<State> listener) {
-        stateChangeListeners.add(listener);
-    }
-
-    @Override
-    public void removeStateChangeListener(Consumer<State> listener) {
-        stateChangeListeners.remove(listener);
-    }
-
-    /**
-     * Opens the session.
-     */
-    private synchronized void openSession() {
-        log.debug("Opening session");
-        client = proxyClientBuilder.build();
-        onStateChange(State.CONNECTED);
-        client.addStateChangeListener(this::onStateChange);
-        eventListeners.forEach(client::addEventListener);
-    }
-
-    @Override
-    public CompletableFuture<byte[]> execute(RaftOperation operation) {
-        return client.execute(operation);
-    }
-
-    @Override
-    public void addEventListener(Consumer<RaftEvent> consumer) {
-        eventListeners.add(consumer);
-        client.addEventListener(consumer);
-    }
-
-    @Override
-    public void removeEventListener(Consumer<RaftEvent> consumer) {
-        eventListeners.remove(consumer);
-        client.removeEventListener(consumer);
-    }
-
-    @Override
-    public boolean isOpen() {
-        return state == State.CONNECTED;
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        return client.close();
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("name", client.name())
-                .add("serviceType", client.serviceType())
-                .add("state", state)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("name", client.name())
+        .add("serviceType", client.serviceType())
+        .add("state", state)
+        .toString();
+  }
 }
