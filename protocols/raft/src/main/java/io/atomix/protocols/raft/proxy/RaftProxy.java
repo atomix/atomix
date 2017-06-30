@@ -113,20 +113,6 @@ public interface RaftProxy extends RaftProxyClient {
   void removeEventListener(EventType eventType, Consumer listener);
 
   /**
-   * Returns a boolean indicating whether the session is open.
-   *
-   * @return Indicates whether the session is open.
-   */
-  boolean isOpen();
-
-  /**
-   * Closes the session.
-   *
-   * @return A completable future to be completed once the session is closed.
-   */
-  CompletableFuture<Void> close();
-
-  /**
    * Raft session builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<RaftProxy> {
