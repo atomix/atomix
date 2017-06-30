@@ -59,7 +59,6 @@ import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.proxy.CommunicationStrategies;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.session.SessionId;
@@ -122,7 +121,7 @@ public class RaftPerformanceTest implements Runnable {
   private static final int NUM_CLIENTS = 5;
 
   private static final ReadConsistency READ_CONSISTENCY = ReadConsistency.LINEARIZABLE;
-  private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategies.ANY;
+  private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategy.ANY;
 
   /**
    * Runs the test.

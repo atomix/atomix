@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.proxy.CommunicationStrategies;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -26,6 +24,7 @@ import io.atomix.protocols.raft.protocol.KeepAliveRequest;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
@@ -74,7 +73,7 @@ public class RaftProxyManager {
     this.connection = new RaftProxyConnection(
         clientId,
         protocol,
-        selectorManager.createSelector(CommunicationStrategies.ANY),
+        selectorManager.createSelector(CommunicationStrategy.ANY),
         new ThreadPoolContext(threadPoolExecutor));
     this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
   }

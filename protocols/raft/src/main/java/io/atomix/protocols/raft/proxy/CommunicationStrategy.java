@@ -17,6 +17,8 @@ package io.atomix.protocols.raft.proxy;
 
 import io.atomix.protocols.raft.cluster.MemberId;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -26,7 +28,65 @@ import java.util.List;
  * loses its connection or cluster membership changes, the client will request a list of servers to
  * which the client can connect. The address list should be prioritized.
  */
-public interface CommunicationStrategy {
+public enum  CommunicationStrategy {
+
+  /**
+   * The {@code ANY} selection strategy allows the client to connect to any server in the cluster. Clients
+   * will attempt to connect to a random server, and the client will persist its connection with the first server
+   * through which it is able to communicate. If the client becomes disconnected from a server, it will attempt
+   * to connect to the next random server again.
+   */
+  ANY {
+    @Override
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
+      Collections.shuffle(servers);
+      return servers;
+    }
+  },
+
+  /**
+   * The {@code LEADER} selection strategy forces the client to attempt to connect to the cluster's leader.
+   * Connecting to the leader means the client's operations are always handled by the first server to receive
+   * them. However, clients connected to the leader will not significantly benefit from operations
+   * with lower consistency levels, and more clients connected to the leader could mean more load on a single
+   * point in the cluster.
+   * <p>
+   * If the client is unable to find a leader in the cluster, the client will connect to a random server.
+   */
+  LEADER {
+    @Override
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
+      if (leader != null) {
+        return Collections.singletonList(leader);
+      }
+      Collections.shuffle(servers);
+      return servers;
+    }
+  },
+
+  /**
+   * The {@code FOLLOWERS} selection strategy forces the client to connect only to followers. Connecting to
+   * followers ensures that the leader is not overloaded with direct client requests. This strategy should be
+   * used when clients frequently submit operations with lower consistency levels that don't need to
+   * be forwarded to the cluster leader. For clients that frequently submit commands or queries with linearizable
+   * consistency, the {@link #LEADER} ConnectionStrategy may be more performant.
+   */
+  FOLLOWERS {
+    @Override
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
+      Collections.shuffle(servers);
+      if (leader != null && servers.size() > 1) {
+        List<MemberId> results = new ArrayList<>(servers.size());
+        for (MemberId memberId : servers) {
+          if (!memberId.equals(leader)) {
+            results.add(memberId);
+          }
+        }
+        return results;
+      }
+      return servers;
+    }
+  };
 
   /**
    * Returns a prioritized list of servers to which the client can connect and submit operations.
@@ -44,6 +104,6 @@ public interface CommunicationStrategy {
    *                may evolve over time as the structure of the cluster changes.
    * @return A collection of servers to which the client can connect.
    */
-  List<MemberId> selectConnections(MemberId leader, List<MemberId> servers);
+  public abstract List<MemberId> selectConnections(MemberId leader, List<MemberId> servers);
 
 }

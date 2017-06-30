@@ -15,12 +15,11 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.proxy.CommunicationStrategies;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -69,7 +68,7 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
     RaftProxyConnection leaderConnection = new RaftProxyConnection(
         proxyName,
         protocol,
-        selectorManager.createSelector(CommunicationStrategies.LEADER), context);
+        selectorManager.createSelector(CommunicationStrategy.LEADER), context);
     RaftProxyConnection sessionConnection = new RaftProxyConnection(
         proxyName,
         protocol,
@@ -80,7 +79,7 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
     RaftProxySequencer sequencer = new RaftProxySequencer(state);
     this.proxyListener = new RaftProxyListener(
         protocol,
-        selectorManager.createSelector(CommunicationStrategies.ANY),
+        selectorManager.createSelector(CommunicationStrategy.ANY),
         state,
         sequencer,
         context);

@@ -197,7 +197,7 @@ public interface RaftProxyClient {
     protected int maxRetries = 0;
     protected Duration retryDelay = Duration.ofMillis(100);
     protected Executor executor;
-    protected CommunicationStrategy communicationStrategy = CommunicationStrategies.LEADER;
+    protected CommunicationStrategy communicationStrategy = CommunicationStrategy.LEADER;
     protected RecoveryStrategy recoveryStrategy = RecoveryStrategy.RECOVER;
     protected Duration timeout = Duration.ofMillis(0);
 

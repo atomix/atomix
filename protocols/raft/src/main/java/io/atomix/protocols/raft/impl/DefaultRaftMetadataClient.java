@@ -15,16 +15,16 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.protocols.raft.proxy.CommunicationStrategies;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyConnection;
+import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Collection;
@@ -46,7 +46,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
     this.connection = new RaftProxyConnection(
         clientId,
         protocol,
-        selectorManager.createSelector(CommunicationStrategies.LEADER),
+        selectorManager.createSelector(CommunicationStrategy.LEADER),
         context);
   }
 
