@@ -134,6 +134,15 @@ public class DefaultRaftClient implements RaftClient {
         }
       };
 
+      clientBuilder.withName(name)
+          .withServiceType(serviceType)
+          .withReadConsistency(readConsistency)
+          .withMaxRetries(maxRetries)
+          .withRetryDelay(retryDelay)
+          .withCommunicationStrategy(communicationStrategy)
+          .withRecoveryStrategy(recoveryStrategy)
+          .withTimeout(timeout);
+
       RaftProxyClient client;
 
       // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
