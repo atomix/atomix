@@ -21,14 +21,19 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.proxy.RecoveryStrategy;
+import io.atomix.protocols.raft.proxy.impl.BlockingAwareRaftProxyClient;
 import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxy;
 import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
+import io.atomix.protocols.raft.proxy.impl.RecoveringRaftProxyClient;
+import io.atomix.protocols.raft.proxy.impl.RetryingRaftProxyClient;
 import io.atomix.utils.concurrent.ThreadPoolContext;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -122,7 +127,32 @@ public class DefaultRaftClient implements RaftClient {
   private class SessionBuilder extends RaftProxy.Builder {
     @Override
     public RaftProxy build() {
-      RaftProxyClient client = sessionManager.openSession(name, serviceType, readConsistency, communicationStrategy, executor, timeout).join();
+      RaftProxyClient.Builder clientBuilder = new RaftProxyClient.Builder() {
+        @Override
+        public RaftProxyClient build() {
+          return sessionManager.openSession(name, serviceType, readConsistency, communicationStrategy, timeout).join();
+        }
+      };
+
+      RaftProxyClient client;
+
+      // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
+      if (recoveryStrategy == RecoveryStrategy.RECOVER) {
+        client = new RecoveringRaftProxyClient(clientBuilder);
+      } else {
+        client = clientBuilder.build();
+      }
+
+      // If max retries is set, wrap the client in a retrying proxy client.
+      if (maxRetries > 0) {
+        client = new RetryingRaftProxyClient(client, new ThreadPoolContext(threadPoolExecutor), maxRetries, retryDelay);
+      }
+
+      // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
+      Executor executor = this.executor != null ? this.executor : new ThreadPoolContext(threadPoolExecutor);
+      client = new BlockingAwareRaftProxyClient(client, executor);
+
+      // Create the proxy.
       return new DefaultRaftProxy(client);
     }
   }

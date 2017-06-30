@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -121,7 +120,6 @@ public class RaftProxyManager {
       ServiceType serviceType,
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
-      Executor executor,
       Duration timeout) {
     checkNotNull(serviceName, "naserviceNameme cannot be null");
     checkNotNull(serviceType, "serviceType cannot be null");
@@ -154,18 +152,14 @@ public class RaftProxyManager {
           // Ensure the proxy session info is reset and the session is kept alive.
           keepAliveSessions();
 
-          // Create the proxy wrapped in an executor delegate and complete the open future.
-          RaftProxyClient client;
-          client = new DefaultRaftProxyClient(
+          // Create the proxy client and complete the future.
+          RaftProxyClient client = new DefaultRaftProxyClient(
               state,
               protocol,
               selectorManager,
               this,
               communicationStrategy,
               proxyContext);
-
-          Executor eventExecutor = executor != null ? executor : new ThreadPoolContext(threadPoolExecutor);
-          client = new BlockingAwareRaftProxyClient(client, eventExecutor);
 
           future.complete(client);
         } else {

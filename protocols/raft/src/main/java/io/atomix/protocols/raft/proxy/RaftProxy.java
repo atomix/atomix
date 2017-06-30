@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.proxy;
 
-import io.atomix.protocols.raft.CommunicationStrategies;
 import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.OperationId;
@@ -25,10 +24,10 @@ import io.atomix.protocols.raft.ServiceType;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -138,67 +137,57 @@ public interface RaftProxy extends RaftProxyClient {
   /**
    * Raft session builder.
    */
-  abstract class Builder implements io.atomix.utils.Builder<RaftProxy> {
-    protected String name;
-    protected ServiceType serviceType;
-    protected ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
+  abstract class Builder extends RaftProxyClient.Builder {
     protected Executor executor;
-    protected CommunicationStrategy communicationStrategy = CommunicationStrategies.LEADER;
-    protected Duration timeout = Duration.ofMillis(0);
 
-    /**
-     * Sets the session name.
-     *
-     * @param name The service name.
-     * @return The session builder.
-     */
+    @Override
     public Builder withName(String name) {
-      this.name = checkNotNull(name, "name cannot be null");
-      return this;
+      return (Builder) super.withName(name);
     }
 
-    /**
-     * Sets the service type.
-     *
-     * @param serviceType The service type.
-     * @return The session builder.
-     */
+    @Override
     public Builder withServiceType(String serviceType) {
       return withServiceType(ServiceType.from(serviceType));
     }
 
-    /**
-     * Sets the service type.
-     *
-     * @param serviceType The service type.
-     * @return The session builder.
-     */
+    @Override
     public Builder withServiceType(ServiceType serviceType) {
-      this.serviceType = checkNotNull(serviceType, "serviceType cannot be null");
-      return this;
+      return (Builder) super.withServiceType(serviceType);
     }
 
-    /**
-     * Sets the session's read consistency level.
-     *
-     * @param consistency the session's read consistency level
-     * @return the proxy builder
-     */
+    @Override
     public Builder withReadConsistency(ReadConsistency consistency) {
-      this.readConsistency = checkNotNull(consistency, "consistency cannot be null");
-      return this;
+      return (Builder) super.withReadConsistency(consistency);
     }
 
-    /**
-     * Sets the session's communication strategy.
-     *
-     * @param communicationStrategy The session's communication strategy.
-     * @return The session builder.
-     * @throws NullPointerException if the communication strategy is null
-     */
+    @Override
+    public Builder withMaxRetries(int maxRetries) {
+      return (Builder) super.withMaxRetries(maxRetries);
+    }
+
+    @Override
+    public Builder withRetryDelayMillis(long retryDelayMillis) {
+      return (Builder) super.withRetryDelayMillis(retryDelayMillis);
+    }
+
+    @Override
+    public Builder withRetryDelay(long retryDelay, TimeUnit timeUnit) {
+      return (Builder) super.withRetryDelay(retryDelay, timeUnit);
+    }
+
+    @Override
+    public Builder withRetryDelay(Duration retryDelay) {
+      return (Builder) super.withRetryDelay(retryDelay);
+    }
+
+    @Override
     public Builder withCommunicationStrategy(CommunicationStrategy communicationStrategy) {
-      this.communicationStrategy = checkNotNull(communicationStrategy, "communicationStrategy");
-      return this;
+      return (Builder) super.withCommunicationStrategy(communicationStrategy);
+    }
+
+    @Override
+    public Builder withRecoveryStrategy(RecoveryStrategy recoveryStrategy) {
+      return (Builder) super.withRecoveryStrategy(recoveryStrategy);
     }
 
     /**
@@ -213,29 +202,17 @@ public interface RaftProxy extends RaftProxyClient {
       return this;
     }
 
-    /**
-     * Sets the session timeout.
-     *
-     * @param timeout The session timeout.
-     * @return The session builder.
-     * @throws IllegalArgumentException if the session timeout is not positive
-     */
-    public Builder withTimeout(long timeout) {
-      return withTimeout(Duration.ofMillis(timeout));
+    @Override
+    public Builder withTimeout(long timeoutMillis) {
+      return (Builder) super.withTimeout(timeoutMillis);
     }
 
-    /**
-     * Sets the session timeout.
-     *
-     * @param timeout The session timeout.
-     * @return The session builder.
-     * @throws IllegalArgumentException if the session timeout is not positive
-     * @throws NullPointerException     if the timeout is null
-     */
+    @Override
     public Builder withTimeout(Duration timeout) {
-      checkArgument(!checkNotNull(timeout).isNegative(), "timeout must be positive");
-      this.timeout = timeout;
-      return this;
+      return (Builder) super.withTimeout(timeout);
     }
+
+    @Override
+    public abstract RaftProxy build();
   }
 }
