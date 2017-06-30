@@ -350,16 +350,16 @@ public class PassiveRole extends ReserveRole {
             .build());
       } else if (error instanceof CompletionException && error.getCause() instanceof RaftException) {
         future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-            .withError(((RaftException) error.getCause()).getType())
+            .withError(((RaftException) error.getCause()).getType(), error.getMessage())
             .build());
       } else if (error instanceof RaftException) {
         future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-            .withError(((RaftException) error).getType())
+            .withError(((RaftException) error).getType(), error.getMessage())
             .build());
       } else {
         LOGGER.warn("An unexpected error occurred: {}", error);
         future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR, error.getMessage())
             .build());
       }
     }
@@ -375,7 +375,7 @@ public class PassiveRole extends ReserveRole {
     if (request.term() < context.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request term is less than the local term " + request.term())
           .build()));
     }
 
@@ -401,7 +401,7 @@ public class PassiveRole extends ReserveRole {
       if (request.chunkOffset() > 0) {
         return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
-            .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+            .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request chunk offset is invalid")
             .build()));
       }
 
@@ -416,7 +416,7 @@ public class PassiveRole extends ReserveRole {
     if (request.chunkOffset() > nextSnapshotOffset) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request chunk offset does not match the next chunk offset")
           .build()));
     }
 

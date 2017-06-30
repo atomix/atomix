@@ -15,46 +15,76 @@
  */
 package io.atomix.protocols.raft;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Base type for Raft protocol errors.
  * <p>
  * Raft errors are passed on the wire in lieu of exceptions to reduce the overhead of serialization.
  * Each error is identifiable by an error ID which is used to serialize and deserialize errors.
  */
-public interface RaftError {
+public class RaftError {
+  private final Type type;
+  private final String message;
+
+  public RaftError(Type type, String message) {
+    this.type = checkNotNull(type, "type cannot be null");
+    this.message = message;
+  }
+
+  /**
+   * Returns the error type.
+   *
+   * @return The error type.
+   */
+  public Type type() {
+    return type;
+  }
+
+  /**
+   * Returns the error message.
+   *
+   * @return The error message.
+   */
+  public String message() {
+    return message;
+  }
 
   /**
    * Creates a new exception for the error.
    *
    * @return The error exception.
    */
-  RaftException createException();
+  public RaftException createException() {
+    return type.createException(message);
+  }
 
-  /**
-   * Creates a new exception for the error.
-   *
-   * @param message The exception message.
-   * @return The exception.
-   */
-  RaftException createException(String message);
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("type", type)
+        .add("message", message)
+        .toString();
+  }
 
   /**
    * Raft error types.
    */
-  enum Type implements RaftError {
+  public enum Type {
 
     /**
      * No leader error.
      */
     NO_LEADER {
       @Override
-      public RaftException createException() {
-        return createException("not the leader");
+      RaftException createException() {
+        return createException("Failed to locate leader");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.NoLeader(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.NoLeader(message) : createException();
       }
     },
 
@@ -63,13 +93,13 @@ public interface RaftError {
      */
     QUERY_FAILURE {
       @Override
-      public RaftException createException() {
-        return createException("failed to obtain read quorum");
+      RaftException createException() {
+        return createException("Failed to obtain read quorum");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.QueryFailure(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.QueryFailure(message) : createException();
       }
     },
 
@@ -78,13 +108,13 @@ public interface RaftError {
      */
     COMMAND_FAILURE {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("Failed to obtain write quorum");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.CommandFailure(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.CommandFailure(message) : createException();
       }
     },
 
@@ -93,13 +123,13 @@ public interface RaftError {
      */
     APPLICATION_ERROR {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("An application error occurred");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.ApplicationException(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.ApplicationException(message) : createException();
       }
     },
 
@@ -108,13 +138,13 @@ public interface RaftError {
      */
     ILLEGAL_MEMBER_STATE {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("Illegal member state");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.IllegalMemberState(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.IllegalMemberState(message) : createException();
       }
     },
 
@@ -123,13 +153,13 @@ public interface RaftError {
      */
     UNKNOWN_CLIENT {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("Unknown client");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.UnknownClient(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.UnknownClient(message) : createException();
       }
     },
 
@@ -138,13 +168,13 @@ public interface RaftError {
      */
     UNKNOWN_SESSION {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("Unknown member session");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.UnknownSession(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.UnknownSession(message) : createException();
       }
     },
 
@@ -153,13 +183,13 @@ public interface RaftError {
      */
     UNKNOWN_SERVICE {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("Unknown state machine");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.UnknownService(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.UnknownService(message) : createException();
       }
     },
 
@@ -168,13 +198,13 @@ public interface RaftError {
      */
     CLOSED_SESSION {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("Closed session");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.ClosedSession(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.ClosedSession(message) : createException();
       }
     },
 
@@ -183,13 +213,13 @@ public interface RaftError {
      */
     PROTOCOL_ERROR {
       @Override
-      public RaftException createException() {
-        return createException("Internal Raft error");
+      RaftException createException() {
+        return createException("Failed to reach consensus");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.ProtocolException(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.ProtocolException(message) : createException();
       }
     },
 
@@ -198,13 +228,13 @@ public interface RaftError {
      */
     CONFIGURATION_ERROR {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("Configuration failed");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.ConfigurationException(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.ConfigurationException(message) : createException();
       }
     },
 
@@ -213,14 +243,29 @@ public interface RaftError {
      */
     UNAVAILABLE {
       @Override
-      public RaftException createException() {
+      RaftException createException() {
         return createException("Service is unavailable");
       }
 
       @Override
-      public RaftException createException(String message) {
-        return new RaftException.Unavailable(message);
+      RaftException createException(String message) {
+        return message != null ? new RaftException.Unavailable(message) : createException();
       }
-    }
+    };
+
+    /**
+     * Creates an exception with a default message.
+     *
+     * @return the exception
+     */
+    abstract RaftException createException();
+
+    /**
+     * Creates an exception with the given message.
+     *
+     * @param message the exception message
+     * @return the exception
+     */
+    abstract RaftException createException(String message);
   }
 }

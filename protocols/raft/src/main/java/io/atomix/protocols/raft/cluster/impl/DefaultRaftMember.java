@@ -16,9 +16,9 @@
 package io.atomix.protocols.raft.cluster.impl;
 
 import com.google.common.hash.Hashing;
+import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.storage.system.Configuration;
@@ -205,7 +205,7 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
           cancelConfigureTimer();
           cluster.configure(new Configuration(response.index(), response.term(), response.timestamp(), response.members()));
           future.complete(null);
-        } else if (response.error() == null || response.error() == RaftError.Type.NO_LEADER) {
+        } else if (response.error() == null || response.error().type() == RaftError.Type.NO_LEADER) {
           cancelConfigureTimer();
           configureTimeout = cluster.getContext().getThreadContext().schedule(cluster.getContext().getElectionTimeout().multipliedBy(2), () -> configure(type, future));
         } else {

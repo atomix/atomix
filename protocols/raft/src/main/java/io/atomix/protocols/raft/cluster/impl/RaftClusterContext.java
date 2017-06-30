@@ -408,7 +408,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
             } else if (joinFuture != null) {
               joinFuture.complete(null);
             }
-          } else if (response.error() == null || response.error() == RaftError.Type.CONFIGURATION_ERROR) {
+          } else if (response.error() == null || response.error().type() == RaftError.Type.CONFIGURATION_ERROR) {
             // If the response error is null, that indicates that no error occurred but the leader was
             // in a state that was incapable of handling the join request. Attempt to join the leader
             // again after an election timeout.

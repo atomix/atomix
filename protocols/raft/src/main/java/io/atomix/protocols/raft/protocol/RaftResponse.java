@@ -110,6 +110,29 @@ public interface RaftResponse extends RaftMessage {
     /**
      * Sets the response error.
      *
+     * @param type The response error type.
+     * @return The response builder.
+     * @throws NullPointerException if {@code type} is null
+     */
+    default T withError(RaftError.Type type) {
+      return withError(new RaftError(type, null));
+    }
+
+    /**
+     * Sets the response error.
+     *
+     * @param type The response error type.
+     * @param message The response error message.
+     * @return The response builder.
+     * @throws NullPointerException if {@code type} is null
+     */
+    default T withError(RaftError.Type type, String message) {
+      return withError(new RaftError(type, message));
+    }
+
+    /**
+     * Sets the response error.
+     *
      * @param error The response error.
      * @return The response builder.
      * @throws NullPointerException if {@code error} is null

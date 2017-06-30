@@ -15,12 +15,12 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.protocols.raft.RaftError;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
-import io.atomix.protocols.raft.RaftError;
-import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftMetadataResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
@@ -313,8 +313,10 @@ public final class LeaderRole extends ActiveRole {
 
     // If the configuration request index is less than the last known configuration index for
     // the leader, fail the request to ensure servers can't reconfigure an old configuration.
-    if (request.index() > 0 && request.index() < context.getClusterState().getConfiguration().index() || request.term() != context.getClusterState().getConfiguration().term()
-        && (existingMember.getType() != request.member().getType() || existingMember.getStatus() != request.member().getStatus())) {
+    if (request.index() > 0 && request.index() < context.getClusterState().getConfiguration().index()
+        || request.term() != context.getClusterState().getConfiguration().term()
+        && (existingMember.getType() != request.member().getType()
+        || existingMember.getStatus() != request.member().getStatus())) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.CONFIGURATION_ERROR)
@@ -510,7 +512,7 @@ public final class LeaderRole extends ActiveRole {
     if (!session.setRequestSequence(request.sequenceNumber())) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.COMMAND_FAILURE)
+          .withError(RaftError.Type.COMMAND_FAILURE, "Request sequence number " + request.sequenceNumber() + " out of sequence")
           .withLastSequence(session.getRequestSequence())
           .build()));
     }
@@ -564,7 +566,7 @@ public final class LeaderRole extends ActiveRole {
     if (context.getStateMachine().getLastApplied() < request.session()) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.UNKNOWN_SESSION)
+          .withError(RaftError.Type.UNKNOWN_SESSION, "Session has not yet been created. You're seeing into the future!")
           .build()));
     }
 
@@ -627,7 +629,7 @@ public final class LeaderRole extends ActiveRole {
             .thenApply(index -> response)
             .exceptionally(error -> QueryResponse.newBuilder()
                 .withStatus(RaftResponse.Status.ERROR)
-                .withError(RaftError.Type.QUERY_FAILURE)
+                .withError(RaftError.Type.QUERY_FAILURE, error.getMessage())
                 .build()));
   }
 
@@ -674,17 +676,17 @@ public final class LeaderRole extends ActiveRole {
               } else if (sessionError instanceof CompletionException && sessionError.getCause() instanceof RaftException) {
                 future.complete(logResponse(OpenSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(((RaftException) sessionError.getCause()).getType())
+                    .withError(((RaftException) sessionError.getCause()).getType(), sessionError.getMessage())
                     .build()));
               } else if (sessionError instanceof RaftException) {
                 future.complete(logResponse(OpenSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(((RaftException) sessionError).getType())
+                    .withError(((RaftException) sessionError).getType(), sessionError.getMessage())
                     .build()));
               } else {
                 future.complete(logResponse(OpenSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.PROTOCOL_ERROR)
+                    .withError(RaftError.Type.PROTOCOL_ERROR, sessionError.getMessage())
                     .build()));
               }
             }
@@ -738,19 +740,19 @@ public final class LeaderRole extends ActiveRole {
                 future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withLeader(context.getCluster().getMember().memberId())
-                    .withError(((RaftException) sessionError.getCause()).getType())
+                    .withError(((RaftException) sessionError.getCause()).getType(), sessionError.getMessage())
                     .build()));
               } else if (sessionError instanceof RaftException) {
                 future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withLeader(context.getCluster().getMember().memberId())
-                    .withError(((RaftException) sessionError).getType())
+                    .withError(((RaftException) sessionError).getType(), sessionError.getMessage())
                     .build()));
               } else {
                 future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
                     .withLeader(context.getCluster().getMember().memberId())
-                    .withError(RaftError.Type.PROTOCOL_ERROR)
+                    .withError(RaftError.Type.PROTOCOL_ERROR, sessionError.getMessage())
                     .build()));
               }
             }
@@ -800,17 +802,17 @@ public final class LeaderRole extends ActiveRole {
               } else if (closeError instanceof CompletionException && closeError.getCause() instanceof RaftException) {
                 future.complete(logResponse(CloseSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(((RaftException) closeError.getCause()).getType())
+                    .withError(((RaftException) closeError.getCause()).getType(), closeError.getMessage())
                     .build()));
               } else if (closeError instanceof RaftException) {
                 future.complete(logResponse(CloseSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(((RaftException) closeError).getType())
+                    .withError(((RaftException) closeError).getType(), closeError.getMessage())
                     .build()));
               } else {
                 future.complete(logResponse(CloseSessionResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.PROTOCOL_ERROR)
+                    .withError(RaftError.Type.PROTOCOL_ERROR, closeError.getMessage())
                     .build()));
               }
             }

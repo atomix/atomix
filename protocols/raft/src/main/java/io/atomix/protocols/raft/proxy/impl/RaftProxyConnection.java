@@ -54,13 +54,13 @@ public class RaftProxyConnection {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxyConnection.class);
   private static final Predicate<RaftResponse> COMPLETE_PREDICATE = response ->
       response.status() == RaftResponse.Status.OK
-          || response.error() == RaftError.Type.COMMAND_FAILURE
-          || response.error() == RaftError.Type.QUERY_FAILURE
-          || response.error() == RaftError.Type.APPLICATION_ERROR
-          || response.error() == RaftError.Type.UNKNOWN_CLIENT
-          || response.error() == RaftError.Type.UNKNOWN_SESSION
-          || response.error() == RaftError.Type.UNKNOWN_SERVICE
-          || response.error() == RaftError.Type.PROTOCOL_ERROR;
+          || response.error().type() == RaftError.Type.COMMAND_FAILURE
+          || response.error().type() == RaftError.Type.QUERY_FAILURE
+          || response.error().type() == RaftError.Type.APPLICATION_ERROR
+          || response.error().type() == RaftError.Type.UNKNOWN_CLIENT
+          || response.error().type() == RaftError.Type.UNKNOWN_SESSION
+          || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
+          || response.error().type() == RaftError.Type.PROTOCOL_ERROR;
 
   private final String name;
   private final RaftClientProtocol protocol;

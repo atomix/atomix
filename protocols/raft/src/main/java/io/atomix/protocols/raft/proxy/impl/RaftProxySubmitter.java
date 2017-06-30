@@ -342,19 +342,19 @@ final class RaftProxySubmitter {
         }
         // COMMAND_ERROR indicates that the command was received by the leader out of sequential order.
         // We need to resend commands starting at the provided lastSequence number.
-        else if (response.error() == RaftError.Type.COMMAND_FAILURE) {
+        else if (response.error().type() == RaftError.Type.COMMAND_FAILURE) {
           resubmit(response.lastSequenceNumber(), this);
         }
         // If the request failed with a PROTOCOL_ERROR, we need to ensure sequencing of operations is still maintained.
-        else if (response.error() == RaftError.Type.PROTOCOL_ERROR) {
+        else if (response.error().type() == RaftError.Type.PROTOCOL_ERROR) {
           completeWithNoOp(response.error().createException());
         }
         // The following exceptions need to be handled at a higher level by the client or the user.
-        else if (response.error() == RaftError.Type.APPLICATION_ERROR
-            || response.error() == RaftError.Type.UNKNOWN_CLIENT
-            || response.error() == RaftError.Type.UNKNOWN_SESSION
-            || response.error() == RaftError.Type.UNKNOWN_SERVICE
-            || response.error() == RaftError.Type.CLOSED_SESSION) {
+        else if (response.error().type() == RaftError.Type.APPLICATION_ERROR
+            || response.error().type() == RaftError.Type.UNKNOWN_CLIENT
+            || response.error().type() == RaftError.Type.UNKNOWN_SESSION
+            || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
+            || response.error().type() == RaftError.Type.CLOSED_SESSION) {
           complete(response.error().createException());
         }
         // For all other errors, use fibonacci backoff to resubmit the command.

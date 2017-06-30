@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.roles;
 
 import io.atomix.protocols.raft.RaftError;
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -44,7 +45,6 @@ import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.RaftServer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -116,7 +116,7 @@ public class ReserveRole extends InactiveRole {
 
     return CompletableFuture.completedFuture(logResponse(PollResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Cannot poll RESERVE member")
         .build()));
   }
 
@@ -128,7 +128,7 @@ public class ReserveRole extends InactiveRole {
 
     return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Cannot request vote from RESERVE member")
         .build()));
   }
 
@@ -299,7 +299,7 @@ public class ReserveRole extends InactiveRole {
 
     return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
         .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Cannot install snapshot to RESERVE member")
         .build()));
   }
 
