@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import java.util.Date;
+import io.atomix.utils.TimestampPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -43,7 +43,7 @@ public abstract class SessionEntry extends TimestampedEntry {
   public String toString() {
     return toStringHelper(this)
         .add("term", term)
-        .add("timestamp", new Date(timestamp))
+        .add("timestamp", new TimestampPrinter(timestamp))
         .add("session", session)
         .toString();
   }

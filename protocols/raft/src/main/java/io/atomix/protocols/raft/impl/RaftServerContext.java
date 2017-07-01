@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
@@ -43,6 +41,8 @@ import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -69,7 +69,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * is stored in the cluster state. This includes Raft-specific state like the current leader and term, the log, and the cluster configuration.
  */
 public class RaftServerContext implements AutoCloseable {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerContext.class);
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final Set<Consumer<RaftServer.Role>> stateChangeListeners = new CopyOnWriteArraySet<>();
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
   protected final String name;
@@ -79,10 +79,10 @@ public class RaftServerContext implements AutoCloseable {
   protected final RaftServerProtocol protocol;
   protected final RaftStorage storage;
   private MetaStore meta;
-  private RaftLog log;
-  private RaftLogWriter writer;
-  private RaftLogReader reader;
-  private SnapshotStore snapshot;
+  private RaftLog raftLog;
+  private RaftLogWriter logWriter;
+  private RaftLogReader logReader;
+  private SnapshotStore snapshotStore;
   private RaftServerStateMachineManager stateMachine;
   protected final ScheduledExecutorService threadPool;
   protected final ThreadContext stateContext;
@@ -103,9 +103,9 @@ public class RaftServerContext implements AutoCloseable {
     this.registry = checkNotNull(registry, "registry cannot be null");
 
     String baseThreadName = String.format("raft-server-%s-%s", localMemberId, name);
-    this.threadContext = new SingleThreadContext(namedThreads(baseThreadName, LOGGER));
-    this.stateContext = new SingleThreadContext(namedThreads(baseThreadName + "-state", LOGGER));
-    this.threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads(baseThreadName + "-%d", LOGGER));
+    this.threadContext = new SingleThreadContext(namedThreads(baseThreadName, log));
+    this.stateContext = new SingleThreadContext(namedThreads(baseThreadName + "-state", log));
+    this.threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads(baseThreadName + "-%d", log));
 
     // Open the meta store.
     CountDownLatch metaLatch = new CountDownLatch(1);
@@ -139,6 +139,15 @@ public class RaftServerContext implements AutoCloseable {
 
     // Register protocol listeners.
     registerHandlers(protocol);
+  }
+
+  /**
+   * Returns the server name.
+   *
+   * @return The server name.
+   */
+  public String getName() {
+    return name;
   }
 
   /**
@@ -283,7 +292,7 @@ public class RaftServerContext implements AutoCloseable {
         DefaultRaftMember member = cluster.getMember(leader);
         if (member != null) {
           this.leader = leader;
-          LOGGER.info("{} - Found leader {}", cluster.getMember().memberId(), member.memberId());
+          log.info("{} Found leader {}", getName(), member.memberId());
           electionListeners.forEach(l -> l.accept(member));
         }
       }
@@ -346,7 +355,7 @@ public class RaftServerContext implements AutoCloseable {
       this.lastVotedFor = null;
       meta.storeTerm(this.term);
       meta.storeVote(this.lastVotedFor);
-      LOGGER.debug("{} - Set term {}", cluster.getMember().memberId(), term);
+      log.debug("{} Set term {}", getName(), term);
     }
     return this;
   }
@@ -375,9 +384,9 @@ public class RaftServerContext implements AutoCloseable {
     meta.storeVote(this.lastVotedFor);
 
     if (candidate != null) {
-      LOGGER.debug("{} - Voted for {}", cluster.getMember().memberId(), member.memberId());
+      log.debug("{} Voted for {}", getName(), member.memberId());
     } else {
-      LOGGER.trace("{} - Reset last voted for", cluster.getMember().memberId());
+      log.trace("{} Reset last voted for", getName());
     }
     return this;
   }
@@ -402,7 +411,7 @@ public class RaftServerContext implements AutoCloseable {
     long previousCommitIndex = this.commitIndex;
     if (commitIndex > previousCommitIndex) {
       this.commitIndex = commitIndex;
-      writer.commit(Math.min(commitIndex, writer.getLastIndex()));
+      logWriter.commit(Math.min(commitIndex, logWriter.getLastIndex()));
       long configurationIndex = cluster.getConfiguration().index();
       if (configurationIndex > previousCommitIndex && configurationIndex <= commitIndex) {
         cluster.commit();
@@ -471,7 +480,7 @@ public class RaftServerContext implements AutoCloseable {
    * @return The server log.
    */
   public RaftLog getLog() {
-    return log;
+    return raftLog;
   }
 
   /**
@@ -480,7 +489,7 @@ public class RaftServerContext implements AutoCloseable {
    * @return The log writer.
    */
   public RaftLogWriter getLogWriter() {
-    return writer;
+    return logWriter;
   }
 
   /**
@@ -489,7 +498,7 @@ public class RaftServerContext implements AutoCloseable {
    * @return The log reader.
    */
   public RaftLogReader getLogReader() {
-    return reader;
+    return logReader;
   }
 
   /**
@@ -499,24 +508,24 @@ public class RaftServerContext implements AutoCloseable {
    */
   public RaftServerContext reset() {
     // Delete the existing log.
-    if (log != null) {
-      log.close();
+    if (raftLog != null) {
+      raftLog.close();
       storage.deleteLog();
     }
 
     // Delete the existing snapshot store.
-    if (snapshot != null) {
-      snapshot.close();
+    if (snapshotStore != null) {
+      snapshotStore.close();
       storage.deleteSnapshotStore();
     }
 
     // Open the log.
-    log = storage.openLog();
-    writer = log.writer();
-    reader = log.openReader(1, RaftLogReader.Mode.ALL);
+    raftLog = storage.openLog();
+    logWriter = raftLog.writer();
+    logReader = raftLog.openReader(1, RaftLogReader.Mode.ALL);
 
     // Open the snapshot store.
-    snapshot = storage.openSnapshotStore();
+    snapshotStore = storage.openSnapshotStore();
 
     // Create a new internal server state machine.
     this.stateMachine = new RaftServerStateMachineManager(this, threadPool, stateContext);
@@ -529,7 +538,7 @@ public class RaftServerContext implements AutoCloseable {
    * @return The server snapshot store.
    */
   public SnapshotStore getSnapshotStore() {
-    return snapshot;
+    return snapshotStore;
   }
 
   /**
@@ -631,7 +640,7 @@ public class RaftServerContext implements AutoCloseable {
       return;
     }
 
-    LOGGER.info("{} - Transitioning to {}", cluster.getMember().memberId(), role);
+    log.info("{} Transitioning to {}", getName(), role);
 
     // Close the old state.
     try {
@@ -680,7 +689,7 @@ public class RaftServerContext implements AutoCloseable {
 
     // Close the log.
     try {
-      log.close();
+      raftLog.close();
     } catch (Exception e) {
     }
 
@@ -692,7 +701,7 @@ public class RaftServerContext implements AutoCloseable {
 
     // Close the snapshot store.
     try {
-      snapshot.close();
+      snapshotStore.close();
     } catch (Exception e) {
     }
 

@@ -41,8 +41,6 @@ import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -64,8 +62,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
  */
 public class RaftServerStateMachineManager implements AutoCloseable {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerStateMachineManager.class);
-  private static final long COMPACT_INTERVAL_MILLIS = 1000 * 60;
+  private static final long COMPACT_INTERVAL_MILLIS = 1000 * 10;
 
   private final RaftServerContext state;
   private final ScheduledExecutorService threadPool;
@@ -246,7 +243,6 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   private <T> CompletableFuture<T> applyEntry(Indexed<? extends RaftLogEntry> entry) {
-    LOGGER.trace("{} - Applying {}", state.getCluster().getMember().memberId(), entry);
     if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());
     } else if (entry.type() == CommandEntry.class) {

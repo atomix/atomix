@@ -51,7 +51,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client connection that recursively connects to servers in the cluster and attempts to submit requests.
  */
 public class RaftProxyConnection {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxyConnection.class);
   private static final Predicate<RaftResponse> COMPLETE_PREDICATE = response ->
       response.status() == RaftResponse.Status.OK
           || response.error().type() == RaftError.Type.COMMAND_FAILURE
@@ -62,11 +61,12 @@ public class RaftProxyConnection {
           || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
           || response.error().type() == RaftError.Type.PROTOCOL_ERROR;
 
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final String name;
   private final RaftClientProtocol protocol;
   private final NodeSelector selector;
   private final ThreadContext context;
-  private MemberId node;
+  private MemberId member;
 
   public RaftProxyConnection(String name, RaftClientProtocol protocol, NodeSelector selector, ThreadContext context) {
     this.name = checkNotNull(name, "name cannot be null");
@@ -191,12 +191,12 @@ public class RaftProxyConnection {
    * Sends the given request attempt to the cluster.
    */
   protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<MemberId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
-    MemberId node = next();
-    if (node != null) {
-      LOGGER.trace("{} - Sending {}", name, request);
-      sender.apply(node, request).whenCompleteAsync((r, e) -> {
+    MemberId member = next();
+    if (member != null) {
+      log.trace("{} Sending {} to {}", name, request, member);
+      sender.apply(member, request).whenCompleteAsync((r, e) -> {
         if (e != null || r != null) {
-          handleResponse(request, sender, node, r, e, future);
+          handleResponse(request, sender, member, r, e, future);
         } else {
           future.complete(null);
         }
@@ -212,9 +212,9 @@ public class RaftProxyConnection {
   @SuppressWarnings("unchecked")
   protected <T extends RaftRequest> void retryRequest(Throwable cause, T request, BiFunction sender, MemberId node, CompletableFuture future) {
     // If the connection has not changed, reset it and connect to the next server.
-    if (this.node == node) {
-      LOGGER.trace("{} - Resetting connection. Reason: {}", name, cause);
-      this.node = null;
+    if (this.member == node) {
+      log.trace("{} Resetting connection. Reason: {}", name, cause);
+      this.member = null;
     }
 
     // Attempt to send the request again.
@@ -225,22 +225,22 @@ public class RaftProxyConnection {
    * Handles a response from the cluster.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, MemberId node, RaftResponse response, Throwable error, CompletableFuture future) {
+  protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, MemberId member, RaftResponse response, Throwable error, CompletableFuture future) {
     if (error == null) {
       if (COMPLETE_PREDICATE.test(response)) {
-        LOGGER.trace("{} - Received {}", name, response);
+        log.trace("{} Received {} from {}", name, response, member);
         future.complete(response);
       } else {
-        retryRequest(response.error().createException(), request, sender, node, future);
+        retryRequest(response.error().createException(), request, sender, member, future);
       }
     } else {
       if (error instanceof CompletionException) {
         error = error.getCause();
       }
       if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
-        retryRequest(error, request, sender, node, future);
+        retryRequest(error, request, sender, member, future);
       } else {
-        LOGGER.debug("{} - {} failed! Reason: {}", name, request, error);
+        log.debug("{} {} failed! Reason: {}", name, request, error);
         future.completeExceptionally(error);
       }
     }
@@ -251,25 +251,23 @@ public class RaftProxyConnection {
    */
   protected MemberId next() {
     // If the address selector has been reset then reset the connection.
-    if (selector.state() == NodeSelector.State.RESET && node != null) {
-      this.node = selector.next();
-      return this.node;
+    if (selector.state() == NodeSelector.State.RESET && member != null) {
+      this.member = selector.next();
+      return this.member;
     }
 
     // If a connection was already established then use that connection.
-    if (node != null) {
-      return node;
+    if (member != null) {
+      return member;
     }
 
     if (!selector.hasNext()) {
-      LOGGER.debug("{} - Failed to connect to the cluster", name);
+      log.debug("{} Failed to connect to the cluster", name);
       reset();
       return null;
     } else {
-      this.node = selector.next();
-      LOGGER.debug("{} - Connecting to {}", name, node);
-      return node;
+      this.member = selector.next();
+      return member;
     }
   }
-
 }

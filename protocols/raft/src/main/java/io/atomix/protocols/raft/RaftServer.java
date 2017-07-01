@@ -251,7 +251,7 @@ public interface RaftServer {
    *
    * @return The server name.
    */
-  String serverName();
+  String name();
 
   /**
    * Returns the server's cluster configuration.
@@ -491,13 +491,12 @@ public interface RaftServer {
    * </pre>
    */
   abstract class Builder implements io.atomix.utils.Builder<RaftServer> {
-    private static final String DEFAULT_NAME = "default";
     private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(750);
     private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
     private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofMillis(5000);
     private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
-    protected String name = DEFAULT_NAME;
+    protected String name;
     protected RaftMember.Type type = RaftMember.Type.ACTIVE;
     protected MemberId localMemberId;
     protected RaftServerProtocol protocol;

@@ -436,7 +436,7 @@ final class LeaderAppender extends AbstractAppender {
     // If we've received a greater term, update the term and transition back to follower.
     if (response.term() > server.getTerm()) {
       server.getThreadContext().execute(() -> {
-        log.debug("{} - Received higher term from {}", server.getClusterState().getMember().memberId(), member.getMember().memberId());
+        log.debug("{} Received higher term from {}", server.getClusterState().getMember().memberId(), member.getMember().memberId());
         server.setTerm(response.term()).setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       });
@@ -467,7 +467,7 @@ final class LeaderAppender extends AbstractAppender {
       // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
       // that a partition occurred and transition back to the FOLLOWER state.
       if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > server.getElectionTimeout().toMillis() * 2) {
-        log.warn("{} - Suspected network partition. Stepping down", server.getCluster().getMember().memberId());
+        log.warn("{} Suspected network partition. Stepping down", server.getName());
         server.setLeader(null);
         server.transition(RaftServer.Role.FOLLOWER);
       }

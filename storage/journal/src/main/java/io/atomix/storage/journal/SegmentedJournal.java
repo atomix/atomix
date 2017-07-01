@@ -55,9 +55,9 @@ public class SegmentedJournal<E> implements Journal<E> {
     return new Builder<>();
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SegmentedJournal.class);
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
 
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final String name;
   private final StorageLevel storageLevel;
   private final File directory;
@@ -342,7 +342,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     Buffer buffer = MappedBuffer.allocate(segmentFile, Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
     descriptor.copyTo(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
-    LOGGER.debug("Created disk segment: {}", segment);
+    log.debug("Created disk segment: {}", segment);
     return segment;
   }
 
@@ -354,7 +354,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     Buffer buffer = HeapBuffer.allocate(Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
     descriptor.copyTo(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
-    LOGGER.debug("Created memory segment: {}", segment);
+    log.debug("Created memory segment: {}", segment);
     return segment;
   }
 
@@ -380,7 +380,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     Buffer buffer = MappedBuffer.allocate(file, Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
     JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(file), descriptor);
-    LOGGER.debug("Loaded disk segment: {} ({})", descriptor.id(), file.getName());
+    log.debug("Loaded disk segment: {} ({})", descriptor.id(), file.getName());
     return segment;
   }
 
@@ -392,7 +392,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     Buffer buffer = HeapBuffer.allocate(Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
     JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(file), descriptor);
-    LOGGER.debug("Loaded memory segment: {}", descriptor.id());
+    log.debug("Loaded memory segment: {}", descriptor.id());
     return segment;
   }
 
@@ -431,7 +431,7 @@ public class SegmentedJournal<E> implements Journal<E> {
           // If the two segments start at the same index, the segment with the higher version number is used.
           if (previousSegment.index() == segment.index()) {
             if (segment.descriptor().version() > previousSegment.descriptor().version()) {
-              LOGGER.debug("Replaced segment {} with newer version: {} ({})", previousSegment.descriptor().id(), segment.descriptor().version(), segmentFile.file().getName());
+              log.debug("Replaced segment {} with newer version: {} ({})", previousSegment.descriptor().id(), segment.descriptor().version(), segmentFile.file().getName());
               segments.remove(previousEntry.getKey());
               previousSegment.close();
               previousSegment.delete();
@@ -451,7 +451,7 @@ public class SegmentedJournal<E> implements Journal<E> {
         }
 
         // Add the segment to the segments list.
-        LOGGER.debug("Found segment: {} ({})", segment.descriptor().id(), segmentFile.file().getName());
+        log.debug("Found segment: {} ({})", segment.descriptor().id(), segmentFile.file().getName());
         segments.put(segment.index(), segment);
 
         // Ensure any segments later in the log with which this segment overlaps are removed.
@@ -515,11 +515,11 @@ public class SegmentedJournal<E> implements Journal<E> {
   public void compact(long index) {
     SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(index);
     if (!compactSegments.isEmpty()) {
-      LOGGER.info("{} - Compacting {} segment(s)", name, compactSegments.size());
+      log.info("{} - Compacting {} segment(s)", name, compactSegments.size());
       writer.getLock().lock();
       try {
         for (JournalSegment segment : compactSegments.values()) {
-          LOGGER.debug("Deleting segment: {}", segment);
+          log.debug("Deleting segment: {}", segment);
           segment.close();
           segment.delete();
         }
@@ -533,7 +533,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   @Override
   public void close() {
     segments.values().forEach(segment -> {
-      LOGGER.debug("Closing segment: {}", segment);
+      log.debug("Closing segment: {}", segment);
       segment.close();
     });
     currentSegment = null;

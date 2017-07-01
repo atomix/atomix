@@ -38,6 +38,13 @@ public interface ServiceContext {
   StateMachineId stateMachineId();
 
   /**
+   * Returns the server name.
+   *
+   * @return The server name.
+   */
+  String serverName();
+
+  /**
    * Returns the state machine name.
    *
    * @return The state machine name.

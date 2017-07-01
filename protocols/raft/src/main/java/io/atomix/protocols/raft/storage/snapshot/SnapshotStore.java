@@ -50,7 +50,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   Snapshot snapshot = snapshots.snapshot(1);
  *   }
  * </pre>
- * To create a new {@link Snapshot}, use the {@link #newSnapshot(StateMachineId, long)} method. Each snapshot must
+ * To create a new {@link Snapshot}, use the {@link #newSnapshot(StateMachineId, long, WallClockTimestamp)} method. Each snapshot must
  * be created with a unique {@code index} which represents the index of the server state machine at
  * the point at which the snapshot was taken. Snapshot indices are used to sort snapshots loaded from
  * disk and apply them at the correct point in the state machine.
@@ -69,7 +69,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * a snapshot may actually only represent a subset of the state machine's state.
  */
 public class SnapshotStore implements AutoCloseable {
-  private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotStore.class);
+  private final Logger log = LoggerFactory.getLogger(getClass());
   final RaftStorage storage;
   private final Map<Long, Snapshot> indexSnapshots = new ConcurrentHashMap<>();
   private final Map<StateMachineId, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
@@ -143,13 +143,13 @@ public class SnapshotStore implements AutoCloseable {
         // Valid segments will have been locked. Segments that resulting from failures during log cleaning will be
         // unlocked and should ultimately be deleted from disk.
         if (descriptor.isLocked()) {
-          LOGGER.debug("Loaded disk snapshot: {} ({})", snapshotFile.index(), snapshotFile.file().getName());
+          log.debug("Loaded disk snapshot: {} ({})", snapshotFile.index(), snapshotFile.file().getName());
           snapshots.add(new FileSnapshot(snapshotFile, this));
           descriptor.close();
         }
         // If the segment descriptor wasn't locked, close and delete the descriptor.
         else {
-          LOGGER.debug("Deleting partial snapshot: {} ({})", descriptor.index(), snapshotFile.file().getName());
+          log.debug("Deleting partial snapshot: {} ({})", descriptor.index(), snapshotFile.file().getName());
           descriptor.close();
           descriptor.delete();
         }
@@ -210,7 +210,7 @@ public class SnapshotStore implements AutoCloseable {
   private Snapshot createMemorySnapshot(SnapshotDescriptor descriptor) {
     HeapBuffer buffer = HeapBuffer.allocate(SnapshotDescriptor.BYTES, Integer.MAX_VALUE);
     Snapshot snapshot = new MemorySnapshot(buffer, descriptor.copyTo(buffer), this);
-    LOGGER.debug("Created memory snapshot: {}", snapshot);
+    log.debug("Created memory snapshot: {}", snapshot);
     return snapshot;
   }
 
@@ -220,7 +220,7 @@ public class SnapshotStore implements AutoCloseable {
   private Snapshot createDiskSnapshot(SnapshotDescriptor descriptor) {
     SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(storage.prefix(), storage.directory(), descriptor.snapshotId(), descriptor.index(), descriptor.timestamp()));
     Snapshot snapshot = new FileSnapshot(file, this);
-    LOGGER.debug("Created disk snapshot: {}", snapshot);
+    log.debug("Created disk snapshot: {}", snapshot);
     return snapshot;
   }
 

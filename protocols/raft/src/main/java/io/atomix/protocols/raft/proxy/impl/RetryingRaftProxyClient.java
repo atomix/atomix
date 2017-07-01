@@ -73,7 +73,7 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
     client.execute(operation).whenComplete((r, e) -> {
       if (e != null) {
         if (attemptIndex < maxRetries + 1 && retryableCheck.test(Throwables.getRootCause(e))) {
-          log.debug("Retry attempt ({} of {}). Failure due to {}", attemptIndex, maxRetries, Throwables.getRootCause(e).getClass());
+          log.debug("{}:{} Retry attempt ({} of {}). Failure due to {}", client.name(), client.sessionId(), attemptIndex, maxRetries, Throwables.getRootCause(e).getClass());
           scheduler.schedule(delayBetweenRetries, () -> execute(operation, attemptIndex + 1, future));
         } else {
           future.completeExceptionally(e);

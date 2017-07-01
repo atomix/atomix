@@ -16,8 +16,7 @@
 package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.protocols.raft.ReadConsistency;
-
-import java.util.Date;
+import io.atomix.utils.TimestampPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -89,7 +88,7 @@ public class OpenSessionEntry extends TimestampedEntry {
   public String toString() {
     return toStringHelper(this)
         .add("term", term)
-        .add("timestamp", new Date(timestamp))
+        .add("timestamp", new TimestampPrinter(timestamp))
         .add("node", memberId)
         .add("serviceName", serviceName)
         .add("serviceType", serviceType)

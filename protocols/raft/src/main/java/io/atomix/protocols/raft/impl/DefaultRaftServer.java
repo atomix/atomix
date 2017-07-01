@@ -20,7 +20,6 @@ import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.utils.concurrent.Futures;
 import org.slf4j.Logger;
@@ -43,25 +42,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see RaftStorage
  */
 public class DefaultRaftServer implements RaftServer {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRaftServer.class);
-
-  protected final String name;
-  protected final RaftServerProtocol protocol;
+  private final Logger log = LoggerFactory.getLogger(getClass());
   protected final RaftServerContext context;
   private volatile CompletableFuture<RaftServer> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
   private Consumer<RaftMember> electionListener;
   private volatile boolean started;
 
-  public DefaultRaftServer(String name, RaftServerProtocol protocol, RaftServerContext context) {
-    this.name = checkNotNull(name, "name cannot be null");
-    this.protocol = checkNotNull(protocol, "protocol cannot be null");
+  public DefaultRaftServer(RaftServerContext context) {
     this.context = checkNotNull(context, "context cannot be null");
   }
 
   @Override
-  public String serverName() {
-    return name;
+  public String name() {
+    return context.getName();
   }
 
   @Override
@@ -148,9 +142,9 @@ public class DefaultRaftServer implements RaftServer {
 
     return openFuture.whenComplete((result, error) -> {
       if (error == null) {
-        LOGGER.info("Server started successfully!");
+        log.info("{} Server started successfully!", name());
       } else {
-        LOGGER.warn("Failed to start server!");
+        log.warn("{} Failed to start server!", name());
       }
     });
   }
@@ -232,7 +226,7 @@ public class DefaultRaftServer implements RaftServer {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("name", name)
+        .add("name", name())
         .toString();
   }
 
@@ -265,7 +259,7 @@ public class DefaultRaftServer implements RaftServer {
           .setHeartbeatInterval(heartbeatInterval)
           .setSessionTimeout(sessionTimeout);
 
-      return new DefaultRaftServer(name, protocol, context);
+      return new DefaultRaftServer(context);
     }
   }
 }

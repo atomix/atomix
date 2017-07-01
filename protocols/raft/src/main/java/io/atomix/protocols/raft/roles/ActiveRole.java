@@ -75,7 +75,7 @@ public abstract class ActiveRole extends PassiveRole {
     for (RaftLogEntry entry : request.entries()) {
       // If the entry index is greater than the commitIndex, break the loop.
       writer.append(entry);
-      LOGGER.trace("{} - Appended {}", context.getCluster().getMember().memberId(), entry);
+      log.trace("{} Appended {}", context.getName(), entry);
     }
 
     // Update the context commit and global indices.
@@ -83,7 +83,7 @@ public abstract class ActiveRole extends PassiveRole {
     context.setCommitIndex(commitIndex);
 
     if (context.getCommitIndex() > previousCommitIndex) {
-      LOGGER.trace("{} - Committed entries up to index {}", context.getCluster().getMember().memberId(), commitIndex);
+      log.trace("{} Committed entries up to index {}", context.getName(), commitIndex);
     }
 
     // Apply commits to the state machine in batch.
@@ -109,7 +109,7 @@ public abstract class ActiveRole extends PassiveRole {
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
     if (request.term() < context.getTerm()) {
-      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().getMember().memberId(), request);
+      log.debug("{} Rejected {}: candidate's term is less than the current term", context.getName(), request);
       return PollResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -154,7 +154,7 @@ public abstract class ActiveRole extends PassiveRole {
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
     if (request.term() < context.getTerm()) {
-      LOGGER.trace("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().getMember().memberId(), request);
+      log.debug("{} Rejected {}: candidate's term is less than the current term", context.getName(), request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -163,7 +163,7 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // If a leader was already determined for this term then reject the request.
     else if (context.getLeader() != null) {
-      LOGGER.trace("{} - Rejected {}: leader already exists", context.getCluster().getMember().memberId(), request);
+      log.debug("{} Rejected {}: leader already exists", context.getName(), request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -173,7 +173,7 @@ public abstract class ActiveRole extends PassiveRole {
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!context.getClusterState().getRemoteMemberStates().stream().map(m -> m.getMember().memberId()).collect(Collectors.toSet()).contains(request.candidate())) {
-      LOGGER.trace("{} - Rejected {}: candidate is not known to the local member", context.getCluster().getMember().memberId(), request);
+      log.debug("{} Rejected {}: candidate is not known to the local member", context.getName(), request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -199,7 +199,7 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // If we already voted for the requesting server, respond successfully.
     else if (context.getLastVotedFor() == request.candidate()) {
-      LOGGER.debug("{} - Accepted {}: already voted for {}", context.getCluster().getMember().memberId(), request, context.getCluster().getMember(context.getLastVotedFor()).memberId());
+      log.debug("{} Accepted {}: already voted for {}", context.getName(), request, context.getCluster().getMember(context.getLastVotedFor()).memberId());
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -208,7 +208,7 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // In this case, we've already voted for someone else.
     else {
-      LOGGER.debug("{} - Rejected {}: already voted for {}", context.getCluster().getMember().memberId(), request, context.getCluster().getMember(context.getLastVotedFor()).memberId());
+      log.debug("{} Rejected {}: already voted for {}", context.getName(), request, context.getCluster().getMember(context.getLastVotedFor()).memberId());
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(context.getTerm())
@@ -226,13 +226,13 @@ public abstract class ActiveRole extends PassiveRole {
 
     // If the log is empty then vote for the candidate.
     if (lastEntry == null) {
-      LOGGER.trace("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().getMember().memberId(), request);
+      log.debug("{} Accepted {}: candidate's log is up-to-date", context.getName(), request);
       return true;
     }
 
     // If the candidate's last log term is lower than the local log's last entry term, reject the request.
     if (lastTerm < lastEntry.entry().term()) {
-      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().getMember().memberId(), request, lastTerm, lastEntry.entry().term());
+      log.debug("{} Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getName(), request, lastTerm, lastEntry.entry().term());
       return false;
     }
 
@@ -241,14 +241,14 @@ public abstract class ActiveRole extends PassiveRole {
     // greater than the local log's last term then it's considered up to date, and if both have the same term
     // then the candidate's last index must be greater than the local log's last index.
     if (lastTerm == lastEntry.entry().term() && lastIndex < lastEntry.index()) {
-      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().getMember().memberId(), request, lastIndex, lastEntry.index());
+      log.debug("{} Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getName(), request, lastIndex, lastEntry.index());
       return false;
     }
 
     // If we made it this far, the candidate's last term is greater than or equal to the local log's last
     // term, and if equal to the local log's last term, the candidate's last index is equal to or greater
     // than the local log's last index.
-    LOGGER.trace("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().getMember().memberId(), request);
+    log.debug("{} Accepted {}: candidate's log is up-to-date", context.getName(), request);
     return true;
   }
 

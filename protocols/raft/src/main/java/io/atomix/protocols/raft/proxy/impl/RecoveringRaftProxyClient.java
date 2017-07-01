@@ -83,7 +83,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
    */
   private synchronized void onStateChange(State state) {
     if (this.state != state) {
-      log.debug("State changed: {}", state);
+      log.debug("{}:{} State changed: {}", client.name(), client.sessionId(), state);
       this.state = state;
       stateChangeListeners.forEach(l -> l.accept(state));
 
@@ -129,7 +129,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
    */
   private synchronized void openClient(CompletableFuture<RaftProxyClient> future) {
     if (recover) {
-      log.debug("Opening session");
+      log.debug("{}:{} Opening session", client.name(), client.sessionId());
       RaftProxyClient client;
       try {
         client = proxyClientBuilder.build();

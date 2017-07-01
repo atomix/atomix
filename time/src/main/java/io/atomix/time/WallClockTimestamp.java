@@ -16,8 +16,8 @@
 package io.atomix.time;
 
 import com.google.common.collect.ComparisonChain;
+import io.atomix.utils.TimestampPrinter;
 
-import java.util.Date;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -78,7 +78,7 @@ public class WallClockTimestamp implements Timestamp {
 
   @Override
   public String toString() {
-    return new Date(unixTimestamp).toString();
+    return new TimestampPrinter(unixTimestamp).toString();
   }
 
   /**

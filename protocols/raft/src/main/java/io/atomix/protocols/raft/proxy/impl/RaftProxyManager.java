@@ -34,7 +34,6 @@ import io.atomix.utils.concurrent.ThreadPoolContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -55,7 +54,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client session manager.
  */
 public class RaftProxyManager {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxyManager.class);
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final String clientId;
   private final MemberId memberId;
   private final RaftClientProtocol protocol;
@@ -126,7 +125,7 @@ public class RaftProxyManager {
     checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
     checkNotNull(timeout, "timeout cannot be null");
 
-    LOGGER.trace("{} - Opening session; name: {}, type: {}", clientId, serviceName, serviceType);
+    log.info("{} Opening session; name: {}, type: {}", clientId, serviceName, serviceType);
     OpenSessionRequest request = OpenSessionRequest.newBuilder()
         .withMemberId(memberId)
         .withServiceName(serviceName)
@@ -135,7 +134,6 @@ public class RaftProxyManager {
         .withTimeout(timeout.toMillis())
         .build();
 
-    LOGGER.trace("{} - Sending {}", clientId, request);
     CompletableFuture<RaftProxyClient> future = new CompletableFuture<>();
     ThreadContext proxyContext = new ThreadPoolContext(threadPoolExecutor);
     connection.openSession(request).whenCompleteAsync((response, error) -> {
@@ -184,12 +182,11 @@ public class RaftProxyManager {
       return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + sessionId));
     }
 
-    LOGGER.trace("Closing session {}", sessionId);
+    log.info("{} Closing session {}", clientId, sessionId);
     CloseSessionRequest request = CloseSessionRequest.newBuilder()
         .withSession(sessionId.id())
         .build();
 
-    LOGGER.trace("Sending {}", request);
     CompletableFuture<Void> future = new CompletableFuture<>();
     connection.closeSession(request).whenComplete((response, error) -> {
       if (error == null) {
@@ -226,10 +223,8 @@ public class RaftProxyManager {
         .withEventIndexes(new long[]{sessionState.getEventIndex()})
         .build();
 
-    LOGGER.trace("{} - Sending {}", clientId, request);
     connection.keepAlive(request).whenComplete((response, error) -> {
       if (error == null) {
-        LOGGER.trace("{} - Received {}", clientId, response);
         if (response.status() == RaftResponse.Status.OK) {
           future.complete(null);
         } else {
@@ -285,17 +280,17 @@ public class RaftProxyManager {
       }
     }
 
+    log.debug("{} Keeping {} sessions alive", clientId, sessionIds.length);
+
     KeepAliveRequest request = KeepAliveRequest.newBuilder()
         .withSessionIds(sessionIds)
         .withCommandSequences(commandResponses)
         .withEventIndexes(eventIndexes)
         .build();
 
-    LOGGER.trace("{} - Sending {}", clientId, request);
     connection.keepAlive(request).whenComplete((response, error) -> {
       if (open.get()) {
         if (error == null) {
-          LOGGER.trace("{} - Received {}", clientId, response);
           // If the request was successful, update the address selector and schedule the next keep-alive.
           if (response.status() == RaftResponse.Status.OK) {
             selectorManager.resetAll(response.leader(), response.members());

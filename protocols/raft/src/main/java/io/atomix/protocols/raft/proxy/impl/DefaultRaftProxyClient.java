@@ -64,7 +64,7 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
     this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
 
     // Create command/query connections.
-    String proxyName = String.valueOf(state.getSessionId());
+    String proxyName = String.format("%s:%s", state.getServiceName(), state.getSessionId());
     RaftProxyConnection leaderConnection = new RaftProxyConnection(
         proxyName,
         protocol,

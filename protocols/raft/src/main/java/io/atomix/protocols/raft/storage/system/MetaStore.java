@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.storage.system;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.serializer.Serializer;
@@ -24,6 +22,8 @@ import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -40,7 +40,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * membership.
  */
 public class MetaStore implements AutoCloseable {
-  private static final Logger LOGGER = LoggerFactory.getLogger(MetaStore.class);
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final Serializer serializer;
   private final FileBuffer metadataBuffer;
   private final Buffer configurationBuffer;
@@ -70,7 +70,7 @@ public class MetaStore implements AutoCloseable {
    * @param term The current server term.
    */
   public synchronized void storeTerm(long term) {
-    LOGGER.trace("Store term {}", term);
+    log.trace("Store term {}", term);
     metadataBuffer.writeLong(0, term).flush();
   }
 
@@ -89,7 +89,7 @@ public class MetaStore implements AutoCloseable {
    * @param vote The server vote.
    */
   public synchronized void storeVote(MemberId vote) {
-    LOGGER.trace("Store vote {}", vote);
+    log.trace("Store vote {}", vote);
     metadataBuffer.writeString(8, vote != null ? vote.id() : null).flush();
   }
 
@@ -109,7 +109,7 @@ public class MetaStore implements AutoCloseable {
    * @param configuration The current cluster configuration.
    */
   public synchronized void storeConfiguration(Configuration configuration) {
-    LOGGER.trace("Store configuration {}", configuration);
+    log.trace("Store configuration {}", configuration);
     byte[] bytes = serializer.encode(configuration);
     configurationBuffer.position(0)
         .writeByte(1)

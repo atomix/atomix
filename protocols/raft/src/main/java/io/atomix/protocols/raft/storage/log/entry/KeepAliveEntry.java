@@ -16,8 +16,7 @@
 package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.utils.ArraySizeHashPrinter;
-
-import java.util.Date;
+import io.atomix.utils.TimestampPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -67,7 +66,7 @@ public class KeepAliveEntry extends TimestampedEntry {
   public String toString() {
     return toStringHelper(this)
         .add("term", term)
-        .add("timestamp", new Date(timestamp))
+        .add("timestamp", new TimestampPrinter(timestamp))
         .add("sessionIds", ArraySizeHashPrinter.of(sessionIds))
         .add("commandSequences", ArraySizeHashPrinter.of(commandSequences))
         .add("eventIndexes", ArraySizeHashPrinter.of(eventIndexes))

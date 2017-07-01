@@ -48,7 +48,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Raft session.
  */
 public class RaftSessionContext implements RaftSession {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionContext.class);
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final SessionId sessionId;
   private final MemberId member;
   private final String name;
@@ -167,7 +167,7 @@ public class RaftSessionContext implements RaftSession {
   private void setState(State state) {
     if (this.state != state) {
       this.state = state;
-      LOGGER.debug("{} - State changed: {}", sessionId, state);
+      log.debug("{}:{}:{} State changed: {}", server.getName(), serviceName(), sessionId, state);
       switch (state) {
         case OPEN:
           eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.OPEN, this, getTimestamp())));
@@ -464,7 +464,7 @@ public class RaftSessionContext implements RaftSession {
           .withEvents(event.events)
           .build();
 
-      LOGGER.trace("{} - Sending {}", sessionId, request);
+      log.trace("{}:{}:{} Sending {}", server.getName(), serviceName(), sessionId, request);
       protocol.publish(member, request);
     }
   }

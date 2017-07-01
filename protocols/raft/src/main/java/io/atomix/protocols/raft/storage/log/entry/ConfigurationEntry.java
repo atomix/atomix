@@ -16,9 +16,9 @@
 package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.protocols.raft.cluster.RaftMember;
+import io.atomix.utils.TimestampPrinter;
 
 import java.util.Collection;
-import java.util.Date;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -51,7 +51,7 @@ public class ConfigurationEntry extends TimestampedEntry {
   public String toString() {
     return toStringHelper(this)
         .add("term", term)
-        .add("timestamp", new Date(timestamp))
+        .add("timestamp", new TimestampPrinter(timestamp))
         .add("members", members)
         .toString();
   }

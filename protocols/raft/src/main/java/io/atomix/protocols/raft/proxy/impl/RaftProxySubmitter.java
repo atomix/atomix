@@ -30,8 +30,6 @@ import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
@@ -52,7 +50,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Session operation submitter.
  */
 final class RaftProxySubmitter {
-  private static final Logger LOG = LoggerFactory.getLogger(RaftProxySubmitter.class);
   private static final int[] FIBONACCI = new int[]{1, 1, 2, 3, 5};
   private static final Predicate<Throwable> EXCEPTION_PREDICATE = e ->
       e instanceof ConnectException
@@ -155,7 +152,6 @@ final class RaftProxySubmitter {
     if (state.getState() == RaftProxy.State.CLOSED) {
       attempt.fail(new RaftException.ClosedSession("session closed"));
     } else {
-      LOG.trace("{} - Sending {}", state.getSessionId(), attempt.request);
       attempts.put(attempt.sequence, attempt);
       attempt.send();
       attempt.future.whenComplete((r, e) -> attempts.remove(attempt.sequence));
@@ -336,7 +332,6 @@ final class RaftProxySubmitter {
     @Override
     public void accept(CommandResponse response, Throwable error) {
       if (error == null) {
-        LOG.trace("{} - Received {}", state.getSessionId(), response);
         if (response.status() == RaftResponse.Status.OK) {
           complete(response);
         }
@@ -438,7 +433,6 @@ final class RaftProxySubmitter {
     @Override
     public void accept(QueryResponse response, Throwable error) {
       if (error == null) {
-        LOG.trace("{} - Received {}", state.getSessionId(), response);
         if (response.status() == RaftResponse.Status.OK) {
           complete(response);
         } else {

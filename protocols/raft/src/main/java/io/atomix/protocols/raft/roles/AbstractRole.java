@@ -35,7 +35,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Abstract state.
  */
 public abstract class AbstractRole implements RaftRole {
-  protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
+  protected final Logger log = LoggerFactory.getLogger(getClass());
   protected final RaftServerContext context;
   private boolean open = true;
 
@@ -54,7 +54,7 @@ public abstract class AbstractRole implements RaftRole {
    * Logs a request.
    */
   protected final <R extends RaftRequest> R logRequest(R request) {
-    LOGGER.trace("{} - Received {}", context.getCluster().getMember().memberId(), request);
+    log.trace("{} Received {}", context.getName(), request);
     return request;
   }
 
@@ -62,7 +62,7 @@ public abstract class AbstractRole implements RaftRole {
    * Logs a response.
    */
   protected final <R extends RaftResponse> R logResponse(R response) {
-    LOGGER.trace("{} - Sending {}", context.getCluster().getMember().memberId(), response);
+    log.trace("{} Sending {}", context.getName(), response);
     return response;
   }
 

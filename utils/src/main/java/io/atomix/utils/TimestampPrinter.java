@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log.entry;
+package io.atomix.utils;
 
-import io.atomix.utils.TimestampPrinter;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
- * Close session entry.
+ * Timestamp printer.
  */
-public class CloseSessionEntry extends SessionEntry {
-  public CloseSessionEntry(long term, long timestamp, long session) {
-    super(term, timestamp, session);
+public class TimestampPrinter {
+  private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
+
+  private final long timestamp;
+
+  public TimestampPrinter(long timestamp) {
+    this.timestamp = timestamp;
   }
 
   @Override
   public String toString() {
-    return toStringHelper(this)
-        .add("term", term)
-        .add("timestamp", new TimestampPrinter(timestamp))
-        .add("session", session)
-        .toString();
+    return FORMAT.format(new Date(timestamp));
   }
 }

@@ -15,7 +15,7 @@
  */
 package io.atomix.event;
 
-import java.util.Date;
+import io.atomix.utils.TimestampPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -69,7 +69,7 @@ public class AbstractEvent<T extends Enum, S> implements Event<T, S> {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("time", new Date(time))
+        .add("time", new TimestampPrinter(time))
         .add("type", type())
         .add("subject", subject())
         .toString();

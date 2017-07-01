@@ -33,7 +33,7 @@ public abstract class RaftService implements RaftStateMachine {
   @Override
   public void init(ServiceContext context) {
     this.context = context;
-    this.executor = new DefaultRaftOperationExecutor();
+    this.executor = new DefaultRaftOperationExecutor(context);
     configure(executor);
   }
 

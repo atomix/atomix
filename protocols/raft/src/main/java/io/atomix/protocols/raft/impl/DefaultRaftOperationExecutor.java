@@ -20,6 +20,7 @@ import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperationExecutor;
+import io.atomix.protocols.raft.ServiceContext;
 import io.atomix.utils.concurrent.Scheduled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,13 +42,18 @@ import static com.google.common.base.Preconditions.checkState;
  * Default operation executor.
  */
 public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRaftOperationExecutor.class);
+  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final ServiceContext context;
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
   private final List<ScheduledTask> complete = new ArrayList<>();
   private final Map<OperationId, Function<RaftCommit<byte[]>, byte[]>> operations = new HashMap<>();
   private OperationType operationType;
   private long timestamp;
+
+  public DefaultRaftOperationExecutor(ServiceContext context) {
+    this.context = checkNotNull(context, "context cannot be null");
+  }
 
   /**
    * Sets the current operation type.
@@ -68,6 +74,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
         if (task.isRunnable(timestamp)) {
           this.timestamp = task.time;
           this.operationType = OperationType.COMMAND;
+          log.trace("{}:{} Executing scheduled task {}", context.serverName(), context.serviceName(), task);
           task.execute();
           complete.add(task);
           iterator.remove();
@@ -103,11 +110,13 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
     operations.put(operationId, callback);
-    LOGGER.debug("Registered operation callback {}", operationId);
+    log.debug("{}:{} Registered operation callback {}", context.serverName(), context.serviceName(), operationId);
   }
 
   @Override
   public byte[] apply(RaftCommit<byte[]> commit) {
+    log.trace("{}:{} Applying commit {}", context.serverName(), context.serviceName(), commit);
+
     prepareOperation(commit);
 
     // Look up the registered callback for the operation.
@@ -121,7 +130,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
       try {
         return callback.apply(commit);
       } catch (Exception e) {
-        LOGGER.warn("State machine operation failed: {}", e);
+        log.warn("State machine operation failed: {}", e);
         throw new RaftException.ApplicationException(e);
       } finally {
         runTasks();
@@ -135,8 +144,9 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
   private void runTasks() {
     // Execute any tasks that were queue during execution of the command.
     if (!tasks.isEmpty()) {
-      for (Runnable callback : tasks) {
-        callback.run();
+      for (Runnable task : tasks) {
+        log.trace("{}:{} Executing task {}", context.serverName(), context.serviceName(), task);
+        task.run();
       }
       tasks.clear();
     }
@@ -151,14 +161,14 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
   @Override
   public Scheduled schedule(Duration delay, Runnable callback) {
     checkOperation(OperationType.COMMAND, "callbacks can only be scheduled during command execution");
-    LOGGER.trace("Scheduled callback {} with delay {}", callback, delay);
+    log.trace("Scheduled callback {} with delay {}", callback, delay);
     return new ScheduledTask(callback, delay.toMillis()).schedule();
   }
 
   @Override
   public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
     checkOperation(OperationType.COMMAND, "callbacks can only be scheduled during command execution");
-    LOGGER.trace("Scheduled repeating callback {} with initial delay {} and interval {}", callback, initialDelay, interval);
+    log.trace("Scheduled repeating callback {} with initial delay {} and interval {}", callback, initialDelay, interval);
     return new ScheduledTask(callback, initialDelay.toMillis(), interval.toMillis()).schedule();
   }
 
