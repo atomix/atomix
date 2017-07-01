@@ -88,13 +88,13 @@ public abstract class AbstractRole implements RaftRole {
       return Futures.exceptionalFuture(new RaftException.NoLeader("No leader found"));
     }
 
-    function.apply(leader.memberId(), request).whenComplete((response, error) -> {
+    function.apply(leader.memberId(), request).whenCompleteAsync((response, error) -> {
       if (error == null) {
         future.complete(response);
       } else {
         future.completeExceptionally(error);
       }
-    });
+    }, context.getThreadContext());
     return future;
   }
 
