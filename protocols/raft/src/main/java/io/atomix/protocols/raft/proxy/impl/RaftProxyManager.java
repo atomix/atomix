@@ -34,6 +34,7 @@ import io.atomix.utils.concurrent.ThreadPoolContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -162,10 +163,10 @@ public class RaftProxyManager {
 
           future.complete(client);
         } else {
-          future.completeExceptionally(response.error().createException());
+          future.completeExceptionally(new RaftException.Unavailable(response.error().message()));
         }
       } else {
-        future.completeExceptionally(error);
+        future.completeExceptionally(new RaftException.Unavailable(error.getMessage()));
       }
     }, proxyContext);
     return future;

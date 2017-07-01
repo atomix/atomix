@@ -134,5 +134,9 @@ public abstract class RaftException extends RuntimeException {
     public Unavailable(String message, Object... args) {
       super(RaftError.Type.UNAVAILABLE, message, args);
     }
+
+    public Unavailable(Throwable cause) {
+      super(RaftError.Type.UNAVAILABLE, cause);
+    }
   }
 }

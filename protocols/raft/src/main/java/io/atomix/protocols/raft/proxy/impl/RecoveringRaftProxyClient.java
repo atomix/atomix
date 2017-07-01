@@ -17,14 +17,18 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.utils.concurrent.Scheduled;
+import io.atomix.utils.concurrent.Scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -38,15 +42,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RecoveringRaftProxyClient implements RaftProxyClient {
   private final Logger log = LoggerFactory.getLogger(RecoveringRaftProxyClient.class);
   private final RaftProxyClient.Builder proxyClientBuilder;
+  private final Scheduler scheduler;
   private RaftProxyClient client;
   private volatile RaftProxy.State state = State.CLOSED;
   private final Set<Consumer<State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Set<Consumer<RaftEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
+  private Scheduled recoverTask;
   private boolean recover = true;
 
-  public RecoveringRaftProxyClient(RaftProxyClient.Builder proxyClientBuilder) {
+  public RecoveringRaftProxyClient(RaftProxyClient.Builder proxyClientBuilder, Scheduler scheduler) {
     this.proxyClientBuilder = checkNotNull(proxyClientBuilder);
-    openSession();
+    this.scheduler = checkNotNull(scheduler);
+    this.client = openClient().join();
   }
 
   @Override
@@ -82,7 +89,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
 
       // If the session was closed then reopen it.
       if (state == State.CLOSED) {
-        openSession();
+        recover();
       }
     }
   }
@@ -98,15 +105,43 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   }
 
   /**
-   * Opens the session.
+   * Recovers the underlying proxy client.
    */
-  private synchronized void openSession() {
-    log.debug("Opening session");
+  private synchronized void recover() {
+    recoverTask = null;
+    this.client = openClient().join();
+  }
+
+  /**
+   * Opens the underlying proxy client.
+   */
+  private synchronized CompletableFuture<RaftProxyClient> openClient() {
+    if (recoverTask == null) {
+      CompletableFuture<RaftProxyClient> future = new CompletableFuture<>();
+      openClient(future);
+      return future;
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Opens the underlying proxy client.
+   */
+  private synchronized void openClient(CompletableFuture<RaftProxyClient> future) {
     if (recover) {
-      client = proxyClientBuilder.build();
-      onStateChange(State.CONNECTED);
-      client.addStateChangeListener(this::onStateChange);
-      eventListeners.forEach(client::addEventListener);
+      log.debug("Opening session");
+      RaftProxyClient client;
+      try {
+        client = proxyClientBuilder.build();
+        onStateChange(State.CONNECTED);
+        client.addStateChangeListener(this::onStateChange);
+        eventListeners.forEach(client::addEventListener);
+        future.complete(client);
+      } catch (RaftException.Unavailable e) {
+        recoverTask = scheduler.schedule(Duration.ofSeconds(1), this::recover);
+      }
+    } else {
+      future.completeExceptionally(new RaftException.Unavailable("Proxy client is closed"));
     }
   }
 
@@ -135,6 +170,9 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   @Override
   public synchronized CompletableFuture<Void> close() {
     recover = false;
+    if (recoverTask != null) {
+      recoverTask.cancel();
+    }
     return client.close();
   }
 

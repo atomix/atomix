@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftClient;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -127,13 +129,23 @@ public class DefaultRaftClient implements RaftClient {
   private class SessionBuilder extends RaftProxy.Builder {
     @Override
     public RaftProxy build() {
+      // Create a client builder that uses the session manager to open a session.
       RaftProxyClient.Builder clientBuilder = new RaftProxyClient.Builder() {
         @Override
         public RaftProxyClient build() {
-          return sessionManager.openSession(name, serviceType, readConsistency, communicationStrategy, timeout).join();
+          try {
+            return sessionManager.openSession(name, serviceType, readConsistency, communicationStrategy, timeout).join();
+          } catch (CompletionException e) {
+            if (e.getCause() instanceof RaftException.Unavailable) {
+              throw (RaftException.Unavailable) e.getCause();
+            } else {
+              throw new RaftException.Unavailable(e);
+            }
+          }
         }
       };
 
+      // Populate the proxy client builder.
       clientBuilder.withName(name)
           .withServiceType(serviceType)
           .withReadConsistency(readConsistency)
@@ -147,7 +159,7 @@ public class DefaultRaftClient implements RaftClient {
 
       // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
       if (recoveryStrategy == RecoveryStrategy.RECOVER) {
-        client = new RecoveringRaftProxyClient(clientBuilder);
+        client = new RecoveringRaftProxyClient(clientBuilder, new ThreadPoolContext(threadPoolExecutor));
       } else {
         client = clientBuilder.build();
       }

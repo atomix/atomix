@@ -189,6 +189,30 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
+   * Tests opening a client before servers.
+   */
+  public void testOpenClientBeforeServer() throws Throwable {
+    for (int i = 0; i < 3; i++) {
+      members.add(nextMember(RaftMember.Type.ACTIVE));
+    }
+
+    RaftClient client = createClient();
+    RaftProxy session = createSession(client);
+    submit(session, 0, 1000);
+
+    for (int i = 0; i < 3; i++) {
+      RaftServer server = createServer(members.get(i));
+      servers.add(server);
+    }
+
+    for (RaftServer server : servers) {
+      server.bootstrap(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
+    }
+
+    await(30000, 4);
+  }
+
+  /**
    * Tests leaving a sever from a cluster.
    */
   public void testServerLeave() throws Throwable {
