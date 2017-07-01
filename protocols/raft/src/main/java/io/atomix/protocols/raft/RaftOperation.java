@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.utils.ArraySizeHashPrinter;
+
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -72,7 +74,7 @@ public class RaftOperation {
   public String toString() {
     return toStringHelper(this)
         .add("id", id)
-        .add("value", value)
+        .add("value", ArraySizeHashPrinter.of(value))
         .toString();
   }
 }
