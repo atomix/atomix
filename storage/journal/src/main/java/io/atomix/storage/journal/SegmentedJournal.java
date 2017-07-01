@@ -513,18 +513,20 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   @Override
   public void compact(long index) {
-    writer.getLock().lock();
-    try {
-      LOGGER.info("Compacting log");
-      SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(index);
-      for (JournalSegment segment : compactSegments.values()) {
-        LOGGER.debug("Deleting segment: {}", segment);
-        segment.close();
-        segment.delete();
+    SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(index);
+    if (!compactSegments.isEmpty()) {
+      LOGGER.info("{} - Compacting {} segment(s)", name, compactSegments.size());
+      writer.getLock().lock();
+      try {
+        for (JournalSegment segment : compactSegments.values()) {
+          LOGGER.debug("Deleting segment: {}", segment);
+          segment.close();
+          segment.delete();
+        }
+        compactSegments.clear();
+      } finally {
+        writer.getLock().unlock();
       }
-      compactSegments.clear();
-    } finally {
-      writer.getLock().unlock();
     }
   }
 
