@@ -112,6 +112,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   private synchronized void recover() {
     recoverTask = null;
     this.client = openClient().join();
+    onStateChange(State.CONNECTED);
   }
 
   /**
@@ -135,7 +136,6 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
       RaftProxyClient client;
       try {
         client = proxyClientBuilder.build();
-        onStateChange(State.CONNECTED);
         client.addStateChangeListener(this::onStateChange);
         eventListeners.forEach(client::addEventListener);
         future.complete(client);
