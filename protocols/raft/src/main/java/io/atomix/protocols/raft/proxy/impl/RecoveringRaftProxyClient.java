@@ -111,8 +111,11 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
    */
   private synchronized void recover() {
     recoverTask = null;
-    this.client = openClient().join();
-    onStateChange(State.CONNECTED);
+    RaftProxyClient newClient = openClient().join();
+    if (newClient != null) {
+      this.client = newClient;
+      onStateChange(State.CONNECTED);
+    }
   }
 
   /**
@@ -143,7 +146,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
         recoverTask = scheduler.schedule(Duration.ofSeconds(1), this::recover);
       }
     } else {
-      future.completeExceptionally(new RaftException.Unavailable("Proxy client is closed"));
+      future.complete(null);
     }
   }
 
