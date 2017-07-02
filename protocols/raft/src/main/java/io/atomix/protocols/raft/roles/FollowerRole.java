@@ -68,7 +68,7 @@ public final class FollowerRole extends ActiveRole {
    * Starts the heartbeat timer.
    */
   private void startHeartbeatTimeout() {
-    log.trace("{} Starting heartbeat timer", context.getName());
+    log.trace("Starting heartbeat timer");
     resetHeartbeatTimeout();
   }
 
@@ -92,7 +92,7 @@ public final class FollowerRole extends ActiveRole {
       heartbeatTimer = null;
       if (isOpen()) {
         context.setLeader(null);
-        log.debug("{} Heartbeat timed out in {}", context.getName(), delay);
+        log.debug("Heartbeat timed out in {}", delay);
         sendPollRequests();
       }
     });
@@ -104,7 +104,7 @@ public final class FollowerRole extends ActiveRole {
   private void sendPollRequests() {
     // Set a new timer within which other nodes must respond in order for this node to transition to candidate.
     heartbeatTimer = context.getThreadContext().schedule(context.getElectionTimeout(), () -> {
-      log.debug("{} Failed to poll a majority of the cluster in {}", context.getName(), context.getElectionTimeout());
+      log.debug("Failed to poll a majority of the cluster in {}", context.getElectionTimeout());
       resetHeartbeatTimeout();
     });
 
@@ -139,12 +139,12 @@ public final class FollowerRole extends ActiveRole {
       lastTerm = 0;
     }
 
-    log.debug("{} Polling members {}", context.getName(), votingMembers);
+    log.debug("Polling members {}", votingMembers);
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
-      log.debug("{} Polling {} for next term {}", context.getName(), member, context.getTerm() + 1);
+      log.debug("Polling {} for next term {}", member, context.getTerm() + 1);
       PollRequest request = PollRequest.newBuilder()
           .withTerm(context.getTerm())
           .withCandidate(context.getCluster().getMember().memberId())
@@ -155,7 +155,7 @@ public final class FollowerRole extends ActiveRole {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
-            log.warn("{} {}", context.getName(), error.getMessage());
+            log.warn("{}", error.getMessage());
             quorum.fail();
           } else {
             if (response.term() > context.getTerm()) {
@@ -163,13 +163,13 @@ public final class FollowerRole extends ActiveRole {
             }
 
             if (!response.accepted()) {
-              log.debug("{} Received rejected poll from {}", context.getName(), member);
+              log.debug("Received rejected poll from {}", member);
               quorum.fail();
             } else if (response.term() != context.getTerm()) {
-              log.debug("{} Received accepted poll for a different term from {}", context.getName(), member);
+              log.debug("Received accepted poll for a different term from {}", member);
               quorum.fail();
             } else {
-              log.debug("{} Received accepted poll from {}", context.getName(), member);
+              log.debug("Received accepted poll from {}", member);
               quorum.succeed();
             }
           }
@@ -219,7 +219,7 @@ public final class FollowerRole extends ActiveRole {
    */
   private void cancelHeartbeatTimeout() {
     if (heartbeatTimer != null) {
-      log.trace("{} Cancelling heartbeat timer", context.getName());
+      log.trace("Cancelling heartbeat timer");
       heartbeatTimer.cancel();
     }
   }

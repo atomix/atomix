@@ -18,8 +18,8 @@ package io.atomix.protocols.raft.proxy.impl;
 import com.google.common.annotations.VisibleForTesting;
 import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
+import io.atomix.utils.ContextualLogger;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -54,7 +54,7 @@ import java.util.Queue;
  * in a queue and the algorithm for checking sequenced responses is run again.
  */
 final class RaftProxySequencer {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final RaftProxyState state;
   @VisibleForTesting
   long requestSequence;
@@ -67,6 +67,12 @@ final class RaftProxySequencer {
 
   RaftProxySequencer(RaftProxyState state) {
     this.state = state;
+    this.log = ContextualLogger.builder(getClass())
+        .add("client", state.getClientId())
+        .add("service", state.getServiceType())
+        .add("name", state.getServiceName())
+        .add("session", state.getSessionId())
+        .build();
   }
 
   /**
@@ -92,7 +98,7 @@ final class RaftProxySequencer {
    */
   public void sequenceEvent(PublishRequest request, Runnable callback) {
     if (requestSequence == responseSequence) {
-      log.trace("{}:{} Completing {}", state.getServiceName(), state.getSessionId(), request);
+      log.trace("Completing {}", request);
       callback.run();
       eventIndex = request.eventIndex();
     } else {
@@ -154,7 +160,7 @@ final class RaftProxySequencer {
     if (requestSequence == responseSequence) {
       EventCallback eventCallback = eventCallbacks.poll();
       while (eventCallback != null) {
-        log.trace("{}:{} Completing {}", state.getServiceName(), state.getSessionId(), eventCallback.request);
+        log.trace("Completing {}", eventCallback.request);
         eventCallback.run();
         eventIndex = eventCallback.request.eventIndex();
         eventCallback = eventCallbacks.poll();
@@ -169,7 +175,7 @@ final class RaftProxySequencer {
     // If the response is null, that indicates an exception occurred. The best we can do is complete
     // the response in sequential order.
     if (response == null) {
-      log.trace("{}:{} Completing failed request", state.getServiceName(), state.getSessionId());
+      log.trace("Completing failed request");
       callback.run();
       return true;
     }
@@ -183,7 +189,7 @@ final class RaftProxySequencer {
       EventCallback eventCallback = eventCallbacks.peek();
       while (eventCallback != null && eventCallback.request.eventIndex() <= responseEventIndex) {
         eventCallbacks.remove();
-        log.trace("{}:{} Completing {}", state.getServiceName(), state.getSessionId(), eventCallback.request);
+        log.trace("Completing {}", eventCallback.request);
         eventCallback.run();
         eventIndex = eventCallback.request.eventIndex();
         eventCallback = eventCallbacks.peek();
@@ -208,7 +214,7 @@ final class RaftProxySequencer {
     // If after completing pending events the eventIndex is greater than or equal to the response's eventIndex, complete the response.
     // Note that the event protocol initializes the eventIndex to the session ID.
     if (responseEventIndex <= eventIndex || (eventIndex == 0 && responseEventIndex == state.getSessionId().id())) {
-      log.trace("{}:{} Completing {}", state.getServiceName(), state.getSessionId(), response);
+      log.trace("Completing {}", response);
       callback.run();
       return true;
     } else {

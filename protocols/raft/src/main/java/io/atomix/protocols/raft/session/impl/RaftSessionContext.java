@@ -29,8 +29,8 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionEvent;
 import io.atomix.protocols.raft.session.RaftSessionEventListener;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.utils.ContextualLogger;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -48,7 +48,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Raft session.
  */
 public class RaftSessionContext implements RaftSession {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final SessionId sessionId;
   private final MemberId member;
   private final String name;
@@ -94,6 +94,11 @@ public class RaftSessionContext implements RaftSession {
     this.protocol = server.getProtocol();
     this.context = context;
     this.server = server;
+    this.log = ContextualLogger.builder(getClass())
+        .add("server", server.getName())
+        .add("serviceName", name)
+        .add("sessionId", sessionId)
+        .build();
     protocol.registerResetListener(sessionId, request -> resendEvents(request.index()), context.executor());
   }
 
@@ -167,7 +172,7 @@ public class RaftSessionContext implements RaftSession {
   private void setState(State state) {
     if (this.state != state) {
       this.state = state;
-      log.debug("{}:{}:{} State changed: {}", server.getName(), serviceName(), sessionId, state);
+      log.debug("State changed: {}", state);
       switch (state) {
         case OPEN:
           eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.OPEN, this, getTimestamp())));
@@ -464,7 +469,7 @@ public class RaftSessionContext implements RaftSession {
           .withEvents(event.events)
           .build();
 
-      log.trace("{}:{}:{} Sending {}", server.getName(), serviceName(), sessionId, request);
+      log.trace("Sending {}", request);
       protocol.publish(member, request);
     }
   }
@@ -498,7 +503,9 @@ public class RaftSessionContext implements RaftSession {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", sessionId)
+        .add("server", server.getName())
+        .add("serviceName", serviceName())
+        .add("sessionId", sessionId)
         .toString();
   }
 

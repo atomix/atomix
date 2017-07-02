@@ -37,10 +37,12 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.storage.journal.Indexed;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
+import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -64,6 +66,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RaftServerStateMachineManager implements AutoCloseable {
   private static final long COMPACT_INTERVAL_MILLIS = 1000 * 10;
 
+  private final Logger logger;
   private final RaftServerContext state;
   private final ScheduledExecutorService threadPool;
   private final ThreadContext threadContext;
@@ -79,6 +82,9 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadPool = threadPool;
     this.threadContext = threadContext;
+    this.logger = ContextualLogger.builder(getClass())
+        .add("server", state.getName())
+        .build();
     threadContext.schedule(Duration.ofMillis(COMPACT_INTERVAL_MILLIS), this::compactLog);
   }
 
@@ -243,6 +249,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   private <T> CompletableFuture<T> applyEntry(Indexed<? extends RaftLogEntry> entry) {
+    logger.trace("Applying {}", entry);
     if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());
     } else if (entry.type() == CommandEntry.class) {

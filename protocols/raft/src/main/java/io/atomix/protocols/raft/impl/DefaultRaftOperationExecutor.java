@@ -21,9 +21,9 @@ import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperationExecutor;
 import io.atomix.protocols.raft.ServiceContext;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Scheduled;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Default operation executor.
  */
 public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final ServiceContext context;
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
@@ -53,6 +53,11 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
 
   public DefaultRaftOperationExecutor(ServiceContext context) {
     this.context = checkNotNull(context, "context cannot be null");
+    this.log = ContextualLogger.builder(getClass())
+        .add("server", context.serverName())
+        .add("service", context.serviceType())
+        .add("name", context.serviceName())
+        .build();
   }
 
   /**
@@ -74,7 +79,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
         if (task.isRunnable(timestamp)) {
           this.timestamp = task.time;
           this.operationType = OperationType.COMMAND;
-          log.trace("{}:{} Executing scheduled task {}", context.serverName(), context.serviceName(), task);
+          log.trace("Executing scheduled task {}", task);
           task.execute();
           complete.add(task);
           iterator.remove();
@@ -110,12 +115,12 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
     operations.put(operationId, callback);
-    log.debug("{}:{} Registered operation callback {}", context.serverName(), context.serviceName(), operationId);
+    log.debug("Registered operation callback {}", operationId);
   }
 
   @Override
   public byte[] apply(RaftCommit<byte[]> commit) {
-    log.trace("{}:{} Applying commit {}", context.serverName(), context.serviceName(), commit);
+    log.trace("Applying commit {}", commit);
 
     prepareOperation(commit);
 
@@ -145,7 +150,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
     // Execute any tasks that were queue during execution of the command.
     if (!tasks.isEmpty()) {
       for (Runnable task : tasks) {
-        log.trace("{}:{} Executing task {}", context.serverName(), context.serviceName(), task);
+        log.trace("Executing task {}", task);
         task.run();
       }
       tasks.clear();

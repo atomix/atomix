@@ -15,10 +15,10 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
+import io.atomix.protocols.raft.RaftServer;
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
@@ -123,7 +123,7 @@ public class PassiveRole extends ReserveRole {
    */
   protected boolean checkTerm(AppendRequest request, RaftLogWriter writer, CompletableFuture<AppendResponse> future) {
     if (request.term() < context.getTerm()) {
-      log.debug("{} Rejected {}: request term is less than the current term ({})", context.getName(), request, context.getTerm());
+      log.debug("Rejected {}: request term is less than the current term ({})", request, context.getTerm());
       return failAppend(writer.getLastIndex(), future);
     }
     return true;
@@ -141,25 +141,25 @@ public class PassiveRole extends ReserveRole {
     if (lastEntry != null) {
       // If the previous log index is greater than the last entry index, fail the attempt.
       if (request.prevLogIndex() > lastEntry.index()) {
-        log.debug("{} Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getName(), request, request.prevLogIndex(), lastEntry.index());
+        log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index ({})", request, request.prevLogIndex(), lastEntry.index());
         return failAppend(0, future);
       }
 
       // If the previous log index is less than the last entry index, fail the attempt.
       if (request.prevLogIndex() < lastEntry.index()) {
-        log.debug("{} Rejected {}: Previous index ({}) is less than the local log's last index ({})", context.getName(), request, request.prevLogIndex(), lastEntry.index());
+        log.debug("Rejected {}: Previous index ({}) is less than the local log's last index ({})", request, request.prevLogIndex(), lastEntry.index());
         return failAppend(lastEntry.index(), future);
       }
 
       // If the previous log term doesn't equal the last entry term, fail the append, sending the prior entry.
       if (request.prevLogTerm() != lastEntry.entry().term()) {
-        log.debug("{} Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", context.getName(), request, request.prevLogTerm(), lastEntry.entry().term());
+        log.debug("Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", request, request.prevLogTerm(), lastEntry.entry().term());
         return failAppend(lastEntry.index() - 1, future);
       }
     } else {
       // If the previous log index is set and the last entry is null, fail the append.
       if (request.prevLogIndex() > 0) {
-        log.debug("{} Rejected {}: Previous index ({}) is greater than the local log's last index (0)", context.getName(), request, request.prevLogIndex());
+        log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index (0)", request, request.prevLogIndex());
         return failAppend(0, future);
       }
     }
@@ -183,7 +183,7 @@ public class PassiveRole extends ReserveRole {
     for (RaftLogEntry entry : request.entries()) {
       // If the entry index is greater than the commitIndex, break the loop.
       writer.append(entry);
-      log.trace("{} Appended {}", context.getName(), entry);
+      log.trace("Appended {}", entry);
 
       // If the last log index meets the commitIndex, break the append loop to avoid appending uncommitted entries.
       if (++lastLogIndex == commitIndex) {
@@ -196,7 +196,7 @@ public class PassiveRole extends ReserveRole {
     context.setCommitIndex(commitIndex);
 
     if (context.getCommitIndex() > previousCommitIndex) {
-      log.trace("{} Committed entries up to index {}", context.getName(), commitIndex);
+      log.trace("Committed entries up to index {}", commitIndex);
     }
 
     // Apply commits to the state machine in batch.
@@ -255,14 +255,14 @@ public class PassiveRole extends ReserveRole {
     // query to the leader. This ensures that a follower does not tell the client its session
     // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
     if (context.getStateMachine().getLastApplied() < request.session()) {
-      log.trace("{} State out of sync, forwarding query to leader", context.getName());
+      log.trace("State out of sync, forwarding query to leader");
       return queryForward(request);
     }
 
     // Look up the client's session.
     RaftSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
     if (session == null) {
-      log.trace("{} State out of sync, forwarding query to leader", context.getName());
+      log.trace("State out of sync, forwarding query to leader");
       return queryForward(request);
     }
 
@@ -272,7 +272,7 @@ public class PassiveRole extends ReserveRole {
       // If the commit index is not in the log then we've fallen too far behind the leader to perform a local query.
       // Forward the request to the leader.
       if (context.getLogWriter().getLastIndex() < context.getCommitIndex()) {
-        log.trace("{} State out of sync, forwarding query to leader", context.getName());
+        log.trace("State out of sync, forwarding query to leader");
         return queryForward(request);
       }
 
@@ -302,7 +302,7 @@ public class PassiveRole extends ReserveRole {
           .build()));
     }
 
-    log.trace("{} Forwarding {}", context.getName(), request);
+    log.trace("Forwarding {}", request);
     return forward(request, context.getProtocol()::query)
         .exceptionally(error -> QueryResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)

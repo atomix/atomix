@@ -22,9 +22,9 @@ import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
@@ -35,12 +35,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Abstract state.
  */
 public abstract class AbstractRole implements RaftRole {
-  protected final Logger log = LoggerFactory.getLogger(getClass());
+  protected final Logger log;
   protected final RaftServerContext context;
   private boolean open = true;
 
   protected AbstractRole(RaftServerContext context) {
     this.context = context;
+    this.log = ContextualLogger.builder(getClass())
+        .add("server", context.getName())
+        .add("role", role())
+        .build();
   }
 
   /**
@@ -54,7 +58,7 @@ public abstract class AbstractRole implements RaftRole {
    * Logs a request.
    */
   protected final <R extends RaftRequest> R logRequest(R request) {
-    log.trace("{} Received {}", context.getName(), request);
+    log.trace("Received {}", request);
     return request;
   }
 
@@ -62,7 +66,7 @@ public abstract class AbstractRole implements RaftRole {
    * Logs a response.
    */
   protected final <R extends RaftResponse> R logResponse(R response) {
-    log.trace("{} Sending {}", context.getName(), response);
+    log.trace("Sending {}", response);
     return response;
   }
 

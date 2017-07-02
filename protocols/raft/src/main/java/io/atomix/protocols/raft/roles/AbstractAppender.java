@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
@@ -33,6 +31,8 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.storage.journal.Indexed;
+import io.atomix.utils.ContextualLogger;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,12 +45,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 abstract class AbstractAppender implements AutoCloseable {
   private static final int MAX_BATCH_SIZE = 1024 * 32;
-  protected final Logger log = LoggerFactory.getLogger(getClass());
+  protected final Logger log;
   protected final RaftServerContext server;
   protected boolean open = true;
 
   AbstractAppender(RaftServerContext server) {
     this.server = checkNotNull(server, "context cannot be null");
+    this.log = ContextualLogger.builder(getClass())
+        .add("server", server.getName())
+        .build();
   }
 
   /**
@@ -180,7 +183,7 @@ abstract class AbstractAppender implements AutoCloseable {
 
     long timestamp = System.currentTimeMillis();
 
-    log.trace("{} Sending {} to {}", server.getName(), request, member.getMember().memberId());
+    log.trace("Sending {} to {}", request, member.getMember().memberId());
     server.getProtocol().append(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
@@ -193,7 +196,7 @@ abstract class AbstractAppender implements AutoCloseable {
 
       if (open) {
         if (error == null) {
-          log.trace("{} Received {} from {}", server.getName(), response, member.getMember().memberId());
+          log.trace("Received {} from {}", response, member.getMember().memberId());
           handleAppendResponse(member, request, response);
         } else {
           handleAppendResponseFailure(member, request, error);
@@ -277,7 +280,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // when attempting to send entries to down followers.
     int failures = member.incrementFailureCount();
     if (failures <= 3 || failures % 100 == 0) {
-      log.warn("{} AppendRequest to {} failed: {}", server.getName(), member.getMember().memberId(), response.error() != null ? response.error() : "");
+      log.warn("AppendRequest to {} failed: {}", member.getMember().memberId(), response.error() != null ? response.error() : "");
     }
   }
 
@@ -298,7 +301,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // when attempting to send entries to down followers.
     int failures = member.incrementFailureCount();
     if (failures <= 3 || failures % 100 == 0) {
-      log.warn("{} AppendRequest to {} failed: {}", server.getName(), member.getMember().memberId(), error.getMessage());
+      log.warn("AppendRequest to {} failed: {}", member.getMember().memberId(), error.getMessage());
     }
   }
 
@@ -330,7 +333,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void resetMatchIndex(RaftMemberContext member, AppendResponse response) {
     member.setMatchIndex(response.lastLogIndex());
-    log.trace("{} Reset match index for {} to {}", server.getName(), member, member.getMatchIndex());
+    log.trace("Reset match index for {} to {}", member, member.getMatchIndex());
   }
 
   /**
@@ -346,7 +349,7 @@ abstract class AbstractAppender implements AutoCloseable {
       } else {
         reader.reset();
       }
-      log.trace("{} Reset next index for {} to {} + 1", server.getName(), member, member.getMatchIndex());
+      log.trace("Reset next index for {} to {} + 1", member, member.getMatchIndex());
     } finally {
       reader.getLock().unlock();
     }
@@ -370,12 +373,12 @@ abstract class AbstractAppender implements AutoCloseable {
    * Connects to the member and sends a configure request.
    */
   protected void sendConfigureRequest(RaftMemberContext member, ConfigureRequest request) {
-    log.debug("{} Configuring {}", server.getName(), member.getMember().memberId());
+    log.debug("Configuring {}", member.getMember().memberId());
 
     // Start the configure to the member.
     member.startConfigure();
 
-    log.trace("{} Sending {} to {}", server.getName(), request, member.getMember().memberId());
+    log.trace("Sending {} to {}", request, member.getMember().memberId());
     server.getProtocol().configure(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
@@ -384,10 +387,10 @@ abstract class AbstractAppender implements AutoCloseable {
 
       if (open) {
         if (error == null) {
-          log.trace("{} Received {} from {}", server.getName(), response, member.getMember().memberId());
+          log.trace("Received {} from {}", response, member.getMember().memberId());
           handleConfigureResponse(member, request, response);
         } else {
-          log.warn("{} Failed to configure {}", server.getName(), member.getMember().memberId());
+          log.warn("Failed to configure {}", member.getMember().memberId());
           handleConfigureResponseFailure(member, request, error);
         }
       }
@@ -490,7 +493,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // Start the install to the member.
     member.startInstall();
 
-    log.trace("{} Sending {} to {}", server.getName(), request, member.getMember().memberId());
+    log.trace("Sending {} to {}", request, member.getMember().memberId());
     server.getProtocol().install(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       member.getThreadContext().checkThread();
 
@@ -499,10 +502,10 @@ abstract class AbstractAppender implements AutoCloseable {
 
       if (open) {
         if (error == null) {
-          log.trace("{} Received {} from {}", server.getName(), response, member.getMember().memberId());
+          log.trace("Received {} from {}", response, member.getMember().memberId());
           handleInstallResponse(member, request, response);
         } else {
-          log.warn("{} Failed to install {}", server.getName(), member.getMember().memberId());
+          log.warn("Failed to install {}", member.getMember().memberId());
 
           // Trigger reactions to the install response failure.
           handleInstallResponseFailure(member, request, error);
@@ -572,7 +575,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   @SuppressWarnings("unused")
   protected void handleInstallResponseError(RaftMemberContext member, InstallRequest request, InstallResponse response) {
-    log.warn("{} Failed to install {}", server.getName(), member.getMember().memberId());
+    log.warn("Failed to install {}", member.getMember().memberId());
     member.setNextSnapshotIndex(0);
     member.setNextSnapshotOffset(0);
   }

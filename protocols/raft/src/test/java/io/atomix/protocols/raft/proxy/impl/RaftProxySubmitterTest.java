@@ -65,7 +65,7 @@ public class RaftProxySubmitterTest {
         .withResult("Hello world!".getBytes())
         .build()));
 
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
@@ -88,7 +88,7 @@ public class RaftProxySubmitterTest {
       .thenReturn(future1)
       .thenReturn(future2);
 
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
@@ -138,7 +138,7 @@ public class RaftProxySubmitterTest {
         .withResult("Hello world!".getBytes())
         .build()));
 
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
@@ -159,7 +159,7 @@ public class RaftProxySubmitterTest {
       .thenReturn(future1)
       .thenReturn(future2);
 
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
@@ -205,7 +205,7 @@ public class RaftProxySubmitterTest {
       .thenReturn(future1)
       .thenReturn(future2);
 
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
@@ -243,7 +243,7 @@ public class RaftProxySubmitterTest {
     Mockito.<CompletableFuture<QueryResponse>>when(connection.query(any(QueryRequest.class)))
       .thenReturn(future);
 
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
@@ -270,7 +270,7 @@ public class RaftProxySubmitterTest {
     Mockito.when(connection.query(any(QueryRequest.class)))
       .thenReturn(future);
 
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 

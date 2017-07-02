@@ -39,9 +39,9 @@ import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ThreadContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -53,7 +53,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RaftServerServiceContext implements ServiceContext {
   private static final long SNAPSHOT_INTERVAL_MILLIS = 1000 * 60 * 10;
 
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final StateMachineId stateMachineId;
   private final String name;
   private final ServiceType serviceType;
@@ -98,6 +98,12 @@ public class RaftServerServiceContext implements ServiceContext {
     this.sessions = new RaftServerStateMachineSessions(sessionManager);
     this.stateMachineExecutor = checkNotNull(stateMachineExecutor);
     this.snapshotExecutor = checkNotNull(snapshotExecutor);
+    this.log = ContextualLogger.builder(getClass())
+        .add("server", server.getName())
+        .add("service", serviceType)
+        .add("name", name)
+        .add("id", id)
+        .build();
     init();
   }
 
@@ -207,12 +213,12 @@ public class RaftServerServiceContext implements ServiceContext {
         // Remove the session from the sessions list.
         sessions.remove(session);
 
-        log.debug("{}:{}:{} Detected expired session {}", serverName(), serviceName(), index, session);
+        log.debug("Detected expired session {}", session);
 
         // Expire the session.
         session.expire();
 
-        log.info("{}:{}:{} Closing session {}", serverName(), serviceName(), index, session.sessionId());
+        log.info("Closing session {}", session.sessionId());
 
         // Iterate through and invoke session listeners.
         for (RaftSessionListener listener : sessions.getListeners()) {
@@ -227,7 +233,7 @@ public class RaftServerServiceContext implements ServiceContext {
    */
   private synchronized void maybeTakeSnapshot(long index, long timestamp) {
     if (pendingSnapshot == null && snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS) {
-      log.info("{}:{}:{} Taking snapshot {}", server.getName(), serviceName(), index, index);
+      log.info("Taking snapshot {}", index);
       pendingSnapshot = server.getSnapshotStore()
           .newTemporarySnapshot(stateMachineId, index, WallClockTimestamp.from(timestamp));
       try (SnapshotWriter writer = pendingSnapshot.openWriter()) {
@@ -266,7 +272,7 @@ public class RaftServerServiceContext implements ServiceContext {
 
       // If the lowest completed index for all sessions is greater than the snapshot index, complete the snapshot.
       if (lastCompleted >= pendingSnapshot.index()) {
-        log.debug("{}:{}:{} Completing snapshot {}", server.getName(), serviceName(), index, pendingSnapshot.index());
+        log.debug("Completing snapshot {}", pendingSnapshot.index());
         pendingSnapshot.complete();
 
         // Update the snapshot index to ensure we don't simply install the same snapshot.
@@ -284,7 +290,7 @@ public class RaftServerServiceContext implements ServiceContext {
   private void maybeInstallSnapshot(long index) {
     Snapshot snapshot = server.getSnapshotStore().getSnapshotById(stateMachineId);
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() <= index) {
-      log.info("{}:{}:{} Installing snapshot {}", server.getName(), serviceName(), index, snapshot.index());
+      log.info("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
         int sessionCount = reader.readInt();
         sessions.clear();
@@ -323,7 +329,7 @@ public class RaftServerServiceContext implements ServiceContext {
   CompletableFuture<Long> openSession(long index, long timestamp, RaftSessionContext session) {
     CompletableFuture<Long> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> {
-      log.info("{}:{}:{} Opening session {}", server.getName(), serviceName(), index, session.sessionId());
+      log.info("Opening session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
@@ -360,7 +366,7 @@ public class RaftServerServiceContext implements ServiceContext {
   CompletableFuture<Void> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> {
-      log.trace("{}:{}:{} Keep alive session {}", server.getName(), serviceName(), index, session.sessionId());
+      log.trace("Keep alive session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
@@ -411,7 +417,7 @@ public class RaftServerServiceContext implements ServiceContext {
   CompletableFuture<Void> closeSession(long index, long timestamp, RaftSessionContext session) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> {
-      log.info("{}:{}:{} Closing session {}", server.getName(), serviceName(), index, session.sessionId());
+      log.info("Closing session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
@@ -499,7 +505,7 @@ public class RaftServerServiceContext implements ServiceContext {
   private void sequenceCommand(long index, long sequence, RaftSessionContext session, CompletableFuture<OperationResult> future) {
     OperationResult result = session.getResult(sequence);
     if (result == null) {
-      log.debug("{}:{}:{} Missing command result for {}:{}", server.getName(), serviceName(), index, session.sessionId(), sequence);
+      log.debug("Missing command result at index {}", index);
     }
     future.complete(result);
   }

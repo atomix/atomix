@@ -36,7 +36,7 @@ public class RaftProxyStateTest {
    */
   public void testSessionStateDefaults() {
     String sessionName = UUID.randomUUID().toString();
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), sessionName, ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), sessionName, ServiceType.from("test"), 1000);
     assertEquals(state.getSessionId(), 0);
     assertEquals(state.getServiceName(), sessionName);
     assertEquals(state.getServiceType(), "test");
@@ -50,7 +50,7 @@ public class RaftProxyStateTest {
    * Tests updating client session state.
    */
   public void testSessionState() {
-    RaftProxyState state = new RaftProxyState(SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     assertEquals(state.getSessionId(), 1);
     assertEquals(state.getResponseIndex(), 1);
     assertEquals(state.getEventIndex(), 1);

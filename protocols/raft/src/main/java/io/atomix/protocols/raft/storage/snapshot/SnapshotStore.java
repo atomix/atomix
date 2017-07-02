@@ -15,13 +15,13 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.time.WallClockTimestamp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;

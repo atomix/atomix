@@ -124,7 +124,7 @@ public final class LeaderRole extends ActiveRole {
     writer.getLock().lock();
     try {
       Indexed<RaftLogEntry> indexed = writer.append(new InitializeEntry(term, appender.getTime()));
-      log.trace("{} Appended {}", context.getName(), indexed.index());
+      log.trace("Appended {}", indexed.index());
     } finally {
       writer.getLock().unlock();
     }
@@ -164,7 +164,7 @@ public final class LeaderRole extends ActiveRole {
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
-    log.trace("{} Starting append timer", context.getName());
+    log.trace("Starting append timer");
     appendTimer = context.getThreadContext().schedule(Duration.ZERO, context.getHeartbeatInterval(), this::appendMembers);
   }
 
@@ -212,7 +212,7 @@ public final class LeaderRole extends ActiveRole {
     writer.getLock().lock();
     try {
       entry = writer.append(new ConfigurationEntry(term, System.currentTimeMillis(), members));
-      log.trace("{} Appended {}", context.getName(), entry);
+      log.trace("Appended {}", entry);
     } finally {
       writer.getLock().unlock();
     }
@@ -428,7 +428,7 @@ public final class LeaderRole extends ActiveRole {
   @Override
   public CompletableFuture<VoteResponse> onVote(final VoteRequest request) {
     if (updateTermAndLeader(request.term(), null)) {
-      log.debug("{} Received greater term", context.getName());
+      log.debug("Received greater term");
       context.transition(RaftServer.Role.FOLLOWER);
       return super.onVote(request);
     } else {
@@ -528,7 +528,7 @@ public final class LeaderRole extends ActiveRole {
     writer.getLock().lock();
     try {
       entry = writer.append(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation()));
-      log.trace("{} Appended {}", context.getName(), entry);
+      log.trace("Appended {}", entry);
     } finally {
       writer.getLock().unlock();
     }
@@ -573,7 +573,7 @@ public final class LeaderRole extends ActiveRole {
     // Look up the client's session.
     RaftSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
     if (session == null) {
-      log.warn("{} Unknown session {}", context.getName(), request.session());
+      log.warn("Unknown session {}", request.session());
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.UNKNOWN_SESSION)
@@ -655,7 +655,7 @@ public final class LeaderRole extends ActiveRole {
     writer.getLock().lock();
     try {
       entry = writer.append(new OpenSessionEntry(term, timestamp, request.member(), request.serviceName(), request.serviceType(), request.readConsistency(), timeout));
-      log.trace("{} Appended {}", context.getName(), entry);
+      log.trace("Appended {}", entry);
     } finally {
       writer.getLock().unlock();
     }
@@ -716,7 +716,7 @@ public final class LeaderRole extends ActiveRole {
     writer.getLock().lock();
     try {
       entry = writer.append(new KeepAliveEntry(term, timestamp, request.sessionIds(), request.commandSequenceNumbers(), request.eventIndexes()));
-      log.trace("{} Appended {}", context.getName(), entry);
+      log.trace("Appended {}", entry);
     } finally {
       writer.getLock().unlock();
     }
@@ -783,7 +783,7 @@ public final class LeaderRole extends ActiveRole {
     writer.getLock().lock();
     try {
       entry = writer.append(new CloseSessionEntry(term, timestamp, request.session()));
-      log.trace("{} Appended {}", context.getName(), entry);
+      log.trace("Appended {}", entry);
     } finally {
       writer.getLock().unlock();
     }
@@ -834,7 +834,7 @@ public final class LeaderRole extends ActiveRole {
    */
   private void cancelAppendTimer() {
     if (appendTimer != null) {
-      log.trace("{} Cancelling append timer", context.getName());
+      log.trace("Cancelling append timer");
       appendTimer.cancel();
     }
   }

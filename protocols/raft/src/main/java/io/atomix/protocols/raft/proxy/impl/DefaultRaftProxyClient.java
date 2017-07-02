@@ -22,6 +22,7 @@ import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -64,16 +65,26 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
     this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
 
     // Create command/query connections.
-    String proxyName = String.format("%s:%s", state.getServiceName(), state.getSessionId());
     RaftProxyConnection leaderConnection = new RaftProxyConnection(
-        proxyName,
         protocol,
-        selectorManager.createSelector(CommunicationStrategy.LEADER), context);
+        selectorManager.createSelector(CommunicationStrategy.LEADER),
+        context,
+        ContextualLogger.builder(RaftProxyConnection.class)
+            .add("client", state.getClientId())
+            .add("service", state.getServiceType())
+            .add("name", state.getServiceName())
+            .add("session", state.getSessionId())
+            .build());
     RaftProxyConnection sessionConnection = new RaftProxyConnection(
-        proxyName,
         protocol,
         selectorManager.createSelector(communicationStrategy),
-        context);
+        context,
+        ContextualLogger.builder(RaftProxyConnection.class)
+            .add("client", state.getClientId())
+            .add("service", state.getServiceType())
+            .add("name", state.getServiceName())
+            .add("session", state.getSessionId())
+            .build());
 
     // Create proxy submitter/listener.
     RaftProxySequencer sequencer = new RaftProxySequencer(state);

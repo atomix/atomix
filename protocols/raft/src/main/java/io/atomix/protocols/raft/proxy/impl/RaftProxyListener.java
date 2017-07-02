@@ -20,6 +20,7 @@ import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
+import io.atomix.utils.ContextualLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client session message listener.
  */
 final class RaftProxyListener {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final RaftClientProtocol protocol;
   private final NodeSelector nodeSelector;
   private final RaftProxyState state;
@@ -48,6 +49,12 @@ final class RaftProxyListener {
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
     this.executor = checkNotNull(executor, "executor cannot be null");
+    this.log = ContextualLogger.builder(getClass())
+        .add("client", state.getClientId())
+        .add("service", state.getServiceType())
+        .add("name", state.getServiceName())
+        .add("session", state.getSessionId())
+        .build();
     protocol.registerPublishListener(state.getSessionId(), this::handlePublish, executor);
   }
 
@@ -76,12 +83,12 @@ final class RaftProxyListener {
    */
   @SuppressWarnings("unchecked")
   private void handlePublish(PublishRequest request) {
-    log.trace("{}:{} Received {}", state.getServiceName(), state.getSessionId(), request);
+    log.trace("Received {}", request);
 
     // If the request is for another session ID, this may be a session that was previously opened
     // for this client.
     if (request.session() != state.getSessionId().id()) {
-      log.trace("{}:{} Inconsistent session ID: {}", state.getServiceName(), state.getSessionId(), request.session());
+      log.trace("Inconsistent session ID: {}", request.session());
       return;
     }
 
@@ -90,7 +97,7 @@ final class RaftProxyListener {
 
     // If the request event index has already been processed, return.
     if (request.eventIndex() <= eventIndex) {
-      log.trace("{}:{} Duplicate event index {}", state.getServiceName(), state.getSessionId(), request.eventIndex());
+      log.trace("Duplicate event index {}", request.eventIndex());
       return;
     }
 
@@ -98,7 +105,7 @@ final class RaftProxyListener {
     // respond with an undefined error and the last index received. This will cause the cluster
     // to resend events starting at eventIndex + 1.
     if (request.previousIndex() != eventIndex) {
-      log.trace("{}:{} Inconsistent event index: {}", state.getServiceName(), state.getSessionId(), request.previousIndex());
+      log.trace("Inconsistent event index: {}", request.previousIndex());
       ResetRequest resetRequest = ResetRequest.newBuilder()
           .withSession(state.getSessionId().id())
           .withIndex(eventIndex)

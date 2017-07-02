@@ -29,6 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client state.
  */
 public final class RaftProxyState {
+  private final String clientId;
   private final SessionId sessionId;
   private final String serviceName;
   private final ServiceType serviceType;
@@ -42,13 +43,23 @@ public final class RaftProxyState {
   private volatile long lastUpdated;
   private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
 
-  RaftProxyState(SessionId sessionId, String serviceName, ServiceType serviceType, long timeout) {
+  RaftProxyState(String clientId, SessionId sessionId, String serviceName, ServiceType serviceType, long timeout) {
+    this.clientId = clientId;
     this.sessionId = sessionId;
     this.serviceName = serviceName;
     this.serviceType = serviceType;
     this.timeout = timeout;
     this.responseIndex = sessionId.id();
     this.eventIndex = sessionId.id();
+  }
+
+  /**
+   * Returns the client identifier.
+   *
+   * @return The client identifier.
+   */
+  public String getClientId() {
+    return clientId;
   }
 
   /**

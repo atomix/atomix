@@ -34,7 +34,6 @@ import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.utils.concurrent.ThreadContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
@@ -61,18 +60,17 @@ public class RaftProxyConnection {
           || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
           || response.error().type() == RaftError.Type.PROTOCOL_ERROR;
 
-  private final Logger log = LoggerFactory.getLogger(getClass());
-  private final String name;
+  private final Logger log;
   private final RaftClientProtocol protocol;
   private final NodeSelector selector;
   private final ThreadContext context;
   private MemberId member;
 
-  public RaftProxyConnection(String name, RaftClientProtocol protocol, NodeSelector selector, ThreadContext context) {
-    this.name = checkNotNull(name, "name cannot be null");
+  public RaftProxyConnection(RaftClientProtocol protocol, NodeSelector selector, ThreadContext context, Logger log) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selector = checkNotNull(selector, "selector cannot be null");
     this.context = checkNotNull(context, "context cannot be null");
+    this.log = checkNotNull(log, "log cannot be null");
   }
 
   /**
@@ -193,7 +191,7 @@ public class RaftProxyConnection {
   protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<MemberId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
     MemberId member = next();
     if (member != null) {
-      log.trace("{} Sending {} to {}", name, request, member);
+      log.trace("Sending {} to {}", request, member);
       sender.apply(member, request).whenCompleteAsync((r, e) -> {
         if (e != null || r != null) {
           handleResponse(request, sender, member, r, e, future);
@@ -213,7 +211,7 @@ public class RaftProxyConnection {
   protected <T extends RaftRequest> void retryRequest(Throwable cause, T request, BiFunction sender, MemberId node, CompletableFuture future) {
     // If the connection has not changed, reset it and connect to the next server.
     if (this.member == node) {
-      log.trace("{} Resetting connection. Reason: {}", name, cause);
+      log.trace("Resetting connection. Reason: {}", cause);
       this.member = null;
     }
 
@@ -228,7 +226,7 @@ public class RaftProxyConnection {
   protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, MemberId member, RaftResponse response, Throwable error, CompletableFuture future) {
     if (error == null) {
       if (COMPLETE_PREDICATE.test(response)) {
-        log.trace("{} Received {} from {}", name, response, member);
+        log.trace("Received {} from {}", response, member);
         future.complete(response);
       } else {
         retryRequest(response.error().createException(), request, sender, member, future);
@@ -240,7 +238,7 @@ public class RaftProxyConnection {
       if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
         retryRequest(error, request, sender, member, future);
       } else {
-        log.debug("{} {} failed! Reason: {}", name, request, error);
+        log.debug("{} failed! Reason: {}", request, error);
         future.completeExceptionally(error);
       }
     }
@@ -262,7 +260,7 @@ public class RaftProxyConnection {
     }
 
     if (!selector.hasNext()) {
-      log.debug("{} Failed to connect to the cluster", name);
+      log.debug("Failed to connect to the cluster");
       reset();
       return null;
     } else {

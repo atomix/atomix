@@ -25,6 +25,7 @@ import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyConnection;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Collection;
@@ -44,10 +45,12 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   public DefaultRaftMetadataClient(String clientId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ThreadContext context) {
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
     this.connection = new RaftProxyConnection(
-        clientId,
         protocol,
         selectorManager.createSelector(CommunicationStrategy.LEADER),
-        context);
+        context,
+        ContextualLogger.builder(RaftProxyConnection.class)
+            .addValue(clientId)
+            .build());
   }
 
   @Override

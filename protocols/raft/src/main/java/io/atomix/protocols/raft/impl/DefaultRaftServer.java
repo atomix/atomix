@@ -21,9 +21,9 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.storage.RaftStorage;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,7 +42,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see RaftStorage
  */
 public class DefaultRaftServer implements RaftServer {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   protected final RaftServerContext context;
   private volatile CompletableFuture<RaftServer> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
@@ -51,6 +51,9 @@ public class DefaultRaftServer implements RaftServer {
 
   public DefaultRaftServer(RaftServerContext context) {
     this.context = checkNotNull(context, "context cannot be null");
+    this.log = ContextualLogger.builder(getClass())
+        .add("server", context.getName())
+        .build();
   }
 
   @Override
@@ -142,9 +145,9 @@ public class DefaultRaftServer implements RaftServer {
 
     return openFuture.whenComplete((result, error) -> {
       if (error == null) {
-        log.info("{} Server started successfully!", name());
+        log.info("Server started successfully!");
       } else {
-        log.warn("{} Failed to start server!", name());
+        log.warn("Failed to start server!");
       }
     });
   }

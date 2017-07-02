@@ -27,11 +27,11 @@ import io.atomix.protocols.raft.protocol.JoinRequest;
 import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.storage.system.Configuration;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -51,6 +51,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
@@ -58,7 +59,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * Manages the persistent state of the Raft cluster from the perspective of a single server.
  */
 public final class RaftClusterContext implements RaftCluster, AutoCloseable {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final RaftServerContext context;
   private final ThreadFactory threadFactory;
   private final DefaultRaftMember member;
@@ -78,6 +79,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     Instant time = Instant.now();
     this.member = new DefaultRaftMember(localMemberId, type, RaftMember.Status.AVAILABLE, time).setCluster(this);
     this.context = checkNotNull(context, "context cannot be null");
+    this.log = ContextualLogger.builder(getClass())
+        .add("server", context.getName())
+        .build();
     this.threadFactory = namedThreads("raft-server-" + localMemberId + "-appender-%d", log);
 
     // If a configuration is stored, use the stored configuration, otherwise configure the server with the user provided configuration.
@@ -383,7 +387,8 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
       });
 
       RaftMemberContext member = iterator.next();
-      log.debug("{} Attempting to join via {}", context.getName(), member.getMember().memberId());
+
+      log.debug("Attempting to join via {}", member.getMember().memberId());
 
       JoinRequest request = JoinRequest.newBuilder()
           .withMember(new DefaultRaftMember(getMember().memberId(), getMember().getType(), getMember().getStatus(), getMember().getLastUpdated()))
@@ -394,7 +399,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
         if (error == null) {
           if (response.status() == RaftResponse.Status.OK) {
-            log.info("{} Successfully joined via {}", context.getName(), member.getMember().memberId());
+            log.info("Successfully joined via {}", member.getMember().memberId());
 
             Configuration configuration = new Configuration(response.index(), response.term(), response.timestamp(), response.members());
 
@@ -412,15 +417,15 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
             // If the response error is null, that indicates that no error occurred but the leader was
             // in a state that was incapable of handling the join request. Attempt to join the leader
             // again after an election timeout.
-            log.debug("{} Failed to join {}", context.getName(), member.getMember().memberId());
+            log.debug("Failed to join {}", member.getMember().memberId());
             resetJoinTimer();
           } else {
             // If the response error was non-null, attempt to join via the next server in the members list.
-            log.debug("{} Failed to join {}", context.getName(), member.getMember().memberId());
+            log.debug("Failed to join {}", member.getMember().memberId());
             join(iterator);
           }
         } else {
-          log.debug("{} Failed to join {}", context.getName(), member.getMember().memberId());
+          log.debug("Failed to join {}", member.getMember().memberId());
           join(iterator);
         }
       });
@@ -428,7 +433,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     // If join attempts remain, schedule another attempt after two election timeouts. This allows enough time
     // for servers to potentially timeout and elect a leader.
     else {
-      log.debug("{} Failed to join cluster, retrying...", member.memberId());
+      log.debug("Failed to join cluster, retrying...");
       resetJoinTimer();
     }
   }
@@ -448,7 +453,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
    */
   private void cancelJoinTimer() {
     if (joinTimeout != null) {
-      log.trace("{} Cancelling join timeout", context.getName());
+      log.trace("Cancelling join timeout");
       joinTimeout.cancel();
       joinTimeout = null;
     }
@@ -473,7 +478,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
       // If there are no remote members to leave, simply transition the server to INACTIVE.
       if (getActiveMemberStates().isEmpty() && configuration.index() <= context.getCommitIndex()) {
-        log.trace("{} Single member cluster. Transitioning directly to inactive.", context.getName());
+        log.trace("Single member cluster. Transitioning directly to inactive.");
         context.transition(RaftServer.Role.INACTIVE);
         leaveFuture.complete(null);
       } else {
@@ -523,7 +528,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
    */
   private void cancelLeaveTimer() {
     if (leaveTimeout != null) {
-      log.trace("{} Cancelling leave timeout", context.getName());
+      log.trace("Cancelling leave timeout");
       leaveTimeout.cancel();
       leaveTimeout = null;
     }
@@ -711,4 +716,10 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     cancelJoinTimer();
   }
 
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("server", context.getName())
+        .toString();
+  }
 }

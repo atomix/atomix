@@ -21,10 +21,10 @@ import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.proxy.DelegatingRaftProxyClient;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduler;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
@@ -37,11 +37,11 @@ import java.util.function.Predicate;
  * Retrying Copycat session.
  */
 public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
+  private final Logger log;
   private final RaftProxyClient client;
   private final Scheduler scheduler;
   private final int maxRetries;
   private final Duration delayBetweenRetries;
-  private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final Predicate<Throwable> retryableCheck = e ->
       e instanceof ConnectException
@@ -51,12 +51,18 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
           || e instanceof RaftException.UnknownClient
           || e instanceof RaftException.UnknownSession;
 
-  public RetryingRaftProxyClient(RaftProxyClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
+  public RetryingRaftProxyClient(String clientId, RaftProxyClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
     super(delegate);
     this.client = delegate;
     this.scheduler = scheduler;
     this.maxRetries = maxRetries;
     this.delayBetweenRetries = delayBetweenRetries;
+    this.log = ContextualLogger.builder(getClass())
+        .add("client", clientId)
+        .add("service", client.serviceType())
+        .add("name", client.name())
+        .add("session", client.sessionId())
+        .build();
   }
 
   @Override
@@ -73,7 +79,7 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
     client.execute(operation).whenComplete((r, e) -> {
       if (e != null) {
         if (attemptIndex < maxRetries + 1 && retryableCheck.test(Throwables.getRootCause(e))) {
-          log.debug("{}:{} Retry attempt ({} of {}). Failure due to {}", client.name(), client.sessionId(), attemptIndex, maxRetries, Throwables.getRootCause(e).getClass());
+          log.debug("Retry attempt ({} of {}). Failure due to {}", attemptIndex, maxRetries, Throwables.getRootCause(e).getClass());
           scheduler.schedule(delayBetweenRetries, () -> execute(operation, attemptIndex + 1, future));
         } else {
           future.completeExceptionally(e);

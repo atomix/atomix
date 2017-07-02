@@ -28,11 +28,11 @@ import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -54,7 +54,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client session manager.
  */
 public class RaftProxyManager {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final String clientId;
   private final MemberId memberId;
   private final RaftClientProtocol protocol;
@@ -70,11 +70,18 @@ public class RaftProxyManager {
     this.memberId = checkNotNull(memberId, "nodeId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
+    this.log = ContextualLogger.builder(getClass())
+        .addValue(clientId)
+        .build();
+
+    Logger connectionLog = ContextualLogger.builder(RaftProxyConnection.class)
+        .addValue(clientId)
+        .build();
     this.connection = new RaftProxyConnection(
-        clientId,
         protocol,
         selectorManager.createSelector(CommunicationStrategy.ANY),
-        new ThreadPoolContext(threadPoolExecutor));
+        new ThreadPoolContext(threadPoolExecutor),
+        connectionLog);
     this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
   }
 
@@ -125,7 +132,7 @@ public class RaftProxyManager {
     checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
     checkNotNull(timeout, "timeout cannot be null");
 
-    log.info("{} Opening session; name: {}, type: {}", clientId, serviceName, serviceType);
+    log.info("Opening session; name: {}, type: {}", serviceName, serviceType);
     OpenSessionRequest request = OpenSessionRequest.newBuilder()
         .withMemberId(memberId)
         .withServiceName(serviceName)
@@ -141,6 +148,7 @@ public class RaftProxyManager {
         if (response.status() == RaftResponse.Status.OK) {
           // Create and store the proxy state.
           RaftProxyState state = new RaftProxyState(
+              clientId,
               SessionId.from(response.session()),
               serviceName,
               serviceType,
@@ -182,7 +190,7 @@ public class RaftProxyManager {
       return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + sessionId));
     }
 
-    log.info("{} Closing session {}", clientId, sessionId);
+    log.info("Closing session {}", sessionId);
     CloseSessionRequest request = CloseSessionRequest.newBuilder()
         .withSession(sessionId.id())
         .build();
@@ -280,7 +288,7 @@ public class RaftProxyManager {
       }
     }
 
-    log.debug("{} Keeping {} sessions alive", clientId, sessionIds.length);
+    log.debug("Keeping {} sessions alive", sessionIds.length);
 
     KeepAliveRequest request = KeepAliveRequest.newBuilder()
         .withSessionIds(sessionIds)

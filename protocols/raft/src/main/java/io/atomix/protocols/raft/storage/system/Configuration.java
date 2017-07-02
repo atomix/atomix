@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.storage.system;
 
 import io.atomix.protocols.raft.cluster.RaftMember;
+import io.atomix.utils.TimestampPrinter;
 
 import java.util.Collection;
 
@@ -86,7 +87,7 @@ public class Configuration {
   public String toString() {
     return toStringHelper(this)
         .add("index", index)
-        .add("time", time)
+        .add("time", new TimestampPrinter(time))
         .add("members", members)
         .toString();
   }

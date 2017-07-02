@@ -39,10 +39,10 @@ import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -69,7 +69,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * is stored in the cluster state. This includes Raft-specific state like the current leader and term, the log, and the cluster configuration.
  */
 public class RaftServerContext implements AutoCloseable {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final Set<Consumer<RaftServer.Role>> stateChangeListeners = new CopyOnWriteArraySet<>();
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
   protected final String name;
@@ -101,8 +101,11 @@ public class RaftServerContext implements AutoCloseable {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
     this.registry = checkNotNull(registry, "registry cannot be null");
+    this.log = ContextualLogger.builder(getClass())
+        .add("server", name)
+        .build();
 
-    String baseThreadName = String.format("raft-server-%s-%s", localMemberId, name);
+    String baseThreadName = String.format("raft-server-%s", name);
     this.threadContext = new SingleThreadContext(namedThreads(baseThreadName, log));
     this.stateContext = new SingleThreadContext(namedThreads(baseThreadName + "-state", log));
     this.threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads(baseThreadName + "-%d", log));
@@ -292,7 +295,7 @@ public class RaftServerContext implements AutoCloseable {
         DefaultRaftMember member = cluster.getMember(leader);
         if (member != null) {
           this.leader = leader;
-          log.info("{} Found leader {}", getName(), member.memberId());
+          log.info("Found leader {}", member.memberId());
           electionListeners.forEach(l -> l.accept(member));
         }
       }
@@ -355,7 +358,7 @@ public class RaftServerContext implements AutoCloseable {
       this.lastVotedFor = null;
       meta.storeTerm(this.term);
       meta.storeVote(this.lastVotedFor);
-      log.debug("{} Set term {}", getName(), term);
+      log.debug("Set term {}", term);
     }
     return this;
   }
@@ -384,9 +387,9 @@ public class RaftServerContext implements AutoCloseable {
     meta.storeVote(this.lastVotedFor);
 
     if (candidate != null) {
-      log.debug("{} Voted for {}", getName(), member.memberId());
+      log.debug("Voted for {}", member.memberId());
     } else {
-      log.trace("{} Reset last voted for", getName());
+      log.trace("Reset last voted for");
     }
     return this;
   }
@@ -640,7 +643,7 @@ public class RaftServerContext implements AutoCloseable {
       return;
     }
 
-    log.info("{} Transitioning to {}", getName(), role);
+    log.info("Transitioning to {}", role);
 
     // Close the old state.
     try {

@@ -29,8 +29,9 @@ import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 import io.atomix.protocols.raft.proxy.impl.RecoveringRaftProxyClient;
 import io.atomix.protocols.raft.proxy.impl.RetryingRaftProxyClient;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ThreadPoolContext;
-import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -159,14 +160,14 @@ public class DefaultRaftClient implements RaftClient {
 
       // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
       if (recoveryStrategy == RecoveryStrategy.RECOVER) {
-        client = new RecoveringRaftProxyClient(name, clientBuilder, new ThreadPoolContext(threadPoolExecutor));
+        client = new RecoveringRaftProxyClient(clientId, clientBuilder, new ThreadPoolContext(threadPoolExecutor));
       } else {
         client = clientBuilder.build();
       }
 
       // If max retries is set, wrap the client in a retrying proxy client.
       if (maxRetries > 0) {
-        client = new RetryingRaftProxyClient(client, new ThreadPoolContext(threadPoolExecutor), maxRetries, retryDelay);
+        client = new RetryingRaftProxyClient(clientId, client, new ThreadPoolContext(threadPoolExecutor), maxRetries, retryDelay);
       }
 
       // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
@@ -189,7 +190,10 @@ public class DefaultRaftClient implements RaftClient {
     @Override
     public RaftClient build() {
       checkNotNull(nodeId, "nodeId cannot be null");
-      ThreadFactory threadFactory = namedThreads("raft-client-" + clientId + "-%d", LoggerFactory.getLogger(RaftClient.class));
+      Logger log = ContextualLogger.builder(DefaultRaftClient.class)
+          .add("clientId", clientId)
+          .build();
+      ThreadFactory threadFactory = namedThreads("raft-client-" + clientId + "-%d", log);
       ScheduledExecutorService executor = Executors.newScheduledThreadPool(threadPoolSize, threadFactory);
       return new DefaultRaftClient(clientId, nodeId, cluster, protocol, executor);
     }

@@ -23,10 +23,10 @@ import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.Scheduler;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Set;
@@ -40,10 +40,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft proxy that supports recovery.
  */
 public class RecoveringRaftProxyClient implements RaftProxyClient {
-  private final Logger log = LoggerFactory.getLogger(RecoveringRaftProxyClient.class);
-  private final String name;
+  private final String clientId;
   private final RaftProxyClient.Builder proxyClientBuilder;
   private final Scheduler scheduler;
+  private Logger log;
   private RaftProxyClient client;
   private volatile RaftProxy.State state = State.CONNECTED;
   private final Set<Consumer<State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
@@ -51,10 +51,13 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   private Scheduled recoverTask;
   private boolean recover = true;
 
-  public RecoveringRaftProxyClient(String name, RaftProxyClient.Builder proxyClientBuilder, Scheduler scheduler) {
-    this.name = checkNotNull(name);
+  public RecoveringRaftProxyClient(String clientId, RaftProxyClient.Builder proxyClientBuilder, Scheduler scheduler) {
+    this.clientId = checkNotNull(clientId);
     this.proxyClientBuilder = checkNotNull(proxyClientBuilder);
     this.scheduler = checkNotNull(scheduler);
+    this.log = ContextualLogger.builder(getClass())
+        .addValue(clientId)
+        .build();
     this.client = openClient().join();
   }
 
@@ -85,7 +88,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
    */
   private synchronized void onStateChange(State state) {
     if (this.state != state) {
-      log.debug("{}:{} State changed: {}", client.name(), client.sessionId(), state);
+      log.debug("State changed: {}", state);
       this.state = state;
       stateChangeListeners.forEach(l -> l.accept(state));
 
@@ -135,10 +138,16 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
    */
   private synchronized void openClient(CompletableFuture<RaftProxyClient> future) {
     if (recover) {
-      log.debug("{} Opening session", name);
+      log.debug("Opening session");
       RaftProxyClient client;
       try {
         client = proxyClientBuilder.build();
+        this.log = ContextualLogger.builder(getClass())
+            .add("client", clientId)
+            .add("service", client.serviceType())
+            .add("name", client.name())
+            .add("session", client.sessionId())
+            .build();
         client.addStateChangeListener(this::onStateChange);
         eventListeners.forEach(client::addEventListener);
         future.complete(client);
