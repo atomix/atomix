@@ -159,7 +159,7 @@ public class DefaultRaftClient implements RaftClient {
 
       // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
       if (recoveryStrategy == RecoveryStrategy.RECOVER) {
-        client = new RecoveringRaftProxyClient(clientBuilder, new ThreadPoolContext(threadPoolExecutor));
+        client = new RecoveringRaftProxyClient(name, clientBuilder, new ThreadPoolContext(threadPoolExecutor));
       } else {
         client = clientBuilder.build();
       }

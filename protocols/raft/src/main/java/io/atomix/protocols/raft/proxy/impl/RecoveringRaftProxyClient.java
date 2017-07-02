@@ -41,6 +41,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class RecoveringRaftProxyClient implements RaftProxyClient {
   private final Logger log = LoggerFactory.getLogger(RecoveringRaftProxyClient.class);
+  private final String name;
   private final RaftProxyClient.Builder proxyClientBuilder;
   private final Scheduler scheduler;
   private RaftProxyClient client;
@@ -50,7 +51,8 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   private Scheduled recoverTask;
   private boolean recover = true;
 
-  public RecoveringRaftProxyClient(RaftProxyClient.Builder proxyClientBuilder, Scheduler scheduler) {
+  public RecoveringRaftProxyClient(String name, RaftProxyClient.Builder proxyClientBuilder, Scheduler scheduler) {
+    this.name = checkNotNull(name);
     this.proxyClientBuilder = checkNotNull(proxyClientBuilder);
     this.scheduler = checkNotNull(scheduler);
     this.client = openClient().join();
@@ -129,7 +131,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
    */
   private synchronized void openClient(CompletableFuture<RaftProxyClient> future) {
     if (recover) {
-      log.debug("{}:{} Opening session", client.name(), client.sessionId());
+      log.debug("{} Opening session", name);
       RaftProxyClient client;
       try {
         client = proxyClientBuilder.build();
