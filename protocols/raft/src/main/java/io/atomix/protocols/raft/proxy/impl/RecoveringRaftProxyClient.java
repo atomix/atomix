@@ -45,7 +45,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   private final RaftProxyClient.Builder proxyClientBuilder;
   private final Scheduler scheduler;
   private RaftProxyClient client;
-  private volatile RaftProxy.State state = State.CLOSED;
+  private volatile RaftProxy.State state = State.CONNECTED;
   private final Set<Consumer<State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Set<Consumer<RaftEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
   private Scheduled recoverTask;
