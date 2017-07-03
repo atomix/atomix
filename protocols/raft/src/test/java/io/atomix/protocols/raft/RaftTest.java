@@ -1224,7 +1224,7 @@ public class RaftTest extends ConcurrentTestCase {
             .withSerializer(storageSerializer)
             .withMaxSegmentSize(1024 * 1024)
             .build())
-        .addStateMachine("test", TestStateMachine::new);
+        .addService("test", TestStateMachine::new);
 
     RaftServer server = builder.build();
     servers.add(server);

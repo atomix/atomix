@@ -471,7 +471,7 @@ public class RaftPerformanceTest implements Runnable {
             .withSerializer(storageSerializer)
             .withMaxSegmentSize(1024 * 1024)
             .build())
-        .addStateMachine("test", PerformanceStateMachine::new);
+        .addService("test", PerformanceStateMachine::new);
 
     RaftServer server = builder.build();
     servers.add(server);

@@ -27,7 +27,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * State machine registry.
  */
-public class RaftStateMachineRegistry {
+public class RaftServiceRegistry {
   private final Map<String, Supplier<RaftService>> stateMachines = new ConcurrentHashMap<>();
 
   /**
@@ -46,7 +46,7 @@ public class RaftStateMachineRegistry {
    * @param factory The state machine factory.
    * @return The state machine registry.
    */
-  public RaftStateMachineRegistry register(String type, Supplier<RaftService> factory) {
+  public RaftServiceRegistry register(String type, Supplier<RaftService> factory) {
     stateMachines.put(checkNotNull(type, "type cannot be null"), checkNotNull(factory, "factory cannot be null"));
     return this;
   }
@@ -57,7 +57,7 @@ public class RaftStateMachineRegistry {
    * @param type The state machine type to unregister.
    * @return The state machine registry.
    */
-  public RaftStateMachineRegistry unregister(String type) {
+  public RaftServiceRegistry unregister(String type) {
     stateMachines.remove(type);
     return this;
   }

@@ -66,7 +66,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * The internal state machine handles application of commands to the user provided {@link RaftService}
  * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
  */
-public class RaftServerStateMachineManager implements AutoCloseable {
+public class RaftServiceManager implements AutoCloseable {
   private static final long COMPACT_INTERVAL_MILLIS = 1000 * 10;
 
   private final Logger logger;
@@ -79,7 +79,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   private final Map<String, DefaultServiceContext> stateMachines = new HashMap<>();
   private volatile long lastApplied;
 
-  public RaftServerStateMachineManager(RaftServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
+  public RaftServiceManager(RaftServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
     this.state = checkNotNull(state, "state cannot be null");
     this.log = state.getLog();
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
@@ -393,7 +393,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   /**
    * Applies a metadata entry to the state machine.
    */
-  private CompletableFuture<RaftMetadataResult> applyMetadata(Indexed<MetadataEntry> entry) {
+  private CompletableFuture<MetadataResult> applyMetadata(Indexed<MetadataEntry> entry) {
     // If the session ID is non-zero, read the metadata for the associated state machine.
     if (entry.entry().session() > 0) {
       RaftSessionContext session = sessionManager.getSession(entry.entry().session());
@@ -409,13 +409,13 @@ public class RaftServerStateMachineManager implements AutoCloseable {
           sessions.add(new RaftSessionMetadata(s.sessionId().id(), s.serviceName(), s.serviceType().id()));
         }
       }
-      return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
+      return CompletableFuture.completedFuture(new MetadataResult(sessions));
     } else {
       Set<RaftSessionMetadata> sessions = new HashSet<>();
       for (RaftSessionContext session : sessionManager.getSessions()) {
         sessions.add(new RaftSessionMetadata(session.sessionId().id(), session.serviceName(), session.serviceType().id()));
       }
-      return CompletableFuture.completedFuture(new RaftMetadataResult(sessions));
+      return CompletableFuture.completedFuture(new MetadataResult(sessions));
     }
   }
 

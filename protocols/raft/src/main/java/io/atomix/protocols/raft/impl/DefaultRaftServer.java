@@ -244,7 +244,7 @@ public class DefaultRaftServer implements RaftServer {
 
     @Override
     public RaftServer build() {
-      if (stateMachineRegistry.size() == 0) {
+      if (serviceRegistry.size() == 0) {
         throw new IllegalStateException("No state machines registered");
       }
 
@@ -258,7 +258,7 @@ public class DefaultRaftServer implements RaftServer {
         storage = RaftStorage.newBuilder().build();
       }
 
-      RaftServerContext context = new RaftServerContext(name, type, localMemberId, protocol, storage, stateMachineRegistry, threadPoolSize);
+      RaftServerContext context = new RaftServerContext(name, type, localMemberId, protocol, storage, serviceRegistry, threadPoolSize);
       context.setElectionTimeout(electionTimeout)
           .setHeartbeatInterval(heartbeatInterval)
           .setSessionTimeout(sessionTimeout);

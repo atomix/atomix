@@ -24,10 +24,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Metadata result.
  */
-public final class RaftMetadataResult {
+public final class MetadataResult {
   final Set<RaftSessionMetadata> sessions;
 
-  RaftMetadataResult(Set<RaftSessionMetadata> sessions) {
+  MetadataResult(Set<RaftSessionMetadata> sessions) {
     this.sessions = sessions;
   }
 

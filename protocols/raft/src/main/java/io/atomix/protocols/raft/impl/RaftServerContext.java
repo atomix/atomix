@@ -75,7 +75,7 @@ public class RaftServerContext implements AutoCloseable {
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
   protected final String name;
   protected final ThreadContext threadContext;
-  protected final RaftStateMachineRegistry registry;
+  protected final RaftServiceRegistry registry;
   protected final RaftClusterContext cluster;
   protected final RaftServerProtocol protocol;
   protected final RaftStorage storage;
@@ -84,7 +84,7 @@ public class RaftServerContext implements AutoCloseable {
   private RaftLogWriter logWriter;
   private RaftLogReader logReader;
   private SnapshotStore snapshotStore;
-  private RaftServerStateMachineManager stateMachine;
+  private RaftServiceManager stateMachine;
   protected final ScheduledExecutorService threadPool;
   protected final ThreadContext stateContext;
   protected RaftRole role = new InactiveRole(this);
@@ -97,7 +97,7 @@ public class RaftServerContext implements AutoCloseable {
   private long commitIndex;
 
   @SuppressWarnings("unchecked")
-  public RaftServerContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftStateMachineRegistry registry, int threadPoolSize) {
+  public RaftServerContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftServiceRegistry registry, int threadPoolSize) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
@@ -438,7 +438,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The server state machine.
    */
-  public RaftServerStateMachineManager getStateMachine() {
+  public RaftServiceManager getStateMachine() {
     return stateMachine;
   }
 
@@ -447,7 +447,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The server state machine registry.
    */
-  public RaftStateMachineRegistry getStateMachineRegistry() {
+  public RaftServiceRegistry getStateMachineRegistry() {
     return registry;
   }
 
@@ -532,7 +532,7 @@ public class RaftServerContext implements AutoCloseable {
     snapshotStore = storage.openSnapshotStore();
 
     // Create a new internal server state machine.
-    this.stateMachine = new RaftServerStateMachineManager(this, threadPool, stateContext);
+    this.stateMachine = new RaftServiceManager(this, threadPool, stateContext);
     return this;
   }
 

@@ -19,7 +19,7 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.impl.DefaultRaftServer;
-import io.atomix.protocols.raft.impl.RaftStateMachineRegistry;
+import io.atomix.protocols.raft.impl.RaftServiceRegistry;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.storage.RaftStorage;
@@ -505,7 +505,7 @@ public interface RaftServer {
     protected Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    protected final RaftStateMachineRegistry stateMachineRegistry = new RaftStateMachineRegistry();
+    protected final RaftServiceRegistry serviceRegistry = new RaftServiceRegistry();
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
     protected Builder(MemberId localMemberId) {
@@ -560,15 +560,15 @@ public interface RaftServer {
     }
 
     /**
-     * Sets the Raft state machine factory.
+     * Adds a Raft service factory.
      *
-     * @param type    The state machine type name.
-     * @param factory The Raft state machine factory.
+     * @param type    The service type name.
+     * @param factory The Raft service factory.
      * @return The server builder.
      * @throws NullPointerException if the {@code factory} is {@code null}
      */
-    public Builder addStateMachine(String type, Supplier<RaftService> factory) {
-      stateMachineRegistry.register(type, factory);
+    public Builder addService(String type, Supplier<RaftService> factory) {
+      serviceRegistry.register(type, factory);
       return this;
     }
 

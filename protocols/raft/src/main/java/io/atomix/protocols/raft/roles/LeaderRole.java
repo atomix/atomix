@@ -22,7 +22,7 @@ import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
 import io.atomix.protocols.raft.impl.OperationResult;
-import io.atomix.protocols.raft.impl.RaftMetadataResult;
+import io.atomix.protocols.raft.impl.MetadataResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -471,7 +471,7 @@ public final class LeaderRole extends ActiveRole {
     Indexed<MetadataEntry> entry = new Indexed<>(
         context.getStateMachine().getLastApplied(),
         new MetadataEntry(context.getTerm(), System.currentTimeMillis(), request.session()), 0);
-    context.getStateMachine().<RaftMetadataResult>apply(entry).whenComplete((result, error) -> {
+    context.getStateMachine().<MetadataResult>apply(entry).whenComplete((result, error) -> {
       context.checkThread();
       if (isOpen()) {
         if (error == null) {
