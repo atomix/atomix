@@ -52,7 +52,7 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
           || e instanceof RaftException.UnknownClient
           || e instanceof RaftException.UnknownSession;
 
-  public RetryingRaftProxyClient(String clientId, RaftProxyClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
+  public RetryingRaftProxyClient(RaftProxyClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
     super(delegate);
     this.client = delegate;
     this.scheduler = scheduler;

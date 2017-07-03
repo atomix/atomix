@@ -168,7 +168,7 @@ public class DefaultRaftClient implements RaftClient {
 
       // If max retries is set, wrap the client in a retrying proxy client.
       if (maxRetries > 0) {
-        client = new RetryingRaftProxyClient(clientId, client, new ThreadPoolContext(threadPoolExecutor), maxRetries, retryDelay);
+        client = new RetryingRaftProxyClient(client, new ThreadPoolContext(threadPoolExecutor), maxRetries, retryDelay);
       }
 
       // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
