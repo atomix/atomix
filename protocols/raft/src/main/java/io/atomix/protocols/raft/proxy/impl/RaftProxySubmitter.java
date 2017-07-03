@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
+import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
@@ -344,12 +344,16 @@ final class RaftProxySubmitter {
         else if (response.error().type() == RaftError.Type.PROTOCOL_ERROR) {
           completeWithNoOp(response.error().createException());
         }
-        // The following exceptions need to be handled at a higher level by the client or the user.
-        else if (response.error().type() == RaftError.Type.APPLICATION_ERROR
-            || response.error().type() == RaftError.Type.UNKNOWN_CLIENT
+        // If an APPLICATION_ERROR occurred, complete the request exceptionally with the error message.
+        else if (response.error().type() == RaftError.Type.APPLICATION_ERROR) {
+          complete(response.error().createException());
+        }
+        // If the client is unknown by the cluster, close the session and complete the operation exceptionally.
+        else if (response.error().type() == RaftError.Type.UNKNOWN_CLIENT
             || response.error().type() == RaftError.Type.UNKNOWN_SESSION
             || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
+          state.setState(RaftProxyClient.State.CLOSED);
           complete(response.error().createException());
         }
         // For all other errors, use fibonacci backoff to resubmit the command.
