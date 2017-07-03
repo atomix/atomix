@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
-import io.atomix.protocols.raft.RaftCommit;
+import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperationExecutor;
 import io.atomix.protocols.raft.service.AbstractRaftService;

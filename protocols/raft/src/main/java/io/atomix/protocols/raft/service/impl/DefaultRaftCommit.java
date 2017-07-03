@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.impl;
+package io.atomix.protocols.raft.service.impl;
 
 import io.atomix.protocols.raft.OperationId;
-import io.atomix.protocols.raft.RaftCommit;
+import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClockTimestamp;

@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
+package io.atomix.protocols.raft.service;
 
+import io.atomix.protocols.raft.OperationId;
+import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.RaftOperationExecutor;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClockTimestamp;
@@ -30,10 +34,10 @@ public interface RaftCommit<T> {
    * Returns the commit index.
    * <p>
    * This is the index at which the committed {@link RaftOperation} was written in the Raft log.
-   * Raft guarantees that this index will be unique for {@link RaftCommand} commits and will be the same for all
+   * Raft guarantees that this index will be unique for {@link RaftOperation} commits and will be the same for all
    * instances of the given operation on all servers in the cluster.
    * <p>
-   * For {@link RaftQuery} operations, the returned {@code index} may actually be representative of the last committed
+   * For {@link RaftOperation} operations, the returned {@code index} may actually be representative of the last committed
    * index in the Raft log since queries are not actually written to disk. Thus, query commits cannot be assumed
    * to have unique indexes.
    *
