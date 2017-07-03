@@ -18,6 +18,7 @@ package io.atomix.protocols.raft;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
+import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
 
 /**
  * Base class for user-provided Raft state machines.

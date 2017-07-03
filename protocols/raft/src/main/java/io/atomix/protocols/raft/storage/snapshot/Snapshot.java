@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Manages reading and writing a single snapshot file.
  * <p>
- * User-provided state machines which implement the {@link io.atomix.protocols.raft.Snapshottable} interface
+ * User-provided state machines which implement the {@link Snapshottable} interface
  * transparently write snapshots to and read snapshots from files on disk. Each time a snapshot is taken of
  * the state machine state, the snapshot will be written to a single file represented by this interface.
  * Snapshots are backed by a {@link io.atomix.storage.buffer.Buffer} dictated by the parent

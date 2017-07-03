@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.protocols.raft;
+package io.atomix.protocols.raft.storage.snapshot;
 
+import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
