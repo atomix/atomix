@@ -217,12 +217,12 @@ final class LeaderAppender extends AbstractAppender {
           sendInstallRequest(member, buildInstallRequest(member));
         }
       } else if (member.canAppend()) {
-        sendAppendRequest(member, buildAppendRequest(member, server.getLogWriter().getLastIndex()));
+        sendAppendRequest(member, buildAppendRequest(member, -1));
       }
     }
     // If no AppendRequest is already being sent, send an AppendRequest.
     else if (member.canAppend()) {
-      sendAppendRequest(member, buildAppendRequest(member, server.getLogWriter().getLastIndex()));
+      sendAppendRequest(member, buildAppendRequest(member, -1));
     }
   }
 
@@ -231,7 +231,7 @@ final class LeaderAppender extends AbstractAppender {
     // If the member's nextIndex is an entry in the local log then more entries can be sent.
     return member.getMember().getType() != RaftMember.Type.RESERVE
         && member.getMember().getType() != RaftMember.Type.PASSIVE
-        && member.getNextIndex() <= server.getLogWriter().getLastIndex();
+        && member.getLogReader().hasNext();
   }
 
   /**

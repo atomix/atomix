@@ -166,7 +166,7 @@ abstract class AbstractAppender implements AutoCloseable {
       Indexed<RaftLogEntry> entry = reader.next();
       entries.add(entry.entry());
       size += entry.size();
-      if (nextIndex == lastIndex || size >= MAX_BATCH_SIZE) {
+      if (entry.index() == lastIndex || size >= MAX_BATCH_SIZE) {
         break;
       }
     }

@@ -42,7 +42,9 @@ final class FollowerAppender extends AbstractAppender {
 
   @Override
   protected boolean hasMoreEntries(RaftMemberContext member) {
-    return member.getMember().getType() == RaftMember.Type.PASSIVE && member.getNextIndex() <= server.getCommitIndex();
+    return member.getMember().getType() == RaftMember.Type.PASSIVE
+        && member.getNextIndex() <= server.getCommitIndex()
+        && member.getLogReader().hasNext();
   }
 
   @Override
