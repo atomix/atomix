@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.service;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.operation.RaftOperationExecutor;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClockTimestamp;
@@ -72,7 +71,7 @@ public interface RaftCommit<T> {
    * commit times are guaranteed to progress monotonically, never going back in time.
    * <p>
    * Users should <em>never</em> use {@code System} time to control behavior in a state machine and should instead rely
-   * upon {@link RaftCommit} times or use the {@link RaftOperationExecutor} for time-based controls.
+   * upon {@link RaftCommit} times or use the {@link RaftServiceExecutor} for time-based controls.
    *
    * @return The commit time.
    */

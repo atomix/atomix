@@ -15,8 +15,7 @@
  */
 package io.atomix.protocols.raft.service;
 
-import io.atomix.protocols.raft.operation.RaftOperationExecutor;
-import io.atomix.protocols.raft.operation.impl.DefaultRaftOperationExecutor;
+import io.atomix.protocols.raft.service.impl.DefaultRaftServiceExecutor;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.time.LogicalClock;
@@ -28,12 +27,12 @@ import io.atomix.utils.concurrent.Scheduler;
  */
 public abstract class AbstractRaftService implements RaftService {
   private ServiceContext context;
-  private RaftOperationExecutor executor;
+  private RaftServiceExecutor executor;
 
   @Override
   public void init(ServiceContext context) {
     this.context = context;
-    this.executor = new DefaultRaftOperationExecutor(context);
+    this.executor = new DefaultRaftServiceExecutor(context);
     configure(executor);
   }
 
@@ -47,11 +46,11 @@ public abstract class AbstractRaftService implements RaftService {
    * <p>
    * By default, this method will configure state machine operations by extracting public methods with
    * a single {@link RaftCommit} parameter via reflection. Override this method to explicitly register
-   * state machine operations via the provided {@link RaftOperationExecutor}.
+   * state machine operations via the provided {@link RaftServiceExecutor}.
    *
    * @param executor The state machine executor.
    */
-  protected abstract void configure(RaftOperationExecutor executor);
+  protected abstract void configure(RaftServiceExecutor executor);
 
   /**
    * Returns the service context.

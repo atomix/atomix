@@ -17,7 +17,6 @@ package io.atomix.protocols.raft.service;
 
 import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.operation.RaftOperationExecutor;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
@@ -41,7 +40,7 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
  * <p>
  * <h3>State machine operations</h3>
  * State machine operations are implemented as methods on the state machine. Operations can be automatically detected
- * by the state machine during setup or can be explicitly registered by overriding the {@link #configure(RaftOperationExecutor)}
+ * by the state machine during setup or can be explicitly registered by overriding the {@link #configure(RaftServiceExecutor)}
  * method. Each operation method must take a single {@link RaftCommit} argument for a specific operation type.
  * <pre>
  *   {@code
@@ -85,11 +84,11 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
  * that will be sent back to the client.
  * <p>
  * <h3>Deterministic scheduling</h3>
- * The {@link RaftOperationExecutor} is responsible for executing state machine operations sequentially and provides an
+ * The {@link RaftServiceExecutor} is responsible for executing state machine operations sequentially and provides an
  * interface similar to that of {@link java.util.concurrent.ScheduledExecutorService} to allow state machines to schedule
  * time-based callbacks. Because of the determinism requirement, scheduled callbacks are guaranteed to be executed
  * deterministically as well. The executor can be accessed via the {@link #executor} field.
- * See the {@link RaftOperationExecutor} documentation for more information.
+ * See the {@link RaftServiceExecutor} documentation for more information.
  * <pre>
  *   {@code
  *   public void putWithTtl(Commit<PutWithTtl> commit) {
@@ -154,7 +153,7 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
  *
  * @see RaftCommit
  * @see ServiceContext
- * @see RaftOperationExecutor
+ * @see RaftServiceExecutor
  */
 public interface RaftService extends Snapshottable, RaftSessionListener {
 

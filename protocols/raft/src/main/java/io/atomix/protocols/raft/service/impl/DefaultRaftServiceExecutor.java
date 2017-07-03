@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.operation.impl;
+package io.atomix.protocols.raft.service.impl;
 
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
-import io.atomix.protocols.raft.operation.RaftOperationExecutor;
+import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.utils.concurrent.Scheduled;
@@ -43,7 +43,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Default operation executor.
  */
-public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
+public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
   private final Logger log;
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
@@ -52,7 +52,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
   private OperationType operationType;
   private long timestamp;
 
-  public DefaultRaftOperationExecutor(ServiceContext context) {
+  public DefaultRaftServiceExecutor(ServiceContext context) {
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(AbstractRaftService.class)
         .addValue(context.serviceId())
         .add("type", context.serviceType())

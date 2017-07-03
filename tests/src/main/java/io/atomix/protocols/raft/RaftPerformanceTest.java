@@ -25,7 +25,7 @@ import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.operation.RaftOperationExecutor;
+import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -528,7 +528,7 @@ public class RaftPerformanceTest implements Runnable {
     private Map<String, String> map = new HashMap<>();
 
     @Override
-    protected void configure(RaftOperationExecutor executor) {
+    protected void configure(RaftServiceExecutor executor) {
       executor.register(PUT, clientSerializer::decode, this::put, clientSerializer::encode);
       executor.register(GET, clientSerializer::decode, this::get, clientSerializer::encode);
       executor.register(REMOVE, clientSerializer::decode, this::remove, clientSerializer::encode);

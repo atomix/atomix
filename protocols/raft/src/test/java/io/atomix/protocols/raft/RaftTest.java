@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.operation.RaftOperationExecutor;
+import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.AbstractRaftService;
@@ -1326,7 +1326,7 @@ public class RaftTest extends ConcurrentTestCase {
     private RaftCommit<Void> close;
 
     @Override
-    protected void configure(RaftOperationExecutor executor) {
+    protected void configure(RaftServiceExecutor executor) {
       executor.register(WRITE, this::write, clientSerializer::encode);
       executor.register(READ, this::read, clientSerializer::encode);
       executor.register(EVENT, clientSerializer::decode, this::event, clientSerializer::encode);
