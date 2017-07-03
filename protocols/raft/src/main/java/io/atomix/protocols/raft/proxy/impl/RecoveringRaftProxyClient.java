@@ -17,12 +17,12 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.protocols.raft.RaftClient;
-import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.RaftException;
+import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.Scheduler;
@@ -42,7 +42,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft proxy that supports recovery.
  */
 public class RecoveringRaftProxyClient implements RaftProxyClient {
-  private final String clientId;
   private final RaftProxyClient.Builder proxyClientBuilder;
   private final Scheduler scheduler;
   private Logger log;
@@ -54,7 +53,6 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   private boolean recover = true;
 
   public RecoveringRaftProxyClient(String clientId, RaftProxyClient.Builder proxyClientBuilder, Scheduler scheduler) {
-    this.clientId = checkNotNull(clientId);
     this.proxyClientBuilder = checkNotNull(proxyClientBuilder);
     this.scheduler = checkNotNull(scheduler);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftClient.class)
