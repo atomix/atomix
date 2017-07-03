@@ -22,8 +22,9 @@ import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
@@ -41,10 +42,10 @@ public abstract class AbstractRole implements RaftRole {
 
   protected AbstractRole(RaftServerContext context) {
     this.context = context;
-    this.log = ContextualLogger.builder(getClass())
-        .add("server", context.getName())
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
+        .addValue(context.getName())
         .add("role", role())
-        .build();
+        .build());
   }
 
   /**

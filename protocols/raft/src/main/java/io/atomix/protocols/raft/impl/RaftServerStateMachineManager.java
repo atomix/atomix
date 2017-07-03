@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftException;
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -37,11 +38,12 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.storage.journal.Indexed;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -82,9 +84,9 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadPool = threadPool;
     this.threadContext = threadContext;
-    this.logger = ContextualLogger.builder(getClass())
-        .add("server", state.getName())
-        .build();
+    this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
+        .addValue(state.getName())
+        .build());
     threadContext.schedule(Duration.ofMillis(COMPACT_INTERVAL_MILLIS), this::compactLog);
   }
 

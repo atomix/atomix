@@ -20,9 +20,10 @@ import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
-import io.atomix.utils.ContextualLogger;
+import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -49,12 +50,11 @@ final class RaftProxyListener {
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
     this.executor = checkNotNull(executor, "executor cannot be null");
-    this.log = ContextualLogger.builder(getClass())
-        .add("client", state.getClientId())
-        .add("service", state.getServiceType())
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftProxy.class)
+        .addValue(state.getSessionId())
+        .add("type", state.getServiceType())
         .add("name", state.getServiceName())
-        .add("session", state.getSessionId())
-        .build();
+        .build());
     protocol.registerPublishListener(state.getSessionId(), this::handlePublish, executor);
   }
 

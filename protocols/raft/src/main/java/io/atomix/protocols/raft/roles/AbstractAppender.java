@@ -31,7 +31,8 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.storage.journal.Indexed;
-import io.atomix.utils.ContextualLogger;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -51,9 +52,9 @@ abstract class AbstractAppender implements AutoCloseable {
 
   AbstractAppender(RaftServerContext server) {
     this.server = checkNotNull(server, "context cannot be null");
-    this.log = ContextualLogger.builder(getClass())
-        .add("server", server.getName())
-        .build();
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
+        .addValue(server.getName())
+        .build());
   }
 
   /**

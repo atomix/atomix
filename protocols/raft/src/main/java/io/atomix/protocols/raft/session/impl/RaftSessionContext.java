@@ -29,7 +29,8 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionEvent;
 import io.atomix.protocols.raft.session.RaftSessionEventListener;
 import io.atomix.protocols.raft.session.SessionId;
-import io.atomix.utils.ContextualLogger;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -94,11 +95,11 @@ public class RaftSessionContext implements RaftSession {
     this.protocol = server.getProtocol();
     this.context = context;
     this.server = server;
-    this.log = ContextualLogger.builder(getClass())
-        .add("server", server.getName())
-        .add("serviceName", name)
-        .add("sessionId", sessionId)
-        .build();
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftSession.class)
+        .addValue(sessionId)
+        .add("type", context.serviceType())
+        .add("name", context.serviceName())
+        .build());
     protocol.registerResetListener(sessionId, request -> resendEvents(request.index()), context.executor());
   }
 
@@ -503,9 +504,8 @@ public class RaftSessionContext implements RaftSession {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("server", server.getName())
-        .add("serviceName", serviceName())
-        .add("sessionId", sessionId)
+        .addValue(context)
+        .add("session", sessionId)
         .toString();
   }
 

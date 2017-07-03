@@ -21,9 +21,10 @@ import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.proxy.DelegatingRaftProxyClient;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduler;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
@@ -57,12 +58,11 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
     this.scheduler = scheduler;
     this.maxRetries = maxRetries;
     this.delayBetweenRetries = delayBetweenRetries;
-    this.log = ContextualLogger.builder(getClass())
-        .add("client", clientId)
-        .add("service", client.serviceType())
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftProxy.class)
+        .addValue(client.sessionId())
+        .add("type", client.serviceType())
         .add("name", client.name())
-        .add("session", client.sessionId())
-        .build();
+        .build());
   }
 
   @Override

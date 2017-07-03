@@ -13,234 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.utils;
+package io.atomix.utils.logging;
 
-import com.google.common.base.MoreObjects;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Contextual logger.
  */
 public class ContextualLogger extends DelegatingLogger {
-
-  /**
-   * Returns a new contextual logger builder.
-   *
-   * @param name the logger name
-   * @return the logger builder
-   */
-  public static Builder builder(String name) {
-    return new Builder(LoggerFactory.getLogger(name));
-  }
-
-  /**
-   * Returns a new contextual logger builder.
-   *
-   * @param clazz the logger class
-   * @return the logger builder
-   */
-  public static Builder builder(Class clazz) {
-    return new Builder(LoggerFactory.getLogger(clazz));
-  }
-
-  /**
-   * Returns a new contextual logger builder.
-   *
-   * @param logger the logger to contextualize
-   * @return the logger builder
-   */
-  public static Builder builder(Logger logger) {
-    return new Builder(logger);
-  }
-
-  /**
-   * Contextual logger builder.
-   */
-  public static class Builder implements io.atomix.utils.Builder<ContextualLogger> {
-    private final Logger logger;
-    private final MoreObjects.ToStringHelper toStringHelper = toStringHelper("");
-
-    public Builder(Logger logger) {
-      this.logger = logger;
-    }
-
-    /**
-     * Configures the {@link MoreObjects.ToStringHelper} so {@link #toString()} will ignore properties with null
-     * value. The order of calling this method, relative to the {@code add()}/{@code addValue()}
-     * methods, is not significant.
-     */
-    @CanIgnoreReturnValue
-    public Builder omitNullValues() {
-      toStringHelper.omitNullValues();
-      return this;
-    }
-
-    /**
-     * Adds a name/value pair to the formatted output in {@code name=value} format. If {@code value}
-     * is {@code null}, the string {@code "null"} is used, unless {@link #omitNullValues()} is
-     * called, in which case this name/value pair will not be added.
-     */
-    @CanIgnoreReturnValue
-    public Builder add(String name, Object value) {
-      toStringHelper.add(name, value);
-      return this;
-    }
-
-    /**
-     * Adds a name/value pair to the formatted output in {@code name=value} format.
-     */
-    @CanIgnoreReturnValue
-    public Builder add(String name, boolean value) {
-      toStringHelper.add(name, value);
-      return this;
-    }
-
-    /**
-     * Adds a name/value pair to the formatted output in {@code name=value} format.
-     */
-    @CanIgnoreReturnValue
-    public Builder add(String name, char value) {
-      toStringHelper.add(name, value);
-      return this;
-    }
-
-    /**
-     * Adds a name/value pair to the formatted output in {@code name=value} format.
-     */
-    @CanIgnoreReturnValue
-    public Builder add(String name, double value) {
-      toStringHelper.add(name, value);
-      return this;
-    }
-
-    /**
-     * Adds a name/value pair to the formatted output in {@code name=value} format.
-     */
-    @CanIgnoreReturnValue
-    public Builder add(String name, float value) {
-      toStringHelper.add(name, value);
-      return this;
-    }
-
-    /**
-     * Adds a name/value pair to the formatted output in {@code name=value} format.
-     */
-    @CanIgnoreReturnValue
-    public Builder add(String name, int value) {
-      toStringHelper.add(name, value);
-      return this;
-    }
-
-    /**
-     * Adds a name/value pair to the formatted output in {@code name=value} format.
-     */
-    @CanIgnoreReturnValue
-    public Builder add(String name, long value) {
-      toStringHelper.add(name, value);
-      return this;
-    }
-
-    /**
-     * Adds an unnamed value to the formatted output.
-     *
-     * <p>It is strongly encouraged to use {@link #add(String, Object)} instead and give value a
-     * readable name.
-     */
-    @CanIgnoreReturnValue
-    public Builder addValue(Object value) {
-      toStringHelper.addValue(value);
-      return this;
-    }
-
-    /**
-     * Adds an unnamed value to the formatted output.
-     *
-     * <p>It is strongly encouraged to use {@link #add(String, boolean)} instead and give value a
-     * readable name.
-     */
-    @CanIgnoreReturnValue
-    public Builder addValue(boolean value) {
-      toStringHelper.addValue(value);
-      return this;
-    }
-
-    /**
-     * Adds an unnamed value to the formatted output.
-     *
-     * <p>It is strongly encouraged to use {@link #add(String, char)} instead and give value a
-     * readable name.
-     */
-    @CanIgnoreReturnValue
-    public Builder addValue(char value) {
-      toStringHelper.addValue(value);
-      return this;
-    }
-
-    /**
-     * Adds an unnamed value to the formatted output.
-     *
-     * <p>It is strongly encouraged to use {@link #add(String, double)} instead and give value a
-     * readable name.
-     */
-    @CanIgnoreReturnValue
-    public Builder addValue(double value) {
-      toStringHelper.addValue(value);
-      return this;
-    }
-
-    /**
-     * Adds an unnamed value to the formatted output.
-     *
-     * <p>It is strongly encouraged to use {@link #add(String, float)} instead and give value a
-     * readable name.
-     */
-    @CanIgnoreReturnValue
-    public Builder addValue(float value) {
-      toStringHelper.addValue(value);
-      return this;
-    }
-
-    /**
-     * Adds an unnamed value to the formatted output.
-     *
-     * <p>It is strongly encouraged to use {@link #add(String, int)} instead and give value a
-     * readable name.
-     */
-    @CanIgnoreReturnValue
-    public Builder addValue(int value) {
-      toStringHelper.addValue(value);
-      return this;
-    }
-
-    /**
-     * Adds an unnamed value to the formatted output.
-     *
-     * <p>It is strongly encouraged to use {@link #add(String, long)} instead and give value a
-     * readable name.
-     */
-    @CanIgnoreReturnValue
-    public Builder addValue(long value) {
-      toStringHelper.addValue(value);
-      return this;
-    }
-
-    @Override
-    public ContextualLogger build() {
-      return new ContextualLogger(logger, toStringHelper.toString());
-    }
-  }
-
   private static final String SEPARATOR = " - ";
-  private final String context;
+  private final LoggerContext context;
 
-  public ContextualLogger(Logger delegate, String context) {
+  public ContextualLogger(Logger delegate, LoggerContext context) {
     super(delegate);
-    this.context = context + SEPARATOR;
+    this.context = context;
   }
 
   /**
@@ -250,7 +37,7 @@ public class ContextualLogger extends DelegatingLogger {
    * @return the contextualized message
    */
   private String contextualize(String msg) {
-    return context + msg;
+    return context + SEPARATOR + msg;
   }
 
   @Override

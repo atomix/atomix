@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.ServiceType;
@@ -28,10 +29,11 @@ import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -70,18 +72,17 @@ public class RaftProxyManager {
     this.memberId = checkNotNull(memberId, "nodeId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-    this.log = ContextualLogger.builder(getClass())
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftClient.class)
         .addValue(clientId)
-        .build();
+        .build());
 
-    Logger connectionLog = ContextualLogger.builder(RaftProxyConnection.class)
-        .addValue(clientId)
-        .build();
     this.connection = new RaftProxyConnection(
         protocol,
         selectorManager.createSelector(CommunicationStrategy.ANY),
         new ThreadPoolContext(threadPoolExecutor),
-        connectionLog);
+        LoggerContext.builder(RaftClient.class)
+            .addValue(clientId)
+            .build());
     this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
   }
 

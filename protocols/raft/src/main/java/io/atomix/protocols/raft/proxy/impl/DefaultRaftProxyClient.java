@@ -20,10 +20,11 @@ import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
+import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.logging.LoggerContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -69,21 +70,19 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
         protocol,
         selectorManager.createSelector(CommunicationStrategy.LEADER),
         context,
-        ContextualLogger.builder(RaftProxyConnection.class)
-            .add("client", state.getClientId())
-            .add("service", state.getServiceType())
+        LoggerContext.builder(RaftProxy.class)
+            .addValue(state.getSessionId())
+            .add("type", state.getServiceType())
             .add("name", state.getServiceName())
-            .add("session", state.getSessionId())
             .build());
     RaftProxyConnection sessionConnection = new RaftProxyConnection(
         protocol,
         selectorManager.createSelector(communicationStrategy),
         context,
-        ContextualLogger.builder(RaftProxyConnection.class)
-            .add("client", state.getClientId())
-            .add("service", state.getServiceType())
+        LoggerContext.builder(RaftProxy.class)
+            .addValue(state.getSessionId())
+            .add("type", state.getServiceType())
             .add("name", state.getServiceName())
-            .add("session", state.getSessionId())
             .build());
 
     // Create proxy submitter/listener.

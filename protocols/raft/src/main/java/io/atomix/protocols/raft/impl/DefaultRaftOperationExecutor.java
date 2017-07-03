@@ -20,9 +20,11 @@ import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperationExecutor;
+import io.atomix.protocols.raft.RaftService;
 import io.atomix.protocols.raft.ServiceContext;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Scheduled;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -43,7 +45,6 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
   private final Logger log;
-  private final ServiceContext context;
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
   private final List<ScheduledTask> complete = new ArrayList<>();
@@ -52,12 +53,11 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
   private long timestamp;
 
   public DefaultRaftOperationExecutor(ServiceContext context) {
-    this.context = checkNotNull(context, "context cannot be null");
-    this.log = ContextualLogger.builder(getClass())
-        .add("server", context.serverName())
-        .add("service", context.serviceType())
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
+        .addValue(context.stateMachineId())
+        .add("type", context.serviceType())
         .add("name", context.serviceName())
-        .build();
+        .build());
   }
 
   /**
@@ -120,7 +120,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
 
   @Override
   public byte[] apply(RaftCommit<byte[]> commit) {
-    log.trace("Applying commit {}", commit);
+    log.trace("Executing {}", commit);
 
     prepareOperation(commit);
 

@@ -18,7 +18,9 @@ package io.atomix.protocols.raft.proxy.impl;
 import com.google.common.annotations.VisibleForTesting;
 import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
-import io.atomix.utils.ContextualLogger;
+import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.ArrayDeque;
@@ -67,12 +69,11 @@ final class RaftProxySequencer {
 
   RaftProxySequencer(RaftProxyState state) {
     this.state = state;
-    this.log = ContextualLogger.builder(getClass())
-        .add("client", state.getClientId())
-        .add("service", state.getServiceType())
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftProxy.class)
+        .addValue(state.getSessionId())
+        .add("type", state.getServiceType())
         .add("name", state.getServiceName())
-        .add("session", state.getSessionId())
-        .build();
+        .build());
   }
 
   /**

@@ -29,8 +29,9 @@ import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 import io.atomix.protocols.raft.proxy.impl.RecoveringRaftProxyClient;
 import io.atomix.protocols.raft.proxy.impl.RetryingRaftProxyClient;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ThreadPoolContext;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -190,9 +191,9 @@ public class DefaultRaftClient implements RaftClient {
     @Override
     public RaftClient build() {
       checkNotNull(nodeId, "nodeId cannot be null");
-      Logger log = ContextualLogger.builder(DefaultRaftClient.class)
-          .add("clientId", clientId)
-          .build();
+      Logger log = ContextualLoggerFactory.getLogger(DefaultRaftClient.class, LoggerContext.builder(RaftClient.class)
+          .addValue(clientId)
+          .build());
       ThreadFactory threadFactory = namedThreads("raft-client-" + clientId + "-%d", log);
       ScheduledExecutorService executor = Executors.newScheduledThreadPool(threadPoolSize, threadFactory);
       return new DefaultRaftClient(clientId, nodeId, cluster, protocol, executor);

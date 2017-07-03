@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.MetadataRequest;
@@ -25,8 +26,8 @@ import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyConnection;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.logging.LoggerContext;
 
 import java.util.Collection;
 import java.util.Set;
@@ -48,7 +49,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
         protocol,
         selectorManager.createSelector(CommunicationStrategy.LEADER),
         context,
-        ContextualLogger.builder(RaftProxyConnection.class)
+        LoggerContext.builder(RaftClient.class)
             .addValue(clientId)
             .build());
   }

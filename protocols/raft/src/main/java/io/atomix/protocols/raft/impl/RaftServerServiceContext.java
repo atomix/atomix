@@ -21,6 +21,7 @@ import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.RaftService;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.ServiceContext;
@@ -39,12 +40,14 @@ import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -55,7 +58,7 @@ public class RaftServerServiceContext implements ServiceContext {
 
   private final Logger log;
   private final StateMachineId stateMachineId;
-  private final String name;
+  private final String serviceName;
   private final ServiceType serviceType;
   private final RaftStateMachine stateMachine;
   private final RaftServerContext server;
@@ -82,28 +85,27 @@ public class RaftServerServiceContext implements ServiceContext {
   };
 
   RaftServerServiceContext(
-      StateMachineId id,
-      String name,
+      StateMachineId stateMachineId,
+      String serviceName,
       ServiceType serviceType,
       RaftStateMachine stateMachine,
       RaftServerContext server,
       RaftSessionManager sessionManager,
       ThreadContext stateMachineExecutor,
       ThreadContext snapshotExecutor) {
-    this.stateMachineId = checkNotNull(id);
-    this.name = checkNotNull(name);
+    this.stateMachineId = checkNotNull(stateMachineId);
+    this.serviceName = checkNotNull(serviceName);
     this.serviceType = checkNotNull(serviceType);
     this.stateMachine = checkNotNull(stateMachine);
     this.server = checkNotNull(server);
     this.sessions = new RaftServerStateMachineSessions(sessionManager);
     this.stateMachineExecutor = checkNotNull(stateMachineExecutor);
     this.snapshotExecutor = checkNotNull(snapshotExecutor);
-    this.log = ContextualLogger.builder(getClass())
-        .add("server", server.getName())
-        .add("service", serviceType)
-        .add("name", name)
-        .add("id", id)
-        .build();
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
+        .addValue(stateMachineId)
+        .add("type", serviceType)
+        .add("name", serviceName)
+        .build());
     init();
   }
 
@@ -127,7 +129,7 @@ public class RaftServerServiceContext implements ServiceContext {
 
   @Override
   public String serviceName() {
-    return name;
+    return serviceName;
   }
 
   @Override
@@ -303,7 +305,7 @@ public class RaftServerServiceContext implements ServiceContext {
           RaftSessionContext session = new RaftSessionContext(
               sessionId,
               node,
-              name,
+              serviceName,
               serviceType,
               readConsistency,
               sessionTimeout,
@@ -366,8 +368,6 @@ public class RaftServerServiceContext implements ServiceContext {
   CompletableFuture<Void> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> {
-      log.trace("Keep alive session {}", session.sessionId());
-
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
 
@@ -638,5 +638,15 @@ public class RaftServerServiceContext implements ServiceContext {
     for (RaftSessionContext session : sessions.getSessions()) {
       session.commit(index);
     }
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("server", server.getName())
+        .add("type", serviceType)
+        .add("name", serviceName)
+        .add("id", stateMachineId)
+        .toString();
   }
 }

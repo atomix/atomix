@@ -21,8 +21,9 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.storage.RaftStorage;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
@@ -51,9 +52,9 @@ public class DefaultRaftServer implements RaftServer {
 
   public DefaultRaftServer(RaftServerContext context) {
     this.context = checkNotNull(context, "context cannot be null");
-    this.log = ContextualLogger.builder(getClass())
-        .add("server", context.getName())
-        .build();
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
+        .addValue(context.getName())
+        .build());
   }
 
   @Override

@@ -33,6 +33,8 @@ import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
@@ -66,11 +68,11 @@ public class RaftProxyConnection {
   private final ThreadContext context;
   private MemberId member;
 
-  public RaftProxyConnection(RaftClientProtocol protocol, NodeSelector selector, ThreadContext context, Logger log) {
+  public RaftProxyConnection(RaftClientProtocol protocol, NodeSelector selector, ThreadContext context, LoggerContext loggerContext) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selector = checkNotNull(selector, "selector cannot be null");
     this.context = checkNotNull(context, "context cannot be null");
-    this.log = checkNotNull(log, "log cannot be null");
+    this.log = ContextualLoggerFactory.getLogger(getClass(), loggerContext);
   }
 
   /**

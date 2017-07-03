@@ -27,10 +27,11 @@ import io.atomix.protocols.raft.protocol.JoinRequest;
 import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.storage.system.Configuration;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.SingleThreadContext;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.time.Instant;
@@ -79,9 +80,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     Instant time = Instant.now();
     this.member = new DefaultRaftMember(localMemberId, type, RaftMember.Status.AVAILABLE, time).setCluster(this);
     this.context = checkNotNull(context, "context cannot be null");
-    this.log = ContextualLogger.builder(getClass())
-        .add("server", context.getName())
-        .build();
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
+        .addValue(context.getName())
+        .build());
     this.threadFactory = namedThreads("raft-server-" + localMemberId + "-appender-%d", log);
 
     // If a configuration is stored, use the stored configuration, otherwise configure the server with the user provided configuration.

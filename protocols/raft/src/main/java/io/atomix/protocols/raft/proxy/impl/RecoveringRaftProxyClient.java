@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
+import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
@@ -23,9 +24,10 @@ import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.session.SessionId;
-import io.atomix.utils.ContextualLogger;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.Scheduler;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -55,9 +57,9 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
     this.clientId = checkNotNull(clientId);
     this.proxyClientBuilder = checkNotNull(proxyClientBuilder);
     this.scheduler = checkNotNull(scheduler);
-    this.log = ContextualLogger.builder(getClass())
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftClient.class)
         .addValue(clientId)
-        .build();
+        .build());
     this.client = openClient().join();
   }
 
@@ -142,12 +144,11 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
       RaftProxyClient client;
       try {
         client = proxyClientBuilder.build();
-        this.log = ContextualLogger.builder(getClass())
-            .add("client", clientId)
-            .add("service", client.serviceType())
+        this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftProxy.class)
+            .addValue(client.sessionId())
+            .add("type", client.serviceType())
             .add("name", client.name())
-            .add("session", client.sessionId())
-            .build();
+            .build());
         client.addStateChangeListener(this::onStateChange);
         eventListeners.forEach(client::addEventListener);
         future.complete(client);
