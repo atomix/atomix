@@ -21,11 +21,15 @@ import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;
 import io.atomix.utils.concurrent.Scheduler;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
+import org.slf4j.Logger;
 
 /**
  * Raft service.
  */
 public abstract class AbstractRaftService implements RaftService {
+  private Logger log;
   private ServiceContext context;
   private RaftServiceExecutor executor;
 
@@ -33,6 +37,11 @@ public abstract class AbstractRaftService implements RaftService {
   public void init(ServiceContext context) {
     this.context = context;
     this.executor = new DefaultRaftServiceExecutor(context);
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
+        .addValue(context.serviceId())
+        .add("type", context.serviceType())
+        .add("name", context.serviceName())
+        .build());
     configure(executor);
   }
 
@@ -59,6 +68,15 @@ public abstract class AbstractRaftService implements RaftService {
    */
   protected ServiceContext getContext() {
     return context;
+  }
+
+  /**
+   * Returns the service logger.
+   *
+   * @return the service logger
+   */
+  protected Logger getLogger() {
+    return log;
   }
 
   /**
