@@ -72,6 +72,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static org.testng.Assert.assertEquals;
+
 /**
  * Raft test.
  */
@@ -1355,7 +1357,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     @Override
     public void install(SnapshotReader reader) {
-      assert reader.readLong() == 10;
+      assertEquals(reader.readLong(), 10);
     }
 
     protected long write(RaftCommit<Void> commit) {

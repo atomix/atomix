@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class SnapshotFile {
   @VisibleForTesting
-  static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
+  static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMddHHmmssSSS");
   private static final char PART_SEPARATOR = '-';
   private static final char EXTENSION_SEPARATOR = '.';
   private static final String EXTENSION = "snapshot";

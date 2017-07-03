@@ -85,9 +85,9 @@ public class SnapshotStore implements AutoCloseable {
    */
   private void open() {
     for (Snapshot snapshot : loadSnapshots()) {
-      Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.snapshotId());
+      Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.serviceId());
       if (existingSnapshot == null || existingSnapshot.index() < snapshot.index()) {
-        stateMachineSnapshots.put(snapshot.snapshotId(), snapshot);
+        stateMachineSnapshots.put(snapshot.serviceId(), snapshot);
 
         // If a newer snapshot was found, delete the old snapshot if necessary.
         if (existingSnapshot != null && !storage.isRetainStaleSnapshots()) {
@@ -232,9 +232,9 @@ public class SnapshotStore implements AutoCloseable {
     checkNotNull(snapshot, "snapshot cannot be null");
 
     // Only store the snapshot if no existing snapshot exists.
-    Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.snapshotId());
+    Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.serviceId());
     if (existingSnapshot == null || existingSnapshot.index() <= snapshot.index()) {
-      stateMachineSnapshots.put(snapshot.snapshotId(), snapshot);
+      stateMachineSnapshots.put(snapshot.serviceId(), snapshot);
       indexSnapshots.put(snapshot.index(), snapshot);
 
       // Delete the old snapshot if necessary.

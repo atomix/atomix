@@ -72,7 +72,7 @@ public class SnapshotFileTest {
   }
 
   public void testTimestampDecoder() throws Exception {
-    String timestampString = "20170624151018";
+    String timestampString = "20170624151018000";
     SnapshotFile.TIMESTAMP_FORMAT.parse(timestampString);
   }
 

@@ -65,7 +65,7 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot identifier.
    */
-  public abstract ServiceId snapshotId();
+  public abstract ServiceId serviceId();
 
   /**
    * Returns the snapshot index.

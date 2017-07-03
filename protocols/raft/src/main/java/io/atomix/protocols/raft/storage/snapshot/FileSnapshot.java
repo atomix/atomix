@@ -42,7 +42,7 @@ final class FileSnapshot extends Snapshot {
   }
 
   @Override
-  public ServiceId snapshotId() {
+  public ServiceId serviceId() {
     return file.snapshotId();
   }
 

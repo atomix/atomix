@@ -41,7 +41,7 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public ServiceId snapshotId() {
+  public ServiceId serviceId() {
     return ServiceId.from(descriptor.snapshotId());
   }
 
@@ -75,10 +75,10 @@ final class MemorySnapshot extends Snapshot {
   @Override
   public Snapshot persist() {
     if (store.storage.storageLevel() != StorageLevel.MEMORY) {
-      try (Snapshot newSnapshot = store.newSnapshot(snapshotId(), index(), timestamp())) {
+      try (Snapshot newSnapshot = store.newSnapshot(serviceId(), index(), timestamp())) {
         try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter()) {
-          buffer.flip();
-          newSnapshotWriter.write(buffer.array(), 0, buffer.remaining());
+          buffer.flip().skip(SnapshotDescriptor.BYTES);
+          newSnapshotWriter.write(buffer.array(), buffer.position(), buffer.remaining());
         }
         return newSnapshot;
       }
@@ -93,7 +93,7 @@ final class MemorySnapshot extends Snapshot {
 
   @Override
   public Snapshot complete() {
-    buffer.flip();
+    buffer.flip().skip(SnapshotDescriptor.BYTES).mark();
     descriptor.lock();
     return super.complete();
   }
