@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.service;
 
-import io.atomix.protocols.raft.RaftOperationExecutor;
-import io.atomix.protocols.raft.impl.DefaultRaftOperationExecutor;
+import io.atomix.protocols.raft.operation.RaftOperationExecutor;
+import io.atomix.protocols.raft.operation.impl.DefaultRaftOperationExecutor;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.time.LogicalClock;

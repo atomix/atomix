@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.OperationId;
+import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.RaftException;
-import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.operation.RaftOperation;
 
 /**
  * Represents a state machine query.

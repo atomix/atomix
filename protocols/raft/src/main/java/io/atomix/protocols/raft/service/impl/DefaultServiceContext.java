@@ -16,11 +16,11 @@
 
 package io.atomix.protocols.raft.service.impl;
 
-import io.atomix.protocols.raft.OperationId;
-import io.atomix.protocols.raft.OperationType;
+import io.atomix.protocols.raft.operation.OperationId;
+import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
-import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.OperationResult;

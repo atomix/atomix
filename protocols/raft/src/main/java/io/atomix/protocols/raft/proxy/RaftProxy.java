@@ -16,8 +16,9 @@
 package io.atomix.protocols.raft.proxy;
 
 import io.atomix.protocols.raft.EventType;
-import io.atomix.protocols.raft.OperationId;
+import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.service.ServiceType;
 
 import java.time.Duration;
@@ -39,7 +40,7 @@ public interface RaftProxy extends RaftProxyClient {
    *
    * @param operationId the operation identifier
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it. The future will always be completed on the
+   * {@link RaftOperation} submission futures that preceded it. The future will always be completed on the
    * @throws NullPointerException if {@code operation} is null
    */
   default CompletableFuture<Void> submit(OperationId operationId) {
@@ -53,7 +54,7 @@ public interface RaftProxy extends RaftProxyClient {
    * @param decoder     the operation result decoder
    * @param <R>         the operation result type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
+   * {@link RaftOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <R> CompletableFuture<R> submit(OperationId operationId, Function<byte[], R> decoder) {
@@ -67,7 +68,7 @@ public interface RaftProxy extends RaftProxyClient {
    * @param encoder     the operation encoder
    * @param <T>         the operation type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
+   * {@link RaftOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <T> CompletableFuture<Void> submit(OperationId operationId, Function<T, byte[]> encoder, T operation) {
@@ -84,7 +85,7 @@ public interface RaftProxy extends RaftProxyClient {
    * @param <T>         the operation type
    * @param <R>         the operation result type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link io.atomix.protocols.raft.RaftOperation} submission futures that preceded it.
+   * {@link RaftOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <T, R> CompletableFuture<R> submit(OperationId operationId, Function<T, byte[]> encoder, T operation, Function<byte[], R> decoder) {

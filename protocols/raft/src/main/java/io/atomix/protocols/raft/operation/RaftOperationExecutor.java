@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.atomix.protocols.raft;
+package io.atomix.protocols.raft.operation;
 
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.service.ServiceContext;

@@ -16,7 +16,7 @@
 
 package io.atomix.protocols.raft.service;
 
-import io.atomix.protocols.raft.OperationType;
+import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;

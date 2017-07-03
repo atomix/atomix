@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.impl;
+package io.atomix.protocols.raft.operation.impl;
 
-import io.atomix.protocols.raft.OperationId;
-import io.atomix.protocols.raft.OperationType;
+import io.atomix.protocols.raft.operation.OperationId;
+import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
-import io.atomix.protocols.raft.RaftOperationExecutor;
+import io.atomix.protocols.raft.operation.RaftOperationExecutor;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.utils.concurrent.Scheduled;

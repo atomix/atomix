@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.protocols.raft.OperationType;
+import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.service.ServiceType;

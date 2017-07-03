@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.service.impl;
 
-import io.atomix.protocols.raft.OperationId;
+import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.time.LogicalTimestamp;

@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.protocols.raft.OperationId;
-import io.atomix.protocols.raft.OperationType;
+import io.atomix.protocols.raft.operation.OperationId;
+import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.utils.AbstractIdentifier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;

@@ -17,9 +17,8 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.RaftEvent;
-import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.proxy.DelegatingRaftProxyClient;
-import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.utils.concurrent.Futures;
 

@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.service;
 
 import io.atomix.protocols.raft.RaftEvent;
-import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.protocols.raft.RaftOperationExecutor;
+import io.atomix.protocols.raft.operation.RaftOperation;
+import io.atomix.protocols.raft.operation.RaftOperationExecutor;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
