@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.ServiceId;
+import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.time.WallClockTimestamp;

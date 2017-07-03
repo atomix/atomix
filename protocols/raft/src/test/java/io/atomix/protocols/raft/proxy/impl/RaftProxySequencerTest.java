@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;

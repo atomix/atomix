@@ -35,7 +35,7 @@ import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
-import io.atomix.protocols.raft.ServiceId;
+import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.time.WallClockTimestamp;
 

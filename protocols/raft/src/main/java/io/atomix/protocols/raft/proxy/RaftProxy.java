@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.proxy;
 import io.atomix.protocols.raft.EventType;
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.ServiceType;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;

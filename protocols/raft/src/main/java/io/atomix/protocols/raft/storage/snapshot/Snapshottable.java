@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.RaftService;
+import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 
 /**

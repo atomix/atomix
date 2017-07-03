@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.impl;
+package io.atomix.protocols.raft.service.impl;
 
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
@@ -32,12 +32,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * State machine sessions.
  */
-class RaftServerStateMachineSessions implements RaftSessions {
+class DefaultServiceSessions implements RaftSessions {
   private final RaftSessionManager sessionManager;
   private final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
   private final Set<RaftSessionListener> listeners = new HashSet<>();
 
-  RaftServerStateMachineSessions(RaftSessionManager sessionManager) {
+  DefaultServiceSessions(RaftSessionManager sessionManager) {
     this.sessionManager = sessionManager;
   }
 

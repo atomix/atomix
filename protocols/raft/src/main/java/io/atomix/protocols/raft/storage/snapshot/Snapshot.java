@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.ServiceId;
+import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.time.WallClockTimestamp;
 
 import static com.google.common.base.Preconditions.checkNotNull;

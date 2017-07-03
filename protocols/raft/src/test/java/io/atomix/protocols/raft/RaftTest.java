@@ -22,6 +22,7 @@ import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;

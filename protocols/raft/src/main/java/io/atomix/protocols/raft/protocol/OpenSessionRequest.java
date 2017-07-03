@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.Objects;

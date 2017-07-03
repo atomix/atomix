@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
+package io.atomix.protocols.raft.service;
 
-import io.atomix.protocols.raft.impl.DefaultServiceType;
+import io.atomix.protocols.raft.service.impl.DefaultServiceType;
 import io.atomix.utils.Identifier;
 
 /**

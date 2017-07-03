@@ -13,8 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
+package io.atomix.protocols.raft.service;
 
+import io.atomix.protocols.raft.RaftCommit;
+import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.RaftOperationExecutor;
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;

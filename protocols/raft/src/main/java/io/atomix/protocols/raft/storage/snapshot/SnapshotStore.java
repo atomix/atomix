@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.ServiceId;
+import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.FileBuffer;

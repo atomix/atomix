@@ -21,6 +21,7 @@ import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.impl.DefaultRaftServer;
 import io.atomix.protocols.raft.impl.RaftStateMachineRegistry;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
+import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;

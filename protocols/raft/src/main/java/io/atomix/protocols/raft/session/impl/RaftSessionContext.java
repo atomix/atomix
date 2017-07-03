@@ -18,11 +18,11 @@ package io.atomix.protocols.raft.session.impl;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
-import io.atomix.protocols.raft.impl.RaftServerServiceContext;
+import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.session.RaftSession;
@@ -57,7 +57,7 @@ public class RaftSessionContext implements RaftSession {
   private final ReadConsistency readConsistency;
   private final long timeout;
   private final RaftServerProtocol protocol;
-  private final RaftServerServiceContext context;
+  private final DefaultServiceContext context;
   private final RaftServerContext server;
   private volatile State state = State.OPEN;
   private long timestamp;
@@ -81,7 +81,7 @@ public class RaftSessionContext implements RaftSession {
       ServiceType serviceType,
       ReadConsistency readConsistency,
       long timeout,
-      RaftServerServiceContext context,
+      DefaultServiceContext context,
       RaftServerContext server) {
     this.sessionId = sessionId;
     this.member = member;
@@ -138,7 +138,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The state machine context associated with the session.
    */
-  public RaftServerServiceContext getStateMachineContext() {
+  public DefaultServiceContext getStateMachineContext() {
     return context;
   }
 

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.session.SessionId;
 

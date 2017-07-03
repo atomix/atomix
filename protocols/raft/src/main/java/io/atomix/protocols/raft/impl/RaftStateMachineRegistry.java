@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.protocols.raft.RaftService;
+import io.atomix.protocols.raft.service.RaftService;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

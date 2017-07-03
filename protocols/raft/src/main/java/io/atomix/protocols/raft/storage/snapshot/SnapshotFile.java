@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.atomix.protocols.raft.ServiceId;
+import io.atomix.protocols.raft.service.ServiceId;
 
 import java.io.File;
 import java.text.ParseException;

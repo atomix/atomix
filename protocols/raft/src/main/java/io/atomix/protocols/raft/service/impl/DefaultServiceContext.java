@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package io.atomix.protocols.raft.impl;
+package io.atomix.protocols.raft.service.impl;
 
 import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.protocols.raft.AbstractRaftService;
-import io.atomix.protocols.raft.RaftService;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceContext;
-import io.atomix.protocols.raft.ServiceId;
-import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.impl.DefaultRaftCommit;
+import io.atomix.protocols.raft.impl.OperationResult;
+import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.service.AbstractRaftService;
+import io.atomix.protocols.raft.service.RaftService;
+import io.atomix.protocols.raft.service.ServiceContext;
+import io.atomix.protocols.raft.service.ServiceId;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.session.SessionId;
@@ -53,7 +56,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft server state machine executor.
  */
-public class RaftServerServiceContext implements ServiceContext {
+public class DefaultServiceContext implements ServiceContext {
   private static final long SNAPSHOT_INTERVAL_MILLIS = 1000 * 60 * 10;
 
   private final Logger log;
@@ -62,7 +65,7 @@ public class RaftServerServiceContext implements ServiceContext {
   private final ServiceType serviceType;
   private final RaftService stateMachine;
   private final RaftServerContext server;
-  private final RaftServerStateMachineSessions sessions;
+  private final DefaultServiceSessions sessions;
   private final ThreadContext stateMachineExecutor;
   private final ThreadContext snapshotExecutor;
   private volatile Snapshot pendingSnapshot;
@@ -84,7 +87,7 @@ public class RaftServerServiceContext implements ServiceContext {
     }
   };
 
-  RaftServerServiceContext(
+  public DefaultServiceContext(
       ServiceId serviceId,
       String serviceName,
       ServiceType serviceType,
@@ -98,7 +101,7 @@ public class RaftServerServiceContext implements ServiceContext {
     this.serviceType = checkNotNull(serviceType);
     this.stateMachine = checkNotNull(stateMachine);
     this.server = checkNotNull(server);
-    this.sessions = new RaftServerStateMachineSessions(sessionManager);
+    this.sessions = new DefaultServiceSessions(sessionManager);
     this.stateMachineExecutor = checkNotNull(stateMachineExecutor);
     this.snapshotExecutor = checkNotNull(snapshotExecutor);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(AbstractRaftService.class)
@@ -323,7 +326,7 @@ public class RaftServerServiceContext implements ServiceContext {
    * @param timestamp The timestamp of the registration.
    * @param session   The session to register.
    */
-  CompletableFuture<Long> openSession(long index, long timestamp, RaftSessionContext session) {
+  public CompletableFuture<Long> openSession(long index, long timestamp, RaftSessionContext session) {
     CompletableFuture<Long> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> {
       log.info("Opening session {}", session.sessionId());
@@ -360,7 +363,7 @@ public class RaftServerServiceContext implements ServiceContext {
    * @param commandSequence The session command sequence number.
    * @param eventIndex      The session event index.
    */
-  CompletableFuture<Void> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
+  public CompletableFuture<Void> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> {
       // Update the session's timestamp to prevent it from being expired.
@@ -409,7 +412,7 @@ public class RaftServerServiceContext implements ServiceContext {
    * @param timestamp The timestamp of the unregister.
    * @param session   The session to unregister.
    */
-  CompletableFuture<Void> closeSession(long index, long timestamp, RaftSessionContext session) {
+  public CompletableFuture<Void> closeSession(long index, long timestamp, RaftSessionContext session) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> {
       log.info("Closing session {}", session.sessionId());
@@ -450,7 +453,7 @@ public class RaftServerServiceContext implements ServiceContext {
    * @param operation   The command to execute.
    * @return A future to be completed with the command result.
    */
-  CompletableFuture<OperationResult> executeCommand(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
+  public CompletableFuture<OperationResult> executeCommand(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
     CompletableFuture<OperationResult> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> executeCommand(index, sequence, timestamp, session, operation, future));
     return future;
@@ -552,7 +555,7 @@ public class RaftServerServiceContext implements ServiceContext {
    * @param operation     The query to execute.
    * @return A future to be completed with the query result.
    */
-  CompletableFuture<OperationResult> executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
+  public CompletableFuture<OperationResult> executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
     CompletableFuture<OperationResult> future = new CompletableFuture<>();
     stateMachineExecutor.execute(() -> executeQuery(index, sequence, timestamp, session, operation, future));
     return future;

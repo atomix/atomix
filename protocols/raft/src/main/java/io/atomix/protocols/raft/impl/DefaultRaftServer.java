@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.RaftService;
+import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;

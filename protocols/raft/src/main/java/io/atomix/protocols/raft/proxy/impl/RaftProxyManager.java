@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.proxy.impl;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.KeepAliveRequest;

@@ -19,7 +19,7 @@ import io.atomix.protocols.raft.OperationId;
 import io.atomix.protocols.raft.RaftEvent;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.storage.buffer.HeapBytes;
 

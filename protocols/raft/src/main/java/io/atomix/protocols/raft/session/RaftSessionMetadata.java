@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.session;
 
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.ServiceType;
 
 import java.util.Objects;
 

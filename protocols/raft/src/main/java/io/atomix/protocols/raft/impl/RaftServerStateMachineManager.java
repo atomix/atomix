@@ -17,9 +17,10 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.RaftService;
-import io.atomix.protocols.raft.ServiceType;
+import io.atomix.protocols.raft.service.RaftService;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
@@ -36,7 +37,7 @@ import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
-import io.atomix.protocols.raft.ServiceId;
+import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
@@ -75,7 +76,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   private final RaftLog log;
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
-  private final Map<String, RaftServerServiceContext> stateMachines = new HashMap<>();
+  private final Map<String, DefaultServiceContext> stateMachines = new HashMap<>();
   private volatile long lastApplied;
 
   public RaftServerStateMachineManager(RaftServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
@@ -340,7 +341,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    */
   private CompletableFuture<Long> applyOpenSession(Indexed<OpenSessionEntry> entry) {
     // Get the state machine executor or create one if it doesn't already exist.
-    RaftServerServiceContext stateMachineExecutor = stateMachines.get(entry.entry().serviceName());
+    DefaultServiceContext stateMachineExecutor = stateMachines.get(entry.entry().serviceName());
     if (stateMachineExecutor == null) {
       Supplier<RaftService> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().serviceType());
       if (stateMachineSupplier == null) {
@@ -348,7 +349,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
       }
 
       ServiceId serviceId = ServiceId.from(entry.index());
-      stateMachineExecutor = new RaftServerServiceContext(
+      stateMachineExecutor = new DefaultServiceContext(
           serviceId,
           entry.entry().serviceName(),
           ServiceType.from(entry.entry().serviceType()),
@@ -385,7 +386,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     }
 
     // Get the state machine executor associated with the session and unregister the session.
-    RaftServerServiceContext stateMachineExecutor = session.getStateMachineContext();
+    DefaultServiceContext stateMachineExecutor = session.getStateMachineContext();
     return stateMachineExecutor.closeSession(entry.index(), entry.entry().timestamp(), session);
   }
 
@@ -497,7 +498,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   private void compactLog() {
     // Iterate through state machines and compute the lowest stored snapshot for all state machines.
     long snapshotIndex = state.getLogWriter().getLastIndex();
-    for (RaftServerServiceContext stateMachineExecutor : stateMachines.values()) {
+    for (DefaultServiceContext stateMachineExecutor : stateMachines.values()) {
       Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.serviceId());
       if (snapshot == null) {
         return;

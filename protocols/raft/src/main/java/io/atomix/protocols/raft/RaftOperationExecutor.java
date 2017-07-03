@@ -16,6 +16,8 @@
 
 package io.atomix.protocols.raft;
 
+import io.atomix.protocols.raft.service.RaftService;
+import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
 

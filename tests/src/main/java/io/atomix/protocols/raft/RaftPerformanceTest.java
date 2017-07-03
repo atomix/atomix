@@ -60,6 +60,7 @@ import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.atomix.protocols.raft;
+package io.atomix.protocols.raft.service;
 
+import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;
