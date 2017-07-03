@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.protocols.raft.RaftClient;
-import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.service.ServiceType;

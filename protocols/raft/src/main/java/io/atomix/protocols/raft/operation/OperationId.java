@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.operation;
 
-import io.atomix.protocols.raft.impl.DefaultOperationId;
+import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.utils.Identifier;
 
 /**

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy;
 
-import io.atomix.protocols.raft.EventType;
+import io.atomix.protocols.raft.event.EventType;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.operation.RaftOperation;

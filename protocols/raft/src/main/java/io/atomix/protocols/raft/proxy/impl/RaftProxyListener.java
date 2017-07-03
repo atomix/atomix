@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.protocols.raft.RaftEvent;
+import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
