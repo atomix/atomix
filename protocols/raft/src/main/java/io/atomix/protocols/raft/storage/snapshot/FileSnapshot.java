@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
+import io.atomix.protocols.raft.ServiceId;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.time.WallClockTimestamp;
@@ -41,7 +42,7 @@ final class FileSnapshot extends Snapshot {
   }
 
   @Override
-  public StateMachineId snapshotId() {
+  public ServiceId snapshotId() {
     return file.snapshotId();
   }
 

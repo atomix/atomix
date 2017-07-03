@@ -54,7 +54,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
 
   public DefaultRaftOperationExecutor(ServiceContext context) {
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
-        .addValue(context.stateMachineId())
+        .addValue(context.serviceId())
         .add("type", context.serviceType())
         .add("name", context.serviceName())
         .build());

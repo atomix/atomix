@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.serializer.Serializer;
+import io.atomix.protocols.raft.ServiceId;
 import io.atomix.time.WallClockTimestamp;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -65,7 +65,7 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot identifier.
    */
-  public abstract StateMachineId snapshotId();
+  public abstract ServiceId snapshotId();
 
   /**
    * Returns the snapshot index.

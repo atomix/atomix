@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.atomix.protocols.raft.ServiceId;
 
 import java.io.File;
 import java.text.ParseException;
@@ -142,8 +143,8 @@ public final class SnapshotFile {
    *
    * @return The snapshot identifier.
    */
-  public StateMachineId snapshotId() {
-    return StateMachineId.from(parseId(file.getName()));
+  public ServiceId snapshotId() {
+    return ServiceId.from(parseId(file.getName()));
   }
 
   /**

@@ -35,7 +35,7 @@ import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
-import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
+import io.atomix.protocols.raft.ServiceId;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.time.WallClockTimestamp;
 
@@ -406,7 +406,7 @@ public class PassiveRole extends ReserveRole {
       }
 
       pendingSnapshot = context.getSnapshotStore().newSnapshot(
-              StateMachineId.from(request.snapshotId()),
+              ServiceId.from(request.snapshotId()),
               request.snapshotIndex(),
               WallClockTimestamp.from(request.snapshotTimestamp()));
       nextSnapshotOffset = 0;

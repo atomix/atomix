@@ -18,7 +18,6 @@ package io.atomix.protocols.raft;
 import io.atomix.protocols.raft.impl.DefaultRaftOperationExecutor;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessions;
-import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;
 import io.atomix.utils.concurrent.Scheduler;
@@ -76,8 +75,8 @@ public abstract class RaftService implements RaftStateMachine {
    *
    * @return The unique state machine identifier.
    */
-  protected StateMachineId getStateMachineId() {
-    return context.stateMachineId();
+  protected ServiceId getStateMachineId() {
+    return context.serviceId();
   }
 
   /**

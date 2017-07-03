@@ -25,6 +25,7 @@ import io.atomix.protocols.raft.RaftService;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.ServiceContext;
+import io.atomix.protocols.raft.ServiceId;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.session.RaftSessionListener;
@@ -35,7 +36,6 @@ import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
-import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
@@ -57,7 +57,7 @@ public class RaftServerServiceContext implements ServiceContext {
   private static final long SNAPSHOT_INTERVAL_MILLIS = 1000 * 60 * 10;
 
   private final Logger log;
-  private final StateMachineId stateMachineId;
+  private final ServiceId serviceId;
   private final String serviceName;
   private final ServiceType serviceType;
   private final RaftStateMachine stateMachine;
@@ -85,7 +85,7 @@ public class RaftServerServiceContext implements ServiceContext {
   };
 
   RaftServerServiceContext(
-      StateMachineId stateMachineId,
+      ServiceId serviceId,
       String serviceName,
       ServiceType serviceType,
       RaftStateMachine stateMachine,
@@ -93,7 +93,7 @@ public class RaftServerServiceContext implements ServiceContext {
       RaftSessionManager sessionManager,
       ThreadContext stateMachineExecutor,
       ThreadContext snapshotExecutor) {
-    this.stateMachineId = checkNotNull(stateMachineId);
+    this.serviceId = checkNotNull(serviceId);
     this.serviceName = checkNotNull(serviceName);
     this.serviceType = checkNotNull(serviceType);
     this.stateMachine = checkNotNull(stateMachine);
@@ -102,7 +102,7 @@ public class RaftServerServiceContext implements ServiceContext {
     this.stateMachineExecutor = checkNotNull(stateMachineExecutor);
     this.snapshotExecutor = checkNotNull(snapshotExecutor);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
-        .addValue(stateMachineId)
+        .addValue(serviceId)
         .add("type", serviceType)
         .add("name", serviceName)
         .build());
@@ -118,13 +118,8 @@ public class RaftServerServiceContext implements ServiceContext {
   }
 
   @Override
-  public StateMachineId stateMachineId() {
-    return stateMachineId;
-  }
-
-  @Override
-  public String serverName() {
-    return server.getName();
+  public ServiceId serviceId() {
+    return serviceId;
   }
 
   @Override
@@ -237,7 +232,7 @@ public class RaftServerServiceContext implements ServiceContext {
     if (pendingSnapshot == null && snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS) {
       log.info("Taking snapshot {}", index);
       pendingSnapshot = server.getSnapshotStore()
-          .newTemporarySnapshot(stateMachineId, index, WallClockTimestamp.from(timestamp));
+          .newTemporarySnapshot(serviceId, index, WallClockTimestamp.from(timestamp));
       try (SnapshotWriter writer = pendingSnapshot.openWriter()) {
         writer.writeInt(sessions.getSessions().size());
         for (RaftSessionContext session : sessions.getSessions()) {
@@ -290,7 +285,7 @@ public class RaftServerServiceContext implements ServiceContext {
    * Installs a snapshot if one exists.
    */
   private void maybeInstallSnapshot(long index) {
-    Snapshot snapshot = server.getSnapshotStore().getSnapshotById(stateMachineId);
+    Snapshot snapshot = server.getSnapshotStore().getSnapshotById(serviceId);
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() <= index) {
       log.info("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
@@ -646,7 +641,7 @@ public class RaftServerServiceContext implements ServiceContext {
         .add("server", server.getName())
         .add("type", serviceType)
         .add("name", serviceName)
-        .add("id", stateMachineId)
+        .add("id", serviceId)
         .toString();
   }
 }

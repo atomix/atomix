@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.snapshot;
+package io.atomix.protocols.raft;
 
 import io.atomix.utils.AbstractIdentifier;
 
 /**
  * Snapshot identifier.
  */
-public class StateMachineId extends AbstractIdentifier<Long> {
+public class ServiceId extends AbstractIdentifier<Long> {
 
   /**
    * Creates a snapshot ID from the given number.
@@ -28,8 +28,8 @@ public class StateMachineId extends AbstractIdentifier<Long> {
    * @param id the number from which to create the identifier
    * @return the snapshot identifier
    */
-  public static StateMachineId from(long id) {
-    return new StateMachineId(id);
+  public static ServiceId from(long id) {
+    return new ServiceId(id);
   }
 
   /**
@@ -38,11 +38,11 @@ public class StateMachineId extends AbstractIdentifier<Long> {
    * @param id the string from which to create the identifier
    * @return the snapshot identifier
    */
-  public static StateMachineId from(String id) {
+  public static ServiceId from(String id) {
     return from(Long.parseLong(id));
   }
 
-  public StateMachineId(Long value) {
+  public ServiceId(Long value) {
     super(value);
   }
 }

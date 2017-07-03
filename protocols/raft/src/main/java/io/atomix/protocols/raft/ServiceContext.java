@@ -17,7 +17,6 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.protocols.raft.session.RaftSessions;
-import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;
 
@@ -35,14 +34,7 @@ public interface ServiceContext {
    *
    * @return The unique state machine identifier.
    */
-  StateMachineId stateMachineId();
-
-  /**
-   * Returns the server name.
-   *
-   * @return The server name.
-   */
-  String serverName();
+  ServiceId serviceId();
 
   /**
    * Returns the state machine name.

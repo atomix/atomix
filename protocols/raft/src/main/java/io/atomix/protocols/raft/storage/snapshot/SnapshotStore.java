@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
+import io.atomix.protocols.raft.ServiceId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.FileBuffer;
@@ -50,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   Snapshot snapshot = snapshots.snapshot(1);
  *   }
  * </pre>
- * To create a new {@link Snapshot}, use the {@link #newSnapshot(StateMachineId, long, WallClockTimestamp)} method. Each snapshot must
+ * To create a new {@link Snapshot}, use the {@link #newSnapshot(ServiceId, long, WallClockTimestamp)} method. Each snapshot must
  * be created with a unique {@code index} which represents the index of the server state machine at
  * the point at which the snapshot was taken. Snapshot indices are used to sort snapshots loaded from
  * disk and apply them at the correct point in the state machine.
@@ -72,7 +73,7 @@ public class SnapshotStore implements AutoCloseable {
   private final Logger log = LoggerFactory.getLogger(getClass());
   final RaftStorage storage;
   private final Map<Long, Snapshot> indexSnapshots = new ConcurrentHashMap<>();
-  private final Map<StateMachineId, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
+  private final Map<ServiceId, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
 
   public SnapshotStore(RaftStorage storage) {
     this.storage = checkNotNull(storage, "storage cannot be null");
@@ -107,7 +108,7 @@ public class SnapshotStore implements AutoCloseable {
    * @param id The state machine identifier for which to return the snapshot.
    * @return The latest snapshot for the given state machine.
    */
-  public Snapshot getSnapshotById(StateMachineId id) {
+  public Snapshot getSnapshotById(ServiceId id) {
     return stateMachineSnapshots.get(id);
   }
 
@@ -162,14 +163,14 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a temporary in-memory snapshot.
    *
-   * @param stateMachineId The snapshot identifier.
+   * @param serviceId The snapshot identifier.
    * @param index The snapshot index.
    * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newTemporarySnapshot(StateMachineId stateMachineId, long index, WallClockTimestamp timestamp) {
+  public Snapshot newTemporarySnapshot(ServiceId serviceId, long index, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-        .withId(stateMachineId.id())
+        .withId(serviceId.id())
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())
         .build();
@@ -179,14 +180,14 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a new snapshot.
    *
-   * @param stateMachineId The snapshot identifier.
+   * @param serviceId The snapshot identifier.
    * @param index The snapshot index.
    * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newSnapshot(StateMachineId stateMachineId, long index, WallClockTimestamp timestamp) {
+  public Snapshot newSnapshot(ServiceId serviceId, long index, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-        .withId(stateMachineId.id())
+        .withId(serviceId.id())
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())
         .build();

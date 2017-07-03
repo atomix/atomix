@@ -36,7 +36,7 @@ import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
-import io.atomix.protocols.raft.storage.snapshot.StateMachineId;
+import io.atomix.protocols.raft.ServiceId;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
@@ -347,9 +347,9 @@ public class RaftServerStateMachineManager implements AutoCloseable {
         return Futures.exceptionalFuture(new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType()));
       }
 
-      StateMachineId stateMachineId = StateMachineId.from(entry.index());
+      ServiceId serviceId = ServiceId.from(entry.index());
       stateMachineExecutor = new RaftServerServiceContext(
-          stateMachineId,
+          serviceId,
           entry.entry().serviceName(),
           ServiceType.from(entry.entry().serviceType()),
           stateMachineSupplier.get(),
@@ -498,7 +498,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     // Iterate through state machines and compute the lowest stored snapshot for all state machines.
     long snapshotIndex = state.getLogWriter().getLastIndex();
     for (RaftServerServiceContext stateMachineExecutor : stateMachines.values()) {
-      Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.stateMachineId());
+      Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.serviceId());
       if (snapshot == null) {
         return;
       } else {
