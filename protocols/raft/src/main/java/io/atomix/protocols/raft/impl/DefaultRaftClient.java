@@ -25,7 +25,7 @@ import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.proxy.RecoveryStrategy;
 import io.atomix.protocols.raft.proxy.impl.BlockingAwareRaftProxyClient;
 import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxy;
-import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
+import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 import io.atomix.protocols.raft.proxy.impl.RecoveringRaftProxyClient;
 import io.atomix.protocols.raft.proxy.impl.RetryingRaftProxyClient;
@@ -54,7 +54,7 @@ public class DefaultRaftClient implements RaftClient {
   private final Collection<MemberId> cluster;
   private final ScheduledExecutorService threadPoolExecutor;
   private final RaftMetadataClient metadata;
-  private final NodeSelectorManager selectorManager = new NodeSelectorManager();
+  private final MemberSelectorManager selectorManager = new MemberSelectorManager();
   private final RaftProxyManager sessionManager;
 
   public DefaultRaftClient(

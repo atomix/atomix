@@ -38,15 +38,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 final class RaftProxyListener {
   private final Logger log;
   private final RaftClientProtocol protocol;
-  private final NodeSelector nodeSelector;
+  private final MemberSelector memberSelector;
   private final RaftProxyState state;
   private final Set<Consumer<RaftEvent>> listeners = Sets.newLinkedHashSet();
   private final RaftProxySequencer sequencer;
   private final Executor executor;
 
-  public RaftProxyListener(RaftClientProtocol protocol, NodeSelector nodeSelector, RaftProxyState state, RaftProxySequencer sequencer, Executor executor) {
+  public RaftProxyListener(RaftClientProtocol protocol, MemberSelector memberSelector, RaftProxyState state, RaftProxySequencer sequencer, Executor executor) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
-    this.nodeSelector = checkNotNull(nodeSelector, "nodeSelector cannot be null");
+    this.memberSelector = checkNotNull(memberSelector, "nodeSelector cannot be null");
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
     this.executor = checkNotNull(executor, "executor cannot be null");
@@ -110,7 +110,7 @@ final class RaftProxyListener {
           .withSession(state.getSessionId().id())
           .withIndex(eventIndex)
           .build();
-      protocol.reset(nodeSelector.servers(), resetRequest);
+      protocol.reset(memberSelector.servers(), resetRequest);
       return;
     }
 

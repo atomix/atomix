@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,9 +28,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Client address selector.
+ * Cluster member selector.
  */
-public final class NodeSelector implements Iterator<MemberId>, AutoCloseable {
+public final class MemberSelector implements Iterator<MemberId>, AutoCloseable {
 
   /**
    * 1
@@ -55,7 +55,7 @@ public final class NodeSelector implements Iterator<MemberId>, AutoCloseable {
 
   }
 
-  private final NodeSelectorManager selectors;
+  private final MemberSelectorManager selectors;
   private MemberId leader;
   private Collection<MemberId> servers = new LinkedList<>();
   private volatile MemberId selection;
@@ -63,7 +63,7 @@ public final class NodeSelector implements Iterator<MemberId>, AutoCloseable {
   private Collection<MemberId> selections = new LinkedList<>();
   private Iterator<MemberId> selectionsIterator;
 
-  public NodeSelector(MemberId leader, Collection<MemberId> servers, CommunicationStrategy strategy, NodeSelectorManager selectors) {
+  public MemberSelector(MemberId leader, Collection<MemberId> servers, CommunicationStrategy strategy, MemberSelectorManager selectors) {
     this.leader = leader;
     this.servers = checkNotNull(servers, "servers cannot be null");
     this.strategy = checkNotNull(strategy, "strategy cannot be null");
@@ -118,7 +118,7 @@ public final class NodeSelector implements Iterator<MemberId>, AutoCloseable {
    *
    * @return The address selector.
    */
-  public NodeSelector reset() {
+  public MemberSelector reset() {
     if (selectionsIterator != null) {
       this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
       this.selectionsIterator = null;
@@ -132,7 +132,7 @@ public final class NodeSelector implements Iterator<MemberId>, AutoCloseable {
    * @param servers The collection of server addresses.
    * @return The address selector.
    */
-  public NodeSelector reset(MemberId leader, Collection<MemberId> servers) {
+  public MemberSelector reset(MemberId leader, Collection<MemberId> servers) {
     if (changed(leader, servers)) {
       this.leader = leader;
       this.servers = servers;

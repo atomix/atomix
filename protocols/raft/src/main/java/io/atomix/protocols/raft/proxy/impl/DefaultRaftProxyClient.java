@@ -58,7 +58,7 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
   public DefaultRaftProxyClient(
       RaftProxyState state,
       RaftClientProtocol protocol,
-      NodeSelectorManager selectorManager,
+      MemberSelectorManager selectorManager,
       RaftProxyManager sessionManager,
       CommunicationStrategy communicationStrategy,
       ThreadContext context) {

@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -25,10 +25,10 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * Address selectors.
+ * Cluster member selectors.
  */
-public final class NodeSelectorManager {
-  private final Set<NodeSelector> selectors = new CopyOnWriteArraySet<>();
+public final class MemberSelectorManager {
+  private final Set<MemberSelector> selectors = new CopyOnWriteArraySet<>();
   private volatile MemberId leader;
   private volatile Collection<MemberId> servers = Collections.emptyList();
 
@@ -56,8 +56,8 @@ public final class NodeSelectorManager {
    * @param selectionStrategy The server selection strategy.
    * @return A new address selector.
    */
-  public NodeSelector createSelector(CommunicationStrategy selectionStrategy) {
-    NodeSelector selector = new NodeSelector(leader, servers, selectionStrategy, this);
+  public MemberSelector createSelector(CommunicationStrategy selectionStrategy) {
+    MemberSelector selector = new MemberSelector(leader, servers, selectionStrategy, this);
     selectors.add(selector);
     return selector;
   }
@@ -66,7 +66,7 @@ public final class NodeSelectorManager {
    * Resets all child selectors.
    */
   public void resetAll() {
-    selectors.forEach(NodeSelector::reset);
+    selectors.forEach(MemberSelector::reset);
   }
 
   /**
@@ -86,7 +86,7 @@ public final class NodeSelectorManager {
    *
    * @param selector The address selector to remove.
    */
-  void remove(NodeSelector selector) {
+  void remove(MemberSelector selector) {
     selectors.remove(selector);
   }
 

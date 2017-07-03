@@ -64,11 +64,11 @@ public class RaftProxyConnection {
 
   private final Logger log;
   private final RaftClientProtocol protocol;
-  private final NodeSelector selector;
+  private final MemberSelector selector;
   private final ThreadContext context;
   private MemberId member;
 
-  public RaftProxyConnection(RaftClientProtocol protocol, NodeSelector selector, ThreadContext context, LoggerContext loggerContext) {
+  public RaftProxyConnection(RaftClientProtocol protocol, MemberSelector selector, ThreadContext context, LoggerContext loggerContext) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selector = checkNotNull(selector, "selector cannot be null");
     this.context = checkNotNull(context, "context cannot be null");
@@ -251,7 +251,7 @@ public class RaftProxyConnection {
    */
   protected MemberId next() {
     // If the address selector has been reset then reset the connection.
-    if (selector.state() == NodeSelector.State.RESET && member != null) {
+    if (selector.state() == MemberSelector.State.RESET && member != null) {
       this.member = selector.next();
       return this.member;
     }

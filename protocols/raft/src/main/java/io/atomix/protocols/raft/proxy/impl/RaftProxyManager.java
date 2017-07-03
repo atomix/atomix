@@ -62,12 +62,12 @@ public class RaftProxyManager {
   private final RaftClientProtocol protocol;
   private final RaftProxyConnection connection;
   private final ScheduledExecutorService threadPoolExecutor;
-  private final NodeSelectorManager selectorManager;
+  private final MemberSelectorManager selectorManager;
   private final Map<SessionId, RaftProxyState> sessions = new ConcurrentHashMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
   private ScheduledFuture<?> keepAliveFuture;
 
-  public RaftProxyManager(String clientId, MemberId memberId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
+  public RaftProxyManager(String clientId, MemberId memberId, RaftClientProtocol protocol, MemberSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
     this.memberId = checkNotNull(memberId, "nodeId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
