@@ -142,7 +142,7 @@ public class PassiveRole extends ReserveRole {
       // If the previous log index is greater than the last entry index, fail the attempt.
       if (request.prevLogIndex() > lastEntry.index()) {
         log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index ({})", request, request.prevLogIndex(), lastEntry.index());
-        return failAppend(0, future);
+        return failAppend(lastEntry.index(), future);
       }
 
       // If the previous log index is less than the last entry index, fail the attempt.
