@@ -518,7 +518,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Performance test state machine.
    */
-  public class PerformanceStateMachine extends RaftService {
+  public class PerformanceStateMachine extends AbstractRaftService {
     private Map<String, String> map = new HashMap<>();
 
     @Override

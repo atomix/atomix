@@ -1314,7 +1314,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Test state machine.
    */
-  public static class TestStateMachine extends RaftService {
+  public static class TestStateMachine extends AbstractRaftService {
     private RaftCommit<Void> expire;
     private RaftCommit<Void> close;
 

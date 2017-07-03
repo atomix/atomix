@@ -15,12 +15,12 @@
  */
 package io.atomix.protocols.raft.session;
 
-import io.atomix.protocols.raft.RaftStateMachine;
+import io.atomix.protocols.raft.RaftService;
 
 /**
  * Support for listening for state changes in server sessions.
  * <p>
- * When implemented by a {@link RaftStateMachine StateMachine}, this interface provides
+ * When implemented by a {@link RaftService StateMachine}, this interface provides
  * support to state machines for reacting to changes in the sessions connected to the cluster. State machines
  * can react to clients {@link #onOpen(RaftSession) registering} and {@link #onClose(RaftSession) unregistering}
  * sessions and servers {@link #onExpire(RaftSession) expiring} sessions.

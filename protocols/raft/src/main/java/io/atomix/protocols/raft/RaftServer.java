@@ -42,7 +42,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * to which to bind the internal {@link io.atomix.protocols.raft.protocol.RaftServerProtocol} and a set of addresses
  * for other members in the cluster.
  * <h2>State machines</h2>
- * Underlying each server is a {@link RaftStateMachine}. The state machine is responsible for maintaining the state with
+ * Underlying each server is a {@link RaftService}. The state machine is responsible for maintaining the state with
  * relation to {@link io.atomix.protocols.raft.RaftCommand}s and {@link io.atomix.protocols.raft.RaftQuery}s submitted
  * to the server by a client. State machines are provided in a factory to allow servers to transition between stateful
  * and stateless states.
@@ -153,7 +153,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  * </pre>
  *
- * @see RaftStateMachine
+ * @see RaftService
  * @see RaftStorage
  */
 public interface RaftServer {
@@ -478,7 +478,7 @@ public interface RaftServer {
    *     .build();
    *   }
    * </pre>
-   * Each server <em>must</em> be configured with a {@link RaftStateMachine}. The state machine is the component of the
+   * Each server <em>must</em> be configured with a {@link RaftService}. The state machine is the component of the
    * server that stores state and reacts to commands and queries submitted by clients to the cluster. State machines
    * are provided to the server in the form of a state machine {@link Supplier factory} to allow the server to reconstruct
    * its state when necessary.
@@ -566,7 +566,7 @@ public interface RaftServer {
      * @return The server builder.
      * @throws NullPointerException if the {@code factory} is {@code null}
      */
-    public Builder addStateMachine(String type, Supplier<RaftStateMachine> factory) {
+    public Builder addStateMachine(String type, Supplier<RaftService> factory) {
       stateMachineRegistry.register(type, factory);
       return this;
     }

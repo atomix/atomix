@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.RaftStateMachine;
+import io.atomix.protocols.raft.RaftService;
 import io.atomix.protocols.raft.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;
@@ -62,7 +62,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Internal server state machine.
  * <p>
- * The internal state machine handles application of commands to the user provided {@link RaftStateMachine}
+ * The internal state machine handles application of commands to the user provided {@link RaftService}
  * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
  */
 public class RaftServerStateMachineManager implements AutoCloseable {
@@ -342,7 +342,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     // Get the state machine executor or create one if it doesn't already exist.
     RaftServerServiceContext stateMachineExecutor = stateMachines.get(entry.entry().serviceName());
     if (stateMachineExecutor == null) {
-      Supplier<RaftStateMachine> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().serviceType());
+      Supplier<RaftService> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().serviceType());
       if (stateMachineSupplier == null) {
         return Futures.exceptionalFuture(new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType()));
       }
@@ -421,7 +421,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   /**
    * Applies a command entry to the state machine.
    * <p>
-   * Command entries result in commands being executed on the user provided {@link RaftStateMachine} and a
+   * Command entries result in commands being executed on the user provided {@link RaftService} and a
    * response being sent back to the client by completing the returned future. All command responses are
    * cached in the command's {@link RaftSessionContext} for fault tolerance. In the event that the same command
    * is applied to the state machine more than once, the original response will be returned.
@@ -457,7 +457,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   /**
    * Applies a query entry to the state machine.
    * <p>
-   * Query entries are applied to the user {@link RaftStateMachine} for read-only operations.
+   * Query entries are applied to the user {@link RaftService} for read-only operations.
    * Because queries are read-only, they may only be applied on a single server in the cluster,
    * and query entries do not go through the Raft log. Thus, it is critical that measures be taken
    * to ensure clients see a consistent view of the cluster event when switching servers. To do so,

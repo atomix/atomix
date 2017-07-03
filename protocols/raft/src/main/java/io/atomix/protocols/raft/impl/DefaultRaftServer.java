@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.RaftStateMachine;
+import io.atomix.protocols.raft.RaftService;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Provides a standalone implementation of the <a href="http://raft.github.io/">Raft consensus algorithm</a>.
  *
- * @see RaftStateMachine
+ * @see RaftService
  * @see RaftStorage
  */
 public class DefaultRaftServer implements RaftServer {

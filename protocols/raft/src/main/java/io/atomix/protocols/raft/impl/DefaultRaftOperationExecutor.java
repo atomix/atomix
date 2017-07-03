@@ -20,7 +20,7 @@ import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperationExecutor;
-import io.atomix.protocols.raft.RaftService;
+import io.atomix.protocols.raft.AbstractRaftService;
 import io.atomix.protocols.raft.ServiceContext;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -53,7 +53,7 @@ public class DefaultRaftOperationExecutor implements RaftOperationExecutor {
   private long timestamp;
 
   public DefaultRaftOperationExecutor(ServiceContext context) {
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(AbstractRaftService.class)
         .addValue(context.serviceId())
         .add("type", context.serviceType())
         .add("name", context.serviceName())

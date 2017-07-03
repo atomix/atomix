@@ -27,7 +27,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Facilitates registration and execution of state machine commands and provides deterministic scheduling.
  * <p>
- * The state machine executor is responsible for managing input to and output from a {@link RaftStateMachine}.
+ * The state machine executor is responsible for managing input to and output from a {@link RaftService}.
  * As operations are committed to the Raft log, the executor is responsible for applying them to the state machine.
  * {@link OperationType#COMMAND commands} are guaranteed to be applied to the state machine in the order in which
  * they appear in the Raft log and always in the same thread, so state machines don't have to be thread safe.
@@ -58,7 +58,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * on a single state machine within the cluster, and so scheduling callbacks in reaction to query execution would
  * not be deterministic.
  *
- * @see RaftStateMachine
+ * @see RaftService
  * @see ServiceContext
  */
 public interface RaftOperationExecutor extends ThreadContext {

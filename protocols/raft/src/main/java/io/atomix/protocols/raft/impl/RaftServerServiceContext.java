@@ -21,8 +21,8 @@ import io.atomix.protocols.raft.OperationType;
 import io.atomix.protocols.raft.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftOperation;
+import io.atomix.protocols.raft.AbstractRaftService;
 import io.atomix.protocols.raft.RaftService;
-import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.ServiceContext;
 import io.atomix.protocols.raft.ServiceId;
@@ -60,7 +60,7 @@ public class RaftServerServiceContext implements ServiceContext {
   private final ServiceId serviceId;
   private final String serviceName;
   private final ServiceType serviceType;
-  private final RaftStateMachine stateMachine;
+  private final RaftService stateMachine;
   private final RaftServerContext server;
   private final RaftServerStateMachineSessions sessions;
   private final ThreadContext stateMachineExecutor;
@@ -88,7 +88,7 @@ public class RaftServerServiceContext implements ServiceContext {
       ServiceId serviceId,
       String serviceName,
       ServiceType serviceType,
-      RaftStateMachine stateMachine,
+      RaftService stateMachine,
       RaftServerContext server,
       RaftSessionManager sessionManager,
       ThreadContext stateMachineExecutor,
@@ -101,7 +101,7 @@ public class RaftServerServiceContext implements ServiceContext {
     this.sessions = new RaftServerStateMachineSessions(sessionManager);
     this.stateMachineExecutor = checkNotNull(stateMachineExecutor);
     this.snapshotExecutor = checkNotNull(snapshotExecutor);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(AbstractRaftService.class)
         .addValue(serviceId)
         .add("type", serviceType)
         .add("name", serviceName)

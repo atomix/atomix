@@ -15,13 +15,11 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.RaftStateMachine;
+import io.atomix.protocols.raft.RaftService;
 import io.atomix.protocols.raft.storage.log.RaftLog;
-import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
-import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 
 /**
- * Support for periodically persisting {@link RaftStateMachine} snapshots to disk.
+ * Support for periodically persisting {@link RaftService} snapshots to disk.
  * <p>
  * To store a state machine's state, simply implement the {@link #snapshot(SnapshotWriter)} method and write the
  * complete state machine state to the snapshot via the {@link SnapshotWriter}. Raft will periodically invoke
