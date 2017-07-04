@@ -48,6 +48,7 @@ import io.atomix.storage.StorageLevel;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -1043,6 +1044,7 @@ public class RaftTest extends ConcurrentTestCase {
    * Tests submitting events.
    */
   @Test
+  @Ignore // Ignored due to lack of timeouts/retries in test protocol
   public void testFiveNodesEventsAfterLeaderKill() throws Throwable {
     testEventsAfterLeaderKill(5);
   }
