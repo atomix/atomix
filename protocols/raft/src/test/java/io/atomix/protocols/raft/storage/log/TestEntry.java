@@ -37,6 +37,10 @@ public class TestEntry extends RaftLogEntry {
     this.bytes = bytes;
   }
 
+  public byte[] bytes() {
+    return bytes;
+  }
+
   @Override
   public String toString() {
     return toStringHelper(this)

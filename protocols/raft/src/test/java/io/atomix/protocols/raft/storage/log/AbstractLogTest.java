@@ -32,8 +32,17 @@ import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,7 +56,11 @@ import static org.junit.Assert.assertTrue;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LogTest {
+public abstract class AbstractLogTest {
+  private static final int MAX_ENTRIES_PER_SEGMENT = 32;
+  private static final int MAX_SEGMENT_SIZE = 1024 * 32;
+  private static final Path PATH = Paths.get("target/test-logs/");
+
   private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
@@ -57,6 +70,7 @@ public class LogTest {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
+      .register(TestEntry.class)
       .register(ArrayList.class)
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
@@ -64,13 +78,19 @@ public class LogTest {
       .register(RaftMember.Type.class)
       .register(ReadConsistency.class)
       .register(Instant.class)
+      .register(byte[].class)
       .build());
+
+  protected abstract StorageLevel storageLevel();
 
   private RaftLog createLog() {
     return RaftLog.builder()
         .withName("test")
+        .withDirectory(PATH.toFile())
         .withSerializer(serializer)
-        .withStorageLevel(StorageLevel.MEMORY)
+        .withStorageLevel(storageLevel())
+        .withMaxEntriesPerSegment(MAX_ENTRIES_PER_SEGMENT)
+        .withMaxSegmentSize(MAX_SEGMENT_SIZE)
         .build();
   }
 
@@ -188,5 +208,61 @@ public class LogTest {
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testWriteReadEntries() throws Exception {
+    RaftLog log = createLog();
+    RaftLogWriter writer = log.writer();
+    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
+
+    for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 5; i++) {
+      writer.append(new TestEntry(1, 32));
+      assertTrue(reader.hasNext());
+      Indexed<TestEntry> entry = (Indexed) reader.next();
+      assertEquals(i, entry.index());
+      assertEquals(1, entry.entry().term());
+      assertEquals(32, entry.entry().bytes().length);
+    }
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testWriteReadCommittedEntries() throws Exception {
+    RaftLog log = createLog();
+    RaftLogWriter writer = log.writer();
+    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
+
+    for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 5; i++) {
+      writer.append(new TestEntry(1, 32));
+      assertFalse(reader.hasNext());
+      writer.commit(i);
+      assertTrue(reader.hasNext());
+      Indexed<TestEntry> entry = (Indexed) reader.next();
+      assertEquals(i, entry.index());
+      assertEquals(1, entry.entry().term());
+      assertEquals(32, entry.entry().bytes().length);
+    }
+  }
+
+  @Before
+  @After
+  public void cleanupStorage() throws IOException {
+    if (Files.exists(PATH)) {
+      Files.walkFileTree(PATH, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          Files.delete(file);
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+          Files.delete(dir);
+          return FileVisitResult.CONTINUE;
+        }
+      });
+    }
   }
 }
