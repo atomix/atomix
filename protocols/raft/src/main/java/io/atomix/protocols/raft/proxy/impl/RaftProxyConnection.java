@@ -213,7 +213,7 @@ public class RaftProxyConnection {
   protected <T extends RaftRequest> void retryRequest(Throwable cause, T request, BiFunction sender, MemberId node, CompletableFuture future) {
     // If the connection has not changed, reset it and connect to the next server.
     if (this.member == node) {
-      log.trace("Resetting connection. Reason: {}", cause);
+      log.trace("Resetting connection. Reason: {}", cause.getMessage());
       this.member = null;
     }
 
