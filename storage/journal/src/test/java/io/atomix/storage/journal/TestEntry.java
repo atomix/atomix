@@ -15,6 +15,10 @@
  */
 package io.atomix.storage.journal;
 
+import io.atomix.utils.ArraySizeHashPrinter;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Test entry.
  *
@@ -33,6 +37,8 @@ public class TestEntry {
 
   @Override
   public String toString() {
-    return String.format("%s[bytes=byte[%d]]", getClass().getSimpleName(), bytes.length);
+    return toStringHelper(this)
+        .add("bytes", ArraySizeHashPrinter.of(bytes))
+        .toString();
   }
 }
