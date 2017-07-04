@@ -17,17 +17,16 @@ package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.time.WallClockTimestamp;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Snapshot store test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@Test
 public abstract class AbstractSnapshotStoreTest {
 
   /**
@@ -38,6 +37,7 @@ public abstract class AbstractSnapshotStoreTest {
   /**
    * Tests writing a snapshot.
    */
+  @Test
   public void testWriteSnapshotChunks() {
     SnapshotStore store = createSnapshotStore();
     WallClockTimestamp timestamp = new WallClockTimestamp();

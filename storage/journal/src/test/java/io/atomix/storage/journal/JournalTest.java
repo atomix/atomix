@@ -18,19 +18,17 @@ package io.atomix.storage.journal;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.storage.StorageLevel;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Log test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@Test
-@SuppressWarnings("unchecked")
 public class JournalTest {
   private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
       .register(TestEntry.class)
@@ -38,13 +36,14 @@ public class JournalTest {
       .build());
 
   private Journal<TestEntry> createJournal() {
-    return SegmentedJournal.newBuilder()
+    return SegmentedJournal.<TestEntry>newBuilder()
         .withName("test")
         .withSerializer(serializer)
         .withStorageLevel(StorageLevel.MEMORY)
         .build();
   }
 
+  @Test
   public void testLogWriteRead() throws Exception {
     Journal<TestEntry> journal = createJournal();
     JournalWriter<TestEntry> writer = journal.writer();
@@ -66,7 +65,7 @@ public class JournalTest {
     // Test reading the register entry.
     Indexed<TestEntry> openSession;
     reader.reset();
-    openSession = (Indexed) reader.next();
+    openSession = reader.next();
     assertEquals(openSession.index(), 1);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
@@ -75,7 +74,7 @@ public class JournalTest {
     Indexed<TestEntry> closeSession;
     assertTrue(reader.hasNext());
     assertEquals(reader.getNextIndex(), 2);
-    closeSession = (Indexed) reader.next();
+    closeSession = reader.next();
     assertEquals(closeSession.index(), 2);
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
@@ -84,7 +83,7 @@ public class JournalTest {
     // Test opening a new reader and reading from the log.
     reader = journal.openReader(1);
     assertTrue(reader.hasNext());
-    openSession = (Indexed) reader.next();
+    openSession = reader.next();
     assertEquals(openSession.index(), 1);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
@@ -92,7 +91,7 @@ public class JournalTest {
 
     assertTrue(reader.hasNext());
     assertEquals(reader.getNextIndex(), 2);
-    closeSession = (Indexed) reader.next();
+    closeSession = reader.next();
     assertEquals(closeSession.index(), 2);
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
@@ -104,7 +103,7 @@ public class JournalTest {
     // Test opening a new reader and reading from the log.
     reader = journal.openReader(1);
     assertTrue(reader.hasNext());
-    openSession = (Indexed) reader.next();
+    openSession = reader.next();
     assertEquals(openSession.index(), 1);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
@@ -112,7 +111,7 @@ public class JournalTest {
 
     assertTrue(reader.hasNext());
     assertEquals(reader.getNextIndex(), 2);
-    closeSession = (Indexed) reader.next();
+    closeSession = reader.next();
     assertEquals(closeSession.index(), 2);
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);

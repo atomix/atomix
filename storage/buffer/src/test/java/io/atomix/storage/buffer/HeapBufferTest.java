@@ -15,18 +15,17 @@
  */
 package io.atomix.storage.buffer;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Heap buffer test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
 public class HeapBufferTest extends BufferTest {
 
   @Override
@@ -39,6 +38,7 @@ public class HeapBufferTest extends BufferTest {
     return HeapBuffer.allocate(capacity, maxCapacity);
   }
 
+  @Test
   public void testByteBufferToHeapBuffer() {
     ByteBuffer byteBuffer = ByteBuffer.allocate(8);
     byteBuffer.putLong(10);
@@ -52,6 +52,7 @@ public class HeapBufferTest extends BufferTest {
     assertEquals(heapBuffer.readLong(), byteBuffer.getLong());
   }
 
+  @Test
   public void testDirectToHeapBuffer() {
     DirectBuffer directBuffer = DirectBuffer.allocate(8);
     directBuffer.writeLong(10);
@@ -65,6 +66,7 @@ public class HeapBufferTest extends BufferTest {
     assertEquals(directBuffer.readLong(), heapBuffer.readLong());
   }
 
+  @Test
   public void testHeapToDirectBuffer() {
     UnsafeHeapBuffer heapBuffer = UnsafeHeapBuffer.allocate(8);
     heapBuffer.writeLong(10);

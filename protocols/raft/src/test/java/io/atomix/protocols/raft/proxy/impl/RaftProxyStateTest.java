@@ -17,41 +17,42 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.UUID;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Client session state test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@Test
 public class RaftProxyStateTest {
 
   /**
    * Tests session state defaults.
    */
+  @Test
   public void testSessionStateDefaults() {
     String sessionName = UUID.randomUUID().toString();
     RaftProxyState state = new RaftProxyState("test", SessionId.from(1), sessionName, ServiceType.from("test"), 1000);
-    assertEquals(state.getSessionId(), 0);
+    assertEquals(state.getSessionId(), SessionId.from(1));
     assertEquals(state.getServiceName(), sessionName);
-    assertEquals(state.getServiceType(), "test");
+    assertEquals(state.getServiceType().id(), "test");
     assertEquals(state.getCommandRequest(), 0);
     assertEquals(state.getCommandResponse(), 0);
-    assertEquals(state.getResponseIndex(), 0);
-    assertEquals(state.getEventIndex(), 0);
+    assertEquals(state.getResponseIndex(), 1);
+    assertEquals(state.getEventIndex(), 1);
   }
 
   /**
    * Tests updating client session state.
    */
+  @Test
   public void testSessionState() {
     RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
-    assertEquals(state.getSessionId(), 1);
+    assertEquals(state.getSessionId(), SessionId.from(1));
     assertEquals(state.getResponseIndex(), 1);
     assertEquals(state.getEventIndex(), 1);
     state.setCommandRequest(2);

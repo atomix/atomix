@@ -109,7 +109,7 @@ public abstract class OperationResponse extends SessionResponse {
           .add("status", status)
           .add("index", index)
           .add("eventIndex", eventIndex)
-          .add("result", ArraySizeHashPrinter.of(result))
+          .add("result", result != null ? ArraySizeHashPrinter.of(result) : null)
           .add("lastSequence", lastSequence)
           .toString();
     } else {

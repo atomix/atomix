@@ -15,14 +15,11 @@
  */
 package io.atomix.storage.buffer;
 
-import org.testng.annotations.Test;
-
 /**
  * Direct buffer test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
 public class UnsafeDirectBufferTest extends BufferTest {
 
   @Override

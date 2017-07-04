@@ -15,23 +15,23 @@
  */
 package io.atomix.storage.buffer;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Direct memory bit set test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
 public class BitArrayTest {
 
   /**
    * Tests the bit array.
    */
+  @Test
   public void testBitArray() {
     BitArray bits = BitArray.allocate(1024);
 

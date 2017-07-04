@@ -17,14 +17,12 @@ package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
-import org.testng.annotations.Test;
 
 /**
  * Memory snapshot store test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@Test
 public class MemorySnapshotStoreTest extends AbstractSnapshotStoreTest {
 
   /**

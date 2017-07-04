@@ -15,40 +15,40 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.RaftException;
+import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
+import org.junit.Test;
 import org.mockito.Mockito;
-import org.testng.annotations.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
 /**
  * Client session submitter test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@Test
 public class RaftProxySubmitterTest {
   private static final OperationId COMMAND = OperationId.command("command");
   private static final OperationId QUERY = OperationId.query("query");
@@ -56,6 +56,7 @@ public class RaftProxySubmitterTest {
   /**
    * Tests submitting a command to the cluster.
    */
+  @Test
   public void testSubmitCommand() throws Throwable {
     RaftProxyConnection connection = mock(RaftProxyConnection.class);
     when(connection.command(any(CommandRequest.class)))
@@ -70,7 +71,7 @@ public class RaftProxySubmitterTest {
     ThreadContext threadContext = new TestContext();
 
     RaftProxySubmitter submitter = new RaftProxySubmitter(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, threadContext);
-    assertEquals(submitter.submit(new RaftOperation(COMMAND, HeapBytes.EMPTY)).get(), "Hello world!");
+    assertArrayEquals(submitter.submit(new RaftOperation(COMMAND, HeapBytes.EMPTY)).get(), "Hello world!".getBytes());
     assertEquals(state.getCommandRequest(), 1);
     assertEquals(state.getCommandResponse(), 1);
     assertEquals(state.getResponseIndex(), 10);
@@ -79,6 +80,7 @@ public class RaftProxySubmitterTest {
   /**
    * Test resequencing a command response.
    */
+  @Test
   public void testResequenceCommand() throws Throwable {
     CompletableFuture<CommandResponse> future1 = new CompletableFuture<>();
     CompletableFuture<CommandResponse> future2 = new CompletableFuture<>();
@@ -129,6 +131,7 @@ public class RaftProxySubmitterTest {
   /**
    * Tests submitting a query to the cluster.
    */
+  @Test
   public void testSubmitQuery() throws Throwable {
     RaftProxyConnection connection = mock(RaftProxyConnection.class);
     when(connection.query(any(QueryRequest.class)))
@@ -150,6 +153,7 @@ public class RaftProxySubmitterTest {
   /**
    * Tests resequencing a query response.
    */
+  @Test
   public void testResequenceQuery() throws Throwable {
     CompletableFuture<QueryResponse> future1 = new CompletableFuture<>();
     CompletableFuture<QueryResponse> future2 = new CompletableFuture<>();
@@ -196,6 +200,7 @@ public class RaftProxySubmitterTest {
   /**
    * Tests skipping over a failed query attempt.
    */
+  @Test
   public void testSkippingOverFailedQuery() throws Throwable {
     CompletableFuture<QueryResponse> future1 = new CompletableFuture<>();
     CompletableFuture<QueryResponse> future2 = new CompletableFuture<>();
@@ -236,12 +241,12 @@ public class RaftProxySubmitterTest {
   /**
    * Tests that the client's session is expired when an UnknownSessionException is received from the cluster.
    */
+  @Test
   public void testExpireSessionOnCommandFailure() throws Throwable {
-    CompletableFuture<QueryResponse> future = new CompletableFuture<>();
+    CompletableFuture<CommandResponse> future = new CompletableFuture<>();
 
     RaftProxyConnection connection = mock(RaftProxyConnection.class);
-    Mockito.<CompletableFuture<QueryResponse>>when(connection.query(any(QueryRequest.class)))
-      .thenReturn(future);
+    Mockito.when(connection.command(any(CommandRequest.class))).thenReturn(future);
 
     RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
     RaftProxyManager manager = mock(RaftProxyManager.class);
@@ -263,6 +268,7 @@ public class RaftProxySubmitterTest {
   /**
    * Tests that the client's session is expired when an UnknownSessionException is received from the cluster.
    */
+  @Test
   public void testExpireSessionOnQueryFailure() throws Throwable {
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
 

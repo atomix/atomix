@@ -15,18 +15,17 @@
  */
 package io.atomix.storage.buffer;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Direct buffer test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
 public class DirectBufferTest extends BufferTest {
 
   @Override
@@ -39,6 +38,7 @@ public class DirectBufferTest extends BufferTest {
     return DirectBuffer.allocate(capacity, maxCapacity);
   }
 
+  @Test
   public void testByteBufferToDirectBuffer() {
     ByteBuffer byteBuffer = ByteBuffer.allocate(8);
     byteBuffer.putLong(10);
@@ -54,6 +54,7 @@ public class DirectBufferTest extends BufferTest {
     assertEquals(heapBuffer.readLong(), byteBuffer.getLong());
   }
 
+  @Test
   public void testUnsafeDirectToDirectBuffer() {
     UnsafeDirectBuffer unsafeDirectBuffer = UnsafeDirectBuffer.allocate(8);
     unsafeDirectBuffer.writeLong(10);
@@ -69,6 +70,7 @@ public class DirectBufferTest extends BufferTest {
     assertEquals(unsafeDirectBuffer.readLong(), directBuffer.readLong());
   }
 
+  @Test
   public void testDirectToUnsafeDirectBuffer() {
     DirectBuffer directBuffer = DirectBuffer.allocate(8);
     directBuffer.writeLong(10);

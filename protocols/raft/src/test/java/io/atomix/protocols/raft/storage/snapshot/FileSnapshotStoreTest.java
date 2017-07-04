@@ -19,9 +19,9 @@ import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.time.WallClockTimestamp;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,16 +33,15 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * File snapshot store test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@Test
 public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   private String testId;
 
@@ -61,6 +60,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   /**
    * Tests storing and loading snapshots.
    */
+  @Test
   public void testStoreLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
@@ -89,6 +89,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   /**
    * Tests persisting and loading snapshots.
    */
+  @Test
   public void testPersistLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
@@ -126,9 +127,9 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     }
   }
 
-  @BeforeMethod
-  @AfterMethod
-  protected void cleanupStorage() throws IOException {
+  @Before
+  @After
+  public void cleanupStorage() throws IOException {
     Path directory = Paths.get("target/test-logs/");
     if (Files.exists(directory)) {
       Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {

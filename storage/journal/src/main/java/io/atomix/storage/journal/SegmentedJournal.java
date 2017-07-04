@@ -565,7 +565,7 @@ public class SegmentedJournal<E> implements Journal<E> {
      * @param name The storage name.
      * @return The storage builder.
      */
-    public Builder withName(String name) {
+    public Builder<E> withName(String name) {
       this.name = checkNotNull(name, "name cannot be null");
       return this;
     }
@@ -578,7 +578,7 @@ public class SegmentedJournal<E> implements Journal<E> {
      * @param storageLevel The log storage level.
      * @return The storage builder.
      */
-    public Builder withStorageLevel(StorageLevel storageLevel) {
+    public Builder<E> withStorageLevel(StorageLevel storageLevel) {
       this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
       return this;
     }
@@ -592,7 +592,7 @@ public class SegmentedJournal<E> implements Journal<E> {
      * @return The storage builder.
      * @throws NullPointerException If the {@code directory} is {@code null}
      */
-    public Builder withDirectory(String directory) {
+    public Builder<E> withDirectory(String directory) {
       return withDirectory(new File(checkNotNull(directory, "directory cannot be null")));
     }
 
@@ -605,7 +605,7 @@ public class SegmentedJournal<E> implements Journal<E> {
      * @return The storage builder.
      * @throws NullPointerException If the {@code directory} is {@code null}
      */
-    public Builder withDirectory(File directory) {
+    public Builder<E> withDirectory(File directory) {
       this.directory = checkNotNull(directory, "directory cannot be null");
       return this;
     }
@@ -616,7 +616,7 @@ public class SegmentedJournal<E> implements Journal<E> {
      * @param serializer The journal serializer.
      * @return The journal builder.
      */
-    public Builder withSerializer(Serializer serializer) {
+    public Builder<E> withSerializer(Serializer serializer) {
       this.serializer = checkNotNull(serializer, "serializer cannot be null");
       return this;
     }
@@ -634,7 +634,7 @@ public class SegmentedJournal<E> implements Journal<E> {
      * @return The storage builder.
      * @throws IllegalArgumentException If the {@code maxSegmentSize} is not positive
      */
-    public Builder withMaxSegmentSize(int maxSegmentSize) {
+    public Builder<E> withMaxSegmentSize(int maxSegmentSize) {
       checkArgument(maxSegmentSize > JournalSegmentDescriptor.BYTES, "maxSegmentSize must be greater than " + JournalSegmentDescriptor.BYTES);
       this.maxSegmentSize = maxSegmentSize;
       return this;
@@ -654,7 +654,7 @@ public class SegmentedJournal<E> implements Journal<E> {
      * @throws IllegalArgumentException If the {@code maxEntriesPerSegment} not greater than the default max entries per
      *                                  segment
      */
-    public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
+    public Builder<E> withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       checkArgument(maxEntriesPerSegment > 0, "max entries per segment must be positive");
       checkArgument(maxEntriesPerSegment <= DEFAULT_MAX_ENTRIES_PER_SEGMENT,
           "max entries per segment cannot be greater than " + DEFAULT_MAX_ENTRIES_PER_SEGMENT);

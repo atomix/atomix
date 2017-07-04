@@ -32,23 +32,21 @@ import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Log test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@Test
-@SuppressWarnings("unchecked")
 public class LogTest {
   private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
       .register(CloseSessionEntry.class)
@@ -64,6 +62,7 @@ public class LogTest {
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
       .register(RaftMember.Type.class)
+      .register(ReadConsistency.class)
       .register(Instant.class)
       .build());
 
@@ -75,6 +74,8 @@ public class LogTest {
         .build();
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
   public void testLogWriteRead() throws Exception {
     RaftLog log = createLog();
     RaftLogWriter writer = log.writer();

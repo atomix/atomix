@@ -20,15 +20,15 @@ import io.atomix.protocols.raft.cluster.RaftClusterEvent;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.event.EventType;
-import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.RaftServiceExecutor;
+import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.RaftCommit;
+import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -46,9 +46,9 @@ import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.storage.StorageLevel;
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,12 +72,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Raft test.
  */
-@Test
 public class RaftTest extends ConcurrentTestCase {
   private static final Serializer storageSerializer = Serializer.using(KryoNamespace.newBuilder()
       .register(CloseSessionEntry.class)
@@ -115,6 +114,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests starting several members individually.
    */
+  @Test
   public void testSingleMemberStart() throws Throwable {
     RaftServer server = createServers(1).get(0);
     server.bootstrap().thenRun(this::resume);
@@ -130,6 +130,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests joining a server after many entries have been committed.
    */
+  @Test
   public void testActiveJoinLate() throws Throwable {
     testServerJoinLate(RaftMember.Type.ACTIVE, RaftServer.Role.FOLLOWER);
   }
@@ -137,6 +138,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests joining a server after many entries have been committed.
    */
+  @Test
   public void testPassiveJoinLate() throws Throwable {
     testServerJoinLate(RaftMember.Type.PASSIVE, RaftServer.Role.PASSIVE);
   }
@@ -144,6 +146,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests joining a server after many entries have been committed.
    */
+  @Test
   public void testReserveJoinLate() throws Throwable {
     testServerJoinLate(RaftMember.Type.RESERVE, RaftServer.Role.RESERVE);
   }
@@ -183,6 +186,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests joining a server to an existing cluster.
    */
+  @Test
   public void testCrashRecover() throws Throwable {
     List<RaftServer> servers = createServers(3);
     RaftClient client = createClient();
@@ -200,6 +204,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests opening a client before servers.
    */
+  @Test
   public void testOpenClientBeforeServer() throws Throwable {
     for (int i = 0; i < 3; i++) {
       members.add(nextMember(RaftMember.Type.ACTIVE));
@@ -224,6 +229,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests leaving a sever from a cluster.
    */
+  @Test
   public void testServerLeave() throws Throwable {
     List<RaftServer> servers = createServers(3);
     RaftServer server = servers.get(0);
@@ -234,6 +240,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests leaving the leader from a cluster.
    */
+  @Test
   public void testLeaderLeave() throws Throwable {
     List<RaftServer> servers = createServers(3);
     RaftServer server = servers.stream().filter(s -> s.getRole() == RaftServer.Role.LEADER).findFirst().get();
@@ -244,6 +251,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests keeping a client session alive.
    */
+  @Test
   public void testClientKeepAlive() throws Throwable {
     createServers(3);
     RaftClient client = createClient();
@@ -255,6 +263,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests an active member joining the cluster.
    */
+  @Test
   public void testActiveJoin() throws Throwable {
     testServerJoin(RaftMember.Type.ACTIVE);
   }
@@ -262,6 +271,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests a passive member joining the cluster.
    */
+  @Test
   public void testPassiveJoin() throws Throwable {
     testServerJoin(RaftMember.Type.PASSIVE);
   }
@@ -269,6 +279,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests a reserve member joining the cluster.
    */
+  @Test
   public void testReserveJoin() throws Throwable {
     testServerJoin(RaftMember.Type.RESERVE);
   }
@@ -286,6 +297,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests joining and leaving the cluster, resizing the quorum.
    */
+  @Test
   public void testResize() throws Throwable {
     RaftServer server = createServers(1).get(0);
     RaftServer joiner = createServer(nextMember(RaftMember.Type.ACTIVE));
@@ -299,6 +311,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests an availability change of an active member.
    */
+  @Test
   public void testActiveAvailabilityChange() throws Throwable {
     testAvailabilityChange(RaftMember.Type.ACTIVE);
   }
@@ -306,6 +319,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests an availability change of a passive member.
    */
+  @Test
   public void testPassiveAvailabilityChange() throws Throwable {
     testAvailabilityChange(RaftMember.Type.PASSIVE);
   }
@@ -313,6 +327,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests an availability change of a reserve member.
    */
+  @Test
   public void testReserveAvailabilityChange() throws Throwable {
     testAvailabilityChange(RaftMember.Type.RESERVE);
   }
@@ -345,6 +360,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests detecting an availability change of a reserve member on a passive member.
    */
+  @Test
   public void testPassiveReserveAvailabilityChange() throws Throwable {
     createServers(3);
 
@@ -376,6 +392,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests detecting an availability change of a passive member on a reserve member.
    */
+  @Test
   public void testReservePassiveAvailabilityChange() throws Throwable {
     createServers(3);
 
@@ -399,6 +416,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests an active member join event.
    */
+  @Test
   public void testActiveJoinEvent() throws Throwable {
     testJoinEvent(RaftMember.Type.ACTIVE);
   }
@@ -406,6 +424,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests a passive member join event.
    */
+  @Test
   public void testPassiveJoinEvent() throws Throwable {
     testJoinEvent(RaftMember.Type.PASSIVE);
   }
@@ -413,6 +432,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests a reserve member join event.
    */
+  @Test
   public void testReserveJoinEvent() throws Throwable {
     testJoinEvent(RaftMember.Type.RESERVE);
   }
@@ -442,6 +462,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests demoting the leader.
    */
+  @Test
   public void testDemoteLeader() throws Throwable {
     List<RaftServer> servers = createServers(3);
 
@@ -466,6 +487,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a command.
    */
+  @Test
   public void testOneNodeSubmitCommand() throws Throwable {
     testSubmitCommand(1);
   }
@@ -473,6 +495,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a command.
    */
+  @Test
   public void testTwoNodeSubmitCommand() throws Throwable {
     testSubmitCommand(2);
   }
@@ -480,6 +503,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a command.
    */
+  @Test
   public void testThreeNodeSubmitCommand() throws Throwable {
     testSubmitCommand(3);
   }
@@ -487,6 +511,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a command.
    */
+  @Test
   public void testFourNodeSubmitCommand() throws Throwable {
     testSubmitCommand(4);
   }
@@ -494,6 +519,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a command.
    */
+  @Test
   public void testFiveNodeSubmitCommand() throws Throwable {
     testSubmitCommand(5);
   }
@@ -514,6 +540,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a command.
    */
+  @Test
   public void testTwoOfThreeNodeSubmitCommand() throws Throwable {
     testSubmitCommand(2, 3);
   }
@@ -521,6 +548,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a command.
    */
+  @Test
   public void testThreeOfFourNodeSubmitCommand() throws Throwable {
     testSubmitCommand(3, 4);
   }
@@ -528,6 +556,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a command.
    */
+  @Test
   public void testThreeOfFiveNodeSubmitCommand() throws Throwable {
     testSubmitCommand(3, 5);
   }
@@ -548,6 +577,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testOneNodeSubmitQueryWithSequentialConsistency() throws Throwable {
     testSubmitQuery(1, ReadConsistency.SEQUENTIAL);
   }
@@ -555,6 +585,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testOneNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
     testSubmitQuery(1, ReadConsistency.LINEARIZABLE_LEASE);
   }
@@ -562,6 +593,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testOneNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
     testSubmitQuery(1, ReadConsistency.LINEARIZABLE);
   }
@@ -569,6 +601,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testTwoNodeSubmitQueryWithSequentialConsistency() throws Throwable {
     testSubmitQuery(2, ReadConsistency.SEQUENTIAL);
   }
@@ -576,6 +609,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testTwoNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
     testSubmitQuery(2, ReadConsistency.LINEARIZABLE_LEASE);
   }
@@ -583,6 +617,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testTwoNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
     testSubmitQuery(2, ReadConsistency.LINEARIZABLE);
   }
@@ -590,6 +625,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testThreeNodeSubmitQueryWithSequentialConsistency() throws Throwable {
     testSubmitQuery(3, ReadConsistency.SEQUENTIAL);
   }
@@ -597,6 +633,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testThreeNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
     testSubmitQuery(3, ReadConsistency.LINEARIZABLE_LEASE);
   }
@@ -604,6 +641,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testThreeNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
     testSubmitQuery(3, ReadConsistency.LINEARIZABLE);
   }
@@ -611,6 +649,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testFourNodeSubmitQueryWithSequentialConsistency() throws Throwable {
     testSubmitQuery(4, ReadConsistency.SEQUENTIAL);
   }
@@ -618,6 +657,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testFourNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
     testSubmitQuery(4, ReadConsistency.LINEARIZABLE_LEASE);
   }
@@ -625,6 +665,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testFourNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
     testSubmitQuery(4, ReadConsistency.LINEARIZABLE);
   }
@@ -632,6 +673,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testFiveNodeSubmitQueryWithSequentialConsistency() throws Throwable {
     testSubmitQuery(5, ReadConsistency.SEQUENTIAL);
   }
@@ -639,6 +681,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testFiveNodeSubmitQueryWithBoundedLinearizableConsistency() throws Throwable {
     testSubmitQuery(5, ReadConsistency.LINEARIZABLE_LEASE);
   }
@@ -646,6 +689,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a query.
    */
+  @Test
   public void testFiveNodeSubmitQueryWithLinearizableConsistency() throws Throwable {
     testSubmitQuery(5, ReadConsistency.LINEARIZABLE);
   }
@@ -666,6 +710,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a sequential event.
    */
+  @Test
   public void testOneNodeSequentialEvent() throws Throwable {
     testSequentialEvent(1);
   }
@@ -673,6 +718,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a sequential event.
    */
+  @Test
   public void testTwoNodeSequentialEvent() throws Throwable {
     testSequentialEvent(2);
   }
@@ -680,6 +726,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a sequential event.
    */
+  @Test
   public void testThreeNodeSequentialEvent() throws Throwable {
     testSequentialEvent(3);
   }
@@ -687,6 +734,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a sequential event.
    */
+  @Test
   public void testFourNodeSequentialEvent() throws Throwable {
     testSequentialEvent(4);
   }
@@ -694,6 +742,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting a sequential event.
    */
+  @Test
   public void testFiveNodeSequentialEvent() throws Throwable {
     testSequentialEvent(5);
   }
@@ -729,6 +778,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting sequential events.
    */
+  @Test
   public void testOneNodeEvents() throws Throwable {
     testEvents(1);
   }
@@ -736,6 +786,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting sequential events.
    */
+  @Test
   public void testTwoNodeEvents() throws Throwable {
     testEvents(2);
   }
@@ -743,6 +794,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting sequential events.
    */
+  @Test
   public void testThreeNodeEvents() throws Throwable {
     testEvents(3);
   }
@@ -750,6 +802,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting sequential events.
    */
+  @Test
   public void testFourNodeEvents() throws Throwable {
     testEvents(4);
   }
@@ -757,6 +810,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting sequential events.
    */
+  @Test
   public void testFiveNodeEvents() throws Throwable {
     testEvents(5);
   }
@@ -790,6 +844,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests that operations are properly sequenced on the client.
    */
+  @Test
   public void testSequenceLinearizableOperations() throws Throwable {
     testSequenceOperations(5, ReadConsistency.LINEARIZABLE);
   }
@@ -797,6 +852,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests that operations are properly sequenced on the client.
    */
+  @Test
   public void testSequenceBoundedLinearizableOperations() throws Throwable {
     testSequenceOperations(5, ReadConsistency.LINEARIZABLE_LEASE);
   }
@@ -804,6 +860,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests that operations are properly sequenced on the client.
    */
+  @Test
   public void testSequenceSequentialOperations() throws Throwable {
     testSequenceOperations(5, ReadConsistency.SEQUENTIAL);
   }
@@ -855,6 +912,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests blocking within an event thread.
    */
+  @Test
   public void testBlockOnEvent() throws Throwable {
     createServers(3);
 
@@ -887,6 +945,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting linearizable events.
    */
+  @Test
   public void testFiveNodeManyEvents() throws Throwable {
     testManyEvents(5);
   }
@@ -914,6 +973,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting linearizable events.
    */
+  @Test
   public void testThreeNodesManyEventsAfterLeaderShutdown() throws Throwable {
     testManyEventsAfterLeaderShutdown(3);
   }
@@ -921,6 +981,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting linearizable events.
    */
+  @Test
   public void testFiveNodesManyEventsAfterLeaderShutdown() throws Throwable {
     testManyEventsAfterLeaderShutdown(5);
   }
@@ -957,6 +1018,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting sequential events.
    */
+  @Test
   public void testThreeNodesEventsAfterFollowerKill() throws Throwable {
     testEventsAfterFollowerKill(3);
   }
@@ -964,6 +1026,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting sequential events.
    */
+  @Test
   public void testFiveNodesEventsAfterFollowerKill() throws Throwable {
     testEventsAfterFollowerKill(5);
   }
@@ -1004,6 +1067,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting events.
    */
+  @Test
   public void testFiveNodesEventsAfterLeaderKill() throws Throwable {
     testEventsAfterLeaderKill(5);
   }
@@ -1044,6 +1108,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests submitting linearizable events.
    */
+  @Test
   public void testFiveNodeManySessionsManyEvents() throws Throwable {
     testManySessionsManyEvents(5);
   }
@@ -1081,6 +1146,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests session expiring events.
    */
+  @Test
   public void testOneNodeExpireEvent() throws Throwable {
     testSessionExpire(1);
   }
@@ -1088,6 +1154,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests session expiring events.
    */
+  @Test
   public void testThreeNodeExpireEvent() throws Throwable {
     testSessionExpire(3);
   }
@@ -1095,6 +1162,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests session expiring events.
    */
+  @Test
   public void testFiveNodeExpireEvent() throws Throwable {
     testSessionExpire(5);
   }
@@ -1118,6 +1186,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests session close events.
    */
+  @Test
   public void testOneNodeCloseEvent() throws Throwable {
     testSessionClose(1);
   }
@@ -1125,6 +1194,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests session close events.
    */
+  @Test
   public void testThreeNodeCloseEvent() throws Throwable {
     testSessionClose(3);
   }
@@ -1132,6 +1202,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Tests session close events.
    */
+  @Test
   public void testFiveNodeCloseEvent() throws Throwable {
     testSessionClose(5);
   }
@@ -1266,8 +1337,8 @@ public class RaftTest extends ConcurrentTestCase {
         .build();
   }
 
-  @BeforeMethod
-  @AfterMethod
+  @Before
+  @After
   public void clearTests() throws Exception {
     clients.forEach(c -> {
       try {
@@ -1357,7 +1428,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     @Override
     public void install(SnapshotReader reader) {
-      assertEquals(reader.readLong(), 10);
+      assertEquals(10, reader.readLong());
     }
 
     protected long write(RaftCommit<Void> commit) {

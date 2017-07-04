@@ -15,12 +15,15 @@
  */
 package io.atomix.storage.buffer;
 
-import org.testng.annotations.AfterTest;
+import org.junit.AfterClass;
+import org.junit.Test;
 
 import java.io.File;
 import java.nio.file.Files;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * File buffer test.
@@ -28,8 +31,8 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileBufferTest extends BufferTest {
-  @AfterTest
-  protected void afterTest() {
+  @AfterClass
+  public static void afterTest() {
     FileTesting.cleanFiles();
   }
 
@@ -43,6 +46,7 @@ public class FileBufferTest extends BufferTest {
     return FileBuffer.allocate(FileTesting.createFile(), capacity, maxCapacity);
   }
 
+  @Test
   public void testFileToHeapBuffer() {
     File file = FileTesting.createFile();
     try (FileBuffer buffer = FileBuffer.allocate(file, 16)) {
@@ -58,6 +62,7 @@ public class FileBufferTest extends BufferTest {
   /**
    * Rests reopening a file that has been closed.
    */
+  @Test
   public void testPersist() {
     File file = FileTesting.createFile();
     try (FileBuffer buffer = FileBuffer.allocate(file, 16)) {
@@ -74,6 +79,7 @@ public class FileBufferTest extends BufferTest {
   /**
    * Tests deleting a file.
    */
+  @Test
   public void testDelete() {
     File file = FileTesting.createFile();
     FileBuffer buffer = FileBuffer.allocate(file, 16);

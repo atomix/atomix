@@ -15,23 +15,23 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.io.File;
 import java.util.Date;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Snapshot file test.
  */
-@Test
 public class SnapshotFileTest {
 
   /**
    * Tests creating a snapshot file name.
    */
+  @Test
   public void testCreateSnapshotFileName() throws Exception {
     long timestamp = 3;
     String timestampString = SnapshotFile.TIMESTAMP_FORMAT.format(new Date(timestamp));
@@ -42,6 +42,7 @@ public class SnapshotFileTest {
   /**
    * Tests determining whether a file is a snapshot file.
    */
+  @Test
   public void testCreateValidateSnapshotFile() throws Exception {
     File file = SnapshotFile.createSnapshotFile("test", new File(System.getProperty("user.dir")), 1, 2, 3);
     assertTrue(SnapshotFile.isSnapshotFile("test", file));
@@ -50,6 +51,7 @@ public class SnapshotFileTest {
   /**
    * Tests parsing the snapshot identifier.
    */
+  @Test
   public void testParseSnapshotId() throws Exception {
     String fileName = SnapshotFile.createSnapshotFileName("test", 1, 2, 3);
     assertEquals(SnapshotFile.parseId(fileName), 1);
@@ -58,6 +60,7 @@ public class SnapshotFileTest {
   /**
    * Tests parsing the snapshot index.
    */
+  @Test
   public void testParseSnapshotIndex() throws Exception {
     String fileName = SnapshotFile.createSnapshotFileName("test", 1, 2, 3);
     assertEquals(SnapshotFile.parseIndex(fileName), 2);
@@ -66,11 +69,16 @@ public class SnapshotFileTest {
   /**
    * Tests parsing the snapshot timestamp.
    */
+  @Test
   public void testParseSnapshotTimestamp() throws Exception {
     String fileName = SnapshotFile.createSnapshotFileName("test", 1, 2, 3);
     assertEquals(SnapshotFile.parseTimestamp(fileName), SnapshotFile.TIMESTAMP_FORMAT.parse(SnapshotFile.TIMESTAMP_FORMAT.format(3)).getTime());
   }
 
+  /**
+   * Tests parsing a timestamp string.
+   */
+  @Test
   public void testTimestampDecoder() throws Exception {
     String timestampString = "20170624151018000";
     SnapshotFile.TIMESTAMP_FORMAT.parse(timestampString);

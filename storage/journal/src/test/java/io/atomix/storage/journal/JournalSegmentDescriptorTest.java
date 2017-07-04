@@ -17,27 +17,27 @@ package io.atomix.storage.journal;
 
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
+import org.junit.After;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Segment descriptor test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
 public class JournalSegmentDescriptorTest {
   private static final File file = new File("descriptor.log");
 
   /**
    * Tests the segment descriptor builder.
    */
+  @Test
   public void testDescriptorBuilder() {
     JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES))
       .withId(2)
@@ -61,6 +61,7 @@ public class JournalSegmentDescriptorTest {
   /**
    * Tests persisting the segment descriptor.
    */
+  @Test
   public void testDescriptorPersist() {
     Buffer buffer = FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES);
     JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder(buffer)
@@ -98,6 +99,7 @@ public class JournalSegmentDescriptorTest {
   /**
    * Tests copying the segment descriptor.
    */
+  @Test
   public void testDescriptorCopy() {
     JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
       .withId(2)
@@ -122,11 +124,10 @@ public class JournalSegmentDescriptorTest {
   /**
    * Deletes the descriptor file.
    */
-  @AfterMethod
+  @After
   public void deleteDescriptor() throws IOException {
     if (Files.exists(file.toPath())) {
       Files.delete(file.toPath());
     }
   }
-
 }
