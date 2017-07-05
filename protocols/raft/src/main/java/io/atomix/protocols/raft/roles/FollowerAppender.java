@@ -42,9 +42,8 @@ final class FollowerAppender extends AbstractAppender {
 
   @Override
   protected boolean hasMoreEntries(RaftMemberContext member) {
-    return member.getMember().getType() == RaftMember.Type.PASSIVE
-        && member.getNextIndex() <= server.getCommitIndex()
-        && member.getLogReader().hasNext();
+    // The PASSIVE member log reader will read only committed entries, so hasNext() should suffice.
+    return member.getMember().getType() == RaftMember.Type.PASSIVE && member.getLogReader().hasNext();
   }
 
   @Override
@@ -56,8 +55,8 @@ final class FollowerAppender extends AbstractAppender {
 
     // If the member's current snapshot index is less than the latest snapshot index and the latest snapshot index
     // is less than the nextIndex, send a snapshot request.
-    Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getNextIndex());
-    if (snapshot != null) {
+    Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
+    if (snapshot != null && member.getSnapshotIndex() < snapshot.index()) {
       if (member.canInstall()) {
         sendInstallRequest(member, buildInstallRequest(member));
       }

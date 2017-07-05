@@ -32,10 +32,10 @@ public final class RaftMemberContext {
   private final ThreadContext context;
   private long term;
   private long configIndex;
+  private long snapshotIndex;
   private long nextSnapshotIndex;
   private int nextSnapshotOffset;
   private long matchIndex;
-  private long nextIndex;
   private long heartbeatTime;
   private long heartbeatStartTime;
   private int appending;
@@ -56,10 +56,10 @@ public final class RaftMemberContext {
    * Resets the member state.
    */
   public void resetState(RaftLog log) {
+    snapshotIndex = 0;
     nextSnapshotIndex = 0;
     nextSnapshotOffset = 0;
     matchIndex = 0;
-    nextIndex = log.writer().getLastIndex() + 1;
     heartbeatTime = 0;
     heartbeatStartTime = 0;
     appending = 0;
@@ -143,6 +143,24 @@ public final class RaftMemberContext {
   }
 
   /**
+   * Returns the member's current snapshot index.
+   *
+   * @return The member's current snapshot index.
+   */
+  public long getSnapshotIndex() {
+    return snapshotIndex;
+  }
+
+  /**
+   * Sets the member's current snapshot index.
+   *
+   * @param snapshotIndex The member's current snapshot index.
+   */
+  public void setSnapshotIndex(long snapshotIndex) {
+    this.snapshotIndex = snapshotIndex;
+  }
+
+  /**
    * Returns the member's next snapshot index.
    *
    * @return The member's next snapshot index.
@@ -198,31 +216,21 @@ public final class RaftMemberContext {
   }
 
   /**
-   * Returns the member's next index.
-   *
-   * @return The member's next index.
-   */
-  public long getNextIndex() {
-    return nextIndex;
-  }
-
-  /**
-   * Sets the member's next index.
-   *
-   * @param nextIndex The member's next index.
-   */
-  public void setNextIndex(long nextIndex) {
-    checkArgument(nextIndex > 0, "nextIndex must be positive");
-    this.nextIndex = nextIndex;
-  }
-
-  /**
    * Returns a boolean indicating whether an append request can be sent to the member.
    *
    * @return Indicates whether an append request can be sent to the member.
    */
   public boolean canAppend() {
     return appending == 0 || (appendSucceeded && appending < MAX_APPENDS && System.currentTimeMillis() - (timeBuffer.average() / MAX_APPENDS) >= appendTime);
+  }
+
+  /**
+   * Returns whether a heartbeat can be sent to the member.
+   *
+   * @return Indicates whether a heartbeat can be sent to the member.
+   */
+  public boolean canHeartbeat() {
+    return appending == 0;
   }
 
   /**
@@ -382,14 +390,16 @@ public final class RaftMemberContext {
 
   @Override
   public String toString() {
+    RaftLogReader reader = this.reader;
     return toStringHelper(this)
         .add("member", member.memberId())
         .add("term", term)
         .add("configIndex", configIndex)
+        .add("snapshotIndex", snapshotIndex)
         .add("nextSnapshotIndex", nextSnapshotIndex)
         .add("nextSnapshotOffset", nextSnapshotOffset)
         .add("matchIndex", matchIndex)
-        .add("nextIndex", nextIndex)
+        .add("nextIndex", reader != null ? reader.getNextIndex() : matchIndex + 1)
         .add("heartbeatTime", heartbeatTime)
         .add("heartbeatStartTime", heartbeatStartTime)
         .add("appending", appending)

@@ -83,7 +83,9 @@ abstract class AbstractAppender implements AutoCloseable {
       // If the next index is greater than the last index then send an empty commit.
       // If the member failed to respond to recent communication send an empty commit. This
       // helps avoid doing expensive work until we can ascertain the member is back up.
-      if (!reader.hasNext() || member.getFailureCount() > 0) {
+      if (!reader.hasNext()) {
+        return buildAppendEmptyRequest(member);
+      } else if (member.getFailureCount() > 0) {
         return buildAppendEmptyRequest(member);
       } else {
         return buildAppendEntriesRequest(member, lastIndex);
@@ -99,7 +101,6 @@ abstract class AbstractAppender implements AutoCloseable {
    * <p>
    * Empty append requests are used as heartbeats to followers.
    */
-  @SuppressWarnings("unchecked")
   protected AppendRequest buildAppendEmptyRequest(RaftMemberContext member) {
     member.getThreadContext().checkThread();
 
@@ -115,7 +116,7 @@ abstract class AbstractAppender implements AutoCloseable {
         .withLeader(leader != null ? leader.memberId() : null)
         .withPrevLogIndex(prevEntry != null ? prevEntry.index() : 0)
         .withPrevLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
-        .withEntries(Collections.EMPTY_LIST)
+        .withEntries(Collections.emptyList())
         .withCommitIndex(server.getCommitIndex())
         .build();
   }
@@ -152,21 +153,18 @@ abstract class AbstractAppender implements AutoCloseable {
 
     // Iterate through the log until the last index or the end of the log is reached.
     while (reader.hasNext()) {
-      // Get the next index from the reader.
-      long nextIndex = reader.getNextIndex();
-
-      // If a snapshot exists at the next index, complete the request. This will ensure that
-      // the snapshot is sent on the next index.
-      Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(nextIndex);
-      if (snapshot != null) {
-        break;
-      }
-
       // Otherwise, read the next entry and add it to the batch.
       Indexed<RaftLogEntry> entry = reader.next();
       entries.add(entry.entry());
       size += entry.size();
       if (entry.index() == lastIndex || size >= MAX_BATCH_SIZE) {
+        break;
+      }
+
+      // If a snapshot exists at the next index, complete the request. This will ensure that
+      // the snapshot is sent on the next index.
+      Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(entry.index());
+      if (snapshot != null) {
         break;
       }
     }
@@ -179,6 +177,11 @@ abstract class AbstractAppender implements AutoCloseable {
    * Connects to the member and sends a commit message.
    */
   protected void sendAppendRequest(RaftMemberContext member, AppendRequest request) {
+    // If this is a heartbeat message and a heartbeat is already in progress, skip the request.
+    if (request.entries().isEmpty() && !member.canHeartbeat()) {
+      return;
+    }
+
     // Start the append to the member.
     member.startAppend();
 
@@ -205,7 +208,6 @@ abstract class AbstractAppender implements AutoCloseable {
       }
     }, member.getThreadContext());
 
-    updateNextIndex(member, request);
     if (!request.entries().isEmpty() && hasMoreEntries(member)) {
       appendEntries(member);
     }
@@ -320,16 +322,6 @@ abstract class AbstractAppender implements AutoCloseable {
   }
 
   /**
-   * Updates the next index when the match index is updated.
-   */
-  protected void updateNextIndex(RaftMemberContext member, AppendRequest request) {
-    // If the match index was set, update the next index to be greater than the match index if necessary.
-    if (!request.entries().isEmpty()) {
-      member.setNextIndex(request.prevLogIndex() + request.entries().size() + 1);
-    }
-  }
-
-  /**
    * Resets the match index when a response fails.
    */
   protected void resetMatchIndex(RaftMemberContext member, AppendResponse response) {
@@ -344,9 +336,8 @@ abstract class AbstractAppender implements AutoCloseable {
     final RaftLogReader reader = member.getLogReader();
     reader.getLock().lock();
     try {
-      member.setNextIndex(member.getMatchIndex() + 1);
       if (member.getMatchIndex() != 0) {
-        reader.reset(member.getNextIndex());
+        reader.reset(member.getMatchIndex() + 1);
       } else {
         reader.reset();
       }
@@ -454,7 +445,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Builds an install request for the given member.
    */
   protected InstallRequest buildInstallRequest(RaftMemberContext member) {
-    Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getNextIndex());
+    Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
     if (member.getNextSnapshotIndex() != snapshot.index()) {
       member.setNextSnapshotIndex(snapshot.index());
       member.setNextSnapshotOffset(0);
@@ -466,7 +457,7 @@ abstract class AbstractAppender implements AutoCloseable {
       try (SnapshotReader reader = snapshot.openReader()) {
         // Skip to the next batch of bytes according to the snapshot chunk size and current offset.
         reader.skip(member.getNextSnapshotOffset() * MAX_BATCH_SIZE);
-        byte[] data = new byte[Math.min(MAX_BATCH_SIZE, (int) reader.remaining())];
+        byte[] data = new byte[Math.min(MAX_BATCH_SIZE, reader.remaining())];
         reader.read(data);
 
         // Create the install request, indicating whether this is the last chunk of data based on the number
@@ -560,7 +551,7 @@ abstract class AbstractAppender implements AutoCloseable {
     if (request.complete()) {
       member.setNextSnapshotIndex(0);
       member.setNextSnapshotOffset(0);
-      member.setNextIndex(request.snapshotIndex() + 1);
+      member.setSnapshotIndex(request.snapshotIndex());
     }
     // If more install requests remain, increment the member's snapshot offset.
     else {

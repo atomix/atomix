@@ -211,8 +211,8 @@ final class LeaderAppender extends AbstractAppender {
     }
     // If there's a snapshot at the member's nextIndex, replicate the snapshot.
     else if (member.getMember().getType() == RaftMember.Type.ACTIVE) {
-      Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getNextIndex());
-      if (snapshot != null) {
+      Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
+      if (snapshot != null && member.getSnapshotIndex() < snapshot.index()) {
         if (member.canInstall()) {
           sendInstallRequest(member, buildInstallRequest(member));
         }
