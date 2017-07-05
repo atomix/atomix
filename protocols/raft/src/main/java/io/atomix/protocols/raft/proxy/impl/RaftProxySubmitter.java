@@ -119,14 +119,14 @@ final class RaftProxySubmitter {
   /**
    * Submits a command request to the cluster.
    */
-  private <T> void submitCommand(CommandRequest request, CompletableFuture<byte[]> future) {
+  private void submitCommand(CommandRequest request, CompletableFuture<byte[]> future) {
     submit(new CommandAttempt(sequencer.nextRequest(), request, future));
   }
 
   /**
    * Submits a query to the cluster.
    */
-  private <T> void submitQuery(RaftOperation operation, CompletableFuture<byte[]> future) {
+  private void submitQuery(RaftOperation operation, CompletableFuture<byte[]> future) {
     QueryRequest request = QueryRequest.newBuilder()
         .withSession(state.getSessionId().id())
         .withSequence(state.getCommandRequest())

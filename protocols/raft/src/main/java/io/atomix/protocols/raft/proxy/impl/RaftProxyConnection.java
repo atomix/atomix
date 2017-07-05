@@ -123,7 +123,11 @@ public class RaftProxyConnection {
    */
   public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
     CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
-    sendRequest(request, protocol::openSession, future);
+    if (context.isCurrentContext()) {
+      sendRequest(request, protocol::openSession, next(), future);
+    } else {
+      context.execute(() -> sendRequest(request, protocol::openSession, next(), future));
+    }
     return future;
   }
 
@@ -135,7 +139,11 @@ public class RaftProxyConnection {
    */
   public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
     CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();
-    sendRequest(request, protocol::closeSession, future);
+    if (context.isCurrentContext()) {
+      sendRequest(request, protocol::closeSession, next(), future);
+    } else {
+      context.execute(() -> sendRequest(request, protocol::closeSession, next(), future));
+    }
     return future;
   }
 
@@ -147,7 +155,11 @@ public class RaftProxyConnection {
    */
   public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
     CompletableFuture<KeepAliveResponse> future = new CompletableFuture<>();
-    sendRequest(request, protocol::keepAlive, future);
+    if (context.isCurrentContext()) {
+      sendRequest(request, protocol::keepAlive, next(), future);
+    } else {
+      context.execute(() -> sendRequest(request, protocol::keepAlive, next(), future));
+    }
     return future;
   }
 
@@ -159,7 +171,11 @@ public class RaftProxyConnection {
    */
   public CompletableFuture<QueryResponse> query(QueryRequest request) {
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    sendRequest(request, protocol::query, future);
+    if (context.isCurrentContext()) {
+      sendRequest(request, protocol::query, next(), future);
+    } else {
+      context.execute(() -> sendRequest(request, protocol::query, next(), future));
+    }
     return future;
   }
 
@@ -171,7 +187,11 @@ public class RaftProxyConnection {
    */
   public CompletableFuture<CommandResponse> command(CommandRequest request) {
     CompletableFuture<CommandResponse> future = new CompletableFuture<>();
-    sendRequest(request, protocol::command, future);
+    if (context.isCurrentContext()) {
+      sendRequest(request, protocol::command, next(), future);
+    } else {
+      context.execute(() -> sendRequest(request, protocol::command, next(), future));
+    }
     return future;
   }
 
@@ -183,15 +203,18 @@ public class RaftProxyConnection {
    */
   public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
-    sendRequest(request, protocol::metadata, future);
+    if (context.isCurrentContext()) {
+      sendRequest(request, protocol::metadata, next(), future);
+    } else {
+      context.execute(() -> sendRequest(request, protocol::metadata, next(), future));
+    }
     return future;
   }
 
   /**
    * Sends the given request attempt to the cluster.
    */
-  protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<MemberId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
-    MemberId member = next();
+  protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<MemberId, T, CompletableFuture<U>> sender, MemberId member, CompletableFuture<U> future) {
     if (member != null) {
       log.trace("Sending {} to {}", request, member);
       sender.apply(member, request).whenCompleteAsync((r, e) -> {
@@ -210,15 +233,15 @@ public class RaftProxyConnection {
    * Resends a request due to a request failure, resetting the connection if necessary.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends RaftRequest> void retryRequest(Throwable cause, T request, BiFunction sender, MemberId node, CompletableFuture future) {
+  protected <T extends RaftRequest> void retryRequest(Throwable cause, T request, BiFunction sender, MemberId member, CompletableFuture future) {
     // If the connection has not changed, reset it and connect to the next server.
-    if (this.member == node) {
+    if (this.member == member) {
       log.trace("Resetting connection. Reason: {}", cause.getMessage());
       this.member = null;
     }
 
     // Attempt to send the request again.
-    sendRequest(request, sender, future);
+    sendRequest(request, sender, next(), future);
   }
 
   /**
@@ -230,6 +253,7 @@ public class RaftProxyConnection {
       if (COMPLETE_PREDICATE.test(response)) {
         log.trace("Received {} from {}", response, member);
         future.complete(response);
+        reset();
       } else {
         retryRequest(response.error().createException(), request, sender, member, future);
       }
@@ -250,12 +274,6 @@ public class RaftProxyConnection {
    * Connects to the cluster.
    */
   protected MemberId next() {
-    // If the address selector has been reset then reset the connection.
-    if (selector.state() == MemberSelector.State.RESET && member != null) {
-      this.member = selector.next();
-      return this.member;
-    }
-
     // If a connection was already established then use that connection.
     if (member != null) {
       return member;
