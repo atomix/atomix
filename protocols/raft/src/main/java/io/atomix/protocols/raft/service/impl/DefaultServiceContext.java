@@ -16,16 +16,15 @@
 
 package io.atomix.protocols.raft.service.impl;
 
-import io.atomix.protocols.raft.operation.OperationId;
-import io.atomix.protocols.raft.operation.OperationType;
-import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.RaftException;
-import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
-import io.atomix.protocols.raft.service.AbstractRaftService;
+import io.atomix.protocols.raft.operation.OperationId;
+import io.atomix.protocols.raft.operation.OperationType;
+import io.atomix.protocols.raft.operation.RaftOperation;
+import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.protocols.raft.service.ServiceId;
@@ -103,7 +102,7 @@ public class DefaultServiceContext implements ServiceContext {
     this.sessions = new DefaultServiceSessions(sessionManager);
     this.stateMachineExecutor = checkNotNull(stateMachineExecutor);
     this.snapshotExecutor = checkNotNull(snapshotExecutor);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(AbstractRaftService.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
         .addValue(serviceId)
         .add("type", serviceType)
         .add("name", serviceName)
