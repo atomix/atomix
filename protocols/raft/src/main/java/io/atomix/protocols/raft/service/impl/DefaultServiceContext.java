@@ -230,7 +230,9 @@ public class DefaultServiceContext implements ServiceContext {
    * Takes a snapshot of the state machine.
    */
   private synchronized void maybeTakeSnapshot(long index, long timestamp) {
-    if (pendingSnapshot == null && snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS) {
+    Snapshot currentSnapshot = server.getSnapshotStore().getSnapshotById(serviceId);
+    if ((currentSnapshot == null || currentSnapshot.index() < index) && pendingSnapshot == null
+        && (snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS)) {
       log.info("Taking snapshot {}", index);
       pendingSnapshot = server.getSnapshotStore()
           .newTemporarySnapshot(serviceId, index, WallClockTimestamp.from(timestamp));
@@ -287,7 +289,7 @@ public class DefaultServiceContext implements ServiceContext {
    */
   private void maybeInstallSnapshot(long index) {
     Snapshot snapshot = server.getSnapshotStore().getSnapshotById(serviceId);
-    if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() <= index) {
+    if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() < index) {
       log.info("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
         int sessionCount = reader.readInt();
