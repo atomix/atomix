@@ -114,12 +114,14 @@ public final class SnapshotFile {
    */
   @VisibleForTesting
   static String createSnapshotFileName(String name, long id, long index, long timestamp) {
-    return String.format("%s-%d-%d-%s.%s",
-        checkNotNull(name, "name cannot be null"),
-        id,
-        index,
-        TIMESTAMP_FORMAT.format(new Date(timestamp)),
-        EXTENSION);
+    synchronized (TIMESTAMP_FORMAT) {
+      return String.format("%s-%d-%d-%s.%s",
+          checkNotNull(name, "name cannot be null"),
+          id,
+          index,
+          TIMESTAMP_FORMAT.format(new Date(timestamp)),
+          EXTENSION);
+    }
   }
 
   /**
