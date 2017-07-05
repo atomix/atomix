@@ -468,18 +468,6 @@ public class SegmentedJournal<E> implements Journal<E> {
         descriptor.close();
       }
     }
-
-    for (Long segmentId : segments.keySet()) {
-      JournalSegment segment = segments.get(segmentId);
-      Map.Entry<Long, JournalSegment> previousEntry = segments.floorEntry(segmentId - 1);
-      if (previousEntry != null) {
-        JournalSegment previousSegment = previousEntry.getValue();
-        if (previousSegment.index() + previousSegment.length() - 1 < segment.index()) {
-          throw new IllegalStateException("Corrupted log: Previous segment " + previousSegment + " does not align with next segment " + segment);
-        }
-      }
-    }
-
     return segments.values();
   }
 
