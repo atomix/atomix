@@ -1272,7 +1272,8 @@ public class RaftTest extends ConcurrentTestCase {
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/test-logs/%s", member.memberId())))
             .withSerializer(storageSerializer)
-            .withMaxSegmentSize(1024 * 1024)
+            .withMaxSegmentSize(1024 * 10)
+            .withMaxEntriesPerSegment(10)
             .build())
         .addService("test", TestStateMachine::new);
 
