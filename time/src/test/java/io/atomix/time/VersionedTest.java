@@ -16,6 +16,7 @@
 package io.atomix.time;
 
 import com.google.common.testing.EqualsTester;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -32,6 +33,7 @@ public class VersionedTest {
   /**
    * Tests the creation of the MapEvent object.
    */
+  @Test
   public void testConstruction() {
     assertThat(stats1.value(), is(1));
     assertThat(stats1.version(), is(2L));
@@ -51,6 +53,7 @@ public class VersionedTest {
   /**
    * Tests the map function.
    */
+  @Test
   public void testMap() {
     Versioned<String> tempObj = stats1.map(VersionedTest::transform);
     assertThat(tempObj.value(), is("1"));
@@ -59,6 +62,7 @@ public class VersionedTest {
   /**
    * Tests the valueOrElse method.
    */
+  @Test
   public void testOrElse() {
     Versioned<String> vv = new Versioned<>("foo", 1);
     Versioned<String> nullVV = null;
@@ -69,6 +73,7 @@ public class VersionedTest {
   /**
    * Tests the equals, hashCode and toString methods using Guava EqualsTester.
    */
+  @Test
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(stats1, stats1)
