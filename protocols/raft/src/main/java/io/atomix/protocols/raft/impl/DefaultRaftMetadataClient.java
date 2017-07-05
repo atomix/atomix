@@ -25,6 +25,7 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyConnection;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.LoggerContext;
@@ -91,11 +92,18 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   }
 
   @Override
-  public CompletableFuture<Set<RaftSessionMetadata>> getSessions(String type) {
+  public CompletableFuture<Set<RaftSessionMetadata>> getSessions(ServiceType serviceType) {
     return getMetadata().thenApply(response -> response.sessions()
         .stream()
-        .filter(s -> s.serviceType().id().equals(type))
+        .filter(s -> s.serviceType().id().equals(serviceType.id()))
         .collect(Collectors.toSet()));
   }
 
+  @Override
+  public CompletableFuture<Set<RaftSessionMetadata>> getSessions(ServiceType serviceType, String serviceName) {
+    return getMetadata().thenApply(response -> response.sessions()
+        .stream()
+        .filter(s -> s.serviceType().id().equals(serviceType.id()) && s.serviceName().equals(serviceName))
+        .collect(Collectors.toSet()));
+  }
 }

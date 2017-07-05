@@ -29,7 +29,9 @@ import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.RaftCommit;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
@@ -64,6 +66,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -74,6 +77,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Raft test.
@@ -111,6 +115,23 @@ public class RaftTest extends ConcurrentTestCase {
   protected volatile List<RaftClient> clients = new ArrayList<>();
   protected volatile List<RaftServer> servers = new ArrayList<>();
   protected volatile TestRaftProtocolFactory protocolFactory;
+
+  /**
+   * Tests getting session metadata.
+   */
+  @Test
+  public void testSessionMetadata() throws Throwable {
+    createServers(3);
+    RaftClient client = createClient();
+    createSession(client);
+    createSession(client);
+    assertNotNull(client.metadata().getLeader());
+    assertNotNull(client.metadata().getServers());
+    Set<RaftSessionMetadata> typeSessions = client.metadata().getSessions(ServiceType.from("test")).join();
+    assertEquals(2, typeSessions.size());
+    Set<RaftSessionMetadata> serviceSessions = client.metadata().getSessions(ServiceType.from("test"), "test").join();
+    assertEquals(2, serviceSessions.size());
+  }
 
   /**
    * Tests starting several members individually.

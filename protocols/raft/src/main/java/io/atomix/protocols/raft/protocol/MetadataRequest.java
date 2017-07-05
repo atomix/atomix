@@ -39,7 +39,6 @@ public class MetadataRequest extends SessionRequest {
   public static class Builder extends SessionRequest.Builder<Builder, MetadataRequest> {
     @Override
     public MetadataRequest build() {
-      validate();
       return new MetadataRequest(session);
     }
   }
