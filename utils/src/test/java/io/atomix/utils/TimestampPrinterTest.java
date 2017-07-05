@@ -15,34 +15,17 @@
  */
 package io.atomix.utils;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
- * Timestamp printer.
+ * Timestamp printer test.
  */
-public class TimestampPrinter {
-
-  /**
-   * Returns a new timestamp printer.
-   *
-   * @param timestamp the timestamp to print
-   * @return the timestamp printer
-   */
-  public static TimestampPrinter of(long timestamp) {
-    return new TimestampPrinter(timestamp);
-  }
-
-  private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
-
-  private final long timestamp;
-
-  public TimestampPrinter(long timestamp) {
-    this.timestamp = timestamp;
-  }
-
-  @Override
-  public String toString() {
-    return FORMAT.format(new Date(timestamp));
+public class TimestampPrinterTest {
+  @Test
+  public void testTimestampPrinter() throws Exception {
+    TimestampPrinter printer = TimestampPrinter.of(1);
+    assertEquals("1969-12-31 04:00:00,001", printer.toString());
   }
 }

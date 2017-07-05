@@ -15,34 +15,17 @@
  */
 package io.atomix.utils;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
- * Timestamp printer.
+ * Array size hash printer test.
  */
-public class TimestampPrinter {
-
-  /**
-   * Returns a new timestamp printer.
-   *
-   * @param timestamp the timestamp to print
-   * @return the timestamp printer
-   */
-  public static TimestampPrinter of(long timestamp) {
-    return new TimestampPrinter(timestamp);
-  }
-
-  private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
-
-  private final long timestamp;
-
-  public TimestampPrinter(long timestamp) {
-    this.timestamp = timestamp;
-  }
-
-  @Override
-  public String toString() {
-    return FORMAT.format(new Date(timestamp));
+public class ArraySizeHashPrinterTest {
+  @Test
+  public void testArraySizeHashPrinter() throws Exception {
+    ArraySizeHashPrinter printer = ArraySizeHashPrinter.of(new byte[]{1, 2, 3});
+    assertEquals("byte[]{length=3, hash=30817}", printer.toString());
   }
 }
