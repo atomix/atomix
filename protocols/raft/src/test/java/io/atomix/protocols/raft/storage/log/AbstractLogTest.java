@@ -49,6 +49,7 @@ import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -57,8 +58,8 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractLogTest {
-  private static final int MAX_ENTRIES_PER_SEGMENT = 32;
-  private static final int MAX_SEGMENT_SIZE = 1024 * 32;
+  private static final int MAX_ENTRIES_PER_SEGMENT = 10;
+  private static final int MAX_SEGMENT_SIZE = 1024 * 8;
   private static final Path PATH = Paths.get("target/test-logs/");
 
   private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
@@ -199,6 +200,9 @@ public abstract class AbstractLogTest {
     // Reset the reader to a specific index and read the last entry again.
     reader.reset(2);
 
+    assertNotNull(reader.getCurrentEntry());
+    assertEquals(1, reader.getCurrentIndex());
+    assertEquals(1, reader.getCurrentEntry().index());
     assertTrue(reader.hasNext());
     assertEquals(reader.getNextIndex(), 2);
     closeSession = (Indexed) reader.next();
@@ -220,7 +224,33 @@ public abstract class AbstractLogTest {
     for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 5; i++) {
       writer.append(new TestEntry(1, 32));
       assertTrue(reader.hasNext());
-      Indexed<TestEntry> entry = (Indexed) reader.next();
+      Indexed<TestEntry> entry;
+      entry = (Indexed) reader.next();
+      assertEquals(i, entry.index());
+      assertEquals(1, entry.entry().term());
+      assertEquals(32, entry.entry().bytes().length);
+      reader.reset(i);
+      entry = (Indexed) reader.next();
+      assertEquals(i, entry.index());
+      assertEquals(1, entry.entry().term());
+      assertEquals(32, entry.entry().bytes().length);
+
+      if (i > 6) {
+        reader.reset(i - 5);
+        assertNotNull(reader.getCurrentEntry());
+        assertEquals(i - 6, reader.getCurrentIndex());
+        assertEquals(i - 6, reader.getCurrentEntry().index());
+        assertEquals(i - 5, reader.getNextIndex());
+        reader.reset(i + 1);
+      }
+
+      writer.truncate(i - 1);
+      writer.append(new TestEntry(1, 32));
+
+      assertFalse(reader.hasNext());
+      reader.reset(i);
+      assertTrue(reader.hasNext());
+      entry = (Indexed) reader.next();
       assertEquals(i, entry.index());
       assertEquals(1, entry.entry().term());
       assertEquals(32, entry.entry().bytes().length);
@@ -239,7 +269,13 @@ public abstract class AbstractLogTest {
       assertFalse(reader.hasNext());
       writer.commit(i);
       assertTrue(reader.hasNext());
-      Indexed<TestEntry> entry = (Indexed) reader.next();
+      Indexed<TestEntry> entry;
+      entry = (Indexed) reader.next();
+      assertEquals(i, entry.index());
+      assertEquals(1, entry.entry().term());
+      assertEquals(32, entry.entry().bytes().length);
+      reader.reset(i);
+      entry = (Indexed) reader.next();
       assertEquals(i, entry.index());
       assertEquals(1, entry.entry().term());
       assertEquals(32, entry.entry().bytes().length);

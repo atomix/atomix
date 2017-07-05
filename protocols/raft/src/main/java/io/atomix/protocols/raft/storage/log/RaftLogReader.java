@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.storage.journal.JournalReader;
 import io.atomix.storage.journal.DelegatingJournalReader;
+import io.atomix.storage.journal.JournalReader;
 
 /**
  * Raft log reader.
@@ -57,9 +57,6 @@ public class RaftLogReader extends DelegatingJournalReader<RaftLogEntry> {
 
     long nextIndex = getNextIndex();
     long commitIndex = log.getCommitIndex();
-    if (nextIndex <= commitIndex) {
-      return super.hasNext();
-    }
-    return super.hasNext();
+    return nextIndex <= commitIndex && super.hasNext();
   }
 }

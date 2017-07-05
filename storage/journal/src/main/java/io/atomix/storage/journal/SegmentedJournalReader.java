@@ -89,18 +89,37 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
 
   @Override
   public void reset(long index) {
-    if (index < currentReader.firstIndex()) {
-      currentSegment = journal.getPreviousSegment(currentSegment.index());
-      while (currentSegment != null) {
+    if (index < currentReader.getNextIndex()) {
+      rewind(index);
+    } else if (index > currentReader.getNextIndex()) {
+      forward(index);
+    }
+  }
+
+  /**
+   * Rewinds the journal to the given index.
+   */
+  private void rewind(long index) {
+    if (currentSegment.index() >= index) {
+      JournalSegment<E> segment = journal.getSegment(index - 1);
+      if (segment != null) {
         currentReader.close();
+        currentSegment = segment;
         currentReader = currentSegment.createReader();
-        if (currentReader.firstIndex() < index) {
-          break;
-        }
       }
     }
+
     currentReader.reset(index);
     previousEntry = currentReader.getCurrentEntry();
+  }
+
+  /**
+   * Fast forwards the journal to the given index.
+   */
+  private void forward(long index) {
+    while (getNextIndex() < index && hasNext()) {
+      next();
+    }
   }
 
   @Override
@@ -117,6 +136,13 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
 
   @Override
   public Indexed<E> next() {
+    if (!currentReader.hasNext()) {
+      JournalSegment<E> nextSegment = journal.getNextSegment(currentSegment.index());
+      if (nextSegment != null) {
+        currentSegment = nextSegment;
+        currentReader = currentSegment.createReader();
+      }
+    }
     previousEntry = currentReader.getCurrentEntry();
     return currentReader.next();
   }
