@@ -48,8 +48,8 @@ public abstract class ByteBufferBytes extends AbstractBytes {
   public Bytes resize(int newSize) {
     ByteBuffer oldBuffer = buffer;
     ByteBuffer newBuffer = newByteBuffer(newSize);
-    oldBuffer.position(0).limit(buffer.capacity());
-    newBuffer.position(0).limit(buffer.capacity());
+    oldBuffer.position(0).limit(oldBuffer.capacity());
+    newBuffer.position(0).limit(newBuffer.capacity());
     newBuffer.put(oldBuffer);
     newBuffer.clear();
     return reset(newBuffer);
