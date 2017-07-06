@@ -67,7 +67,7 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   private final NavigableMap<Long, JournalSegment<E>> segments = new ConcurrentSkipListMap<>();
   private final Collection<SegmentedJournalReader<E>> readers = Sets.newConcurrentHashSet();
-  private JournalSegment<E> currentSegment;
+  private volatile JournalSegment<E> currentSegment;
 
   private final SegmentedJournalWriter<E> writer;
   protected final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -161,7 +161,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   private void open() {
     // Load existing log segments from disk.
-    for (JournalSegment segment : loadSegments()) {
+    for (JournalSegment<E> segment : loadSegments()) {
       segments.put(segment.descriptor().index(), segment);
     }
 
@@ -196,7 +196,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * Resets the current segment, creating a new segment if necessary.
    */
   private synchronized void resetCurrentSegment() {
-    JournalSegment lastSegment = getLastSegment();
+    JournalSegment<E> lastSegment = getLastSegment();
     if (lastSegment != null) {
       currentSegment = lastSegment;
     } else {
@@ -361,7 +361,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   /**
    * Loads a segment.
    */
-  private JournalSegment loadSegment(long segmentId, long segmentVersion) {
+  private JournalSegment<E> loadSegment(long segmentId, long segmentVersion) {
     switch (storageLevel) {
       case MEMORY:
         return loadMemorySegment(segmentId, segmentVersion);
@@ -401,11 +401,11 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return A collection of segments for the log.
    */
-  protected Collection<JournalSegment> loadSegments() {
+  protected Collection<JournalSegment<E>> loadSegments() {
     // Ensure log directories are created.
     directory.mkdirs();
 
-    TreeMap<Long, JournalSegment> segments = new TreeMap<>();
+    TreeMap<Long, JournalSegment<E>> segments = new TreeMap<>();
 
     // Iterate through all files in the log directory.
     for (File file : directory.listFiles(File::isFile)) {
@@ -416,11 +416,11 @@ public class SegmentedJournal<E> implements Journal<E> {
         JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
 
         // Load the segment.
-        JournalSegment segment = loadSegment(descriptor.id(), descriptor.version());
+        JournalSegment<E> segment = loadSegment(descriptor.id(), descriptor.version());
 
         // If a segment with an equal or lower index has already been loaded, ensure this segment is not superseded
         // by the earlier segment. This can occur due to segments being combined during log compaction.
-        Map.Entry<Long, JournalSegment> previousEntry = segments.floorEntry(segment.index());
+        Map.Entry<Long, JournalSegment<E>> previousEntry = segments.floorEntry(segment.index());
         if (previousEntry != null) {
 
           // If an existing descriptor exists with a lower index than this segment's first index, check to determine
@@ -455,7 +455,7 @@ public class SegmentedJournal<E> implements Journal<E> {
         segments.put(segment.index(), segment);
 
         // Ensure any segments later in the log with which this segment overlaps are removed.
-        Map.Entry<Long, JournalSegment> nextEntry = segments.higherEntry(segment.index());
+        Map.Entry<Long, JournalSegment<E>> nextEntry = segments.higherEntry(segment.index());
         while (nextEntry != null) {
           if (nextEntry.getValue().index() < segment.index() + segment.length()) {
             segments.remove(nextEntry.getKey());
@@ -491,7 +491,13 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   @Override
   public SegmentedJournalReader<E> openReader(long index) {
-    return new SegmentedJournalReader<>(this, lock.readLock(), index);
+    SegmentedJournalReader<E> reader = new SegmentedJournalReader<>(this, lock.readLock(), index);
+    readers.add(reader);
+    return reader;
+  }
+
+  void closeReader(SegmentedJournalReader<E> reader) {
+    readers.remove(reader);
   }
 
   @Override
@@ -501,19 +507,22 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   @Override
   public void compact(long index) {
-    SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(index);
-    if (!compactSegments.isEmpty()) {
-      log.info("{} - Compacting {} segment(s)", name, compactSegments.size());
-      writer.getLock().lock();
-      try {
-        for (JournalSegment segment : compactSegments.values()) {
-          log.debug("Deleting segment: {}", segment);
-          segment.close();
-          segment.delete();
+    Map.Entry<Long, JournalSegment<E>> segmentEntry = segments.floorEntry(index);
+    if (segmentEntry != null) {
+      SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(segmentEntry.getValue().index());
+      if (!compactSegments.isEmpty()) {
+        log.info("{} - Compacting {} segment(s)", name, compactSegments.size());
+        writer.getLock().lock();
+        try {
+          for (JournalSegment segment : compactSegments.values()) {
+            log.debug("Deleting segment: {}", segment);
+            segment.close();
+            segment.delete();
+          }
+          compactSegments.clear();
+        } finally {
+          writer.getLock().unlock();
         }
-        compactSegments.clear();
-      } finally {
-        writer.getLock().unlock();
       }
     }
   }
