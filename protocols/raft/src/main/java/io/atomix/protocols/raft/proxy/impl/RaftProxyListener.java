@@ -110,6 +110,7 @@ final class RaftProxyListener {
           .withSession(state.getSessionId().id())
           .withIndex(eventIndex)
           .build();
+      log.trace("Sending {}", resetRequest);
       protocol.reset(memberSelector.servers(), resetRequest);
       return;
     }

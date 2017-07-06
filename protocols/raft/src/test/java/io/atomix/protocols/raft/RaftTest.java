@@ -127,9 +127,13 @@ public class RaftTest extends ConcurrentTestCase {
     createSession(client);
     assertNotNull(client.metadata().getLeader());
     assertNotNull(client.metadata().getServers());
-    Set<RaftSessionMetadata> typeSessions = client.metadata().getSessions(ServiceType.from("test")).join();
+    Set<RaftSessionMetadata> typeSessions = client.metadata().getSessions("test").join();
     assertEquals(2, typeSessions.size());
-    Set<RaftSessionMetadata> serviceSessions = client.metadata().getSessions(ServiceType.from("test"), "test").join();
+    typeSessions = client.metadata().getSessions(ServiceType.from("test")).join();
+    assertEquals(2, typeSessions.size());
+    Set<RaftSessionMetadata> serviceSessions = client.metadata().getSessions("test", "test").join();
+    assertEquals(2, serviceSessions.size());
+    serviceSessions = client.metadata().getSessions(ServiceType.from("test"), "test").join();
     assertEquals(2, serviceSessions.size());
   }
 
