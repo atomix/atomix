@@ -150,5 +150,6 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
   @Override
   public void close() {
     currentReader.close();
+    journal.closeReader(this);
   }
 }
