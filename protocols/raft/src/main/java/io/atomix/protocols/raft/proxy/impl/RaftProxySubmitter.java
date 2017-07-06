@@ -176,10 +176,11 @@ final class RaftProxySubmitter {
     long responseSequence = state.getCommandResponse();
     if (commandSequence < responseSequence && keepAliveIndex.get() != responseSequence) {
       keepAliveIndex.set(responseSequence);
-      manager.resetIndexes(state.getSessionId().id()).whenCompleteAsync((result, error) -> {
+      manager.resetIndexes(state.getSessionId()).whenCompleteAsync((result, error) -> {
         if (error == null) {
           resubmit(responseSequence, attempt);
         } else {
+          keepAliveIndex.set(0);
           attempt.retry(Duration.ofSeconds(FIBONACCI[Math.min(attempt.attempt - 1, FIBONACCI.length - 1)]));
         }
       }, context);

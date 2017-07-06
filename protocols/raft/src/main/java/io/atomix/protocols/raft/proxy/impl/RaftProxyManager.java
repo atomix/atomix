@@ -218,7 +218,7 @@ public class RaftProxyManager {
    * @param sessionId The session for which to reset indexes.
    * @return A completable future to be completed once the session's indexes have been reset.
    */
-  CompletableFuture<Void> resetIndexes(long sessionId) {
+  CompletableFuture<Void> resetIndexes(SessionId sessionId) {
     RaftProxyState sessionState = sessions.get(sessionId);
     if (sessionState == null) {
       return Futures.exceptionalFuture(new IllegalArgumentException("Unknown session: " + sessionId));
@@ -227,7 +227,7 @@ public class RaftProxyManager {
     CompletableFuture<Void> future = new CompletableFuture<>();
 
     KeepAliveRequest request = KeepAliveRequest.newBuilder()
-        .withSessionIds(new long[]{sessionId})
+        .withSessionIds(new long[]{sessionId.id()})
         .withCommandSequences(new long[]{sessionState.getCommandResponse()})
         .withEventIndexes(new long[]{sessionState.getEventIndex()})
         .build();

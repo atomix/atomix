@@ -261,10 +261,10 @@ public class RaftProxyConnection {
       if (error instanceof CompletionException) {
         error = error.getCause();
       }
+      log.debug("{} failed! Reason: {}", request, error);
       if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
         retryRequest(error, request, sender, member, future);
       } else {
-        log.debug("{} failed! Reason: {}", request, error);
         future.completeExceptionally(error);
       }
     }
