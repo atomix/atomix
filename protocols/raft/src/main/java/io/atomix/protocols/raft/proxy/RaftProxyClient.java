@@ -15,16 +15,18 @@
  */
 package io.atomix.protocols.raft.proxy;
 
-import io.atomix.protocols.raft.operation.OperationId;
-import io.atomix.protocols.raft.event.RaftEvent;
-import io.atomix.protocols.raft.operation.RaftOperation;
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.event.RaftEvent;
+import io.atomix.protocols.raft.operation.OperationId;
+import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.storage.buffer.HeapBytes;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -338,5 +340,30 @@ public interface RaftProxyClient {
       this.timeout = timeout;
       return this;
     }
+
+    /**
+     * Builds the proxy client.
+     *
+     * @return the proxy client
+     */
+    @Override
+    public RaftProxyClient build() {
+      try {
+        return buildAsync().join();
+      } catch (CompletionException e) {
+        if (e.getCause() instanceof RaftException.Unavailable) {
+          throw (RaftException.Unavailable) e.getCause();
+        } else {
+          throw new RaftException.Unavailable(e);
+        }
+      }
+    }
+
+    /**
+     * Returns a future to be completed once the proxy client has been connected.
+     *
+     * @return a future to be completed once the proxy client has been connected
+     */
+    public abstract CompletableFuture<RaftProxyClient> buildAsync();
   }
 }

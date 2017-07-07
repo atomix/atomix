@@ -123,8 +123,8 @@ public class RaftTest extends ConcurrentTestCase {
   public void testSessionMetadata() throws Throwable {
     createServers(3);
     RaftClient client = createClient();
-    createSession(client);
-    createSession(client);
+    createSession(client).submit(WRITE).join();
+    createSession(client).submit(WRITE).join();
     assertNotNull(client.metadata().getLeader());
     assertNotNull(client.metadata().getServers());
     Set<RaftSessionMetadata> typeSessions = client.metadata().getSessions("test").join();
