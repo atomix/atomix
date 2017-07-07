@@ -71,28 +71,19 @@ abstract class AbstractAppender implements AutoCloseable {
    * @return The append request.
    */
   protected AppendRequest buildAppendRequest(RaftMemberContext member, long lastIndex) {
-    member.getThreadContext().checkThread();
-
     final RaftLogReader reader = member.getLogReader();
 
-    // Lock the entry reader.
-    reader.getLock().lock();
-    try {
-      // If the log is empty then send an empty commit.
-      // If the next index hasn't yet been set then we send an empty commit first.
-      // If the next index is greater than the last index then send an empty commit.
-      // If the member failed to respond to recent communication send an empty commit. This
-      // helps avoid doing expensive work until we can ascertain the member is back up.
-      if (!reader.hasNext()) {
-        return buildAppendEmptyRequest(member);
-      } else if (member.getFailureCount() > 0) {
-        return buildAppendEmptyRequest(member);
-      } else {
-        return buildAppendEntriesRequest(member, lastIndex);
-      }
-    } finally {
-      // Unlock the entry reader.
-      reader.getLock().unlock();
+    // If the log is empty then send an empty commit.
+    // If the next index hasn't yet been set then we send an empty commit first.
+    // If the next index is greater than the last index then send an empty commit.
+    // If the member failed to respond to recent communication send an empty commit. This
+    // helps avoid doing expensive work until we can ascertain the member is back up.
+    if (!reader.hasNext()) {
+      return buildAppendEmptyRequest(member);
+    } else if (member.getFailureCount() > 0) {
+      return buildAppendEmptyRequest(member);
+    } else {
+      return buildAppendEntriesRequest(member, lastIndex);
     }
   }
 
@@ -102,8 +93,6 @@ abstract class AbstractAppender implements AutoCloseable {
    * Empty append requests are used as heartbeats to followers.
    */
   protected AppendRequest buildAppendEmptyRequest(RaftMemberContext member) {
-    member.getThreadContext().checkThread();
-
     final RaftLogReader reader = member.getLogReader();
 
     // Read the previous entry from the reader.
@@ -126,8 +115,6 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   protected AppendRequest buildAppendEntriesRequest(RaftMemberContext member, long lastIndex) {
-    member.getThreadContext().checkThread();
-
     final RaftLogReader reader = member.getLogReader();
 
     final Indexed<RaftLogEntry> prevEntry = reader.getCurrentEntry();
@@ -189,8 +176,6 @@ abstract class AbstractAppender implements AutoCloseable {
 
     log.trace("Sending {} to {}", request, member.getMember().memberId());
     server.getProtocol().append(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
-      member.getThreadContext().checkThread();
-
       // Complete the append to the member.
       if (!request.entries().isEmpty()) {
         member.completeAppend(System.currentTimeMillis() - timestamp);
@@ -206,7 +191,7 @@ abstract class AbstractAppender implements AutoCloseable {
           handleAppendResponseFailure(member, request, error);
         }
       }
-    }, member.getThreadContext());
+    }, server.getThreadContext());
 
     if (!request.entries().isEmpty() && hasMoreEntries(member)) {
       appendEntries(member);
@@ -334,17 +319,12 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void resetNextIndex(RaftMemberContext member) {
     final RaftLogReader reader = member.getLogReader();
-    reader.getLock().lock();
-    try {
-      if (member.getMatchIndex() != 0) {
-        reader.reset(member.getMatchIndex() + 1);
-      } else {
-        reader.reset();
-      }
-      log.trace("Reset next index for {} to {} + 1", member, member.getMatchIndex());
-    } finally {
-      reader.getLock().unlock();
+    if (member.getMatchIndex() != 0) {
+      reader.reset(member.getMatchIndex() + 1);
+    } else {
+      reader.reset();
     }
+    log.trace("Reset next index for {} to {} + 1", member, member.getMatchIndex());
   }
 
   /**
@@ -372,8 +352,6 @@ abstract class AbstractAppender implements AutoCloseable {
 
     log.trace("Sending {} to {}", request, member.getMember().memberId());
     server.getProtocol().configure(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
-      member.getThreadContext().checkThread();
-
       // Complete the configure to the member.
       member.completeConfigure();
 
@@ -386,7 +364,7 @@ abstract class AbstractAppender implements AutoCloseable {
           handleConfigureResponseFailure(member, request, error);
         }
       }
-    }, member.getThreadContext());
+    }, server.getThreadContext());
   }
 
   /**
@@ -487,8 +465,6 @@ abstract class AbstractAppender implements AutoCloseable {
 
     log.trace("Sending {} to {}", request, member.getMember().memberId());
     server.getProtocol().install(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
-      member.getThreadContext().checkThread();
-
       // Complete the install to the member.
       member.completeInstall();
 
@@ -503,7 +479,7 @@ abstract class AbstractAppender implements AutoCloseable {
           handleInstallResponseFailure(member, request, error);
         }
       }
-    }, member.getThreadContext());
+    }, server.getThreadContext());
   }
 
   /**

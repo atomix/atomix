@@ -15,8 +15,6 @@
  */
 package io.atomix.storage.journal;
 
-import java.util.concurrent.locks.Lock;
-
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
@@ -27,11 +25,6 @@ public class DelegatingJournalReader<E> implements JournalReader<E> {
 
   public DelegatingJournalReader(JournalReader<E> delegate) {
     this.delegate = delegate;
-  }
-
-  @Override
-  public Lock getLock() {
-    return delegate.getLock();
   }
 
   @Override

@@ -21,8 +21,8 @@ import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
-import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.MetadataResult;
+import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -121,13 +121,8 @@ public final class LeaderRole extends ActiveRole {
     final long term = context.getTerm();
 
     final RaftLogWriter writer = context.getLogWriter();
-    writer.getLock().lock();
-    try {
-      Indexed<RaftLogEntry> indexed = writer.append(new InitializeEntry(term, appender.getTime()));
-      log.trace("Appended {}", indexed.index());
-    } finally {
-      writer.getLock().unlock();
-    }
+    final Indexed<RaftLogEntry> indexed = writer.append(new InitializeEntry(term, appender.getTime()));
+    log.trace("Appended {}", indexed.index());
 
     // Append a configuration entry to propagate the leader's cluster configuration.
     configure(context.getCluster().getMembers());
@@ -208,14 +203,8 @@ public final class LeaderRole extends ActiveRole {
     final long term = context.getTerm();
 
     final RaftLogWriter writer = context.getLogWriter();
-    final Indexed<ConfigurationEntry> entry;
-    writer.getLock().lock();
-    try {
-      entry = writer.append(new ConfigurationEntry(term, System.currentTimeMillis(), members));
-      log.trace("Appended {}", entry);
-    } finally {
-      writer.getLock().unlock();
-    }
+    final Indexed<ConfigurationEntry> entry = writer.append(new ConfigurationEntry(term, System.currentTimeMillis(), members));
+    log.trace("Appended {}", entry);
 
     // Store the index of the configuration entry in order to prevent other configurations from
     // being logged and committed concurrently. This is an important safety property of Raft.
@@ -522,16 +511,9 @@ public final class LeaderRole extends ActiveRole {
     final long term = context.getTerm();
     final long timestamp = System.currentTimeMillis();
 
-    final Indexed<CommandEntry> entry;
-
     final RaftLogWriter writer = context.getLogWriter();
-    writer.getLock().lock();
-    try {
-      entry = writer.append(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation()));
-      log.trace("Appended {}", entry);
-    } finally {
-      writer.getLock().unlock();
-    }
+    final Indexed<CommandEntry> entry = writer.append(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation()));
+    log.trace("Appended {}", entry);
 
     // Replicate the command to followers.
     appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
@@ -625,12 +607,12 @@ public final class LeaderRole extends ActiveRole {
    */
   private CompletableFuture<QueryResponse> queryLinearizable(Indexed<QueryEntry> entry) {
     return applyQuery(entry)
-        .thenCompose(response -> appender.appendEntries()
+        .thenComposeAsync(response -> appender.appendEntries()
             .thenApply(index -> response)
             .exceptionally(error -> QueryResponse.newBuilder()
                 .withStatus(RaftResponse.Status.ERROR)
                 .withError(RaftError.Type.QUERY_FAILURE, error.getMessage())
-                .build()));
+                .build()), context.getThreadContext());
   }
 
   @Override
@@ -650,15 +632,9 @@ public final class LeaderRole extends ActiveRole {
     context.checkThread();
     logRequest(request);
 
-    final Indexed<OpenSessionEntry> entry;
     final RaftLogWriter writer = context.getLogWriter();
-    writer.getLock().lock();
-    try {
-      entry = writer.append(new OpenSessionEntry(term, timestamp, request.member(), request.serviceName(), request.serviceType(), request.readConsistency(), timeout));
-      log.trace("Appended {}", entry);
-    } finally {
-      writer.getLock().unlock();
-    }
+    final Indexed<OpenSessionEntry> entry = writer.append(new OpenSessionEntry(term, timestamp, request.member(), request.serviceName(), request.serviceType(), request.readConsistency(), timeout));
+    log.trace("Appended {}", entry);
 
     CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
     appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
@@ -711,15 +687,9 @@ public final class LeaderRole extends ActiveRole {
     context.checkThread();
     logRequest(request);
 
-    final Indexed<KeepAliveEntry> entry;
     final RaftLogWriter writer = context.getLogWriter();
-    writer.getLock().lock();
-    try {
-      entry = writer.append(new KeepAliveEntry(term, timestamp, request.sessionIds(), request.commandSequenceNumbers(), request.eventIndexes()));
-      log.trace("Appended {}", entry);
-    } finally {
-      writer.getLock().unlock();
-    }
+    final Indexed<KeepAliveEntry> entry = writer.append(new KeepAliveEntry(term, timestamp, request.sessionIds(), request.commandSequenceNumbers(), request.eventIndexes()));
+    log.trace("Appended {}", entry);
 
     CompletableFuture<KeepAliveResponse> future = new CompletableFuture<>();
     appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
@@ -778,15 +748,9 @@ public final class LeaderRole extends ActiveRole {
     context.checkThread();
     logRequest(request);
 
-    final Indexed<CloseSessionEntry> entry;
     final RaftLogWriter writer = context.getLogWriter();
-    writer.getLock().lock();
-    try {
-      entry = writer.append(new CloseSessionEntry(term, timestamp, request.session()));
-      log.trace("Appended {}", entry);
-    } finally {
-      writer.getLock().unlock();
-    }
+    final Indexed<CloseSessionEntry> entry = writer.append(new CloseSessionEntry(term, timestamp, request.session()));
+    log.trace("Appended {}", entry);
 
     CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();
     appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {

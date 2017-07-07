@@ -16,7 +16,6 @@
 package io.atomix.storage.journal;
 
 import java.util.Iterator;
-import java.util.concurrent.locks.Lock;
 
 /**
  * Log reader.
@@ -24,13 +23,6 @@ import java.util.concurrent.locks.Lock;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
-
-  /**
-   * Returns the reader lock.
-   *
-   * @return The reader lock.
-   */
-  Lock getLock();
 
   /**
    * Returns the current reader index.

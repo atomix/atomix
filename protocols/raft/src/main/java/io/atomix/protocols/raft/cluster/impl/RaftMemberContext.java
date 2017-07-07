@@ -17,7 +17,6 @@ package io.atomix.protocols.raft.cluster.impl;
 
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
-import io.atomix.utils.concurrent.ThreadContext;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -29,7 +28,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class RaftMemberContext {
   private static final int MAX_APPENDS = 2;
   private final DefaultRaftMember member;
-  private final ThreadContext context;
   private long term;
   private long configIndex;
   private long snapshotIndex;
@@ -47,9 +45,8 @@ public final class RaftMemberContext {
   private volatile RaftLogReader reader;
   private final TimeBuffer timeBuffer = new TimeBuffer(8);
 
-  RaftMemberContext(DefaultRaftMember member, RaftClusterContext cluster, ThreadContext context) {
+  RaftMemberContext(DefaultRaftMember member, RaftClusterContext cluster) {
     this.member = checkNotNull(member, "member cannot be null").setCluster(cluster);
-    this.context = checkNotNull(context, "context cannot be null");
   }
 
   /**
@@ -77,15 +74,6 @@ public final class RaftMemberContext {
         reader = log.openReader(log.writer().getLastIndex() + 1, RaftLogReader.Mode.ALL);
         break;
     }
-  }
-
-  /**
-   * Returns the member thread context.
-   *
-   * @return The member thread context.
-   */
-  public ThreadContext getThreadContext() {
-    return context;
   }
 
   /**

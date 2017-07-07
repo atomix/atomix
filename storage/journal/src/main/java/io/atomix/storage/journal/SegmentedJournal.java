@@ -32,8 +32,6 @@ import java.util.NavigableMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -67,10 +65,9 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   private final NavigableMap<Long, JournalSegment<E>> segments = new ConcurrentSkipListMap<>();
   private final Collection<SegmentedJournalReader<E>> readers = Sets.newConcurrentHashSet();
-  private volatile JournalSegment<E> currentSegment;
+  private JournalSegment<E> currentSegment;
 
   private final SegmentedJournalWriter<E> writer;
-  protected final ReadWriteLock lock = new ReentrantReadWriteLock();
   private volatile boolean open = true;
 
   public SegmentedJournal(
@@ -153,7 +150,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @return A new journal writer.
    */
   protected SegmentedJournalWriter<E> openWriter() {
-    return new SegmentedJournalWriter<>(this, lock.writeLock());
+    return new SegmentedJournalWriter<>(this);
   }
 
   /**
@@ -491,7 +488,7 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   @Override
   public SegmentedJournalReader<E> openReader(long index) {
-    SegmentedJournalReader<E> reader = new SegmentedJournalReader<>(this, lock.readLock(), index);
+    SegmentedJournalReader<E> reader = new SegmentedJournalReader<>(this, index);
     readers.add(reader);
     return reader;
   }
@@ -512,17 +509,12 @@ public class SegmentedJournal<E> implements Journal<E> {
       SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(segmentEntry.getValue().index());
       if (!compactSegments.isEmpty()) {
         log.info("{} - Compacting {} segment(s)", name, compactSegments.size());
-        writer.getLock().lock();
-        try {
-          for (JournalSegment segment : compactSegments.values()) {
-            log.debug("Deleting segment: {}", segment);
-            segment.close();
-            segment.delete();
-          }
-          compactSegments.clear();
-        } finally {
-          writer.getLock().unlock();
+        for (JournalSegment segment : compactSegments.values()) {
+          log.debug("Deleting segment: {}", segment);
+          segment.close();
+          segment.delete();
         }
+        compactSegments.clear();
       }
     }
   }

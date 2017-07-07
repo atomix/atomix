@@ -17,9 +17,10 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.service.RaftService;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.service.RaftService;
+import io.atomix.protocols.raft.service.ServiceId;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.session.SessionId;
@@ -37,9 +38,7 @@ import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
-import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.storage.journal.Indexed;
-import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
@@ -54,7 +53,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -139,14 +137,9 @@ public class RaftServiceManager implements AutoCloseable {
       return;
     }
 
-    // Only apply valid indices.
-    if (index > 0) {
-      threadContext.execute(() -> {
-        // Don't attempt to apply indices that have already been applied.
-        if (index > lastApplied) {
-          applyIndex(index);
-        }
-      });
+    // Don't attempt to apply indices that have already been applied.
+    if (index > lastApplied) {
+      apply(index);
     }
   }
 
@@ -161,84 +154,37 @@ public class RaftServiceManager implements AutoCloseable {
    * @return A completable future to be completed once the commit has been applied.
    */
   public <T> CompletableFuture<T> apply(long index) {
-    ComposableFuture<T> future = new ComposableFuture<>();
-    threadContext.execute(() -> this.<T>applyIndex(index).whenComplete(future));
-    return future;
-  }
+    // Apply entries prior to this entry.
+    while (reader.hasNext()) {
+      long nextIndex = reader.getNextIndex();
 
-  /**
-   * Applies the entry at the given index.
-   */
-  private <T> CompletableFuture<T> applyIndex(long index) {
-    threadContext.checkThread();
-
-    reader.getLock().lock();
-
-    try {
-      // Apply entries prior to this entry.
-      while (reader.hasNext()) {
-        long nextIndex = reader.getNextIndex();
-
-        // If the next index is less than or equal to the given index, read and apply the entry.
-        if (nextIndex < index) {
+      // If the next index is less than or equal to the given index, read and apply the entry.
+      if (nextIndex < index) {
+        Indexed<RaftLogEntry> entry = reader.next();
+        apply(entry);
+        setLastApplied(entry.index());
+      }
+      // If the next index is equal to the applied index, apply it and return the result.
+      else if (nextIndex == index) {
+        // Read the entry from the log. If the entry is non-null then apply it, otherwise
+        // simply update the last applied index and return a null result.
+        try {
           Indexed<RaftLogEntry> entry = reader.next();
-          applyEntry(entry);
-          setLastApplied(entry.index());
-        }
-        // If the next index is equal to the applied index, apply it and return the result.
-        else if (nextIndex == index) {
-          // Read the entry from the log. If the entry is non-null then apply it, otherwise
-          // simply update the last applied index and return a null result.
-          try {
-            Indexed<RaftLogEntry> entry = reader.next();
-            if (entry.index() != index) {
-              throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
-            }
-            return applyEntry(entry);
-          } finally {
-            setLastApplied(index);
+          if (entry.index() != index) {
+            throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
           }
-        }
-        // If the applied index has been passed, return a null result.
-        else {
+          return apply(entry);
+        } finally {
           setLastApplied(index);
-          return CompletableFuture.completedFuture(null);
         }
       }
-      return CompletableFuture.completedFuture(null);
-    } finally {
-      reader.getLock().unlock();
-    }
-  }
-
-  /**
-   * Applies an entry to the state machine.
-   * <p>
-   * Calls to this method are assumed to expect a result. This means linearizable session events
-   * triggered by the application of the given entry will be awaited before completing the returned future.
-   *
-   * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
-   */
-  public <T> CompletableFuture<T> apply(Indexed<? extends RaftLogEntry> entry) {
-    ThreadContext context = ThreadContext.currentContextOrThrow();
-    return applyEntry(entry, context);
-  }
-
-  /**
-   * Applies an entry to the state machine, returning a future that's completed on the given context.
-   */
-  private <T> CompletableFuture<T> applyEntry(Indexed<? extends RaftLogEntry> entry, ThreadContext context) {
-    ComposableFuture<T> future = new ComposableFuture<T>();
-    BiConsumer<T, Throwable> callback = (result, error) -> {
-      if (error == null) {
-        context.execute(() -> future.complete(result));
-      } else {
-        context.execute(() -> future.completeExceptionally(error));
+      // If the applied index has been passed, return a null result.
+      else {
+        setLastApplied(index);
+        return CompletableFuture.completedFuture(null);
       }
-    };
-    threadContext.execute(() -> this.<T>applyEntry(entry).whenComplete(callback));
-    return future;
+    }
+    return CompletableFuture.completedFuture(null);
   }
 
   /**
@@ -251,7 +197,7 @@ public class RaftServiceManager implements AutoCloseable {
    * @return A completable future to be completed with the result.
    */
   @SuppressWarnings("unchecked")
-  private <T> CompletableFuture<T> applyEntry(Indexed<? extends RaftLogEntry> entry) {
+  public <T> CompletableFuture<T> apply(Indexed<? extends RaftLogEntry> entry) {
     logger.trace("Applying {}", entry);
     if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());

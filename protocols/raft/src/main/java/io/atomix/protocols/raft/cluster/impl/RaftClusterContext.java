@@ -29,7 +29,6 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
-import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -48,13 +47,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Manages the persistent state of the Raft cluster from the perspective of a single server.
@@ -62,7 +59,6 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   private final Logger log;
   private final RaftServerContext context;
-  private final ThreadFactory threadFactory;
   private final DefaultRaftMember member;
   private volatile Configuration configuration;
   private final Map<MemberId, RaftMemberContext> membersMap = new ConcurrentHashMap<>();
@@ -83,7 +79,6 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(context.getName())
         .build());
-    this.threadFactory = namedThreads("raft-server-" + localMemberId + "-appender-%d", log);
 
     // If a configuration is stored, use the stored configuration, otherwise configure the server with the user provided configuration.
     configuration = context.getMetaStore().loadConfiguration();
@@ -96,7 +91,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
           this.members.add(this.member);
         } else {
           // If the member state doesn't already exist, create it.
-          RaftMemberContext state = new RaftMemberContext(new DefaultRaftMember(member.memberId(), member.getType(), member.getStatus(), updateTime), this, new SingleThreadContext(threadFactory));
+          RaftMemberContext state = new RaftMemberContext(new DefaultRaftMember(member.memberId(), member.getType(), member.getStatus(), updateTime), this);
           state.resetState(context.getLog());
           this.members.add(state.getMember());
           this.remoteMembers.add(state);
@@ -593,7 +588,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
         RaftMemberContext state = membersMap.get(member.memberId());
         if (state == null) {
           DefaultRaftMember defaultMember = new DefaultRaftMember(member.memberId(), member.getType(), member.getStatus(), time);
-          state = new RaftMemberContext(defaultMember, this, new SingleThreadContext(threadFactory));
+          state = new RaftMemberContext(defaultMember, this);
           state.resetState(context.getLog());
           this.members.add(state.getMember());
           this.remoteMembers.add(state);

@@ -21,7 +21,6 @@ import io.atomix.storage.buffer.HeapBuffer;
 
 import java.nio.BufferUnderflowException;
 import java.util.NoSuchElementException;
-import java.util.concurrent.locks.Lock;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -36,8 +35,8 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   private final Serializer serializer;
   private final HeapBuffer memory = HeapBuffer.allocate();
   private final long firstIndex;
-  private volatile Indexed<E> currentEntry;
-  private volatile Indexed<E> nextEntry;
+  private Indexed<E> currentEntry;
+  private Indexed<E> nextEntry;
 
   public JournalSegmentReader(SegmentedJournal<E> journal, JournalSegmentDescriptor descriptor, Serializer serializer) {
     this.journal = journal;
@@ -45,11 +44,6 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
     readNext();
-  }
-
-  @Override
-  public Lock getLock() {
-    throw new UnsupportedOperationException();
   }
 
   /**

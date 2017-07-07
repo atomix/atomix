@@ -35,7 +35,7 @@ final class FollowerAppender extends AbstractAppender {
   public void appendEntries() {
     if (open) {
       for (RaftMemberContext member : server.getClusterState().getAssignedPassiveMemberStates()) {
-        member.getThreadContext().execute(() -> appendEntries(member));
+        appendEntries(member);
       }
     }
   }

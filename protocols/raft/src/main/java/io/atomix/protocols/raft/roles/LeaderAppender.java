@@ -116,7 +116,7 @@ final class LeaderAppender extends AbstractAppender {
       heartbeatFuture = newHeartbeatFuture;
       heartbeatTime = System.currentTimeMillis();
       for (RaftMemberContext member : server.getClusterState().getRemoteMemberStates()) {
-        member.getThreadContext().execute(() -> appendEntries(member));
+        appendEntries(member);
       }
       return newHeartbeatFuture;
     }
@@ -169,7 +169,7 @@ final class LeaderAppender extends AbstractAppender {
     // Only send entry-specific AppendRequests to active members of the cluster.
     return appendFutures.computeIfAbsent(index, i -> {
       for (RaftMemberContext member : server.getClusterState().getActiveMemberStates()) {
-        member.getThreadContext().execute(() -> appendEntries(member));
+        appendEntries(member);
       }
       return new CompletableFuture<>();
     });
@@ -181,8 +181,6 @@ final class LeaderAppender extends AbstractAppender {
     if (!open) {
       return;
     }
-
-    member.getThreadContext().checkThread();
 
     // If prior requests to the member have failed, build an empty append request to send to the member
     // to prevent having to read from disk to configure, install, or append to an unavailable member.
@@ -293,7 +291,7 @@ final class LeaderAppender extends AbstractAppender {
     if (heartbeatFuture != null) {
       heartbeatTime = System.currentTimeMillis();
       for (RaftMemberContext member : server.getClusterState().getRemoteMemberStates()) {
-        member.getThreadContext().execute(() -> appendEntries(member));
+        appendEntries(member);
       }
     }
   }
@@ -363,7 +361,7 @@ final class LeaderAppender extends AbstractAppender {
     super.handleAppendRequestFailure(member, request, error);
 
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, error));
+    updateHeartbeatTime(member, error);
   }
 
   /**
@@ -371,7 +369,7 @@ final class LeaderAppender extends AbstractAppender {
    */
   protected void handleAppendResponseFailure(RaftMemberContext member, AppendRequest request, Throwable error) {
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, error));
+    updateHeartbeatTime(member, error);
 
     super.handleAppendResponseFailure(member, request, error);
   }
@@ -381,7 +379,7 @@ final class LeaderAppender extends AbstractAppender {
    */
   protected void handleAppendResponse(RaftMemberContext member, AppendRequest request, AppendResponse response) {
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, null));
+    updateHeartbeatTime(member, null);
 
     super.handleAppendResponse(member, request, response);
   }
@@ -400,7 +398,7 @@ final class LeaderAppender extends AbstractAppender {
 
       // If entries were committed to the replica then check commit indexes.
       if (!request.entries().isEmpty()) {
-        server.getThreadContext().execute(() -> commitEntries());
+        commitEntries();
       }
 
       // If there are more entries to send then attempt to send another commit.
@@ -410,10 +408,8 @@ final class LeaderAppender extends AbstractAppender {
     }
     // If we've received a greater term, update the term and transition back to follower.
     else if (response.term() > server.getTerm()) {
-      server.getThreadContext().execute(() -> {
-        server.setTerm(response.term()).setLeader(null);
-        server.transition(RaftServer.Role.FOLLOWER);
-      });
+      server.setTerm(response.term()).setLeader(null);
+      server.transition(RaftServer.Role.FOLLOWER);
     }
     // If the response failed, the follower should have provided the correct last index in their log. This helps
     // us converge on the matchIndex faster than by simply decrementing nextIndex one index at a time.
@@ -435,11 +431,9 @@ final class LeaderAppender extends AbstractAppender {
   protected void handleAppendResponseError(RaftMemberContext member, AppendRequest request, AppendResponse response) {
     // If we've received a greater term, update the term and transition back to follower.
     if (response.term() > server.getTerm()) {
-      server.getThreadContext().execute(() -> {
-        log.debug("Received higher term from {}", member.getMember().memberId());
-        server.setTerm(response.term()).setLeader(null);
-        server.transition(RaftServer.Role.FOLLOWER);
-      });
+      log.debug("Received higher term from {}", member.getMember().memberId());
+      server.setTerm(response.term()).setLeader(null);
+      server.transition(RaftServer.Role.FOLLOWER);
     } else {
       super.handleAppendResponseError(member, request, response);
     }
@@ -450,42 +444,38 @@ final class LeaderAppender extends AbstractAppender {
     super.succeedAttempt(member);
 
     // If the member is currently marked as UNAVAILABLE, change its status to AVAILABLE and update the configuration.
-    server.getThreadContext().execute(() -> {
-      if (member.getMember().getStatus() == DefaultRaftMember.Status.UNAVAILABLE && !leader.configuring()) {
-        member.getMember().update(DefaultRaftMember.Status.AVAILABLE, Instant.now());
-        leader.configure(server.getCluster().getMembers());
-      }
-    });
+    if (member.getMember().getStatus() == DefaultRaftMember.Status.UNAVAILABLE && !leader.configuring()) {
+      member.getMember().update(DefaultRaftMember.Status.AVAILABLE, Instant.now());
+      leader.configure(server.getCluster().getMembers());
+    }
   }
 
   @Override
   protected void failAttempt(RaftMemberContext member, Throwable error) {
     super.failAttempt(member, error);
 
-    server.getThreadContext().execute(() -> {
-      // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
-      // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
-      // that a partition occurred and transition back to the FOLLOWER state.
-      if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > server.getElectionTimeout().toMillis() * 2) {
-        log.warn("Suspected network partition. Stepping down");
-        server.setLeader(null);
-        server.transition(RaftServer.Role.FOLLOWER);
+    // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
+    // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
+    // that a partition occurred and transition back to the FOLLOWER state.
+    if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > server.getElectionTimeout().toMillis() * 2) {
+      log.warn("Suspected network partition. Stepping down");
+      server.setLeader(null);
+      server.transition(RaftServer.Role.FOLLOWER);
+    }
+    // If the number of failures has increased above 3 and the member hasn't been marked as UNAVAILABLE, do so.
+    else if (member.getFailureCount() >= 3) {
+      // If the member is currently marked as AVAILABLE, change its status to UNAVAILABLE and update the configuration.
+      if (member.getMember().getStatus() == DefaultRaftMember.Status.AVAILABLE && !leader.configuring()) {
+        member.getMember().update(DefaultRaftMember.Status.UNAVAILABLE, Instant.now());
+        leader.configure(server.getCluster().getMembers());
       }
-      // If the number of failures has increased above 3 and the member hasn't been marked as UNAVAILABLE, do so.
-      else if (member.getFailureCount() >= 3) {
-        // If the member is currently marked as AVAILABLE, change its status to UNAVAILABLE and update the configuration.
-        if (member.getMember().getStatus() == DefaultRaftMember.Status.AVAILABLE && !leader.configuring()) {
-          member.getMember().update(DefaultRaftMember.Status.UNAVAILABLE, Instant.now());
-          leader.configure(server.getCluster().getMembers());
-        }
-      }
-    });
+    }
   }
 
   @Override
   protected void handleConfigureResponse(RaftMemberContext member, ConfigureRequest request, ConfigureResponse response) {
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, null));
+    updateHeartbeatTime(member, null);
 
     super.handleConfigureResponse(member, request, response);
   }
@@ -495,13 +485,13 @@ final class LeaderAppender extends AbstractAppender {
     super.handleConfigureRequestFailure(member, request, error);
 
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, error));
+    updateHeartbeatTime(member, error);
   }
 
   @Override
   protected void handleConfigureResponseFailure(RaftMemberContext member, ConfigureRequest request, Throwable error) {
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, error));
+    updateHeartbeatTime(member, error);
 
     super.handleConfigureResponseFailure(member, request, error);
   }
@@ -509,7 +499,7 @@ final class LeaderAppender extends AbstractAppender {
   @Override
   protected void handleInstallResponse(RaftMemberContext member, InstallRequest request, InstallResponse response) {
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, null));
+    updateHeartbeatTime(member, null);
 
     super.handleInstallResponse(member, request, response);
   }
@@ -519,13 +509,13 @@ final class LeaderAppender extends AbstractAppender {
     super.handleInstallRequestFailure(member, request, error);
 
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, error));
+    updateHeartbeatTime(member, error);
   }
 
   @Override
   protected void handleInstallResponseFailure(RaftMemberContext member, InstallRequest request, Throwable error) {
     // Trigger commit futures if necessary.
-    server.getThreadContext().execute(() -> updateHeartbeatTime(member, error));
+    updateHeartbeatTime(member, error);
 
     super.handleInstallResponseFailure(member, request, error);
   }

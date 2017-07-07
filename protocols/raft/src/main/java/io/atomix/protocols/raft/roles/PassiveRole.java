@@ -29,13 +29,13 @@ import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
-import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.time.WallClockTimestamp;
 
@@ -73,12 +73,7 @@ public class PassiveRole extends ReserveRole {
   private void truncateUncommittedEntries() {
     if (role() == RaftServer.Role.PASSIVE) {
       final RaftLogWriter writer = context.getLogWriter();
-      writer.getLock().lock();
-      try {
-        writer.truncate(context.getCommitIndex());
-      } finally {
-        writer.getLock().unlock();
-      }
+      writer.truncate(context.getCommitIndex());
     }
   }
 
@@ -97,23 +92,18 @@ public class PassiveRole extends ReserveRole {
     CompletableFuture<AppendResponse> future = new CompletableFuture<>();
 
     final RaftLogWriter writer = context.getLogWriter();
-    writer.getLock().lock();
-    try {
-      // Check that the term of the given request matches the local term or update the term.
-      if (!checkTerm(request, writer, future)) {
-        return future;
-      }
-
-      // Check that the previous index/term matches the local log's last entry.
-      if (!checkPreviousEntry(request, writer, future)) {
-        return future;
-      }
-
-      // Append the entries to the log.
-      appendEntries(request, writer, future);
-    } finally {
-      writer.getLock().unlock();
+    // Check that the term of the given request matches the local term or update the term.
+    if (!checkTerm(request, writer, future)) {
+      return future;
     }
+
+    // Check that the previous index/term matches the local log's last entry.
+    if (!checkPreviousEntry(request, writer, future)) {
+      return future;
+    }
+
+    // Append the entries to the log.
+    appendEntries(request, writer, future);
     return future;
   }
 

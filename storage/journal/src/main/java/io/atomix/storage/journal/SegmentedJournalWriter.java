@@ -15,8 +15,6 @@
  */
 package io.atomix.storage.journal;
 
-import java.util.concurrent.locks.Lock;
-
 /**
  * Log writer.
  *
@@ -24,20 +22,13 @@ import java.util.concurrent.locks.Lock;
  */
 public class SegmentedJournalWriter<E> implements JournalWriter<E> {
   private final SegmentedJournal<E> journal;
-  private final Lock lock;
-  private volatile JournalSegment<E> currentSegment;
-  private volatile JournalSegmentWriter<E> currentWriter;
+  private JournalSegment<E> currentSegment;
+  private JournalSegmentWriter<E> currentWriter;
 
-  public SegmentedJournalWriter(SegmentedJournal<E> journal, Lock lock) {
+  public SegmentedJournalWriter(SegmentedJournal<E> journal) {
     this.journal = journal;
-    this.lock = lock;
     this.currentSegment = journal.getLastSegment();
     this.currentWriter = currentSegment.writer();
-  }
-
-  @Override
-  public Lock getLock() {
-    return lock;
   }
 
   @Override

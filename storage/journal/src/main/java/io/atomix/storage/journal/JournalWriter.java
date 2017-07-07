@@ -15,21 +15,12 @@
  */
 package io.atomix.storage.journal;
 
-import java.util.concurrent.locks.Lock;
-
 /**
  * Log writer.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface JournalWriter<E> extends AutoCloseable {
-
-  /**
-   * Returns the writer lock.
-   *
-   * @return The writer lock.
-   */
-  Lock getLock();
 
   /**
    * Returns the last written index.

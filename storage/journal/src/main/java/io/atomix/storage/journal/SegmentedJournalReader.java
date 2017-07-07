@@ -15,8 +15,6 @@
  */
 package io.atomix.storage.journal;
 
-import java.util.concurrent.locks.Lock;
-
 /**
  * Segmented journal reader.
  *
@@ -24,14 +22,12 @@ import java.util.concurrent.locks.Lock;
  */
 public class SegmentedJournalReader<E> implements JournalReader<E> {
   private final SegmentedJournal<E> journal;
-  private final Lock lock;
   private JournalSegment<E> currentSegment;
   private Indexed<E> previousEntry;
   private JournalSegmentReader<E> currentReader;
 
-  public SegmentedJournalReader(SegmentedJournal<E> journal, Lock lock, long index) {
+  public SegmentedJournalReader(SegmentedJournal<E> journal, long index) {
     this.journal = journal;
-    this.lock = lock;
     initialize(index);
   }
 
@@ -46,11 +42,6 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
       next();
       nextIndex = getNextIndex();
     }
-  }
-
-  @Override
-  public Lock getLock() {
-    return lock;
   }
 
   @Override

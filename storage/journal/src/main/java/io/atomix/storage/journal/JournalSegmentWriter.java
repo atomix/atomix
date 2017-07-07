@@ -22,7 +22,6 @@ import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
 import io.atomix.storage.buffer.SlicedBuffer;
 
-import java.util.concurrent.locks.Lock;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -101,11 +100,6 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
 
     // Reset the buffer to the previous mark.
     buffer.reset();
-  }
-
-  @Override
-  public Lock getLock() {
-    throw new UnsupportedOperationException();
   }
 
   @Override
