@@ -67,6 +67,7 @@ public class RaftProxyManager {
   private final ScheduledExecutorService threadPoolExecutor;
   private final MemberSelectorManager selectorManager;
   private final Map<Long, RaftProxyState> sessions = new ConcurrentHashMap<>();
+  private final Set<Long> keepingAlive = Sets.newConcurrentHashSet();
   private final AtomicBoolean open = new AtomicBoolean();
   private ScheduledFuture<?> keepAliveFuture;
 
@@ -267,7 +268,8 @@ public class RaftProxyManager {
     // then sending a keep-alive for the session is redundant.
     List<RaftProxyState> needKeepAlive = sessions.values()
         .stream()
-        .filter(s -> currentTime - s.getLastUpdated() > s.getSessionTimeout() / 2)
+        .filter(s -> !keepingAlive.contains(s.getSessionId().id())
+            && currentTime - s.getLastUpdated() > s.getSessionTimeout() / 2)
         .collect(Collectors.toList());
 
     // If no sessions need keep-alives to be sent, skip and reschedule the keep-alive.
@@ -284,12 +286,11 @@ public class RaftProxyManager {
     // For each session that needs to be kept alive, populate batch request arrays.
     int i = 0;
     for (RaftProxyState sessionState : needKeepAlive) {
-      if (currentTime - sessionState.getLastUpdated() > sessionState.getSessionTimeout() / 4) {
-        sessionIds[i] = sessionState.getSessionId().id();
-        commandResponses[i] = sessionState.getCommandResponse();
-        eventIndexes[i] = sessionState.getEventIndex();
-        i++;
-      }
+      sessionIds[i] = sessionState.getSessionId().id();
+      commandResponses[i] = sessionState.getCommandResponse();
+      eventIndexes[i] = sessionState.getEventIndex();
+      keepingAlive.add(sessionState.getSessionId().id());
+      i++;
     }
 
     log.debug("Keeping {} sessions alive", sessionIds.length);
@@ -302,6 +303,7 @@ public class RaftProxyManager {
 
     connection.keepAlive(request).whenComplete((response, error) -> {
       if (open.get()) {
+        needKeepAlive.forEach(session -> keepingAlive.remove(session.getSessionId().id()));
         if (error == null) {
           // If the request was successful, update the address selector and schedule the next keep-alive.
           if (response.status() == RaftResponse.Status.OK) {
@@ -312,6 +314,7 @@ public class RaftProxyManager {
             for (RaftProxyState session : needKeepAlive) {
               if (keptAliveSessions.contains(session.getSessionId().id())) {
                 session.setState(RaftProxyClient.State.CONNECTED);
+                session.setLastUpdated(currentTime);
               } else {
                 session.setState(RaftProxyClient.State.CLOSED);
               }
@@ -362,7 +365,7 @@ public class RaftProxyManager {
           if (open.get()) {
             keepAliveSessions();
           }
-        }, minTimeout.getAsLong() / 2, TimeUnit.MILLISECONDS);
+        }, minTimeout.getAsLong() / 4, TimeUnit.MILLISECONDS);
       }
     }
   }
