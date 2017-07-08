@@ -61,18 +61,18 @@ public class RaftSessionContext implements RaftSession {
   private final DefaultServiceContext context;
   private final RaftServerContext server;
   private volatile State state = State.OPEN;
-  private long timestamp;
-  private long requestSequence;
-  private long commandSequence;
-  private long lastApplied;
-  private long commandLowWaterMark;
-  private long eventIndex;
-  private long completeIndex;
+  private volatile long timestamp;
+  private volatile long requestSequence;
+  private volatile long commandSequence;
+  private volatile long lastApplied;
+  private volatile long commandLowWaterMark;
+  private volatile long eventIndex;
+  private volatile long completeIndex;
   private final Map<Long, List<Runnable>> sequenceQueries = new HashMap<>();
   private final Map<Long, List<Runnable>> indexQueries = new HashMap<>();
   private final Map<Long, OperationResult> results = new HashMap<>();
   private final Queue<EventHolder> events = new LinkedList<>();
-  private EventHolder currentEventList;
+  private volatile EventHolder currentEventList;
   private final Set<RaftSessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
 
   public RaftSessionContext(

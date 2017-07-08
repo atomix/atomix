@@ -35,10 +35,10 @@ public final class RaftProxyState {
   private final ServiceType serviceType;
   private final long timeout;
   private volatile RaftProxy.State state = RaftProxy.State.CONNECTED;
-  private Long suspendedTime;
-  private long commandRequest;
+  private volatile Long suspendedTime;
+  private volatile long commandRequest;
   private volatile long commandResponse;
-  private long responseIndex;
+  private volatile long responseIndex;
   private volatile long eventIndex;
   private volatile long lastUpdated;
   private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
