@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import com.google.common.primitives.Longs;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -47,8 +48,10 @@ import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -269,13 +272,15 @@ public class RaftServiceManager implements AutoCloseable {
    * client's session is expired. This ensures for sessions that have long timeouts, keep alive entries cannot be cleaned
    * from the log before they're replicated to some servers.
    */
-  private CompletableFuture<Void> applyKeepAlive(Indexed<KeepAliveEntry> entry) {
+  private CompletableFuture<long[]> applyKeepAlive(Indexed<KeepAliveEntry> entry) {
     // Store the session/command/event sequence and event index instead of acquiring a reference to the entry.
     long[] sessionIds = entry.entry().sessionIds();
     long[] commandSequences = entry.entry().commandSequenceNumbers();
     long[] eventIndexes = entry.entry().eventIndexes();
 
     // Iterate through session identifiers and keep sessions alive.
+    List<Long> successfulSessionIds = new ArrayList<>(sessionIds.length);
+    List<CompletableFuture<Void>> futures = new ArrayList<>(sessionIds.length);
     for (int i = 0; i < sessionIds.length; i++) {
       long sessionId = sessionIds[i];
       long commandSequence = commandSequences[i];
@@ -283,7 +288,16 @@ public class RaftServiceManager implements AutoCloseable {
 
       RaftSessionContext session = sessionManager.getSession(sessionId);
       if (session != null) {
-        session.getStateMachineContext().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex);
+        CompletableFuture<Void> future = session.getStateMachineContext().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex)
+            .thenApply(succeeded -> {
+              if (succeeded) {
+                synchronized (successfulSessionIds) {
+                  successfulSessionIds.add(sessionId);
+                }
+              }
+              return null;
+            });
+        futures.add(future);
       }
     }
 
@@ -291,7 +305,13 @@ public class RaftServiceManager implements AutoCloseable {
     for (DefaultServiceContext service : services.values()) {
       service.completeKeepAlive(entry.index(), entry.entry().timestamp());
     }
-    return CompletableFuture.completedFuture(null);
+
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
+        .thenApply(v -> {
+          synchronized (successfulSessionIds) {
+            return Longs.toArray(successfulSessionIds);
+          }
+        });
   }
 
   /**

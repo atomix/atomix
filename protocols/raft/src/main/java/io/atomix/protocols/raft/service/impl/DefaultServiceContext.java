@@ -29,6 +29,7 @@ import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.service.ServiceType;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.session.SessionId;
@@ -363,35 +364,40 @@ public class DefaultServiceContext implements ServiceContext {
    * @param commandSequence The session command sequence number.
    * @param eventIndex      The session event index.
    */
-  public CompletableFuture<Void> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
+  public CompletableFuture<Boolean> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
+    CompletableFuture<Boolean> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
-      // Update the session's timestamp to prevent it from being expired.
-      session.setTimestamp(timestamp);
+      // The session may have been closed by the time this update was executed on the service thread.
+      if (session.getState() != RaftSession.State.CLOSED) {
+        // Update the session's timestamp to prevent it from being expired.
+        session.setTimestamp(timestamp);
 
-      // Clear results cached in the session.
-      session.clearResults(commandSequence);
+        // Clear results cached in the session.
+        session.clearResults(commandSequence);
 
-      // Resend missing events starting from the last received event index.
-      session.resendEvents(eventIndex);
+        // Resend missing events starting from the last received event index.
+        session.resendEvents(eventIndex);
 
-      // Update the session's request sequence number. The command sequence number will be applied
-      // iff the existing request sequence number is less than the command sequence number. This must
-      // be applied to ensure that request sequence numbers are reset after a leader change since leaders
-      // track request sequence numbers in local memory.
-      session.resetRequestSequence(commandSequence);
+        // Update the session's request sequence number. The command sequence number will be applied
+        // iff the existing request sequence number is less than the command sequence number. This must
+        // be applied to ensure that request sequence numbers are reset after a leader change since leaders
+        // track request sequence numbers in local memory.
+        session.resetRequestSequence(commandSequence);
 
-      // Update the sessions' command sequence number. The command sequence number will be applied
-      // iff the existing sequence number is less than the keep-alive command sequence number. This should
-      // not be the case under normal operation since the command sequence number in keep-alive requests
-      // represents the highest sequence for which a client has received a response (the command has already
-      // been completed), but since the log compaction algorithm can exclude individual entries from replication,
-      // the command sequence number must be applied for keep-alive requests to reset the sequence number in
-      // the event the last command for the session was cleaned/compacted from the log.
-      session.setCommandSequence(commandSequence);
+        // Update the sessions' command sequence number. The command sequence number will be applied
+        // iff the existing sequence number is less than the keep-alive command sequence number. This should
+        // not be the case under normal operation since the command sequence number in keep-alive requests
+        // represents the highest sequence for which a client has received a response (the command has already
+        // been completed), but since the log compaction algorithm can exclude individual entries from replication,
+        // the command sequence number must be applied for keep-alive requests to reset the sequence number in
+        // the event the last command for the session was cleaned/compacted from the log.
+        session.setCommandSequence(commandSequence);
 
-      // Complete the future.
-      future.complete(null);
+        // Complete the future.
+        future.complete(true);
+      } else {
+        future.complete(false);
+      }
     });
     return future;
   }

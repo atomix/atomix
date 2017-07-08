@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.RaftError;
+import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -45,11 +45,13 @@ public class KeepAliveResponse extends AbstractRaftResponse {
 
   private final MemberId leader;
   private final Collection<MemberId> members;
+  private final long[] sessionIds;
 
-  public KeepAliveResponse(Status status, RaftError error, MemberId leader, Collection<MemberId> members) {
+  public KeepAliveResponse(Status status, RaftError error, MemberId leader, Collection<MemberId> members, long[] sessionIds) {
     super(status, error);
     this.leader = leader;
     this.members = members;
+    this.sessionIds = sessionIds;
   }
 
   /**
@@ -68,6 +70,15 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    */
   public Collection<MemberId> members() {
     return members;
+  }
+
+  /**
+   * Returns the sessions that were successfully kept alive.
+   *
+   * @return The sessions that were successfully kept alive.
+   */
+  public long[] sessionIds() {
+    return sessionIds;
   }
 
   @Override
@@ -110,6 +121,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
   public static class Builder extends AbstractRaftResponse.Builder<Builder, KeepAliveResponse> {
     private MemberId leader;
     private Collection<MemberId> members;
+    private long[] sessionIds;
 
     /**
      * Sets the response leader.
@@ -134,11 +146,23 @@ public class KeepAliveResponse extends AbstractRaftResponse {
       return this;
     }
 
+    /**
+     * Sets the response sessions.
+     *
+     * @param sessionIds the response sessions
+     * @return the response builder
+     */
+    public Builder withSessionIds(long[] sessionIds) {
+      this.sessionIds = checkNotNull(sessionIds, "sessionIds cannot be null");
+      return this;
+    }
+
     @Override
     protected void validate() {
       super.validate();
       if (status == Status.OK) {
         checkNotNull(members, "members cannot be null");
+        checkNotNull(sessionIds, "sessionIds cannot be null");
       }
     }
 
@@ -148,7 +172,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
     @Override
     public KeepAliveResponse build() {
       validate();
-      return new KeepAliveResponse(status, error, leader, members);
+      return new KeepAliveResponse(status, error, leader, members, sessionIds);
     }
   }
 }

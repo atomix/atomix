@@ -696,7 +696,7 @@ public final class LeaderRole extends ActiveRole {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          context.getStateMachine().apply(entry.index()).whenComplete((sessionResult, sessionError) -> {
+          context.getStateMachine().<long[]>apply(entry.index()).whenComplete((sessionResult, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(KeepAliveResponse.newBuilder()
@@ -705,7 +705,9 @@ public final class LeaderRole extends ActiveRole {
                     .withMembers(context.getCluster().getMembers().stream()
                         .map(RaftMember::memberId)
                         .filter(m -> m != null)
-                        .collect(Collectors.toList())).build()));
+                        .collect(Collectors.toList()))
+                    .withSessionIds(sessionResult)
+                    .build()));
               } else if (sessionError instanceof CompletionException && sessionError.getCause() instanceof RaftException) {
                 future.complete(logResponse(KeepAliveResponse.newBuilder()
                     .withStatus(RaftResponse.Status.ERROR)

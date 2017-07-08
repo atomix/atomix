@@ -15,10 +15,11 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import com.google.common.collect.Sets;
+import com.google.common.primitives.Longs;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.KeepAliveRequest;
@@ -28,6 +29,7 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -41,6 +43,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -63,7 +66,7 @@ public class RaftProxyManager {
   private final RaftProxyConnection connection;
   private final ScheduledExecutorService threadPoolExecutor;
   private final MemberSelectorManager selectorManager;
-  private final Map<SessionId, RaftProxyState> sessions = new ConcurrentHashMap<>();
+  private final Map<Long, RaftProxyState> sessions = new ConcurrentHashMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
   private ScheduledFuture<?> keepAliveFuture;
 
@@ -154,7 +157,7 @@ public class RaftProxyManager {
               serviceName,
               serviceType,
               response.timeout());
-          sessions.put(state.getSessionId(), state);
+          sessions.put(state.getSessionId().id(), state);
 
           // Ensure the proxy session info is reset and the session is kept alive.
           keepAliveSessions();
@@ -186,7 +189,7 @@ public class RaftProxyManager {
    * @return A completable future to be completed once the session is closed.
    */
   public CompletableFuture<Void> closeSession(SessionId sessionId) {
-    RaftProxyState state = sessions.get(sessionId);
+    RaftProxyState state = sessions.get(sessionId.id());
     if (state == null) {
       return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + sessionId));
     }
@@ -200,7 +203,7 @@ public class RaftProxyManager {
     connection.closeSession(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
-          sessions.remove(sessionId);
+          sessions.remove(sessionId.id());
           future.complete(null);
         } else {
           future.completeExceptionally(response.error().createException());
@@ -219,7 +222,7 @@ public class RaftProxyManager {
    * @return A completable future to be completed once the session's indexes have been reset.
    */
   CompletableFuture<Void> resetIndexes(SessionId sessionId) {
-    RaftProxyState sessionState = sessions.get(sessionId);
+    RaftProxyState sessionState = sessions.get(sessionId.id());
     if (sessionState == null) {
       return Futures.exceptionalFuture(new IllegalArgumentException("Unknown session: " + sessionId));
     }
@@ -281,7 +284,7 @@ public class RaftProxyManager {
     // For each session that needs to be kept alive, populate batch request arrays.
     int i = 0;
     for (RaftProxyState sessionState : needKeepAlive) {
-      if (currentTime - sessionState.getLastUpdated() > sessionState.getSessionTimeout() / 2) {
+      if (currentTime - sessionState.getLastUpdated() > sessionState.getSessionTimeout() / 4) {
         sessionIds[i] = sessionState.getSessionId().id();
         commandResponses[i] = sessionState.getCommandResponse();
         eventIndexes[i] = sessionState.getEventIndex();
@@ -303,7 +306,16 @@ public class RaftProxyManager {
           // If the request was successful, update the address selector and schedule the next keep-alive.
           if (response.status() == RaftResponse.Status.OK) {
             selectorManager.resetAll(response.leader(), response.members());
-            needKeepAlive.forEach(s -> s.setState(RaftProxy.State.CONNECTED));
+
+            // Iterate through sessions and close sessions that weren't kept alive by the request (have already been closed).
+            Set<Long> keptAliveSessions = Sets.newHashSet(Longs.asList(response.sessionIds()));
+            for (RaftProxyState session : needKeepAlive) {
+              if (keptAliveSessions.contains(session.getSessionId().id())) {
+                session.setState(RaftProxyClient.State.CONNECTED);
+              } else {
+                session.setState(RaftProxyClient.State.CLOSED);
+              }
+            }
             scheduleKeepAlive();
           }
           // If a leader is still set in the address selector, unset the leader and attempt to send another keep-alive.
