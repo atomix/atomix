@@ -29,6 +29,7 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionEvent;
 import io.atomix.protocols.raft.session.RaftSessionEventListener;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.utils.TimestampPrinter;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -506,6 +507,7 @@ public class RaftSessionContext implements RaftSession {
     return toStringHelper(this)
         .addValue(context)
         .add("session", sessionId)
+        .add("timestamp", TimestampPrinter.of(timestamp))
         .toString();
   }
 

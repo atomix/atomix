@@ -64,7 +64,7 @@ public class DefaultServiceContext implements ServiceContext {
   private final RaftService stateMachine;
   private final RaftServerContext server;
   private final DefaultServiceSessions sessions;
-  private final ThreadContext stateMachineExecutor;
+  private final ThreadContext serviceExecutor;
   private final ThreadContext snapshotExecutor;
   private volatile Snapshot pendingSnapshot;
   private long snapshotTime;
@@ -92,7 +92,7 @@ public class DefaultServiceContext implements ServiceContext {
       RaftService stateMachine,
       RaftServerContext server,
       RaftSessionManager sessionManager,
-      ThreadContext stateMachineExecutor,
+      ThreadContext serviceExecutor,
       ThreadContext snapshotExecutor) {
     this.serviceId = checkNotNull(serviceId);
     this.serviceName = checkNotNull(serviceName);
@@ -100,7 +100,7 @@ public class DefaultServiceContext implements ServiceContext {
     this.stateMachine = checkNotNull(stateMachine);
     this.server = checkNotNull(server);
     this.sessions = new DefaultServiceSessions(sessionManager);
-    this.stateMachineExecutor = checkNotNull(stateMachineExecutor);
+    this.serviceExecutor = checkNotNull(serviceExecutor);
     this.snapshotExecutor = checkNotNull(snapshotExecutor);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
         .addValue(serviceId)
@@ -164,7 +164,7 @@ public class DefaultServiceContext implements ServiceContext {
    * @return The state machine executor.
    */
   public ThreadContext executor() {
-    return stateMachineExecutor;
+    return serviceExecutor;
   }
 
   /**
@@ -328,7 +328,7 @@ public class DefaultServiceContext implements ServiceContext {
    */
   public CompletableFuture<Long> openSession(long index, long timestamp, RaftSessionContext session) {
     CompletableFuture<Long> future = new CompletableFuture<>();
-    stateMachineExecutor.execute(() -> {
+    serviceExecutor.execute(() -> {
       log.info("Opening session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
@@ -365,12 +365,9 @@ public class DefaultServiceContext implements ServiceContext {
    */
   public CompletableFuture<Void> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    stateMachineExecutor.execute(() -> {
+    serviceExecutor.execute(() -> {
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
-
-      // Update the state machine index/timestamp and expire sessions if necessary.
-      tick(index, timestamp);
 
       // Clear results cached in the session.
       session.clearResults(commandSequence);
@@ -393,14 +390,49 @@ public class DefaultServiceContext implements ServiceContext {
       // the event the last command for the session was cleaned/compacted from the log.
       session.setCommandSequence(commandSequence);
 
-      // Set the last applied index for the session. This will cause queries to be triggered if enqueued.
-      session.setLastApplied(index);
+      // Complete the future.
+      future.complete(null);
+    });
+    return future;
+  }
+
+  /**
+   * Completes a keep-alive.
+   *
+   * @param index the keep-alive index
+   * @param timestamp the keep-alive timestamp
+   * @return future to be completed once the keep alive is completed
+   */
+  public CompletableFuture<Void> completeKeepAlive(long index, long timestamp) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    serviceExecutor.execute(() -> {
+      // Update the state machine index/timestamp and expire sessions if necessary.
+      tick(index, timestamp);
 
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
+    });
+    return future;
+  }
 
-      // Complete the future.
-      future.complete(null);
+  /**
+   * Keeps all sessions alive using the given timestamp.
+   *
+   * @param index the index of the timestamp
+   * @param timestamp the timestamp with which to reset session timeouts
+   * @return future to be completed once all sessions have been preserved
+   */
+  public CompletableFuture<Void> keepAliveSessions(long index, long timestamp) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    serviceExecutor.execute(() -> {
+      log.debug("Resetting session timeouts");
+
+      this.currentIndex = index;
+      this.currentTimestamp = Math.max(currentTimestamp, timestamp);
+
+      for (RaftSessionContext session : sessions.getSessions()) {
+        session.setTimestamp(timestamp);
+      }
     });
     return future;
   }
@@ -414,7 +446,7 @@ public class DefaultServiceContext implements ServiceContext {
    */
   public CompletableFuture<Void> closeSession(long index, long timestamp, RaftSessionContext session) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    stateMachineExecutor.execute(() -> {
+    serviceExecutor.execute(() -> {
       log.info("Closing session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
@@ -455,7 +487,7 @@ public class DefaultServiceContext implements ServiceContext {
    */
   public CompletableFuture<OperationResult> executeCommand(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
     CompletableFuture<OperationResult> future = new CompletableFuture<>();
-    stateMachineExecutor.execute(() -> executeCommand(index, sequence, timestamp, session, operation, future));
+    serviceExecutor.execute(() -> executeCommand(index, sequence, timestamp, session, operation, future));
     return future;
   }
 
@@ -557,7 +589,7 @@ public class DefaultServiceContext implements ServiceContext {
    */
   public CompletableFuture<OperationResult> executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
     CompletableFuture<OperationResult> future = new CompletableFuture<>();
-    stateMachineExecutor.execute(() -> executeQuery(index, sequence, timestamp, session, operation, future));
+    serviceExecutor.execute(() -> executeQuery(index, sequence, timestamp, session, operation, future));
     return future;
   }
 

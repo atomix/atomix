@@ -74,7 +74,7 @@ public class RaftServiceManager implements AutoCloseable {
   private final RaftLog log;
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
-  private final Map<String, DefaultServiceContext> stateMachines = new HashMap<>();
+  private final Map<String, DefaultServiceContext> services = new HashMap<>();
   private volatile long lastApplied;
 
   public RaftServiceManager(RaftServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
@@ -226,6 +226,9 @@ public class RaftServiceManager implements AutoCloseable {
    * prior terms, therefore no logic needs to take place.
    */
   private CompletableFuture<Void> applyInitialize(Indexed<InitializeEntry> entry) {
+    for (DefaultServiceContext service : services.values()) {
+      service.keepAliveSessions(entry.index(), entry.entry().timestamp());
+    }
     return CompletableFuture.completedFuture(null);
   }
 
@@ -237,6 +240,9 @@ public class RaftServiceManager implements AutoCloseable {
    * entry since it was overwritten by a more recent committed configuration entry.
    */
   private CompletableFuture<Void> applyConfiguration(Indexed<ConfigurationEntry> entry) {
+    for (DefaultServiceContext service : services.values()) {
+      service.keepAliveSessions(entry.index(), entry.entry().timestamp());
+    }
     return CompletableFuture.completedFuture(null);
   }
 
@@ -269,6 +275,7 @@ public class RaftServiceManager implements AutoCloseable {
     long[] commandSequences = entry.entry().commandSequenceNumbers();
     long[] eventIndexes = entry.entry().eventIndexes();
 
+    // Iterate through session identifiers and keep sessions alive.
     for (int i = 0; i < sessionIds.length; i++) {
       long sessionId = sessionIds[i];
       long commandSequence = commandSequences[i];
@@ -279,6 +286,11 @@ public class RaftServiceManager implements AutoCloseable {
         session.getStateMachineContext().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex);
       }
     }
+
+    // Iterate through services and complete keep-alives, causing sessions to be expired if necessary.
+    for (DefaultServiceContext service : services.values()) {
+      service.completeKeepAlive(entry.index(), entry.entry().timestamp());
+    }
     return CompletableFuture.completedFuture(null);
   }
 
@@ -287,7 +299,7 @@ public class RaftServiceManager implements AutoCloseable {
    */
   private CompletableFuture<Long> applyOpenSession(Indexed<OpenSessionEntry> entry) {
     // Get the state machine executor or create one if it doesn't already exist.
-    DefaultServiceContext stateMachineExecutor = stateMachines.get(entry.entry().serviceName());
+    DefaultServiceContext stateMachineExecutor = services.get(entry.entry().serviceName());
     if (stateMachineExecutor == null) {
       Supplier<RaftService> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().serviceType());
       if (stateMachineSupplier == null) {
@@ -304,7 +316,7 @@ public class RaftServiceManager implements AutoCloseable {
           sessionManager,
           new ThreadPoolContext(threadPool),
           new ThreadPoolContext(threadPool));
-      stateMachines.put(entry.entry().serviceName(), stateMachineExecutor);
+      services.put(entry.entry().serviceName(), stateMachineExecutor);
     }
 
     SessionId sessionId = SessionId.from(entry.index());
@@ -445,7 +457,7 @@ public class RaftServiceManager implements AutoCloseable {
   private void compactLog() {
     // Iterate through state machines and compute the lowest stored snapshot for all state machines.
     long snapshotIndex = state.getLogWriter().getLastIndex();
-    for (DefaultServiceContext stateMachineExecutor : stateMachines.values()) {
+    for (DefaultServiceContext stateMachineExecutor : services.values()) {
       Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.serviceId());
       if (snapshot == null) {
         return;
