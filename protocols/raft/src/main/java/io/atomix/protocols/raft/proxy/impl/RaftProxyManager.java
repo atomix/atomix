@@ -72,7 +72,7 @@ public class RaftProxyManager {
 
   public RaftProxyManager(String clientId, MemberId memberId, RaftClientProtocol protocol, MemberSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
-    this.memberId = checkNotNull(memberId, "nodeId cannot be null");
+    this.memberId = checkNotNull(memberId, "memberId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftClient.class)
@@ -131,7 +131,7 @@ public class RaftProxyManager {
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
       Duration timeout) {
-    checkNotNull(serviceName, "naserviceNameme cannot be null");
+    checkNotNull(serviceName, "serviceName cannot be null");
     checkNotNull(serviceType, "serviceType cannot be null");
     checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
     checkNotNull(timeout, "timeout cannot be null");
