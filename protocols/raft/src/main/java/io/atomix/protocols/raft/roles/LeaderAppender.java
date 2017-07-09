@@ -26,6 +26,7 @@ import io.atomix.protocols.raft.protocol.ConfigureRequest;
 import io.atomix.protocols.raft.protocol.ConfigureResponse;
 import io.atomix.protocols.raft.protocol.InstallRequest;
 import io.atomix.protocols.raft.protocol.InstallResponse;
+import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 
 import java.time.Instant;
@@ -451,8 +452,8 @@ final class LeaderAppender extends AbstractAppender {
   }
 
   @Override
-  protected void failAttempt(RaftMemberContext member, Throwable error) {
-    super.failAttempt(member, error);
+  protected void failAttempt(RaftMemberContext member, RaftRequest request, Throwable error) {
+    super.failAttempt(member, request, error);
 
     // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
     // If the leader is not able to contact a majority of the cluster within two election timeouts, assume

@@ -25,6 +25,7 @@ import io.atomix.protocols.raft.protocol.ConfigureRequest;
 import io.atomix.protocols.raft.protocol.ConfigureResponse;
 import io.atomix.protocols.raft.protocol.InstallRequest;
 import io.atomix.protocols.raft.protocol.InstallResponse;
+import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
@@ -203,7 +204,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void handleAppendRequestFailure(RaftMemberContext member, AppendRequest request, Throwable error) {
     // Log the failed attempt to contact the member.
-    failAttempt(member, error);
+    failAttempt(member, request, error);
   }
 
   /**
@@ -211,7 +212,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void handleAppendResponseFailure(RaftMemberContext member, AppendRequest request, Throwable error) {
     // Log the failed attempt to contact the member.
-    failAttempt(member, error);
+    failAttempt(member, request, error);
   }
 
   /**
@@ -268,7 +269,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // when attempting to send entries to down followers.
     int failures = member.incrementFailureCount();
     if (failures <= 3 || failures % 100 == 0) {
-      log.warn("AppendRequest to {} failed: {}", member.getMember().memberId(), response.error() != null ? response.error() : "");
+      log.warn("{} to {} failed: {}", request, member.getMember().memberId(), response.error() != null ? response.error() : "");
     }
   }
 
@@ -283,13 +284,13 @@ abstract class AbstractAppender implements AutoCloseable {
   /**
    * Fails an attempt to contact a member.
    */
-  protected void failAttempt(RaftMemberContext member, Throwable error) {
+  protected void failAttempt(RaftMemberContext member, RaftRequest request, Throwable error) {
     // If any append error occurred, increment the failure count for the member. Log the first three failures,
     // and thereafter log 1% of the failures. This keeps the log from filling up with annoying error messages
     // when attempting to send entries to down followers.
     int failures = member.incrementFailureCount();
     if (failures <= 3 || failures % 100 == 0) {
-      log.warn("AppendRequest to {} failed: {}", member.getMember().memberId(), error.getMessage());
+      log.warn("{} to {} failed: {}", request, member.getMember().memberId(), error.getMessage());
     }
   }
 
@@ -372,7 +373,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void handleConfigureRequestFailure(RaftMemberContext member, ConfigureRequest request, Throwable error) {
     // Log the failed attempt to contact the member.
-    failAttempt(member, error);
+    failAttempt(member, request, error);
   }
 
   /**
@@ -380,7 +381,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void handleConfigureResponseFailure(RaftMemberContext member, ConfigureRequest request, Throwable error) {
     // Log the failed attempt to contact the member.
-    failAttempt(member, error);
+    failAttempt(member, request, error);
   }
 
   /**
@@ -487,7 +488,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void handleInstallRequestFailure(RaftMemberContext member, InstallRequest request, Throwable error) {
     // Log the failed attempt to contact the member.
-    failAttempt(member, error);
+    failAttempt(member, request, error);
   }
 
   /**
@@ -500,7 +501,7 @@ abstract class AbstractAppender implements AutoCloseable {
     member.setNextSnapshotOffset(0);
 
     // Log the failed attempt to contact the member.
-    failAttempt(member, error);
+    failAttempt(member, request, error);
   }
 
   /**
