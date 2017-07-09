@@ -15,16 +15,17 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.protocols.raft.operation.OperationType;
-import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftServerContext;
-import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
+import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
+import io.atomix.protocols.raft.roles.PendingCommand;
+import io.atomix.protocols.raft.service.ServiceType;
+import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionEvent;
 import io.atomix.protocols.raft.session.RaftSessionEventListener;
@@ -62,7 +63,7 @@ public class RaftSessionContext implements RaftSession {
   private final RaftServerContext server;
   private volatile State state = State.OPEN;
   private volatile long timestamp;
-  private volatile long requestSequence;
+  private long requestSequence;
   private volatile long commandSequence;
   private volatile long lastApplied;
   private volatile long commandLowWaterMark;
@@ -70,6 +71,7 @@ public class RaftSessionContext implements RaftSession {
   private volatile long completeIndex;
   private final Map<Long, List<Runnable>> sequenceQueries = new HashMap<>();
   private final Map<Long, List<Runnable>> indexQueries = new HashMap<>();
+  private final Map<Long, PendingCommand> commands = new HashMap<>();
   private final Map<Long, OperationResult> results = new HashMap<>();
   private final Queue<EventHolder> events = new LinkedList<>();
   private volatile EventHolder currentEventList;
@@ -209,19 +211,21 @@ public class RaftSessionContext implements RaftSession {
   }
 
   /**
-   * Checks and sets the current request sequence number.
+   * Returns the next request sequence number.
    *
-   * @param requestSequence The request sequence number to set.
-   * @return Indicates whether the given {@code requestSequence} number is the next sequence number.
+   * @return the next request sequence number
    */
-  public boolean setRequestSequence(long requestSequence) {
-    if (requestSequence == this.requestSequence + 1) {
-      this.requestSequence = requestSequence;
-      return true;
-    } else if (requestSequence <= this.requestSequence) {
-      return true;
-    }
-    return false;
+  public long nextRequestSequence() {
+    return this.requestSequence + 1;
+  }
+
+  /**
+   * Sets the current request sequence number.
+   *
+   * @param requestSequence the current request sequence number
+   */
+  public void setRequestSequence(long requestSequence) {
+    this.requestSequence = Math.max(this.requestSequence, requestSequence);
   }
 
   /**
@@ -325,6 +329,18 @@ public class RaftSessionContext implements RaftSession {
     // Add a query to be run once the session's index reaches the given index.
     List<Runnable> queries = this.indexQueries.computeIfAbsent(index, v -> new LinkedList<>());
     queries.add(query);
+  }
+
+  public void registerCommand(long sequence, PendingCommand submission) {
+    commands.put(sequence, submission);
+  }
+
+  public PendingCommand getCommand(long sequence) {
+    return commands.get(sequence);
+  }
+
+  public PendingCommand removeCommand(long sequence) {
+    return commands.remove(sequence);
   }
 
   /**

@@ -493,21 +493,74 @@ public final class LeaderRole extends ActiveRole {
           .build()));
     }
 
-    // If the command is LINEARIZABLE and the session's current sequence number is less then one prior to the request
-    // sequence number, queue this request for handling later. We want to handle command requests in the order in which
-    // they were sent by the client. Note that it's possible for the session sequence number to be greater than the request
-    // sequence number. In that case, it's likely that the command was submitted more than once to the
-    // cluster, and the command will be deduplicated once applied to the state machine.
-    if (!session.setRequestSequence(request.sequenceNumber())) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
-          .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.COMMAND_FAILURE, "Request sequence number " + request.sequenceNumber() + " out of sequence")
-          .withLastSequence(session.getRequestSequence())
-          .build()));
+    // If a command with the given sequence number is already pending, return the existing future to ensure
+    // duplicate requests aren't committed as duplicate entries in the log.
+    PendingCommand existingCommand = session.getCommand(request.sequenceNumber());
+    if (existingCommand != null) {
+      return existingCommand.future();
     }
 
     final CompletableFuture<CommandResponse> future = new CompletableFuture<>();
 
+    final long sequenceNumber = request.sequenceNumber();
+
+    // If the request sequence number is greater than the next sequence number, that indicates a command is missing.
+    // Register the command request and return a future to be completed once commands are properly sequenced.
+    if (sequenceNumber > session.nextRequestSequence()) {
+      session.registerCommand(request.sequenceNumber(), new PendingCommand(request, future));
+      return future;
+    }
+
+    // If the command has already been applied to the state machine then return a cached result if possible, otherwise
+    // return null.
+    if (sequenceNumber <= session.getCommandSequence()) {
+      OperationResult result = session.getResult(sequenceNumber);
+      if (result != null) {
+        completeOperation(result, CommandResponse.newBuilder(), null, future);
+      } else {
+        future.complete(CommandResponse.newBuilder()
+            .withStatus(RaftResponse.Status.OK)
+            .withIndex(session.getLastApplied())
+            .withEventIndex(0)
+            .withResult(new byte[0])
+            .build());
+      }
+    }
+    // Otherwise, commit the command and update the request sequence number.
+    else {
+      commitCommand(request, future);
+      session.setRequestSequence(sequenceNumber);
+
+      // Once the sequence number has been updated, drain any additional pending commands after this sequence number.
+      drainCommands(session);
+    }
+
+    return future.thenApply(this::logResponse);
+  }
+
+  /**
+   * Sequentially drains pending commands from the session's command request queue.
+   *
+   * @param session the session for which to drain commands
+   */
+  private void drainCommands(RaftSessionContext session) {
+    long nextSequence = session.nextRequestSequence();
+    PendingCommand nextCommand = session.removeCommand(nextSequence);
+    while (nextCommand != null) {
+      commitCommand(nextCommand.request(), nextCommand.future());
+      session.setRequestSequence(nextSequence);
+      nextSequence = session.nextRequestSequence();
+      nextCommand = session.removeCommand(nextSequence);
+    }
+  }
+
+  /**
+   * Commits a command.
+   *
+   * @param request the command request
+   * @param future the command response future
+   */
+  private void commitCommand(CommandRequest request, CompletableFuture<CommandResponse> future) {
     final long term = context.getTerm();
     final long timestamp = System.currentTimeMillis();
 
@@ -534,7 +587,6 @@ public final class LeaderRole extends ActiveRole {
         }
       }
     });
-    return future.thenApply(this::logResponse);
   }
 
   @Override
