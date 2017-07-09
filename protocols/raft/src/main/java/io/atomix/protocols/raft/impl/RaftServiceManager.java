@@ -71,23 +71,21 @@ public class RaftServiceManager implements AutoCloseable {
   private static final long COMPACT_INTERVAL_MILLIS = 1000 * 10;
 
   private final Logger logger;
-  private final RaftServerContext state;
+  private final RaftServerContext server;
   private final ScheduledExecutorService threadPool;
-  private final ThreadContext threadContext;
   private final RaftLog log;
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
   private final Map<String, DefaultServiceContext> services = new HashMap<>();
   private volatile long lastApplied;
 
-  public RaftServiceManager(RaftServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
-    this.state = checkNotNull(state, "state cannot be null");
-    this.log = state.getLog();
+  public RaftServiceManager(RaftServerContext server, ScheduledExecutorService threadPool, ThreadContext threadContext) {
+    this.server = checkNotNull(server, "state cannot be null");
+    this.log = server.getLog();
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadPool = threadPool;
-    this.threadContext = threadContext;
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
-        .addValue(state.getName())
+        .addValue(server.getName())
         .build());
     threadContext.schedule(Duration.ofMillis(COMPACT_INTERVAL_MILLIS), this::compactLog);
   }
@@ -136,13 +134,9 @@ public class RaftServiceManager implements AutoCloseable {
    * @param index The index up to which to apply commits.
    */
   public void applyAll(long index) {
-    if (!log.isOpen()) {
-      return;
-    }
-
     // Don't attempt to apply indices that have already been applied.
     if (index > lastApplied) {
-      apply(index);
+      server.getThreadContext().execute(() -> apply(index));
     }
   }
 
@@ -321,7 +315,7 @@ public class RaftServiceManager implements AutoCloseable {
     // Get the state machine executor or create one if it doesn't already exist.
     DefaultServiceContext stateMachineExecutor = services.get(entry.entry().serviceName());
     if (stateMachineExecutor == null) {
-      Supplier<RaftService> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().serviceType());
+      Supplier<RaftService> stateMachineSupplier = server.getStateMachineRegistry().getFactory(entry.entry().serviceType());
       if (stateMachineSupplier == null) {
         return Futures.exceptionalFuture(new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType()));
       }
@@ -332,7 +326,7 @@ public class RaftServiceManager implements AutoCloseable {
           entry.entry().serviceName(),
           ServiceType.from(entry.entry().serviceType()),
           stateMachineSupplier.get(),
-          state,
+          server,
           sessionManager,
           new ThreadPoolContext(threadPool),
           new ThreadPoolContext(threadPool));
@@ -348,7 +342,7 @@ public class RaftServiceManager implements AutoCloseable {
         entry.entry().readConsistency(),
         entry.entry().timeout(),
         stateMachineExecutor,
-        state);
+        server);
     sessionManager.registerSession(session);
     return stateMachineExecutor.openSession(entry.index(), entry.entry().timestamp(), session);
   }
@@ -476,9 +470,9 @@ public class RaftServiceManager implements AutoCloseable {
    */
   private void compactLog() {
     // Iterate through state machines and compute the lowest stored snapshot for all state machines.
-    long snapshotIndex = state.getLogWriter().getLastIndex();
+    long snapshotIndex = server.getLogWriter().getLastIndex();
     for (DefaultServiceContext stateMachineExecutor : services.values()) {
-      Snapshot snapshot = state.getSnapshotStore().getSnapshotById(stateMachineExecutor.serviceId());
+      Snapshot snapshot = server.getSnapshotStore().getSnapshotById(stateMachineExecutor.serviceId());
       if (snapshot == null) {
         return;
       } else {
@@ -487,7 +481,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Compact logs prior to the lowest snapshot.
-    state.getLog().compact(snapshotIndex);
+    server.getLog().compact(snapshotIndex);
   }
 
   @Override
