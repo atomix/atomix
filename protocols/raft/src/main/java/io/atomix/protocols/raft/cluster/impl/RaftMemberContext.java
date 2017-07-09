@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.cluster.impl;
 
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -27,6 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class RaftMemberContext {
   private static final int MAX_APPENDS = 2;
+  private static final int APPEND_WINDOW_SIZE = 8;
   private final DefaultRaftMember member;
   private long term;
   private long configIndex;
@@ -43,7 +45,7 @@ public final class RaftMemberContext {
   private boolean installing;
   private volatile int failures;
   private volatile RaftLogReader reader;
-  private final TimeBuffer timeBuffer = new TimeBuffer(8);
+  private final DescriptiveStatistics timeStats = new DescriptiveStatistics(APPEND_WINDOW_SIZE);
 
   RaftMemberContext(DefaultRaftMember member, RaftClusterContext cluster) {
     this.member = checkNotNull(member, "member cannot be null").setCluster(cluster);
@@ -60,7 +62,7 @@ public final class RaftMemberContext {
     heartbeatTime = 0;
     heartbeatStartTime = 0;
     appending = 0;
-    timeBuffer.reset();
+    timeStats.clear();
     configuring = false;
     installing = false;
     appendSucceeded = false;
@@ -209,7 +211,7 @@ public final class RaftMemberContext {
    * @return Indicates whether an append request can be sent to the member.
    */
   public boolean canAppend() {
-    return appending == 0 || (appendSucceeded && appending < MAX_APPENDS && System.currentTimeMillis() - (timeBuffer.average() / MAX_APPENDS) >= appendTime);
+    return appending == 0 || (appendSucceeded && appending < MAX_APPENDS && System.currentTimeMillis() - (timeStats.getMean() / MAX_APPENDS) >= appendTime);
   }
 
   /**
@@ -266,7 +268,7 @@ public final class RaftMemberContext {
    */
   public void completeAppend(long time) {
     appending--;
-    timeBuffer.record(time);
+    timeStats.addValue(time);
   }
 
   /**
