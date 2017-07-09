@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.Set;
@@ -40,6 +40,7 @@ public final class RaftProxyState {
   private volatile long commandResponse;
   private volatile long responseIndex;
   private volatile long eventIndex;
+  private volatile long lastKeepAlive;
   private volatile long lastUpdated;
   private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
 
@@ -227,6 +228,24 @@ public final class RaftProxyState {
    */
   public long getEventIndex() {
     return eventIndex;
+  }
+
+  /**
+   * Sets the last time the session keep-alive was sent.
+   *
+   * @param lastKeepAlive The last time the session keep-alive was sent.
+   */
+  public void setLastKeepAlive(long lastKeepAlive) {
+    this.lastKeepAlive = lastKeepAlive;
+  }
+
+  /**
+   * Returns the last time the session keep-alive was sent.
+   *
+   * @return The last time the session keep-alive was sent.
+   */
+  public long getLastKeepAlive() {
+    return lastKeepAlive;
   }
 
   /**

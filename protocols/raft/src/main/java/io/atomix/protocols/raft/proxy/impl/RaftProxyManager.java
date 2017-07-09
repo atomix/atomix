@@ -67,7 +67,6 @@ public class RaftProxyManager {
   private final ScheduledExecutorService threadPoolExecutor;
   private final MemberSelectorManager selectorManager;
   private final Map<Long, RaftProxyState> sessions = new ConcurrentHashMap<>();
-  private final Set<Long> keepingAlive = Sets.newConcurrentHashSet();
   private final AtomicBoolean open = new AtomicBoolean();
   private ScheduledFuture<?> keepAliveFuture;
 
@@ -274,7 +273,7 @@ public class RaftProxyManager {
     // then sending a keep-alive for the session is redundant.
     List<RaftProxyState> needKeepAlive = sessions.values()
         .stream()
-        .filter(s -> !keepingAlive.contains(s.getSessionId().id())
+        .filter(s -> currentTime - s.getLastKeepAlive() > s.getSessionTimeout() / 2
             && currentTime - s.getLastUpdated() > s.getSessionTimeout() / 2)
         .collect(Collectors.toList());
 
@@ -295,7 +294,7 @@ public class RaftProxyManager {
       sessionIds[i] = sessionState.getSessionId().id();
       commandResponses[i] = sessionState.getCommandResponse();
       eventIndexes[i] = sessionState.getEventIndex();
-      keepingAlive.add(sessionState.getSessionId().id());
+      sessionState.setLastKeepAlive(currentTime);
       i++;
     }
 
@@ -309,7 +308,6 @@ public class RaftProxyManager {
 
     connection.keepAlive(request).whenComplete((response, error) -> {
       if (open.get()) {
-        needKeepAlive.forEach(session -> keepingAlive.remove(session.getSessionId().id()));
         if (error == null) {
           // If the request was successful, update the address selector and schedule the next keep-alive.
           if (response.status() == RaftResponse.Status.OK) {
