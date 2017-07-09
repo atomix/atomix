@@ -247,7 +247,7 @@ public abstract class AbstractLogTest {
       writer.truncate(i - 1);
       writer.append(new TestEntry(1, 32));
 
-      assertFalse(reader.hasNext());
+      assertTrue(reader.hasNext());
       reader.reset(i);
       assertTrue(reader.hasNext());
       entry = (Indexed) reader.next();
