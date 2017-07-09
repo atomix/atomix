@@ -160,6 +160,12 @@ public class RaftProxyManager {
               response.timeout());
           sessions.put(state.getSessionId().id(), state);
 
+          state.addStateChangeListener(s -> {
+            if (s == RaftProxyClient.State.CLOSED) {
+              sessions.remove(state.getSessionId().id());
+            }
+          });
+
           // Ensure the proxy session info is reset and the session is kept alive.
           keepAliveSessions();
 
