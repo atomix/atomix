@@ -880,12 +880,28 @@ public final class LeaderRole extends ActiveRole {
     }
   }
 
+  /**
+   * Fails pending commands.
+   */
+  private void failPendingCommands() {
+    for (RaftSessionContext session : context.getStateMachine().getSessions().getSessions()) {
+      for (PendingCommand command : session.clearCommands()) {
+        command.future().complete(logResponse(CommandResponse.newBuilder()
+            .withStatus(RaftResponse.Status.ERROR)
+            .withError(RaftError.Type.COMMAND_FAILURE, "Request sequence number " + command.request().sequenceNumber() + " out of sequence")
+            .withLastSequence(session.getRequestSequence())
+            .build()));
+      }
+    }
+  }
+
   @Override
   public synchronized CompletableFuture<Void> close() {
     return super.close()
         .thenRun(appender::close)
         .thenRun(this::cancelAppendTimer)
-        .thenRun(this::stepDown);
+        .thenRun(this::stepDown)
+        .thenRun(this::failPendingCommands);
   }
 
 }
