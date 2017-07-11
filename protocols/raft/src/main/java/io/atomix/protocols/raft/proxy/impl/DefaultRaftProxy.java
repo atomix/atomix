@@ -19,9 +19,9 @@ import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.event.EventType;
 import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.Map;
@@ -137,6 +137,11 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
+  public CompletableFuture<RaftProxy> open() {
+    return client.open().thenApply(c -> this);
+  }
+
+  @Override
   public boolean isOpen() {
     return client.isOpen();
   }
@@ -144,6 +149,11 @@ public class DefaultRaftProxy implements RaftProxy {
   @Override
   public CompletableFuture<Void> close() {
     return client.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return client.isClosed();
   }
 
   @Override

@@ -27,7 +27,6 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
-import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
 
@@ -49,7 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Session operation submitter.
  */
-final class RaftProxySubmitter {
+final class RaftProxyInvoker {
   private static final int[] FIBONACCI = new int[]{1, 1, 2, 3, 5};
   private static final Predicate<Throwable> EXCEPTION_PREDICATE = e ->
       e instanceof ConnectException
@@ -68,7 +67,7 @@ final class RaftProxySubmitter {
   private final Map<Long, OperationAttempt> attempts = new LinkedHashMap<>();
   private final AtomicLong keepAliveIndex = new AtomicLong();
 
-  public RaftProxySubmitter(
+  public RaftProxyInvoker(
       RaftProxyConnection leaderConnection,
       RaftProxyConnection sessionConnection,
       RaftProxyState state,
@@ -89,14 +88,14 @@ final class RaftProxySubmitter {
    * @param operation   The operation to submit.
    * @return A completable future to be completed once the command has been submitted.
    */
-  public CompletableFuture<byte[]> submit(RaftOperation operation) {
+  public CompletableFuture<byte[]> invoke(RaftOperation operation) {
     CompletableFuture<byte[]> future = new CompletableFuture<>();
     switch (operation.id().type()) {
       case COMMAND:
-        context.execute(() -> submitCommand(operation, future));
+        context.execute(() -> invokeCommand(operation, future));
         break;
       case QUERY:
-        context.execute(() -> submitQuery(operation, future));
+        context.execute(() -> invokeQuery(operation, future));
         break;
       default:
         throw new IllegalArgumentException("Unknown operation type " + operation.id().type());
@@ -107,40 +106,40 @@ final class RaftProxySubmitter {
   /**
    * Submits a command to the cluster.
    */
-  private void submitCommand(RaftOperation operation, CompletableFuture<byte[]> future) {
+  private void invokeCommand(RaftOperation operation, CompletableFuture<byte[]> future) {
     CommandRequest request = CommandRequest.newBuilder()
         .withSession(state.getSessionId().id())
         .withSequence(state.nextCommandRequest())
         .withOperation(operation)
         .build();
-    submitCommand(request, future);
+    invokeCommand(request, future);
   }
 
   /**
    * Submits a command request to the cluster.
    */
-  private void submitCommand(CommandRequest request, CompletableFuture<byte[]> future) {
-    submit(new CommandAttempt(sequencer.nextRequest(), request, future));
+  private void invokeCommand(CommandRequest request, CompletableFuture<byte[]> future) {
+    invoke(new CommandAttempt(sequencer.nextRequest(), request, future));
   }
 
   /**
    * Submits a query to the cluster.
    */
-  private void submitQuery(RaftOperation operation, CompletableFuture<byte[]> future) {
+  private void invokeQuery(RaftOperation operation, CompletableFuture<byte[]> future) {
     QueryRequest request = QueryRequest.newBuilder()
         .withSession(state.getSessionId().id())
         .withSequence(state.getCommandRequest())
         .withOperation(operation)
         .withIndex(state.getResponseIndex())
         .build();
-    submitQuery(request, future);
+    invokeQuery(request, future);
   }
 
   /**
    * Submits a query request to the cluster.
    */
-  private void submitQuery(QueryRequest request, CompletableFuture<byte[]> future) {
-    submit(new QueryAttempt(sequencer.nextRequest(), request, future));
+  private void invokeQuery(QueryRequest request, CompletableFuture<byte[]> future) {
+    invoke(new QueryAttempt(sequencer.nextRequest(), request, future));
   }
 
   /**
@@ -148,7 +147,7 @@ final class RaftProxySubmitter {
    *
    * @param attempt The attempt to submit.
    */
-  private <T extends OperationRequest, U extends OperationResponse, V> void submit(OperationAttempt<T, U> attempt) {
+  private <T extends OperationRequest, U extends OperationResponse> void invoke(OperationAttempt<T, U> attempt) {
     if (state.getState() == RaftProxy.State.CLOSED) {
       attempt.fail(new RaftException.ClosedSession("session closed"));
     } else {
@@ -288,7 +287,7 @@ final class RaftProxySubmitter {
      * Immediately retries the attempt.
      */
     public void retry() {
-      context.execute(() -> submit(next()));
+      context.execute(() -> invoke(next()));
     }
 
     /**
@@ -297,7 +296,7 @@ final class RaftProxySubmitter {
      * @param after The duration after which to retry the attempt.
      */
     public void retry(Duration after) {
-      context.schedule(after, () -> submit(next()));
+      context.schedule(after, () -> invoke(next()));
     }
   }
 
@@ -354,7 +353,7 @@ final class RaftProxySubmitter {
             || response.error().type() == RaftError.Type.UNKNOWN_SESSION
             || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
-          state.setState(RaftProxyClient.State.CLOSED);
+          state.setState(RaftProxy.State.CLOSED);
           complete(response.error().createException());
         }
         // For all other errors, use fibonacci backoff to resubmit the command.
@@ -374,7 +373,7 @@ final class RaftProxySubmitter {
 
       // If the session has been closed, update the client's state.
       if (CLOSED_PREDICATE.test(cause)) {
-        state.setState(RaftProxyClient.State.CLOSED);
+        state.setState(RaftProxy.State.CLOSED);
       }
       // Otherwise, resend the request with a NOOP command. This is necessary to ensure that sequence
       // numbers are not skipped which could otherwise prevent the client from progressing.
@@ -392,7 +391,7 @@ final class RaftProxySubmitter {
           .withSequence(request.sequenceNumber())
           .withOperation(new RaftOperation(OperationId.NOOP, HeapBytes.EMPTY))
           .build();
-      context.execute(() -> submit(new CommandAttempt(sequence, attempt + 1, noOpRequest, new CompletableFuture<>())));
+      context.execute(() -> invoke(new CommandAttempt(sequence, attempt + 1, noOpRequest, new CompletableFuture<>())));
       complete(cause);
     }
 

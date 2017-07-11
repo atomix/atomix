@@ -160,7 +160,7 @@ public class RaftProxyManager {
           sessions.put(state.getSessionId().id(), state);
 
           state.addStateChangeListener(s -> {
-            if (s == RaftProxyClient.State.CLOSED) {
+            if (s == RaftProxy.State.CLOSED) {
               sessions.remove(state.getSessionId().id());
             }
           });
@@ -169,7 +169,7 @@ public class RaftProxyManager {
           keepAliveSessions();
 
           // Create the proxy client and complete the future.
-          RaftProxyClient client = new DefaultRaftProxyClient(
+          RaftProxyClient client = new DiscreteRaftProxyClient(
               state,
               protocol,
               selectorManager,
@@ -317,10 +317,10 @@ public class RaftProxyManager {
             Set<Long> keptAliveSessions = Sets.newHashSet(Longs.asList(response.sessionIds()));
             for (RaftProxyState session : needKeepAlive) {
               if (keptAliveSessions.contains(session.getSessionId().id())) {
-                session.setState(RaftProxyClient.State.CONNECTED);
+                session.setState(RaftProxy.State.CONNECTED);
                 session.setLastUpdated(currentTime);
               } else {
-                session.setState(RaftProxyClient.State.CLOSED);
+                session.setState(RaftProxy.State.CLOSED);
               }
             }
             scheduleKeepAlive();

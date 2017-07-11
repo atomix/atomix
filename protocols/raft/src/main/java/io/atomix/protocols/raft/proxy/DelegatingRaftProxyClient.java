@@ -52,17 +52,17 @@ public class DelegatingRaftProxyClient implements RaftProxyClient {
   }
 
   @Override
-  public State getState() {
+  public RaftProxy.State getState() {
     return delegate.getState();
   }
 
   @Override
-  public void addStateChangeListener(Consumer<State> listener) {
+  public void addStateChangeListener(Consumer<RaftProxy.State> listener) {
     delegate.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<State> listener) {
+  public void removeStateChangeListener(Consumer<RaftProxy.State> listener) {
     delegate.removeStateChangeListener(listener);
   }
 
@@ -82,6 +82,11 @@ public class DelegatingRaftProxyClient implements RaftProxyClient {
   }
 
   @Override
+  public CompletableFuture<RaftProxyClient> open() {
+    return delegate.open();
+  }
+
+  @Override
   public boolean isOpen() {
     return delegate.isOpen();
   }
@@ -89,6 +94,11 @@ public class DelegatingRaftProxyClient implements RaftProxyClient {
   @Override
   public CompletableFuture<Void> close() {
     return delegate.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return delegate.isClosed();
   }
 
   @Override

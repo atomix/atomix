@@ -23,6 +23,7 @@ import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.Scheduler;
@@ -37,6 +38,7 @@ import java.util.function.Consumer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Raft proxy that supports recovery.
@@ -48,13 +50,13 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   private final RaftProxyClient.Builder proxyClientBuilder;
   private final Scheduler scheduler;
   private Logger log;
-  private volatile OrderedFuture<RaftProxyClient> openFuture;
+  private volatile OrderedFuture<RaftProxyClient> clientFuture;
   private volatile RaftProxyClient client;
-  private volatile RaftProxy.State state = State.SUSPENDED;
-  private final Set<Consumer<State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
+  private volatile RaftProxy.State state = RaftProxy.State.SUSPENDED;
+  private final Set<Consumer<RaftProxy.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Set<Consumer<RaftEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
   private Scheduled recoverTask;
-  private boolean recover = true;
+  private volatile boolean open = false;
 
   public RecoveringRaftProxyClient(String clientId, String name, ServiceType serviceType, RaftProxyClient.Builder proxyClientBuilder, Scheduler scheduler) {
     this.name = checkNotNull(name);
@@ -64,7 +66,6 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftClient.class)
         .addValue(clientId)
         .build());
-    recover();
   }
 
   @Override
@@ -84,7 +85,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   }
 
   @Override
-  public State getState() {
+  public RaftProxy.State getState() {
     return state;
   }
 
@@ -93,11 +94,11 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
    *
    * @param state the session state
    */
-  private synchronized void onStateChange(State state) {
+  private synchronized void onStateChange(RaftProxy.State state) {
     if (this.state != state) {
-      if (state == State.CLOSED) {
-        if (recover) {
-          onStateChange(State.SUSPENDED);
+      if (state == RaftProxy.State.CLOSED) {
+        if (open) {
+          onStateChange(RaftProxy.State.SUSPENDED);
           recover();
         } else {
           log.debug("State changed: {}", state);
@@ -113,28 +114,43 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   }
 
   @Override
-  public void addStateChangeListener(Consumer<State> listener) {
+  public void addStateChangeListener(Consumer<RaftProxy.State> listener) {
     stateChangeListeners.add(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<State> listener) {
+  public void removeStateChangeListener(Consumer<RaftProxy.State> listener) {
     stateChangeListeners.remove(listener);
   }
 
   /**
-   * Recovers the proxy client.
+   * Verifies that the client is open.
    */
-  private synchronized void recover() {
-    if (recover) {
-      // Setting the client to null will force operations to be queued until a new client is connected
-      client = null;
+  private void checkOpen() {
+    checkState(isOpen(), "client not open");
+  }
 
-      // Store the open future so operations can be enqueued waiting for the new client to be connected
-      openFuture = openClient();
+  /**
+   * Recovers the client.
+   */
+  private void recover() {
+    client = null;
+    openClient();
+  }
 
-      // Once the new client is connected, update the logger/listeners.
-      openFuture.thenAccept(client -> {
+  /**
+   * Opens a new client.
+   *
+   * @return a future to be completed once the client has been opened
+   */
+  private CompletableFuture<RaftProxyClient> openClient() {
+    if (open) {
+      log.debug("Opening proxy session");
+
+      clientFuture = new OrderedFuture<>();
+      openClient(clientFuture);
+
+      return clientFuture.thenApply(client -> {
         synchronized (this) {
           this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftProxy.class)
               .addValue(client.sessionId())
@@ -144,21 +160,12 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
           this.client = client;
           client.addStateChangeListener(this::onStateChange);
           eventListeners.forEach(client::addEventListener);
-          onStateChange(State.CONNECTED);
+          onStateChange(RaftProxy.State.CONNECTED);
         }
+        return client;
       });
     }
-  }
-
-  /**
-   * Opens a new client.
-   *
-   * @return a future to be completed once the client has been opened
-   */
-  private OrderedFuture<RaftProxyClient> openClient() {
-    OrderedFuture<RaftProxyClient> future = new OrderedFuture<>();
-    openClient(future);
-    return future;
+    return Futures.exceptionalFuture(new IllegalStateException("Client not open"));
   }
 
   /**
@@ -167,7 +174,6 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
    * @param future the future to be completed once the client is opened
    */
   private void openClient(CompletableFuture<RaftProxyClient> future) {
-    log.debug("Opening session");
     proxyClientBuilder.buildAsync().whenComplete((client, error) -> {
       if (error == null) {
         future.complete(client);
@@ -179,16 +185,18 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
 
   @Override
   public CompletableFuture<byte[]> execute(RaftOperation operation) {
+    checkOpen();
     RaftProxyClient client = this.client;
     if (client != null) {
       return client.execute(operation);
     } else {
-      return openFuture.thenCompose(c -> c.execute(operation));
+      return clientFuture.thenCompose(c -> c.execute(operation));
     }
   }
 
   @Override
   public synchronized void addEventListener(Consumer<RaftEvent> consumer) {
+    checkOpen();
     eventListeners.add(consumer);
     RaftProxyClient client = this.client;
     if (client != null) {
@@ -198,6 +206,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
 
   @Override
   public synchronized void removeEventListener(Consumer<RaftEvent> consumer) {
+    checkOpen();
     eventListeners.remove(consumer);
     RaftProxyClient client = this.client;
     if (client != null) {
@@ -206,23 +215,40 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   }
 
   @Override
+  public synchronized CompletableFuture<RaftProxyClient> open() {
+    if (!open) {
+      open = true;
+      return openClient().thenApply(c -> this);
+    }
+    return CompletableFuture.completedFuture(this);
+  }
+
+  @Override
   public boolean isOpen() {
-    return state == State.CONNECTED;
+    return open;
   }
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    recover = false;
-    if (recoverTask != null) {
-      recoverTask.cancel();
-    }
+    if (open) {
+      open = false;
+      if (recoverTask != null) {
+        recoverTask.cancel();
+      }
 
-    RaftProxyClient client = this.client;
-    if (client != null) {
-      return client.close();
-    } else {
-      return openFuture.thenCompose(c -> c.close());
+      RaftProxyClient client = this.client;
+      if (client != null) {
+        return client.close();
+      } else {
+        return clientFuture.thenCompose(c -> c.close());
+      }
     }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
   }
 
   @Override

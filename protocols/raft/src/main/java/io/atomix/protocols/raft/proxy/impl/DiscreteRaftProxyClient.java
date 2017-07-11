@@ -17,11 +17,11 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.LoggerContext;
@@ -49,13 +49,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * In the event that the client session expires, clients are responsible for opening a new session by creating and
  * opening a new session object.
  */
-public class DefaultRaftProxyClient implements RaftProxyClient {
+public class DiscreteRaftProxyClient implements RaftProxyClient {
   private final RaftProxyState state;
   private final RaftProxyManager sessionManager;
   private final RaftProxyListener proxyListener;
-  private final RaftProxySubmitter proxySubmitter;
+  private final RaftProxyInvoker proxySubmitter;
 
-  public DefaultRaftProxyClient(
+  public DiscreteRaftProxyClient(
       RaftProxyState state,
       RaftClientProtocol protocol,
       MemberSelectorManager selectorManager,
@@ -93,7 +93,7 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
         state,
         sequencer,
         context);
-    this.proxySubmitter = new RaftProxySubmitter(
+    this.proxySubmitter = new RaftProxyInvoker(
         leaderConnection,
         sessionConnection,
         state,
@@ -118,23 +118,23 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
   }
 
   @Override
-  public State getState() {
+  public RaftProxy.State getState() {
     return state.getState();
   }
 
   @Override
-  public void addStateChangeListener(Consumer<State> listener) {
+  public void addStateChangeListener(Consumer<RaftProxy.State> listener) {
     state.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<State> listener) {
+  public void removeStateChangeListener(Consumer<RaftProxy.State> listener) {
     state.removeStateChangeListener(listener);
   }
 
   @Override
   public CompletableFuture<byte[]> execute(RaftOperation operation) {
-    return proxySubmitter.submit(operation);
+    return proxySubmitter.invoke(operation);
   }
 
   @Override
@@ -148,14 +148,24 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
   }
 
   @Override
+  public CompletableFuture<RaftProxyClient> open() {
+    return CompletableFuture.completedFuture(this);
+  }
+
+  @Override
   public boolean isOpen() {
-    return state.getState() != State.CLOSED;
+    return state.getState() != RaftProxy.State.CLOSED;
   }
 
   @Override
   public CompletableFuture<Void> close() {
     return sessionManager.closeSession(state.getSessionId())
-        .whenComplete((result, error) -> state.setState(State.CLOSED));
+        .whenComplete((result, error) -> state.setState(RaftProxy.State.CLOSED));
+  }
+
+  @Override
+  public boolean isClosed() {
+    return state.getState() == RaftProxy.State.CLOSED;
   }
 
   @Override
@@ -168,7 +178,7 @@ public class DefaultRaftProxyClient implements RaftProxyClient {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof DefaultRaftProxyClient && ((DefaultRaftProxyClient) object).state.getSessionId() == state.getSessionId();
+    return object instanceof DiscreteRaftProxyClient && ((DiscreteRaftProxyClient) object).state.getSessionId() == state.getSessionId();
   }
 
   @Override
