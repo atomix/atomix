@@ -184,15 +184,18 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(3);
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    submit(session, 0, 1000);
-    await(30000);
+    submit(session, 0, 100);
+    await(10000);
     RaftServer joiner = createServer(nextMember(type));
     joiner.addRoleChangeListener(s -> {
       if (s == role)
         resume();
     });
     joiner.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
-    await(30000, 2);
+    await(10000, 2);
+    submit(session, 0, 10);
+    await(10000);
+    Thread.sleep(5000);
   }
 
   /**

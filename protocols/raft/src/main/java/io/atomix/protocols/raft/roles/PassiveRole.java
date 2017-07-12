@@ -48,8 +48,7 @@ import java.util.concurrent.CompletionException;
  * Passive state.
  */
 public class PassiveRole extends ReserveRole {
-  private final Map<Long, Snapshot> pendingSnapshots = new HashMap<>();
-  private int nextSnapshotOffset;
+  private final Map<Long, PendingSnapshot> pendingSnapshots = new HashMap<>();
 
   public PassiveRole(RaftServerContext context) {
     super(context);
@@ -370,7 +369,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Get the pending snapshot for the associated snapshot ID.
-    Snapshot pendingSnapshot = pendingSnapshots.get(request.snapshotId());
+    PendingSnapshot pendingSnapshot = pendingSnapshots.get(request.snapshotId());
 
     // If a snapshot is currently being received and the snapshot versions don't match, simply
     // close the existing snapshot. This is a naive implementation that assumes that the leader
@@ -378,11 +377,9 @@ public class PassiveRole extends ReserveRole {
     // where snapshots must be sent since entries can still legitimately exist prior to the snapshot,
     // and so snapshots aren't simply sent at the beginning of the follower's log, but rather the
     // leader dictates when a snapshot needs to be sent.
-    if (pendingSnapshot != null && request.snapshotIndex() != pendingSnapshot.index()) {
-      pendingSnapshot.close();
-      pendingSnapshot.delete();
+    if (pendingSnapshot != null && request.snapshotIndex() != pendingSnapshot.snapshot().index()) {
+      pendingSnapshot.rollback();
       pendingSnapshot = null;
-      nextSnapshotOffset = 0;
     }
 
     // If there is no pending snapshot, create a new snapshot.
@@ -395,15 +392,15 @@ public class PassiveRole extends ReserveRole {
             .build()));
       }
 
-      pendingSnapshot = context.getSnapshotStore().newSnapshot(
+      Snapshot snapshot = context.getSnapshotStore().newSnapshot(
               ServiceId.from(request.snapshotId()),
               request.snapshotIndex(),
               WallClockTimestamp.from(request.snapshotTimestamp()));
-      nextSnapshotOffset = 0;
+      pendingSnapshot = new PendingSnapshot(snapshot);
     }
 
     // If the request offset is greater than the next expected snapshot offset, fail the request.
-    if (request.chunkOffset() > nextSnapshotOffset) {
+    if (request.chunkOffset() > pendingSnapshot.nextOffset()) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request chunk offset does not match the next chunk offset")
@@ -411,17 +408,16 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Write the data to the snapshot.
-    try (SnapshotWriter writer = pendingSnapshot.openWriter()) {
+    try (SnapshotWriter writer = pendingSnapshot.snapshot().openWriter()) {
       writer.write(request.data());
     }
 
     // If the snapshot is complete, store the snapshot and reset state, otherwise update the next snapshot offset.
     if (request.complete()) {
-      pendingSnapshot.persist().complete();
+      pendingSnapshot.commit();
       pendingSnapshots.remove(request.snapshotId());
-      nextSnapshotOffset = 0;
     } else {
-      nextSnapshotOffset++;
+      pendingSnapshot.incrementOffset();
       pendingSnapshots.put(request.snapshotId(), pendingSnapshot);
     }
 
@@ -432,9 +428,8 @@ public class PassiveRole extends ReserveRole {
 
   @Override
   public CompletableFuture<Void> close() {
-    for (Snapshot pendingSnapshot : pendingSnapshots.values()) {
-      pendingSnapshot.close();
-      pendingSnapshot.delete();
+    for (PendingSnapshot pendingSnapshot : pendingSnapshots.values()) {
+      pendingSnapshot.rollback();
     }
     return super.close();
   }

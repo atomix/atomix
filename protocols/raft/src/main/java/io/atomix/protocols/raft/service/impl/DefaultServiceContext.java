@@ -293,6 +293,9 @@ public class DefaultServiceContext implements ServiceContext {
    */
   private void maybeInstallSnapshot(long index) {
     Snapshot snapshot = server.getSnapshotStore().getSnapshotById(serviceId);
+    if (snapshot != null) {
+      System.out.println(snapshot + " > " + snapshotIndex + " && " + snapshot.index() + " < " + index);
+    }
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() < index) {
       log.info("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
