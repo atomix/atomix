@@ -121,7 +121,7 @@ public class RaftPerformanceTest implements Runnable {
 
   private static final int ITERATIONS = 10;
 
-  private static final int TOTAL_OPERATIONS = 100000;
+  private static final int TOTAL_OPERATIONS = 1000000;
   private static final int WRITE_RATIO = 5;
   private static final int NUM_CLIENTS = 5;
 
@@ -312,7 +312,7 @@ public class RaftPerformanceTest implements Runnable {
     if (count > TOTAL_OPERATIONS) {
       future.complete(null);
     } else if (count % 10 < WRITE_RATIO) {
-      proxy.submit(PUT, clientSerializer::encode, Maps.immutableEntry(randomKey(), UUID.randomUUID().toString()))
+      proxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry(randomKey(), UUID.randomUUID().toString()))
           .whenComplete((result, error) -> {
             if (error == null) {
               writeCount.incrementAndGet();
@@ -320,7 +320,7 @@ public class RaftPerformanceTest implements Runnable {
             runProxy(proxy, future);
           });
     } else {
-      proxy.submit(GET, clientSerializer::encode, randomKey()).whenComplete((result, error) -> {
+      proxy.invoke(GET, clientSerializer::encode, randomKey()).whenComplete((result, error) -> {
         if (error == null) {
           readCount.incrementAndGet();
         }
