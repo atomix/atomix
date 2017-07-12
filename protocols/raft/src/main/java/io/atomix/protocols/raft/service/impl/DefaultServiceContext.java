@@ -235,7 +235,7 @@ public class DefaultServiceContext implements ServiceContext {
     if ((currentSnapshot == null || currentSnapshot.index() < index) && pendingSnapshot == null
         && (snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS)) {
       log.info("Taking snapshot {}", index);
-      pendingSnapshot = server.getSnapshotStore()
+      Snapshot snapshot = server.getSnapshotStore()
           .newTemporarySnapshot(serviceId, index, WallClockTimestamp.from(timestamp));
       try (SnapshotWriter writer = pendingSnapshot.openWriter()) {
         writer.writeInt(sessions.getSessions().size());
@@ -247,7 +247,12 @@ public class DefaultServiceContext implements ServiceContext {
           writer.writeLong(session.getTimestamp());
         }
         stateMachine.snapshot(writer);
+      } catch (Exception e) {
+        log.error("Snapshot failed: {}", e);
+        return;
       }
+
+      pendingSnapshot = snapshot;
       snapshotTime = System.currentTimeMillis();
 
       snapshotExecutor.execute(() -> {
@@ -315,6 +320,8 @@ public class DefaultServiceContext implements ServiceContext {
           sessions.add(session);
         }
         stateMachine.install(reader);
+      } catch (Exception e) {
+        log.error("Snapshot installation failed: {}", e);
       }
       snapshotIndex = snapshot.index();
     }
