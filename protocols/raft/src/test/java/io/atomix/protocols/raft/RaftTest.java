@@ -27,7 +27,7 @@ import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.AbstractRaftService;
-import io.atomix.protocols.raft.service.RaftCommit;
+import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.RaftSession;
@@ -1402,8 +1402,8 @@ public class RaftTest extends ConcurrentTestCase {
    * Test state machine.
    */
   public static class TestStateMachine extends AbstractRaftService {
-    private RaftCommit<Void> expire;
-    private RaftCommit<Void> close;
+    private Commit<Void> expire;
+    private Commit<Void> close;
 
     @Override
     protected void configure(RaftServiceExecutor executor) {
@@ -1438,15 +1438,15 @@ public class RaftTest extends ConcurrentTestCase {
       assertEquals(10, reader.readLong());
     }
 
-    protected long write(RaftCommit<Void> commit) {
+    protected long write(Commit<Void> commit) {
       return commit.index();
     }
 
-    protected long read(RaftCommit<Void> commit) {
+    protected long read(Commit<Void> commit) {
       return commit.index();
     }
 
-    protected long event(RaftCommit<Boolean> commit) {
+    protected long event(Commit<Boolean> commit) {
       if (commit.value()) {
         commit.session().publish(CHANGE_EVENT, clientSerializer::encode, commit.index());
       } else {
@@ -1457,11 +1457,11 @@ public class RaftTest extends ConcurrentTestCase {
       return commit.index();
     }
 
-    public void close(RaftCommit<Void> commit) {
+    public void close(Commit<Void> commit) {
       this.close = commit;
     }
 
-    public void expire(RaftCommit<Void> commit) {
+    public void expire(Commit<Void> commit) {
       this.expire = commit;
     }
   }

@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.RaftCommit;
+import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.protocols.raft.service.ServiceId;
@@ -561,7 +561,7 @@ public class DefaultServiceContext implements ServiceContext {
       return;
     }
 
-    RaftCommit<byte[]> commit = new DefaultRaftCommit<>(index, operation.id(), operation.value(), session, timestamp);
+    Commit<byte[]> commit = new DefaultCommit<>(index, operation.id(), operation.value(), session, timestamp);
 
     long eventIndex = session.getEventIndex();
 
@@ -657,7 +657,7 @@ public class DefaultServiceContext implements ServiceContext {
     // Set the current operation type to QUERY to prevent events from being sent to clients.
     setOperation(OperationType.QUERY);
 
-    RaftCommit<byte[]> commit = new DefaultRaftCommit<>(session.getLastApplied(), operation.id(), operation.value(), session, timestamp);
+    Commit<byte[]> commit = new DefaultCommit<>(session.getLastApplied(), operation.id(), operation.value(), session, timestamp);
 
     long eventIndex = session.getEventIndex();
 

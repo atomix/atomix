@@ -46,7 +46,7 @@ public abstract class AbstractRaftService implements RaftService {
   }
 
   @Override
-  public byte[] apply(RaftCommit<byte[]> commit) {
+  public byte[] apply(Commit<byte[]> commit) {
     return executor.apply(commit);
   }
 
@@ -54,7 +54,7 @@ public abstract class AbstractRaftService implements RaftService {
    * Configures the state machine.
    * <p>
    * By default, this method will configure state machine operations by extracting public methods with
-   * a single {@link RaftCommit} parameter via reflection. Override this method to explicitly register
+   * a single {@link Commit} parameter via reflection. Override this method to explicitly register
    * state machine operations via the provided {@link RaftServiceExecutor}.
    *
    * @param executor The state machine executor.

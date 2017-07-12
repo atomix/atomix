@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.service.impl;
 
 import io.atomix.protocols.raft.operation.OperationId;
-import io.atomix.protocols.raft.service.RaftCommit;
+import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClockTimestamp;
@@ -30,14 +30,14 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Server commit.
  */
-public class DefaultRaftCommit<T> implements RaftCommit<T> {
+public class DefaultCommit<T> implements Commit<T> {
   private final long index;
   private final RaftSession session;
   private final long timestamp;
   private final OperationId operation;
   private final T value;
 
-  public DefaultRaftCommit(long index, OperationId operation, T value, RaftSession session, long timestamp) {
+  public DefaultCommit(long index, OperationId operation, T value, RaftSession session, long timestamp) {
     this.index = index;
     this.session = session;
     this.timestamp = timestamp;
@@ -77,23 +77,23 @@ public class DefaultRaftCommit<T> implements RaftCommit<T> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(RaftCommit.class, index, session.sessionId(), operation);
+    return Objects.hash(Commit.class, index, session.sessionId(), operation);
   }
 
   @Override
-  public <U> RaftCommit<U> map(Function<T, U> transcoder) {
-    return new DefaultRaftCommit<>(index, operation, transcoder.apply(value), session, timestamp);
+  public <U> Commit<U> map(Function<T, U> transcoder) {
+    return new DefaultCommit<>(index, operation, transcoder.apply(value), session, timestamp);
   }
 
   @Override
-  public RaftCommit<Void> mapToNull() {
-    return new DefaultRaftCommit<>(index, operation, null, session, timestamp);
+  public Commit<Void> mapToNull() {
+    return new DefaultCommit<>(index, operation, null, session, timestamp);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof RaftCommit) {
-      RaftCommit commit = (RaftCommit) object;
+    if (object instanceof Commit) {
+      Commit commit = (Commit) object;
       return commit.index() == index
           && commit.session().equals(session)
           && commit.operation().equals(operation)

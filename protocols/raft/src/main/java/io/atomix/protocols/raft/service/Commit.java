@@ -27,7 +27,7 @@ import java.util.function.Function;
 /**
  * Represents the committed state and metadata of a Raft state machine operation.
  */
-public interface RaftCommit<T> {
+public interface Commit<T> {
 
   /**
    * Returns the commit index.
@@ -48,7 +48,7 @@ public interface RaftCommit<T> {
    * Returns the session that submitted the operation.
    * <p>
    * The returned {@link RaftSession} is representative of the session that submitted the operation
-   * that resulted in this {@link RaftCommit}. The session can be used to {@link RaftSession#publish(RaftEvent)}
+   * that resulted in this {@link Commit}. The session can be used to {@link RaftSession#publish(RaftEvent)}
    * event messages to the client.
    *
    * @return The session that created the commit.
@@ -71,7 +71,7 @@ public interface RaftCommit<T> {
    * commit times are guaranteed to progress monotonically, never going back in time.
    * <p>
    * Users should <em>never</em> use {@code System} time to control behavior in a state machine and should instead rely
-   * upon {@link RaftCommit} times or use the {@link RaftServiceExecutor} for time-based controls.
+   * upon {@link Commit} times or use the {@link RaftServiceExecutor} for time-based controls.
    *
    * @return The commit time.
    */
@@ -98,13 +98,13 @@ public interface RaftCommit<T> {
    * @param <U> the output commit value type
    * @return the mapped commit
    */
-  <U> RaftCommit<U> map(Function<T, U> transcoder);
+  <U> Commit<U> map(Function<T, U> transcoder);
 
   /**
    * Converts the commit to a null valued commit.
    *
    * @return the mapped commit
    */
-  RaftCommit<Void> mapToNull();
+  Commit<Void> mapToNull();
 
 }

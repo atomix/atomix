@@ -29,7 +29,7 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
  * Users should extend this class to create a state machine for use within a {@link RaftServer}.
  * <p>
  * State machines are responsible for handling {@link RaftOperation operations} submitted to the Raft cluster and
- * filtering {@link RaftCommit committed} operations out of the Raft log. The most important rule of state machines is
+ * filtering {@link Commit committed} operations out of the Raft log. The most important rule of state machines is
  * that <em>state machines must be deterministic</em> in order to maintain Raft's consistency guarantees. That is,
  * state machines must not change their behavior based on external influences and have no side effects. Users should
  * <em>never</em> use {@code System} time to control behavior within a state machine.
@@ -41,7 +41,7 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
  * <h3>State machine operations</h3>
  * State machine operations are implemented as methods on the state machine. Operations can be automatically detected
  * by the state machine during setup or can be explicitly registered by overriding the {@link #configure(RaftServiceExecutor)}
- * method. Each operation method must take a single {@link RaftCommit} argument for a specific operation type.
+ * method. Each operation method must take a single {@link Commit} argument for a specific operation type.
  * <pre>
  *   {@code
  *   public class MapStateMachine extends StateMachine {
@@ -69,12 +69,12 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
  *   }
  *   }
  * </pre>
- * When operations are applied to the state machine they're wrapped in a {@link RaftCommit} object. The commit provides the
- * context of how the command or query was committed to the cluster, including the log {@link RaftCommit#index()}, the
+ * When operations are applied to the state machine they're wrapped in a {@link Commit} object. The commit provides the
+ * context of how the command or query was committed to the cluster, including the log {@link Commit#index()}, the
  * {@link RaftSession} from which the operation was submitted, and the approximate
- * wall-clock {@link RaftCommit#wallClockTime()} at which the commit was written to the Raft log. Note that the commit time is
+ * wall-clock {@link Commit#wallClockTime()} at which the commit was written to the Raft log. Note that the commit time is
  * guaranteed to progress monotonically, but it may not be representative of the progress of actual time. See the
- * {@link RaftCommit} documentation for more information.
+ * {@link Commit} documentation for more information.
  * <p>
  * State machine operations are guaranteed to be executed in the order in which they were submitted by the client,
  * always in the same thread, and thus always sequentially. State machines do not need to be thread safe, but they must
@@ -151,7 +151,7 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
  * method. Once the state machine has written a snapshot of its state, Raft will automatically remove all commands
  * associated with the state machine from the underlying log.
  *
- * @see RaftCommit
+ * @see Commit
  * @see ServiceContext
  * @see RaftServiceExecutor
  */
@@ -171,7 +171,7 @@ public interface RaftService extends Snapshottable, RaftSessionListener {
    * @param commit the commit to apply
    * @return the commit result
    */
-  byte[] apply(RaftCommit<byte[]> commit);
+  byte[] apply(Commit<byte[]> commit);
 
   /**
    * Closes the state machine.

@@ -20,9 +20,6 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.RaftCommit;
-import io.atomix.protocols.raft.service.RaftService;
-import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
 
@@ -76,7 +73,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * @param commit the commit to apply
    * @return the commit result
    */
-  byte[] apply(RaftCommit<byte[]> commit);
+  byte[] apply(Commit<byte[]> commit);
 
   /**
    * Registers a operation callback.
@@ -85,7 +82,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * @param callback the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
-  void handle(OperationId operationId, Function<RaftCommit<byte[]>, byte[]> callback);
+  void handle(OperationId operationId, Function<Commit<byte[]>, byte[]> callback);
 
   /**
    * Registers a operation callback.
@@ -94,7 +91,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * @param callback the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
-  default void register(OperationId operationId, Consumer<RaftCommit<Void>> callback) {
+  default void register(OperationId operationId, Consumer<Commit<Void>> callback) {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
     handle(operationId, commit -> {
@@ -110,7 +107,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * @param callback the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
-  default <R> void register(OperationId operationId, Function<RaftCommit<Void>, R> callback, Function<R, byte[]> encoder) {
+  default <R> void register(OperationId operationId, Function<Commit<Void>, R> callback, Function<R, byte[]> encoder) {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
     checkNotNull(encoder, "encoder cannot be null");
@@ -125,7 +122,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * @param callback the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
-  default <T> void register(OperationId operationId, Function<byte[], T> decoder, Consumer<RaftCommit<T>> callback) {
+  default <T> void register(OperationId operationId, Function<byte[], T> decoder, Consumer<Commit<T>> callback) {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(decoder, "decoder cannot be null");
     checkNotNull(callback, "callback cannot be null");
@@ -144,7 +141,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * @param encoder the output encoder
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
-  default <T, R> void register(OperationId operationId, Function<byte[], T> decoder, Function<RaftCommit<T>, R> callback, Function<R, byte[]> encoder) {
+  default <T, R> void register(OperationId operationId, Function<byte[], T> decoder, Function<Commit<T>, R> callback, Function<R, byte[]> encoder) {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(decoder, "decoder cannot be null");
     checkNotNull(callback, "callback cannot be null");

@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.service.impl;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
-import io.atomix.protocols.raft.service.RaftCommit;
+import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.service.ServiceContext;
@@ -48,7 +48,7 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
   private final List<ScheduledTask> complete = new ArrayList<>();
-  private final Map<OperationId, Function<RaftCommit<byte[]>, byte[]>> operations = new HashMap<>();
+  private final Map<OperationId, Function<Commit<byte[]>, byte[]>> operations = new HashMap<>();
   private OperationType operationType;
   private long timestamp;
 
@@ -65,7 +65,7 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
    *
    * @param commit the current commit
    */
-  private void prepareOperation(RaftCommit<byte[]> commit) {
+  private void prepareOperation(Commit<byte[]> commit) {
     long timestamp = commit.wallClockTime().unixTimestamp();
 
     // Trigger scheduled tasks if this is a command and tasks are waiting to be executed.
@@ -111,7 +111,7 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
   }
 
   @Override
-  public void handle(OperationId operationId, Function<RaftCommit<byte[]>, byte[]> callback) {
+  public void handle(OperationId operationId, Function<Commit<byte[]>, byte[]> callback) {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
     operations.put(operationId, callback);
@@ -119,13 +119,13 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
   }
 
   @Override
-  public byte[] apply(RaftCommit<byte[]> commit) {
+  public byte[] apply(Commit<byte[]> commit) {
     log.trace("Executing {}", commit);
 
     prepareOperation(commit);
 
     // Look up the registered callback for the operation.
-    Function<RaftCommit<byte[]>, byte[]> callback = operations.get(commit.operation());
+    Function<Commit<byte[]>, byte[]> callback = operations.get(commit.operation());
 
     if (callback == null) {
       throw new IllegalStateException("Unknown state machine operation: " + commit.operation());

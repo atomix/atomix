@@ -65,7 +65,7 @@ import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.AbstractRaftService;
-import io.atomix.protocols.raft.service.RaftCommit;
+import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -555,21 +555,21 @@ public class RaftPerformanceTest implements Runnable {
       }
     }
 
-    protected long put(RaftCommit<Map.Entry<String, String>> commit) {
+    protected long put(Commit<Map.Entry<String, String>> commit) {
       map.put(commit.value().getKey(), commit.value().getValue());
       return commit.index();
     }
 
-    protected String get(RaftCommit<String> commit) {
+    protected String get(Commit<String> commit) {
       return map.get(commit.value());
     }
 
-    protected long remove(RaftCommit<String> commit) {
+    protected long remove(Commit<String> commit) {
       map.remove(commit.value());
       return commit.index();
     }
 
-    protected long index(RaftCommit<Void> commit) {
+    protected long index(Commit<Void> commit) {
       return commit.index();
     }
   }
