@@ -399,7 +399,6 @@ final class RaftProxyInvoker {
     @SuppressWarnings("unchecked")
     protected void complete(CommandResponse response) {
       sequence(response, () -> {
-        state.setLastUpdated(time);
         state.setCommandResponse(request.sequenceNumber());
         state.setResponseIndex(response.index());
         future.complete(response.result());
