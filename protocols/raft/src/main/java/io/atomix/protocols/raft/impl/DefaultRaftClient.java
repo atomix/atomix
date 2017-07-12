@@ -23,7 +23,7 @@ import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.proxy.RecoveryStrategy;
 import io.atomix.protocols.raft.proxy.impl.BlockingAwareRaftProxyClient;
-import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxy;
+import io.atomix.protocols.raft.proxy.impl.DelegatingRaftProxy;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 import io.atomix.protocols.raft.proxy.impl.RecoveringRaftProxyClient;
@@ -166,7 +166,7 @@ public class DefaultRaftClient implements RaftClient {
       client = new BlockingAwareRaftProxyClient(client, executor);
 
       // Create the proxy.
-      return new DefaultRaftProxy(client);
+      return new DelegatingRaftProxy(client);
     }
   }
 

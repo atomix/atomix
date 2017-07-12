@@ -34,11 +34,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Default Raft proxy.
  */
-public class DefaultRaftProxy implements RaftProxy {
+public class DelegatingRaftProxy implements RaftProxy {
   private final RaftProxyClient client;
   private final Map<EventType, Map<Object, Consumer<RaftEvent>>> eventTypeListeners = Maps.newConcurrentMap();
 
-  public DefaultRaftProxy(RaftProxyClient client) {
+  public DelegatingRaftProxy(RaftProxyClient client) {
     this.client = client;
   }
 
