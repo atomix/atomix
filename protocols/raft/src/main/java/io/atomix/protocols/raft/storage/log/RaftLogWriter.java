@@ -16,18 +16,29 @@
 package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.storage.journal.JournalWriter;
 import io.atomix.storage.journal.DelegatingJournalWriter;
+import io.atomix.storage.journal.SegmentedJournalWriter;
 
 /**
  * Raft log writer.
  */
 public class RaftLogWriter extends DelegatingJournalWriter<RaftLogEntry> {
+  private final SegmentedJournalWriter<RaftLogEntry> writer;
   private final RaftLog log;
 
-  public RaftLogWriter(JournalWriter<RaftLogEntry> delegate, RaftLog log) {
-    super(delegate);
+  public RaftLogWriter(SegmentedJournalWriter<RaftLogEntry> writer, RaftLog log) {
+    super(writer);
+    this.writer = writer;
     this.log = log;
+  }
+
+  /**
+   * Resets the head of the log to the given index.
+   *
+   * @param index the index to which to reset the head of the log
+   */
+  public void reset(long index) {
+    writer.reset(index);
   }
 
   /**

@@ -211,11 +211,43 @@ public class SegmentedJournal<E> implements Journal<E> {
   }
 
   /**
+   * Resets and returns the first segment in the journal.
+   *
+   * @param index the starting index of the journal
+   * @return the first segment
+   */
+  JournalSegment<E> resetSegments(long index) {
+    assertOpen();
+
+    // If the index already equals the first segment index, skip the reset.
+    JournalSegment<E> firstSegment = getFirstSegment();
+    if (index == firstSegment.index()) {
+      return firstSegment;
+    }
+
+    for (JournalSegment<E> segment : segments.values()) {
+      segment.close();
+      segment.delete();
+    }
+    segments.clear();
+
+    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
+        .withId(1)
+        .withIndex(index)
+        .withMaxSegmentSize(maxSegmentSize)
+        .withMaxEntries(maxEntriesPerSegment)
+        .build();
+    currentSegment = createSegment(descriptor);
+    segments.put(index, currentSegment);
+    return currentSegment;
+  }
+
+  /**
    * Returns the first segment in the log.
    *
    * @throws IllegalStateException if the segment manager is not open
    */
-  synchronized JournalSegment<E> getFirstSegment() {
+  JournalSegment<E> getFirstSegment() {
     assertOpen();
     Map.Entry<Long, JournalSegment<E>> segment = segments.firstEntry();
     return segment != null ? segment.getValue() : null;
@@ -226,7 +258,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @throws IllegalStateException if the segment manager is not open
    */
-  synchronized JournalSegment<E> getLastSegment() {
+  JournalSegment<E> getLastSegment() {
     assertOpen();
     Map.Entry<Long, JournalSegment<E>> segment = segments.lastEntry();
     return segment != null ? segment.getValue() : null;
@@ -291,7 +323,10 @@ public class SegmentedJournal<E> implements Journal<E> {
 
     // If the index is in another segment, get the entry with the next lowest first index.
     Map.Entry<Long, JournalSegment<E>> segment = segments.floorEntry(index);
-    return segment != null ? segment.getValue() : null;
+    if (segment != null) {
+      return segment.getValue();
+    }
+    return getFirstSegment();
   }
 
   /**
@@ -475,9 +510,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   void resetReaders(long index) {
     for (SegmentedJournalReader<E> reader : readers) {
-      if (reader.getNextIndex() >= index) {
-        reader.reset(index);
-      }
+      reader.reset(index);
     }
   }
 
@@ -503,12 +536,25 @@ public class SegmentedJournal<E> implements Journal<E> {
   }
 
   /**
-   * Returns a boolean indicating whether a segment can be removed from the journal.
+   * Returns a boolean indicating whether a segment can be removed from the journal prior to the given index.
    *
+   * @param index the index from which to remove segments
    * @return indicates whether a segment can be removed from the journal
    */
-  public boolean isCompactable() {
-    return segments.size() > 1;
+  public boolean isCompactable(long index) {
+    Map.Entry<Long, JournalSegment<E>> segmentEntry = segments.floorEntry(index);
+    return segmentEntry != null && segments.headMap(segmentEntry.getValue().index()).size() > 1;
+  }
+
+  /**
+   * Returns the index of the last segment in the log.
+   *
+   * @param index the compaction index
+   * @return the starting index of the last segment in the log
+   */
+  public long getCompactableIndex(long index) {
+    Map.Entry<Long, JournalSegment<E>> segmentEntry = segments.floorEntry(index);
+    return segmentEntry != null ? segmentEntry.getValue().index() : 0;
   }
 
   /**

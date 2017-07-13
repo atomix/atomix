@@ -38,7 +38,6 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -57,8 +56,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -73,17 +72,20 @@ public class RaftServiceManager implements AutoCloseable {
   private final Logger logger;
   private final RaftServerContext server;
   private final ScheduledExecutorService threadPool;
+  private final ThreadContext threadContext;
   private final RaftLog log;
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
   private final Map<String, DefaultServiceContext> services = new HashMap<>();
   private volatile long lastApplied;
+  private long lastCompacted;
 
   public RaftServiceManager(RaftServerContext server, ScheduledExecutorService threadPool, ThreadContext threadContext) {
     this.server = checkNotNull(server, "state cannot be null");
     this.log = server.getLog();
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadPool = threadPool;
+    this.threadContext = threadContext;
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(server.getName())
         .build());
@@ -106,23 +108,6 @@ public class RaftServiceManager implements AutoCloseable {
    */
   public long getLastApplied() {
     return lastApplied;
-  }
-
-  /**
-   * Sets the last applied index.
-   * <p>
-   * The last applied index is updated *after* each time a non-query entry is applied to the state machine.
-   *
-   * @param lastApplied The last applied index.
-   */
-  private void setLastApplied(long lastApplied) {
-    // lastApplied should be either equal to or one greater than this.lastApplied.
-    if (lastApplied > this.lastApplied) {
-      checkArgument(lastApplied == this.lastApplied + 1, "lastApplied must be sequential");
-      this.lastApplied = lastApplied;
-    } else {
-      checkArgument(lastApplied == this.lastApplied, "lastApplied cannot be decreased");
-    }
   }
 
   /**
@@ -155,11 +140,19 @@ public class RaftServiceManager implements AutoCloseable {
     while (reader.hasNext()) {
       long nextIndex = reader.getNextIndex();
 
+      // Validate that the next entry can be applied.
+      long lastApplied = this.lastApplied;
+      if (nextIndex > lastApplied + 1 && nextIndex != reader.getFirstIndex()) {
+        throw new IndexOutOfBoundsException("Cannot apply non-sequential index unless it's the first entry in the log");
+      } else if (nextIndex < lastApplied) {
+        throw new IndexOutOfBoundsException("Cannot apply duplicate entry " + nextIndex);
+      }
+
       // If the next index is less than or equal to the given index, read and apply the entry.
       if (nextIndex < index) {
         Indexed<RaftLogEntry> entry = reader.next();
         apply(entry);
-        setLastApplied(entry.index());
+        this.lastApplied = nextIndex;
       }
       // If the next index is equal to the applied index, apply it and return the result.
       else if (nextIndex == index) {
@@ -172,12 +165,12 @@ public class RaftServiceManager implements AutoCloseable {
           }
           return apply(entry);
         } finally {
-          setLastApplied(index);
+          this.lastApplied = nextIndex;
         }
       }
       // If the applied index has been passed, return a null result.
       else {
-        setLastApplied(index);
+        this.lastApplied = nextIndex;
         return CompletableFuture.completedFuture(null);
       }
     }
@@ -468,20 +461,34 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Compacts the log if necessary.
    */
+  @SuppressWarnings("unchecked")
   private void compactLog() {
-    // Iterate through state machines and compute the lowest stored snapshot for all state machines.
-    long snapshotIndex = server.getLogWriter().getLastIndex();
-    for (DefaultServiceContext stateMachineExecutor : services.values()) {
-      Snapshot snapshot = server.getSnapshotStore().getSnapshotById(stateMachineExecutor.serviceId());
-      if (snapshot == null) {
-        return;
-      } else {
-        snapshotIndex = Math.min(snapshotIndex, snapshot.index());
-      }
-    }
+    long lastApplied = this.lastApplied;
 
-    // Compact logs prior to the lowest snapshot.
-    server.getLog().compact(snapshotIndex);
+    // Only take snapshots if segments can be removed from the log below the lastApplied index.
+    if (server.getLog().isCompactable(lastApplied) && server.getLog().getCompactableIndex(lastApplied) > lastCompacted) {
+
+      // Update the index at which the log was last compacted.
+      this.lastCompacted = lastApplied;
+
+      // Copy the set of services.
+      List<DefaultServiceContext> services = new ArrayList<>(this.services.values());
+
+      // Iterate through services and take snapshots, gathering a collection of snapshot completion futures.
+      List<CompletableFuture<Void>> futures = services.stream()
+          .map(context -> {
+            long snapshotIndex = context.takeSnapshot().join();
+            return context.completeSnapshot(snapshotIndex);
+          })
+          .collect(Collectors.toList());
+
+      // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
+          .whenCompleteAsync((result, error) -> {
+            logger.info("Compacting logs up to index {}", lastApplied);
+            log.compact(lastApplied);
+          }, threadContext);
+    }
   }
 
   @Override

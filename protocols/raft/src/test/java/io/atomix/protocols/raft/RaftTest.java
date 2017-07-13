@@ -220,13 +220,14 @@ public class RaftTest extends ConcurrentTestCase {
     List<RaftServer> servers = createServers(3);
     RaftClient client = createClient();
     RaftProxy session = createSession(client);
-    submit(session, 0, 1000);
+    submit(session, 0, 100);
     await(30000);
+    Thread.sleep(15000);
     servers.get(0).shutdown().get(10, TimeUnit.SECONDS);
     RaftServer server = createServer(members.get(0));
     server.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
     await(30000);
-    submit(session, 0, 1000);
+    submit(session, 0, 100);
     await(30000);
   }
 

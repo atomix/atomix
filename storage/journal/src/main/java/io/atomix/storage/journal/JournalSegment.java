@@ -31,7 +31,7 @@ public class JournalSegment<E> implements AutoCloseable {
   protected final Serializer serializer;
   protected final SegmentedJournal<E> journal;
   private final JournalSegmentWriter<E> writer;
-  private volatile boolean open = true;
+  private boolean open = true;
 
   public JournalSegment(JournalSegmentFile file, JournalSegmentDescriptor descriptor, Serializer serializer, SegmentedJournal<E> journal) {
     this.file = file;
@@ -156,6 +156,15 @@ public class JournalSegment<E> implements AutoCloseable {
    */
   private void checkOpen() {
     checkState(open, "Segment not open");
+  }
+
+  /**
+   * Returns a boolean indicating whether the segment is open.
+   *
+   * @return indicates whether the segment is open
+   */
+  public boolean isOpen() {
+    return open;
   }
 
   /**

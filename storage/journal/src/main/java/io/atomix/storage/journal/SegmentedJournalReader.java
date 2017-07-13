@@ -15,6 +15,8 @@
  */
 package io.atomix.storage.journal;
 
+import java.util.NoSuchElementException;
+
 /**
  * Segmented journal reader.
  *
@@ -42,6 +44,15 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
       next();
       nextIndex = getNextIndex();
     }
+  }
+
+  /**
+   * Returns the first index in the journal.
+   *
+   * @return the first index in the journal
+   */
+  public long getFirstIndex() {
+    return journal.getFirstSegment().index();
   }
 
   @Override
@@ -80,6 +91,11 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
 
   @Override
   public void reset(long index) {
+    // If the current segment is not open, it has been replaced. Reset the segments.
+    if (!currentSegment.isOpen()) {
+      reset();
+    }
+
     if (index < currentReader.getNextIndex()) {
       rewind(index);
     } else if (index > currentReader.getNextIndex()) {
@@ -118,11 +134,14 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
     if (!currentReader.hasNext()) {
       JournalSegment<E> nextSegment = journal.getNextSegment(currentSegment.index());
       if (nextSegment != null) {
+        previousEntry = currentReader.getCurrentEntry();
         currentSegment = nextSegment;
         currentReader = currentSegment.createReader();
+        return currentReader.hasNext();
       }
+      return false;
     }
-    return currentReader.hasNext();
+    return true;
   }
 
   @Override
@@ -130,12 +149,17 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
     if (!currentReader.hasNext()) {
       JournalSegment<E> nextSegment = journal.getNextSegment(currentSegment.index());
       if (nextSegment != null) {
+        previousEntry = currentReader.getCurrentEntry();
         currentSegment = nextSegment;
         currentReader = currentSegment.createReader();
+        return currentReader.next();
+      } else {
+        throw new NoSuchElementException();
       }
+    } else {
+      previousEntry = currentReader.getCurrentEntry();
+      return currentReader.next();
     }
-    previousEntry = currentReader.getCurrentEntry();
-    return currentReader.next();
   }
 
   @Override

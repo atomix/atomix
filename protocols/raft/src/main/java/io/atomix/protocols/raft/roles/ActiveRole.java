@@ -71,11 +71,20 @@ public abstract class ActiveRole extends PassiveRole {
     // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
     final long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
 
-    // Iterate through entries and append them.
-    for (RaftLogEntry entry : request.entries()) {
-      // If the entry index is greater than the commitIndex, break the loop.
-      writer.append(entry);
-      log.trace("Appended {}", entry);
+    if (!request.entries().isEmpty()) {
+      // If the previous term is zero, that indicates the previous index represents the beginning of the log.
+      // Reset the log to the previous index plus one.
+      if (request.prevLogTerm() == 0) {
+        log.debug("Reset first index to {}", request.prevLogIndex() + 1);
+        writer.reset(request.prevLogIndex() + 1);
+      }
+
+      // Iterate through entries and append them.
+      for (RaftLogEntry entry : request.entries()) {
+        // If the entry index is greater than the commitIndex, break the loop.
+        writer.append(entry);
+        log.trace("Appended {}", entry);
+      }
     }
 
     // Update the context commit and global indices.

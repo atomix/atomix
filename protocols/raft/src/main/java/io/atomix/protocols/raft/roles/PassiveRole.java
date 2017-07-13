@@ -168,15 +168,24 @@ public class PassiveRole extends ReserveRole {
     // Track the last log index while entries are appended.
     long lastLogIndex = request.prevLogIndex();
 
-    // Iterate through entries and append them.
-    for (RaftLogEntry entry : request.entries()) {
-      // If the entry index is greater than the commitIndex, break the loop.
-      writer.append(entry);
-      log.trace("Appended {}", entry);
+    if (!request.entries().isEmpty()) {
+      // If the previous term is zero, that indicates the previous index represents the beginning of the log.
+      // Reset the log to the previous index plus one.
+      if (request.prevLogTerm() == 0) {
+        log.debug("Reset first index to {}", request.prevLogIndex() + 1);
+        writer.reset(request.prevLogIndex() + 1);
+      }
 
-      // If the last log index meets the commitIndex, break the append loop to avoid appending uncommitted entries.
-      if (++lastLogIndex == commitIndex) {
-        break;
+      // Iterate through entries and append them.
+      for (RaftLogEntry entry : request.entries()) {
+        // If the entry index is greater than the commitIndex, break the loop.
+        writer.append(entry);
+        log.trace("Appended {}", entry);
+
+        // If the last log index meets the commitIndex, break the append loop to avoid appending uncommitted entries.
+        if (++lastLogIndex == commitIndex) {
+          break;
+        }
       }
     }
 

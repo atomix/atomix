@@ -47,7 +47,9 @@ import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -56,19 +58,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft server state machine executor.
  */
 public class DefaultServiceContext implements ServiceContext {
-  private static final long SNAPSHOT_INTERVAL_MILLIS = 1000 * 60 * 10;
-
   private final Logger log;
   private final ServiceId serviceId;
   private final String serviceName;
   private final ServiceType serviceType;
-  private final RaftService stateMachine;
+  private final RaftService service;
   private final RaftServerContext server;
   private final DefaultServiceSessions sessions;
   private final ThreadContext serviceExecutor;
   private final ThreadContext snapshotExecutor;
-  private volatile Snapshot pendingSnapshot;
-  private long snapshotTime;
+  private final Map<Long, PendingSnapshot> pendingSnapshots = new ConcurrentSkipListMap<>();
   private long snapshotIndex;
   private long currentIndex;
   private long currentTimestamp;
@@ -90,7 +89,7 @@ public class DefaultServiceContext implements ServiceContext {
       ServiceId serviceId,
       String serviceName,
       ServiceType serviceType,
-      RaftService stateMachine,
+      RaftService service,
       RaftServerContext server,
       RaftSessionManager sessionManager,
       ThreadContext serviceExecutor,
@@ -98,7 +97,7 @@ public class DefaultServiceContext implements ServiceContext {
     this.serviceId = checkNotNull(serviceId);
     this.serviceName = checkNotNull(serviceName);
     this.serviceType = checkNotNull(serviceType);
-    this.stateMachine = checkNotNull(stateMachine);
+    this.service = checkNotNull(service);
     this.server = checkNotNull(server);
     this.sessions = new DefaultServiceSessions(sessionManager);
     this.serviceExecutor = checkNotNull(serviceExecutor);
@@ -115,8 +114,8 @@ public class DefaultServiceContext implements ServiceContext {
    * Initializes the state machine.
    */
   private void init() {
-    sessions.addListener(stateMachine);
-    stateMachine.init(this);
+    sessions.addListener(service);
+    service.init(this);
   }
 
   @Override
@@ -187,11 +186,6 @@ public class DefaultServiceContext implements ServiceContext {
     // Set the current operation type to COMMAND to allow events to be sent.
     setOperation(OperationType.COMMAND);
 
-    // If the pending snapshot is non-null, attempt to complete the snapshot.
-    if (pendingSnapshot != null) {
-      maybeCompleteSnapshot(index);
-    }
-
     // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
     maybeInstallSnapshot(index);
 
@@ -228,62 +222,30 @@ public class DefaultServiceContext implements ServiceContext {
   }
 
   /**
-   * Takes a snapshot of the state machine.
-   */
-  private synchronized void maybeTakeSnapshot(long index, long timestamp) {
-    Snapshot currentSnapshot = server.getSnapshotStore().getSnapshotById(serviceId);
-    if ((currentSnapshot == null || currentSnapshot.index() < index) && pendingSnapshot == null
-        && (snapshotTime == 0 || System.currentTimeMillis() - snapshotTime > SNAPSHOT_INTERVAL_MILLIS)) {
-      log.info("Taking snapshot {}", index);
-      pendingSnapshot = server.getSnapshotStore()
-          .newTemporarySnapshot(serviceId, index, WallClockTimestamp.from(timestamp));
-      try (SnapshotWriter writer = pendingSnapshot.openWriter()) {
-        writer.writeInt(sessions.getSessions().size());
-        for (RaftSessionContext session : sessions.getSessions()) {
-          writer.writeLong(session.sessionId().id());
-          writer.writeString(session.memberId().id());
-          writer.writeString(session.readConsistency().name());
-          writer.writeLong(session.timeout());
-          writer.writeLong(session.getTimestamp());
-        }
-        stateMachine.snapshot(writer);
-      } catch (Exception e) {
-        log.error("Snapshot failed: {}", e);
-      }
-
-      snapshotTime = System.currentTimeMillis();
-
-      snapshotExecutor.execute(() -> {
-        synchronized (this) {
-          if (pendingSnapshot != null) {
-            pendingSnapshot = pendingSnapshot.persist();
-          }
-        }
-      });
-    }
-  }
-
-  /**
    * Completes a state machine snapshot.
    */
-  private synchronized void maybeCompleteSnapshot(long index) {
-    if (pendingSnapshot != null && pendingSnapshot.isPersisted()) {
+  private void maybeCompleteSnapshot(long index) {
+    if (!pendingSnapshots.isEmpty()) {
       // Compute the lowest completed index for all sessions that belong to this state machine.
       long lastCompleted = index;
       for (RaftSessionContext session : sessions.getSessions()) {
         lastCompleted = Math.min(lastCompleted, session.getLastCompleted());
       }
 
-      // If the lowest completed index for all sessions is greater than the snapshot index, complete the snapshot.
-      if (lastCompleted >= pendingSnapshot.index()) {
-        log.debug("Completing snapshot {}", pendingSnapshot.index());
-        pendingSnapshot.complete();
+      for (PendingSnapshot pendingSnapshot : pendingSnapshots.values()) {
+        Snapshot snapshot = pendingSnapshot.snapshot;
+        if (snapshot.isPersisted()) {
 
-        // Update the snapshot index to ensure we don't simply install the same snapshot.
-        snapshotIndex = pendingSnapshot.index();
+          // If the lowest completed index for all sessions is greater than the snapshot index, complete the snapshot.
+          if (lastCompleted >= snapshot.index()) {
+            log.debug("Completing snapshot {}", snapshot.index());
+            snapshot.complete();
 
-        // Reset the pending snapshot.
-        pendingSnapshot = null;
+            // Update the snapshot index to ensure we don't simply install the same snapshot.
+            snapshotIndex = snapshot.index();
+            pendingSnapshot.future.complete(null);
+          }
+        }
       }
     }
   }
@@ -292,10 +254,10 @@ public class DefaultServiceContext implements ServiceContext {
    * Installs a snapshot if one exists.
    */
   private void maybeInstallSnapshot(long index) {
+    // Look up the latest snapshot for this state machine.
     Snapshot snapshot = server.getSnapshotStore().getSnapshotById(serviceId);
-    if (snapshot != null) {
-      System.out.println(snapshot + " > " + snapshotIndex + " && " + snapshot.index() + " < " + index);
-    }
+
+    // If the latest snapshot is non-null, hasn't been installed, and has an index lower than the current index, install it.
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() < index) {
       log.info("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
@@ -320,12 +282,76 @@ public class DefaultServiceContext implements ServiceContext {
           session.setLastApplied(snapshot.index());
           sessions.add(session);
         }
-        stateMachine.install(reader);
+        service.install(reader);
       } catch (Exception e) {
         log.error("Snapshot installation failed: {}", e);
       }
       snapshotIndex = snapshot.index();
     }
+  }
+
+  /**
+   * Takes a snapshot of the service state.
+   *
+   * @return a future to be completed once the snapshot has been taken
+   */
+  public CompletableFuture<Long> takeSnapshot() {
+    CompletableFuture<Long> future = new CompletableFuture<>();
+    serviceExecutor.execute(() -> {
+      // If no entries have been applied to the state machine, skip the snapshot.
+      if (currentIndex == 0) {
+        return;
+      }
+
+      long snapshotIndex = currentIndex;
+      log.info("Taking snapshot {}", snapshotIndex);
+
+      // Create a temporary in-memory snapshot buffer.
+      Snapshot snapshot = server.getSnapshotStore()
+          .newTemporarySnapshot(serviceId, snapshotIndex, WallClockTimestamp.from(currentTimestamp));
+
+      // Add the snapshot to the pending snapshots registry.
+      PendingSnapshot pendingSnapshot = new PendingSnapshot(snapshot);
+      pendingSnapshots.put(snapshotIndex, pendingSnapshot);
+      pendingSnapshot.future.whenComplete((r, e) -> pendingSnapshots.remove(snapshotIndex));
+
+      // Serialize sessions to the in-memory snapshot and request a snapshot from the state machine.
+      try (SnapshotWriter writer = snapshot.openWriter()) {
+        writer.writeInt(sessions.getSessions().size());
+        for (RaftSessionContext session : sessions.getSessions()) {
+          writer.writeLong(session.sessionId().id());
+          writer.writeString(session.memberId().id());
+          writer.writeString(session.readConsistency().name());
+          writer.writeLong(session.timeout());
+          writer.writeLong(session.getTimestamp());
+        }
+        service.snapshot(writer);
+      } catch (Exception e) {
+        log.error("Snapshot failed: {}", e);
+      }
+
+      // Persist the snapshot to disk in a background thread before completing the snapshot future.
+      snapshotExecutor.execute(() -> {
+        pendingSnapshot.persist();
+        future.complete(snapshotIndex);
+      });
+    });
+    return future;
+  }
+
+  /**
+   * Completes a snapshot of the service state.
+   *
+   * @param index the index of the snapshot to complete
+   * @return a future to be completed once the snapshot has been completed
+   */
+  public CompletableFuture<Void> completeSnapshot(long index) {
+    PendingSnapshot pendingSnapshot = pendingSnapshots.get(index);
+    if (pendingSnapshot == null) {
+      return CompletableFuture.completedFuture(null);
+    }
+    serviceExecutor.execute(() -> maybeCompleteSnapshot(index));
+    return pendingSnapshot.future;
   }
 
   /**
@@ -356,6 +382,9 @@ public class DefaultServiceContext implements ServiceContext {
 
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
+
+      // Complete any pending snapshots of the service state.
+      maybeCompleteSnapshot(index);
 
       // Complete the future.
       future.complete(session.sessionId().id());
@@ -425,6 +454,9 @@ public class DefaultServiceContext implements ServiceContext {
 
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
+
+      // Complete any pending snapshots of the service state.
+      maybeCompleteSnapshot(index);
     });
     return future;
   }
@@ -483,6 +515,9 @@ public class DefaultServiceContext implements ServiceContext {
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
 
+      // Complete any pending snapshots of the service state.
+      maybeCompleteSnapshot(index);
+
       // Complete the future.
       future.complete(null);
     });
@@ -537,9 +572,6 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session timestamp and command sequence number. This is done in the caller's thread since all
       // timestamp/index/sequence checks are done in this thread prior to executing operations on the state machine thread.
       session.setCommandSequence(sequence);
-
-      // Take a snapshot if the command count has surpassed the snapshot command count.
-      maybeTakeSnapshot(index, timestamp);
     }
   }
 
@@ -571,7 +603,7 @@ public class DefaultServiceContext implements ServiceContext {
     OperationResult result;
     try {
       // Execute the state machine operation and get the result.
-      byte[] output = stateMachine.apply(commit);
+      byte[] output = service.apply(commit);
 
       // Store the result for linearizability and complete the command.
       result = OperationResult.succeeded(index, eventIndex, output);
@@ -666,7 +698,7 @@ public class DefaultServiceContext implements ServiceContext {
 
     OperationResult result;
     try {
-      result = OperationResult.succeeded(currentIndex, eventIndex, stateMachine.apply(commit));
+      result = OperationResult.succeeded(currentIndex, eventIndex, service.apply(commit));
     } catch (Exception e) {
       result = OperationResult.failed(currentIndex, eventIndex, e);
     }
@@ -692,5 +724,24 @@ public class DefaultServiceContext implements ServiceContext {
         .add("name", serviceName)
         .add("id", serviceId)
         .toString();
+  }
+
+  /**
+   * Pending snapshot.
+   */
+  private class PendingSnapshot {
+    private volatile Snapshot snapshot;
+    private final CompletableFuture<Void> future = new CompletableFuture<>();
+
+    public PendingSnapshot(Snapshot snapshot) {
+      this.snapshot = snapshot;
+    }
+
+    /**
+     * Persists the snapshot.
+     */
+    void persist() {
+      this.snapshot = snapshot.persist();
+    }
   }
 }

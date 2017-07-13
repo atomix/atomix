@@ -100,12 +100,23 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
   }
 
   /**
-   * Returns a boolean indicating whether a segment can be removed from the journal.
+   * Returns a boolean indicating whether a segment can be removed from the journal prior to the given index.
    *
+   * @param index the index from which to remove segments
    * @return indicates whether a segment can be removed from the journal
    */
-  public boolean isCompactable() {
-    return journal.isCompactable();
+  public boolean isCompactable(long index) {
+    return journal.isCompactable(index);
+  }
+
+  /**
+   * Returns the index of the last segment in the log.
+   *
+   * @param index the compaction index
+   * @return the starting index of the last segment in the log
+   */
+  public long getCompactableIndex(long index) {
+    return journal.getCompactableIndex(index);
   }
 
   /**

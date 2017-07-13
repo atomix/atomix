@@ -124,7 +124,7 @@ public class AppendRequest extends AbstractRaftRequest {
     if (object instanceof AppendRequest) {
       AppendRequest request = (AppendRequest) object;
       return request.term == term
-          && request.leader == leader
+          && request.leader.equals(leader)
           && request.prevLogIndex == prevLogIndex
           && request.prevLogTerm == prevLogTerm
           && request.entries.equals(entries)

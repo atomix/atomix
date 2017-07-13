@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.journal.DelegatingJournalReader;
-import io.atomix.storage.journal.JournalReader;
+import io.atomix.storage.journal.SegmentedJournalReader;
 
 /**
  * Raft log reader.
@@ -40,13 +40,24 @@ public class RaftLogReader extends DelegatingJournalReader<RaftLogEntry> {
     COMMITS,
   }
 
+  private final SegmentedJournalReader<RaftLogEntry> reader;
   private final RaftLog log;
   private final Mode mode;
 
-  public RaftLogReader(JournalReader<RaftLogEntry> delegate, RaftLog log, Mode mode) {
-    super(delegate);
+  public RaftLogReader(SegmentedJournalReader<RaftLogEntry> reader, RaftLog log, Mode mode) {
+    super(reader);
+    this.reader = reader;
     this.log = log;
     this.mode = mode;
+  }
+
+  /**
+   * Returns the first index in the journal.
+   *
+   * @return the first index in the journal
+   */
+  public long getFirstIndex() {
+    return reader.getFirstIndex();
   }
 
   @Override

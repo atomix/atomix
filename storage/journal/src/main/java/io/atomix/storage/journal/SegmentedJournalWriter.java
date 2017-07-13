@@ -46,6 +46,18 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
     return currentWriter.getNextIndex();
   }
 
+  /**
+   * Resets the head of the journal to the given index.
+   *
+   * @param index the index to which to reset the head of the journal
+   */
+  public void reset(long index) {
+    currentWriter.close();
+    currentSegment = journal.resetSegments(index);
+    currentWriter = currentSegment.writer();
+    journal.resetReaders(index);
+  }
+
   @Override
   public <T extends E> Indexed<T> append(T entry) {
     if (currentWriter.isFull()) {
