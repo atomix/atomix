@@ -502,7 +502,22 @@ public class SegmentedJournal<E> implements Journal<E> {
     return open;
   }
 
-  @Override
+  /**
+   * Returns a boolean indicating whether a segment can be removed from the journal.
+   *
+   * @return indicates whether a segment can be removed from the journal
+   */
+  public boolean isCompactable() {
+    return segments.size() > 1;
+  }
+
+  /**
+   * Compacts the journal up to the given index.
+   * <p>
+   * The semantics of compaction are not specified by this interface.
+   *
+   * @param index The index up to which to compact the journal.
+   */
   public void compact(long index) {
     Map.Entry<Long, JournalSegment<E>> segmentEntry = segments.floorEntry(index);
     if (segmentEntry != null) {

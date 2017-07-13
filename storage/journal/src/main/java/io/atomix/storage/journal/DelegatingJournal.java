@@ -43,11 +43,6 @@ public class DelegatingJournal<E> implements Journal<E> {
   }
 
   @Override
-  public void compact(long index) {
-    delegate.compact(index);
-  }
-
-  @Override
   public void close() {
     delegate.close();
   }

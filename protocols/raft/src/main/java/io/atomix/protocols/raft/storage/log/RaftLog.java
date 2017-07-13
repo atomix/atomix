@@ -19,7 +19,6 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.DelegatingJournal;
-import io.atomix.storage.journal.Journal;
 import io.atomix.storage.journal.SegmentedJournal;
 
 import java.io.File;
@@ -38,18 +37,18 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
     return new Builder();
   }
 
-  private final Journal<RaftLogEntry> delegate;
+  private final SegmentedJournal<RaftLogEntry> journal;
   private final boolean flushOnCommit;
   private final RaftLogWriter writer;
   private volatile long commitIndex;
 
   public RaftLog(
-      Journal<RaftLogEntry> delegate,
+      SegmentedJournal<RaftLogEntry> journal,
       boolean flushOnCommit) {
-    super(delegate);
-    this.delegate = delegate;
+    super(journal);
+    this.journal = journal;
     this.flushOnCommit = flushOnCommit;
-    this.writer = new RaftLogWriter(delegate.writer(), this);
+    this.writer = new RaftLogWriter(journal.writer(), this);
   }
 
   @Override
@@ -70,7 +69,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    * @return The Raft log reader.
    */
   public RaftLogReader openReader(long index, RaftLogReader.Mode mode) {
-    return new RaftLogReader(delegate.openReader(index), this, mode);
+    return new RaftLogReader(journal.openReader(index), this, mode);
   }
 
   /**
@@ -98,6 +97,26 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    */
   long getCommitIndex() {
     return commitIndex;
+  }
+
+  /**
+   * Returns a boolean indicating whether a segment can be removed from the journal.
+   *
+   * @return indicates whether a segment can be removed from the journal
+   */
+  public boolean isCompactable() {
+    return journal.isCompactable();
+  }
+
+  /**
+   * Compacts the journal up to the given index.
+   * <p>
+   * The semantics of compaction are not specified by this interface.
+   *
+   * @param index The index up to which to compact the journal.
+   */
+  public void compact(long index) {
+    journal.compact(index);
   }
 
   /**

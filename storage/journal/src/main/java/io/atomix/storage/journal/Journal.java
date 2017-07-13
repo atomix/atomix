@@ -46,15 +46,6 @@ public interface Journal<E> extends Closeable {
    */
   boolean isOpen();
 
-  /**
-   * Compacts the journal up to the given index.
-   * <p>
-   * The semantics of compaction are not specified by this interface.
-   *
-   * @param index The index up to which to compact the journal.
-   */
-  void compact(long index);
-
   @Override
   void close();
 }
