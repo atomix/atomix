@@ -135,7 +135,7 @@ public class RaftProxyManager {
     checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
     checkNotNull(timeout, "timeout cannot be null");
 
-    log.info("Opening session; name: {}, type: {}", serviceName, serviceType);
+    log.debug("Opening session; name: {}, type: {}", serviceName, serviceType);
     OpenSessionRequest request = OpenSessionRequest.newBuilder()
         .withMemberId(memberId)
         .withServiceName(serviceName)
