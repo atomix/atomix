@@ -447,7 +447,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The server state machine registry.
    */
-  public RaftServiceRegistry getStateMachineRegistry() {
+  public RaftServiceRegistry getServiceRegistry() {
     return registry;
   }
 

@@ -275,7 +275,7 @@ public class RaftServiceManager implements AutoCloseable {
 
       RaftSessionContext session = sessionManager.getSession(sessionId);
       if (session != null) {
-        CompletableFuture<Void> future = session.getStateMachineContext().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex)
+        CompletableFuture<Void> future = session.getService().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex)
             .thenApply(succeeded -> {
               if (succeeded) {
                 synchronized (successfulSessionIds) {
@@ -306,24 +306,24 @@ public class RaftServiceManager implements AutoCloseable {
    */
   private CompletableFuture<Long> applyOpenSession(Indexed<OpenSessionEntry> entry) {
     // Get the state machine executor or create one if it doesn't already exist.
-    DefaultServiceContext stateMachineExecutor = services.get(entry.entry().serviceName());
-    if (stateMachineExecutor == null) {
-      Supplier<RaftService> stateMachineSupplier = server.getStateMachineRegistry().getFactory(entry.entry().serviceType());
-      if (stateMachineSupplier == null) {
+    DefaultServiceContext service = services.get(entry.entry().serviceName());
+    if (service == null) {
+      Supplier<RaftService> serviceFactory = server.getServiceRegistry().getFactory(entry.entry().serviceType());
+      if (serviceFactory == null) {
         return Futures.exceptionalFuture(new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType()));
       }
 
       ServiceId serviceId = ServiceId.from(entry.index());
-      stateMachineExecutor = new DefaultServiceContext(
+      service = new DefaultServiceContext(
           serviceId,
           entry.entry().serviceName(),
           ServiceType.from(entry.entry().serviceType()),
-          stateMachineSupplier.get(),
+          serviceFactory.get(),
           server,
           sessionManager,
           new ThreadPoolContext(threadPool),
           new ThreadPoolContext(threadPool));
-      services.put(entry.entry().serviceName(), stateMachineExecutor);
+      services.put(entry.entry().serviceName(), service);
     }
 
     SessionId sessionId = SessionId.from(entry.index());
@@ -334,10 +334,10 @@ public class RaftServiceManager implements AutoCloseable {
         ServiceType.from(entry.entry().serviceType()),
         entry.entry().readConsistency(),
         entry.entry().timeout(),
-        stateMachineExecutor,
+        service,
         server);
     sessionManager.registerSession(session);
-    return stateMachineExecutor.openSession(entry.index(), entry.entry().timestamp(), session);
+    return service.openSession(entry.index(), entry.entry().timestamp(), session);
   }
 
   /**
@@ -352,8 +352,8 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Get the state machine executor associated with the session and unregister the session.
-    DefaultServiceContext stateMachineExecutor = session.getStateMachineContext();
-    return stateMachineExecutor.closeSession(entry.index(), entry.entry().timestamp(), session);
+    DefaultServiceContext service = session.getService();
+    return service.closeSession(entry.index(), entry.entry().timestamp(), session);
   }
 
   /**
@@ -412,7 +412,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Execute the command using the state machine associated with the session.
-    return session.getStateMachineContext()
+    return session.getService()
         .executeCommand(
             entry.index(),
             entry.entry().sequenceNumber(),
@@ -449,7 +449,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Execute the query using the state machine associated with the session.
-    return session.getStateMachineContext()
+    return session.getService()
         .executeQuery(
             entry.index(),
             entry.entry().sequenceNumber(),

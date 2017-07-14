@@ -143,7 +143,7 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The state machine context associated with the session.
    */
-  public DefaultServiceContext getStateMachineContext() {
+  public DefaultServiceContext getService() {
     return context;
   }
 
