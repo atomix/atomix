@@ -25,7 +25,6 @@ import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.journal.Indexed;
 
@@ -59,47 +58,6 @@ public abstract class ActiveRole extends PassiveRole {
       context.transition(RaftServer.Role.FOLLOWER);
     }
     return future;
-  }
-
-  /**
-   * Appends entries from the given AppendRequest.
-   */
-  protected void appendEntries(AppendRequest request, RaftLogWriter writer, CompletableFuture<AppendResponse> future) {
-    // Compute the last entry index from the previous log index and request entry count.
-    final long lastEntryIndex = request.prevLogIndex() + request.entries().size();
-
-    // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
-    final long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
-
-    if (!request.entries().isEmpty()) {
-      // If the previous term is zero, that indicates the previous index represents the beginning of the log.
-      // Reset the log to the previous index plus one.
-      if (request.prevLogTerm() == 0) {
-        log.debug("Reset first index to {}", request.prevLogIndex() + 1);
-        writer.reset(request.prevLogIndex() + 1);
-      }
-
-      // Iterate through entries and append them.
-      for (RaftLogEntry entry : request.entries()) {
-        // If the entry index is greater than the commitIndex, break the loop.
-        writer.append(entry);
-        log.trace("Appended {}", entry);
-      }
-    }
-
-    // Update the context commit and global indices.
-    long previousCommitIndex = context.getCommitIndex();
-    context.setCommitIndex(commitIndex);
-
-    if (context.getCommitIndex() > previousCommitIndex) {
-      log.trace("Committed entries up to index {}", commitIndex);
-    }
-
-    // Apply commits to the state machine in batch.
-    context.getStateMachine().applyAll(context.getCommitIndex());
-
-    // Return a successful append response.
-    succeedAppend(lastEntryIndex, future);
   }
 
   @Override

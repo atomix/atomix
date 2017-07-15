@@ -197,14 +197,14 @@ public interface RaftServer {
      * <p>
      * All servers start in this state and return to this state when {@link #leave() stopped}.
      */
-    INACTIVE,
+    INACTIVE(false),
 
     /**
      * Represents the state of a server that is a reserve member of the cluster.
      * <p>
      * Reserve servers only receive notification of leader, term, and configuration changes.
      */
-    RESERVE,
+    RESERVE(false),
 
     /**
      * Represents the state of a server in the process of catching up its log.
@@ -212,14 +212,14 @@ public interface RaftServer {
      * Upon successfully joining an existing cluster, the server will transition to the passive state and remain there
      * until the leader determines that the server has caught up enough to be promoted to a full member.
      */
-    PASSIVE,
+    PASSIVE(false),
 
     /**
      * Represents the state of a server participating in normal log replication.
      * <p>
      * The follower state is a standard Raft state in which the server receives replicated log entries from the leader.
      */
-    FOLLOWER,
+    FOLLOWER(true),
 
     /**
      * Represents the state of a server attempting to become the leader.
@@ -229,7 +229,7 @@ public interface RaftServer {
      * each of the other servers in the cluster. If the candidate wins the election by receiving votes from a majority
      * of the cluster, it will transition to the leader state.
      */
-    CANDIDATE,
+    CANDIDATE(true),
 
     /**
      * Represents the state of a server which is actively coordinating and replicating logs with other servers.
@@ -237,8 +237,22 @@ public interface RaftServer {
      * Leaders are responsible for handling and replicating writes from clients. Note that more than one leader can
      * exist at any given time, but Raft guarantees that no two leaders will exist for the same {@link RaftCluster#getTerm()}.
      */
-    LEADER
+    LEADER(true);
 
+    private final boolean active;
+
+    Role(boolean active) {
+      this.active = active;
+    }
+
+    /**
+     * Returns whether the role is a voting Raft member role.
+     *
+     * @return whether the role is a voting member
+     */
+    public boolean active() {
+      return active;
+    }
   }
 
   /**
