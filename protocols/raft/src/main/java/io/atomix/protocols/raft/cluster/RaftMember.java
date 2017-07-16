@@ -25,24 +25,6 @@ import java.util.function.Consumer;
  * This interface provides metadata and operations related to a specific member of a Raft cluster.
  * Each server in a {@link RaftCluster} has a view of the cluster state and can reference and operate on
  * specific members of the cluster via this API.
- * <p>
- * Each member in the cluster has an associated {@link RaftMember.Type} and {@link RaftMember.Status}. The
- * {@link RaftMember.Type} is indicative of the manner in which the member interacts with other members of
- * the cluster. The {@link RaftMember.Status} is indicative of the leader's ability to communicate with the
- * member. Additionally, each member is identified by an {@link #memberId() address} and unique {@link #memberId() ID}
- * which is generated from the {@link MemberId} hash code. The member's {@link MemberId} represents the
- * address through which the server communicates with other servers and not through which clients
- * communicate with the member (which may be a different {@link MemberId}).
- * <p>
- * Users can listen for {@link RaftMember.Type} and {@link RaftMember.Status} changes via the
- * {@link #addTypeChangeListener(Consumer)} and {@link #addStatusChangeListener(Consumer)} methods respectively.
- * Member types can be modified by virtually any member of the cluster via the {@link #promote()} and {@link #demote()}
- * methods. This allows servers to modify the way dead nodes interact with the cluster and modify the
- * Raft quorum size without requiring the member being modified to be available. The member status is
- * controlled only by the cluster {@link RaftCluster#getLeader() leader}. When the leader fails to contact a
- * member for a few rounds of heartbeats, the leader will commit a configuration change marking that
- * member as {@link RaftMember.Status#UNAVAILABLE}. Once the member can be reached again, the leader will
- * update its status back to {@link RaftMember.Status#AVAILABLE}.
  */
 public interface RaftMember {
 
@@ -101,38 +83,6 @@ public interface RaftMember {
   }
 
   /**
-   * Indicates the availability of a member from the perspective of the cluster {@link RaftCluster#getLeader() leader}.
-   * <p>
-   * Member statuses are manged by the cluster {@link RaftCluster#getLeader() leader}. For each {@link RaftMember} of a
-   * {@link RaftCluster}, the leader periodically sends a heartbeat to the member to determine its availability.
-   * In the event that the leader cannot contact a member for more than a few heartbeats, the leader will
-   * set the member's availability status to {@link #UNAVAILABLE}. Once the leader reestablishes communication
-   * with the member, it will reset its status back to {@link #AVAILABLE}.
-   */
-  enum Status {
-
-    /**
-     * Indicates that a member is reachable by the leader.
-     * <p>
-     * Availability is determined by the leader's ability to successfully send heartbeats to the member. If the
-     * last heartbeat attempt to the member was successful, its status will be available. For members whose status
-     * is {@link #UNAVAILABLE}, once the leader is able to heartbeat the member its status will be reset to available.
-     */
-    AVAILABLE,
-
-    /**
-     * Indicates that a member is unreachable by the leader.
-     * <p>
-     * Availability is determined by the leader's ability to successfully send heartbeats to the member. If the
-     * leader repeatedly fails to heartbeat a member, the leader will eventually commit a configuration change setting
-     * the member's status to unavailable. Once the leader is able to contact the member again, its status will be
-     * reset to {@link #AVAILABLE}.
-     */
-    UNAVAILABLE,
-
-  }
-
-  /**
    * Returns the member node ID.
    *
    * @return The member node ID.
@@ -178,19 +128,6 @@ public interface RaftMember {
   void removeTypeChangeListener(Consumer<Type> listener);
 
   /**
-   * Returns the member status.
-   * <p>
-   * The status is indicative of the leader's ability to communicate with this member. If this member is a local
-   * member, the member's status will be {@link Status#AVAILABLE} while the server is alive and will not change
-   * regardless of the leader's ability to communicate with the local member. Similarly, if the local server is
-   * partitioned from the leader then changes in statuses seen on other nodes may not be visible to this node.
-   * Status changes are guaranteed to occur in the same order on all nodes but without a real-time constraint.
-   *
-   * @return The member status.
-   */
-  Status getStatus();
-
-  /**
    * Returns the time at which the member was updated.
    * <p>
    * The member update time is not guaranteed to be consistent across servers or consistent across server
@@ -199,24 +136,6 @@ public interface RaftMember {
    * @return The time at which the member was updated.
    */
   Instant getLastUpdated();
-
-  /**
-   * Adds a listener to be called when the member's status changes.
-   * <p>
-   * The status change callback will be called when the local server receives notification of the change in status
-   * to this member. Status changes may occur at different times from the perspective of different servers but are
-   * guaranteed to occur in the same order on all servers.
-   *
-   * @param listener The listener to be called when the member's status changes.
-   */
-  void addStatusChangeListener(Consumer<Status> listener);
-
-  /**
-   * Removes a status change listener.
-   *
-   * @param listener The status change listener to remove.
-   */
-  void removeStatusChangeListener(Consumer<Status> listener);
 
   /**
    * Promotes the member to the next highest type.

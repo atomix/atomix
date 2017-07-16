@@ -41,20 +41,17 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   private final MemberId id;
   private final int hash;
   private RaftMember.Type type;
-  private Status status = Status.AVAILABLE;
   private Instant updated;
   private transient Scheduled configureTimeout;
   private transient RaftClusterContext cluster;
   private final transient Set<Consumer<Type>> typeChangeListeners = new CopyOnWriteArraySet<>();
-  private final transient Set<Consumer<Status>> statusChangeListeners = new CopyOnWriteArraySet<>();
 
-  public DefaultRaftMember(MemberId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
+  public DefaultRaftMember(MemberId id, RaftMember.Type type, Instant updated) {
     this.id = checkNotNull(id, "id cannot be null");
     this.hash = Hashing.murmur3_32()
         .hashUnencodedChars(id.id())
         .asInt();
     this.type = checkNotNull(type, "type cannot be null");
-    this.status = checkNotNull(status, "status cannot be null");
     this.updated = checkNotNull(updated, "updated cannot be null");
   }
 
@@ -82,11 +79,6 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   }
 
   @Override
-  public Status getStatus() {
-    return status;
-  }
-
-  @Override
   public Instant getLastUpdated() {
     return updated;
   }
@@ -99,16 +91,6 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   @Override
   public void removeTypeChangeListener(Consumer<Type> listener) {
     typeChangeListeners.remove(listener);
-  }
-
-  @Override
-  public void addStatusChangeListener(Consumer<Status> listener) {
-    statusChangeListeners.add(listener);
-  }
-
-  @Override
-  public void removeStatusChangeListener(Consumer<Status> listener) {
-    statusChangeListeners.remove(listener);
   }
 
   @Override
@@ -156,25 +138,6 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   }
 
   /**
-   * Updates the member status.
-   *
-   * @param status The member status.
-   * @return The member.
-   */
-  public DefaultRaftMember update(Status status, Instant time) {
-    if (this.status != status) {
-      this.status = checkNotNull(status, "status cannot be null");
-      if (time.isAfter(updated)) {
-        this.updated = checkNotNull(time, "time cannot be null");
-      }
-      if (statusChangeListeners != null) {
-        statusChangeListeners.forEach(l -> l.accept(status));
-      }
-    }
-    return this;
-  }
-
-  /**
    * Demotes the server to the given type.
    */
   CompletableFuture<Void> configure(RaftMember.Type type) {
@@ -198,7 +161,7 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
     cluster.getContext().getRaftRole().onReconfigure(ReconfigureRequest.newBuilder()
         .withIndex(cluster.getConfiguration().index())
         .withTerm(cluster.getConfiguration().term())
-        .withMember(new DefaultRaftMember(id, type, status, updated))
+        .withMember(new DefaultRaftMember(id, type, updated))
         .build()).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
@@ -246,7 +209,6 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
     return toStringHelper(this)
         .add("id", id)
         .add("type", type)
-        .add("status", status)
         .add("updated", updated)
         .toString();
   }

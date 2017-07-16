@@ -21,11 +21,10 @@ import io.atomix.messaging.netty.NettyMessagingManager;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
-import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.RaftServiceExecutor;
+import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -66,6 +65,7 @@ import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
+import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -192,7 +192,6 @@ public class RaftPerformanceTest implements Runnable {
       .register(MemberId.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
-      .register(RaftMember.Status.class)
       .register(Instant.class)
       .register(Configuration.class)
       .build());
@@ -215,7 +214,6 @@ public class RaftPerformanceTest implements Runnable {
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
       .register(RaftMember.Type.class)
-      .register(RaftMember.Status.class)
       .register(Instant.class)
       .register(Configuration.class)
       .register(byte[].class)
@@ -612,23 +610,8 @@ public class RaftPerformanceTest implements Runnable {
     }
 
     @Override
-    public Status getStatus() {
-      return Status.AVAILABLE;
-    }
-
-    @Override
     public Instant getLastUpdated() {
       return Instant.now();
-    }
-
-    @Override
-    public void addStatusChangeListener(Consumer<Status> listener) {
-
-    }
-
-    @Override
-    public void removeStatusChangeListener(Consumer<Status> listener) {
-
     }
 
     @Override

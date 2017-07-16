@@ -191,7 +191,6 @@ public class RaftFuzzTest implements Runnable {
       .register(MemberId.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
-      .register(RaftMember.Status.class)
       .register(Instant.class)
       .register(Configuration.class)
       .build());
@@ -214,7 +213,6 @@ public class RaftFuzzTest implements Runnable {
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
       .register(RaftMember.Type.class)
-      .register(RaftMember.Status.class)
       .register(Instant.class)
       .register(Configuration.class)
       .register(byte[].class)
@@ -719,23 +717,8 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public Status getStatus() {
-      return Status.AVAILABLE;
-    }
-
-    @Override
     public Instant getLastUpdated() {
       return Instant.now();
-    }
-
-    @Override
-    public void addStatusChangeListener(Consumer<Status> listener) {
-
-    }
-
-    @Override
-    public void removeStatusChangeListener(Consumer<Status> listener) {
-
     }
 
     @Override

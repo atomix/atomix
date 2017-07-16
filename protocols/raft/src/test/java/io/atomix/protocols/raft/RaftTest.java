@@ -101,7 +101,6 @@ public class RaftTest extends ConcurrentTestCase {
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
       .register(RaftMember.Type.class)
-      .register(RaftMember.Status.class)
       .register(Instant.class)
       .register(Configuration.class)
       .register(byte[].class)
@@ -311,111 +310,6 @@ public class RaftTest extends ConcurrentTestCase {
     server.leave().thenRun(this::resume);
     await(10000);
     joiner.leave().thenRun(this::resume);
-  }
-
-  /**
-   * Tests an availability change of an active member.
-   */
-  @Test
-  public void testActiveAvailabilityChange() throws Throwable {
-    testAvailabilityChange(RaftMember.Type.ACTIVE);
-  }
-
-  /**
-   * Tests an availability change of a passive member.
-   */
-  @Test
-  public void testPassiveAvailabilityChange() throws Throwable {
-    testAvailabilityChange(RaftMember.Type.PASSIVE);
-  }
-
-  /**
-   * Tests an availability change of a reserve member.
-   */
-  @Test
-  public void testReserveAvailabilityChange() throws Throwable {
-    testAvailabilityChange(RaftMember.Type.RESERVE);
-  }
-
-  /**
-   * Tests a member availability change.
-   */
-  private void testAvailabilityChange(RaftMember.Type type) throws Throwable {
-    List<RaftServer> servers = createServers(3);
-
-    RaftServer server = servers.get(0);
-    server.cluster().addListener(event -> {
-      if (event.type() == RaftClusterEvent.Type.JOIN) {
-        event.subject().addStatusChangeListener(s -> {
-          threadAssertEquals(s, RaftMember.Status.UNAVAILABLE);
-          resume();
-        });
-      }
-    });
-
-    RaftMember member = nextMember(type);
-    RaftServer joiner = createServer(member);
-    joiner.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
-    await(10000);
-
-    joiner.shutdown().thenRun(this::resume);
-    await(10000, 2);
-  }
-
-  /**
-   * Tests detecting an availability change of a reserve member on a passive member.
-   */
-  @Test
-  public void testPassiveReserveAvailabilityChange() throws Throwable {
-    createServers(3);
-
-    RaftServer passive = createServer(nextMember(RaftMember.Type.PASSIVE));
-    passive.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
-
-    await(10000);
-
-    RaftMember reserveMember = nextMember(RaftMember.Type.RESERVE);
-    passive.cluster().addListener(event -> {
-      if (event.type() == RaftClusterEvent.Type.JOIN) {
-        threadAssertEquals(event.subject().memberId(), reserveMember.memberId());
-        event.subject().addStatusChangeListener(s -> {
-          threadAssertEquals(s, RaftMember.Status.UNAVAILABLE);
-          resume();
-        });
-      }
-    });
-
-    RaftServer reserve = createServer(reserveMember);
-    reserve.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
-
-    await(10000);
-
-    reserve.shutdown().thenRun(this::resume);
-    await(10000, 2);
-  }
-
-  /**
-   * Tests detecting an availability change of a passive member on a reserve member.
-   */
-  @Test
-  public void testReservePassiveAvailabilityChange() throws Throwable {
-    createServers(3);
-
-    RaftServer passive = createServer(nextMember(RaftMember.Type.PASSIVE));
-    passive.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
-
-    RaftServer reserve = createServer(nextMember(RaftMember.Type.RESERVE));
-    reserve.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
-
-    await(10000, 2);
-
-    reserve.cluster().getMember(passive.cluster().getMember().memberId()).addStatusChangeListener(s -> {
-      threadAssertEquals(s, RaftMember.Status.UNAVAILABLE);
-      resume();
-    });
-
-    passive.shutdown().thenRun(this::resume);
-    await(10000, 2);
   }
 
   /**
@@ -1508,23 +1402,8 @@ public class RaftTest extends ConcurrentTestCase {
     }
 
     @Override
-    public Status getStatus() {
-      return null;
-    }
-
-    @Override
     public Instant getLastUpdated() {
       return null;
-    }
-
-    @Override
-    public void addStatusChangeListener(Consumer<Status> listener) {
-
-    }
-
-    @Override
-    public void removeStatusChangeListener(Consumer<Status> listener) {
-
     }
 
     @Override

@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.roles;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -29,7 +28,6 @@ import io.atomix.protocols.raft.protocol.InstallResponse;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -443,17 +441,6 @@ final class LeaderAppender extends AbstractAppender {
   }
 
   @Override
-  protected void succeedAttempt(RaftMemberContext member) {
-    super.succeedAttempt(member);
-
-    // If the member is currently marked as UNAVAILABLE, change its status to AVAILABLE and update the configuration.
-    if (member.getMember().getStatus() == DefaultRaftMember.Status.UNAVAILABLE && !leader.configuring()) {
-      member.getMember().update(DefaultRaftMember.Status.AVAILABLE, Instant.now());
-      leader.configure(raft.getCluster().getMembers());
-    }
-  }
-
-  @Override
   protected void failAttempt(RaftMemberContext member, RaftRequest request, Throwable error) {
     super.failAttempt(member, request, error);
 
@@ -464,14 +451,6 @@ final class LeaderAppender extends AbstractAppender {
       log.warn("Suspected network partition. Stepping down");
       raft.setLeader(null);
       raft.transition(RaftServer.Role.FOLLOWER);
-    }
-    // If the number of failures has increased above 3 and the member hasn't been marked as UNAVAILABLE, do so.
-    else if (member.getFailureCount() >= 3) {
-      // If the member is currently marked as AVAILABLE, change its status to UNAVAILABLE and update the configuration.
-      if (member.getMember().getStatus() == DefaultRaftMember.Status.AVAILABLE && !leader.configuring()) {
-        member.getMember().update(DefaultRaftMember.Status.UNAVAILABLE, Instant.now());
-        leader.configure(raft.getCluster().getMembers());
-      }
     }
   }
 

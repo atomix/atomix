@@ -251,7 +251,7 @@ public final class LeaderRole extends ActiveRole {
     // Add the joining member to the members list. If the joining member's type is ACTIVE, join the member in the
     // PROMOTABLE state to allow it to get caught up without impacting the quorum size.
     Collection<RaftMember> members = raft.getCluster().getMembers();
-    members.add(new DefaultRaftMember(member.memberId(), member.getType(), member.getStatus(), Instant.now()));
+    members.add(new DefaultRaftMember(member.memberId(), member.getType(), Instant.now()));
 
     CompletableFuture<JoinResponse> future = new CompletableFuture<>();
     configure(members).whenComplete((index, error) -> {
@@ -303,12 +303,22 @@ public final class LeaderRole extends ActiveRole {
     // If the configuration request index is less than the last known configuration index for
     // the leader, fail the request to ensure servers can't reconfigure an old configuration.
     if (request.index() > 0 && request.index() < raft.getCluster().getConfiguration().index()
-        || request.term() != raft.getCluster().getConfiguration().term()
-        && (existingMember.getType() != request.member().getType()
-        || existingMember.getStatus() != request.member().getStatus())) {
+        || request.term() != raft.getCluster().getConfiguration().term()) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.CONFIGURATION_ERROR)
+          .build()));
+    }
+
+    // If the member type has not changed, complete the configuration change successfully.
+    if (existingMember.getType() == request.member().getType()) {
+      Configuration configuration = raft.getCluster().getConfiguration();
+      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
+          .withStatus(RaftResponse.Status.OK)
+          .withIndex(configuration.index())
+          .withTerm(raft.getCluster().getConfiguration().term())
+          .withTime(raft.getCluster().getConfiguration().time())
+          .withMembers(configuration.members())
           .build()));
     }
 
@@ -401,10 +411,6 @@ public final class LeaderRole extends ActiveRole {
     RaftMemberContext member = raft.getCluster().getMemberState(request.candidate());
     if (member != null) {
       member.resetFailureCount();
-      if (member.getMember().getStatus() == RaftMember.Status.UNAVAILABLE) {
-        member.getMember().update(RaftMember.Status.AVAILABLE, Instant.now());
-        configure(raft.getCluster().getMembers());
-      }
     }
 
     return CompletableFuture.completedFuture(logResponse(PollResponse.newBuilder()
