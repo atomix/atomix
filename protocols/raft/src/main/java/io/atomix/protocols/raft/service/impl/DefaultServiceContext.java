@@ -211,7 +211,7 @@ public class DefaultServiceContext implements ServiceContext {
         // Expire the session.
         session.expire();
 
-        log.info("Closing session {}", session.sessionId());
+        log.debug("Closing session {}", session.sessionId());
 
         // Iterate through and invoke session listeners.
         for (RaftSessionListener listener : sessions.getListeners()) {
@@ -259,7 +259,7 @@ public class DefaultServiceContext implements ServiceContext {
 
     // If the latest snapshot is non-null, hasn't been installed, and has an index lower than the current index, install it.
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() < index) {
-      log.info("Installing snapshot {}", snapshot.index());
+      log.debug("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
         int sessionCount = reader.readInt();
         sessions.clear();
@@ -304,7 +304,7 @@ public class DefaultServiceContext implements ServiceContext {
       }
 
       long snapshotIndex = currentIndex;
-      log.info("Taking snapshot {}", snapshotIndex);
+      log.debug("Taking snapshot {}", snapshotIndex);
 
       // Create a temporary in-memory snapshot buffer.
       Snapshot snapshot = server.getSnapshotStore()
@@ -364,7 +364,7 @@ public class DefaultServiceContext implements ServiceContext {
   public CompletableFuture<Long> openSession(long index, long timestamp, RaftSessionContext session) {
     CompletableFuture<Long> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
-      log.info("Opening session {}", session.sessionId());
+      log.debug("Opening session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
@@ -493,7 +493,7 @@ public class DefaultServiceContext implements ServiceContext {
   public CompletableFuture<Void> closeSession(long index, long timestamp, RaftSessionContext session) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
-      log.info("Closing session {}", session.sessionId());
+      log.debug("Closing session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
