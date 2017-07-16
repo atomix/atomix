@@ -121,8 +121,8 @@ public final class LeaderRole extends ActiveRole {
     final long term = context.getTerm();
 
     final RaftLogWriter writer = context.getLogWriter();
-    final Indexed<RaftLogEntry> indexed = writer.append(new InitializeEntry(term, appender.getTime()));
-    log.trace("Appended {}", indexed.index());
+    final Indexed<RaftLogEntry> entry = writer.append(new InitializeEntry(term, appender.getTime()));
+    log.trace("Appended {}", entry);
 
     // Append a configuration entry to propagate the leader's cluster configuration.
     configure(context.getCluster().getMembers());

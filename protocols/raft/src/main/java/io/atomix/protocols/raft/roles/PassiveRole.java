@@ -227,8 +227,8 @@ public class PassiveRole extends ReserveRole {
             // the log and append the leader's entry.
             if (existingEntry.entry().term() != entry.term()) {
               writer.truncate(index - 1);
-              writer.append(entry);
-              log.trace("Appended {} at index {}", entry, index);
+              Indexed<RaftLogEntry> indexed = writer.append(entry);
+              log.trace("Appended {}", indexed);
             }
           }
           // If the last written entry is equal to the append entry index, we don't need
@@ -238,8 +238,8 @@ public class PassiveRole extends ReserveRole {
             // the log and append the leader's entry.
             if (lastEntry.entry().term() != entry.term()) {
               writer.truncate(index - 1);
-              writer.append(entry);
-              log.trace("Appended {} at index {}", entry, index);
+              Indexed<RaftLogEntry> indexed = writer.append(entry);
+              log.trace("Appended {}", indexed);
             }
           }
           // Otherwise, this entry is being appended at the end of the log.
@@ -250,14 +250,14 @@ public class PassiveRole extends ReserveRole {
             }
 
             // Append the entry and log a message.
-            writer.append(entry);
-            log.trace("Appended {} at index {}", entry, index);
+            Indexed<RaftLogEntry> indexed = writer.append(entry);
+            log.trace("Appended {}", indexed);
           }
         }
         // Otherwise, if the last entry is null just append the entry and log a message.
         else {
-          writer.append(entry);
-          log.trace("Appended {} at index {}", entry, index);
+          Indexed<RaftLogEntry> indexed = writer.append(entry);
+          log.trace("Appended {}", indexed);
         }
 
         // If the last log index meets the commitIndex, break the append loop to avoid appending uncommitted entries.
