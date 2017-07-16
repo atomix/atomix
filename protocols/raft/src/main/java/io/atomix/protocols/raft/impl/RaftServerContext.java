@@ -50,7 +50,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -111,33 +110,15 @@ public class RaftServerContext implements AutoCloseable {
     this.stateContext = new SingleThreadContext(namedThreads(baseThreadName + "-state", log));
     this.threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads(baseThreadName + "-%d", log));
 
-    // Open the meta store.
-    CountDownLatch metaLatch = new CountDownLatch(1);
-    threadContext.execute(() -> {
-      this.meta = storage.openMetaStore();
-      metaLatch.countDown();
-    });
-
-    try {
-      metaLatch.await();
-    } catch (InterruptedException e) {
-    }
+    // Open the metadata store.
+    this.meta = storage.openMetaStore();
 
     // Load the current term and last vote from disk.
     this.term = meta.loadTerm();
     this.lastVotedFor = meta.loadVote();
 
-    // Reset the state machine.
-    CountDownLatch resetLatch = new CountDownLatch(1);
-    threadContext.execute(() -> {
-      reset();
-      resetLatch.countDown();
-    });
-
-    try {
-      resetLatch.await();
-    } catch (InterruptedException e) {
-    }
+    // Reset the log/state machine.
+    reset();
 
     this.cluster = new RaftClusterContext(type, localMemberId, this);
 
