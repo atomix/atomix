@@ -389,7 +389,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
       JoinRequest request = JoinRequest.newBuilder()
           .withMember(new DefaultRaftMember(getMember().memberId(), getMember().getType(), getMember().getStatus(), getMember().getLastUpdated()))
           .build();
-      raft.getProtocol().join(member.getMember().memberId(), request).whenComplete((response, error) -> {
+      raft.getProtocol().join(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
         // Cancel the join timer.
         cancelJoinTimer();
 
@@ -424,7 +424,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
           log.debug("Failed to join {}", member.getMember().memberId());
           join(iterator);
         }
-      });
+      }, raft.getThreadContext());
     }
     // If join attempts remain, schedule another attempt after two election timeouts. This allows enough time
     // for servers to potentially timeout and elect a leader.
