@@ -17,14 +17,11 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftClusterContext;
-import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.roles.AbstractRole;
 import io.atomix.protocols.raft.roles.ActiveRole;
 import io.atomix.protocols.raft.roles.CandidateRole;
 import io.atomix.protocols.raft.roles.FollowerRole;
@@ -68,7 +65,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * This class is the primary vehicle for managing the state of a server. All state that is shared across roles (i.e. follower, candidate, leader)
  * is stored in the cluster state. This includes Raft-specific state like the current leader and term, the log, and the cluster configuration.
  */
-public class RaftServerContext implements AutoCloseable {
+public class RaftContext implements AutoCloseable {
   private final Logger log;
   private final Set<Consumer<RaftServer.Role>> stateChangeListeners = new CopyOnWriteArraySet<>();
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
@@ -96,7 +93,7 @@ public class RaftServerContext implements AutoCloseable {
   private long commitIndex;
 
   @SuppressWarnings("unchecked")
-  public RaftServerContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftServiceRegistry registry, int threadPoolSize) {
+  public RaftContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftServiceRegistry registry, int threadPoolSize) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
@@ -202,11 +199,9 @@ public class RaftServerContext implements AutoCloseable {
    * Sets the election timeout.
    *
    * @param electionTimeout The election timeout.
-   * @return The Raft context.
    */
-  public RaftServerContext setElectionTimeout(Duration electionTimeout) {
+  public void setElectionTimeout(Duration electionTimeout) {
     this.electionTimeout = electionTimeout;
-    return this;
   }
 
   /**
@@ -222,11 +217,9 @@ public class RaftServerContext implements AutoCloseable {
    * Sets the heartbeat interval.
    *
    * @param heartbeatInterval The Raft heartbeat interval.
-   * @return The Raft context.
    */
-  public RaftServerContext setHeartbeatInterval(Duration heartbeatInterval) {
+  public void setHeartbeatInterval(Duration heartbeatInterval) {
     this.heartbeatInterval = checkNotNull(heartbeatInterval, "heartbeatInterval cannot be null");
-    return this;
   }
 
   /**
@@ -251,22 +244,18 @@ public class RaftServerContext implements AutoCloseable {
    * Sets the session timeout.
    *
    * @param sessionTimeout The session timeout.
-   * @return The Raft state machine.
    */
-  public RaftServerContext setSessionTimeout(Duration sessionTimeout) {
+  public void setSessionTimeout(Duration sessionTimeout) {
     this.sessionTimeout = checkNotNull(sessionTimeout, "sessionTimeout cannot be null");
-    return this;
   }
 
   /**
    * Sets the state leader.
    *
    * @param leader The state leader.
-   * @return The Raft context.
    */
-  public RaftServerContext setLeader(MemberId leader) {
+  public void setLeader(MemberId leader) {
     if (!Objects.equals(this.leader, leader)) {
-      // 0 indicates no leader.
       if (leader == null) {
         this.leader = null;
       } else {
@@ -285,7 +274,6 @@ public class RaftServerContext implements AutoCloseable {
       this.lastVotedFor = null;
       meta.storeVote(null);
     }
-    return this;
   }
 
   /**
@@ -293,16 +281,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The cluster state.
    */
-  public RaftCluster getCluster() {
-    return cluster;
-  }
-
-  /**
-   * Returns the cluster state.
-   *
-   * @return The cluster state.
-   */
-  public RaftClusterContext getClusterState() {
+  public RaftClusterContext getCluster() {
     return cluster;
   }
 
@@ -331,9 +310,8 @@ public class RaftServerContext implements AutoCloseable {
    * Sets the state term.
    *
    * @param term The state term.
-   * @return The Raft context.
    */
-  public RaftServerContext setTerm(long term) {
+  public void setTerm(long term) {
     if (term > this.term) {
       this.term = term;
       this.leader = null;
@@ -342,7 +320,6 @@ public class RaftServerContext implements AutoCloseable {
       meta.storeVote(this.lastVotedFor);
       log.debug("Set term {}", term);
     }
-    return this;
   }
 
   /**
@@ -358,9 +335,8 @@ public class RaftServerContext implements AutoCloseable {
    * Sets the state last voted for candidate.
    *
    * @param candidate The candidate that was voted for.
-   * @return The Raft context.
    */
-  public RaftServerContext setLastVotedFor(MemberId candidate) {
+  public void setLastVotedFor(MemberId candidate) {
     // If we've already voted for another candidate in this term then the last voted for candidate cannot be overridden.
     checkState(!(lastVotedFor != null && candidate != null), "Already voted for another candidate");
     DefaultRaftMember member = cluster.getMember(candidate);
@@ -373,7 +349,6 @@ public class RaftServerContext implements AutoCloseable {
     } else {
       log.trace("Reset last voted for");
     }
-    return this;
   }
 
   /**
@@ -389,9 +364,8 @@ public class RaftServerContext implements AutoCloseable {
    * Sets the commit index.
    *
    * @param commitIndex The commit index.
-   * @return The Raft context.
    */
-  public RaftServerContext setCommitIndex(long commitIndex) {
+  public void setCommitIndex(long commitIndex) {
     checkArgument(commitIndex >= 0, "commitIndex must be positive");
     long previousCommitIndex = this.commitIndex;
     if (commitIndex > previousCommitIndex) {
@@ -402,7 +376,6 @@ public class RaftServerContext implements AutoCloseable {
         cluster.commit();
       }
     }
-    return this;
   }
 
   /**
@@ -487,11 +460,9 @@ public class RaftServerContext implements AutoCloseable {
   }
 
   /**
-   * Resets the state log.
-   *
-   * @return The server context.
+   * Resets the log and state machine.
    */
-  public RaftServerContext reset() {
+  public void reset() {
     // Delete the existing log.
     if (raftLog != null) {
       raftLog.close();
@@ -514,7 +485,6 @@ public class RaftServerContext implements AutoCloseable {
 
     // Create a new internal server state machine.
     this.stateMachine = new RaftServiceManager(this, threadPool, stateContext);
-    return this;
   }
 
   /**
@@ -553,8 +523,8 @@ public class RaftServerContext implements AutoCloseable {
     protocol.registerQueryHandler(request -> runOnContext(() -> role.onQuery(request)));
   }
 
-  private <T extends RaftRequest, U extends RaftResponse> CompletableFuture<U> runOnContext(Supplier<CompletableFuture<U>> function) {
-    CompletableFuture<U> future = new CompletableFuture<U>();
+  private <R extends RaftResponse> CompletableFuture<R> runOnContext(Supplier<CompletableFuture<R>> function) {
+    CompletableFuture<R> future = new CompletableFuture<>();
     threadContext.execute(() -> {
       function.get().whenComplete((response, error) -> {
         if (error == null) {
@@ -636,7 +606,7 @@ public class RaftServerContext implements AutoCloseable {
 
     // Force state transitions to occur synchronously in order to prevent race conditions.
     try {
-      this.role = createState(role);
+      this.role = createRole(role);
       this.role.open().get();
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException("failed to initialize Raft state", e);
@@ -648,7 +618,7 @@ public class RaftServerContext implements AutoCloseable {
   /**
    * Creates an internal state for the given state type.
    */
-  private AbstractRole createState(RaftServer.Role role) {
+  private RaftRole createRole(RaftServer.Role role) {
     switch (role) {
       case INACTIVE:
         return new InactiveRole(this);

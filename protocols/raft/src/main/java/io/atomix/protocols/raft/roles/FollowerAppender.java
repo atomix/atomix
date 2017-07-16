@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.roles;
 
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 
 /**
@@ -25,7 +25,7 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshot;
  */
 final class FollowerAppender extends AbstractAppender {
 
-  public FollowerAppender(RaftServerContext context) {
+  public FollowerAppender(RaftContext context) {
     super(context);
   }
 
@@ -34,7 +34,7 @@ final class FollowerAppender extends AbstractAppender {
    */
   public void appendEntries() {
     if (open) {
-      for (RaftMemberContext member : server.getClusterState().getAssignedPassiveMemberStates()) {
+      for (RaftMemberContext member : raft.getCluster().getAssignedPassiveMemberStates()) {
         appendEntries(member);
       }
     }
@@ -55,7 +55,7 @@ final class FollowerAppender extends AbstractAppender {
 
     // If the member's current snapshot index is less than the latest snapshot index and the latest snapshot index
     // is less than the nextIndex, send a snapshot request.
-    Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
+    Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
     if (snapshot != null && member.getSnapshotIndex() < snapshot.index()) {
       if (member.canInstall()) {
         sendInstallRequest(member, buildInstallRequest(member));
@@ -63,7 +63,7 @@ final class FollowerAppender extends AbstractAppender {
     }
     // If no AppendRequest is already being sent, send an AppendRequest.
     else if (member.canAppend() && hasMoreEntries(member)) {
-      sendAppendRequest(member, buildAppendRequest(member, Math.min(server.getCommitIndex(), server.getLogWriter().getLastIndex())));
+      sendAppendRequest(member, buildAppendRequest(member, Math.min(raft.getCommitIndex(), raft.getLogWriter().getLastIndex())));
     }
   }
 

@@ -20,7 +20,7 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.InstallRequest;
@@ -51,7 +51,7 @@ import java.util.concurrent.CompletionException;
 public class PassiveRole extends ReserveRole {
   private final Map<Long, PendingSnapshot> pendingSnapshots = new HashMap<>();
 
-  public PassiveRole(RaftServerContext context) {
+  public PassiveRole(RaftContext context) {
     super(context);
   }
 
@@ -72,14 +72,14 @@ public class PassiveRole extends ReserveRole {
    */
   private void truncateUncommittedEntries() {
     if (role() == RaftServer.Role.PASSIVE) {
-      final RaftLogWriter writer = context.getLogWriter();
-      writer.truncate(context.getCommitIndex());
+      final RaftLogWriter writer = raft.getLogWriter();
+      writer.truncate(raft.getCommitIndex());
     }
   }
 
   @Override
   public CompletableFuture<AppendResponse> onAppend(final AppendRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
     return handleAppend(request);
@@ -111,9 +111,9 @@ public class PassiveRole extends ReserveRole {
    * handling the request.
    */
   protected boolean checkTerm(AppendRequest request, CompletableFuture<AppendResponse> future) {
-    RaftLogWriter writer = context.getLogWriter();
-    if (request.term() < context.getTerm()) {
-      log.debug("Rejected {}: request term is less than the current term ({})", request, context.getTerm());
+    RaftLogWriter writer = raft.getLogWriter();
+    if (request.term() < raft.getTerm()) {
+      log.debug("Rejected {}: request term is less than the current term ({})", request, raft.getTerm());
       return failAppend(writer.getLastIndex(), future);
     }
     return true;
@@ -124,8 +124,8 @@ public class PassiveRole extends ReserveRole {
    * handling the request.
    */
   protected boolean checkPreviousEntry(AppendRequest request, CompletableFuture<AppendResponse> future) {
-    RaftLogWriter writer = context.getLogWriter();
-    RaftLogReader reader = context.getLogReader();
+    RaftLogWriter writer = raft.getLogWriter();
+    RaftLogReader reader = raft.getLogReader();
 
     // Get the last entry written to the log.
     Indexed<RaftLogEntry> lastEntry = writer.getLastEntry();
@@ -185,14 +185,14 @@ public class PassiveRole extends ReserveRole {
     final long lastEntryIndex = request.prevLogIndex() + request.entries().size();
 
     // Ensure the commitIndex is not increased beyond the index of the last entry in the request.
-    final long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
+    final long commitIndex = Math.max(raft.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
 
     // Track the last log index while entries are appended.
     long lastLogIndex = request.prevLogIndex();
 
     if (!request.entries().isEmpty()) {
-      final RaftLogWriter writer = context.getLogWriter();
-      final RaftLogReader reader = context.getLogReader();
+      final RaftLogWriter writer = raft.getLogWriter();
+      final RaftLogReader reader = raft.getLogReader();
 
       // If the previous term is zero, that indicates the previous index represents the beginning of the log.
       // Reset the log to the previous index plus one.
@@ -268,15 +268,15 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Update the context commit and global indices.
-    long previousCommitIndex = context.getCommitIndex();
-    context.setCommitIndex(commitIndex);
+    long previousCommitIndex = raft.getCommitIndex();
+    raft.setCommitIndex(commitIndex);
 
-    if (context.getCommitIndex() > previousCommitIndex) {
+    if (raft.getCommitIndex() > previousCommitIndex) {
       log.trace("Committed entries up to index {}", commitIndex);
     }
 
     // Apply commits to the state machine in batch.
-    context.getStateMachine().applyAll(context.getCommitIndex());
+    raft.getStateMachine().applyAll(raft.getCommitIndex());
 
     // Return a successful append response.
     succeedAppend(lastLogIndex, future);
@@ -315,7 +315,7 @@ public class PassiveRole extends ReserveRole {
   protected boolean completeAppend(boolean succeeded, long lastLogIndex, CompletableFuture<AppendResponse> future) {
     future.complete(logResponse(AppendResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
+        .withTerm(raft.getTerm())
         .withSucceeded(succeeded)
         .withLastLogIndex(lastLogIndex)
         .build()));
@@ -324,19 +324,19 @@ public class PassiveRole extends ReserveRole {
 
   @Override
   public CompletableFuture<QueryResponse> onQuery(QueryRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
     // If this server has not yet applied entries up to the client's session ID, forward the
     // query to the leader. This ensures that a follower does not tell the client its session
     // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
-    if (context.getStateMachine().getLastApplied() < request.session()) {
+    if (raft.getStateMachine().getLastApplied() < request.session()) {
       log.trace("State out of sync, forwarding query to leader");
       return queryForward(request);
     }
 
     // Look up the client's session.
-    RaftSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
+    RaftSessionContext session = raft.getStateMachine().getSessions().getSession(request.session());
     if (session == null) {
       log.trace("State out of sync, forwarding query to leader");
       return queryForward(request);
@@ -347,7 +347,7 @@ public class PassiveRole extends ReserveRole {
 
       // If the commit index is not in the log then we've fallen too far behind the leader to perform a local query.
       // Forward the request to the leader.
-      if (context.getLogWriter().getLastIndex() < context.getCommitIndex()) {
+      if (raft.getLogWriter().getLastIndex() < raft.getCommitIndex()) {
         log.trace("State out of sync, forwarding query to leader");
         return queryForward(request);
       }
@@ -355,7 +355,7 @@ public class PassiveRole extends ReserveRole {
       final Indexed<QueryEntry> entry = new Indexed<>(
           request.index(),
           new QueryEntry(
-              context.getTerm(),
+              raft.getTerm(),
               System.currentTimeMillis(),
               request.session(),
               request.sequenceNumber(),
@@ -371,7 +371,7 @@ public class PassiveRole extends ReserveRole {
    * Forwards the query to the leader.
    */
   private CompletableFuture<QueryResponse> queryForward(QueryRequest request) {
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
@@ -379,7 +379,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     log.trace("Forwarding {}", request);
-    return forward(request, context.getProtocol()::query)
+    return forward(request, raft.getProtocol()::query)
         .exceptionally(error -> QueryResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
             .withError(RaftError.Type.NO_LEADER)
@@ -401,7 +401,7 @@ public class PassiveRole extends ReserveRole {
     // In the case of the leader, the state machine is always up to date, so no queries will be queued and all query
     // indexes will be the last applied index.
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    context.getStateMachine().<OperationResult>apply(entry).whenComplete((result, error) -> {
+    raft.getStateMachine().<OperationResult>apply(entry).whenComplete((result, error) -> {
       completeOperation(result, QueryResponse.newBuilder(), error, future);
     });
     return future;
@@ -443,12 +443,12 @@ public class PassiveRole extends ReserveRole {
 
   @Override
   public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
 
     // If the request is for a lesser term, reject the request.
-    if (request.term() < context.getTerm()) {
+    if (request.term() < raft.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request term is less than the local term " + request.term())
@@ -479,7 +479,7 @@ public class PassiveRole extends ReserveRole {
             .build()));
       }
 
-      Snapshot snapshot = context.getSnapshotStore().newSnapshot(
+      Snapshot snapshot = raft.getSnapshotStore().newSnapshot(
               ServiceId.from(request.snapshotId()),
               request.snapshotIndex(),
               WallClockTimestamp.from(request.snapshotTimestamp()));

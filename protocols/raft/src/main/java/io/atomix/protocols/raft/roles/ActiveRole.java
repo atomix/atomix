@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.roles;
 
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.PollRequest;
@@ -36,13 +36,13 @@ import java.util.stream.Collectors;
  */
 public abstract class ActiveRole extends PassiveRole {
 
-  protected ActiveRole(RaftServerContext context) {
+  protected ActiveRole(RaftContext context) {
     super(context);
   }
 
   @Override
   public CompletableFuture<AppendResponse> onAppend(final AppendRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
     // If the request indicates a term that is greater than the current term then
@@ -55,14 +55,14 @@ public abstract class ActiveRole extends PassiveRole {
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
     if (transition) {
-      context.transition(RaftServer.Role.FOLLOWER);
+      raft.transition(RaftServer.Role.FOLLOWER);
     }
     return future;
   }
 
   @Override
   public CompletableFuture<PollResponse> onPoll(PollRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), null);
     return CompletableFuture.completedFuture(logResponse(handlePoll(request)));
@@ -75,23 +75,23 @@ public abstract class ActiveRole extends PassiveRole {
     // If the request term is not as great as the current context term then don't
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
-    if (request.term() < context.getTerm()) {
+    if (request.term() < raft.getTerm()) {
       log.debug("Rejected {}: candidate's term is less than the current term", request);
       return PollResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withAccepted(false)
           .build();
     } else if (isLogUpToDate(request.lastLogIndex(), request.lastLogTerm(), request)) {
       return PollResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withAccepted(true)
           .build();
     } else {
       return PollResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withAccepted(false)
           .build();
     }
@@ -99,7 +99,7 @@ public abstract class ActiveRole extends PassiveRole {
 
   @Override
   public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
     // If the request indicates a term that is greater than the current term then
@@ -108,7 +108,7 @@ public abstract class ActiveRole extends PassiveRole {
 
     CompletableFuture<VoteResponse> future = CompletableFuture.completedFuture(logResponse(handleVote(request)));
     if (transition) {
-      context.transition(RaftServer.Role.FOLLOWER);
+      raft.transition(RaftServer.Role.FOLLOWER);
     }
     return future;
   }
@@ -120,65 +120,65 @@ public abstract class ActiveRole extends PassiveRole {
     // If the request term is not as great as the current context term then don't
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
-    if (request.term() < context.getTerm()) {
+    if (request.term() < raft.getTerm()) {
       log.debug("Rejected {}: candidate's term is less than the current term", request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withVoted(false)
           .build();
     }
     // If a leader was already determined for this term then reject the request.
-    else if (context.getLeader() != null) {
+    else if (raft.getLeader() != null) {
       log.debug("Rejected {}: leader already exists", request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withVoted(false)
           .build();
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!context.getClusterState().getRemoteMemberStates().stream().map(m -> m.getMember().memberId()).collect(Collectors.toSet()).contains(request.candidate())) {
+    else if (!raft.getCluster().getRemoteMemberStates().stream().map(m -> m.getMember().memberId()).collect(Collectors.toSet()).contains(request.candidate())) {
       log.debug("Rejected {}: candidate is not known to the local member", request);
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withVoted(false)
           .build();
     }
     // If no vote has been cast, check the log and cast a vote if necessary.
-    else if (context.getLastVotedFor() == null) {
+    else if (raft.getLastVotedFor() == null) {
       if (isLogUpToDate(request.lastLogIndex(), request.lastLogTerm(), request)) {
-        context.setLastVotedFor(request.candidate());
+        raft.setLastVotedFor(request.candidate());
         return VoteResponse.newBuilder()
             .withStatus(RaftResponse.Status.OK)
-            .withTerm(context.getTerm())
+            .withTerm(raft.getTerm())
             .withVoted(true)
             .build();
       } else {
         return VoteResponse.newBuilder()
             .withStatus(RaftResponse.Status.OK)
-            .withTerm(context.getTerm())
+            .withTerm(raft.getTerm())
             .withVoted(false)
             .build();
       }
     }
     // If we already voted for the requesting server, respond successfully.
-    else if (context.getLastVotedFor() == request.candidate()) {
-      log.debug("Accepted {}: already voted for {}", request, context.getCluster().getMember(context.getLastVotedFor()).memberId());
+    else if (raft.getLastVotedFor() == request.candidate()) {
+      log.debug("Accepted {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).memberId());
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withVoted(true)
           .build();
     }
     // In this case, we've already voted for someone else.
     else {
-      log.debug("Rejected {}: already voted for {}", request, context.getCluster().getMember(context.getLastVotedFor()).memberId());
+      log.debug("Rejected {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).memberId());
       return VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withVoted(false)
           .build();
     }
@@ -189,7 +189,7 @@ public abstract class ActiveRole extends PassiveRole {
    */
   boolean isLogUpToDate(long lastIndex, long lastTerm, RaftRequest request) {
     // Read the last entry from the log.
-    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().getLastEntry();
+    final Indexed<RaftLogEntry> lastEntry = raft.getLogWriter().getLastEntry();
 
     // If the log is empty then vote for the candidate.
     if (lastEntry == null) {

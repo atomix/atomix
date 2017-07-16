@@ -70,7 +70,7 @@ public class RaftServiceManager implements AutoCloseable {
   private static final long COMPACT_INTERVAL_MILLIS = 1000 * 10;
 
   private final Logger logger;
-  private final RaftServerContext server;
+  private final RaftContext raft;
   private final ScheduledExecutorService threadPool;
   private final ThreadContext threadContext;
   private final RaftLog log;
@@ -80,14 +80,14 @@ public class RaftServiceManager implements AutoCloseable {
   private volatile long lastApplied;
   private long lastCompacted;
 
-  public RaftServiceManager(RaftServerContext server, ScheduledExecutorService threadPool, ThreadContext threadContext) {
-    this.server = checkNotNull(server, "state cannot be null");
-    this.log = server.getLog();
+  public RaftServiceManager(RaftContext raft, ScheduledExecutorService threadPool, ThreadContext threadContext) {
+    this.raft = checkNotNull(raft, "state cannot be null");
+    this.log = raft.getLog();
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadPool = threadPool;
     this.threadContext = threadContext;
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
-        .addValue(server.getName())
+        .addValue(raft.getName())
         .build());
     threadContext.schedule(Duration.ofMillis(COMPACT_INTERVAL_MILLIS), this::compactLog);
   }
@@ -121,7 +121,7 @@ public class RaftServiceManager implements AutoCloseable {
   public void applyAll(long index) {
     // Don't attempt to apply indices that have already been applied.
     if (index > lastApplied) {
-      server.getThreadContext().execute(() -> apply(index));
+      raft.getThreadContext().execute(() -> apply(index));
     }
   }
 
@@ -308,7 +308,7 @@ public class RaftServiceManager implements AutoCloseable {
     // Get the state machine executor or create one if it doesn't already exist.
     DefaultServiceContext service = services.get(entry.entry().serviceName());
     if (service == null) {
-      Supplier<RaftService> serviceFactory = server.getServiceRegistry().getFactory(entry.entry().serviceType());
+      Supplier<RaftService> serviceFactory = raft.getServiceRegistry().getFactory(entry.entry().serviceType());
       if (serviceFactory == null) {
         return Futures.exceptionalFuture(new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType()));
       }
@@ -319,7 +319,7 @@ public class RaftServiceManager implements AutoCloseable {
           entry.entry().serviceName(),
           ServiceType.from(entry.entry().serviceType()),
           serviceFactory.get(),
-          server,
+          raft,
           sessionManager,
           new ThreadPoolContext(threadPool),
           new ThreadPoolContext(threadPool));
@@ -335,7 +335,7 @@ public class RaftServiceManager implements AutoCloseable {
         entry.entry().readConsistency(),
         entry.entry().timeout(),
         service,
-        server);
+        raft);
     sessionManager.registerSession(session);
     return service.openSession(entry.index(), entry.entry().timestamp(), session);
   }
@@ -466,7 +466,7 @@ public class RaftServiceManager implements AutoCloseable {
     long lastApplied = this.lastApplied;
 
     // Only take snapshots if segments can be removed from the log below the lastApplied index.
-    if (server.getLog().isCompactable(lastApplied) && server.getLog().getCompactableIndex(lastApplied) > lastCompacted) {
+    if (raft.getLog().isCompactable(lastApplied) && raft.getLog().getCompactableIndex(lastApplied) > lastCompacted) {
 
       // Update the index at which the log was last compacted.
       this.lastCompacted = lastApplied;

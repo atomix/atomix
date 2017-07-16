@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.roles;
 
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -54,7 +54,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class ReserveRole extends InactiveRole {
 
-  public ReserveRole(RaftServerContext context) {
+  public ReserveRole(RaftContext context) {
     super(context);
   }
 
@@ -67,23 +67,23 @@ public class ReserveRole extends InactiveRole {
   public CompletableFuture<RaftRole> open() {
     return super.open().thenRun(() -> {
       if (role() == RaftServer.Role.RESERVE) {
-        context.reset();
+        raft.reset();
       }
     }).thenApply(v -> this);
   }
 
   @Override
   public CompletableFuture<MetadataResponse> onMetadata(MetadataRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(MetadataResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::metadata)
+      return forward(request, raft.getProtocol()::metadata)
           .exceptionally(error -> MetadataResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -94,16 +94,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
 
     // Update the local commitIndex and globalIndex.
-    context.setCommitIndex(request.commitIndex());
+    raft.setCommitIndex(request.commitIndex());
 
     return CompletableFuture.completedFuture(logResponse(AppendResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
+        .withTerm(raft.getTerm())
         .withSucceeded(true)
         .withLastLogIndex(0)
         .build()));
@@ -111,7 +111,7 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<PollResponse> onPoll(PollRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
     return CompletableFuture.completedFuture(logResponse(PollResponse.newBuilder()
@@ -122,7 +122,7 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), null);
 
@@ -134,16 +134,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<CommandResponse> onCommand(CommandRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::command)
+      return forward(request, raft.getProtocol()::command)
           .exceptionally(error -> CommandResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -154,16 +154,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<QueryResponse> onQuery(QueryRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::query)
+      return forward(request, raft.getProtocol()::query)
           .exceptionally(error -> QueryResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -174,16 +174,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<KeepAliveResponse> onKeepAlive(KeepAliveRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::keepAlive)
+      return forward(request, raft.getProtocol()::keepAlive)
           .exceptionally(error -> KeepAliveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -194,16 +194,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<OpenSessionResponse> onOpenSession(OpenSessionRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::openSession)
+      return forward(request, raft.getProtocol()::openSession)
           .exceptionally(error -> OpenSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -214,16 +214,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<CloseSessionResponse> onCloseSession(CloseSessionRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::closeSession)
+      return forward(request, raft.getProtocol()::closeSession)
           .exceptionally(error -> CloseSessionResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -234,16 +234,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<JoinResponse> onJoin(JoinRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(JoinResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::join)
+      return forward(request, raft.getProtocol()::join)
           .exceptionally(error -> JoinResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -254,16 +254,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<ReconfigureResponse> onReconfigure(ReconfigureRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::reconfigure)
+      return forward(request, raft.getProtocol()::reconfigure)
           .exceptionally(error -> ReconfigureResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -274,16 +274,16 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<LeaveResponse> onLeave(LeaveRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
-    if (context.getLeader() == null) {
+    if (raft.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(LeaveResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
-      return forward(request, context.getProtocol()::leave)
+      return forward(request, raft.getProtocol()::leave)
           .exceptionally(error -> LeaveResponse.newBuilder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
@@ -294,7 +294,7 @@ public class ReserveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
     return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
@@ -307,7 +307,7 @@ public class ReserveRole extends InactiveRole {
   public CompletableFuture<Void> close() {
     return super.close().thenRun(() -> {
       if (role() == RaftServer.Role.RESERVE) {
-        context.reset();
+        raft.reset();
       }
     });
   }

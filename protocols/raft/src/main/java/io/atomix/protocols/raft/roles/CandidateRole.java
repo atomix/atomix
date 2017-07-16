@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.roles;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
@@ -45,7 +45,7 @@ public final class CandidateRole extends ActiveRole {
   private Quorum quorum;
   private Scheduled currentTimer;
 
-  public CandidateRole(RaftServerContext context) {
+  public CandidateRole(RaftContext context) {
     super(context);
   }
 
@@ -71,7 +71,7 @@ public final class CandidateRole extends ActiveRole {
    * Resets the election timer.
    */
   private void sendVoteRequests() {
-    context.checkThread();
+    raft.checkThread();
 
     // Because of asynchronous execution, the candidate state could have already been closed. In that case,
     // simply skip the election.
@@ -86,10 +86,11 @@ public final class CandidateRole extends ActiveRole {
 
     // When the election timer is reset, increment the current term and
     // restart the election.
-    context.setTerm(context.getTerm() + 1).setLastVotedFor(context.getCluster().getMember().memberId());
+    raft.setTerm(raft.getTerm() + 1);
+    raft.setLastVotedFor(raft.getCluster().getMember().memberId());
 
-    Duration delay = context.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) context.getElectionTimeout().toMillis())));
-    currentTimer = context.getThreadContext().schedule(delay, () -> {
+    Duration delay = raft.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) raft.getElectionTimeout().toMillis())));
+    currentTimer = raft.getThreadContext().schedule(delay, () -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
       log.debug("Election timed out");
@@ -102,12 +103,12 @@ public final class CandidateRole extends ActiveRole {
     });
 
     final AtomicBoolean complete = new AtomicBoolean();
-    final Set<DefaultRaftMember> votingMembers = new HashSet<>(context.getClusterState().getActiveMemberStates().stream().map(RaftMemberContext::getMember).collect(Collectors.toList()));
+    final Set<DefaultRaftMember> votingMembers = new HashSet<>(raft.getCluster().getActiveMemberStates().stream().map(RaftMemberContext::getMember).collect(Collectors.toList()));
 
     // If there are no other members in the cluster, immediately transition to leader.
     if (votingMembers.isEmpty()) {
-      log.debug("Single member cluster. Transitioning directly to leader.", context.getCluster().getMember().memberId());
-      context.transition(RaftServer.Role.LEADER);
+      log.debug("Single member cluster. Transitioning directly to leader.", raft.getCluster().getMember().memberId());
+      raft.transition(RaftServer.Role.LEADER);
       return;
     }
 
@@ -115,18 +116,18 @@ public final class CandidateRole extends ActiveRole {
     // to this node will be automatically successful.
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
-    final Quorum quorum = new Quorum(context.getClusterState().getQuorum(), (elected) -> {
+    final Quorum quorum = new Quorum(raft.getCluster().getQuorum(), (elected) -> {
       complete.set(true);
       if (elected) {
-        context.transition(RaftServer.Role.LEADER);
+        raft.transition(RaftServer.Role.LEADER);
       } else {
-        context.transition(RaftServer.Role.FOLLOWER);
+        raft.transition(RaftServer.Role.FOLLOWER);
       }
     });
 
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
-    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().getLastEntry();
+    final Indexed<RaftLogEntry> lastEntry = raft.getLogWriter().getLastEntry();
 
     final long lastTerm;
     if (lastEntry != null) {
@@ -135,35 +136,35 @@ public final class CandidateRole extends ActiveRole {
       lastTerm = 0;
     }
 
-    log.debug("Requesting votes for term {}", context.getTerm());
+    log.debug("Requesting votes for term {}", raft.getTerm());
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
-      log.debug("Requesting vote from {} for term {}", member, context.getTerm());
+      log.debug("Requesting vote from {} for term {}", member, raft.getTerm());
       VoteRequest request = VoteRequest.newBuilder()
-          .withTerm(context.getTerm())
-          .withCandidate(context.getCluster().getMember().memberId())
+          .withTerm(raft.getTerm())
+          .withCandidate(raft.getCluster().getMember().memberId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLastLogTerm(lastTerm)
           .build();
 
-      context.getProtocol().vote(member.memberId(), request).whenCompleteAsync((response, error) -> {
-        context.checkThread();
+      raft.getProtocol().vote(member.memberId(), request).whenCompleteAsync((response, error) -> {
+        raft.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
             log.warn(error.getMessage());
             quorum.fail();
           } else {
-            if (response.term() > context.getTerm()) {
+            if (response.term() > raft.getTerm()) {
               log.debug("Received greater term from {}", member);
-              context.setTerm(response.term());
+              raft.setTerm(response.term());
               complete.set(true);
-              context.transition(RaftServer.Role.FOLLOWER);
+              raft.transition(RaftServer.Role.FOLLOWER);
             } else if (!response.voted()) {
               log.debug("Received rejected vote from {}", member);
               quorum.fail();
-            } else if (response.term() != context.getTerm()) {
+            } else if (response.term() != raft.getTerm()) {
               log.debug("Received successful vote for a different term from {}", member);
               quorum.fail();
             } else {
@@ -172,47 +173,47 @@ public final class CandidateRole extends ActiveRole {
             }
           }
         }
-      }, context.getThreadContext());
+      }, raft.getThreadContext());
     }
   }
 
   @Override
   public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
-    context.checkThread();
+    raft.checkThread();
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
-    if (request.term() >= context.getTerm()) {
-      context.setTerm(request.term());
-      context.transition(RaftServer.Role.FOLLOWER);
+    if (request.term() >= raft.getTerm()) {
+      raft.setTerm(request.term());
+      raft.transition(RaftServer.Role.FOLLOWER);
     }
     return super.onAppend(request);
   }
 
   @Override
   public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
 
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
     if (updateTermAndLeader(request.term(), null)) {
       CompletableFuture<VoteResponse> future = super.onVote(request);
-      context.transition(RaftServer.Role.FOLLOWER);
+      raft.transition(RaftServer.Role.FOLLOWER);
       return future;
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (request.candidate() == context.getCluster().getMember().memberId()) {
+    if (request.candidate() == raft.getCluster().getMember().memberId()) {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withVoted(true)
           .build()));
     } else {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
           .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
+          .withTerm(raft.getTerm())
           .withVoted(false)
           .build()));
     }
@@ -222,7 +223,7 @@ public final class CandidateRole extends ActiveRole {
    * Cancels the election.
    */
   private void cancelElection() {
-    context.checkThread();
+    raft.checkThread();
     if (currentTimer != null) {
       log.debug("Cancelling election");
       currentTimer.cancel();

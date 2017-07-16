@@ -16,10 +16,10 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
+import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -44,13 +44,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DefaultRaftServer implements RaftServer {
   private final Logger log;
-  protected final RaftServerContext context;
+  protected final RaftContext context;
   private volatile CompletableFuture<RaftServer> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
   private Consumer<RaftMember> electionListener;
   private volatile boolean started;
 
-  public DefaultRaftServer(RaftServerContext context) {
+  public DefaultRaftServer(RaftContext context) {
     this.context = checkNotNull(context, "context cannot be null");
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(context.getName())
@@ -258,12 +258,12 @@ public class DefaultRaftServer implements RaftServer {
         storage = RaftStorage.newBuilder().build();
       }
 
-      RaftServerContext context = new RaftServerContext(name, type, localMemberId, protocol, storage, serviceRegistry, threadPoolSize);
-      context.setElectionTimeout(electionTimeout)
-          .setHeartbeatInterval(heartbeatInterval)
-          .setSessionTimeout(sessionTimeout);
+      RaftContext raft = new RaftContext(name, type, localMemberId, protocol, storage, serviceRegistry, threadPoolSize);
+      raft.setElectionTimeout(electionTimeout);
+      raft.setHeartbeatInterval(heartbeatInterval);
+      raft.setSessionTimeout(sessionTimeout);
 
-      return new DefaultRaftServer(context);
+      return new DefaultRaftServer(raft);
     }
   }
 }

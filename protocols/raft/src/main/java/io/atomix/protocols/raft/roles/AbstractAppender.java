@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.roles;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.ConfigureRequest;
@@ -48,13 +48,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 abstract class AbstractAppender implements AutoCloseable {
   private static final int MAX_BATCH_SIZE = 1024 * 32;
   protected final Logger log;
-  protected final RaftServerContext server;
+  protected final RaftContext raft;
   protected boolean open = true;
 
-  AbstractAppender(RaftServerContext server) {
-    this.server = checkNotNull(server, "context cannot be null");
+  AbstractAppender(RaftContext raft) {
+    this.raft = checkNotNull(raft, "context cannot be null");
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
-        .addValue(server.getName())
+        .addValue(raft.getName())
         .build());
   }
 
@@ -100,14 +100,14 @@ abstract class AbstractAppender implements AutoCloseable {
     // The reader can be null for RESERVE members.
     Indexed<RaftLogEntry> prevEntry = reader != null ? reader.getCurrentEntry() : null;
 
-    DefaultRaftMember leader = server.getLeader();
+    DefaultRaftMember leader = raft.getLeader();
     return AppendRequest.newBuilder()
-        .withTerm(server.getTerm())
+        .withTerm(raft.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
         .withPrevLogIndex(prevEntry != null ? prevEntry.index() : reader != null ? reader.getFirstIndex() - 1 : 0)
         .withPrevLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
         .withEntries(Collections.emptyList())
-        .withCommitIndex(server.getCommitIndex())
+        .withCommitIndex(raft.getCommitIndex())
         .build();
   }
 
@@ -120,13 +120,13 @@ abstract class AbstractAppender implements AutoCloseable {
 
     final Indexed<RaftLogEntry> prevEntry = reader.getCurrentEntry();
 
-    final DefaultRaftMember leader = server.getLeader();
+    final DefaultRaftMember leader = raft.getLeader();
     AppendRequest.Builder builder = AppendRequest.newBuilder()
-        .withTerm(server.getTerm())
+        .withTerm(raft.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
         .withPrevLogIndex(prevEntry != null ? prevEntry.index() : reader.getFirstIndex() - 1)
         .withPrevLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
-        .withCommitIndex(server.getCommitIndex());
+        .withCommitIndex(raft.getCommitIndex());
 
     // Build a list of entries to send to the member.
     final List<RaftLogEntry> entries = new ArrayList<>();
@@ -151,7 +151,7 @@ abstract class AbstractAppender implements AutoCloseable {
 
       // If a snapshot exists at the next index, complete the request. This will ensure that
       // the snapshot is sent on the next index.
-      Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(entry.index());
+      Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(entry.index());
       if (snapshot != null) {
         break;
       }
@@ -176,7 +176,7 @@ abstract class AbstractAppender implements AutoCloseable {
     long timestamp = System.currentTimeMillis();
 
     log.trace("Sending {} to {}", request, member.getMember().memberId());
-    server.getProtocol().append(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
+    raft.getProtocol().append(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       // Complete the append to the member.
       if (!request.entries().isEmpty()) {
         member.completeAppend(System.currentTimeMillis() - timestamp);
@@ -192,7 +192,7 @@ abstract class AbstractAppender implements AutoCloseable {
           handleAppendResponseFailure(member, request, error);
         }
       }
-    }, server.getThreadContext());
+    }, raft.getThreadContext());
 
     if (!request.entries().isEmpty() && hasMoreEntries(member)) {
       appendEntries(member);
@@ -243,9 +243,10 @@ abstract class AbstractAppender implements AutoCloseable {
       }
     }
     // If we've received a greater term, update the term and transition back to follower.
-    else if (response.term() > server.getTerm()) {
-      server.setTerm(response.term()).setLeader(null);
-      server.transition(RaftServer.Role.FOLLOWER);
+    else if (response.term() > raft.getTerm()) {
+      raft.setTerm(response.term());
+      raft.setLeader(null);
+      raft.transition(RaftServer.Role.FOLLOWER);
     }
     // If the response failed, the follower should have provided the correct last index in their log. This helps
     // us converge on the matchIndex faster than by simply decrementing nextIndex one index at a time.
@@ -332,13 +333,13 @@ abstract class AbstractAppender implements AutoCloseable {
    * Builds a configure request for the given member.
    */
   protected ConfigureRequest buildConfigureRequest(RaftMemberContext member) {
-    DefaultRaftMember leader = server.getLeader();
+    DefaultRaftMember leader = raft.getLeader();
     return ConfigureRequest.newBuilder()
-        .withTerm(server.getTerm())
+        .withTerm(raft.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
-        .withIndex(server.getClusterState().getConfiguration().index())
-        .withTime(server.getClusterState().getConfiguration().time())
-        .withMembers(server.getClusterState().getConfiguration().members())
+        .withIndex(raft.getCluster().getConfiguration().index())
+        .withTime(raft.getCluster().getConfiguration().time())
+        .withMembers(raft.getCluster().getConfiguration().members())
         .build();
   }
 
@@ -352,7 +353,7 @@ abstract class AbstractAppender implements AutoCloseable {
     member.startConfigure();
 
     log.trace("Sending {} to {}", request, member.getMember().memberId());
-    server.getProtocol().configure(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
+    raft.getProtocol().configure(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       // Complete the configure to the member.
       member.completeConfigure();
 
@@ -365,7 +366,7 @@ abstract class AbstractAppender implements AutoCloseable {
           handleConfigureResponseFailure(member, request, error);
         }
       }
-    }, server.getThreadContext());
+    }, raft.getThreadContext());
   }
 
   /**
@@ -424,7 +425,7 @@ abstract class AbstractAppender implements AutoCloseable {
    * Builds an install request for the given member.
    */
   protected InstallRequest buildInstallRequest(RaftMemberContext member) {
-    Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
+    Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
     if (member.getNextSnapshotIndex() != snapshot.index()) {
       member.setNextSnapshotIndex(snapshot.index());
       member.setNextSnapshotOffset(0);
@@ -441,9 +442,9 @@ abstract class AbstractAppender implements AutoCloseable {
 
         // Create the install request, indicating whether this is the last chunk of data based on the number
         // of bytes remaining in the buffer.
-        DefaultRaftMember leader = server.getLeader();
+        DefaultRaftMember leader = raft.getLeader();
         request = InstallRequest.newBuilder()
-            .withTerm(server.getTerm())
+            .withTerm(raft.getTerm())
             .withLeader(leader != null ? leader.memberId() : null)
             .withId(snapshot.serviceId().id())
             .withIndex(snapshot.index())
@@ -465,7 +466,7 @@ abstract class AbstractAppender implements AutoCloseable {
     member.startInstall();
 
     log.trace("Sending {} to {}", request, member.getMember().memberId());
-    server.getProtocol().install(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
+    raft.getProtocol().install(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       // Complete the install to the member.
       member.completeInstall();
 
@@ -480,7 +481,7 @@ abstract class AbstractAppender implements AutoCloseable {
           handleInstallResponseFailure(member, request, error);
         }
       }
-    }, server.getThreadContext());
+    }, raft.getThreadContext());
   }
 
   /**

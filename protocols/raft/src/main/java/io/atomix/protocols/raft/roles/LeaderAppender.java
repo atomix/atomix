@@ -56,12 +56,12 @@ final class LeaderAppender extends AbstractAppender {
   private final Map<Long, CompletableFuture<Long>> appendFutures = new HashMap<>();
 
   LeaderAppender(LeaderRole leader) {
-    super(leader.context);
+    super(leader.raft);
     this.leader = checkNotNull(leader, "leader cannot be null");
     this.leaderTime = System.currentTimeMillis();
-    this.leaderIndex = server.getLogWriter().getNextIndex();
+    this.leaderIndex = raft.getLogWriter().getNextIndex();
     this.heartbeatTime = leaderTime;
-    this.heartbeatInterval = server.getHeartbeatInterval().toMillis();
+    this.heartbeatInterval = raft.getHeartbeatInterval().toMillis();
   }
 
   /**
@@ -88,7 +88,7 @@ final class LeaderAppender extends AbstractAppender {
    * @return The current quorum index.
    */
   private int getQuorumIndex() {
-    return server.getClusterState().getQuorum() - 2;
+    return raft.getCluster().getQuorum() - 2;
   }
 
   /**
@@ -103,10 +103,10 @@ final class LeaderAppender extends AbstractAppender {
    * @return A completable future to be completed the next time a heartbeat is received by a majority of the cluster.
    */
   public CompletableFuture<Long> appendEntries() {
-    server.checkThread();
+    raft.checkThread();
 
     // If there are no other active members in the cluster, simply complete the append operation.
-    if (server.getClusterState().getRemoteMemberStates().isEmpty()) {
+    if (raft.getCluster().getRemoteMemberStates().isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
 
@@ -116,7 +116,7 @@ final class LeaderAppender extends AbstractAppender {
       CompletableFuture<Long> newHeartbeatFuture = new CompletableFuture<>();
       heartbeatFuture = newHeartbeatFuture;
       heartbeatTime = System.currentTimeMillis();
-      for (RaftMemberContext member : server.getClusterState().getRemoteMemberStates()) {
+      for (RaftMemberContext member : raft.getCluster().getRemoteMemberStates()) {
         appendEntries(member);
       }
       return newHeartbeatFuture;
@@ -141,35 +141,35 @@ final class LeaderAppender extends AbstractAppender {
    * @return A completable future to be completed once the given log index has been committed.
    */
   public CompletableFuture<Long> appendEntries(long index) {
-    server.checkThread();
+    raft.checkThread();
 
     if (index == 0) {
       return appendEntries();
     }
 
-    if (index <= server.getCommitIndex()) {
+    if (index <= raft.getCommitIndex()) {
       return CompletableFuture.completedFuture(index);
     }
 
     // If there are no other stateful servers in the cluster, immediately commit the index.
-    if (server.getClusterState().getActiveMemberStates().isEmpty() && server.getClusterState().getPassiveMemberStates().isEmpty()) {
-      long previousCommitIndex = server.getCommitIndex();
-      server.setCommitIndex(index);
+    if (raft.getCluster().getActiveMemberStates().isEmpty() && raft.getCluster().getPassiveMemberStates().isEmpty()) {
+      long previousCommitIndex = raft.getCommitIndex();
+      raft.setCommitIndex(index);
       completeCommits(previousCommitIndex, index);
       return CompletableFuture.completedFuture(index);
     }
     // If there are no other active members in the cluster, update the commit index and complete the commit.
     // The updated commit index will be sent to passive/reserve members on heartbeats.
-    else if (server.getClusterState().getActiveMemberStates().isEmpty()) {
-      long previousCommitIndex = server.getCommitIndex();
-      server.setCommitIndex(index);
+    else if (raft.getCluster().getActiveMemberStates().isEmpty()) {
+      long previousCommitIndex = raft.getCommitIndex();
+      raft.setCommitIndex(index);
       completeCommits(previousCommitIndex, index);
       return CompletableFuture.completedFuture(index);
     }
 
     // Only send entry-specific AppendRequests to active members of the cluster.
     return appendFutures.computeIfAbsent(index, i -> {
-      for (RaftMemberContext member : server.getClusterState().getActiveMemberStates()) {
+      for (RaftMemberContext member : raft.getCluster().getActiveMemberStates()) {
         appendEntries(member);
       }
       return new CompletableFuture<>();
@@ -197,7 +197,7 @@ final class LeaderAppender extends AbstractAppender {
     // Ensure that only one configuration attempt per member is attempted at any given time by storing the
     // member state in a set of configuring members.
     // Once the configuration is complete sendAppendRequest will be called recursively.
-    else if (member.getConfigTerm() < server.getTerm() || member.getConfigIndex() < server.getClusterState().getConfiguration().index()) {
+    else if (member.getConfigTerm() < raft.getTerm() || member.getConfigIndex() < raft.getCluster().getConfiguration().index()) {
       if (member.canConfigure()) {
         sendConfigureRequest(member, buildConfigureRequest(member));
       }
@@ -210,7 +210,7 @@ final class LeaderAppender extends AbstractAppender {
     }
     // If there's a snapshot at the member's nextIndex, replicate the snapshot.
     else if (member.getMember().getType() == RaftMember.Type.ACTIVE) {
-      Snapshot snapshot = server.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
+      Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
       if (snapshot != null && member.getSnapshotIndex() < snapshot.index()) {
         if (member.canInstall()) {
           sendInstallRequest(member, buildInstallRequest(member));
@@ -243,7 +243,7 @@ final class LeaderAppender extends AbstractAppender {
   private long getHeartbeatTime() {
     int quorumIndex = getQuorumIndex();
     if (quorumIndex >= 0) {
-      return server.getClusterState().getActiveMemberStates((m1, m2) -> Long.compare(m2.getHeartbeatTime(), m1.getHeartbeatTime())).get(quorumIndex).getHeartbeatTime();
+      return raft.getCluster().getActiveMemberStates((m1, m2) -> Long.compare(m2.getHeartbeatTime(), m1.getHeartbeatTime())).get(quorumIndex).getHeartbeatTime();
     }
     return System.currentTimeMillis();
   }
@@ -256,10 +256,10 @@ final class LeaderAppender extends AbstractAppender {
       return;
     }
 
-    server.checkThread();
+    raft.checkThread();
 
     if (error != null && member.getHeartbeatStartTime() == heartbeatTime) {
-      int votingMemberSize = server.getClusterState().getActiveMemberStates().size() + (server.getCluster().getMember().getType() == RaftMember.Type.ACTIVE ? 1 : 0);
+      int votingMemberSize = raft.getCluster().getActiveMemberStates().size() + (raft.getCluster().getMember().getType() == RaftMember.Type.ACTIVE ? 1 : 0);
       int quorumSize = (int) Math.floor(votingMemberSize / 2) + 1;
       // If a quorum of successful responses cannot be achieved, fail this heartbeat. Ensure that only
       // ACTIVE members are considered. A member could have been transitioned to another state while the
@@ -291,7 +291,7 @@ final class LeaderAppender extends AbstractAppender {
     nextHeartbeatFuture = null;
     if (heartbeatFuture != null) {
       heartbeatTime = System.currentTimeMillis();
-      for (RaftMemberContext member : server.getClusterState().getRemoteMemberStates()) {
+      for (RaftMemberContext member : raft.getCluster().getRemoteMemberStates()) {
         appendEntries(member);
       }
     }
@@ -301,20 +301,20 @@ final class LeaderAppender extends AbstractAppender {
    * Checks whether any futures can be completed.
    */
   private void commitEntries() {
-    server.checkThread();
+    raft.checkThread();
 
     // Sort the list of replicas, order by the last index that was replicated
     // to the replica. This will allow us to determine the median index
     // for all known replicated entries across all cluster members.
-    List<RaftMemberContext> members = server.getClusterState().getActiveMemberStates((m1, m2) ->
+    List<RaftMemberContext> members = raft.getCluster().getActiveMemberStates((m1, m2) ->
         Long.compare(m2.getMatchIndex() != 0 ? m2.getMatchIndex() : 0L, m1.getMatchIndex() != 0 ? m1.getMatchIndex() : 0L));
 
     // If the active members list is empty (a configuration change occurred between an append request/response)
     // ensure all commit futures are completed and cleared.
     if (members.isEmpty()) {
-      long previousCommitIndex = server.getCommitIndex();
-      long commitIndex = server.getLogWriter().getLastIndex();
-      server.setCommitIndex(commitIndex);
+      long previousCommitIndex = raft.getCommitIndex();
+      long commitIndex = raft.getLogWriter().getLastIndex();
+      raft.setCommitIndex(commitIndex);
       completeCommits(previousCommitIndex, commitIndex);
       return;
     }
@@ -325,9 +325,9 @@ final class LeaderAppender extends AbstractAppender {
     // If the commit index has increased then update the commit index. Note that in order to ensure
     // the leader completeness property holds, we verify that the commit index is greater than or equal to
     // the index of the leader's no-op entry. Update the commit index and trigger commit futures.
-    long previousCommitIndex = server.getCommitIndex();
+    long previousCommitIndex = raft.getCommitIndex();
     if (commitIndex > 0 && commitIndex > previousCommitIndex && (leaderIndex > 0 && commitIndex >= leaderIndex)) {
-      server.setCommitIndex(commitIndex);
+      raft.setCommitIndex(commitIndex);
       completeCommits(previousCommitIndex, commitIndex);
     }
   }
@@ -408,9 +408,10 @@ final class LeaderAppender extends AbstractAppender {
       }
     }
     // If we've received a greater term, update the term and transition back to follower.
-    else if (response.term() > server.getTerm()) {
-      server.setTerm(response.term()).setLeader(null);
-      server.transition(RaftServer.Role.FOLLOWER);
+    else if (response.term() > raft.getTerm()) {
+      raft.setTerm(response.term());
+      raft.setLeader(null);
+      raft.transition(RaftServer.Role.FOLLOWER);
     }
     // If the response failed, the follower should have provided the correct last index in their log. This helps
     // us converge on the matchIndex faster than by simply decrementing nextIndex one index at a time.
@@ -431,10 +432,11 @@ final class LeaderAppender extends AbstractAppender {
    */
   protected void handleAppendResponseError(RaftMemberContext member, AppendRequest request, AppendResponse response) {
     // If we've received a greater term, update the term and transition back to follower.
-    if (response.term() > server.getTerm()) {
+    if (response.term() > raft.getTerm()) {
       log.debug("Received higher term from {}", member.getMember().memberId());
-      server.setTerm(response.term()).setLeader(null);
-      server.transition(RaftServer.Role.FOLLOWER);
+      raft.setTerm(response.term());
+      raft.setLeader(null);
+      raft.transition(RaftServer.Role.FOLLOWER);
     } else {
       super.handleAppendResponseError(member, request, response);
     }
@@ -447,7 +449,7 @@ final class LeaderAppender extends AbstractAppender {
     // If the member is currently marked as UNAVAILABLE, change its status to AVAILABLE and update the configuration.
     if (member.getMember().getStatus() == DefaultRaftMember.Status.UNAVAILABLE && !leader.configuring()) {
       member.getMember().update(DefaultRaftMember.Status.AVAILABLE, Instant.now());
-      leader.configure(server.getCluster().getMembers());
+      leader.configure(raft.getCluster().getMembers());
     }
   }
 
@@ -458,17 +460,17 @@ final class LeaderAppender extends AbstractAppender {
     // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
     // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
     // that a partition occurred and transition back to the FOLLOWER state.
-    if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > server.getElectionTimeout().toMillis() * 2) {
+    if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > raft.getElectionTimeout().toMillis() * 2) {
       log.warn("Suspected network partition. Stepping down");
-      server.setLeader(null);
-      server.transition(RaftServer.Role.FOLLOWER);
+      raft.setLeader(null);
+      raft.transition(RaftServer.Role.FOLLOWER);
     }
     // If the number of failures has increased above 3 and the member hasn't been marked as UNAVAILABLE, do so.
     else if (member.getFailureCount() >= 3) {
       // If the member is currently marked as AVAILABLE, change its status to UNAVAILABLE and update the configuration.
       if (member.getMember().getStatus() == DefaultRaftMember.Status.AVAILABLE && !leader.configuring()) {
         member.getMember().update(DefaultRaftMember.Status.UNAVAILABLE, Instant.now());
-        leader.configure(server.getCluster().getMembers());
+        leader.configure(raft.getCluster().getMembers());
       }
     }
   }

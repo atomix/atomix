@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.roles;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.ConfigureRequest;
@@ -49,7 +49,7 @@ public final class FollowerRole extends ActiveRole {
   private final Random random = new Random();
   private Scheduled heartbeatTimer;
 
-  public FollowerRole(RaftServerContext context) {
+  public FollowerRole(RaftContext context) {
     super(context);
     this.appender = new FollowerAppender(context);
   }
@@ -76,7 +76,7 @@ public final class FollowerRole extends ActiveRole {
    * Resets the heartbeat timer.
    */
   private void resetHeartbeatTimeout() {
-    context.checkThread();
+    raft.checkThread();
     if (isClosed())
       return;
 
@@ -87,11 +87,11 @@ public final class FollowerRole extends ActiveRole {
 
     // Set the election timeout in a semi-random fashion with the random range
     // being election timeout and 2 * election timeout.
-    Duration delay = context.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) context.getElectionTimeout().toMillis())));
-    heartbeatTimer = context.getThreadContext().schedule(delay, () -> {
+    Duration delay = raft.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) raft.getElectionTimeout().toMillis())));
+    heartbeatTimer = raft.getThreadContext().schedule(delay, () -> {
       heartbeatTimer = null;
       if (isOpen()) {
-        context.setLeader(null);
+        raft.setLeader(null);
         log.debug("Heartbeat timed out in {}", delay);
         sendPollRequests();
       }
@@ -103,26 +103,26 @@ public final class FollowerRole extends ActiveRole {
    */
   private void sendPollRequests() {
     // Set a new timer within which other nodes must respond in order for this node to transition to candidate.
-    heartbeatTimer = context.getThreadContext().schedule(context.getElectionTimeout(), () -> {
-      log.debug("Failed to poll a majority of the cluster in {}", context.getElectionTimeout());
+    heartbeatTimer = raft.getThreadContext().schedule(raft.getElectionTimeout(), () -> {
+      log.debug("Failed to poll a majority of the cluster in {}", raft.getElectionTimeout());
       resetHeartbeatTimeout();
     });
 
     // Create a quorum that will track the number of nodes that have responded to the poll request.
     final AtomicBoolean complete = new AtomicBoolean();
-    final Set<DefaultRaftMember> votingMembers = new HashSet<>(context.getClusterState().getActiveMemberStates().stream().map(RaftMemberContext::getMember).collect(Collectors.toList()));
+    final Set<DefaultRaftMember> votingMembers = new HashSet<>(raft.getCluster().getActiveMemberStates().stream().map(RaftMemberContext::getMember).collect(Collectors.toList()));
 
     // If there are no other members in the cluster, immediately transition to leader.
     if (votingMembers.isEmpty()) {
-      context.transition(RaftServer.Role.CANDIDATE);
+      raft.transition(RaftServer.Role.CANDIDATE);
       return;
     }
 
-    final Quorum quorum = new Quorum(context.getClusterState().getQuorum(), (elected) -> {
+    final Quorum quorum = new Quorum(raft.getCluster().getQuorum(), (elected) -> {
       // If a majority of the cluster indicated they would vote for us then transition to candidate.
       complete.set(true);
       if (elected) {
-        context.transition(RaftServer.Role.CANDIDATE);
+        raft.transition(RaftServer.Role.CANDIDATE);
       } else {
         resetHeartbeatTimeout();
       }
@@ -130,7 +130,7 @@ public final class FollowerRole extends ActiveRole {
 
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
-    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().getLastEntry();
+    final Indexed<RaftLogEntry> lastEntry = raft.getLogWriter().getLastEntry();
 
     final long lastTerm;
     if (lastEntry != null) {
@@ -144,28 +144,28 @@ public final class FollowerRole extends ActiveRole {
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
-      log.debug("Polling {} for next term {}", member, context.getTerm() + 1);
+      log.debug("Polling {} for next term {}", member, raft.getTerm() + 1);
       PollRequest request = PollRequest.newBuilder()
-          .withTerm(context.getTerm())
-          .withCandidate(context.getCluster().getMember().memberId())
+          .withTerm(raft.getTerm())
+          .withCandidate(raft.getCluster().getMember().memberId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLastLogTerm(lastTerm)
           .build();
-      context.getProtocol().poll(member.memberId(), request).whenCompleteAsync((response, error) -> {
-        context.checkThread();
+      raft.getProtocol().poll(member.memberId(), request).whenCompleteAsync((response, error) -> {
+        raft.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
             log.warn("{}", error.getMessage());
             quorum.fail();
           } else {
-            if (response.term() > context.getTerm()) {
-              context.setTerm(response.term());
+            if (response.term() > raft.getTerm()) {
+              raft.setTerm(response.term());
             }
 
             if (!response.accepted()) {
               log.debug("Received rejected poll from {}", member);
               quorum.fail();
-            } else if (response.term() != context.getTerm()) {
+            } else if (response.term() != raft.getTerm()) {
               log.debug("Received accepted poll for a different term from {}", member);
               quorum.fail();
             } else {
@@ -174,7 +174,7 @@ public final class FollowerRole extends ActiveRole {
             }
           }
         }
-      }, context.getThreadContext());
+      }, raft.getThreadContext());
     }
   }
 

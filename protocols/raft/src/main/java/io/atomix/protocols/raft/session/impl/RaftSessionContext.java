@@ -20,7 +20,7 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.impl.OperationResult;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
@@ -62,7 +62,7 @@ public class RaftSessionContext implements RaftSession {
   private final long timeout;
   private final RaftServerProtocol protocol;
   private final DefaultServiceContext context;
-  private final RaftServerContext server;
+  private final RaftContext server;
   private volatile State state = State.OPEN;
   private volatile long timestamp;
   private long requestSequence;
@@ -87,7 +87,7 @@ public class RaftSessionContext implements RaftSession {
       ReadConsistency readConsistency,
       long timeout,
       DefaultServiceContext context,
-      RaftServerContext server) {
+      RaftContext server) {
     this.sessionId = sessionId;
     this.member = member;
     this.name = name;

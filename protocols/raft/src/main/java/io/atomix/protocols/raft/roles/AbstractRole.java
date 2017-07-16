@@ -19,7 +19,7 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.utils.concurrent.Futures;
@@ -37,13 +37,13 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public abstract class AbstractRole implements RaftRole {
   protected final Logger log;
-  protected final RaftServerContext context;
+  protected final RaftContext raft;
   private boolean open = true;
 
-  protected AbstractRole(RaftServerContext context) {
-    this.context = context;
+  protected AbstractRole(RaftContext raft) {
+    this.raft = raft;
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
-        .addValue(context.getName())
+        .addValue(raft.getName())
         .add("role", role())
         .build());
   }
@@ -73,7 +73,7 @@ public abstract class AbstractRole implements RaftRole {
 
   @Override
   public CompletableFuture<RaftRole> open() {
-    context.checkThread();
+    raft.checkThread();
     open = true;
     return CompletableFuture.completedFuture(null);
   }
@@ -88,7 +88,7 @@ public abstract class AbstractRole implements RaftRole {
    */
   protected <T extends RaftRequest, U extends RaftResponse> CompletableFuture<U> forward(T request, BiFunction<MemberId, T, CompletableFuture<U>> function) {
     CompletableFuture<U> future = new CompletableFuture<>();
-    DefaultRaftMember leader = context.getLeader();
+    DefaultRaftMember leader = raft.getLeader();
     if (leader == null) {
       return Futures.exceptionalFuture(new RaftException.NoLeader("No leader found"));
     }
@@ -99,7 +99,7 @@ public abstract class AbstractRole implements RaftRole {
       } else {
         future.completeExceptionally(error);
       }
-    }, context.getThreadContext());
+    }, raft.getThreadContext());
     return future;
   }
 
@@ -109,12 +109,12 @@ public abstract class AbstractRole implements RaftRole {
   protected boolean updateTermAndLeader(long term, MemberId leader) {
     // If the request indicates a term that is greater than the current term or no leader has been
     // set for the current term, update leader and term.
-    if (term > context.getTerm() || (term == context.getTerm() && context.getLeader() == null && leader != null)) {
-      context.setTerm(term);
-      context.setLeader(leader);
+    if (term > raft.getTerm() || (term == raft.getTerm() && raft.getLeader() == null && leader != null)) {
+      raft.setTerm(term);
+      raft.setLeader(leader);
 
       // Reset the current cluster configuration to the last committed configuration when a leader change occurs.
-      context.getClusterState().reset();
+      raft.getCluster().reset();
       return true;
     }
     return false;
@@ -122,7 +122,7 @@ public abstract class AbstractRole implements RaftRole {
 
   @Override
   public CompletableFuture<Void> close() {
-    context.checkThread();
+    raft.checkThread();
     open = false;
     return CompletableFuture.completedFuture(null);
   }
@@ -135,7 +135,7 @@ public abstract class AbstractRole implements RaftRole {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("context", context)
+        .add("context", raft)
         .toString();
   }
 

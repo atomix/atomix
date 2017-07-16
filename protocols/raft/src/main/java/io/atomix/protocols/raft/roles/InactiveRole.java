@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -56,7 +56,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class InactiveRole extends AbstractRole {
 
-  public InactiveRole(RaftServerContext context) {
+  public InactiveRole(RaftContext context) {
     super(context);
   }
 
@@ -67,7 +67,7 @@ public class InactiveRole extends AbstractRole {
 
   @Override
   public CompletableFuture<ConfigureResponse> onConfigure(ConfigureRequest request) {
-    context.checkThread();
+    raft.checkThread();
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
 
@@ -75,13 +75,13 @@ public class InactiveRole extends AbstractRole {
 
     // Configure the cluster membership. This will cause this server to transition to the
     // appropriate state if its type has changed.
-    context.getClusterState().configure(configuration);
+    raft.getCluster().configure(configuration);
 
     // If the configuration is already committed, commit it to disk.
     // Check against the actual cluster Configuration rather than the received configuration in
     // case the received configuration was an older configuration that was not applied.
-    if (context.getCommitIndex() >= context.getClusterState().getConfiguration().index()) {
-      context.getClusterState().commit();
+    if (raft.getCommitIndex() >= raft.getCluster().getConfiguration().index()) {
+      raft.getCluster().commit();
     }
 
     return CompletableFuture.completedFuture(logResponse(ConfigureResponse.newBuilder()

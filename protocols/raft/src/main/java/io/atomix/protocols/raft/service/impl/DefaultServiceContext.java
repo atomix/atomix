@@ -20,7 +20,7 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.OperationResult;
-import io.atomix.protocols.raft.impl.RaftServerContext;
+import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
@@ -63,7 +63,7 @@ public class DefaultServiceContext implements ServiceContext {
   private final String serviceName;
   private final ServiceType serviceType;
   private final RaftService service;
-  private final RaftServerContext server;
+  private final RaftContext server;
   private final DefaultServiceSessions sessions;
   private final ThreadContext serviceExecutor;
   private final ThreadContext snapshotExecutor;
@@ -90,7 +90,7 @@ public class DefaultServiceContext implements ServiceContext {
       String serviceName,
       ServiceType serviceType,
       RaftService service,
-      RaftServerContext server,
+      RaftContext server,
       RaftSessionManager sessionManager,
       ThreadContext serviceExecutor,
       ThreadContext snapshotExecutor) {
