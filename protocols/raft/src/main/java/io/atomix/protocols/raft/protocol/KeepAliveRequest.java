@@ -101,7 +101,7 @@ public class KeepAliveRequest extends AbstractRaftRequest {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("sessionIds", Arrays.toString(sessionIds))
+        .add("sessionIds", ArraySizeHashPrinter.of(sessionIds))
         .add("commandSequences", ArraySizeHashPrinter.of(commandSequences))
         .add("eventIndexes", ArraySizeHashPrinter.of(eventIndexes))
         .toString();

@@ -17,8 +17,8 @@ package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.utils.ArraySizeHashPrinter;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -107,7 +107,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
           .add("status", status)
           .add("leader", leader)
           .add("members", members)
-          .add("sessionIds", Arrays.toString(sessionIds))
+          .add("sessionIds", ArraySizeHashPrinter.of(sessionIds))
           .toString();
     } else {
       return toStringHelper(this)
