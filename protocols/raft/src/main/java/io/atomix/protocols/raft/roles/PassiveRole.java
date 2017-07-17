@@ -411,33 +411,31 @@ public class PassiveRole extends ReserveRole {
    * Completes an operation.
    */
   protected <T extends OperationResponse> void completeOperation(OperationResult result, OperationResponse.Builder<?, T> builder, Throwable error, CompletableFuture<T> future) {
-    if (isOpen()) {
-      if (result != null) {
-        builder.withIndex(result.index());
-        builder.withEventIndex(result.eventIndex());
-        if (result.failed()) {
-          error = result.error();
-        }
+    if (result != null) {
+      builder.withIndex(result.index());
+      builder.withEventIndex(result.eventIndex());
+      if (result.failed()) {
+        error = result.error();
       }
+    }
 
-      if (error == null) {
-        future.complete(builder.withStatus(RaftResponse.Status.OK)
-            .withResult(result != null ? result.result() : null)
-            .build());
-      } else if (error instanceof CompletionException && error.getCause() instanceof RaftException) {
-        future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-            .withError(((RaftException) error.getCause()).getType(), error.getMessage())
-            .build());
-      } else if (error instanceof RaftException) {
-        future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-            .withError(((RaftException) error).getType(), error.getMessage())
-            .build());
-      } else {
-        log.warn("An unexpected error occurred: {}", error);
-        future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-            .withError(RaftError.Type.PROTOCOL_ERROR, error.getMessage())
-            .build());
-      }
+    if (error == null) {
+      future.complete(builder.withStatus(RaftResponse.Status.OK)
+          .withResult(result != null ? result.result() : null)
+          .build());
+    } else if (error instanceof CompletionException && error.getCause() instanceof RaftException) {
+      future.complete(builder.withStatus(RaftResponse.Status.ERROR)
+          .withError(((RaftException) error.getCause()).getType(), error.getMessage())
+          .build());
+    } else if (error instanceof RaftException) {
+      future.complete(builder.withStatus(RaftResponse.Status.ERROR)
+          .withError(((RaftException) error).getType(), error.getMessage())
+          .build());
+    } else {
+      log.warn("An unexpected error occurred: {}", error);
+      future.complete(builder.withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.PROTOCOL_ERROR, error.getMessage())
+          .build());
     }
   }
 
