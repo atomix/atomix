@@ -729,7 +729,7 @@ public final class LeaderRole extends ActiveRole {
       } else {
         future.complete(logResponse(OpenSessionResponse.newBuilder()
             .withStatus(RaftResponse.Status.ERROR)
-            .withError(RaftError.Type.QUERY_FAILURE)
+            .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
             .build()));
       }
     });
