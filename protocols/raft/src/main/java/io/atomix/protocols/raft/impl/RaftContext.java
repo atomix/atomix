@@ -319,6 +319,10 @@ public class RaftContext implements AutoCloseable {
           this.leader = leader;
           log.info("Found leader {}", member.memberId());
           electionListeners.forEach(l -> l.accept(member));
+          if (state == State.ACTIVE && cluster.getMember().getType() == RaftMember.Type.RESERVE) {
+            state = State.READY;
+            stateChangeListeners.forEach(l -> l.accept(State.READY));
+          }
         }
       }
 
