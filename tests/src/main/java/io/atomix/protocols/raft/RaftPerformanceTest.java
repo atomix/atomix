@@ -123,7 +123,7 @@ public class RaftPerformanceTest implements Runnable {
 
   private static final int TOTAL_OPERATIONS = 1000000;
   private static final int WRITE_RATIO = 10;
-  private static final int NUM_CLIENTS = 20;
+  private static final int NUM_CLIENTS = 5;
 
   private static final ReadConsistency READ_CONSISTENCY = ReadConsistency.LINEARIZABLE;
   private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategy.ANY;
@@ -296,9 +296,9 @@ public class RaftPerformanceTest implements Runnable {
     long runTime = endTime - startTime;
     System.out.println(String.format("readCount: %d/%d, writeCount: %d/%d, runTime: %dms",
       readCount.get(),
-      (int) (TOTAL_OPERATIONS * (WRITE_RATIO / 10d)),
+      TOTAL_OPERATIONS,
       writeCount.get(),
-      (int) (TOTAL_OPERATIONS * (1 - (WRITE_RATIO / 10d))),
+      TOTAL_OPERATIONS,
       runTime));
     return runTime;
   }
