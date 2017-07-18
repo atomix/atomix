@@ -453,9 +453,13 @@ public class RaftContext implements AutoCloseable {
    */
   public void setLastApplied(long lastApplied) {
     this.lastApplied = Math.max(this.lastApplied, lastApplied);
-    if (state == State.ACTIVE && this.lastApplied >= firstCommitIndex) {
-      state = State.READY;
-      stateChangeListeners.forEach(l -> l.accept(state));
+    if (state == State.ACTIVE) {
+      threadContext.execute(() -> {
+        if (state == State.ACTIVE && this.lastApplied >= firstCommitIndex) {
+          state = State.READY;
+          stateChangeListeners.forEach(l -> l.accept(state));
+        }
+      });
     }
   }
 
