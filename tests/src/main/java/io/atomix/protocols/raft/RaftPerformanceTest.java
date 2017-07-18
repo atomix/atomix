@@ -122,8 +122,8 @@ public class RaftPerformanceTest implements Runnable {
   private static final int ITERATIONS = 10;
 
   private static final int TOTAL_OPERATIONS = 1000000;
-  private static final int WRITE_RATIO = 5;
-  private static final int NUM_CLIENTS = 5;
+  private static final int WRITE_RATIO = 10;
+  private static final int NUM_CLIENTS = 20;
 
   private static final ReadConsistency READ_CONSISTENCY = ReadConsistency.LINEARIZABLE;
   private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategy.ANY;
@@ -279,16 +279,17 @@ public class RaftPerformanceTest implements Runnable {
 
     CompletableFuture<Void>[] futures = new CompletableFuture[NUM_CLIENTS];
     RaftClient[] clients = new RaftClient[NUM_CLIENTS];
+    RaftProxy[] proxies = new RaftProxy[NUM_CLIENTS];
     for (int i = 0; i < NUM_CLIENTS; i++) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       clients[i] = createClient();
+      proxies[i] = createProxy(clients[i]).open().join();
       futures[i] = future;
     }
 
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < clients.length; i++) {
-      RaftProxy proxy = createProxy(clients[i]);
-      runProxy(proxy, futures[i]);
+      runProxy(proxies[i], futures[i]);
     }
     CompletableFuture.allOf(futures).join();
     long endTime = System.currentTimeMillis();
