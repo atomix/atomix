@@ -261,7 +261,7 @@ public class PassiveRole extends ReserveRole {
         }
 
         // If the last log index meets the commitIndex, break the append loop to avoid appending uncommitted entries.
-        if (role().active() && index == commitIndex) {
+        if (!role().active() && index == commitIndex) {
           break;
         }
       }
