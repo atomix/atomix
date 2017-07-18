@@ -48,6 +48,7 @@ public class DefaultRaftServer implements RaftServer {
   private volatile CompletableFuture<RaftServer> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
   private Consumer<RaftMember> electionListener;
+  private Consumer<RaftContext.State> stateChangeListener;
   private volatile boolean started;
 
   public DefaultRaftServer(RaftContext context) {
@@ -74,17 +75,17 @@ public class DefaultRaftServer implements RaftServer {
 
   @Override
   public void addRoleChangeListener(Consumer<Role> listener) {
-    context.addStateChangeListener(listener);
+    context.addRoleChangeListener(listener);
   }
 
   @Override
   public void removeRoleChangeListener(Consumer<Role> listener) {
-    context.removeStateChangeListener(listener);
+    context.removeRoleChangeListener(listener);
   }
 
   @Override
   public CompletableFuture<RaftServer> bootstrap() {
-    return bootstrap(Collections.EMPTY_LIST);
+    return bootstrap(Collections.emptyList());
   }
 
   @Override
@@ -121,25 +122,14 @@ public class DefaultRaftServer implements RaftServer {
           openFuture = future;
           joiner.get().whenComplete((result, error) -> {
             if (error == null) {
-              if (cluster().getLeader() != null) {
+              context.awaitState(RaftContext.State.READY, state -> {
                 started = true;
-                future.complete(this);
-              } else {
-                electionListener = leader -> {
-                  if (electionListener != null) {
-                    started = true;
-                    future.complete(this);
-                    cluster().removeLeaderElectionListener(electionListener);
-                    electionListener = null;
-                  }
-                };
-                cluster().addLeaderElectionListener(electionListener);
-              }
+                future.complete(null);
+              });
             } else {
               future.completeExceptionally(error);
             }
           });
-          return future.whenComplete((r, e) -> openFuture = null);
         }
       }
     }

@@ -77,7 +77,6 @@ public class RaftServiceManager implements AutoCloseable {
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
   private final Map<String, DefaultServiceContext> services = new HashMap<>();
-  private volatile long lastApplied;
   private long lastCompacted;
 
   public RaftServiceManager(RaftContext raft, ScheduledExecutorService threadPool, ThreadContext threadContext) {
@@ -102,15 +101,6 @@ public class RaftServiceManager implements AutoCloseable {
   }
 
   /**
-   * Returns the last applied index.
-   *
-   * @return The last applied index.
-   */
-  public long getLastApplied() {
-    return lastApplied;
-  }
-
-  /**
    * Applies all commits up to the given index.
    * <p>
    * Calls to this method are assumed not to expect a result. This allows some optimizations to be
@@ -120,7 +110,7 @@ public class RaftServiceManager implements AutoCloseable {
    */
   public void applyAll(long index) {
     // Don't attempt to apply indices that have already been applied.
-    if (index > lastApplied) {
+    if (index > raft.getLastApplied()) {
       raft.getThreadContext().execute(() -> apply(index));
     }
   }
@@ -141,7 +131,7 @@ public class RaftServiceManager implements AutoCloseable {
       long nextIndex = reader.getNextIndex();
 
       // Validate that the next entry can be applied.
-      long lastApplied = this.lastApplied;
+      long lastApplied = raft.getLastApplied();
       if (nextIndex > lastApplied + 1 && nextIndex != reader.getFirstIndex()) {
         throw new IndexOutOfBoundsException("Cannot apply non-sequential index unless it's the first entry in the log");
       } else if (nextIndex < lastApplied) {
@@ -152,7 +142,7 @@ public class RaftServiceManager implements AutoCloseable {
       if (nextIndex < index) {
         Indexed<RaftLogEntry> entry = reader.next();
         apply(entry);
-        this.lastApplied = nextIndex;
+        raft.setLastApplied(nextIndex);
       }
       // If the next index is equal to the applied index, apply it and return the result.
       else if (nextIndex == index) {
@@ -165,12 +155,12 @@ public class RaftServiceManager implements AutoCloseable {
           }
           return apply(entry);
         } finally {
-          this.lastApplied = nextIndex;
+          raft.setLastApplied(nextIndex);
         }
       }
       // If the applied index has been passed, return a null result.
       else {
-        this.lastApplied = nextIndex;
+        raft.setLastApplied(nextIndex);
         return CompletableFuture.completedFuture(null);
       }
     }
@@ -463,7 +453,7 @@ public class RaftServiceManager implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   private void compactLog() {
-    long lastApplied = this.lastApplied;
+    long lastApplied = raft.getLastApplied();
 
     // Only take snapshots if segments can be removed from the log below the lastApplied index.
     if (raft.getLog().isCompactable(lastApplied) && raft.getLog().getCompactableIndex(lastApplied) > lastCompacted) {

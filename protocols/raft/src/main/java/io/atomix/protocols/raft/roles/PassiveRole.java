@@ -330,7 +330,7 @@ public class PassiveRole extends ReserveRole {
     // If this server has not yet applied entries up to the client's session ID, forward the
     // query to the leader. This ensures that a follower does not tell the client its session
     // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
-    if (raft.getStateMachine().getLastApplied() < request.session()) {
+    if (raft.getLastApplied() < request.session()) {
       log.trace("State out of sync, forwarding query to leader");
       return queryForward(request);
     }

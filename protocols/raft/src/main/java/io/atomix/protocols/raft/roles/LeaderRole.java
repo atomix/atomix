@@ -213,9 +213,8 @@ public final class LeaderRole extends ActiveRole {
 
     return appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
       raft.checkThread();
-      if (isOpen()) {
-        configuring = 0;
-      }
+      raft.getStateMachine().<OperationResult>apply(entry.index());
+      configuring = 0;
     });
   }
 
@@ -455,7 +454,7 @@ public final class LeaderRole extends ActiveRole {
 
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
     Indexed<MetadataEntry> entry = new Indexed<>(
-        raft.getStateMachine().getLastApplied(),
+        raft.getLastApplied(),
         new MetadataEntry(raft.getTerm(), System.currentTimeMillis(), request.session()), 0);
     raft.getStateMachine().<MetadataResult>apply(entry).whenComplete((result, error) -> {
       if (error == null) {
@@ -600,7 +599,7 @@ public final class LeaderRole extends ActiveRole {
     // If this server has not yet applied entries up to the client's session ID, forward the
     // query to the leader. This ensures that a follower does not tell the client its session
     // doesn't exist if the follower hasn't had a chance to see the session's registration entry.
-    if (raft.getStateMachine().getLastApplied() < request.session()) {
+    if (raft.getLastApplied() < request.session()) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.UNKNOWN_SESSION, "Session has not yet been created. You're seeing into the future!")

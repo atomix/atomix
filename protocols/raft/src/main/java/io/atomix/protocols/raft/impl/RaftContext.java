@@ -67,7 +67,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  */
 public class RaftContext implements AutoCloseable {
   private final Logger log;
-  private final Set<Consumer<RaftServer.Role>> stateChangeListeners = new CopyOnWriteArraySet<>();
+  private final Set<Consumer<RaftServer.Role>> roleChangeListeners = new CopyOnWriteArraySet<>();
+  private final Set<Consumer<State>> stateChangeListeners = new CopyOnWriteArraySet<>();
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
   protected final String name;
   protected final ThreadContext threadContext;
@@ -75,6 +76,7 @@ public class RaftContext implements AutoCloseable {
   protected final RaftClusterContext cluster;
   protected final RaftServerProtocol protocol;
   protected final RaftStorage storage;
+  private volatile State state = State.ACTIVE;
   private MetaStore meta;
   private RaftLog raftLog;
   private RaftLogWriter logWriter;
@@ -91,6 +93,8 @@ public class RaftContext implements AutoCloseable {
   private volatile long term;
   private MemberId lastVotedFor;
   private long commitIndex;
+  private volatile long firstCommitIndex;
+  private volatile long lastApplied;
 
   @SuppressWarnings("unchecked")
   public RaftContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftServiceRegistry registry, int threadPoolSize) {
@@ -133,11 +137,29 @@ public class RaftContext implements AutoCloseable {
   }
 
   /**
+   * Adds a role change listener.
+   *
+   * @param listener The role change listener.
+   */
+  public void addRoleChangeListener(Consumer<RaftServer.Role> listener) {
+    roleChangeListeners.add(listener);
+  }
+
+  /**
+   * Removes a role change listener.
+   *
+   * @param listener The role change listener.
+   */
+  public void removeRoleChangeListener(Consumer<RaftServer.Role> listener) {
+    roleChangeListeners.remove(listener);
+  }
+
+  /**
    * Adds a state change listener.
    *
    * @param listener The state change listener.
    */
-  public void addStateChangeListener(Consumer<RaftServer.Role> listener) {
+  public void addStateChangeListener(Consumer<State> listener) {
     stateChangeListeners.add(listener);
   }
 
@@ -146,8 +168,28 @@ public class RaftContext implements AutoCloseable {
    *
    * @param listener The state change listener.
    */
-  public void removeStateChangeListener(Consumer<RaftServer.Role> listener) {
+  public void removeStateChangeListener(Consumer<State> listener) {
     stateChangeListeners.remove(listener);
+  }
+
+  /**
+   * Awaits a state change.
+   *
+   * @param state the state for which to wait
+   * @param listener the listener to call when the next state change occurs
+   */
+  public void awaitState(State state, Consumer<State> listener) {
+    if (this.state == state) {
+      listener.accept(this.state);
+    } else {
+      addStateChangeListener(new Consumer<State>() {
+        @Override
+        public void accept(State state) {
+          listener.accept(state);
+          removeStateChangeListener(this);
+        }
+      });
+    }
   }
 
   /**
@@ -193,6 +235,15 @@ public class RaftContext implements AutoCloseable {
    */
   public RaftStorage getStorage() {
     return storage;
+  }
+
+  /**
+   * Returns the current server state.
+   *
+   * @return the current server state
+   */
+  public State getState() {
+    return state;
   }
 
   /**
@@ -375,6 +426,10 @@ public class RaftContext implements AutoCloseable {
       if (configurationIndex > previousCommitIndex && configurationIndex <= commitIndex) {
         cluster.commit();
       }
+
+      if (firstCommitIndex == 0) {
+        firstCommitIndex = commitIndex;
+      }
     }
   }
 
@@ -385,6 +440,28 @@ public class RaftContext implements AutoCloseable {
    */
   public long getCommitIndex() {
     return commitIndex;
+  }
+
+  /**
+   * Sets the last applied index.
+   *
+   * @param lastApplied the last applied index
+   */
+  public void setLastApplied(long lastApplied) {
+    this.lastApplied = Math.max(this.lastApplied, lastApplied);
+    if (state == State.ACTIVE && this.lastApplied >= firstCommitIndex) {
+      state = State.READY;
+      stateChangeListeners.forEach(l -> l.accept(state));
+    }
+  }
+
+  /**
+   * Returns the last applied index.
+   *
+   * @return the last applied index
+   */
+  public long getLastApplied() {
+    return lastApplied;
   }
 
   /**
@@ -612,7 +689,7 @@ public class RaftContext implements AutoCloseable {
       throw new IllegalStateException("failed to initialize Raft state", e);
     }
 
-    stateChangeListeners.forEach(l -> l.accept(this.role.role()));
+    roleChangeListeners.forEach(l -> l.accept(this.role.role()));
   }
 
   /**
@@ -689,6 +766,14 @@ public class RaftContext implements AutoCloseable {
   @Override
   public String toString() {
     return getClass().getCanonicalName();
+  }
+
+  /**
+   * Raft server state.
+   */
+  public enum State {
+    ACTIVE,
+    READY,
   }
 
 }
