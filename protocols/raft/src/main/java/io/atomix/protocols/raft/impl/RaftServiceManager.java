@@ -42,7 +42,6 @@ import io.atomix.storage.journal.Indexed;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.utils.concurrent.ThreadPoolContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -322,8 +321,7 @@ public class RaftServiceManager implements AutoCloseable {
           serviceFactory.get(),
           raft,
           sessionManager,
-          new ThreadPoolContext(threadPool),
-          new ThreadPoolContext(threadPool));
+          threadPool);
       services.put(entry.entry().serviceName(), service);
     }
 
@@ -336,7 +334,8 @@ public class RaftServiceManager implements AutoCloseable {
         entry.entry().readConsistency(),
         entry.entry().timeout(),
         service,
-        raft);
+        raft,
+        threadPool);
     sessionManager.registerSession(session);
     return service.openSession(entry.index(), entry.entry().timestamp(), session);
   }

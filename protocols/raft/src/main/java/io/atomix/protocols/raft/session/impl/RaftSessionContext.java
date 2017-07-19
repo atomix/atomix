@@ -32,6 +32,8 @@ import io.atomix.protocols.raft.session.RaftSessionEvent;
 import io.atomix.protocols.raft.session.RaftSessionEventListener;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.TimestampPrinter;
+import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.ThreadPoolContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -45,6 +47,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -63,6 +66,7 @@ public class RaftSessionContext implements RaftSession {
   private final RaftServerProtocol protocol;
   private final DefaultServiceContext context;
   private final RaftContext server;
+  private final ThreadContext eventExecutor;
   private volatile State state = State.OPEN;
   private volatile long timestamp;
   private long requestSequence;
@@ -87,7 +91,8 @@ public class RaftSessionContext implements RaftSession {
       ReadConsistency readConsistency,
       long timeout,
       DefaultServiceContext context,
-      RaftContext server) {
+      RaftContext server,
+      ScheduledExecutorService threadPool) {
     this.sessionId = sessionId;
     this.member = member;
     this.name = name;
@@ -100,6 +105,7 @@ public class RaftSessionContext implements RaftSession {
     this.protocol = server.getProtocol();
     this.context = context;
     this.server = server;
+    this.eventExecutor = new ThreadPoolContext(threadPool);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftSession.class)
         .addValue(sessionId)
         .add("type", context.serviceType())
@@ -511,15 +517,17 @@ public class RaftSessionContext implements RaftSession {
   private void sendEvents(EventHolder event) {
     // Only send events to the client if this server is the leader.
     if (server.isLeader()) {
-      PublishRequest request = PublishRequest.newBuilder()
-          .withSession(sessionId().id())
-          .withEventIndex(event.eventIndex)
-          .withPreviousIndex(Math.max(event.previousIndex, completeIndex))
-          .withEvents(event.events)
-          .build();
+      eventExecutor.execute(() -> {
+        PublishRequest request = PublishRequest.newBuilder()
+            .withSession(sessionId().id())
+            .withEventIndex(event.eventIndex)
+            .withPreviousIndex(Math.max(event.previousIndex, completeIndex))
+            .withEvents(event.events)
+            .build();
 
-      log.trace("Sending {}", request);
-      protocol.publish(member, request);
+        log.trace("Sending {}", request);
+        protocol.publish(member, request);
+      });
     }
   }
 

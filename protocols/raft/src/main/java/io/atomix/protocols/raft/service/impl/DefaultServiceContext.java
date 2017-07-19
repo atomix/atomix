@@ -43,6 +43,7 @@ import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.ThreadPoolContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -50,6 +51,7 @@ import org.slf4j.Logger;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -67,6 +69,7 @@ public class DefaultServiceContext implements ServiceContext {
   private final DefaultServiceSessions sessions;
   private final ThreadContext serviceExecutor;
   private final ThreadContext snapshotExecutor;
+  private final ScheduledExecutorService threadPool;
   private final Map<Long, PendingSnapshot> pendingSnapshots = new ConcurrentSkipListMap<>();
   private long snapshotIndex;
   private long currentIndex;
@@ -92,16 +95,16 @@ public class DefaultServiceContext implements ServiceContext {
       RaftService service,
       RaftContext server,
       RaftSessionManager sessionManager,
-      ThreadContext serviceExecutor,
-      ThreadContext snapshotExecutor) {
+      ScheduledExecutorService threadPool) {
     this.serviceId = checkNotNull(serviceId);
     this.serviceName = checkNotNull(serviceName);
     this.serviceType = checkNotNull(serviceType);
     this.service = checkNotNull(service);
     this.server = checkNotNull(server);
     this.sessions = new DefaultServiceSessions(sessionManager);
-    this.serviceExecutor = checkNotNull(serviceExecutor);
-    this.snapshotExecutor = checkNotNull(snapshotExecutor);
+    this.serviceExecutor = new ThreadPoolContext(threadPool);
+    this.snapshotExecutor = new ThreadPoolContext(threadPool);
+    this.threadPool = checkNotNull(threadPool);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
         .addValue(serviceId)
         .add("type", serviceType)
@@ -277,7 +280,8 @@ public class DefaultServiceContext implements ServiceContext {
               readConsistency,
               sessionTimeout,
               this,
-              server);
+              server,
+              threadPool);
           session.setTimestamp(sessionTimestamp);
           session.setLastApplied(snapshot.index());
           sessions.add(session);

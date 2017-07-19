@@ -123,7 +123,7 @@ public class RaftPerformanceTest implements Runnable {
 
   private static final int TOTAL_OPERATIONS = 1000000;
   private static final int WRITE_RATIO = 10;
-  private static final int NUM_CLIENTS = 5;
+  private static final int NUM_CLIENTS = 20;
 
   private static final ReadConsistency READ_CONSISTENCY = ReadConsistency.LINEARIZABLE;
   private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategy.ANY;
