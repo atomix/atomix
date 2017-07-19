@@ -41,7 +41,6 @@ import java.util.zip.Checksum;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class JournalSegmentWriter<E> implements JournalWriter<E> {
-  private final SegmentedJournal<E> journal;
   private final JournalSegmentDescriptor descriptor;
   private final Buffer buffer;
   private final Serializer serializer;
@@ -49,8 +48,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
   private final long firstIndex;
   private Indexed<E> lastEntry;
 
-  public JournalSegmentWriter(SegmentedJournal<E> journal, JournalSegmentDescriptor descriptor, Serializer serializer) {
-    this.journal = journal;
+  public JournalSegmentWriter(JournalSegmentDescriptor descriptor, Serializer serializer) {
     this.descriptor = descriptor;
     this.buffer = descriptor.buffer().slice();
     this.serializer = serializer;

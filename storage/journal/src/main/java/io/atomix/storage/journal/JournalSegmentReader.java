@@ -30,7 +30,6 @@ import java.util.zip.Checksum;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class JournalSegmentReader<E> implements JournalReader<E> {
-  private final SegmentedJournal<E> journal;
   private final Buffer buffer;
   private final Serializer serializer;
   private final HeapBuffer memory = HeapBuffer.allocate();
@@ -38,21 +37,11 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   private Indexed<E> currentEntry;
   private Indexed<E> nextEntry;
 
-  public JournalSegmentReader(SegmentedJournal<E> journal, JournalSegmentDescriptor descriptor, Serializer serializer) {
-    this.journal = journal;
+  public JournalSegmentReader(JournalSegmentDescriptor descriptor, Serializer serializer) {
     this.buffer = descriptor.buffer().slice();
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
     readNext();
-  }
-
-  /**
-   * Returns the first index in the segment.
-   *
-   * @return The first index in the segment.
-   */
-  public long firstIndex() {
-    return firstIndex;
   }
 
   @Override

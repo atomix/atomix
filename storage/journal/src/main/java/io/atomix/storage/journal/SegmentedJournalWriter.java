@@ -55,7 +55,7 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
     currentWriter.close();
     currentSegment = journal.resetSegments(index);
     currentWriter = currentSegment.writer();
-    journal.resetReaders(index);
+    journal.resetHead(index);
   }
 
   @Override
@@ -90,7 +90,7 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
     currentWriter.truncate(index);
 
     // Reset segment readers.
-    journal.resetReaders(index);
+    journal.resetTail(index + 1);
   }
 
   @Override

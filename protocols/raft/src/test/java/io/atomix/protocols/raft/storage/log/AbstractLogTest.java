@@ -58,8 +58,8 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractLogTest {
-  private static final int MAX_ENTRIES_PER_SEGMENT = 10;
-  private static final int MAX_SEGMENT_SIZE = 1024 * 8;
+  protected static final int MAX_ENTRIES_PER_SEGMENT = 10;
+  protected static final int MAX_SEGMENT_SIZE = 1024 * 8;
   private static final Path PATH = Paths.get("target/test-logs/");
 
   private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
@@ -84,7 +84,7 @@ public abstract class AbstractLogTest {
 
   protected abstract StorageLevel storageLevel();
 
-  private RaftLog createLog() {
+  protected RaftLog createLog() {
     return RaftLog.builder()
         .withName("test")
         .withDirectory(PATH.toFile())

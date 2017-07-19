@@ -363,7 +363,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @return The segment instance.
    */
   protected JournalSegment<E> newSegment(JournalSegmentFile segmentFile, JournalSegmentDescriptor descriptor) {
-    return new JournalSegment<>(segmentFile, descriptor, serializer, this);
+    return new JournalSegment<>(segmentFile, descriptor, serializer);
   }
 
   /**
@@ -504,13 +504,28 @@ public class SegmentedJournal<E> implements Journal<E> {
   }
 
   /**
-   * Resets journal readers.
+   * Resets journal readers to the given head.
    *
    * @param index The index at which to reset readers.
    */
-  void resetReaders(long index) {
+  void resetHead(long index) {
     for (SegmentedJournalReader<E> reader : readers) {
-      reader.reset(index);
+      if (reader.getNextIndex() < index) {
+        reader.reset(index);
+      }
+    }
+  }
+
+  /**
+   * Resets journal readers to the given tail.
+   *
+   * @param index The index at which to reset readers.
+   */
+  void resetTail(long index) {
+    for (SegmentedJournalReader<E> reader : readers) {
+      if (reader.getNextIndex() > index) {
+        reader.reset(index);
+      }
     }
   }
 

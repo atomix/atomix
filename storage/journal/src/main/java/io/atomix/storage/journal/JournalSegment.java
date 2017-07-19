@@ -29,16 +29,14 @@ public class JournalSegment<E> implements AutoCloseable {
   protected final JournalSegmentFile file;
   protected final JournalSegmentDescriptor descriptor;
   protected final Serializer serializer;
-  protected final SegmentedJournal<E> journal;
   private final JournalSegmentWriter<E> writer;
   private boolean open = true;
 
-  public JournalSegment(JournalSegmentFile file, JournalSegmentDescriptor descriptor, Serializer serializer, SegmentedJournal<E> journal) {
+  public JournalSegment(JournalSegmentFile file, JournalSegmentDescriptor descriptor, Serializer serializer) {
     this.file = file;
     this.descriptor = descriptor;
     this.serializer = serializer;
-    this.journal = journal;
-    this.writer = new JournalSegmentWriter<>(journal, descriptor, serializer);
+    this.writer = new JournalSegmentWriter<>(descriptor, serializer);
   }
 
   /**
@@ -148,7 +146,7 @@ public class JournalSegment<E> implements AutoCloseable {
    */
   JournalSegmentReader<E> createReader() {
     checkOpen();
-    return new JournalSegmentReader<>(journal, descriptor, serializer);
+    return new JournalSegmentReader<>(descriptor, serializer);
   }
 
   /**
