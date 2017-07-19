@@ -135,12 +135,12 @@ public class RaftServiceManager implements AutoCloseable {
         // Validate that the next entry can be applied.
         long lastApplied = raft.getLastApplied();
         if (nextIndex > lastApplied + 1 && nextIndex != reader.getFirstIndex()) {
-          logger.error("Cannot apply non-sequential index unless it's the first entry in the log");
+          logger.error("Cannot apply non-sequential index {} unless it's the first entry in the log: {}", nextIndex, reader.getFirstIndex());
           future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply non-sequential index unless it's the first entry in the log"));
           return;
         } else if (nextIndex < lastApplied) {
-          logger.error("Cannot apply duplicate entry {}", nextIndex);
-          future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply duplicate entry " + nextIndex));
+          logger.error("Cannot apply duplicate entry at index {}", nextIndex);
+          future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply duplicate entry at index " + nextIndex));
           return;
         }
 

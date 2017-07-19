@@ -158,13 +158,13 @@ public class PassiveRole extends ReserveRole {
           Indexed<RaftLogEntry> previousEntry = reader.next();
           if (request.prevLogTerm() != previousEntry.entry().term()) {
             log.debug("Rejected {}: Previous entry term ({}) does not match local log's term for the same entry ({})", request, request.prevLogTerm(), previousEntry.entry().term());
-            return failAppend(lastEntry.index(), future);
+            return failAppend(request.prevLogIndex() - 1, future);
           }
         }
         // If the previous log term doesn't equal the last entry term, fail the append, sending the prior entry.
         else if (request.prevLogTerm() != lastEntry.entry().term()) {
           log.debug("Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", request, request.prevLogTerm(), lastEntry.entry().term());
-          return failAppend(lastEntry.index() - 1, future);
+          return failAppend(request.prevLogIndex() - 1, future);
         }
       }
     } else {
