@@ -42,6 +42,7 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
   private Function<ConfigureRequest, CompletableFuture<ConfigureResponse>> configureHandler;
   private Function<ReconfigureRequest, CompletableFuture<ReconfigureResponse>> reconfigureHandler;
   private Function<InstallRequest, CompletableFuture<InstallResponse>> installHandler;
+  private Function<TransferRequest, CompletableFuture<TransferResponse>> transferHandler;
   private Function<PollRequest, CompletableFuture<PollResponse>> pollHandler;
   private Function<VoteRequest, CompletableFuture<VoteResponse>> voteHandler;
   private Function<AppendRequest, CompletableFuture<AppendResponse>> appendHandler;
@@ -123,6 +124,11 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
   @Override
   public CompletableFuture<InstallResponse> install(MemberId memberId, InstallRequest request) {
     return getServer(memberId).thenCompose(listener -> listener.install(request));
+  }
+
+  @Override
+  public CompletableFuture<TransferResponse> transfer(MemberId memberId, TransferRequest request) {
+    return getServer(memberId).thenCompose(listener -> listener.transfer(request));
   }
 
   @Override
@@ -341,6 +347,24 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
   @Override
   public void unregisterInstallHandler() {
     this.installHandler = null;
+  }
+
+  CompletableFuture<TransferResponse> transfer(TransferRequest request) {
+    if (transferHandler != null) {
+      return transferHandler.apply(request);
+    } else {
+      return Futures.exceptionalFuture(new ConnectException());
+    }
+  }
+
+  @Override
+  public void registerTransferHandler(Function<TransferRequest, CompletableFuture<TransferResponse>> handler) {
+    this.transferHandler = handler;
+  }
+
+  @Override
+  public void unregisterTransferHandler() {
+    this.transferHandler = null;
   }
 
   CompletableFuture<PollResponse> poll(PollRequest request) {

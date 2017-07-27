@@ -47,6 +47,8 @@ import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
+import io.atomix.protocols.raft.protocol.TransferRequest;
+import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
@@ -79,6 +81,7 @@ public final class LeaderRole extends ActiveRole {
   private final LeaderAppender appender;
   private Scheduled appendTimer;
   private long configuring;
+  private boolean transferring;
 
   public LeaderRole(RaftContext context) {
     super(context);
@@ -391,6 +394,55 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
+  public CompletableFuture<TransferResponse> onTransfer(final TransferRequest request) {
+    logRequest(request);
+
+    RaftMemberContext member = raft.getCluster().getMemberState(request.member());
+    if (member == null) {
+      return CompletableFuture.completedFuture(logResponse(TransferResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+          .build()));
+    }
+
+    transferring = true;
+
+    CompletableFuture<TransferResponse> future = new CompletableFuture<>();
+    appender.appendEntries(raft.getLogWriter().getLastIndex()).whenComplete((result, error) -> {
+      if (isOpen()) {
+        if (error == null) {
+          log.debug("Transferring leadership to {}", request.member());
+          raft.transition(RaftServer.Role.FOLLOWER);
+          future.complete(logResponse(TransferResponse.newBuilder()
+              .withStatus(RaftResponse.Status.OK)
+              .build()));
+        } else if (error instanceof CompletionException && error.getCause() instanceof RaftException) {
+          future.complete(logResponse(TransferResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(((RaftException) error.getCause()).getType(), error.getMessage())
+              .build()));
+        } else if (error instanceof RaftException) {
+          future.complete(logResponse(TransferResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(((RaftException) error).getType(), error.getMessage())
+              .build()));
+        } else {
+          future.complete(logResponse(TransferResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.PROTOCOL_ERROR, error.getMessage())
+              .build()));
+        }
+      } else {
+        future.complete(logResponse(TransferResponse.newBuilder()
+            .withStatus(RaftResponse.Status.ERROR)
+            .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+            .build()));
+      }
+    });
+    return future;
+  }
+
+  @Override
   public CompletableFuture<PollResponse> onPoll(final PollRequest request) {
     logRequest(request);
 
@@ -452,6 +504,13 @@ public final class LeaderRole extends ActiveRole {
     raft.checkThread();
     logRequest(request);
 
+    if (transferring) {
+      return CompletableFuture.completedFuture(logResponse(MetadataResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+          .build()));
+    }
+
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
     Indexed<MetadataEntry> entry = new Indexed<>(
         raft.getLastApplied(),
@@ -476,6 +535,13 @@ public final class LeaderRole extends ActiveRole {
   public CompletableFuture<CommandResponse> onCommand(final CommandRequest request) {
     raft.checkThread();
     logRequest(request);
+
+    if (transferring) {
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
+          .build()));
+    }
 
     // Get the client's server session. If the session doesn't exist, return an unknown session error.
     RaftSessionContext session = raft.getStateMachine().getSessions().getSession(request.session());

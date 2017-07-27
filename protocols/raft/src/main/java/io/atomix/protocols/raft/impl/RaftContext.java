@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -22,6 +23,7 @@ import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftClusterContext;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
+import io.atomix.protocols.raft.protocol.TransferRequest;
 import io.atomix.protocols.raft.roles.ActiveRole;
 import io.atomix.protocols.raft.roles.CandidateRole;
 import io.atomix.protocols.raft.roles.FollowerRole;
@@ -36,6 +38,7 @@ import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -601,6 +604,7 @@ public class RaftContext implements AutoCloseable {
     protocol.registerJoinHandler(request -> runOnContext(() -> role.onJoin(request)));
     protocol.registerReconfigureHandler(request -> runOnContext(() -> role.onReconfigure(request)));
     protocol.registerLeaveHandler(request -> runOnContext(() -> role.onLeave(request)));
+    protocol.registerTransferHandler(request -> runOnContext(() -> role.onTransfer(request)));
     protocol.registerAppendHandler(request -> runOnContext(() -> role.onAppend(request)));
     protocol.registerPollHandler(request -> runOnContext(() -> role.onPoll(request)));
     protocol.registerVoteHandler(request -> runOnContext(() -> role.onVote(request)));
@@ -640,6 +644,54 @@ public class RaftContext implements AutoCloseable {
     protocol.unregisterVoteHandler();
     protocol.unregisterCommandHandler();
     protocol.unregisterQueryHandler();
+  }
+
+  /**
+   * Attempts to become the leader.
+   */
+  public CompletableFuture<Void> anoint() {
+    if (role.role() == RaftServer.Role.LEADER) {
+      return CompletableFuture.completedFuture(null);
+    }
+
+    CompletableFuture<Void> future = new CompletableFuture<>();
+
+    threadContext.execute(() -> {
+      // Register a leader election listener to wait for the election of this node.
+      Consumer<RaftMember> electionListener = new Consumer<RaftMember>() {
+        @Override
+        public void accept(RaftMember member) {
+          if (member.memberId().equals(cluster.getMember().memberId())) {
+            future.complete(null);
+          } else {
+            future.completeExceptionally(new RaftException.ProtocolException("Failed to transfer leadership"));
+          }
+          removeLeaderElectionListener(this);
+        }
+      };
+      addLeaderElectionListener(electionListener);
+
+      // If a leader already exists, request a leadership transfer from it. Otherwise, transition to the candidate
+      // state and attempt to get elected.
+      RaftMember member = getCluster().getMember();
+      RaftMember leader = getLeader();
+      if (leader != null) {
+        protocol.transfer(leader.memberId(), TransferRequest.newBuilder()
+            .withMember(member.memberId())
+            .build()).whenCompleteAsync((response, error) -> {
+          if (error != null) {
+            future.completeExceptionally(error);
+          } else if (response.status() == RaftResponse.Status.ERROR) {
+            future.completeExceptionally(response.error().createException());
+          } else {
+            transition(RaftServer.Role.CANDIDATE);
+          }
+        }, threadContext);
+      } else {
+        transition(RaftServer.Role.CANDIDATE);
+      }
+    });
+    return future;
   }
 
   /**

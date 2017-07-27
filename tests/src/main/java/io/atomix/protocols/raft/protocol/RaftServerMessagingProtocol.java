@@ -90,6 +90,11 @@ public class RaftServerMessagingProtocol extends RaftMessagingProtocol implement
   }
 
   @Override
+  public CompletableFuture<TransferResponse> transfer(MemberId memberId, TransferRequest request) {
+    return sendAndReceive(memberId, "transfer", request);
+  }
+
+  @Override
   public CompletableFuture<PollResponse> poll(MemberId memberId, PollRequest request) {
     return sendAndReceive(memberId, "poll", request);
   }
@@ -217,6 +222,16 @@ public class RaftServerMessagingProtocol extends RaftMessagingProtocol implement
   @Override
   public void unregisterInstallHandler() {
     unregisterHandler("install");
+  }
+
+  @Override
+  public void registerTransferHandler(Function<TransferRequest, CompletableFuture<TransferResponse>> handler) {
+    registerHandler("transfer", handler);
+  }
+
+  @Override
+  public void unregisterTransferHandler() {
+    unregisterHandler("transfer");
   }
 
   @Override

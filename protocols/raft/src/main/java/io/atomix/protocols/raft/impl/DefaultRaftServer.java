@@ -143,6 +143,11 @@ public class DefaultRaftServer implements RaftServer {
     });
   }
 
+  @Override
+  public CompletableFuture<RaftServer> promote() {
+    return context.anoint().thenApply(v -> this);
+  }
+
   /**
    * Returns a boolean indicating whether the server is running.
    *

@@ -78,6 +78,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Raft test.
@@ -209,6 +210,24 @@ public class RaftTest extends ConcurrentTestCase {
     } else {
       resume();
     }
+  }
+
+  /**
+   * Tests transferring leadership.
+   */
+  @Test
+  public void testTransferLeadership() throws Throwable {
+    List<RaftServer> servers = createServers(3);
+    RaftClient client = createClient();
+    RaftProxy session = createSession(client);
+    submit(session, 0, 1000);
+    RaftServer follower = servers.stream()
+        .filter(RaftServer::isFollower)
+        .findFirst()
+        .get();
+    follower.promote().thenRun(this::resume);
+    await(10000, 2);
+    assertTrue(follower.isLeader());
   }
 
   /**

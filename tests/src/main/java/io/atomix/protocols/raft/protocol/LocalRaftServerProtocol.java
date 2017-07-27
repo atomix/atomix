@@ -45,6 +45,7 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
   private Function<InstallRequest, CompletableFuture<InstallResponse>> installHandler;
   private Function<PollRequest, CompletableFuture<PollResponse>> pollHandler;
   private Function<VoteRequest, CompletableFuture<VoteResponse>> voteHandler;
+  private Function<TransferRequest, CompletableFuture<TransferResponse>> transferHandler;
   private Function<AppendRequest, CompletableFuture<AppendResponse>> appendHandler;
   private final Map<Long, Consumer<ResetRequest>> resetListeners = Maps.newConcurrentMap();
 
@@ -123,6 +124,11 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
 
   @Override
   public CompletableFuture<InstallResponse> install(MemberId memberId, InstallRequest request) {
+    return getServer(memberId).thenCompose(listener -> listener.install(encode(request))).thenApply(this::decode);
+  }
+
+  @Override
+  public CompletableFuture<TransferResponse> transfer(MemberId memberId, TransferRequest request) {
     return getServer(memberId).thenCompose(listener -> listener.install(encode(request))).thenApply(this::decode);
   }
 
@@ -378,6 +384,24 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
   @Override
   public void unregisterVoteHandler() {
     this.voteHandler = null;
+  }
+
+  @Override
+  public void registerTransferHandler(Function<TransferRequest, CompletableFuture<TransferResponse>> handler) {
+    this.transferHandler = handler;
+  }
+
+  @Override
+  public void unregisterTransferHandler() {
+    this.transferHandler = null;
+  }
+
+  CompletableFuture<byte[]> transfer(byte[] request) {
+    if (transferHandler != null) {
+      return transferHandler.apply(decode(request)).thenApply(this::encode);
+    } else {
+      return Futures.exceptionalFuture(new ConnectException());
+    }
   }
 
   CompletableFuture<byte[]> append(byte[] request) {
