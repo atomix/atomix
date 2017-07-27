@@ -49,6 +49,8 @@ import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.ResetRequest;
+import io.atomix.protocols.raft.protocol.TransferRequest;
+import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.session.SessionId;
@@ -134,6 +136,11 @@ public class RaftServerCommunicator implements RaftServerProtocol {
   @Override
   public CompletableFuture<InstallResponse> install(MemberId memberId, InstallRequest request) {
     return sendAndReceive(context.installSubject, request, memberId);
+  }
+
+  @Override
+  public CompletableFuture<TransferResponse> transfer(MemberId memberId, TransferRequest request) {
+    return sendAndReceive(context.transferSubject, request, memberId);
   }
 
   @Override
@@ -264,6 +271,16 @@ public class RaftServerCommunicator implements RaftServerProtocol {
   @Override
   public void unregisterInstallHandler() {
     clusterCommunicator.removeSubscriber(context.installSubject);
+  }
+
+  @Override
+  public void registerTransferHandler(Function<TransferRequest, CompletableFuture<TransferResponse>> handler) {
+    clusterCommunicator.addSubscriber(context.transferSubject, serializer::decode, handler, serializer::encode);
+  }
+
+  @Override
+  public void unregisterTransferHandler() {
+    clusterCommunicator.removeSubscriber(context.transferSubject);
   }
 
   @Override

@@ -33,6 +33,7 @@ class RaftMessageContext {
   final MessageSubject configureSubject;
   final MessageSubject reconfigureSubject;
   final MessageSubject installSubject;
+  final MessageSubject transferSubject;
   final MessageSubject pollSubject;
   final MessageSubject voteSubject;
   final MessageSubject appendSubject;
@@ -50,6 +51,7 @@ class RaftMessageContext {
     this.configureSubject = getSubject(prefix, "configure");
     this.reconfigureSubject = getSubject(prefix, "reconfigure");
     this.installSubject = getSubject(prefix, "install");
+    this.transferSubject = getSubject(prefix, "transfer");
     this.pollSubject = getSubject(prefix, "poll");
     this.voteSubject = getSubject(prefix, "vote");
     this.appendSubject = getSubject(prefix, "append");

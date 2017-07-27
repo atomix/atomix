@@ -296,6 +296,24 @@ public interface RaftServer {
   Role getRole();
 
   /**
+   * Returns whether the server is the leader.
+   *
+   * @return whether the server is the leader
+   */
+  default boolean isLeader() {
+    return getRole() == Role.LEADER;
+  }
+
+  /**
+   * Returns whether the server is a follower.
+   *
+   * @return whether the server is a follower
+   */
+  default boolean isFollower() {
+    return getRole() == Role.FOLLOWER;
+  }
+
+  /**
    * Adds a role change listener.
    *
    * @param listener The role change listener to add.
@@ -451,6 +469,13 @@ public interface RaftServer {
    * @return A completable future to be completed once the local server has joined the cluster.
    */
   CompletableFuture<RaftServer> join(Collection<MemberId> cluster);
+
+  /**
+   * Promotes the server to leader if possible.
+   *
+   * @return a future to be completed once the server has been promoted
+   */
+  CompletableFuture<RaftServer> promote();
 
   /**
    * Returns a boolean indicating whether the server is running.

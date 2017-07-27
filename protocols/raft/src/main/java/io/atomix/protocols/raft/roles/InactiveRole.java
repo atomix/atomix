@@ -43,6 +43,8 @@ import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
+import io.atomix.protocols.raft.protocol.TransferRequest;
+import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.RaftServer;
@@ -126,6 +128,11 @@ public class InactiveRole extends AbstractRole {
 
   @Override
   public CompletableFuture<LeaveResponse> onLeave(LeaveRequest request) {
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+  }
+
+  @Override
+  public CompletableFuture<TransferResponse> onTransfer(TransferRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 

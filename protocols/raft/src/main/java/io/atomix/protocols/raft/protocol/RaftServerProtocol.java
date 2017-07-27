@@ -128,6 +128,15 @@ public interface RaftServerProtocol {
   CompletableFuture<InstallResponse> install(MemberId memberId, InstallRequest request);
 
   /**
+   * Sends a transfer request to the given node.
+   *
+   * @param memberId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<TransferResponse> transfer(MemberId memberId, TransferRequest request);
+
+  /**
    * Sends a poll request to the given node.
    *
    * @param memberId  the node to which to send the request
@@ -257,6 +266,18 @@ public interface RaftServerProtocol {
    * Unregisters the leave request handler.
    */
   void unregisterLeaveHandler();
+
+  /**
+   * Registers a transfer request callback.
+   *
+   * @param handler the open session request handler to register
+   */
+  void registerTransferHandler(Function<TransferRequest, CompletableFuture<TransferResponse>> handler);
+
+  /**
+   * Unregisters the transfer request handler.
+   */
+  void unregisterTransferHandler();
 
   /**
    * Registers a configure request callback.
