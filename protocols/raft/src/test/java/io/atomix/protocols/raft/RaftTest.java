@@ -1327,7 +1327,7 @@ public class RaftTest extends ConcurrentTestCase {
       executor.register(WRITE, this::write, clientSerializer::encode);
       executor.register(READ, this::read, clientSerializer::encode);
       executor.register(EVENT, clientSerializer::decode, this::event, clientSerializer::encode);
-      executor.register(CLOSE, this::close);
+      executor.register(CLOSE, c -> close(c));
       executor.register(EXPIRE, this::expire);
     }
 
