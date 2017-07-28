@@ -25,6 +25,7 @@ import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -91,6 +92,36 @@ public interface RaftServiceExecutor extends ThreadContext {
    * @param callback the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
+  default void register(OperationId operationId, Runnable callback) {
+    checkNotNull(operationId, "operationId cannot be null");
+    checkNotNull(callback, "callback cannot be null");
+    handle(operationId, commit -> {
+      callback.run();
+      return HeapBytes.EMPTY;
+    });
+  }
+
+  /**
+   * Registers a no argument operation callback.
+   *
+   * @param operationId the operation identifier
+   * @param callback the operation callback
+   * @param encoder result encoder
+   * @throws NullPointerException if the {@code operationId} or {@code callback} is null
+   */
+  default <R> void register(OperationId operationId, Supplier<R> callback, Function<R, byte[]> encoder) {
+    checkNotNull(operationId, "operationId cannot be null");
+    checkNotNull(callback, "callback cannot be null");
+    handle(operationId, commit -> encoder.apply(callback.get()));
+  }
+
+  /**
+   * Registers a operation callback.
+   *
+   * @param operationId the operation identifier
+   * @param callback the operation callback
+   * @throws NullPointerException if the {@code operationId} or {@code callback} is null
+   */
   default void register(OperationId operationId, Consumer<Commit<Void>> callback) {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
@@ -105,6 +136,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    *
    * @param operationId the operation identifier
    * @param callback the operation callback
+   * @param encoder result encoder
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   default <R> void register(OperationId operationId, Function<Commit<Void>, R> callback, Function<R, byte[]> encoder) {
