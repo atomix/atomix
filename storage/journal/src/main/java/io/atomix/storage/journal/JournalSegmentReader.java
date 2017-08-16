@@ -38,7 +38,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   private Indexed<E> nextEntry;
 
   public JournalSegmentReader(JournalSegmentDescriptor descriptor, Serializer serializer) {
-    this.buffer = descriptor.buffer().slice();
+    this.buffer = descriptor.buffer().slice().duplicate();
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
     readNext();

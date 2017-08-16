@@ -214,6 +214,7 @@ public class FileBytes extends AbstractBytes {
   public Bytes zero() {
     try {
       randomAccessFile.setLength(0);
+      randomAccessFile.setLength(size);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -224,6 +225,7 @@ public class FileBytes extends AbstractBytes {
   public Bytes zero(int offset) {
     try {
       randomAccessFile.setLength(offset);
+      randomAccessFile.setLength(Math.max(offset, size));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

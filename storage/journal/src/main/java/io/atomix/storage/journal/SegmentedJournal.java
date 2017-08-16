@@ -348,6 +348,8 @@ public class SegmentedJournal<E> implements Journal<E> {
     switch (storageLevel) {
       case MEMORY:
         return createMemorySegment(descriptor);
+      case MAPPED:
+        return createMappedSegment(descriptor);
       case DISK:
         return createDiskSegment(descriptor);
       default:
@@ -371,10 +373,22 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   private JournalSegment<E> createDiskSegment(JournalSegmentDescriptor descriptor) {
     File segmentFile = JournalSegmentFile.createSegmentFile(name, directory, descriptor.id());
-    Buffer buffer = MappedBuffer.allocate(segmentFile, Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
+    Buffer buffer = FileBuffer.allocate(segmentFile, Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
     descriptor.copyTo(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
     log.debug("Created disk segment: {}", segment);
+    return segment;
+  }
+
+  /**
+   * Creates a new segment.
+   */
+  private JournalSegment<E> createMappedSegment(JournalSegmentDescriptor descriptor) {
+    File segmentFile = JournalSegmentFile.createSegmentFile(name, directory, descriptor.id());
+    Buffer buffer = MappedBuffer.allocate(segmentFile, Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
+    descriptor.copyTo(buffer);
+    JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
+    log.debug("Created memory mapped segment: {}", segment);
     return segment;
   }
 
@@ -397,6 +411,8 @@ public class SegmentedJournal<E> implements Journal<E> {
     switch (storageLevel) {
       case MEMORY:
         return loadMemorySegment(segmentId);
+      case MAPPED:
+        return loadMappedSegment(segmentId);
       case DISK:
         return loadDiskSegment(segmentId);
       default:
@@ -408,6 +424,18 @@ public class SegmentedJournal<E> implements Journal<E> {
    * Loads a segment.
    */
   private JournalSegment<E> loadDiskSegment(long segmentId) {
+    File file = JournalSegmentFile.createSegmentFile(name, directory, segmentId);
+    Buffer buffer = FileBuffer.allocate(file, Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
+    JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);
+    JournalSegment<E> segment = newSegment(new JournalSegmentFile(file), descriptor);
+    log.debug("Loaded disk segment: {} ({})", descriptor.id(), file.getName());
+    return segment;
+  }
+
+  /**
+   * Loads a segment.
+   */
+  private JournalSegment<E> loadMappedSegment(long segmentId) {
     File file = JournalSegmentFile.createSegmentFile(name, directory, segmentId);
     Buffer buffer = MappedBuffer.allocate(file, Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
     JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);

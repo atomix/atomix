@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.storage;
+package io.atomix.protocols.raft.storage.log;
+
+import io.atomix.storage.StorageLevel;
 
 /**
- * Storage level configuration values which control how logs are stored on disk or in memory.
+ * Disk log test.
  */
-public enum StorageLevel {
-
-  /**
-   * Stores data in memory only.
-   */
-  MEMORY,
-
-  /**
-   * Stores data in a memory-mapped file.
-   */
-  MAPPED,
-
-  /**
-   * Stores data on disk.
-   */
-  DISK
-
+public class MappedLogTest extends AbstractLogTest {
+  @Override
+  protected StorageLevel storageLevel() {
+    return StorageLevel.MAPPED;
+  }
 }
