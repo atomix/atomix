@@ -18,6 +18,7 @@ package io.atomix.protocols.raft.service;
 import io.atomix.protocols.raft.service.impl.DefaultRaftServiceExecutor;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessions;
+import io.atomix.time.Clock;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;
 import io.atomix.utils.concurrent.Scheduler;
@@ -66,7 +67,7 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return the service context
    */
-  protected ServiceContext getContext() {
+  protected ServiceContext context() {
     return context;
   }
 
@@ -75,7 +76,7 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return the service logger
    */
-  protected Logger getLogger() {
+  protected Logger logger() {
     return log;
   }
 
@@ -84,7 +85,7 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return The state machine scheduler.
    */
-  protected Scheduler getScheduler() {
+  protected Scheduler scheduler() {
     return executor;
   }
 
@@ -93,7 +94,7 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return The unique state machine identifier.
    */
-  protected ServiceId getStateMachineId() {
+  protected ServiceId serviceId() {
     return context.serviceId();
   }
 
@@ -102,7 +103,7 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return The unique state machine name.
    */
-  protected String getName() {
+  protected String serviceName() {
     return context.serviceName();
   }
 
@@ -111,8 +112,17 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return The state machine's current index.
    */
-  protected long getCurrentIndex() {
+  protected long currentIndex() {
     return context.currentIndex();
+  }
+
+  /**
+   * Returns the state machine's clock.
+   *
+   * @return The state machine's clock.
+   */
+  protected Clock clock() {
+    return wallClock();
   }
 
   /**
@@ -120,7 +130,7 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return The state machine's wall clock.
    */
-  protected WallClock getWallClock() {
+  protected WallClock wallClock() {
     return context.wallClock();
   }
 
@@ -129,7 +139,7 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return The state machine's logical clock.
    */
-  protected LogicalClock getLogicalClock() {
+  protected LogicalClock logicalClock() {
     return context.logicalClock();
   }
 
@@ -138,7 +148,7 @@ public abstract class AbstractRaftService implements RaftService {
    *
    * @return The state machine's sessions.
    */
-  protected RaftSessions getSessions() {
+  protected RaftSessions sessions() {
     return context.sessions();
   }
 
