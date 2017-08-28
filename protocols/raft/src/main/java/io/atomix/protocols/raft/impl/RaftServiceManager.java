@@ -147,20 +147,27 @@ public class RaftServiceManager implements AutoCloseable {
         // If the next index is less than or equal to the given index, read and apply the entry.
         if (nextIndex < index) {
           Indexed<RaftLogEntry> entry = reader.next();
-          apply(entry);
-          raft.setLastApplied(nextIndex);
+          try {
+            apply(entry);
+          } catch (Exception e) {
+            logger.error("Failed to apply {}: {}", entry, e);
+          } finally {
+            raft.setLastApplied(nextIndex);
+          }
         }
         // If the next index is equal to the applied index, apply it and return the result.
         else if (nextIndex == index) {
           // Read the entry from the log. If the entry is non-null then apply it, otherwise
           // simply update the last applied index and return a null result.
+          Indexed<RaftLogEntry> entry = reader.next();
           try {
-            Indexed<RaftLogEntry> entry = reader.next();
             if (entry.index() != index) {
               throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
             }
             this.<T>apply(entry).whenComplete(future);
             return;
+          } catch (Exception e) {
+            logger.error("Failed to apply {}: {}", entry, e);
           } finally {
             raft.setLastApplied(nextIndex);
           }
