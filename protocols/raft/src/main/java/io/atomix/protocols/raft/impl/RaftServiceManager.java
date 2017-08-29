@@ -508,6 +508,8 @@ public class RaftServiceManager implements AutoCloseable {
               scheduleCompaction();
             }
           }, threadContext);
+    } else {
+      scheduleCompaction();
     }
   }
 
