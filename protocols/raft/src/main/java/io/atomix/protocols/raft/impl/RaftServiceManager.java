@@ -67,7 +67,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
  */
 public class RaftServiceManager implements AutoCloseable {
-  private static final long COMPACT_INTERVAL_MILLIS = 1000 * 10;
+  private static final Duration COMPACT_INTERVAL = Duration.ofSeconds(10);
 
   private final Logger logger;
   private final RaftContext raft;
@@ -88,7 +88,7 @@ public class RaftServiceManager implements AutoCloseable {
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(raft.getName())
         .build());
-    threadContext.schedule(Duration.ofMillis(COMPACT_INTERVAL_MILLIS), this::compactLog);
+    scheduleCompaction();
   }
 
   /**
@@ -466,6 +466,13 @@ public class RaftServiceManager implements AutoCloseable {
   }
 
   /**
+   * Schedules a log compaction iteration.
+   */
+  private void scheduleCompaction() {
+    threadContext.schedule(COMPACT_INTERVAL, this::compactLog);
+  }
+
+  /**
    * Compacts the log if necessary.
    */
   @SuppressWarnings("unchecked")
@@ -493,7 +500,13 @@ public class RaftServiceManager implements AutoCloseable {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
           .whenCompleteAsync((result, error) -> {
             logger.info("Compacting logs up to index {}", lastApplied);
-            log.compact(lastApplied);
+            try {
+              log.compact(lastApplied);
+            } catch (Exception e) {
+              logger.error("An exception occurred during log compaction: {}", e);
+            } finally {
+              scheduleCompaction();
+            }
           }, threadContext);
     }
   }
