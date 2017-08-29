@@ -500,8 +500,13 @@ public class RaftServiceManager implements AutoCloseable {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
           .whenCompleteAsync((result, error) -> {
             logger.info("Compacting logs up to index {}", lastApplied);
-            log.compact(lastApplied);
-            scheduleCompaction();
+            try {
+              log.compact(lastApplied);
+            } catch (Exception e) {
+              logger.error("An exception occurred during log compaction: {}", e);
+            } finally {
+              scheduleCompaction();
+            }
           }, threadContext);
     }
   }
