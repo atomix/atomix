@@ -216,6 +216,7 @@ public class RaftTest extends ConcurrentTestCase {
    * Tests transferring leadership.
    */
   @Test
+  @Ignore
   public void testTransferLeadership() throws Throwable {
     List<RaftServer> servers = createServers(3);
     RaftClient client = createClient();
