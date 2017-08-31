@@ -36,35 +36,44 @@ public final class JournalSegmentFile {
    * @throws NullPointerException if {@code file} is null
    */
   public static boolean isSegmentFile(String name, File file) {
-    checkNotNull(name, "name cannot be null");
-    checkNotNull(file, "file cannot be null");
-    String fileName = file.getName();
-    if (fileName.lastIndexOf(EXTENSION_SEPARATOR) == -1 || fileName.lastIndexOf(PART_SEPARATOR) == -1 || fileName.lastIndexOf(EXTENSION_SEPARATOR) < fileName.lastIndexOf(PART_SEPARATOR) || !fileName.endsWith(EXTENSION))
-      return false;
+    return isSegmentFile(name, file.getName());
+  }
 
-    for (int i = fileName.lastIndexOf(PART_SEPARATOR) + 1; i < fileName.lastIndexOf(EXTENSION_SEPARATOR); i++) {
+  /**
+   * Returns a boolean value indicating whether the given file appears to be a parsable segment file.
+   *
+   * @param journalName the name of the journal
+   * @param fileName the name of the file to check
+   * @throws NullPointerException if {@code file} is null
+   */
+  public static boolean isSegmentFile(String journalName, String fileName) {
+    checkNotNull(journalName, "journalName cannot be null");
+    checkNotNull(fileName, "fileName cannot be null");
+
+    int partSeparator = fileName.lastIndexOf(PART_SEPARATOR);
+    int extensionSeparator = fileName.lastIndexOf(EXTENSION_SEPARATOR);
+
+    if (extensionSeparator == -1
+        || partSeparator == -1
+        || extensionSeparator < partSeparator
+        || !fileName.endsWith(EXTENSION)) {
+      return false;
+    }
+
+    for (int i = partSeparator + 1; i < extensionSeparator; i++) {
       if (!Character.isDigit(fileName.charAt(i))) {
         return false;
       }
     }
 
-    if (fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) == -1)
-      return false;
-
-    for (int i = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) + 1; i < fileName.lastIndexOf(PART_SEPARATOR); i++) {
-      if (!Character.isDigit(fileName.charAt(i))) {
-        return false;
-      }
-    }
-
-    return fileName.substring(0, fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1)).equals(name);
+    return fileName.substring(0, partSeparator).equals(journalName);
   }
 
   /**
    * Creates a segment file for the given directory, log name, segment ID, and segment version.
    */
-  static File createSegmentFile(String name, File directory, long id, long version) {
-    return new File(directory, String.format("%s-%d-%d.log", checkNotNull(name, "name cannot be null"), id, version));
+  static File createSegmentFile(String name, File directory, long id) {
+    return new File(directory, String.format("%s-%d.log", checkNotNull(name, "name cannot be null"), id));
   }
 
   /**
@@ -87,13 +96,6 @@ public final class JournalSegmentFile {
    * Returns the segment identifier.
    */
   public long id() {
-    return Long.valueOf(file.getName().substring(file.getName().lastIndexOf(PART_SEPARATOR, file.getName().lastIndexOf(PART_SEPARATOR) - 1) + 1, file.getName().lastIndexOf(PART_SEPARATOR)));
-  }
-
-  /**
-   * Returns the segment version.
-   */
-  public long version() {
     return Long.valueOf(file.getName().substring(file.getName().lastIndexOf(PART_SEPARATOR) + 1, file.getName().lastIndexOf(EXTENSION_SEPARATOR)));
   }
 

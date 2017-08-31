@@ -370,7 +370,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * Creates a new segment.
    */
   private JournalSegment<E> createDiskSegment(JournalSegmentDescriptor descriptor) {
-    File segmentFile = JournalSegmentFile.createSegmentFile(name, directory, descriptor.id(), descriptor.version());
+    File segmentFile = JournalSegmentFile.createSegmentFile(name, directory, descriptor.id());
     Buffer buffer = MappedBuffer.allocate(segmentFile, Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
     descriptor.copyTo(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
@@ -382,7 +382,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * Creates a new segment.
    */
   private JournalSegment<E> createMemorySegment(JournalSegmentDescriptor descriptor) {
-    File segmentFile = JournalSegmentFile.createSegmentFile(name, directory, descriptor.id(), descriptor.version());
+    File segmentFile = JournalSegmentFile.createSegmentFile(name, directory, descriptor.id());
     Buffer buffer = HeapBuffer.allocate(Math.min(DEFAULT_BUFFER_SIZE, descriptor.maxSegmentSize()), Integer.MAX_VALUE);
     descriptor.copyTo(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(segmentFile), descriptor);
@@ -393,12 +393,12 @@ public class SegmentedJournal<E> implements Journal<E> {
   /**
    * Loads a segment.
    */
-  private JournalSegment<E> loadSegment(long segmentId, long segmentVersion) {
+  private JournalSegment<E> loadSegment(long segmentId) {
     switch (storageLevel) {
       case MEMORY:
-        return loadMemorySegment(segmentId, segmentVersion);
+        return loadMemorySegment(segmentId);
       case DISK:
-        return loadDiskSegment(segmentId, segmentVersion);
+        return loadDiskSegment(segmentId);
       default:
         throw new AssertionError();
     }
@@ -407,8 +407,8 @@ public class SegmentedJournal<E> implements Journal<E> {
   /**
    * Loads a segment.
    */
-  private JournalSegment<E> loadDiskSegment(long segmentId, long segmentVersion) {
-    File file = JournalSegmentFile.createSegmentFile(name, directory, segmentId, segmentVersion);
+  private JournalSegment<E> loadDiskSegment(long segmentId) {
+    File file = JournalSegmentFile.createSegmentFile(name, directory, segmentId);
     Buffer buffer = MappedBuffer.allocate(file, Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
     JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(file), descriptor);
@@ -419,8 +419,8 @@ public class SegmentedJournal<E> implements Journal<E> {
   /**
    * Loads a segment.
    */
-  private JournalSegment<E> loadMemorySegment(long segmentId, long segmentVersion) {
-    File file = JournalSegmentFile.createSegmentFile(name, directory, segmentId, segmentVersion);
+  private JournalSegment<E> loadMemorySegment(long segmentId) {
+    File file = JournalSegmentFile.createSegmentFile(name, directory, segmentId);
     Buffer buffer = HeapBuffer.allocate(Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
     JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(file), descriptor);
@@ -448,7 +448,7 @@ public class SegmentedJournal<E> implements Journal<E> {
         JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
 
         // Load the segment.
-        JournalSegment<E> segment = loadSegment(descriptor.id(), descriptor.version());
+        JournalSegment<E> segment = loadSegment(descriptor.id());
 
         // If a segment with an equal or lower index has already been loaded, ensure this segment is not superseded
         // by the earlier segment. This can occur due to segments being combined during log compaction.
