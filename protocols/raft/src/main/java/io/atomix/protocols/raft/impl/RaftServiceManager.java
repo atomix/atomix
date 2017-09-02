@@ -39,7 +39,6 @@ import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.journal.Indexed;
-import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -126,62 +125,54 @@ public class RaftServiceManager implements AutoCloseable {
    * @return A completable future to be completed once the commit has been applied.
    */
   public <T> CompletableFuture<T> apply(long index) {
-    ComposableFuture<T> future = new ComposableFuture<>();
-    threadContext.execute(() -> {
-      // Apply entries prior to this entry.
-      while (reader.hasNext()) {
-        long nextIndex = reader.getNextIndex();
+    // Apply entries prior to this entry.
+    while (reader.hasNext()) {
+      long nextIndex = reader.getNextIndex();
 
-        // Validate that the next entry can be applied.
-        long lastApplied = raft.getLastApplied();
-        if (nextIndex > lastApplied + 1 && nextIndex != reader.getFirstIndex()) {
-          logger.error("Cannot apply non-sequential index {} unless it's the first entry in the log: {}", nextIndex, reader.getFirstIndex());
-          future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply non-sequential index unless it's the first entry in the log"));
-          return;
-        } else if (nextIndex < lastApplied) {
-          logger.error("Cannot apply duplicate entry at index {}", nextIndex);
-          future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply duplicate entry at index " + nextIndex));
-          return;
-        }
+      // Validate that the next entry can be applied.
+      long lastApplied = raft.getLastApplied();
+      if (nextIndex > lastApplied + 1 && nextIndex != reader.getFirstIndex()) {
+        logger.error("Cannot apply non-sequential index {} unless it's the first entry in the log: {}", nextIndex, reader.getFirstIndex());
+        return Futures.exceptionalFuture(new IndexOutOfBoundsException("Cannot apply non-sequential index unless it's the first entry in the log"));
+      } else if (nextIndex < lastApplied) {
+        logger.error("Cannot apply duplicate entry at index {}", nextIndex);
+        return Futures.exceptionalFuture(new IndexOutOfBoundsException("Cannot apply duplicate entry at index " + nextIndex));
+      }
 
-        // If the next index is less than or equal to the given index, read and apply the entry.
-        if (nextIndex < index) {
-          Indexed<RaftLogEntry> entry = reader.next();
-          try {
-            apply(entry);
-          } catch (Exception e) {
-            logger.error("Failed to apply {}: {}", entry, e);
-          } finally {
-            raft.setLastApplied(nextIndex);
-          }
-        }
-        // If the next index is equal to the applied index, apply it and return the result.
-        else if (nextIndex == index) {
-          // Read the entry from the log. If the entry is non-null then apply it, otherwise
-          // simply update the last applied index and return a null result.
-          Indexed<RaftLogEntry> entry = reader.next();
-          try {
-            if (entry.index() != index) {
-              throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
-            }
-            this.<T>apply(entry).whenComplete(future);
-            return;
-          } catch (Exception e) {
-            logger.error("Failed to apply {}: {}", entry, e);
-          } finally {
-            raft.setLastApplied(nextIndex);
-          }
-        }
-        // If the applied index has been passed, return a null result.
-        else {
+      // If the next index is less than or equal to the given index, read and apply the entry.
+      if (nextIndex < index) {
+        Indexed<RaftLogEntry> entry = reader.next();
+        try {
+          apply(entry);
+        } catch (Exception e) {
+          logger.error("Failed to apply {}: {}", entry, e);
+        } finally {
           raft.setLastApplied(nextIndex);
-          future.complete(null);
-          return;
         }
       }
-      future.completeExceptionally(new IndexOutOfBoundsException("Cannot commit index " + index));
-    });
-    return future;
+      // If the next index is equal to the applied index, apply it and return the result.
+      else if (nextIndex == index) {
+        // Read the entry from the log. If the entry is non-null then apply it, otherwise
+        // simply update the last applied index and return a null result.
+        Indexed<RaftLogEntry> entry = reader.next();
+        try {
+          if (entry.index() != index) {
+            throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
+          }
+          return apply(entry);
+        } catch (Exception e) {
+          logger.error("Failed to apply {}: {}", entry, e);
+        } finally {
+          raft.setLastApplied(nextIndex);
+        }
+      }
+      // If the applied index has been passed, return a null result.
+      else {
+        raft.setLastApplied(nextIndex);
+        return Futures.completedFuture(null);
+      }
+    }
+    return Futures.exceptionalFuture(new IndexOutOfBoundsException("Cannot commit index " + index));
   }
 
   /**
