@@ -38,6 +38,7 @@ import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.storage.buffer.Bytes;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
@@ -264,6 +265,9 @@ public class DefaultServiceContext implements ServiceContext {
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() < index) {
       log.debug("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
+        reader.skip(Bytes.LONG); // Skip the service ID
+        ServiceType serviceType = ServiceType.from(reader.readString());
+        String serviceName = reader.readString();
         int sessionCount = reader.readInt();
         sessions.clear();
         for (int i = 0; i < sessionCount; i++) {
@@ -283,6 +287,8 @@ public class DefaultServiceContext implements ServiceContext {
               server,
               threadPool);
           session.setTimestamp(sessionTimestamp);
+          session.setRequestSequence(reader.readLong());
+          session.setCommandSequence(reader.readLong());
           session.setLastApplied(snapshot.index());
           sessions.add(session);
         }
@@ -321,6 +327,9 @@ public class DefaultServiceContext implements ServiceContext {
 
       // Serialize sessions to the in-memory snapshot and request a snapshot from the state machine.
       try (SnapshotWriter writer = snapshot.openWriter()) {
+        writer.writeLong(serviceId.id());
+        writer.writeString(serviceType.id());
+        writer.writeString(serviceName);
         writer.writeInt(sessions.getSessions().size());
         for (RaftSessionContext session : sessions.getSessions()) {
           writer.writeLong(session.sessionId().id());
@@ -328,6 +337,8 @@ public class DefaultServiceContext implements ServiceContext {
           writer.writeString(session.readConsistency().name());
           writer.writeLong(session.timeout());
           writer.writeLong(session.getTimestamp());
+          writer.writeLong(session.getRequestSequence());
+          writer.writeLong(session.getCommandSequence());
         }
         service.snapshot(writer);
       } catch (Exception e) {
