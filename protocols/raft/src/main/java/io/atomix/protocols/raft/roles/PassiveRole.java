@@ -166,6 +166,12 @@ public class PassiveRole extends ReserveRole {
           log.debug("Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", request, request.prevLogTerm(), lastEntry.entry().term());
           return failAppend(request.prevLogIndex() - 1, future);
         }
+      } else {
+        // If the previous log index is set and the last entry is null, fail the append.
+        if (request.prevLogIndex() > 0) {
+          log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index (0)", request, request.prevLogIndex());
+          return failAppend(0, future);
+        }
       }
     }
     return true;
