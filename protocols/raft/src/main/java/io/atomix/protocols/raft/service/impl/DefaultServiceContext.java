@@ -38,6 +38,7 @@ import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.storage.buffer.Bytes;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
@@ -264,6 +265,9 @@ public class DefaultServiceContext implements ServiceContext {
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() < index) {
       log.debug("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
+        reader.skip(Bytes.LONG); // Skip the service ID
+        ServiceType serviceType = ServiceType.from(reader.readString());
+        String serviceName = reader.readString();
         int sessionCount = reader.readInt();
         sessions.clear();
         for (int i = 0; i < sessionCount; i++) {
@@ -283,6 +287,10 @@ public class DefaultServiceContext implements ServiceContext {
               server,
               threadPool);
           session.setTimestamp(sessionTimestamp);
+          session.setRequestSequence(reader.readLong());
+          session.setCommandSequence(reader.readLong());
+          session.setEventIndex(reader.readLong());
+          session.setLastCompleted(reader.readLong());
           session.setLastApplied(snapshot.index());
           sessions.add(session);
         }
@@ -321,6 +329,9 @@ public class DefaultServiceContext implements ServiceContext {
 
       // Serialize sessions to the in-memory snapshot and request a snapshot from the state machine.
       try (SnapshotWriter writer = snapshot.openWriter()) {
+        writer.writeLong(serviceId.id());
+        writer.writeString(serviceType.id());
+        writer.writeString(serviceName);
         writer.writeInt(sessions.getSessions().size());
         for (RaftSessionContext session : sessions.getSessions()) {
           writer.writeLong(session.sessionId().id());
@@ -328,6 +339,10 @@ public class DefaultServiceContext implements ServiceContext {
           writer.writeString(session.readConsistency().name());
           writer.writeLong(session.timeout());
           writer.writeLong(session.getTimestamp());
+          writer.writeLong(session.getRequestSequence());
+          writer.writeLong(session.getCommandSequence());
+          writer.writeLong(session.getEventIndex());
+          writer.writeLong(session.getLastCompleted());
         }
         service.snapshot(writer);
       } catch (Exception e) {
@@ -649,6 +664,7 @@ public class DefaultServiceContext implements ServiceContext {
   private void executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
+      log.warn("Inactive session: " + session.sessionId());
       future.completeExceptionally(new RaftException.UnknownSession("Unknown session: " + session.sessionId()));
       return;
     }
@@ -663,7 +679,9 @@ public class DefaultServiceContext implements ServiceContext {
   private void sequenceQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // If the query's sequence number is greater than the session's current sequence number, queue the request for
     // handling once the state machine is caught up.
-    if (sequence > session.getCommandSequence()) {
+    long commandSequence = session.getCommandSequence();
+    if (sequence > commandSequence) {
+      log.trace("Registering query with sequence number " + sequence + " > " + commandSequence);
       session.registerSequenceQuery(sequence, () -> indexQuery(index, timestamp, session, operation, future));
     } else {
       indexQuery(index, timestamp, session, operation, future);
@@ -677,6 +695,7 @@ public class DefaultServiceContext implements ServiceContext {
     // If the query index is greater than the session's last applied index, queue the request for handling once the
     // state machine is caught up.
     if (index > currentIndex) {
+      log.trace("Registering query with index " + index + " > " + currentIndex);
       session.registerIndexQuery(index, () -> applyQuery(timestamp, session, operation, future));
     } else {
       applyQuery(timestamp, session, operation, future);
@@ -689,6 +708,7 @@ public class DefaultServiceContext implements ServiceContext {
   private void applyQuery(long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
+      log.warn("Inactive session: " + session.sessionId());
       future.completeExceptionally(new RaftException.UnknownSession("Unknown session: " + session.sessionId()));
       return;
     }

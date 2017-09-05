@@ -127,22 +127,22 @@ public class PassiveRole extends ReserveRole {
     RaftLogWriter writer = raft.getLogWriter();
     RaftLogReader reader = raft.getLogReader();
 
-    // Get the last entry written to the log.
-    Indexed<RaftLogEntry> lastEntry = writer.getLastEntry();
+    // If the previous term is set, validate that it matches the local log.
+    // We check the previous log term since that indicates whether any entry is present in the leader's
+    // log at the previous log index. It's possible that the leader can send a non-zero previous log index
+    // with a zero term in the event the leader has compacted its logs and is sending the first entry.
+    if (request.prevLogTerm() != 0) {
+      // Get the last entry written to the log.
+      Indexed<RaftLogEntry> lastEntry = writer.getLastEntry();
 
-    // If the local log is non-empty...
-    if (lastEntry != null) {
-      // If the previous log index is greater than the last entry index, fail the attempt.
-      if (request.prevLogIndex() > lastEntry.index()) {
-        log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index ({})", request, request.prevLogIndex(), lastEntry.index());
-        return failAppend(lastEntry.index(), future);
-      }
+      // If the local log is non-empty...
+      if (lastEntry != null) {
+        // If the previous log index is greater than the last entry index, fail the attempt.
+        if (request.prevLogIndex() > lastEntry.index()) {
+          log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index ({})", request, request.prevLogIndex(), lastEntry.index());
+          return failAppend(lastEntry.index(), future);
+        }
 
-      // If the previous term is set, validate that it matches the local log.
-      // We check the previous log term since that indicates whether any entry is present in the leader's
-      // log at the previous log index. It's possible that the leader can send a non-zero previous log index
-      // with a zero term in the event the leader has compacted its logs and is sending the first entry.
-      if (request.prevLogTerm() != 0) {
         // If the previous log index is less than the last written entry index, look up the entry.
         if (request.prevLogIndex() < lastEntry.index()) {
           // Reset the reader to the previous log index.
@@ -166,12 +166,12 @@ public class PassiveRole extends ReserveRole {
           log.debug("Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", request, request.prevLogTerm(), lastEntry.entry().term());
           return failAppend(request.prevLogIndex() - 1, future);
         }
-      }
-    } else {
-      // If the previous log index is set and the last entry is null, fail the append.
-      if (request.prevLogIndex() > 0) {
-        log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index (0)", request, request.prevLogIndex());
-        return failAppend(0, future);
+      } else {
+        // If the previous log index is set and the last entry is null, fail the append.
+        if (request.prevLogIndex() > 0) {
+          log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index (0)", request, request.prevLogIndex());
+          return failAppend(0, future);
+        }
       }
     }
     return true;

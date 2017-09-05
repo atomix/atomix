@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import com.google.common.collect.Lists;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.event.RaftEvent;
@@ -24,7 +23,6 @@ import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.roles.PendingCommand;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
 import io.atomix.protocols.raft.session.RaftSession;
@@ -38,7 +36,6 @@ import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,7 +74,6 @@ public class RaftSessionContext implements RaftSession {
   private volatile long completeIndex;
   private final Map<Long, List<Runnable>> sequenceQueries = new HashMap<>();
   private final Map<Long, List<Runnable>> indexQueries = new HashMap<>();
-  private final Map<Long, PendingCommand> pendingCommands = new HashMap<>();
   private final Map<Long, OperationResult> results = new HashMap<>();
   private final Queue<EventHolder> events = new LinkedList<>();
   private volatile EventHolder currentEventList;
@@ -340,47 +336,6 @@ public class RaftSessionContext implements RaftSession {
   }
 
   /**
-   * Registers a pending command.
-   *
-   * @param sequence the pending command sequence number
-   * @param pendingCommand the pending command to register
-   */
-  public void registerCommand(long sequence, PendingCommand pendingCommand) {
-    pendingCommands.put(sequence, pendingCommand);
-  }
-
-  /**
-   * Gets a pending command.
-   *
-   * @param sequence the pending command sequence number
-   * @return the pending command or {@code null} if no command is pending for this sequence number
-   */
-  public PendingCommand getCommand(long sequence) {
-    return pendingCommands.get(sequence);
-  }
-
-  /**
-   * Removes and returns a pending command.
-   *
-   * @param sequence the pending command sequence number
-   * @return the pending command or {@code null} if no command is pending for this sequence number
-   */
-  public PendingCommand removeCommand(long sequence) {
-    return pendingCommands.remove(sequence);
-  }
-
-  /**
-   * Clears and returns all pending commands.
-   *
-   * @return a collection of pending commands
-   */
-  public Collection<PendingCommand> clearCommands() {
-    Collection<PendingCommand> commands = Lists.newArrayList(pendingCommands.values());
-    pendingCommands.clear();
-    return commands;
-  }
-
-  /**
    * Registers a session result.
    * <p>
    * Results are stored in memory on all servers in order to provide linearizable semantics. When a command
@@ -429,6 +384,15 @@ public class RaftSessionContext implements RaftSession {
    */
   public long getEventIndex() {
     return eventIndex;
+  }
+
+  /**
+   * Sets the session event index.
+   *
+   * @param eventIndex the session event index
+   */
+  public void setEventIndex(long eventIndex) {
+    this.eventIndex = eventIndex;
   }
 
   @Override
@@ -480,6 +444,15 @@ public class RaftSessionContext implements RaftSession {
     }
     // If no events are queued, return the highest index applied to the session.
     return lastApplied;
+  }
+
+  /**
+   * Sets the last completed event index for the session.
+   *
+   * @param lastCompleted the last completed index
+   */
+  public void setLastCompleted(long lastCompleted) {
+    this.completeIndex = lastCompleted;
   }
 
   /**
