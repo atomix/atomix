@@ -81,7 +81,6 @@ public class RaftServiceManager implements AutoCloseable {
   private final Map<String, DefaultServiceContext> services = new HashMap<>();
   private long lastPrepared;
   private long lastCompacted;
-  private long compactTime;
 
   public RaftServiceManager(RaftContext raft, ScheduledExecutorService threadPool, ThreadContext threadContext) {
     this.raft = checkNotNull(raft, "state cannot be null");
@@ -542,18 +541,8 @@ public class RaftServiceManager implements AutoCloseable {
    * Schedules a log compaction.
    */
   private void scheduleCompaction(long lastApplied) {
-    // Wait half the time since the last compaction before compacting the logs to ensure followers can keep
-    // up with the leader without replicating snapshots.
-    long compactTime = System.currentTimeMillis();
-    long lastCompactTime = this.compactTime;
-    this.compactTime = compactTime;
-    if (lastCompactTime > 0) {
-      Duration duration = Duration.ofMillis((compactTime - lastCompactTime) / 2);
-      logger.trace("Scheduling compaction for {}", duration);
-      threadContext.schedule(duration, () -> compactLogs(lastApplied));
-    } else {
-      scheduleSnapshots();
-    }
+    logger.trace("Scheduling compaction in {}", COMPACT_INTERVAL);
+    threadContext.schedule(COMPACT_INTERVAL, () -> compactLogs(lastApplied));
   }
 
   /**
