@@ -386,6 +386,15 @@ public class RaftSessionContext implements RaftSession {
     return eventIndex;
   }
 
+  /**
+   * Sets the session event index.
+   *
+   * @param eventIndex the session event index
+   */
+  public void setEventIndex(long eventIndex) {
+    this.eventIndex = eventIndex;
+  }
+
   @Override
   public void publish(RaftEvent event) {
     // Store volatile state in a local variable.
@@ -435,6 +444,15 @@ public class RaftSessionContext implements RaftSession {
     }
     // If no events are queued, return the highest index applied to the session.
     return lastApplied;
+  }
+
+  /**
+   * Sets the last completed event index for the session.
+   *
+   * @param lastCompleted the last completed index
+   */
+  public void setLastCompleted(long lastCompleted) {
+    this.completeIndex = lastCompleted;
   }
 
   /**

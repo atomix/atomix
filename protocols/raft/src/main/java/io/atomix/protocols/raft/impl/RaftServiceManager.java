@@ -253,6 +253,8 @@ public class RaftServiceManager implements AutoCloseable {
             session.setTimestamp(sessionTimestamp);
             session.setRequestSequence(reader.readLong());
             session.setCommandSequence(reader.readLong());
+            session.setEventIndex(reader.readLong());
+            session.setLastCompleted(reader.readLong());
             session.setLastApplied(snapshot.index());
             sessionManager.registerSession(session);
           }

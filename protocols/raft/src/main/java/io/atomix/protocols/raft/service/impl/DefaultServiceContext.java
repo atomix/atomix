@@ -289,6 +289,8 @@ public class DefaultServiceContext implements ServiceContext {
           session.setTimestamp(sessionTimestamp);
           session.setRequestSequence(reader.readLong());
           session.setCommandSequence(reader.readLong());
+          session.setEventIndex(reader.readLong());
+          session.setLastCompleted(reader.readLong());
           session.setLastApplied(snapshot.index());
           sessions.add(session);
         }
@@ -339,6 +341,8 @@ public class DefaultServiceContext implements ServiceContext {
           writer.writeLong(session.getTimestamp());
           writer.writeLong(session.getRequestSequence());
           writer.writeLong(session.getCommandSequence());
+          writer.writeLong(session.getEventIndex());
+          writer.writeLong(session.getLastCompleted());
         }
         service.snapshot(writer);
       } catch (Exception e) {
