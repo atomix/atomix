@@ -660,6 +660,7 @@ public class DefaultServiceContext implements ServiceContext {
   private void executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
+      log.warn("Inactive session: " + session.sessionId());
       future.completeExceptionally(new RaftException.UnknownSession("Unknown session: " + session.sessionId()));
       return;
     }
@@ -674,7 +675,9 @@ public class DefaultServiceContext implements ServiceContext {
   private void sequenceQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // If the query's sequence number is greater than the session's current sequence number, queue the request for
     // handling once the state machine is caught up.
-    if (sequence > session.getCommandSequence()) {
+    long commandSequence = session.getCommandSequence();
+    if (sequence > commandSequence) {
+      log.trace("Registering query with sequence number " + sequence + " > " + commandSequence);
       session.registerSequenceQuery(sequence, () -> indexQuery(index, timestamp, session, operation, future));
     } else {
       indexQuery(index, timestamp, session, operation, future);
@@ -688,6 +691,7 @@ public class DefaultServiceContext implements ServiceContext {
     // If the query index is greater than the session's last applied index, queue the request for handling once the
     // state machine is caught up.
     if (index > currentIndex) {
+      log.trace("Registering query with index " + index + " > " + currentIndex);
       session.registerIndexQuery(index, () -> applyQuery(timestamp, session, operation, future));
     } else {
       applyQuery(timestamp, session, operation, future);
@@ -700,6 +704,7 @@ public class DefaultServiceContext implements ServiceContext {
   private void applyQuery(long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
+      log.warn("Inactive session: " + session.sessionId());
       future.completeExceptionally(new RaftException.UnknownSession("Unknown session: " + session.sessionId()));
       return;
     }
