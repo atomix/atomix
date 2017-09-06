@@ -189,12 +189,6 @@ public class DefaultServiceContext implements ServiceContext {
 
     // Set the current operation type to COMMAND to allow events to be sent.
     setOperation(OperationType.COMMAND);
-
-    // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
-    maybeInstallSnapshot(index);
-
-    // Expire sessions that have timed out.
-    expireSessions(currentTimestamp);
   }
 
   /**
@@ -388,8 +382,14 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
 
-      // Update the state machine index/timestamp and expire sessions if necessary.
+      // Update the state machine index/timestamp.
       tick(index, timestamp);
+
+      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+      maybeInstallSnapshot(index);
+
+      // Expire sessions that have timed out.
+      expireSessions(currentTimestamp);
 
       // Add the session to the sessions list.
       sessions.add(session);
@@ -423,6 +423,13 @@ public class DefaultServiceContext implements ServiceContext {
   public CompletableFuture<Boolean> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
+
+      // Update the state machine index/timestamp.
+      tick(index, timestamp);
+
+      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+      maybeInstallSnapshot(index);
+
       // The session may have been closed by the time this update was executed on the service thread.
       if (session.getState() != RaftSession.State.CLOSED) {
         // Update the session's timestamp to prevent it from being expired.
@@ -468,8 +475,11 @@ public class DefaultServiceContext implements ServiceContext {
   public CompletableFuture<Void> completeKeepAlive(long index, long timestamp) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
-      // Update the state machine index/timestamp and expire sessions if necessary.
+      // Update the state machine index/timestamp.
       tick(index, timestamp);
+
+      // Expire sessions that have timed out.
+      expireSessions(currentTimestamp);
 
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
@@ -517,8 +527,14 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
 
-      // Update the state machine index/timestamp and expire sessions if necessary.
+      // Update the state machine index/timestamp.
       tick(index, timestamp);
+
+      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+      maybeInstallSnapshot(index);
+
+      // Expire sessions that have timed out.
+      expireSessions(currentTimestamp);
 
       // Remove the session from the sessions list.
       sessions.remove(session);
@@ -566,8 +582,11 @@ public class DefaultServiceContext implements ServiceContext {
     // Update the session's timestamp to prevent it from being expired.
     session.setTimestamp(timestamp);
 
-    // Update the state machine index/timestamp and expire sessions if necessary.
+    // Update the state machine index/timestamp.
     tick(index, timestamp);
+
+    // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+    maybeInstallSnapshot(index);
 
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
