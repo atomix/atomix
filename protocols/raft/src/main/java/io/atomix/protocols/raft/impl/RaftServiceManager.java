@@ -54,6 +54,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -69,7 +70,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
  */
 public class RaftServiceManager implements AutoCloseable {
-  private static final Duration COMPACT_INTERVAL = Duration.ofSeconds(10);
+  private static final Duration SNAPSHOT_INTERVAL = Duration.ofSeconds(10);
+  private static final Duration MIN_COMPACT_INTERVAL = Duration.ofSeconds(10);
 
   private final Logger logger;
   private final RaftContext raft;
@@ -79,6 +81,7 @@ public class RaftServiceManager implements AutoCloseable {
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
   private final Map<String, DefaultServiceContext> services = new HashMap<>();
+  private final Random random = new Random();
   private long lastPrepared;
   private long lastCompacted;
 
@@ -534,15 +537,17 @@ public class RaftServiceManager implements AutoCloseable {
    * Schedules a snapshot iteration.
    */
   private void scheduleSnapshots() {
-    threadContext.schedule(COMPACT_INTERVAL, this::snapshotServices);
+    threadContext.schedule(SNAPSHOT_INTERVAL, this::snapshotServices);
   }
 
   /**
    * Schedules a log compaction.
    */
   private void scheduleCompaction(long lastApplied) {
-    logger.trace("Scheduling compaction in {}", COMPACT_INTERVAL);
-    threadContext.schedule(COMPACT_INTERVAL, () -> compactLogs(lastApplied));
+    // Schedule compaction after a randomized delay to discourage snapshots on multiple nodes at the same time.
+    Duration delay = MIN_COMPACT_INTERVAL.plusMillis(random.nextInt((int) MIN_COMPACT_INTERVAL.toMillis()));
+    logger.trace("Scheduling compaction in {}", delay);
+    threadContext.schedule(delay, () -> compactLogs(lastApplied));
   }
 
   /**
