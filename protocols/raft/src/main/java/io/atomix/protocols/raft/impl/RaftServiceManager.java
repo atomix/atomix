@@ -42,6 +42,7 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.storage.journal.Indexed;
+import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -179,6 +180,8 @@ public class RaftServiceManager implements AutoCloseable {
         return Futures.completedFuture(null);
       }
     }
+
+    logger.error("Cannot commit index " + index);
     return Futures.exceptionalFuture(new IndexOutOfBoundsException("Cannot commit index " + index));
   }
 
@@ -541,6 +544,17 @@ public class RaftServiceManager implements AutoCloseable {
   }
 
   /**
+   * Schedules completion of a snapshot after a randomized delay to reduce the chance the snapshot will need to be
+   * replicated to followers.
+   */
+  private CompletableFuture<Void> scheduleCompletion(DefaultServiceContext serviceContext, long snapshotIndex) {
+    ComposableFuture<Void> future = new ComposableFuture<>();
+    Duration delay = SNAPSHOT_INTERVAL.plusMillis(random.nextInt((int) SNAPSHOT_INTERVAL.toMillis()));
+    threadContext.schedule(delay, () -> serviceContext.completeSnapshot(snapshotIndex).whenComplete(future));
+    return future;
+  }
+
+  /**
    * Schedules a log compaction.
    */
   private void scheduleCompaction(long lastApplied) {
@@ -571,7 +585,7 @@ public class RaftServiceManager implements AutoCloseable {
       List<CompletableFuture<Void>> futures = services.stream()
           .map(context -> {
             long snapshotIndex = context.takeSnapshot().join();
-            return context.completeSnapshot(snapshotIndex);
+            return scheduleCompletion(context, snapshotIndex);
           })
           .collect(Collectors.toList());
 
