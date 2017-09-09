@@ -310,10 +310,12 @@ final class LeaderAppender extends AbstractAppender {
     // If the active members list is empty (a configuration change occurred between an append request/response)
     // ensure all commit futures are completed and cleared.
     if (members.isEmpty()) {
-      long previousCommitIndex = raft.getCommitIndex();
       long commitIndex = raft.getLogWriter().getLastIndex();
-      raft.setCommitIndex(commitIndex);
-      completeCommits(previousCommitIndex, commitIndex);
+      long previousCommitIndex = raft.setCommitIndex(commitIndex);
+      if (commitIndex > previousCommitIndex) {
+        log.trace("Committed entries up to {}", commitIndex);
+        completeCommits(previousCommitIndex, commitIndex);
+      }
       return;
     }
 
@@ -325,6 +327,7 @@ final class LeaderAppender extends AbstractAppender {
     // the index of the leader's no-op entry. Update the commit index and trigger commit futures.
     long previousCommitIndex = raft.getCommitIndex();
     if (commitIndex > 0 && commitIndex > previousCommitIndex && (leaderIndex > 0 && commitIndex >= leaderIndex)) {
+      log.trace("Committed entries up to {}", commitIndex);
       raft.setCommitIndex(commitIndex);
       completeCommits(previousCommitIndex, commitIndex);
     }
@@ -502,4 +505,10 @@ final class LeaderAppender extends AbstractAppender {
     super.handleInstallResponseFailure(member, request, error);
   }
 
+  @Override
+  public void close() {
+    super.close();
+    appendFutures.values().forEach(future ->
+        future.completeExceptionally(new IllegalStateException("Inactive state")));
+  }
 }

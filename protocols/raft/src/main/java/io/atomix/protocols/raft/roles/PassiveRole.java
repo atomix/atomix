@@ -268,15 +268,11 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Update the context commit and global indices.
-    long previousCommitIndex = raft.getCommitIndex();
-    raft.setCommitIndex(commitIndex);
-
-    if (raft.getCommitIndex() > previousCommitIndex) {
+    long previousCommitIndex = raft.setCommitIndex(commitIndex);
+    if (previousCommitIndex < commitIndex) {
       log.trace("Committed entries up to index {}", commitIndex);
+      raft.getStateMachine().applyAll(commitIndex);
     }
-
-    // Apply commits to the state machine in batch.
-    raft.getStateMachine().applyAll(raft.getCommitIndex());
 
     // Return a successful append response.
     succeedAppend(lastLogIndex, future);
