@@ -450,7 +450,7 @@ final class LeaderAppender extends AbstractAppender {
     // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
     // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
     // that a partition occurred and transition back to the FOLLOWER state.
-    if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > raft.getElectionTimeout().toMillis() * 2) {
+    if (member.getFailureCount() >= 3 && System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > raft.getElectionTimeout().toMillis() * 2) {
       log.warn("Suspected network partition. Stepping down");
       raft.setLeader(null);
       raft.transition(RaftServer.Role.FOLLOWER);
