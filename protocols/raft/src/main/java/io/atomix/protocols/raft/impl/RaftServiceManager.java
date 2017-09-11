@@ -197,23 +197,25 @@ public class RaftServiceManager implements AutoCloseable {
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> apply(Indexed<? extends RaftLogEntry> entry) {
     logger.trace("Applying {}", entry);
-    prepareIndex(entry.index());
     if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());
-    } else if (entry.type() == CommandEntry.class) {
-      return (CompletableFuture<T>) applyCommand(entry.cast());
-    } else if (entry.type() == OpenSessionEntry.class) {
-      return (CompletableFuture<T>) applyOpenSession(entry.cast());
-    } else if (entry.type() == KeepAliveEntry.class) {
-      return (CompletableFuture<T>) applyKeepAlive(entry.cast());
-    } else if (entry.type() == CloseSessionEntry.class) {
-      return (CompletableFuture<T>) applyCloseSession(entry.cast());
-    } else if (entry.type() == MetadataEntry.class) {
-      return (CompletableFuture<T>) applyMetadata(entry.cast());
-    } else if (entry.type() == InitializeEntry.class) {
-      return (CompletableFuture<T>) applyInitialize(entry.cast());
-    } else if (entry.type() == ConfigurationEntry.class) {
-      return (CompletableFuture<T>) applyConfiguration(entry.cast());
+    } else {
+      prepareIndex(entry.index());
+      if (entry.type() == CommandEntry.class) {
+        return (CompletableFuture<T>) applyCommand(entry.cast());
+      } else if (entry.type() == OpenSessionEntry.class) {
+        return (CompletableFuture<T>) applyOpenSession(entry.cast());
+      } else if (entry.type() == KeepAliveEntry.class) {
+        return (CompletableFuture<T>) applyKeepAlive(entry.cast());
+      } else if (entry.type() == CloseSessionEntry.class) {
+        return (CompletableFuture<T>) applyCloseSession(entry.cast());
+      } else if (entry.type() == MetadataEntry.class) {
+        return (CompletableFuture<T>) applyMetadata(entry.cast());
+      } else if (entry.type() == InitializeEntry.class) {
+        return (CompletableFuture<T>) applyInitialize(entry.cast());
+      } else if (entry.type() == ConfigurationEntry.class) {
+        return (CompletableFuture<T>) applyConfiguration(entry.cast());
+      }
     }
     return Futures.exceptionalFuture(new RaftException.ProtocolException("Unknown entry type"));
   }
