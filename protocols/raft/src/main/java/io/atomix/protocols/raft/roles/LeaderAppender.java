@@ -255,7 +255,7 @@ final class LeaderAppender extends AbstractAppender {
       TimestampedFuture<Long> future = iterator.next();
 
       // If the future is timestamped prior to the last heartbeat to a majority of the cluster, complete the future.
-      if (future.timestamp <= heartbeatTime) {
+      if (future.timestamp < heartbeatTime) {
         future.complete(null);
         iterator.remove();
       }
