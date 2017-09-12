@@ -58,6 +58,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client session manager.
  */
 public class RaftProxyManager {
+  private static final double TIMEOUT_FACTOR = .5;
+  private static final long MIN_TIMEOUT_DELTA = 2500;
+
   private final Logger log;
   private final String clientId;
   private final MemberId memberId;
@@ -354,7 +357,7 @@ public class RaftProxyManager {
       if (open.get()) {
         keepAliveSessions(lastKeepAliveTime, timeout);
       }
-    }, Math.max(Math.max((long)(timeout * .75) - delta, timeout - 2500 - delta), 0), TimeUnit.MILLISECONDS));
+    }, Math.max(Math.max((long)(timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0), TimeUnit.MILLISECONDS));
   }
 
   /**
