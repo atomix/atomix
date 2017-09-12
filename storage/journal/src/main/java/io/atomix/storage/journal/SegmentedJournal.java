@@ -53,7 +53,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     return new Builder<>();
   }
 
-  private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
+  private static final int DEFAULT_BUFFER_SIZE = 1024 * 64;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final String name;

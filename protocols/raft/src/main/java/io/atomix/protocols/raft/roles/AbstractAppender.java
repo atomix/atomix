@@ -187,7 +187,7 @@ abstract class AbstractAppender implements AutoCloseable {
       if (open) {
         if (error == null) {
           log.trace("Received {} from {}", response, member.getMember().memberId());
-          handleAppendResponse(member, request, response);
+          handleAppendResponse(member, request, response, timestamp);
         } else {
           handleAppendResponseFailure(member, request, error);
         }
@@ -202,14 +202,6 @@ abstract class AbstractAppender implements AutoCloseable {
   /**
    * Handles an append failure.
    */
-  protected void handleAppendRequestFailure(RaftMemberContext member, AppendRequest request, Throwable error) {
-    // Log the failed attempt to contact the member.
-    failAttempt(member, request, error);
-  }
-
-  /**
-   * Handles an append failure.
-   */
   protected void handleAppendResponseFailure(RaftMemberContext member, AppendRequest request, Throwable error) {
     // Log the failed attempt to contact the member.
     failAttempt(member, request, error);
@@ -218,7 +210,7 @@ abstract class AbstractAppender implements AutoCloseable {
   /**
    * Handles an append response.
    */
-  protected void handleAppendResponse(RaftMemberContext member, AppendRequest request, AppendResponse response) {
+  protected void handleAppendResponse(RaftMemberContext member, AppendRequest request, AppendResponse response, long timestamp) {
     if (response.status() == RaftResponse.Status.OK) {
       handleAppendResponseOk(member, request, response);
     } else {
@@ -352,6 +344,8 @@ abstract class AbstractAppender implements AutoCloseable {
     // Start the configure to the member.
     member.startConfigure();
 
+    long timestamp = System.currentTimeMillis();
+
     log.trace("Sending {} to {}", request, member.getMember().memberId());
     raft.getProtocol().configure(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       // Complete the configure to the member.
@@ -360,21 +354,13 @@ abstract class AbstractAppender implements AutoCloseable {
       if (open) {
         if (error == null) {
           log.trace("Received {} from {}", response, member.getMember().memberId());
-          handleConfigureResponse(member, request, response);
+          handleConfigureResponse(member, request, response, timestamp);
         } else {
           log.warn("Failed to configure {}", member.getMember().memberId());
           handleConfigureResponseFailure(member, request, error);
         }
       }
     }, raft.getThreadContext());
-  }
-
-  /**
-   * Handles a configure failure.
-   */
-  protected void handleConfigureRequestFailure(RaftMemberContext member, ConfigureRequest request, Throwable error) {
-    // Log the failed attempt to contact the member.
-    failAttempt(member, request, error);
   }
 
   /**
@@ -388,7 +374,7 @@ abstract class AbstractAppender implements AutoCloseable {
   /**
    * Handles a configuration response.
    */
-  protected void handleConfigureResponse(RaftMemberContext member, ConfigureRequest request, ConfigureResponse response) {
+  protected void handleConfigureResponse(RaftMemberContext member, ConfigureRequest request, ConfigureResponse response, long timestamp) {
     if (response.status() == RaftResponse.Status.OK) {
       handleConfigureResponseOk(member, request, response);
     } else {
@@ -465,6 +451,8 @@ abstract class AbstractAppender implements AutoCloseable {
     // Start the install to the member.
     member.startInstall();
 
+    long timestamp = System.currentTimeMillis();
+
     log.trace("Sending {} to {}", request, member.getMember().memberId());
     raft.getProtocol().install(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
       // Complete the install to the member.
@@ -473,7 +461,7 @@ abstract class AbstractAppender implements AutoCloseable {
       if (open) {
         if (error == null) {
           log.trace("Received {} from {}", response, member.getMember().memberId());
-          handleInstallResponse(member, request, response);
+          handleInstallResponse(member, request, response, timestamp);
         } else {
           log.warn("Failed to install {}", member.getMember().memberId());
 
@@ -482,14 +470,6 @@ abstract class AbstractAppender implements AutoCloseable {
         }
       }
     }, raft.getThreadContext());
-  }
-
-  /**
-   * Handles an install request failure.
-   */
-  protected void handleInstallRequestFailure(RaftMemberContext member, InstallRequest request, Throwable error) {
-    // Log the failed attempt to contact the member.
-    failAttempt(member, request, error);
   }
 
   /**
@@ -508,7 +488,7 @@ abstract class AbstractAppender implements AutoCloseable {
   /**
    * Handles an install response.
    */
-  protected void handleInstallResponse(RaftMemberContext member, InstallRequest request, InstallResponse response) {
+  protected void handleInstallResponse(RaftMemberContext member, InstallRequest request, InstallResponse response, long timestamp) {
     if (response.status() == RaftResponse.Status.OK) {
       handleInstallResponseOk(member, request, response);
     } else {

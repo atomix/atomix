@@ -422,8 +422,9 @@ public class RaftContext implements AutoCloseable {
    * Sets the commit index.
    *
    * @param commitIndex The commit index.
+   * @return the previous commit index
    */
-  public void setCommitIndex(long commitIndex) {
+  public long setCommitIndex(long commitIndex) {
     checkArgument(commitIndex >= 0, "commitIndex must be positive");
     long previousCommitIndex = this.commitIndex;
     if (commitIndex > previousCommitIndex) {
@@ -438,6 +439,7 @@ public class RaftContext implements AutoCloseable {
         firstCommitIndex = commitIndex;
       }
     }
+    return previousCommitIndex;
   }
 
   /**

@@ -42,6 +42,7 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.storage.journal.Indexed;
+import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -54,6 +55,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -69,7 +71,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
  */
 public class RaftServiceManager implements AutoCloseable {
-  private static final Duration COMPACT_INTERVAL = Duration.ofSeconds(10);
+  private static final Duration SNAPSHOT_INTERVAL = Duration.ofSeconds(10);
+  private static final Duration MIN_COMPACT_INTERVAL = Duration.ofSeconds(10);
 
   private final Logger logger;
   private final RaftContext raft;
@@ -79,6 +82,7 @@ public class RaftServiceManager implements AutoCloseable {
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
   private final Map<String, DefaultServiceContext> services = new HashMap<>();
+  private final Random random = new Random();
   private long lastPrepared;
   private long lastCompacted;
 
@@ -176,6 +180,8 @@ public class RaftServiceManager implements AutoCloseable {
         return Futures.completedFuture(null);
       }
     }
+
+    logger.error("Cannot commit index " + index);
     return Futures.exceptionalFuture(new IndexOutOfBoundsException("Cannot commit index " + index));
   }
 
@@ -191,23 +197,25 @@ public class RaftServiceManager implements AutoCloseable {
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> apply(Indexed<? extends RaftLogEntry> entry) {
     logger.trace("Applying {}", entry);
-    prepareIndex(entry.index());
     if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());
-    } else if (entry.type() == CommandEntry.class) {
-      return (CompletableFuture<T>) applyCommand(entry.cast());
-    } else if (entry.type() == OpenSessionEntry.class) {
-      return (CompletableFuture<T>) applyOpenSession(entry.cast());
-    } else if (entry.type() == KeepAliveEntry.class) {
-      return (CompletableFuture<T>) applyKeepAlive(entry.cast());
-    } else if (entry.type() == CloseSessionEntry.class) {
-      return (CompletableFuture<T>) applyCloseSession(entry.cast());
-    } else if (entry.type() == MetadataEntry.class) {
-      return (CompletableFuture<T>) applyMetadata(entry.cast());
-    } else if (entry.type() == InitializeEntry.class) {
-      return (CompletableFuture<T>) applyInitialize(entry.cast());
-    } else if (entry.type() == ConfigurationEntry.class) {
-      return (CompletableFuture<T>) applyConfiguration(entry.cast());
+    } else {
+      prepareIndex(entry.index());
+      if (entry.type() == CommandEntry.class) {
+        return (CompletableFuture<T>) applyCommand(entry.cast());
+      } else if (entry.type() == OpenSessionEntry.class) {
+        return (CompletableFuture<T>) applyOpenSession(entry.cast());
+      } else if (entry.type() == KeepAliveEntry.class) {
+        return (CompletableFuture<T>) applyKeepAlive(entry.cast());
+      } else if (entry.type() == CloseSessionEntry.class) {
+        return (CompletableFuture<T>) applyCloseSession(entry.cast());
+      } else if (entry.type() == MetadataEntry.class) {
+        return (CompletableFuture<T>) applyMetadata(entry.cast());
+      } else if (entry.type() == InitializeEntry.class) {
+        return (CompletableFuture<T>) applyInitialize(entry.cast());
+      } else if (entry.type() == ConfigurationEntry.class) {
+        return (CompletableFuture<T>) applyConfiguration(entry.cast());
+      }
     }
     return Futures.exceptionalFuture(new RaftException.ProtocolException("Unknown entry type"));
   }
@@ -534,15 +542,28 @@ public class RaftServiceManager implements AutoCloseable {
    * Schedules a snapshot iteration.
    */
   private void scheduleSnapshots() {
-    threadContext.schedule(COMPACT_INTERVAL, this::snapshotServices);
+    threadContext.schedule(SNAPSHOT_INTERVAL, this::snapshotServices);
+  }
+
+  /**
+   * Schedules completion of a snapshot after a randomized delay to reduce the chance the snapshot will need to be
+   * replicated to followers.
+   */
+  private CompletableFuture<Void> scheduleCompletion(DefaultServiceContext serviceContext, long snapshotIndex) {
+    ComposableFuture<Void> future = new ComposableFuture<>();
+    Duration delay = SNAPSHOT_INTERVAL.plusMillis(random.nextInt((int) SNAPSHOT_INTERVAL.toMillis()));
+    threadContext.schedule(delay, () -> serviceContext.completeSnapshot(snapshotIndex).whenComplete(future));
+    return future;
   }
 
   /**
    * Schedules a log compaction.
    */
   private void scheduleCompaction(long lastApplied) {
-    logger.trace("Scheduling compaction in {}", COMPACT_INTERVAL);
-    threadContext.schedule(COMPACT_INTERVAL, () -> compactLogs(lastApplied));
+    // Schedule compaction after a randomized delay to discourage snapshots on multiple nodes at the same time.
+    Duration delay = MIN_COMPACT_INTERVAL.plusMillis(random.nextInt((int) MIN_COMPACT_INTERVAL.toMillis()));
+    logger.trace("Scheduling compaction in {}", delay);
+    threadContext.schedule(delay, () -> compactLogs(lastApplied));
   }
 
   /**
@@ -566,7 +587,7 @@ public class RaftServiceManager implements AutoCloseable {
       List<CompletableFuture<Void>> futures = services.stream()
           .map(context -> {
             long snapshotIndex = context.takeSnapshot().join();
-            return context.completeSnapshot(snapshotIndex);
+            return scheduleCompletion(context, snapshotIndex);
           })
           .collect(Collectors.toList());
 

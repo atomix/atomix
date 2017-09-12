@@ -58,6 +58,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Client session manager.
  */
 public class RaftProxyManager {
+  private static final double TIMEOUT_FACTOR = .5;
+  private static final long MIN_TIMEOUT_DELTA = 2500;
+
   private final Logger log;
   private final String clientId;
   private final MemberId memberId;
@@ -165,7 +168,7 @@ public class RaftProxyManager {
           });
 
           // Ensure the proxy session info is reset and the session is kept alive.
-          keepAliveSessions(state.getSessionTimeout());
+          keepAliveSessions(System.currentTimeMillis(), state.getSessionTimeout());
 
           // Create the proxy client and complete the future.
           RaftProxyClient client = new DiscreteRaftProxyClient(
@@ -257,18 +260,11 @@ public class RaftProxyManager {
   /**
    * Sends a keep-alive request to the cluster.
    */
-  private void keepAliveSessions(long timeout) {
-    keepAliveSessions(timeout, true);
-  }
-
-  /**
-   * Sends a keep-alive request to the cluster.
-   */
-  private synchronized void keepAliveSessions(long timeout, boolean retryOnFailure) {
+  private synchronized void keepAliveSessions(long lastKeepAliveTime, long sessionTimeout) {
     // Filter the list of sessions by timeout.
     List<RaftProxyState> needKeepAlive = sessions.values()
         .stream()
-        .filter(session -> session.getSessionTimeout() == timeout)
+        .filter(session -> session.getSessionTimeout() == sessionTimeout)
         .collect(Collectors.toList());
 
     // If no sessions need keep-alives to be sent, skip and reschedule the keep-alive.
@@ -298,10 +294,10 @@ public class RaftProxyManager {
         .withEventIndexes(eventIndexes)
         .build();
 
-    long startTime = System.currentTimeMillis();
+    long keepAliveTime = System.currentTimeMillis();
     connection.keepAlive(request).whenComplete((response, error) -> {
       if (open.get()) {
-        long delta = System.currentTimeMillis() - startTime;
+        long delta = System.currentTimeMillis() - keepAliveTime;
         if (error == null) {
           // If the request was successful, update the address selector and schedule the next keep-alive.
           if (response.status() == RaftResponse.Status.OK) {
@@ -316,32 +312,32 @@ public class RaftProxyManager {
                 session.setState(RaftProxy.State.CLOSED);
               }
             }
-            scheduleKeepAlive(timeout, delta);
+            scheduleKeepAlive(System.currentTimeMillis(), sessionTimeout, delta);
           }
-          // If a leader is still set in the address selector, unset the leader and attempt to send another keep-alive.
-          // This will ensure that the address selector selects all servers without filtering on the leader.
-          else if (retryOnFailure && connection.leader() != null) {
+          // If the timeout has not been passed, attempt to keep the session alive again with no delay.
+          // We will continue to retry until the session expiration has passed.
+          else if (System.currentTimeMillis() - lastKeepAliveTime < sessionTimeout) {
             selectorManager.resetAll(null, connection.servers());
-            keepAliveSessions(timeout, false);
+            keepAliveSessions(lastKeepAliveTime, sessionTimeout);
           }
           // If no leader was set, set the session state to unstable and schedule another keep-alive.
           else {
             needKeepAlive.forEach(s -> s.setState(RaftProxy.State.SUSPENDED));
             selectorManager.resetAll();
-            scheduleKeepAlive(timeout, delta);
+            scheduleKeepAlive(lastKeepAliveTime, sessionTimeout, delta);
           }
         }
-        // If a leader is still set in the address selector, unset the leader and attempt to send another keep-alive.
-        // This will ensure that the address selector selects all servers without filtering on the leader.
-        else if (retryOnFailure && connection.leader() != null) {
+        // If the timeout has not been passed, reset the connection and attempt to keep the session alive
+        // again with no delay.
+        else if (System.currentTimeMillis() - lastKeepAliveTime < sessionTimeout && connection.leader() != null) {
           selectorManager.resetAll(null, connection.servers());
-          keepAliveSessions(timeout, false);
+          keepAliveSessions(lastKeepAliveTime, sessionTimeout);
         }
         // If no leader was set, set the session state to unstable and schedule another keep-alive.
         else {
           needKeepAlive.forEach(s -> s.setState(RaftProxy.State.SUSPENDED));
           selectorManager.resetAll();
-          scheduleKeepAlive(timeout, delta);
+          scheduleKeepAlive(lastKeepAliveTime, sessionTimeout, delta);
         }
       }
     });
@@ -350,7 +346,7 @@ public class RaftProxyManager {
   /**
    * Schedules a keep-alive request.
    */
-  private synchronized void scheduleKeepAlive(long timeout, long delta) {
+  private synchronized void scheduleKeepAlive(long lastKeepAliveTime, long timeout, long delta) {
     ScheduledFuture<?> keepAliveFuture = keepAliveFutures.remove(timeout);
     if (keepAliveFuture != null) {
       keepAliveFuture.cancel(false);
@@ -359,9 +355,9 @@ public class RaftProxyManager {
     // Schedule the keep alive for 3/4 the timeout minus the delta from the last keep-alive request.
     keepAliveFutures.put(timeout, threadPoolExecutor.schedule(() -> {
       if (open.get()) {
-        keepAliveSessions(timeout);
+        keepAliveSessions(lastKeepAliveTime, timeout);
       }
-    }, Math.max(Math.max((long)(timeout * .75) - delta, timeout - 2500 - delta), 0), TimeUnit.MILLISECONDS));
+    }, Math.max(Math.max((long)(timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0), TimeUnit.MILLISECONDS));
   }
 
   /**

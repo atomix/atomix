@@ -28,12 +28,12 @@ import io.atomix.protocols.raft.protocol.InstallResponse;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * The leader appender is responsible for sending {@link AppendRequest}s on behalf of a leader to followers.
@@ -41,24 +41,23 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 final class LeaderAppender extends AbstractAppender {
   private static final long MAX_HEARTBEAT_WAIT = 60000;
-  private static final int MINIMUM_BACKOFF_FAILURE_COUNT = 5;
+  private static final int MIN_BACKOFF_FAILURE_COUNT = 5;
+  private static final int MIN_STEP_DOWN_FAILURE_COUNT = 3;
 
-  private final LeaderRole leader;
   private final long leaderTime;
   private final long leaderIndex;
+  private final long electionTimeout;
   private final long heartbeatInterval;
   private long heartbeatTime;
-  private int heartbeatFailures;
-  private CompletableFuture<Long> heartbeatFuture;
-  private CompletableFuture<Long> nextHeartbeatFuture;
   private final Map<Long, CompletableFuture<Long>> appendFutures = new HashMap<>();
+  private final List<TimestampedFuture<Long>> heartbeatFutures = new ArrayList<>();
 
   LeaderAppender(LeaderRole leader) {
     super(leader.raft);
-    this.leader = checkNotNull(leader, "leader cannot be null");
     this.leaderTime = System.currentTimeMillis();
     this.leaderIndex = raft.getLogWriter().getNextIndex();
     this.heartbeatTime = leaderTime;
+    this.electionTimeout = raft.getElectionTimeout().toMillis();
     this.heartbeatInterval = raft.getHeartbeatInterval().toMillis();
   }
 
@@ -108,28 +107,15 @@ final class LeaderAppender extends AbstractAppender {
       return CompletableFuture.completedFuture(null);
     }
 
-    // If no heartbeat future already exists, that indicates there's no heartbeat currently under way.
-    // Create a new heartbeat future and commit to all members in the cluster.
-    if (heartbeatFuture == null) {
-      CompletableFuture<Long> newHeartbeatFuture = new CompletableFuture<>();
-      heartbeatFuture = newHeartbeatFuture;
-      heartbeatTime = System.currentTimeMillis();
-      for (RaftMemberContext member : raft.getCluster().getRemoteMemberStates()) {
-        appendEntries(member);
-      }
-      return newHeartbeatFuture;
+    // Create a heartbeat future and add it to the heartbeat futures list.
+    TimestampedFuture<Long> future = new TimestampedFuture<>();
+    heartbeatFutures.add(future);
+
+    // Iterate through members and append entries. Futures will be completed on responses from followers.
+    for (RaftMemberContext member : raft.getCluster().getRemoteMemberStates()) {
+      appendEntries(member);
     }
-    // If a heartbeat future already exists, that indicates there is a heartbeat currently underway.
-    // We don't want to allow callers to be completed by a heartbeat that may already almost be done.
-    // So, we create the next heartbeat future if necessary and return that. Once the current heartbeat
-    // completes the next future will be used to do another heartbeat. This ensures that only one
-    // heartbeat can be outstanding at any given point in time.
-    else if (nextHeartbeatFuture == null) {
-      nextHeartbeatFuture = new CompletableFuture<>();
-      return nextHeartbeatFuture;
-    } else {
-      return nextHeartbeatFuture;
-    }
+    return future;
   }
 
   /**
@@ -183,10 +169,10 @@ final class LeaderAppender extends AbstractAppender {
 
     // If prior requests to the member have failed, build an empty append request to send to the member
     // to prevent having to read from disk to configure, install, or append to an unavailable member.
-    if (member.getFailureCount() >= MINIMUM_BACKOFF_FAILURE_COUNT) {
+    if (member.getFailureCount() >= MIN_BACKOFF_FAILURE_COUNT) {
       // To prevent the leader from unnecessarily attempting to connect to a down follower on every heartbeat,
       // use exponential backoff to back off up to 60 second heartbeat intervals.
-      if (System.currentTimeMillis() - member.getHeartbeatStartTime() > Math.min(heartbeatInterval * Math.pow(2, member.getFailureCount()), MAX_HEARTBEAT_WAIT)) {
+      if (System.currentTimeMillis() - member.getFailureTime() > Math.min(heartbeatInterval * Math.pow(2, member.getFailureCount()), MAX_HEARTBEAT_WAIT)) {
         sendAppendRequest(member, buildAppendEmptyRequest(member));
       }
     }
@@ -238,7 +224,7 @@ final class LeaderAppender extends AbstractAppender {
    * the cluster was contacted based on the index of a majority of the members. So, in a list of 3 ACTIVE
    * members, index 1 (the second member) will be used to determine the commit time in a sorted members list.
    */
-  private long getHeartbeatTime() {
+  private long computeHeartbeatTime() {
     int quorumIndex = getQuorumIndex();
     if (quorumIndex >= 0) {
       return raft.getCluster().getActiveMemberStates((m1, m2) -> Long.compare(m2.getHeartbeatTime(), m1.getHeartbeatTime())).get(quorumIndex).getHeartbeatTime();
@@ -247,51 +233,71 @@ final class LeaderAppender extends AbstractAppender {
   }
 
   /**
-   * Sets a commit time or fails the commit if a quorum of successful responses cannot be achieved.
+   * Records a completed heartbeat to the given member.
    */
-  private void updateHeartbeatTime(RaftMemberContext member, Throwable error) {
-    if (heartbeatFuture == null) {
-      return;
-    }
-
+  private void recordHeartbeat(RaftMemberContext member, long timestamp) {
     raft.checkThread();
 
-    if (error != null && member.getHeartbeatStartTime() == heartbeatTime) {
-      int votingMemberSize = raft.getCluster().getActiveMemberStates().size() + (raft.getCluster().getMember().getType() == RaftMember.Type.ACTIVE ? 1 : 0);
-      int quorumSize = (int) Math.floor(votingMemberSize / 2) + 1;
-      // If a quorum of successful responses cannot be achieved, fail this heartbeat. Ensure that only
-      // ACTIVE members are considered. A member could have been transitioned to another state while the
-      // heartbeat was being sent.
-      if (member.getMember().getType() == RaftMember.Type.ACTIVE && ++heartbeatFailures > votingMemberSize - quorumSize) {
-        heartbeatFuture.completeExceptionally(new RaftException.ProtocolException("Failed to reach consensus"));
-        completeHeartbeat();
-      }
-    } else {
-      member.setHeartbeatTime(System.currentTimeMillis());
+    // Update the member's heartbeat time. This will be used when calculating the quorum heartbeat time.
+    member.setHeartbeatTime(timestamp);
 
-      // Sort the list of commit times. Use the quorum index to get the last time the majority of the cluster
-      // was contacted. If the current heartbeatFuture's time is less than the commit time then trigger the
-      // commit future and reset it to the next commit future.
-      if (heartbeatTime <= getHeartbeatTime()) {
-        heartbeatFuture.complete(null);
-        completeHeartbeat();
+    // Compute the quorum heartbeat time.
+    long heartbeatTime = computeHeartbeatTime();
+    long currentTimestamp = System.currentTimeMillis();
+
+    // Iterate through pending timestamped heartbeat futures and complete all futures where the timestamp
+    // is greater than the last timestamp a quorum of the cluster was contacted.
+    Iterator<TimestampedFuture<Long>> iterator = heartbeatFutures.iterator();
+    while (iterator.hasNext()) {
+      TimestampedFuture<Long> future = iterator.next();
+
+      // If the future is timestamped prior to the last heartbeat to a majority of the cluster, complete the future.
+      if (future.timestamp < heartbeatTime) {
+        future.complete(null);
+        iterator.remove();
+      }
+      // If the future is more than an election timeout old, fail it with a protocol exception.
+      else if (currentTimestamp - future.timestamp > electionTimeout) {
+        future.completeExceptionally(new RaftException.ProtocolException("Failed to reach consensus"));
+        iterator.remove();
+      }
+      // Otherwise, we've reached recent heartbeat futures. Break out of the loop.
+      else {
+        break;
+      }
+    }
+
+    // If heartbeat futures are still pending, attempt to send heartbeats.
+    if (!heartbeatFutures.isEmpty()) {
+      sendHeartbeats();
+    }
+  }
+
+  /**
+   * Records a failed heartbeat.
+   */
+  private void failHeartbeat() {
+    raft.checkThread();
+
+    // Iterate through pending timestamped heartbeat futures and fail futures that have been pending longer
+    // than an election timeout.
+    long currentTimestamp = System.currentTimeMillis();
+    Iterator<TimestampedFuture<Long>> iterator = heartbeatFutures.iterator();
+    while (iterator.hasNext()) {
+      TimestampedFuture<Long> future = iterator.next();
+      if (currentTimestamp - future.timestamp > electionTimeout) {
+        future.completeExceptionally(new RaftException.ProtocolException("Failed to reach consensus"));
+        iterator.remove();
       }
     }
   }
 
   /**
-   * Completes a heartbeat by replacing the current heartbeatFuture with the nextHeartbeatFuture, updating the
-   * current heartbeatTime, and starting a new {@link AppendRequest} to all active members.
+   * Attempts to send heartbeats to all followers.
    */
-  private void completeHeartbeat() {
-    heartbeatFailures = 0;
-    heartbeatFuture = nextHeartbeatFuture;
-    nextHeartbeatFuture = null;
-    if (heartbeatFuture != null) {
-      heartbeatTime = System.currentTimeMillis();
-      for (RaftMemberContext member : raft.getCluster().getRemoteMemberStates()) {
-        appendEntries(member);
-      }
+  private void sendHeartbeats() {
+    for (RaftMemberContext member : raft.getCluster().getRemoteMemberStates()) {
+      appendEntries(member);
     }
   }
 
@@ -310,10 +316,12 @@ final class LeaderAppender extends AbstractAppender {
     // If the active members list is empty (a configuration change occurred between an append request/response)
     // ensure all commit futures are completed and cleared.
     if (members.isEmpty()) {
-      long previousCommitIndex = raft.getCommitIndex();
       long commitIndex = raft.getLogWriter().getLastIndex();
-      raft.setCommitIndex(commitIndex);
-      completeCommits(previousCommitIndex, commitIndex);
+      long previousCommitIndex = raft.setCommitIndex(commitIndex);
+      if (commitIndex > previousCommitIndex) {
+        log.trace("Committed entries up to {}", commitIndex);
+        completeCommits(previousCommitIndex, commitIndex);
+      }
       return;
     }
 
@@ -325,6 +333,7 @@ final class LeaderAppender extends AbstractAppender {
     // the index of the leader's no-op entry. Update the commit index and trigger commit futures.
     long previousCommitIndex = raft.getCommitIndex();
     if (commitIndex > 0 && commitIndex > previousCommitIndex && (leaderIndex > 0 && commitIndex >= leaderIndex)) {
+      log.trace("Committed entries up to {}", commitIndex);
       raft.setCommitIndex(commitIndex);
       completeCommits(previousCommitIndex, commitIndex);
     }
@@ -342,50 +351,20 @@ final class LeaderAppender extends AbstractAppender {
     }
   }
 
-  /**
-   * Connects to the member and sends a commit message.
-   */
-  protected void sendAppendRequest(RaftMemberContext member, AppendRequest request) {
-    // Set the start time of the member's current commit. This will be used to associate responses
-    // with the current commit request.
-    member.setHeartbeatStartTime(heartbeatTime);
-
-    super.sendAppendRequest(member, request);
-  }
-
-  /**
-   * Handles an append failure.
-   */
-  protected void handleAppendRequestFailure(RaftMemberContext member, AppendRequest request, Throwable error) {
-    super.handleAppendRequestFailure(member, request, error);
-
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, error);
-  }
-
-  /**
-   * Handles an append failure.
-   */
+  @Override
   protected void handleAppendResponseFailure(RaftMemberContext member, AppendRequest request, Throwable error) {
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, error);
-
+    failHeartbeat();
     super.handleAppendResponseFailure(member, request, error);
   }
 
-  /**
-   * Handles an append response.
-   */
-  protected void handleAppendResponse(RaftMemberContext member, AppendRequest request, AppendResponse response) {
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, null);
-
-    super.handleAppendResponse(member, request, response);
+  @Override
+  protected void handleAppendResponse(RaftMemberContext member, AppendRequest request, AppendResponse response, long timestamp) {
+    // Record a successful heartbeat to the member.
+    recordHeartbeat(member, timestamp);
+    super.handleAppendResponse(member, request, response, timestamp);
   }
 
-  /**
-   * Handles a {@link io.atomix.protocols.raft.protocol.RaftResponse.Status#OK} response.
-   */
+  @Override
   protected void handleAppendResponseOk(RaftMemberContext member, AppendRequest request, AppendResponse response) {
     // Reset the member failure count and update the member's availability status if necessary.
     succeedAttempt(member);
@@ -444,10 +423,13 @@ final class LeaderAppender extends AbstractAppender {
   protected void failAttempt(RaftMemberContext member, RaftRequest request, Throwable error) {
     super.failAttempt(member, request, error);
 
+    // Fail heartbeat futures.
+    failHeartbeat();
+
     // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
     // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
     // that a partition occurred and transition back to the FOLLOWER state.
-    if (System.currentTimeMillis() - Math.max(getHeartbeatTime(), leaderTime) > raft.getElectionTimeout().toMillis() * 2) {
+    if (member.getFailureCount() >= MIN_STEP_DOWN_FAILURE_COUNT && System.currentTimeMillis() - Math.max(computeHeartbeatTime(), leaderTime) > electionTimeout * 2) {
       log.warn("Suspected network partition. Stepping down");
       raft.setLeader(null);
       raft.transition(RaftServer.Role.FOLLOWER);
@@ -455,51 +437,40 @@ final class LeaderAppender extends AbstractAppender {
   }
 
   @Override
-  protected void handleConfigureResponse(RaftMemberContext member, ConfigureRequest request, ConfigureResponse response) {
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, null);
-
-    super.handleConfigureResponse(member, request, response);
+  protected void handleConfigureResponse(RaftMemberContext member, ConfigureRequest request, ConfigureResponse response, long timestamp) {
+    // Record a successful heartbeat to the member.
+    recordHeartbeat(member, timestamp);
+    super.handleConfigureResponse(member, request, response, timestamp);
   }
 
   @Override
-  protected void handleConfigureRequestFailure(RaftMemberContext member, ConfigureRequest request, Throwable error) {
-    super.handleConfigureRequestFailure(member, request, error);
-
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, error);
+  protected void handleInstallResponse(RaftMemberContext member, InstallRequest request, InstallResponse response, long timestamp) {
+    // Record a successful heartbeat to the member.
+    recordHeartbeat(member, timestamp);
+    super.handleInstallResponse(member, request, response, timestamp);
   }
 
   @Override
-  protected void handleConfigureResponseFailure(RaftMemberContext member, ConfigureRequest request, Throwable error) {
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, error);
-
-    super.handleConfigureResponseFailure(member, request, error);
+  public void close() {
+    super.close();
+    appendFutures.values().forEach(future ->
+        future.completeExceptionally(new IllegalStateException("Inactive state")));
+    heartbeatFutures.forEach(future ->
+        future.completeExceptionally(new RaftException.ProtocolException("Failed to reach consensus")));
   }
 
-  @Override
-  protected void handleInstallResponse(RaftMemberContext member, InstallRequest request, InstallResponse response) {
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, null);
+  /**
+   * Timestamped completable future.
+   */
+  private static class TimestampedFuture<T> extends CompletableFuture<T> {
+    private final long timestamp;
 
-    super.handleInstallResponse(member, request, response);
+    public TimestampedFuture() {
+      this(System.currentTimeMillis());
+    }
+
+    public TimestampedFuture(long timestamp) {
+      this.timestamp = timestamp;
+    }
   }
-
-  @Override
-  protected void handleInstallRequestFailure(RaftMemberContext member, InstallRequest request, Throwable error) {
-    super.handleInstallRequestFailure(member, request, error);
-
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, error);
-  }
-
-  @Override
-  protected void handleInstallResponseFailure(RaftMemberContext member, InstallRequest request, Throwable error) {
-    // Trigger commit futures if necessary.
-    updateHeartbeatTime(member, error);
-
-    super.handleInstallResponseFailure(member, request, error);
-  }
-
 }

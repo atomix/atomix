@@ -37,13 +37,13 @@ public final class RaftMemberContext {
   private int nextSnapshotOffset;
   private long matchIndex;
   private long heartbeatTime;
-  private long heartbeatStartTime;
   private int appending;
   private boolean appendSucceeded;
   private long appendTime;
   private boolean configuring;
   private boolean installing;
-  private volatile int failures;
+  private int failures;
+  private long failureTime;
   private volatile RaftLogReader reader;
   private final DescriptiveStatistics timeStats = new DescriptiveStatistics(APPEND_WINDOW_SIZE);
 
@@ -60,13 +60,13 @@ public final class RaftMemberContext {
     nextSnapshotOffset = 0;
     matchIndex = 0;
     heartbeatTime = 0;
-    heartbeatStartTime = 0;
     appending = 0;
     timeStats.clear();
     configuring = false;
     installing = false;
     appendSucceeded = false;
     failures = 0;
+    failureTime = 0;
 
     switch (member.getType()) {
       case PASSIVE:
@@ -332,25 +332,7 @@ public final class RaftMemberContext {
    * @param heartbeatTime The member heartbeat time.
    */
   public void setHeartbeatTime(long heartbeatTime) {
-    this.heartbeatTime = heartbeatTime;
-  }
-
-  /**
-   * Returns the member heartbeat start time.
-   *
-   * @return The member heartbeat start time.
-   */
-  public long getHeartbeatStartTime() {
-    return heartbeatStartTime;
-  }
-
-  /**
-   * Sets the member heartbeat start time.
-   *
-   * @param startTime The member heartbeat attempt start time.
-   */
-  public void setHeartbeatStartTime(long startTime) {
-    this.heartbeatStartTime = startTime;
+    this.heartbeatTime = Math.max(this.heartbeatTime, heartbeatTime);
   }
 
   /**
@@ -368,7 +350,10 @@ public final class RaftMemberContext {
    * @return The member state.
    */
   public int incrementFailureCount() {
-    return ++failures;
+    if (failures++ == 0) {
+      failureTime = System.currentTimeMillis();
+    }
+    return failures;
   }
 
   /**
@@ -376,6 +361,16 @@ public final class RaftMemberContext {
    */
   public void resetFailureCount() {
     failures = 0;
+    failureTime = 0;
+  }
+
+  /**
+   * Returns the member failure time.
+   *
+   * @return the member failure time
+   */
+  public long getFailureTime() {
+    return failureTime;
   }
 
   @Override
@@ -391,7 +386,6 @@ public final class RaftMemberContext {
         .add("matchIndex", matchIndex)
         .add("nextIndex", reader != null ? reader.getNextIndex() : matchIndex + 1)
         .add("heartbeatTime", heartbeatTime)
-        .add("heartbeatStartTime", heartbeatStartTime)
         .add("appending", appending)
         .add("appendSucceeded", appendSucceeded)
         .add("appendTime", appendTime)

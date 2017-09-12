@@ -30,7 +30,6 @@ import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.RaftSession;
-import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
@@ -102,7 +101,7 @@ public class DefaultServiceContext implements ServiceContext {
     this.serviceType = checkNotNull(serviceType);
     this.service = checkNotNull(service);
     this.server = checkNotNull(server);
-    this.sessions = new DefaultServiceSessions(sessionManager);
+    this.sessions = new DefaultServiceSessions(serviceId, sessionManager);
     this.serviceExecutor = new ThreadPoolContext(threadPool);
     this.snapshotExecutor = new ThreadPoolContext(threadPool);
     this.threadPool = checkNotNull(threadPool);
@@ -189,12 +188,6 @@ public class DefaultServiceContext implements ServiceContext {
 
     // Set the current operation type to COMMAND to allow events to be sent.
     setOperation(OperationType.COMMAND);
-
-    // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
-    maybeInstallSnapshot(index);
-
-    // Expire sessions that have timed out.
-    expireSessions(currentTimestamp);
   }
 
   /**
@@ -205,22 +198,12 @@ public class DefaultServiceContext implements ServiceContext {
     for (RaftSessionContext session : sessions.getSessions()) {
 
       // If the current timestamp minus the session timestamp is greater than the session timeout, expire the session.
-      if (timestamp - session.getTimestamp() > session.timeout()) {
-
-        // Remove the session from the sessions list.
-        sessions.remove(session);
-
+      long lastUpdated = session.getTimestamp();
+      if (lastUpdated > 0 && timestamp - lastUpdated > session.timeout()) {
         log.debug("Detected expired session {}", session);
-
-        // Expire the session.
-        session.expire();
-
         log.debug("Closing session {}", session.sessionId());
-
-        // Iterate through and invoke session listeners.
-        for (RaftSessionListener listener : sessions.getListeners()) {
-          listener.onExpire(session);
-        }
+        // Remove the session from the sessions list.
+        sessions.expireSession(session);
       }
     }
   }
@@ -269,7 +252,6 @@ public class DefaultServiceContext implements ServiceContext {
         ServiceType serviceType = ServiceType.from(reader.readString());
         String serviceName = reader.readString();
         int sessionCount = reader.readInt();
-        sessions.clear();
         for (int i = 0; i < sessionCount; i++) {
           SessionId sessionId = SessionId.from(reader.readLong());
           MemberId node = MemberId.from(reader.readString());
@@ -292,7 +274,7 @@ public class DefaultServiceContext implements ServiceContext {
           session.setEventIndex(reader.readLong());
           session.setLastCompleted(reader.readLong());
           session.setLastApplied(snapshot.index());
-          sessions.add(session);
+          sessions.openSession(session);
         }
         service.install(reader);
       } catch (Exception e) {
@@ -388,16 +370,17 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
 
-      // Update the state machine index/timestamp and expire sessions if necessary.
+      // Update the state machine index/timestamp.
       tick(index, timestamp);
 
-      // Add the session to the sessions list.
-      sessions.add(session);
+      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+      maybeInstallSnapshot(index);
 
-      // Iterate through and invoke session listeners.
-      for (RaftSessionListener listener : sessions.getListeners()) {
-        listener.onOpen(session);
-      }
+      // Expire sessions that have timed out.
+      expireSessions(currentTimestamp);
+
+      // Add the session to the sessions list.
+      sessions.openSession(session);
 
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
@@ -423,6 +406,13 @@ public class DefaultServiceContext implements ServiceContext {
   public CompletableFuture<Boolean> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
+
+      // Update the state machine index/timestamp.
+      tick(index, timestamp);
+
+      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+      maybeInstallSnapshot(index);
+
       // The session may have been closed by the time this update was executed on the service thread.
       if (session.getState() != RaftSession.State.CLOSED) {
         // Update the session's timestamp to prevent it from being expired.
@@ -468,14 +458,19 @@ public class DefaultServiceContext implements ServiceContext {
   public CompletableFuture<Void> completeKeepAlive(long index, long timestamp) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
-      // Update the state machine index/timestamp and expire sessions if necessary.
+      // Update the state machine index/timestamp.
       tick(index, timestamp);
+
+      // Expire sessions that have timed out.
+      expireSessions(currentTimestamp);
 
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
 
       // Complete any pending snapshots of the service state.
       maybeCompleteSnapshot(index);
+
+      future.complete(null);
     });
     return future;
   }
@@ -517,19 +512,17 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session's timestamp to prevent it from being expired.
       session.setTimestamp(timestamp);
 
-      // Update the state machine index/timestamp and expire sessions if necessary.
+      // Update the state machine index/timestamp.
       tick(index, timestamp);
 
+      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+      maybeInstallSnapshot(index);
+
+      // Expire sessions that have timed out.
+      expireSessions(currentTimestamp);
+
       // Remove the session from the sessions list.
-      sessions.remove(session);
-
-      // Close the session.
-      session.close();
-
-      // Iterate through and invoke session listeners.
-      for (RaftSessionListener listener : sessions.getListeners()) {
-        listener.onClose(session);
-      }
+      sessions.closeSession(session);
 
       // Commit the index, causing events to be sent to clients if necessary.
       commit();
@@ -566,8 +559,11 @@ public class DefaultServiceContext implements ServiceContext {
     // Update the session's timestamp to prevent it from being expired.
     session.setTimestamp(timestamp);
 
-    // Update the state machine index/timestamp and expire sessions if necessary.
+    // Update the state machine index/timestamp.
     tick(index, timestamp);
+
+    // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
+    maybeInstallSnapshot(index);
 
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
