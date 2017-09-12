@@ -66,7 +66,7 @@ public final class JournalSegmentFile {
       }
     }
 
-    return fileName.substring(0, partSeparator).equals(journalName);
+    return fileName.startsWith(journalName);
   }
 
   /**
@@ -91,12 +91,4 @@ public final class JournalSegmentFile {
   public File file() {
     return file;
   }
-
-  /**
-   * Returns the segment identifier.
-   */
-  public long id() {
-    return Long.valueOf(file.getName().substring(file.getName().lastIndexOf(PART_SEPARATOR) + 1, file.getName().lastIndexOf(EXTENSION_SEPARATOR)));
-  }
-
 }
