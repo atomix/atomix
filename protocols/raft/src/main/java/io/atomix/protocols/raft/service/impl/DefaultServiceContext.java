@@ -486,6 +486,8 @@ public class DefaultServiceContext implements ServiceContext {
 
       // Complete any pending snapshots of the service state.
       maybeCompleteSnapshot(index);
+
+      future.complete(null);
     });
     return future;
   }
