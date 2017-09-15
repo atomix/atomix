@@ -66,7 +66,7 @@ public final class SlidingWindowCounter {
         .map(AtomicLong::new)
         .collect(Collectors.toCollection(ArrayList::new));
 
-    background = newSingleThreadScheduledExecutor(namedThreads("SlidingWindowCounter-%", log));
+    background = newSingleThreadScheduledExecutor(namedThreads("atomix-sliding-window-counter-%d", log));
     background.scheduleWithFixedDelay(this::advanceHead, 0,
         SLIDE_WINDOW_PERIOD_SECONDS, TimeUnit.SECONDS);
   }
