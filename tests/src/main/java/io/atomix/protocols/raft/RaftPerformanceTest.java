@@ -498,6 +498,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftClient client = RaftClient.newBuilder()
         .withMemberId(memberId)
         .withProtocol(protocol)
+        .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .build();
 
     client.connect(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).join();
