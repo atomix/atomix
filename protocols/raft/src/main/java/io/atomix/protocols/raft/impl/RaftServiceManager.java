@@ -46,6 +46,7 @@ import io.atomix.utils.SlidingWindowCounter;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -60,7 +61,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -81,7 +81,7 @@ public class RaftServiceManager implements AutoCloseable {
 
   private final Logger logger;
   private final RaftContext raft;
-  private final ScheduledExecutorService threadPool;
+  private final ThreadContextFactory threadContextFactory;
   private final ThreadContext threadContext;
   private final RaftLog log;
   private final RaftLogReader reader;
@@ -92,11 +92,11 @@ public class RaftServiceManager implements AutoCloseable {
   private long lastPrepared;
   private long lastCompacted;
 
-  public RaftServiceManager(RaftContext raft, ScheduledExecutorService threadPool, ThreadContext threadContext) {
+  public RaftServiceManager(RaftContext raft, ThreadContextFactory threadContextFactory, ThreadContext threadContext) {
     this.raft = checkNotNull(raft, "state cannot be null");
     this.log = raft.getLog();
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
-    this.threadPool = threadPool;
+    this.threadContextFactory = threadContextFactory;
     this.threadContext = threadContext;
     this.loadCounter = new SlidingWindowCounter(WINDOW_SIZE, threadContext);
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
@@ -263,7 +263,7 @@ public class RaftServiceManager implements AutoCloseable {
                 sessionTimeout,
                 service,
                 raft,
-                threadPool);
+                threadContextFactory);
             session.setTimestamp(sessionTimestamp);
             session.setRequestSequence(reader.readLong());
             session.setCommandSequence(reader.readLong());
@@ -389,7 +389,7 @@ public class RaftServiceManager implements AutoCloseable {
           serviceFactory.get(),
           raft,
           sessionManager,
-          threadPool);
+          threadContextFactory);
       services.put(serviceName, service);
     }
     return service;
@@ -418,7 +418,7 @@ public class RaftServiceManager implements AutoCloseable {
         entry.entry().timeout(),
         service,
         raft,
-        threadPool);
+        threadContextFactory);
     sessionManager.registerSession(session);
     return service.openSession(entry.index(), entry.entry().timestamp(), session);
   }

@@ -31,7 +31,7 @@ import io.atomix.protocols.raft.session.RaftSessionEventListener;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.TimestampPrinter;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.utils.concurrent.ThreadPoolContext;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -44,7 +44,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -88,7 +87,7 @@ public class RaftSessionContext implements RaftSession {
       long timeout,
       DefaultServiceContext context,
       RaftContext server,
-      ScheduledExecutorService threadPool) {
+      ThreadContextFactory threadContextFactory) {
     this.sessionId = sessionId;
     this.member = member;
     this.name = name;
@@ -101,7 +100,7 @@ public class RaftSessionContext implements RaftSession {
     this.protocol = server.getProtocol();
     this.context = context;
     this.server = server;
-    this.eventExecutor = new ThreadPoolContext(threadPool);
+    this.eventExecutor = threadContextFactory.createContext();
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftSession.class)
         .addValue(sessionId)
         .add("type", context.serviceType())

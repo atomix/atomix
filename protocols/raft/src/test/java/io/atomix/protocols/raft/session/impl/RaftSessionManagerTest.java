@@ -26,6 +26,7 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.junit.Test;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -121,7 +122,7 @@ public class RaftSessionManagerTest {
         5000,
         context,
         server,
-        mock(ScheduledExecutorService.class));
+        mock(ThreadContextFactory.class));
   }
 
   private class TestSessionListener implements RaftSessionListener {

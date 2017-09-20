@@ -42,7 +42,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SingleThreadContext implements ThreadContext {
-  private static final Logger LOGGER = LoggerFactory.getLogger(SingleThreadContext.class);
+  protected static final Logger LOGGER = LoggerFactory.getLogger(SingleThreadContext.class);
   private final ScheduledExecutorService executor;
   private final Executor wrappedExecutor = new Executor() {
     @Override

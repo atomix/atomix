@@ -534,6 +534,7 @@ public interface RaftServer {
     private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(750);
     private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
     private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofMillis(5000);
+    private static final ThreadModel DEFAULT_THREAD_MODEL = ThreadModel.SHARED_THREAD_POOL;
     private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
     protected String name;
@@ -545,6 +546,7 @@ public interface RaftServer {
     protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
     protected final RaftServiceRegistry serviceRegistry = new RaftServiceRegistry();
+    protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
     protected Builder(MemberId localMemberId) {
@@ -583,6 +585,17 @@ public interface RaftServer {
      */
     public Builder withProtocol(RaftServerProtocol protocol) {
       this.protocol = checkNotNull(protocol, "protocol cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the server thread model.
+     *
+     * @param threadModel the server thread model
+     * @return the server builder
+     */
+    public Builder withThreadModel(ThreadModel threadModel) {
+      this.threadModel = checkNotNull(threadModel, "threadModel cannot be null");
       return this;
     }
 

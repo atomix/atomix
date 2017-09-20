@@ -119,11 +119,11 @@ public class RaftPerformanceTest implements Runnable {
 
   private static final boolean USE_NETTY = true;
 
-  private static final int ITERATIONS = 10;
+  private static final int ITERATIONS = 1;
 
   private static final int TOTAL_OPERATIONS = 1000000;
   private static final int WRITE_RATIO = 10;
-  private static final int NUM_CLIENTS = 20;
+  private static final int NUM_CLIENTS = 5;
 
   private static final ReadConsistency READ_CONSISTENCY = ReadConsistency.LINEARIZABLE;
   private static final CommunicationStrategy COMMUNICATION_STRATEGY = CommunicationStrategy.ANY;
@@ -464,11 +464,13 @@ public class RaftPerformanceTest implements Runnable {
     RaftServer.Builder builder = RaftServer.newBuilder(member.memberId())
         .withType(member.getType())
         .withProtocol(protocol)
+        .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .withStorage(RaftStorage.newBuilder()
-            .withStorageLevel(StorageLevel.DISK)
+            .withStorageLevel(StorageLevel.MAPPED)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.memberId())))
             .withSerializer(storageSerializer)
-            .withMaxSegmentSize(1024 * 1024)
+            .withMaxEntriesPerSegment(32768)
+            .withMaxSegmentSize(1024 * 1024 * 64)
             .build())
         .addService("test", PerformanceStateMachine::new);
 
