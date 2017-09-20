@@ -54,6 +54,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -61,7 +62,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -77,7 +77,7 @@ public class RaftServiceManager implements AutoCloseable {
 
   private static final int WINDOW_SIZE = 5;
   private static final int LOAD_WINDOW = 2;
-  private static final int HIGH_LOAD_THRESHOLD = 2;
+  private static final int HIGH_LOAD_THRESHOLD = 10;
 
   private final Logger logger;
   private final RaftContext raft;
@@ -88,7 +88,7 @@ public class RaftServiceManager implements AutoCloseable {
   private final RaftSessionManager sessionManager = new RaftSessionManager();
   private final Map<String, DefaultServiceContext> services = new HashMap<>();
   private final Random random = new Random();
-  private final SlidingWindowCounter loadCounter = new SlidingWindowCounter(WINDOW_SIZE);
+  private final SlidingWindowCounter loadCounter;
   private long lastPrepared;
   private long lastCompacted;
 
@@ -98,6 +98,7 @@ public class RaftServiceManager implements AutoCloseable {
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadPool = threadPool;
     this.threadContext = threadContext;
+    this.loadCounter = new SlidingWindowCounter(WINDOW_SIZE, threadContext);
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(raft.getName())
         .build());
@@ -572,7 +573,7 @@ public class RaftServiceManager implements AutoCloseable {
   }
 
   /**
-   * Compacts the log if necessary.
+   * Takes a snapshot of all services and compacts logs if the server is not under high load or disk needs to be freed.
    */
   private void snapshotServices() {
     // If the server is under high load and the log doesn't *need* to be compacted, skip snapshotting.
@@ -590,20 +591,13 @@ public class RaftServiceManager implements AutoCloseable {
       // Update the index at which the log was last compacted.
       this.lastCompacted = lastApplied;
 
-      // Copy the set of services.
+      // Copy the set of services. We don't need to account for new services that are created during the
+      // snapshot/compaction process since we're only deleting segments prior to the creation of all
+      // services that existed at the start of compaction.
       List<DefaultServiceContext> services = new ArrayList<>(this.services.values());
 
-      // Iterate through services and take snapshots, gathering a collection of snapshot completion futures.
-      List<CompletableFuture<Void>> futures = services.stream()
-          .map(context -> {
-            long snapshotIndex = context.takeSnapshot().join();
-            return scheduleCompletion(context, snapshotIndex);
-          })
-          .collect(Collectors.toList());
-
       // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
-          .whenComplete((result, error) -> scheduleCompaction(lastApplied));
+      snapshotServices(services, log.mustCompact()).whenComplete((result, error) -> scheduleCompaction(lastApplied));
     }
     // Otherwise, if the log can't be compacted anyways, just reschedule snapshots.
     else {
@@ -612,8 +606,104 @@ public class RaftServiceManager implements AutoCloseable {
   }
 
   /**
+   * Takes and persists snapshots of provided services.
+   *
+   * @param services a list of services to snapshot
+   * @param force whether to force snapshotting all services to free disk space
+   * @return future to be completed once all snapshots have been completed
+   */
+  private CompletableFuture<Void> snapshotServices(List<DefaultServiceContext> services, boolean force) {
+    return snapshotServices(services, force, 0, new ArrayList<>());
+  }
+
+  /**
+   * Takes and persists snapshots of provided services.
+   * <p>
+   * Snapshots are attempted on services that are not experiencing high load. In the event there are no more services
+   * that can be snapshotted, an attempt will be scheduled again for the future using exponential backoff.
+   *
+   * @param services a list of services to snapshot
+   * @param force whether to force snapshotting all services to free disk space
+   * @param attempt the current attempt count
+   * @param futures reference to a list of futures for all service snapshots
+   * @return future to be completed once all snapshots have been completed
+   */
+  private CompletableFuture<Void> snapshotServices(
+      List<DefaultServiceContext> services,
+      boolean force,
+      int attempt,
+      List<CompletableFuture<Void>> futures) {
+    // If all services have been processed, return a successfully completed future.
+    if (services.isEmpty()) {
+      return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+    }
+
+    // Select any service that can be snapshotted.
+    DefaultServiceContext nextService = selectService(services, force);
+
+    if (nextService != null) {
+      // Take a snapshot and then persist the snapshot after some interval. This is done to avoid persisting snapshots
+      // too close to the head of a follower's log such that the snapshot will be replicated in place of entries.
+      futures.add(nextService.takeSnapshot()
+          .thenCompose(snapshotIndex -> scheduleCompletion(nextService, snapshotIndex)));
+
+      // Recursively snapshot remaining services, resetting the attempt count.
+      return snapshotServices(services, force, 0, futures);
+    } else {
+      return rescheduleSnapshots(services, force, attempt, futures);
+    }
+  }
+
+  /**
+   * Reschedules an attempt to snapshot remaining services.
+   *
+   * @param services a list of services to snapshot
+   * @param force whether to force snapshotting all services to free disk space
+   * @param attempt the current attempt count
+   * @param futures reference to a list of futures for all service snapshots
+   * @return future to be completed once all snapshots have been completed
+   */
+  private CompletableFuture<Void> rescheduleSnapshots(
+      List<DefaultServiceContext> services,
+      boolean force,
+      int attempt,
+      List<CompletableFuture<Void>> futures) {
+    ComposableFuture<Void> future = new ComposableFuture<>();
+    threadContext.schedule(Duration.ofSeconds(Math.min(2 ^ attempt, 10)), () ->
+        snapshotServices(services, force, attempt + 1, futures).whenComplete(future));
+    return future;
+  }
+
+  /**
+   * Selects the next service to snapshot.
+   * <p>
+   * Services that are not under high load are selected unless compaction is being forced by low available disk space.
+   * When a service is selected, it will be removed from the {@code services} list reference and returned. If no
+   * service can be snapshotted, returns {@code null}.
+   *
+   * @param services a list of services from which to select a service
+   * @param force whether to force snapshotting all services to free disk space
+   * @return the service to snapshot or {@code null} if no service can be snapshotted
+   */
+  private DefaultServiceContext selectService(List<DefaultServiceContext> services, boolean force) {
+    Iterator<DefaultServiceContext> iterator = services.iterator();
+    while (iterator.hasNext()) {
+      DefaultServiceContext serviceContext = iterator.next();
+      if (force || !serviceContext.isUnderHighLoad()) {
+        iterator.remove();
+        return serviceContext;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Schedules completion of a snapshot after a randomized delay to reduce the chance the snapshot will need to be
    * replicated to followers.
+   *
+   * @param serviceContext the service for which to complete the snapshot
+   * @param snapshotIndex the index of the snapshot
+   * @return future to be completed once the snapshot has been completed
    */
   private CompletableFuture<Void> scheduleCompletion(DefaultServiceContext serviceContext, long snapshotIndex) {
     ComposableFuture<Void> future = new ComposableFuture<>();
@@ -624,6 +714,9 @@ public class RaftServiceManager implements AutoCloseable {
 
   /**
    * Schedules a log compaction.
+   *
+   * @param lastApplied the last applied index at the start of snapshotting. This represents the highest index before
+   *                    which segments can be safely removed from disk
    */
   private void scheduleCompaction(long lastApplied) {
     // Schedule compaction after a randomized delay to discourage snapshots on multiple nodes at the same time.

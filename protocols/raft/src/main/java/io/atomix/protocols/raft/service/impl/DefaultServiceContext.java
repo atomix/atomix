@@ -42,6 +42,7 @@ import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.SlidingWindowCounter;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -60,6 +61,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft server state machine executor.
  */
 public class DefaultServiceContext implements ServiceContext {
+
+  private static final int WINDOW_SIZE = 5;
+  private static final int LOAD_WINDOW = 2;
+  private static final int HIGH_LOAD_THRESHOLD = 2;
+
   private final Logger log;
   private final ServiceId serviceId;
   private final String serviceName;
@@ -70,6 +76,7 @@ public class DefaultServiceContext implements ServiceContext {
   private final ThreadContext serviceExecutor;
   private final ThreadContext snapshotExecutor;
   private final ScheduledExecutorService threadPool;
+  private final SlidingWindowCounter loadCounter;
   private final Map<Long, PendingSnapshot> pendingSnapshots = new ConcurrentSkipListMap<>();
   private long snapshotIndex;
   private long currentIndex;
@@ -104,6 +111,7 @@ public class DefaultServiceContext implements ServiceContext {
     this.sessions = new DefaultServiceSessions(serviceId, sessionManager);
     this.serviceExecutor = new ThreadPoolContext(threadPool);
     this.snapshotExecutor = new ThreadPoolContext(threadPool);
+    this.loadCounter = new SlidingWindowCounter(WINDOW_SIZE, serviceExecutor);
     this.threadPool = checkNotNull(threadPool);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
         .addValue(serviceId)
@@ -159,6 +167,15 @@ public class DefaultServiceContext implements ServiceContext {
   @Override
   public RaftSessions sessions() {
     return sessions;
+  }
+
+  /**
+   * Returns a boolean indicating whether the service is under high load.
+   *
+   * @return indicates whether the service is under high load
+   */
+  public boolean isUnderHighLoad() {
+    return loadCounter.get(LOAD_WINDOW) > HIGH_LOAD_THRESHOLD;
   }
 
   /**
