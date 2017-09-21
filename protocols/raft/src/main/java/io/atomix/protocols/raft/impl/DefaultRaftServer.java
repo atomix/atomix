@@ -253,7 +253,7 @@ public class DefaultRaftServer implements RaftServer {
         storage = RaftStorage.newBuilder().build();
       }
 
-      RaftContext raft = new RaftContext(name, type, localMemberId, protocol, storage, serviceRegistry, threadPoolSize);
+      RaftContext raft = new RaftContext(name, type, localMemberId, protocol, storage, serviceRegistry, threadModel, threadPoolSize);
       raft.setElectionTimeout(electionTimeout);
       raft.setHeartbeatInterval(heartbeatInterval);
       raft.setSessionTimeout(sessionTimeout);

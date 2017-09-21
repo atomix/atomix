@@ -32,8 +32,9 @@ import io.atomix.protocols.raft.proxy.RaftProxyClient;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.utils.concurrent.ThreadPoolContext;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -45,9 +46,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -66,17 +64,19 @@ public class RaftProxyManager {
   private final MemberId memberId;
   private final RaftClientProtocol protocol;
   private final RaftProxyConnection connection;
-  private final ScheduledExecutorService threadPoolExecutor;
+  private final ThreadContextFactory threadContextFactory;
+  private final ThreadContext threadContext;
   private final MemberSelectorManager selectorManager;
   private final Map<Long, RaftProxyState> sessions = new ConcurrentHashMap<>();
-  private final Map<Long, ScheduledFuture<?>> keepAliveFutures = new ConcurrentHashMap<>();
+  private final Map<Long, Scheduled> keepAliveFutures = new ConcurrentHashMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public RaftProxyManager(String clientId, MemberId memberId, RaftClientProtocol protocol, MemberSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
+  public RaftProxyManager(String clientId, MemberId memberId, RaftClientProtocol protocol, MemberSelectorManager selectorManager, ThreadContextFactory threadContextFactory) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
     this.memberId = checkNotNull(memberId, "memberId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
+    this.threadContext = threadContextFactory.createContext();
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftClient.class)
         .addValue(clientId)
         .build());
@@ -84,11 +84,11 @@ public class RaftProxyManager {
     this.connection = new RaftProxyConnection(
         protocol,
         selectorManager.createSelector(CommunicationStrategy.ANY),
-        new ThreadPoolContext(threadPoolExecutor),
+        threadContextFactory.createContext(),
         LoggerContext.builder(RaftClient.class)
             .addValue(clientId)
             .build());
-    this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
+    this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
   }
 
   /**
@@ -148,7 +148,7 @@ public class RaftProxyManager {
         .build();
 
     CompletableFuture<RaftProxyClient> future = new CompletableFuture<>();
-    ThreadContext proxyContext = new ThreadPoolContext(threadPoolExecutor);
+    ThreadContext proxyContext = threadContextFactory.createContext();
     connection.openSession(request).whenCompleteAsync((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
@@ -347,17 +347,17 @@ public class RaftProxyManager {
    * Schedules a keep-alive request.
    */
   private synchronized void scheduleKeepAlive(long lastKeepAliveTime, long timeout, long delta) {
-    ScheduledFuture<?> keepAliveFuture = keepAliveFutures.remove(timeout);
+    Scheduled keepAliveFuture = keepAliveFutures.remove(timeout);
     if (keepAliveFuture != null) {
-      keepAliveFuture.cancel(false);
+      keepAliveFuture.cancel();
     }
 
     // Schedule the keep alive for 3/4 the timeout minus the delta from the last keep-alive request.
-    keepAliveFutures.put(timeout, threadPoolExecutor.schedule(() -> {
+    keepAliveFutures.put(timeout, threadContext.schedule(Duration.ofMillis(Math.max(Math.max((long)(timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0)), () -> {
       if (open.get()) {
         keepAliveSessions(lastKeepAliveTime, timeout);
       }
-    }, Math.max(Math.max((long)(timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0), TimeUnit.MILLISECONDS));
+    }));
   }
 
   /**
@@ -368,9 +368,9 @@ public class RaftProxyManager {
   public CompletableFuture<Void> close() {
     if (open.compareAndSet(true, false)) {
       CompletableFuture<Void> future = new CompletableFuture<>();
-      threadPoolExecutor.execute(() -> {
-        for (ScheduledFuture<?> keepAliveFuture : keepAliveFutures.values()) {
-          keepAliveFuture.cancel(false);
+      threadContext.execute(() -> {
+        for (Scheduled keepAliveFuture : keepAliveFutures.values()) {
+          keepAliveFuture.cancel();
         }
         future.complete(null);
       });

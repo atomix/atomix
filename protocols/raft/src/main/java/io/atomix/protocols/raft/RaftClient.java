@@ -165,6 +165,7 @@ public interface RaftClient {
     protected String clientId = UUID.randomUUID().toString();
     protected MemberId nodeId;
     protected RaftClientProtocol protocol;
+    protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
 
     protected Builder(Collection<MemberId> cluster) {
@@ -207,6 +208,18 @@ public interface RaftClient {
      */
     public Builder withProtocol(RaftClientProtocol protocol) {
       this.protocol = checkNotNull(protocol, "protocol cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the client thread model.
+     *
+     * @param threadModel the client thread model
+     * @return the client builder
+     * @throws NullPointerException if the thread model is null
+     */
+    public Builder withThreadModel(ThreadModel threadModel) {
+      this.threadModel = checkNotNull(threadModel, "threadModel cannot be null");
       return this;
     }
 

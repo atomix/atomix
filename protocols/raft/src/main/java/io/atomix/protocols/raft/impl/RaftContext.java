@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
+import io.atomix.protocols.raft.ThreadModel;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -38,9 +39,9 @@ import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
-import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -51,9 +52,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -86,8 +84,8 @@ public class RaftContext implements AutoCloseable {
   private RaftLogReader logReader;
   private SnapshotStore snapshotStore;
   private RaftServiceManager stateMachine;
-  protected final ScheduledExecutorService threadPool;
-  protected final ThreadContext stateContext;
+  private final ThreadContextFactory threadContextFactory;
+  private final ThreadContext stateContext;
   protected RaftRole role = new InactiveRole(this);
   private Duration electionTimeout = Duration.ofMillis(500);
   private Duration sessionTimeout = Duration.ofMillis(5000);
@@ -100,7 +98,15 @@ public class RaftContext implements AutoCloseable {
   private volatile long lastApplied;
 
   @SuppressWarnings("unchecked")
-  public RaftContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftServiceRegistry registry, int threadPoolSize) {
+  public RaftContext(
+      String name,
+      RaftMember.Type type,
+      MemberId localMemberId,
+      RaftServerProtocol protocol,
+      RaftStorage storage,
+      RaftServiceRegistry registry,
+      ThreadModel threadModel,
+      int threadPoolSize) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
@@ -112,7 +118,8 @@ public class RaftContext implements AutoCloseable {
     String baseThreadName = String.format("raft-server-%s", name);
     this.threadContext = new SingleThreadContext(namedThreads(baseThreadName, log));
     this.stateContext = new SingleThreadContext(namedThreads(baseThreadName + "-state", log));
-    this.threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads(baseThreadName + "-%d", log));
+
+    this.threadContextFactory = threadModel.factory(baseThreadName + "-%d", threadPoolSize, log);
 
     // Open the metadata store.
     this.meta = storage.openMetaStore();
@@ -574,7 +581,7 @@ public class RaftContext implements AutoCloseable {
     snapshotStore = storage.openSnapshotStore();
 
     // Create a new internal server state machine.
-    this.stateMachine = new RaftServiceManager(this, threadPool, stateContext);
+    this.stateMachine = new RaftServiceManager(this, threadContextFactory, stateContext);
   }
 
   /**
@@ -803,12 +810,7 @@ public class RaftContext implements AutoCloseable {
     stateMachine.close();
     threadContext.close();
     stateContext.close();
-    threadPool.shutdownNow();
-
-    try {
-      threadPool.awaitTermination(10, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-    }
+    threadContextFactory.close();
   }
 
   /**
