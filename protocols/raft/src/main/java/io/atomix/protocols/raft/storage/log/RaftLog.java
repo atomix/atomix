@@ -37,6 +37,9 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
     return new Builder();
   }
 
+  private static final long SEGMENT_BUFFER_FACTOR = 3;
+  private static final double FREE_DISK_BUFFER = .25;
+
   private final SegmentedJournal<RaftLogEntry> journal;
   private final boolean flushOnCommit;
   private final RaftLogWriter writer;
@@ -117,6 +120,17 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    */
   public long getCompactableIndex(long index) {
     return journal.getCompactableIndex(index);
+  }
+
+  /**
+   * Returns a boolean indicating whether the log must be compacted if possible.
+   *
+   * @return indicates whether the log must be compacted if possible
+   */
+  public boolean mustCompact() {
+    return journal.storageLevel() == StorageLevel.MEMORY
+        || journal.directory().getFreeSpace() < journal.maxSegmentSize() * SEGMENT_BUFFER_FACTOR
+        || journal.directory().getFreeSpace() / (double) journal.directory().getTotalSpace() < FREE_DISK_BUFFER;
   }
 
   /**

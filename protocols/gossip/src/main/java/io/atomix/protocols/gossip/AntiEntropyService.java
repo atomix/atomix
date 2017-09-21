@@ -20,8 +20,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.event.AbstractListenerManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.gossip.protocol.AntiEntropyAdvertisement;
 import io.atomix.protocols.gossip.protocol.AntiEntropyProtocol;
 import io.atomix.protocols.gossip.protocol.AntiEntropyResponse;
@@ -31,6 +29,9 @@ import io.atomix.time.LogicalClock;
 import io.atomix.utils.AbstractAccumulator;
 import io.atomix.utils.Identifier;
 import io.atomix.utils.SlidingWindowCounter;
+import io.atomix.utils.concurrent.SingleThreadContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -76,7 +77,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
 
   private volatile boolean open = true;
 
-  private final SlidingWindowCounter counter = new SlidingWindowCounter(WINDOW_SIZE);
+  private final SlidingWindowCounter counter;
 
   public AntiEntropyService(
       AntiEntropyProtocol<Identifier> protocol,
@@ -90,6 +91,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
     this.peerProvider = checkNotNull(peerProvider, "peerProvider cannot be null");
     this.eventExecutor = checkNotNull(eventExecutor, "eventExecutor cannot be null");
     this.communicationExecutor = checkNotNull(communicationExecutor, "communicationExecutor cannot be null");
+    this.counter = new SlidingWindowCounter(WINDOW_SIZE, new SingleThreadContext("anti-entropy-%d"));
     this.tombstonesDisabled = tombstonesDisabled;
     protocol.registerGossipListener(this::update);
     updateFuture = communicationExecutor.scheduleAtFixedRate(this::performAntiEntropy, 0, antiEntropyInterval.toMillis(), TimeUnit.MILLISECONDS);

@@ -15,20 +15,19 @@
  */
 package io.atomix.utils;
 
+import io.atomix.utils.concurrent.Scheduled;
+import io.atomix.utils.concurrent.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static io.atomix.utils.concurrent.Threads.namedThreads;
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 
 /**
  * Maintains a sliding window of value counts. The sliding window counter is
@@ -44,7 +43,7 @@ public final class SlidingWindowCounter {
 
   private final List<AtomicLong> counters;
 
-  private final ScheduledExecutorService background;
+  private final Scheduled schedule;
 
   private static final int SLIDE_WINDOW_PERIOD_SECONDS = 1;
 
@@ -54,7 +53,7 @@ public final class SlidingWindowCounter {
    *
    * @param windowSlots total number of window slots
    */
-  public SlidingWindowCounter(int windowSlots) {
+  public SlidingWindowCounter(int windowSlots, ThreadContext context) {
     checkArgument(windowSlots > 0, "Window size must be a positive integer");
 
     this.windowSlots = windowSlots;
@@ -65,17 +64,14 @@ public final class SlidingWindowCounter {
         .stream()
         .map(AtomicLong::new)
         .collect(Collectors.toCollection(ArrayList::new));
-
-    background = newSingleThreadScheduledExecutor(namedThreads("SlidingWindowCounter-%", log));
-    background.scheduleWithFixedDelay(this::advanceHead, 0,
-        SLIDE_WINDOW_PERIOD_SECONDS, TimeUnit.SECONDS);
+    this.schedule = context.schedule(0, SLIDE_WINDOW_PERIOD_SECONDS, TimeUnit.SECONDS, this::advanceHead);
   }
 
   /**
    * Releases resources used by the SlidingWindowCounter.
    */
   public void destroy() {
-    background.shutdownNow();
+    schedule.cancel();
   }
 
   /**
