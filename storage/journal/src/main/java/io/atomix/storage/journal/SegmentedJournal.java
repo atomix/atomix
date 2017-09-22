@@ -612,9 +612,9 @@ public class SegmentedJournal<E> implements Journal<E> {
     if (segmentEntry != null) {
       SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(segmentEntry.getValue().index());
       if (!compactSegments.isEmpty()) {
-        log.info("{} - Compacting {} segment(s)", name, compactSegments.size());
+        log.debug("{} - Compacting {} segment(s)", name, compactSegments.size());
         for (JournalSegment segment : compactSegments.values()) {
-          log.debug("Deleting segment: {}", segment);
+          log.trace("Deleting segment: {}", segment);
           segment.close();
           segment.delete();
         }
