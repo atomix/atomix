@@ -74,7 +74,7 @@ public class BalancingClusterManager implements ClusterManager {
     });
 
     cluster.onLeave(m -> balance(cluster));
-    return null;
+    return CompletableFuture.completedFuture(null);
   }
 
   /**
