@@ -45,13 +45,11 @@ import java.util.stream.Collectors;
  * Follower state.
  */
 public final class FollowerRole extends ActiveRole {
-  private final FollowerAppender appender;
   private final Random random = new Random();
   private Scheduled heartbeatTimer;
 
   public FollowerRole(RaftContext context) {
     super(context);
-    this.appender = new FollowerAppender(context);
   }
 
   @Override
@@ -198,9 +196,6 @@ public final class FollowerRole extends ActiveRole {
 
     // Reset the heartbeat timeout.
     resetHeartbeatTimeout();
-
-    // Send AppendEntries requests to passive members if necessary.
-    appender.appendEntries();
     return future;
   }
 
@@ -226,7 +221,7 @@ public final class FollowerRole extends ActiveRole {
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    return super.close().thenRun(appender::close).thenRun(this::cancelHeartbeatTimeout);
+    return super.close().thenRun(this::cancelHeartbeatTimeout);
   }
 
 }

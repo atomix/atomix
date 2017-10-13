@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
-import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.utils.concurrent.Futures;
@@ -26,9 +25,7 @@ import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -47,8 +44,6 @@ public class DefaultRaftServer implements RaftServer {
   protected final RaftContext context;
   private volatile CompletableFuture<RaftServer> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
-  private Consumer<RaftMember> electionListener;
-  private Consumer<RaftContext.State> stateChangeListener;
   private volatile boolean started;
 
   public DefaultRaftServer(RaftContext context) {
@@ -84,23 +79,8 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   @Override
-  public CompletableFuture<RaftServer> bootstrap() {
-    return bootstrap(Collections.emptyList());
-  }
-
-  @Override
-  public CompletableFuture<RaftServer> bootstrap(MemberId... cluster) {
-    return bootstrap(Arrays.asList(cluster));
-  }
-
-  @Override
   public CompletableFuture<RaftServer> bootstrap(Collection<MemberId> cluster) {
     return start(() -> cluster().bootstrap(cluster));
-  }
-
-  @Override
-  public CompletableFuture<RaftServer> join(MemberId... cluster) {
-    return join(Arrays.asList(cluster));
   }
 
   @Override

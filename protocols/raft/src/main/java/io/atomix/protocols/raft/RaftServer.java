@@ -27,7 +27,9 @@ import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -350,7 +352,9 @@ public interface RaftServer {
    *
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  CompletableFuture<RaftServer> bootstrap();
+  default CompletableFuture<RaftServer> bootstrap() {
+    return bootstrap(Collections.emptyList());
+  }
 
   /**
    * Bootstraps the cluster using the provided cluster configuration.
@@ -374,10 +378,12 @@ public interface RaftServer {
    * The {@link CompletableFuture} returned by this method will be completed once the cluster has been bootstrapped,
    * a leader has been elected, and the leader has been notified of the local server's client configurations.
    *
-   * @param cluster The bootstrap cluster configuration.
+   * @param members The bootstrap cluster configuration.
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  CompletableFuture<RaftServer> bootstrap(MemberId... cluster);
+  default CompletableFuture<RaftServer> bootstrap(MemberId... members) {
+    return bootstrap(Arrays.asList(members));
+  }
 
   /**
    * Bootstraps the cluster using the provided cluster configuration.
@@ -433,10 +439,12 @@ public interface RaftServer {
    * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
    * the join will be retried until successful.
    *
-   * @param cluster A collection of cluster member addresses to join.
+   * @param members A collection of cluster members to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  CompletableFuture<RaftServer> join(MemberId... cluster);
+  default CompletableFuture<RaftServer> join(MemberId... members) {
+    return join(Arrays.asList(members));
+  }
 
   /**
    * Joins the cluster.
@@ -465,10 +473,10 @@ public interface RaftServer {
    * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
    * the join will be retried until successful.
    *
-   * @param cluster A collection of cluster member addresses to join.
+   * @param members A collection of cluster members to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  CompletableFuture<RaftServer> join(Collection<MemberId> cluster);
+  CompletableFuture<RaftServer> join(Collection<MemberId> members);
 
   /**
    * Promotes the server to leader if possible.
