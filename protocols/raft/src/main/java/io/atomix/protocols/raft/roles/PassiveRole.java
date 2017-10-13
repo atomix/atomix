@@ -267,6 +267,9 @@ public class PassiveRole extends ReserveRole {
       }
     }
 
+    // Set the first commit index.
+    raft.setFirstCommitIndex(request.commitIndex());
+
     // Update the context commit and global indices.
     long previousCommitIndex = raft.setCommitIndex(commitIndex);
     if (previousCommitIndex < commitIndex) {
