@@ -187,13 +187,13 @@ final class LeaderAppender extends AbstractAppender {
       }
     }
     // If the member is a reserve or passive member, send an empty AppendRequest to it.
-    else if (member.getMember().getType() == RaftMember.Type.RESERVE || member.getMember().getType() == RaftMember.Type.PASSIVE) {
+    else if (member.getMember().getType() == RaftMember.Type.RESERVE) {
       if (member.canAppend()) {
         sendAppendRequest(member, buildAppendEmptyRequest(member));
       }
     }
     // If there's a snapshot at the member's nextIndex, replicate the snapshot.
-    else if (member.getMember().getType() == RaftMember.Type.ACTIVE) {
+    else if (member.getMember().getType() == RaftMember.Type.ACTIVE || member.getMember().getType() == RaftMember.Type.PASSIVE) {
       Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
       if (snapshot != null && member.getSnapshotIndex() < snapshot.index()) {
         if (member.canInstall()) {

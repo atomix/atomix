@@ -289,15 +289,6 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     return reserveMembers;
   }
 
-  /**
-   * Returns a list of assigned passive member states.
-   *
-   * @return A list of assigned passive member states.
-   */
-  public List<RaftMemberContext> getAssignedPassiveMemberStates() {
-    return assignedMembers;
-  }
-
   @Override
   public CompletableFuture<Void> bootstrap(Collection<MemberId> cluster) {
     if (joinFuture != null)
@@ -653,49 +644,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
       raft.getMetaStore().storeConfiguration(configuration);
     }
 
-    // Reassign members based on availability.
-    reassign();
-
     return this;
-  }
-
-  /**
-   * Rebuilds assigned member states.
-   */
-  private void reassign() {
-    if (member.getType() == RaftMember.Type.ACTIVE && !member.equals(raft.getLeader())) {
-      // Calculate this server's index within the collection of active members, excluding the leader.
-      // This is done in a deterministic way by sorting the list of active members by ID.
-      int index = 1;
-      for (RaftMemberContext member : getActiveMemberStates(Comparator.comparingInt(m -> m.getMember().hash()))) {
-        if (!member.getMember().equals(raft.getLeader())) {
-          if (this.member.hash() < member.getMember().hash()) {
-            index++;
-          } else {
-            break;
-          }
-        }
-      }
-
-      // Intersect the active members list with a sorted list of passive members to get assignments.
-      List<RaftMemberContext> sortedPassiveMembers = getPassiveMemberStates(Comparator.comparingInt(m -> m.getMember().hash()));
-      assignedMembers = assignMembers(index, sortedPassiveMembers);
-    } else {
-      assignedMembers = new ArrayList<>(0);
-    }
-  }
-
-  /**
-   * Assigns members using consistent hashing.
-   */
-  private List<RaftMemberContext> assignMembers(int index, List<RaftMemberContext> sortedMembers) {
-    List<RaftMemberContext> members = new ArrayList<>(sortedMembers.size());
-    for (int i = 0; i < sortedMembers.size(); i++) {
-      if ((i + 1) % index == 0) {
-        members.add(sortedMembers.get(i));
-      }
-    }
-    return members;
   }
 
   @Override
