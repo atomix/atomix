@@ -441,10 +441,7 @@ public class RaftContext implements AutoCloseable {
       if (configurationIndex > previousCommitIndex && configurationIndex <= commitIndex) {
         cluster.commit();
       }
-
-      if (firstCommitIndex == 0) {
-        firstCommitIndex = commitIndex;
-      }
+      setFirstCommitIndex(commitIndex);
     }
     return previousCommitIndex;
   }
@@ -456,6 +453,26 @@ public class RaftContext implements AutoCloseable {
    */
   public long getCommitIndex() {
     return commitIndex;
+  }
+
+  /**
+   * Sets the first commit index.
+   *
+   * @param firstCommitIndex The first commit index.
+   */
+  public void setFirstCommitIndex(long firstCommitIndex) {
+    if (this.firstCommitIndex == 0) {
+      this.firstCommitIndex = firstCommitIndex;
+    }
+  }
+
+  /**
+   * Returns the first commit index.
+   *
+   * @return The first commit index.
+   */
+  public long getFirstCommitIndex() {
+    return firstCommitIndex;
   }
 
   /**
