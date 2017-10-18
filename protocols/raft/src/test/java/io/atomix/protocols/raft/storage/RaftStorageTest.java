@@ -35,6 +35,7 @@ public class RaftStorageTest {
     assertEquals(new File(System.getProperty("user.dir")), storage.directory());
     assertEquals(1024 * 1024 * 32, storage.maxLogSegmentSize());
     assertEquals(1024 * 1024, storage.maxLogEntriesPerSegment());
+    assertTrue(storage.dynamicCompaction());
     assertEquals(3, storage.segmentBufferFactor());
     assertEquals(.25, storage.freeDiskBuffer(), .01);
     assertFalse(storage.isFlushOnCommit());
@@ -48,6 +49,7 @@ public class RaftStorageTest {
         .withDirectory(new File(System.getProperty("user.dir"), "foo"))
         .withMaxSegmentSize(1024 * 1024)
         .withMaxEntriesPerSegment(1024)
+        .withDynamicCompaction(false)
         .withSegmentBufferFactor(5)
         .withFreeDiskBuffer(.5)
         .withFlushOnCommit()

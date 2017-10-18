@@ -48,15 +48,24 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
   private static final double FREE_DISK_BUFFER = .25;
 
   private final SegmentedJournal<RaftLogEntry> journal;
+  private final boolean dynamicCompaction;
+  private final int segmentBufferFactor;
+  private final double freeDiskBuffer;
   private final boolean flushOnCommit;
   private final RaftLogWriter writer;
   private volatile long commitIndex;
 
-  public RaftLog(
+  protected RaftLog(
       SegmentedJournal<RaftLogEntry> journal,
+      boolean dynamicCompaction,
+      int segmentBufferFactor,
+      double freeDiskBuffer,
       boolean flushOnCommit) {
     super(journal);
     this.journal = journal;
+    this.dynamicCompaction = dynamicCompaction;
+    this.segmentBufferFactor = segmentBufferFactor;
+    this.freeDiskBuffer = freeDiskBuffer;
     this.flushOnCommit = flushOnCommit;
     this.writer = new RaftLogWriter(journal.writer(), this);
   }
@@ -135,7 +144,8 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    * @return indicates whether the log must be compacted if possible
    */
   public boolean mustCompact() {
-    return journal.storageLevel() == StorageLevel.MEMORY
+    return !dynamicCompaction
+        || journal.storageLevel() == StorageLevel.MEMORY
         || journal.directory().getUsableSpace() < journal.maxSegmentSize() * (long) SEGMENT_BUFFER_FACTOR
         || journal.directory().getUsableSpace() / (double) journal.directory().getTotalSpace() < FREE_DISK_BUFFER;
   }
@@ -155,11 +165,13 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    * Raft log builder.
    */
   public static class Builder implements io.atomix.utils.Builder<RaftLog> {
+    private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
     private static final int DEFAULT_SEGMENT_BUFFER_FACTOR = 3;
     private static final double DEFAULT_FREE_DISK_BUFFER = .25;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
 
     private final SegmentedJournal.Builder<RaftLogEntry> journalBuilder = SegmentedJournal.newBuilder();
+    private boolean dynamicCompaction = DEFAULT_DYNAMIC_COMPACTION;
     private int segmentBufferFactor = DEFAULT_SEGMENT_BUFFER_FACTOR;
     private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
@@ -268,6 +280,32 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
     }
 
     /**
+     * Enables dynamic log compaction.
+     * <p>
+     * When dynamic compaction is enabled, logs will be compacted only during periods of low load on the cluster
+     * or when the cluster is running out of disk space.
+     *
+     * @return the Raft log builder
+     */
+    public Builder withDynamicCompaction() {
+      return withDynamicCompaction(true);
+    }
+
+    /**
+     * Enables dynamic log compaction.
+     * <p>
+     * When dynamic compaction is enabled, logs will be compacted only during periods of low load on the cluster
+     * or when the cluster is running out of disk space.
+     *
+     * @param dynamicCompaction whether to enable dynamic compaction
+     * @return the Raft log builder
+     */
+    public Builder withDynamicCompaction(boolean dynamicCompaction) {
+      this.dynamicCompaction = dynamicCompaction;
+      return this;
+    }
+
+    /**
      * Sets the number of additional segments that must be able to fit on disk before log compaction is forced.
      *
      * @param segmentBufferFactor the segment buffer factor
@@ -322,7 +360,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
 
     @Override
     public RaftLog build() {
-      return new RaftLog(journalBuilder.build(), flushOnCommit);
+      return new RaftLog(journalBuilder.build(), dynamicCompaction, segmentBufferFactor, freeDiskBuffer, flushOnCommit);
     }
   }
 }
