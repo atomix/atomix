@@ -23,21 +23,28 @@ import io.atomix.storage.journal.SegmentedJournal;
 
 import java.io.File;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * Raft log.
  */
 public class RaftLog extends DelegatingJournal<RaftLogEntry> {
+
+  @Deprecated
+  public static Builder builder() {
+    return newBuilder();
+  }
 
   /**
    * Returns a new Raft log builder.
    *
    * @return A new Raft log builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
-  private static final long SEGMENT_BUFFER_FACTOR = 3;
+  private static final int SEGMENT_BUFFER_FACTOR = 3;
   private static final double FREE_DISK_BUFFER = .25;
 
   private final SegmentedJournal<RaftLogEntry> journal;
@@ -129,8 +136,8 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    */
   public boolean mustCompact() {
     return journal.storageLevel() == StorageLevel.MEMORY
-        || journal.directory().getFreeSpace() < journal.maxSegmentSize() * SEGMENT_BUFFER_FACTOR
-        || journal.directory().getFreeSpace() / (double) journal.directory().getTotalSpace() < FREE_DISK_BUFFER;
+        || journal.directory().getUsableSpace() < journal.maxSegmentSize() * (long) SEGMENT_BUFFER_FACTOR
+        || journal.directory().getUsableSpace() / (double) journal.directory().getTotalSpace() < FREE_DISK_BUFFER;
   }
 
   /**
@@ -148,8 +155,13 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    * Raft log builder.
    */
   public static class Builder implements io.atomix.utils.Builder<RaftLog> {
+    private static final int DEFAULT_SEGMENT_BUFFER_FACTOR = 3;
+    private static final double DEFAULT_FREE_DISK_BUFFER = .25;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
+
     private final SegmentedJournal.Builder<RaftLogEntry> journalBuilder = SegmentedJournal.newBuilder();
+    private int segmentBufferFactor = DEFAULT_SEGMENT_BUFFER_FACTOR;
+    private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
 
     protected Builder() {
@@ -252,6 +264,31 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
      */
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       journalBuilder.withMaxEntriesPerSegment(maxEntriesPerSegment);
+      return this;
+    }
+
+    /**
+     * Sets the number of additional segments that must be able to fit on disk before log compaction is forced.
+     *
+     * @param segmentBufferFactor the segment buffer factor
+     * @return the Raft log builder
+     */
+    public Builder withSegmentBufferFactor(int segmentBufferFactor) {
+      checkArgument(segmentBufferFactor > 0, "segmentBufferFactor must be positive");
+      this.segmentBufferFactor = segmentBufferFactor;
+      return this;
+    }
+
+    /**
+     * Sets the percentage of free disk space that must be preserved before log compaction is forced.
+     *
+     * @param freeDiskBuffer the free disk percentage
+     * @return the Raft log builder
+     */
+    public Builder withFreeDiskBuffer(double freeDiskBuffer) {
+      checkArgument(freeDiskBuffer > 0, "freeDiskBuffer must be positive");
+      checkArgument(freeDiskBuffer < 1, "freeDiskBuffer must be less than 1");
+      this.freeDiskBuffer = freeDiskBuffer;
       return this;
     }
 
