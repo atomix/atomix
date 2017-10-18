@@ -650,7 +650,7 @@ public class RaftServiceManager implements AutoCloseable {
       // Recursively snapshot remaining services, resetting the attempt count.
       return snapshotServices(services, force, 0, futures);
     } else {
-      return rescheduleSnapshots(services, force, attempt, futures);
+      return rescheduleSnapshots(services, attempt, futures);
     }
   }
 
@@ -658,19 +658,17 @@ public class RaftServiceManager implements AutoCloseable {
    * Reschedules an attempt to snapshot remaining services.
    *
    * @param services a list of services to snapshot
-   * @param force whether to force snapshotting all services to free disk space
    * @param attempt the current attempt count
    * @param futures reference to a list of futures for all service snapshots
    * @return future to be completed once all snapshots have been completed
    */
   private CompletableFuture<Void> rescheduleSnapshots(
       List<DefaultServiceContext> services,
-      boolean force,
       int attempt,
       List<CompletableFuture<Void>> futures) {
     ComposableFuture<Void> future = new ComposableFuture<>();
     threadContext.schedule(Duration.ofSeconds(Math.min(2 ^ attempt, 10)), () ->
-        snapshotServices(services, force, attempt + 1, futures).whenComplete(future));
+        snapshotServices(services, log.mustCompact(), attempt + 1, futures).whenComplete(future));
     return future;
   }
 
