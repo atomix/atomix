@@ -68,7 +68,8 @@ public class RaftStorage {
   private final Serializer serializer;
   private final int maxSegmentSize;
   private final int maxEntriesPerSegment;
-  private final int entryBufferSize;
+  private final int segmentBufferFactor;
+  private final double freeDiskBuffer;
   private final boolean flushOnCommit;
   private final boolean retainStaleSnapshots;
 
@@ -79,7 +80,8 @@ public class RaftStorage {
       Serializer serializer,
       int maxSegmentSize,
       int maxEntriesPerSegment,
-      int entryBufferSize,
+      int segmentBufferFactor,
+      double freeDiskBuffer,
       boolean flushOnCommit,
       boolean retainStaleSnapshots) {
     this.prefix = prefix;
@@ -88,7 +90,8 @@ public class RaftStorage {
     this.serializer = serializer;
     this.maxSegmentSize = maxSegmentSize;
     this.maxEntriesPerSegment = maxEntriesPerSegment;
-    this.entryBufferSize = entryBufferSize;
+    this.segmentBufferFactor = segmentBufferFactor;
+    this.freeDiskBuffer = freeDiskBuffer;
     this.flushOnCommit = flushOnCommit;
     this.retainStaleSnapshots = retainStaleSnapshots;
     directory.mkdirs();
@@ -156,20 +159,26 @@ public class RaftStorage {
    *
    * @return The maximum number of entries per segment.
    */
-  public int maxLogEntriesPerSecond() {
+  public int maxLogEntriesPerSegment() {
     return maxEntriesPerSegment;
   }
 
   /**
-   * Returns the entry buffer size.
-   * <p>
-   * The entry buffer size dictates the number of entries that will be held in memory for read operations
-   * at the tail of the log.
+   * Returns the number of segments that must be able to fit on disk before log compaction is forced.
    *
-   * @return The entry buffer size.
+   * @return the number of segments that must be able to fit on disk before log compaction is forced
    */
-  public int logEntryBufferSize() {
-    return entryBufferSize;
+  public int segmentBufferFactor() {
+    return segmentBufferFactor;
+  }
+
+  /**
+   * Returns the percentage of disk space that must be available before log compaction is forced.
+   *
+   * @return the percentage of disk space that must be available before log compaction is forced
+   */
+  public double freeDiskBuffer() {
+    return freeDiskBuffer;
   }
 
   /**
@@ -251,13 +260,16 @@ public class RaftStorage {
    * @return The opened log.
    */
   public RaftLog openLog() {
-    return RaftLog.builder()
+    return RaftLog.newBuilder()
         .withName(prefix)
         .withDirectory(directory)
         .withStorageLevel(storageLevel)
         .withSerializer(serializer)
         .withMaxSegmentSize(maxSegmentSize)
         .withMaxEntriesPerSegment(maxEntriesPerSegment)
+        .withSegmentBufferFactor(segmentBufferFactor)
+        .withFreeDiskBuffer(freeDiskBuffer)
+        .withFlushOnCommit(flushOnCommit)
         .build();
   }
 
@@ -315,7 +327,8 @@ public class RaftStorage {
     private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
-    private static final int DEFAULT_ENTRY_BUFFER_SIZE = 1024;
+    private static final int DEFAULT_SEGMENT_BUFFER_FACTOR = 3;
+    private static final double DEFAULT_FREE_DISK_BUFFER = .25;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
     private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
 
@@ -325,7 +338,8 @@ public class RaftStorage {
     private Serializer serializer;
     private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
     private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
-    private int entryBufferSize = DEFAULT_ENTRY_BUFFER_SIZE;
+    private int segmentBufferFactor = DEFAULT_SEGMENT_BUFFER_FACTOR;
+    private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;
 
@@ -440,19 +454,27 @@ public class RaftStorage {
     }
 
     /**
-     * Sets the entry buffer size.
-     * <p>
-     * The entry buffer size dictates the number of entries to hold in memory at the tail of the log. Increasing
-     * the buffer size increases the number of entries that will be held in memory and thus implies greater memory
-     * consumption, but server performance may be improved due to reduced disk access.
+     * Sets the number of additional segments that must be able to fit on disk before log compaction is forced.
      *
-     * @param entryBufferSize The entry buffer size.
-     * @return The storage builder.
-     * @throws IllegalArgumentException if the buffer size is not positive
+     * @param segmentBufferFactor the segment buffer factor
+     * @return the Raft log builder
      */
-    public Builder withEntryBufferSize(int entryBufferSize) {
-      checkArgument(entryBufferSize > 0, "entryBufferSize must be positive");
-      this.entryBufferSize = entryBufferSize;
+    public Builder withSegmentBufferFactor(int segmentBufferFactor) {
+      checkArgument(segmentBufferFactor > 0, "segmentBufferFactor must be positive");
+      this.segmentBufferFactor = segmentBufferFactor;
+      return this;
+    }
+
+    /**
+     * Sets the percentage of free disk space that must be preserved before log compaction is forced.
+     *
+     * @param freeDiskBuffer the free disk percentage
+     * @return the Raft log builder
+     */
+    public Builder withFreeDiskBuffer(double freeDiskBuffer) {
+      checkArgument(freeDiskBuffer > 0, "freeDiskBuffer must be positive");
+      checkArgument(freeDiskBuffer < 1, "freeDiskBuffer must be less than 1");
+      this.freeDiskBuffer = freeDiskBuffer;
       return this;
     }
 
@@ -530,7 +552,8 @@ public class RaftStorage {
           serializer,
           maxSegmentSize,
           maxEntriesPerSegment,
-          entryBufferSize,
+          segmentBufferFactor,
+          freeDiskBuffer,
           flushOnCommit,
           retainStaleSnapshots);
     }
