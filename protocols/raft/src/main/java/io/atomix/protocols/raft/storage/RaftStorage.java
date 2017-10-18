@@ -68,6 +68,7 @@ public class RaftStorage {
   private final Serializer serializer;
   private final int maxSegmentSize;
   private final int maxEntriesPerSegment;
+  private final boolean dynamicCompaction;
   private final int segmentBufferFactor;
   private final double freeDiskBuffer;
   private final boolean flushOnCommit;
@@ -80,6 +81,7 @@ public class RaftStorage {
       Serializer serializer,
       int maxSegmentSize,
       int maxEntriesPerSegment,
+      boolean dynamicCompaction,
       int segmentBufferFactor,
       double freeDiskBuffer,
       boolean flushOnCommit,
@@ -90,6 +92,7 @@ public class RaftStorage {
     this.serializer = serializer;
     this.maxSegmentSize = maxSegmentSize;
     this.maxEntriesPerSegment = maxEntriesPerSegment;
+    this.dynamicCompaction = dynamicCompaction;
     this.segmentBufferFactor = segmentBufferFactor;
     this.freeDiskBuffer = freeDiskBuffer;
     this.flushOnCommit = flushOnCommit;
@@ -161,6 +164,15 @@ public class RaftStorage {
    */
   public int maxLogEntriesPerSegment() {
     return maxEntriesPerSegment;
+  }
+
+  /**
+   * Returns whether dynamic log compaction is enabled.
+   *
+   * @return whether dynamic log compaction is enabled
+   */
+  public boolean dynamicCompaction() {
+    return dynamicCompaction;
   }
 
   /**
@@ -267,6 +279,7 @@ public class RaftStorage {
         .withSerializer(serializer)
         .withMaxSegmentSize(maxSegmentSize)
         .withMaxEntriesPerSegment(maxEntriesPerSegment)
+        .withDynamicCompaction(dynamicCompaction)
         .withSegmentBufferFactor(segmentBufferFactor)
         .withFreeDiskBuffer(freeDiskBuffer)
         .withFlushOnCommit(flushOnCommit)
@@ -327,6 +340,7 @@ public class RaftStorage {
     private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
+    private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
     private static final int DEFAULT_SEGMENT_BUFFER_FACTOR = 3;
     private static final double DEFAULT_FREE_DISK_BUFFER = .25;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
@@ -338,6 +352,7 @@ public class RaftStorage {
     private Serializer serializer;
     private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
     private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
+    private boolean dynamicCompaction = DEFAULT_DYNAMIC_COMPACTION;
     private int segmentBufferFactor = DEFAULT_SEGMENT_BUFFER_FACTOR;
     private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
@@ -454,6 +469,32 @@ public class RaftStorage {
     }
 
     /**
+     * Enables dynamic log compaction.
+     * <p>
+     * When dynamic compaction is enabled, logs will be compacted only during periods of low load on the cluster
+     * or when the cluster is running out of disk space.
+     *
+     * @return the Raft storage builder
+     */
+    public Builder withDynamicCompaction() {
+      return withDynamicCompaction(true);
+    }
+
+    /**
+     * Enables dynamic log compaction.
+     * <p>
+     * When dynamic compaction is enabled, logs will be compacted only during periods of low load on the cluster
+     * or when the cluster is running out of disk space.
+     *
+     * @param dynamicCompaction whether to enable dynamic compaction
+     * @return the Raft storage builder
+     */
+    public Builder withDynamicCompaction(boolean dynamicCompaction) {
+      this.dynamicCompaction = dynamicCompaction;
+      return this;
+    }
+
+    /**
      * Sets the number of additional segments that must be able to fit on disk before log compaction is forced.
      *
      * @param segmentBufferFactor the segment buffer factor
@@ -552,6 +593,7 @@ public class RaftStorage {
           serializer,
           maxSegmentSize,
           maxEntriesPerSegment,
+          dynamicCompaction,
           segmentBufferFactor,
           freeDiskBuffer,
           flushOnCommit,
