@@ -146,8 +146,8 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
   public boolean mustCompact() {
     return !dynamicCompaction
         || journal.storageLevel() == StorageLevel.MEMORY
-        || journal.directory().getUsableSpace() < journal.maxSegmentSize() * (long) SEGMENT_BUFFER_FACTOR
-        || journal.directory().getUsableSpace() / (double) journal.directory().getTotalSpace() < FREE_DISK_BUFFER;
+        || journal.directory().getUsableSpace() < journal.maxSegmentSize() * (long) segmentBufferFactor
+        || journal.directory().getUsableSpace() / (double) journal.directory().getTotalSpace() < freeDiskBuffer;
   }
 
   /**
