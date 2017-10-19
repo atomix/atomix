@@ -28,6 +28,7 @@ import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.session.impl.RaftSessionManager;
+import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -41,6 +42,7 @@ import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
+import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.utils.SlidingWindowCounter;
 import io.atomix.utils.concurrent.ComposableFuture;
@@ -49,6 +51,7 @@ import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -75,30 +78,36 @@ public class RaftServiceManager implements AutoCloseable {
   private static final Duration SNAPSHOT_INTERVAL = Duration.ofSeconds(10);
   private static final Duration MIN_COMPACT_INTERVAL = Duration.ofSeconds(10);
 
-  private static final int WINDOW_SIZE = 5;
+  private static final int LOAD_WINDOW_SIZE = 5;
   private static final int LOAD_WINDOW = 2;
   private static final int HIGH_LOAD_THRESHOLD = 10;
+  private static final int COMPACTION_WINDOW_SIZE = 10;
+  private static final int COMPACTION_TIME_FACTOR = 10;
+  private static final long DEFAULT_COMPACTION_TIME = Duration.ofMinutes(1).toMillis();
 
   private final Logger logger;
   private final RaftContext raft;
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext threadContext;
+  private final RaftStorage storage;
   private final RaftLog log;
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
   private final Map<String, DefaultServiceContext> services = new HashMap<>();
   private final Random random = new Random();
   private final SlidingWindowCounter loadCounter;
+  private final DescriptiveStatistics compactionStats = new DescriptiveStatistics(COMPACTION_WINDOW_SIZE);
   private long lastPrepared;
   private long lastCompacted;
 
   public RaftServiceManager(RaftContext raft, ThreadContextFactory threadContextFactory, ThreadContext threadContext) {
     this.raft = checkNotNull(raft, "state cannot be null");
+    this.storage = raft.getStorage();
     this.log = raft.getLog();
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadContextFactory = threadContextFactory;
     this.threadContext = threadContext;
-    this.loadCounter = new SlidingWindowCounter(WINDOW_SIZE, threadContext);
+    this.loadCounter = new SlidingWindowCounter(LOAD_WINDOW_SIZE, threadContext);
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(raft.getName())
         .build());
@@ -566,6 +575,15 @@ public class RaftServiceManager implements AutoCloseable {
   }
 
   /**
+   * Returns a boolean indicating whether the logs should be compacted.
+   */
+  private boolean shouldCompact() {
+    return storage.storageLevel() == StorageLevel.MEMORY
+        || storage.statistics().getRemainingDuration().toMillis() / 2 < getCompactionTime()
+        || storage.statistics().getUsableSpace() / (double) storage.statistics().getTotalSpace() < storage.freeDiskBuffer() * 2;
+  }
+
+  /**
    * Schedules a snapshot iteration.
    */
   private void scheduleSnapshots() {
@@ -577,7 +595,7 @@ public class RaftServiceManager implements AutoCloseable {
    */
   private void snapshotServices() {
     // If the server is under high load and the log doesn't *need* to be compacted, skip snapshotting.
-    if (isUnderHighLoad() && !log.mustCompact()) {
+    if (isUnderHighLoad() && !shouldCompact() && !log.mustCompact()) {
       scheduleSnapshots();
       return;
     }
@@ -597,7 +615,9 @@ public class RaftServiceManager implements AutoCloseable {
       List<DefaultServiceContext> services = new ArrayList<>(this.services.values());
 
       // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
-      snapshotServices(services, log.mustCompact()).whenComplete((result, error) -> scheduleCompaction(lastApplied));
+      long startTime = System.currentTimeMillis();
+      snapshotServices(services, shouldCompact() || log.mustCompact())
+          .whenComplete((result, error) -> scheduleCompaction(lastApplied, startTime));
     }
     // Otherwise, if the log can't be compacted anyways, just reschedule snapshots.
     else {
@@ -668,7 +688,7 @@ public class RaftServiceManager implements AutoCloseable {
       List<CompletableFuture<Void>> futures) {
     ComposableFuture<Void> future = new ComposableFuture<>();
     threadContext.schedule(Duration.ofSeconds(Math.min(2 ^ attempt, 10)), () ->
-        snapshotServices(services, log.mustCompact(), attempt + 1, futures).whenComplete(future));
+        snapshotServices(services, shouldCompact() || log.mustCompact(), attempt + 1, futures).whenComplete(future));
     return future;
   }
 
@@ -715,12 +735,13 @@ public class RaftServiceManager implements AutoCloseable {
    *
    * @param lastApplied the last applied index at the start of snapshotting. This represents the highest index before
    *                    which segments can be safely removed from disk
+   * @param startTime the time at which compaction was started
    */
-  private void scheduleCompaction(long lastApplied) {
+  private void scheduleCompaction(long lastApplied, long startTime) {
     // Schedule compaction after a randomized delay to discourage snapshots on multiple nodes at the same time.
     Duration delay = MIN_COMPACT_INTERVAL.plusMillis(random.nextInt((int) MIN_COMPACT_INTERVAL.toMillis()));
     logger.trace("Scheduling compaction in {}", delay);
-    threadContext.schedule(delay, () -> compactLogs(lastApplied));
+    threadContext.schedule(delay, () -> compactLogs(lastApplied, startTime));
   }
 
   /**
@@ -728,16 +749,35 @@ public class RaftServiceManager implements AutoCloseable {
    *
    * @param compactIndex the index to which to compact logs
    */
-  private void compactLogs(long compactIndex) {
+  private void compactLogs(long compactIndex, long startTime) {
     logger.debug("Compacting logs up to index {}", compactIndex);
     try {
       log.compact(compactIndex);
     } catch (Exception e) {
       logger.error("An exception occurred during log compaction: {}", e);
     } finally {
+      recordCompactionTime(System.currentTimeMillis() - startTime);
       // Immediately attempt to take new snapshots since compaction is already run after a time interval.
       snapshotServices();
     }
+  }
+
+  /**
+   * Records the given compaction time.
+   *
+   * @param time the time it took to snapshot and compact logs
+   */
+  private void recordCompactionTime(long time) {
+    compactionStats.addValue(time);
+  }
+
+  /**
+   * Returns the estimated amount of time it takes to snapshot services and compact logs.
+   *
+   * @return the estimated amount of time it takes to snapshot services and compact logs
+   */
+  private long getCompactionTime() {
+    return compactionStats.getN() == 0 ? DEFAULT_COMPACTION_TIME : (long) compactionStats.getMax() * COMPACTION_TIME_FACTOR;
   }
 
   @Override
