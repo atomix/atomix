@@ -34,6 +34,7 @@ public class StorageEstimator {
   private volatile Duration remaining = Duration.ofSeconds(1);
   private final DescriptiveStatistics stats = new DescriptiveStatistics(WINDOW_SIZE);
   private long previousSize;
+  private long previousTime;
 
   public StorageEstimator(File file, ThreadContext context) {
     this.file = file;
@@ -47,17 +48,6 @@ public class StorageEstimator {
    * @return the estimated amount of time remaining until disk space is consumed
    */
   public Duration estimateRemainingDuration() {
-    long previousSize = this.previousSize;
-    long nextSize = file.getUsableSpace();
-    this.previousSize = nextSize;
-    long consumedSize = previousSize - nextSize;
-    if (consumedSize < 0) {
-      stats.clear();
-    } else if (previousSize > 0) {
-      stats.addValue(consumedSize);
-      long averageSizePerSecond = (long) stats.getMean();
-      return Duration.ofSeconds(nextSize / averageSizePerSecond);
-    }
     return remaining;
   }
 
@@ -66,13 +56,18 @@ public class StorageEstimator {
    */
   private void estimate() {
     long previousSize = this.previousSize;
+    long previousTime = this.previousTime;
     long nextSize = file.getUsableSpace();
+    long nextTime = System.currentTimeMillis();
     this.previousSize = nextSize;
+    this.previousTime = nextTime;
     long consumedSize = previousSize - nextSize;
-    if (consumedSize < 0) {
+    long consumedTime = previousTime - nextTime;
+    double consumedSizePerSecond = consumedSize / (consumedTime / 1000d);
+    if (consumedSizePerSecond < 0) {
       stats.clear();
     } else if (previousSize > 0) {
-      stats.addValue(consumedSize);
+      stats.addValue(consumedSizePerSecond);
       long averageSizePerSecond = (long) stats.getMean();
       this.remaining = Duration.ofSeconds(nextSize / averageSizePerSecond);
     }

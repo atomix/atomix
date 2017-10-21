@@ -37,4 +37,12 @@ public class StorageException extends RuntimeException {
     super(cause);
   }
 
+  /**
+   * Exception thrown when storage runs out of disk space.
+   */
+  public static class OutOfDiskSpace extends StorageException {
+    public OutOfDiskSpace(String message) {
+      super(message);
+    }
+  }
 }

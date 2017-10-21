@@ -139,18 +139,6 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
   }
 
   /**
-   * Returns a boolean indicating whether the log must be compacted if possible.
-   *
-   * @return indicates whether the log must be compacted if possible
-   */
-  public boolean mustCompact() {
-    return !dynamicCompaction
-        || journal.storageLevel() == StorageLevel.MEMORY
-        || journal.directory().getUsableSpace() < journal.maxSegmentSize() * (long) segmentBufferFactor
-        || journal.directory().getUsableSpace() / (double) journal.directory().getTotalSpace() < freeDiskBuffer;
-  }
-
-  /**
    * Compacts the journal up to the given index.
    * <p>
    * The semantics of compaction are not specified by this interface.

@@ -28,7 +28,6 @@ import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.session.impl.RaftSessionManager;
-import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -42,26 +41,16 @@ import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
-import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
-import io.atomix.utils.SlidingWindowCounter;
-import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
-import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -75,43 +64,23 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
  */
 public class RaftServiceManager implements AutoCloseable {
-  private static final Duration SNAPSHOT_INTERVAL = Duration.ofSeconds(10);
-  private static final Duration MIN_COMPACT_INTERVAL = Duration.ofSeconds(10);
-
-  private static final int LOAD_WINDOW_SIZE = 5;
-  private static final int LOAD_WINDOW = 2;
-  private static final int HIGH_LOAD_THRESHOLD = 10;
-  private static final int COMPACTION_WINDOW_SIZE = 10;
-  private static final int COMPACTION_TIME_FACTOR = 10;
-  private static final long DEFAULT_COMPACTION_TIME = Duration.ofMinutes(1).toMillis();
-
   private final Logger logger;
   private final RaftContext raft;
   private final ThreadContextFactory threadContextFactory;
-  private final ThreadContext threadContext;
-  private final RaftStorage storage;
   private final RaftLog log;
   private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
-  private final Map<String, DefaultServiceContext> services = new HashMap<>();
-  private final Random random = new Random();
-  private final SlidingWindowCounter loadCounter;
-  private final DescriptiveStatistics compactionStats = new DescriptiveStatistics(COMPACTION_WINDOW_SIZE);
+  private final RaftServiceRegistry services = new RaftServiceRegistry();
   private long lastPrepared;
-  private long lastCompacted;
 
-  public RaftServiceManager(RaftContext raft, ThreadContextFactory threadContextFactory, ThreadContext threadContext) {
+  public RaftServiceManager(RaftContext raft, ThreadContextFactory threadContextFactory) {
     this.raft = checkNotNull(raft, "state cannot be null");
-    this.storage = raft.getStorage();
     this.log = raft.getLog();
     this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
     this.threadContextFactory = threadContextFactory;
-    this.threadContext = threadContext;
-    this.loadCounter = new SlidingWindowCounter(LOAD_WINDOW_SIZE, threadContext);
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(raft.getName())
         .build());
-    scheduleSnapshots();
   }
 
   /**
@@ -294,7 +263,7 @@ public class RaftServiceManager implements AutoCloseable {
    * prior terms, therefore no logic needs to take place.
    */
   private CompletableFuture<Void> applyInitialize(Indexed<InitializeEntry> entry) {
-    for (DefaultServiceContext service : services.values()) {
+    for (DefaultServiceContext service : services) {
       service.keepAliveSessions(entry.index(), entry.entry().timestamp());
     }
     return CompletableFuture.completedFuture(null);
@@ -308,7 +277,7 @@ public class RaftServiceManager implements AutoCloseable {
    * entry since it was overwritten by a more recent committed configuration entry.
    */
   private CompletableFuture<Void> applyConfiguration(Indexed<ConfigurationEntry> entry) {
-    for (DefaultServiceContext service : services.values()) {
+    for (DefaultServiceContext service : services) {
       service.keepAliveSessions(entry.index(), entry.entry().timestamp());
     }
     return CompletableFuture.completedFuture(null);
@@ -367,7 +336,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Iterate through services and complete keep-alives, causing sessions to be expired if necessary.
-    for (DefaultServiceContext service : services.values()) {
+    for (DefaultServiceContext service : services) {
       service.completeKeepAlive(entry.index(), entry.entry().timestamp());
     }
 
@@ -386,7 +355,7 @@ public class RaftServiceManager implements AutoCloseable {
     // Get the state machine executor or create one if it doesn't already exist.
     DefaultServiceContext service = services.get(serviceName);
     if (service == null) {
-      Supplier<RaftService> serviceFactory = raft.getServiceRegistry().getFactory(serviceType.id());
+      Supplier<RaftService> serviceFactory = raft.getServiceFactories().getFactory(serviceType.id());
       if (serviceFactory == null) {
         return null;
       }
@@ -399,7 +368,7 @@ public class RaftServiceManager implements AutoCloseable {
           raft,
           sessionManager,
           threadContextFactory);
-      services.put(serviceName, service);
+      services.register(service);
     }
     return service;
   }
@@ -507,7 +476,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Increment the load counter to avoid snapshotting under high load.
-    incrementLoadCounter();
+    raft.getLoadMonitor().increment();
 
     // Execute the command using the state machine associated with the session.
     return session.getService()
@@ -548,7 +517,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Increment the load counter to avoid snapshotting under high load.
-    incrementLoadCounter();
+    raft.getLoadMonitor().increment();
 
     // Execute the query using the state machine associated with the session.
     return session.getService()
@@ -558,226 +527,6 @@ public class RaftServiceManager implements AutoCloseable {
             entry.entry().timestamp(),
             session,
             entry.entry().operation());
-  }
-
-  /**
-   * Increments the load counter.
-   */
-  private void incrementLoadCounter() {
-    loadCounter.incrementCount();
-  }
-
-  /**
-   * Returns a boolean indicating whether the node is under high load.
-   */
-  private boolean isUnderHighLoad() {
-    return loadCounter.get(LOAD_WINDOW) > HIGH_LOAD_THRESHOLD;
-  }
-
-  /**
-   * Returns a boolean indicating whether the logs should be compacted.
-   */
-  private boolean shouldCompact() {
-    return storage.storageLevel() == StorageLevel.MEMORY
-        || storage.statistics().getRemainingDuration().toMillis() / 2 < getCompactionTime()
-        || storage.statistics().getUsableSpace() / (double) storage.statistics().getTotalSpace() < storage.freeDiskBuffer() * 2;
-  }
-
-  /**
-   * Schedules a snapshot iteration.
-   */
-  private void scheduleSnapshots() {
-    threadContext.schedule(SNAPSHOT_INTERVAL, this::snapshotServices);
-  }
-
-  /**
-   * Takes a snapshot of all services and compacts logs if the server is not under high load or disk needs to be freed.
-   */
-  private void snapshotServices() {
-    // If the server is under high load and the log doesn't *need* to be compacted, skip snapshotting.
-    if (isUnderHighLoad() && !shouldCompact() && !log.mustCompact()) {
-      scheduleSnapshots();
-      return;
-    }
-
-    long lastApplied = raft.getLastApplied();
-
-    // Only take snapshots if segments can be removed from the log below the lastApplied index.
-    if (raft.getLog().isCompactable(lastApplied) && raft.getLog().getCompactableIndex(lastApplied) > lastCompacted) {
-      logger.debug("Snapshotting services");
-
-      // Update the index at which the log was last compacted.
-      this.lastCompacted = lastApplied;
-
-      // Copy the set of services. We don't need to account for new services that are created during the
-      // snapshot/compaction process since we're only deleting segments prior to the creation of all
-      // services that existed at the start of compaction.
-      List<DefaultServiceContext> services = new ArrayList<>(this.services.values());
-
-      // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
-      long startTime = System.currentTimeMillis();
-      snapshotServices(services, shouldCompact() || log.mustCompact())
-          .whenComplete((result, error) -> scheduleCompaction(lastApplied, startTime));
-    }
-    // Otherwise, if the log can't be compacted anyways, just reschedule snapshots.
-    else {
-      scheduleSnapshots();
-    }
-  }
-
-  /**
-   * Takes and persists snapshots of provided services.
-   *
-   * @param services a list of services to snapshot
-   * @param force whether to force snapshotting all services to free disk space
-   * @return future to be completed once all snapshots have been completed
-   */
-  private CompletableFuture<Void> snapshotServices(List<DefaultServiceContext> services, boolean force) {
-    return snapshotServices(services, force, 0, new ArrayList<>());
-  }
-
-  /**
-   * Takes and persists snapshots of provided services.
-   * <p>
-   * Snapshots are attempted on services that are not experiencing high load. In the event there are no more services
-   * that can be snapshotted, an attempt will be scheduled again for the future using exponential backoff.
-   *
-   * @param services a list of services to snapshot
-   * @param force whether to force snapshotting all services to free disk space
-   * @param attempt the current attempt count
-   * @param futures reference to a list of futures for all service snapshots
-   * @return future to be completed once all snapshots have been completed
-   */
-  private CompletableFuture<Void> snapshotServices(
-      List<DefaultServiceContext> services,
-      boolean force,
-      int attempt,
-      List<CompletableFuture<Void>> futures) {
-    // If all services have been processed, return a successfully completed future.
-    if (services.isEmpty()) {
-      return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-    }
-
-    // Select any service that can be snapshotted.
-    DefaultServiceContext nextService = selectService(services, force);
-
-    if (nextService != null) {
-      // Take a snapshot and then persist the snapshot after some interval. This is done to avoid persisting snapshots
-      // too close to the head of a follower's log such that the snapshot will be replicated in place of entries.
-      futures.add(nextService.takeSnapshot()
-          .thenCompose(snapshotIndex -> scheduleCompletion(nextService, snapshotIndex)));
-
-      // Recursively snapshot remaining services, resetting the attempt count.
-      return snapshotServices(services, force, 0, futures);
-    } else {
-      return rescheduleSnapshots(services, attempt, futures);
-    }
-  }
-
-  /**
-   * Reschedules an attempt to snapshot remaining services.
-   *
-   * @param services a list of services to snapshot
-   * @param attempt the current attempt count
-   * @param futures reference to a list of futures for all service snapshots
-   * @return future to be completed once all snapshots have been completed
-   */
-  private CompletableFuture<Void> rescheduleSnapshots(
-      List<DefaultServiceContext> services,
-      int attempt,
-      List<CompletableFuture<Void>> futures) {
-    ComposableFuture<Void> future = new ComposableFuture<>();
-    threadContext.schedule(Duration.ofSeconds(Math.min(2 ^ attempt, 10)), () ->
-        snapshotServices(services, shouldCompact() || log.mustCompact(), attempt + 1, futures).whenComplete(future));
-    return future;
-  }
-
-  /**
-   * Selects the next service to snapshot.
-   * <p>
-   * Services that are not under high load are selected unless compaction is being forced by low available disk space.
-   * When a service is selected, it will be removed from the {@code services} list reference and returned. If no
-   * service can be snapshotted, returns {@code null}.
-   *
-   * @param services a list of services from which to select a service
-   * @param force whether to force snapshotting all services to free disk space
-   * @return the service to snapshot or {@code null} if no service can be snapshotted
-   */
-  private DefaultServiceContext selectService(List<DefaultServiceContext> services, boolean force) {
-    Iterator<DefaultServiceContext> iterator = services.iterator();
-    while (iterator.hasNext()) {
-      DefaultServiceContext serviceContext = iterator.next();
-      if (force || !serviceContext.isUnderHighLoad()) {
-        iterator.remove();
-        return serviceContext;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Schedules completion of a snapshot after a randomized delay to reduce the chance the snapshot will need to be
-   * replicated to followers.
-   *
-   * @param serviceContext the service for which to complete the snapshot
-   * @param snapshotIndex the index of the snapshot
-   * @return future to be completed once the snapshot has been completed
-   */
-  private CompletableFuture<Void> scheduleCompletion(DefaultServiceContext serviceContext, long snapshotIndex) {
-    ComposableFuture<Void> future = new ComposableFuture<>();
-    Duration delay = SNAPSHOT_INTERVAL.plusMillis(random.nextInt((int) SNAPSHOT_INTERVAL.toMillis()));
-    threadContext.schedule(delay, () -> serviceContext.completeSnapshot(snapshotIndex).whenComplete(future));
-    return future;
-  }
-
-  /**
-   * Schedules a log compaction.
-   *
-   * @param lastApplied the last applied index at the start of snapshotting. This represents the highest index before
-   *                    which segments can be safely removed from disk
-   * @param startTime the time at which compaction was started
-   */
-  private void scheduleCompaction(long lastApplied, long startTime) {
-    // Schedule compaction after a randomized delay to discourage snapshots on multiple nodes at the same time.
-    Duration delay = MIN_COMPACT_INTERVAL.plusMillis(random.nextInt((int) MIN_COMPACT_INTERVAL.toMillis()));
-    logger.trace("Scheduling compaction in {}", delay);
-    threadContext.schedule(delay, () -> compactLogs(lastApplied, startTime));
-  }
-
-  /**
-   * Compacts logs up to the given index.
-   *
-   * @param compactIndex the index to which to compact logs
-   */
-  private void compactLogs(long compactIndex, long startTime) {
-    logger.debug("Compacting logs up to index {}", compactIndex);
-    try {
-      log.compact(compactIndex);
-    } catch (Exception e) {
-      logger.error("An exception occurred during log compaction: {}", e);
-    } finally {
-      recordCompactionTime(System.currentTimeMillis() - startTime);
-      // Immediately attempt to take new snapshots since compaction is already run after a time interval.
-      snapshotServices();
-    }
-  }
-
-  /**
-   * Records the given compaction time.
-   *
-   * @param time the time it took to snapshot and compact logs
-   */
-  private void recordCompactionTime(long time) {
-    compactionStats.addValue(time);
-  }
-
-  /**
-   * Returns the estimated amount of time it takes to snapshot services and compact logs.
-   *
-   * @return the estimated amount of time it takes to snapshot services and compact logs
-   */
-  private long getCompactionTime() {
-    return compactionStats.getN() == 0 ? DEFAULT_COMPACTION_TIME : (long) compactionStats.getMax() * COMPACTION_TIME_FACTOR;
   }
 
   @Override
