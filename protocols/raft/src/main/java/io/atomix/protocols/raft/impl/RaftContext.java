@@ -94,7 +94,6 @@ public class RaftContext implements AutoCloseable {
   private SnapshotStore snapshotStore;
   private RaftServiceManager stateMachine;
   private final ThreadContextFactory threadContextFactory;
-  private final ThreadContext stateContext;
   private final ThreadContext loadContext;
   private final ThreadContext compactionContext;
   protected RaftRole role = new InactiveRole(this);
@@ -128,7 +127,6 @@ public class RaftContext implements AutoCloseable {
 
     String baseThreadName = String.format("raft-server-%s", name);
     this.threadContext = new SingleThreadContext(namedThreads(baseThreadName, log));
-    this.stateContext = new SingleThreadContext(namedThreads(baseThreadName + "-state", log));
     this.loadContext = new SingleThreadContext(namedThreads(baseThreadName + "-load", log));
     this.compactionContext = new SingleThreadContext(namedThreads(baseThreadName + "-compaction", log));
 
@@ -869,7 +867,6 @@ public class RaftContext implements AutoCloseable {
     // Close the state machine and thread context.
     stateMachine.close();
     threadContext.close();
-    stateContext.close();
     loadContext.close();
     compactionContext.close();
     threadContextFactory.close();
