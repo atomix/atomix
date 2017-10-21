@@ -35,9 +35,9 @@ public class LoadMonitor {
   }
 
   /**
-   * Increments the load count.
+   * Records a load event.
    */
-  public void increment() {
+  public void recordEvent() {
     loadCounter.incrementCount();
   }
 

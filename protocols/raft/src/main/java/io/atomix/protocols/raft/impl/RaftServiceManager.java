@@ -476,7 +476,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Increment the load counter to avoid snapshotting under high load.
-    raft.getLoadMonitor().increment();
+    raft.getLoadMonitor().recordEvent();
 
     // Execute the command using the state machine associated with the session.
     return session.getService()
@@ -517,7 +517,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Increment the load counter to avoid snapshotting under high load.
-    raft.getLoadMonitor().increment();
+    raft.getLoadMonitor().recordEvent();
 
     // Execute the query using the state machine associated with the session.
     return session.getService()
