@@ -36,8 +36,7 @@ public class RaftStorageTest {
     assertEquals(1024 * 1024 * 32, storage.maxLogSegmentSize());
     assertEquals(1024 * 1024, storage.maxLogEntriesPerSegment());
     assertTrue(storage.dynamicCompaction());
-    assertEquals(3, storage.segmentBufferFactor());
-    assertEquals(.25, storage.freeDiskBuffer(), .01);
+    assertEquals(.2, storage.freeDiskBuffer(), .01);
     assertFalse(storage.isFlushOnCommit());
     assertFalse(storage.isRetainStaleSnapshots());
   }
@@ -50,7 +49,6 @@ public class RaftStorageTest {
         .withMaxSegmentSize(1024 * 1024)
         .withMaxEntriesPerSegment(1024)
         .withDynamicCompaction(false)
-        .withSegmentBufferFactor(5)
         .withFreeDiskBuffer(.5)
         .withFlushOnCommit()
         .withRetainStaleSnapshots()
@@ -59,7 +57,6 @@ public class RaftStorageTest {
     assertEquals(new File(System.getProperty("user.dir"), "foo"), storage.directory());
     assertEquals(1024 * 1024, storage.maxLogSegmentSize());
     assertEquals(1024, storage.maxLogEntriesPerSegment());
-    assertEquals(5, storage.segmentBufferFactor());
     assertEquals(.5, storage.freeDiskBuffer(), .01);
     assertTrue(storage.isFlushOnCommit());
     assertTrue(storage.isRetainStaleSnapshots());

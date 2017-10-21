@@ -71,7 +71,6 @@ public class RaftStorage {
   private final int maxSegmentSize;
   private final int maxEntriesPerSegment;
   private final boolean dynamicCompaction;
-  private final int segmentBufferFactor;
   private final double freeDiskBuffer;
   private final boolean flushOnCommit;
   private final boolean retainStaleSnapshots;
@@ -85,7 +84,6 @@ public class RaftStorage {
       int maxSegmentSize,
       int maxEntriesPerSegment,
       boolean dynamicCompaction,
-      int segmentBufferFactor,
       double freeDiskBuffer,
       boolean flushOnCommit,
       boolean retainStaleSnapshots) {
@@ -96,7 +94,6 @@ public class RaftStorage {
     this.maxSegmentSize = maxSegmentSize;
     this.maxEntriesPerSegment = maxEntriesPerSegment;
     this.dynamicCompaction = dynamicCompaction;
-    this.segmentBufferFactor = segmentBufferFactor;
     this.freeDiskBuffer = freeDiskBuffer;
     this.flushOnCommit = flushOnCommit;
     this.retainStaleSnapshots = retainStaleSnapshots;
@@ -177,15 +174,6 @@ public class RaftStorage {
    */
   public boolean dynamicCompaction() {
     return dynamicCompaction;
-  }
-
-  /**
-   * Returns the number of segments that must be able to fit on disk before log compaction is forced.
-   *
-   * @return the number of segments that must be able to fit on disk before log compaction is forced
-   */
-  public int segmentBufferFactor() {
-    return segmentBufferFactor;
   }
 
   /**
@@ -292,9 +280,6 @@ public class RaftStorage {
         .withSerializer(serializer)
         .withMaxSegmentSize(maxSegmentSize)
         .withMaxEntriesPerSegment(maxEntriesPerSegment)
-        .withDynamicCompaction(dynamicCompaction)
-        .withSegmentBufferFactor(segmentBufferFactor)
-        .withFreeDiskBuffer(freeDiskBuffer)
         .withFlushOnCommit(flushOnCommit)
         .build();
   }
@@ -354,8 +339,7 @@ public class RaftStorage {
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
-    private static final int DEFAULT_SEGMENT_BUFFER_FACTOR = 3;
-    private static final double DEFAULT_FREE_DISK_BUFFER = .25;
+    private static final double DEFAULT_FREE_DISK_BUFFER = .2;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
     private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
 
@@ -366,7 +350,6 @@ public class RaftStorage {
     private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
     private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
     private boolean dynamicCompaction = DEFAULT_DYNAMIC_COMPACTION;
-    private int segmentBufferFactor = DEFAULT_SEGMENT_BUFFER_FACTOR;
     private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;
@@ -508,18 +491,6 @@ public class RaftStorage {
     }
 
     /**
-     * Sets the number of additional segments that must be able to fit on disk before log compaction is forced.
-     *
-     * @param segmentBufferFactor the segment buffer factor
-     * @return the Raft log builder
-     */
-    public Builder withSegmentBufferFactor(int segmentBufferFactor) {
-      checkArgument(segmentBufferFactor > 0, "segmentBufferFactor must be positive");
-      this.segmentBufferFactor = segmentBufferFactor;
-      return this;
-    }
-
-    /**
      * Sets the percentage of free disk space that must be preserved before log compaction is forced.
      *
      * @param freeDiskBuffer the free disk percentage
@@ -607,7 +578,6 @@ public class RaftStorage {
           maxSegmentSize,
           maxEntriesPerSegment,
           dynamicCompaction,
-          segmentBufferFactor,
           freeDiskBuffer,
           flushOnCommit,
           retainStaleSnapshots);

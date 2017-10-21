@@ -65,7 +65,7 @@ public class RaftLogCompactor {
     return raft.getStorage().storageLevel() == StorageLevel.MEMORY
         || raft.getStorage().dynamicCompaction()
         || raft.getStorage().statistics().getRemainingDuration().toMillis() / 2 < getCompactionTime()
-        || raft.getStorage().statistics().getUsableSpace() / (double) raft.getStorage().statistics().getTotalSpace() < raft.getStorage().freeDiskBuffer() * 2;
+        || raft.getStorage().statistics().getUsableSpace() / (double) raft.getStorage().statistics().getTotalSpace() < raft.getStorage().freeDiskBuffer();
   }
 
   /**
@@ -96,7 +96,7 @@ public class RaftLogCompactor {
     }
 
     // If the server is under high load and the log doesn't *need* to be compacted, skip snapshotting.
-    if (!shouldCompact()) {
+    if (raft.getStorage().dynamicCompaction() && !shouldCompact()) {
       if (rescheduleAfterCompletion) {
         scheduleSnapshots();
       }
@@ -109,7 +109,7 @@ public class RaftLogCompactor {
     if (raft.getLog().isCompactable(lastApplied) && raft.getLog().getCompactableIndex(lastApplied) > lastCompacted) {
 
       // If the server is under high load, skip compaction and log a message.
-      if (raft.getLoadMonitor().isUnderHighLoad()) {
+      if (raft.getStorage().dynamicCompaction() && raft.getLoadMonitor().isUnderHighLoad()) {
         LOGGER.debug("Skipping compaction due to high load");
         if (rescheduleAfterCompletion) {
           scheduleSnapshots();
@@ -317,6 +317,6 @@ public class RaftLogCompactor {
    * @return the estimated amount of time it takes to snapshot services and compact logs
    */
   private long getCompactionTime() {
-    return compactionStats.getN() == 0 ? DEFAULT_COMPACTION_TIME : (long) compactionStats.getMax() * COMPACTION_TIME_FACTOR;
+    return (compactionStats.getN() == 0 ? DEFAULT_COMPACTION_TIME : (long) compactionStats.getMax() * COMPACTION_TIME_FACTOR) + DEFAULT_COMPACTION_TIME;
   }
 }
