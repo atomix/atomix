@@ -20,7 +20,7 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
-import io.atomix.protocols.raft.session.impl.RaftSessionManager;
+import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -30,9 +30,9 @@ import java.util.Iterator;
  */
 class DefaultServiceSessions implements RaftSessions {
   private final ServiceId serviceId;
-  private final RaftSessionManager sessionManager;
+  private final RaftSessionRegistry sessionManager;
 
-  public DefaultServiceSessions(ServiceId serviceId, RaftSessionManager sessionManager) {
+  public DefaultServiceSessions(ServiceId serviceId, RaftSessionRegistry sessionManager) {
     this.serviceId = serviceId;
     this.sessionManager = sessionManager;
   }

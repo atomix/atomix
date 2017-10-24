@@ -31,7 +31,6 @@ import org.junit.Test;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -45,14 +44,14 @@ import static org.mockito.Mockito.when;
 /**
  * Raft session manager test.
  */
-public class RaftSessionManagerTest {
+public class RaftSessionRegistryTest {
 
   /**
    * Tests that the same session can be registered twice without replacing the original session.
    */
   @Test
   public void testRegisterIdempotent() throws Exception {
-    RaftSessionManager sessionManager = new RaftSessionManager();
+    RaftSessionRegistry sessionManager = new RaftSessionRegistry();
     RaftSessionContext session1 = createSession(1);
     RaftSessionContext session2 = createSession(1);
     sessionManager.registerSession(session1);
@@ -62,7 +61,7 @@ public class RaftSessionManagerTest {
 
   @Test
   public void testUnregisterSession() throws Exception {
-    RaftSessionManager sessionManager = new RaftSessionManager();
+    RaftSessionRegistry sessionManager = new RaftSessionRegistry();
     RaftSessionContext session = createSession(1);
     sessionManager.registerSession(session);
     assertNotNull(sessionManager.getSession(1));
@@ -73,7 +72,7 @@ public class RaftSessionManagerTest {
 
   @Test
   public void testSessionListeners() throws Exception {
-    RaftSessionManager sessionManager = new RaftSessionManager();
+    RaftSessionRegistry sessionManager = new RaftSessionRegistry();
     TestSessionListener listener = new TestSessionListener();
     sessionManager.addListener(ServiceId.from(1), listener);
 

@@ -34,7 +34,7 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
    *
    * @param service the service to register
    */
-  public void register(DefaultServiceContext service) {
+  public void registerService(DefaultServiceContext service) {
     services.put(service.serviceName(), service);
   }
 
@@ -44,7 +44,7 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
    * @param name the service name
    * @return the registered service
    */
-  public DefaultServiceContext get(String name) {
+  public DefaultServiceContext getService(String name) {
     return services.get(name);
   }
 

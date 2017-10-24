@@ -33,6 +33,7 @@ import io.atomix.protocols.raft.roles.LeaderRole;
 import io.atomix.protocols.raft.roles.PassiveRole;
 import io.atomix.protocols.raft.roles.RaftRole;
 import io.atomix.protocols.raft.roles.ReserveRole;
+import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.compactor.RaftLogCompactor;
 import io.atomix.protocols.raft.storage.log.RaftLog;
@@ -83,6 +84,7 @@ public class RaftContext implements AutoCloseable {
   protected final RaftServerProtocol protocol;
   protected final RaftStorage storage;
   protected final RaftServiceRegistry services = new RaftServiceRegistry();
+  protected final RaftSessionRegistry sessions = new RaftSessionRegistry();
   private final LoadMonitor loadMonitor;
   private volatile State state = State.ACTIVE;
   private MetaStore meta;
@@ -538,6 +540,15 @@ public class RaftContext implements AutoCloseable {
    */
   public RaftServiceRegistry getServices() {
     return services;
+  }
+
+  /**
+   * Returns the server session registry.
+   *
+   * @return the server session registry
+   */
+  public RaftSessionRegistry getSessions() {
+    return sessions;
   }
 
   /**

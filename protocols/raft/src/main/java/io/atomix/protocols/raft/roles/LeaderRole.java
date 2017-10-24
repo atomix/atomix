@@ -547,7 +547,7 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // Get the client's server session. If the session doesn't exist, return an unknown session error.
-    RaftSessionContext session = raft.getStateMachine().getSessions().getSession(request.session());
+    RaftSessionContext session = raft.getSessions().getSession(request.session());
     if (session == null) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
           .withStatus(RaftResponse.Status.ERROR)
@@ -659,7 +659,7 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // Look up the client's session.
-    RaftSessionContext session = raft.getStateMachine().getSessions().getSession(request.session());
+    RaftSessionContext session = raft.getSessions().getSession(request.session());
     if (session == null) {
       log.warn("Unknown session {}", request.session());
       return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()

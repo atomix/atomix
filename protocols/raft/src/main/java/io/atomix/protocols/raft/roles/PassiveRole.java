@@ -357,7 +357,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Look up the client's session.
-    RaftSessionContext session = raft.getStateMachine().getSessions().getSession(request.session());
+    RaftSessionContext session = raft.getSessions().getSession(request.session());
     if (session == null) {
       log.trace("State out of sync, forwarding query to leader");
       return queryForward(request);

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 /**
  * Session manager.
  */
-public class RaftSessionManager {
+public class RaftSessionRegistry {
   private final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
   private final Map<ServiceId, Set<RaftSessionListener>> listeners = new ConcurrentHashMap<>();
 
