@@ -70,8 +70,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  */
 public class RaftContext implements AutoCloseable {
   private static final int LOAD_WINDOW_SIZE = 5;
-  private static final int LOAD_WINDOW = 2;
-  private static final int HIGH_LOAD_THRESHOLD = 10;
+  private static final int HIGH_LOAD_THRESHOLD = 500;
 
   private final Logger log;
   private final Set<Consumer<RaftServer.Role>> roleChangeListeners = new CopyOnWriteArraySet<>();

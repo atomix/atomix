@@ -88,6 +88,7 @@ public class RaftLogCompactor {
    * Takes a snapshot of all services and compacts logs if the server is not under high load or disk needs to be freed.
    */
   private synchronized CompletableFuture<Void> snapshotServices(boolean rescheduleAfterCompletion, boolean force) {
+    // If compaction is already in progress, return the existing future and reschedule if this is a scheduled compaction.
     if (compactFuture != null) {
       if (rescheduleAfterCompletion) {
         scheduleSnapshots();
@@ -95,21 +96,14 @@ public class RaftLogCompactor {
       return compactFuture;
     }
 
-    // If the server is under high load and the log doesn't *need* to be compacted, skip snapshotting.
-    if (raft.getStorage().dynamicCompaction() && !shouldCompact()) {
-      if (rescheduleAfterCompletion) {
-        scheduleSnapshots();
-      }
-      return CompletableFuture.completedFuture(null);
-    }
-
+    boolean shouldCompact = shouldCompact();
     long lastApplied = raft.getLastApplied();
 
     // Only take snapshots if segments can be removed from the log below the lastApplied index.
     if (raft.getLog().isCompactable(lastApplied) && raft.getLog().getCompactableIndex(lastApplied) > lastCompacted) {
 
-      // If the server is under high load, skip compaction and log a message.
-      if (raft.getStorage().dynamicCompaction() && raft.getLoadMonitor().isUnderHighLoad()) {
+      // If compaction is not being forced and the server is under high load, skip compaction and log a message.
+      if (!force && raft.getStorage().dynamicCompaction() && !shouldCompact && raft.getLoadMonitor().isUnderHighLoad()) {
         LOGGER.debug("Skipping compaction due to high load");
         if (rescheduleAfterCompletion) {
           scheduleSnapshots();
@@ -133,7 +127,7 @@ public class RaftLogCompactor {
       long startTime = System.currentTimeMillis();
 
       // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
-      snapshotServices(services, force || shouldCompact())
+      snapshotServices(services, force || shouldCompact)
           .whenComplete((result, error) -> {
             // If log compaction is being forced, immediately compact the logs.
             if (force) {
@@ -213,6 +207,9 @@ public class RaftLogCompactor {
 
   /**
    * Reschedules an attempt to snapshot remaining services.
+   * <p>
+   * When a snapshot cannot be taken of any remaining service, snapshots are rescheduled using exponential backoff based
+   * on the {@code attempt} count.
    *
    * @param services a list of services to snapshot
    * @param attempt the current attempt count
@@ -245,7 +242,7 @@ public class RaftLogCompactor {
     Iterator<DefaultServiceContext> iterator = services.iterator();
     while (iterator.hasNext()) {
       DefaultServiceContext serviceContext = iterator.next();
-      if (force || !serviceContext.isUnderHighLoad()) {
+      if (force || !raft.getStorage().dynamicCompaction() || !serviceContext.isUnderHighLoad()) {
         iterator.remove();
         return serviceContext;
       }
