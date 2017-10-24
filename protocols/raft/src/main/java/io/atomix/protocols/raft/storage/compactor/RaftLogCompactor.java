@@ -91,7 +91,7 @@ public class RaftLogCompactor {
     // If compaction is already in progress, return the existing future and reschedule if this is a scheduled compaction.
     if (compactFuture != null) {
       if (rescheduleAfterCompletion) {
-        scheduleSnapshots();
+        compactFuture.whenComplete((r, e) -> scheduleSnapshots());
       }
       return compactFuture;
     }
@@ -136,6 +136,11 @@ public class RaftLogCompactor {
               scheduleCompaction(lastApplied, startTime);
             }
           });
+
+      // Reschedule snapshots after completion if necessary.
+      if (rescheduleAfterCompletion) {
+        compactFuture.whenComplete((r, e) -> scheduleSnapshots());
+      }
       return compactFuture;
     }
     // Otherwise, if the log can't be compacted anyways, just reschedule snapshots.
