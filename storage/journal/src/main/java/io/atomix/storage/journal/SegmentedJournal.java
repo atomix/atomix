@@ -587,7 +587,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   public boolean isCompactable(long index) {
     Map.Entry<Long, JournalSegment<E>> segmentEntry = segments.floorEntry(index);
-    return segmentEntry != null && segments.headMap(segmentEntry.getValue().index()).size() > 1;
+    return segmentEntry != null && segments.headMap(segmentEntry.getValue().index()).size() > 0;
   }
 
   /**
