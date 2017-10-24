@@ -37,12 +37,12 @@ import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.protocols.raft.utils.LoadMonitor;
 import io.atomix.storage.buffer.Bytes;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
-import io.atomix.utils.SlidingWindowCounter;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -61,9 +61,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DefaultServiceContext implements ServiceContext {
 
-  private static final int WINDOW_SIZE = 5;
-  private static final int LOAD_WINDOW = 2;
-  private static final int HIGH_LOAD_THRESHOLD = 2;
+  private static final int LOAD_WINDOW_SIZE = 5;
+  private static final int HIGH_LOAD_THRESHOLD = 50;
 
   private final Logger log;
   private final ServiceId serviceId;
@@ -75,7 +74,7 @@ public class DefaultServiceContext implements ServiceContext {
   private final ThreadContext serviceExecutor;
   private final ThreadContext snapshotExecutor;
   private final ThreadContextFactory threadContextFactory;
-  private final SlidingWindowCounter loadCounter;
+  private final LoadMonitor loadMonitor;
   private final Map<Long, PendingSnapshot> pendingSnapshots = new ConcurrentSkipListMap<>();
   private long snapshotIndex;
   private long currentIndex;
@@ -110,7 +109,7 @@ public class DefaultServiceContext implements ServiceContext {
     this.sessions = new DefaultServiceSessions(serviceId, sessionManager);
     this.serviceExecutor = threadContextFactory.createContext();
     this.snapshotExecutor = threadContextFactory.createContext();
-    this.loadCounter = new SlidingWindowCounter(WINDOW_SIZE, serviceExecutor);
+    this.loadMonitor = new LoadMonitor(LOAD_WINDOW_SIZE, HIGH_LOAD_THRESHOLD, serviceExecutor);
     this.threadContextFactory = threadContextFactory;
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
         .addValue(serviceId)
@@ -174,7 +173,7 @@ public class DefaultServiceContext implements ServiceContext {
    * @return indicates whether the service is under high load
    */
   public boolean isUnderHighLoad() {
-    return loadCounter.get(LOAD_WINDOW) > HIGH_LOAD_THRESHOLD;
+    return loadMonitor.isUnderHighLoad();
   }
 
   /**
