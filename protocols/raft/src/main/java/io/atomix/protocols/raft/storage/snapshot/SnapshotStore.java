@@ -55,7 +55,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   Snapshot snapshot = snapshots.snapshot(1);
  *   }
  * </pre>
- * To create a new {@link Snapshot}, use the {@link #newSnapshot(ServiceId, long, WallClockTimestamp)} method. Each snapshot must
+ * To create a new {@link Snapshot}, use the {@link #newSnapshot(ServiceId, String, long, WallClockTimestamp)} method. Each snapshot must
  * be created with a unique {@code index} which represents the index of the server state machine at
  * the point at which the snapshot was taken. Snapshot indices are used to sort snapshots loaded from
  * disk and apply them at the correct point in the state machine.
@@ -144,15 +144,15 @@ public class SnapshotStore implements AutoCloseable {
     for (File file : storage.directory().listFiles(File::isFile)) {
 
       // If the file looks like a segment file, attempt to load the segment.
-      if (SnapshotFile.isSnapshotFile(storage.prefix(), file)) {
+      if (SnapshotFile.isSnapshotFile(file)) {
         SnapshotFile snapshotFile = new SnapshotFile(file);
         SnapshotDescriptor descriptor = new SnapshotDescriptor(FileBuffer.allocate(file, SnapshotDescriptor.BYTES));
 
         // Valid segments will have been locked. Segments that resulting from failures during log cleaning will be
         // unlocked and should ultimately be deleted from disk.
         if (descriptor.isLocked()) {
-          log.debug("Loaded disk snapshot: {} ({})", snapshotFile.index(), snapshotFile.file().getName());
-          snapshots.add(new FileSnapshot(snapshotFile, this));
+          log.debug("Loaded disk snapshot: {} ({})", descriptor.index(), snapshotFile.file().getName());
+          snapshots.add(new FileSnapshot(snapshotFile, descriptor, this));
           descriptor.close();
         }
         // If the segment descriptor wasn't locked, close and delete the descriptor.
@@ -171,53 +171,55 @@ public class SnapshotStore implements AutoCloseable {
    * Creates a temporary in-memory snapshot.
    *
    * @param serviceId The snapshot identifier.
+   * @param serviceName The snapshot service name.
    * @param index The snapshot index.
    * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newTemporarySnapshot(ServiceId serviceId, long index, WallClockTimestamp timestamp) {
+  public Snapshot newTemporarySnapshot(ServiceId serviceId, String serviceName, long index, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-        .withId(serviceId.id())
+        .withServiceId(serviceId.id())
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())
         .build();
-    return newSnapshot(descriptor, StorageLevel.MEMORY);
+    return newSnapshot(serviceName, descriptor, StorageLevel.MEMORY);
   }
 
   /**
    * Creates a new snapshot.
    *
    * @param serviceId The snapshot identifier.
+   * @param serviceName The snapshot service name.
    * @param index The snapshot index.
    * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newSnapshot(ServiceId serviceId, long index, WallClockTimestamp timestamp) {
+  public Snapshot newSnapshot(ServiceId serviceId, String serviceName, long index, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-        .withId(serviceId.id())
+        .withServiceId(serviceId.id())
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())
         .build();
-    return newSnapshot(descriptor, storage.storageLevel());
+    return newSnapshot(serviceName, descriptor, storage.storageLevel());
   }
 
   /**
    * Creates a new snapshot buffer.
    */
-  private Snapshot newSnapshot(SnapshotDescriptor descriptor, StorageLevel storageLevel) {
+  private Snapshot newSnapshot(String serviceName, SnapshotDescriptor descriptor, StorageLevel storageLevel) {
     if (storageLevel == StorageLevel.MEMORY) {
-      return createMemorySnapshot(descriptor);
+      return createMemorySnapshot(serviceName, descriptor);
     } else {
-      return createDiskSnapshot(descriptor);
+      return createDiskSnapshot(serviceName, descriptor);
     }
   }
 
   /**
    * Creates a memory snapshot.
    */
-  private Snapshot createMemorySnapshot(SnapshotDescriptor descriptor) {
+  private Snapshot createMemorySnapshot(String serviceName, SnapshotDescriptor descriptor) {
     HeapBuffer buffer = HeapBuffer.allocate(SnapshotDescriptor.BYTES, Integer.MAX_VALUE);
-    Snapshot snapshot = new MemorySnapshot(buffer, descriptor.copyTo(buffer), this);
+    Snapshot snapshot = new MemorySnapshot(serviceName, buffer, descriptor.copyTo(buffer), this);
     log.debug("Created memory snapshot: {}", snapshot);
     return snapshot;
   }
@@ -225,14 +227,14 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a disk snapshot.
    */
-  private Snapshot createDiskSnapshot(SnapshotDescriptor descriptor) {
+  private Snapshot createDiskSnapshot(String serviceName, SnapshotDescriptor descriptor) {
     SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(
-        storage.prefix(),
         storage.directory(),
-        descriptor.snapshotId(),
-        descriptor.index(),
-        descriptor.timestamp()));
-    Snapshot snapshot = new FileSnapshot(file, this);
+        serviceName,
+        descriptor.serviceId(),
+        descriptor.index()
+    ));
+    Snapshot snapshot = new FileSnapshot(file, descriptor, this);
     log.debug("Created disk snapshot: {}", snapshot);
     return snapshot;
   }

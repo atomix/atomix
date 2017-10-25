@@ -257,7 +257,7 @@ public class RaftStorage {
    * files directly. Deleting the snapshot store does not involve reading any snapshot files into memory.
    */
   public void deleteSnapshotStore() {
-    deleteFiles(f -> SnapshotFile.isSnapshotFile(prefix, f));
+    deleteFiles(f -> SnapshotFile.isSnapshotFile(f));
   }
 
   /**

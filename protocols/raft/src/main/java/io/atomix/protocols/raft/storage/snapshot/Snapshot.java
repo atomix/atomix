@@ -55,19 +55,30 @@ import static com.google.common.base.Preconditions.checkState;
  * can be recovered after a failure, and can be read by multiple readers concurrently.
  */
 public abstract class Snapshot implements AutoCloseable {
-  private final SnapshotStore store;
+  protected final SnapshotDescriptor descriptor;
+  protected final SnapshotStore store;
   private SnapshotWriter writer;
 
-  protected Snapshot(SnapshotStore store) {
+  protected Snapshot(SnapshotDescriptor descriptor, SnapshotStore store) {
+    this.descriptor = checkNotNull(descriptor, "descriptor cannot be null");
     this.store = checkNotNull(store, "store cannot be null");
   }
+
+  /**
+   * Returns the service name.
+   *
+   * @return the service name
+   */
+  public abstract String serviceName();
 
   /**
    * Returns the identifier of the state machine to which the snapshot belongs.
    *
    * @return The snapshot identifier.
    */
-  public abstract ServiceId serviceId();
+  public ServiceId serviceId() {
+    return ServiceId.from(descriptor.serviceId());
+  }
 
   /**
    * Returns the snapshot index.
@@ -76,7 +87,9 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot index.
    */
-  public abstract long index();
+  public long index() {
+    return descriptor.index();
+  }
 
   /**
    * Returns the snapshot timestamp.
@@ -85,7 +98,9 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot timestamp.
    */
-  public abstract WallClockTimestamp timestamp();
+  public WallClockTimestamp timestamp() {
+    return WallClockTimestamp.from(descriptor.timestamp());
+  }
 
   /**
    * Opens a new snapshot writer.

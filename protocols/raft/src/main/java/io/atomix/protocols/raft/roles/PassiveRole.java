@@ -475,7 +475,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Get the pending snapshot for the associated snapshot ID.
-    PendingSnapshot pendingSnapshot = pendingSnapshots.get(request.snapshotId());
+    PendingSnapshot pendingSnapshot = pendingSnapshots.get(request.serviceId());
 
     // If a snapshot is currently being received and the snapshot versions don't match, simply
     // close the existing snapshot. This is a naive implementation that assumes that the leader
@@ -499,7 +499,8 @@ public class PassiveRole extends ReserveRole {
       }
 
       Snapshot snapshot = raft.getSnapshotStore().newSnapshot(
-              ServiceId.from(request.snapshotId()),
+              ServiceId.from(request.serviceId()),
+              request.serviceName(),
               request.snapshotIndex(),
               WallClockTimestamp.from(request.snapshotTimestamp()));
       pendingSnapshot = new PendingSnapshot(snapshot);
@@ -521,10 +522,10 @@ public class PassiveRole extends ReserveRole {
     // If the snapshot is complete, store the snapshot and reset state, otherwise update the next snapshot offset.
     if (request.complete()) {
       pendingSnapshot.commit();
-      pendingSnapshots.remove(request.snapshotId());
+      pendingSnapshots.remove(request.serviceId());
     } else {
       pendingSnapshot.incrementOffset();
-      pendingSnapshots.put(request.snapshotId(), pendingSnapshot);
+      pendingSnapshots.put(request.serviceId(), pendingSnapshot);
     }
 
     return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()

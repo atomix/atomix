@@ -64,7 +64,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testStoreLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newSnapshot(ServiceId.from(1), 2, new WallClockTimestamp());
+    Snapshot snapshot = store.newSnapshot(ServiceId.from(1), "foo", 2, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
@@ -77,8 +77,10 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     assertNotNull(store.getSnapshotById(ServiceId.from(1)));
     assertNotNull(store.getSnapshotsByIndex(2));
     assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceId(), ServiceId.from(1));
+    assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceName(), "foo");
     assertEquals(store.getSnapshotById(ServiceId.from(1)).index(), 2);
     assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceId(), ServiceId.from(1));
+    assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceName(), "foo");
     assertEquals(store.getSnapshotsByIndex(2).iterator().next().index(), 2);
 
     try (SnapshotReader reader = snapshot.openReader()) {
@@ -93,7 +95,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testPersistLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newTemporarySnapshot(ServiceId.from(1), 2, new WallClockTimestamp());
+    Snapshot snapshot = store.newTemporarySnapshot(ServiceId.from(1), "foo", 2, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
@@ -117,8 +119,10 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     assertNotNull(store.getSnapshotById(ServiceId.from(1)));
     assertNotNull(store.getSnapshotsByIndex(2));
     assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceId(), ServiceId.from(1));
+    assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceName(), "foo");
     assertEquals(store.getSnapshotById(ServiceId.from(1)).index(), 2);
     assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceId(), ServiceId.from(1));
+    assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceName(), "foo");
     assertEquals(store.getSnapshotsByIndex(2).iterator().next().index(), 2);
 
     snapshot = store.getSnapshotById(ServiceId.from(1));

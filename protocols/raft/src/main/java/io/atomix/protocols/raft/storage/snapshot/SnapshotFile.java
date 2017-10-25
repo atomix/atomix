@@ -16,12 +16,8 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.atomix.protocols.raft.service.ServiceId;
 
 import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -30,7 +26,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class SnapshotFile {
   @VisibleForTesting
-  static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMddHHmmssSSS");
   private static final char PART_SEPARATOR = '-';
   private static final char EXTENSION_SEPARATOR = '.';
   private static final String EXTENSION = "snapshot";
@@ -41,8 +36,7 @@ public final class SnapshotFile {
    *
    * @throws NullPointerException if {@code file} is null
    */
-  public static boolean isSnapshotFile(String name, File file) {
-    checkNotNull(name, "name cannot be null");
+  public static boolean isSnapshotFile(File file) {
     checkNotNull(file, "file cannot be null");
     String fileName = file.getName();
 
@@ -57,28 +51,22 @@ public final class SnapshotFile {
     }
 
     // Parse the file name parts.
-    String[] parts = fileName.split(String.valueOf(PART_SEPARATOR));
+    String[] parts = fileName.substring(0, fileName.lastIndexOf(EXTENSION_SEPARATOR)).split(String.valueOf(PART_SEPARATOR));
 
     // The total number of file name parts should be at least 4.
-    if (parts.length < 4) {
-      return false;
-    }
-
-    // The first part of the file name should be the provided snapshot file name.
-    // Subtract from the number of parts to ensure PART_SEPARATOR can be used in snapshot names.
-    if (!parts[parts.length - 4].equals(name)) {
+    if (parts.length < 3) {
       return false;
     }
 
     // The second part of the file name should be numeric.
     // Subtract from the number of parts to ensure PART_SEPARATOR can be used in snapshot names.
-    if (!isNumeric(parts[parts.length - 3])) {
+    if (!isNumeric(parts[parts.length - 2])) {
       return false;
     }
 
     // The third part of the file name should be numeric.
     // Subtract from the number of parts to ensure PART_SEPARATOR can be used in snapshot names.
-    if (!isNumeric(parts[parts.length - 2])) {
+    if (!isNumeric(parts[parts.length - 1])) {
       return false;
     }
 
@@ -105,23 +93,20 @@ public final class SnapshotFile {
    * Creates a snapshot file for the given directory, log name, and snapshot index.
    */
   @VisibleForTesting
-  static File createSnapshotFile(String name, File directory, long id, long index, long timestamp) {
-    return new File(directory, createSnapshotFileName(name, id, index, timestamp));
+  static File createSnapshotFile(File directory, String serviceName, long serviceId, long index) {
+    return new File(directory, createSnapshotFileName(serviceName, serviceId, index));
   }
 
   /**
    * Creates a snapshot file name from the given parameters.
    */
   @VisibleForTesting
-  static String createSnapshotFileName(String name, long id, long index, long timestamp) {
-    synchronized (TIMESTAMP_FORMAT) {
-      return String.format("%s-%d-%d-%s.%s",
-          checkNotNull(name, "name cannot be null"),
-          id,
-          index,
-          TIMESTAMP_FORMAT.format(new Date(timestamp)),
-          EXTENSION);
-    }
+  static String createSnapshotFileName(String serviceName, long serviceId, long index) {
+    return String.format("%s-%d-%d.%s",
+        serviceName,
+        serviceId,
+        index,
+        EXTENSION);
   }
 
   /**
@@ -141,79 +126,17 @@ public final class SnapshotFile {
   }
 
   /**
-   * Returns the snapshot identifier.
+   * Returns the snapshot name.
    *
-   * @return The snapshot identifier.
+   * @return the snapshot name
    */
-  public ServiceId snapshotId() {
-    return ServiceId.from(parseId(file.getName()));
+  public String name() {
+    return parseName(file.getName());
   }
 
-  /**
-   * Parses the snapshot identifier from the given file name.
-   *
-   * @param fileName the file name from which to parse the identifier
-   * @return the identifier from the given snapshot file name
-   */
   @VisibleForTesting
-  static long parseId(String fileName) {
-    int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) - 1) + 1;
-    int end = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1);
-    String idString = fileName.substring(start, end);
-    return Long.parseLong(idString);
-  }
-
-  /**
-   * Returns the snapshot index.
-   *
-   * @return The snapshot index.
-   */
-  public long index() {
-    return parseIndex(file.getName());
-  }
-
-  /**
-   * Parses the snapshot index from the given file name.
-   *
-   * @param fileName the file name from which to parse the index
-   * @return the index from the given snapshot file name
-   */
-  @VisibleForTesting
-  static long parseIndex(String fileName) {
-    int start = fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1) + 1;
-    int end = fileName.lastIndexOf(PART_SEPARATOR);
-    String indexString = fileName.substring(start, end);
-    return Long.parseLong(indexString);
-  }
-
-  /**
-   * Returns the snapshot timestamp.
-   *
-   * @return The snapshot timestamp.
-   */
-  public long timestamp() {
-    return parseTimestamp(file.getName());
-  }
-
-  /**
-   * Parses the snapshot timestamp from the given file name.
-   *
-   * @param fileName the file name from which to parse the timestamp
-   * @return the timestamp from the given snapshot file name
-   */
-  @VisibleForTesting
-  static long parseTimestamp(String fileName) {
-    int start = fileName.lastIndexOf(PART_SEPARATOR) + 1;
-    int end = fileName.lastIndexOf(EXTENSION_SEPARATOR);
-    String timestampString = fileName.substring(start, end);
-    synchronized (TIMESTAMP_FORMAT) {
-      try {
-        Date timestamp = TIMESTAMP_FORMAT.parse(timestampString);
-        return timestamp.getTime();
-      } catch (ParseException e) {
-        throw new RuntimeException(e);
-      }
-    }
+  static String parseName(String fileName) {
+    return fileName.substring(0, fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1));
   }
 
 }

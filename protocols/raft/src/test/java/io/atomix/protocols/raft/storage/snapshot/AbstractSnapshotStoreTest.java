@@ -41,7 +41,7 @@ public abstract class AbstractSnapshotStoreTest {
   public void testWriteSnapshotChunks() {
     SnapshotStore store = createSnapshotStore();
     WallClockTimestamp timestamp = new WallClockTimestamp();
-    Snapshot snapshot = store.newSnapshot(ServiceId.from(1), 2, timestamp);
+    Snapshot snapshot = store.newSnapshot(ServiceId.from(1), "foo", 2, timestamp);
     assertEquals(snapshot.serviceId(), ServiceId.from(1));
     assertEquals(snapshot.index(), 2);
     assertEquals(snapshot.timestamp(), timestamp);
