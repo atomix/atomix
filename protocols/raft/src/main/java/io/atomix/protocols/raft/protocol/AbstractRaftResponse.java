@@ -101,9 +101,6 @@ public abstract class AbstractRaftResponse implements RaftResponse {
      */
     protected void validate() {
       checkNotNull(status, "status cannot be null");
-      if (status == Status.ERROR) {
-        checkNotNull(error, "error cannot be null");
-      }
     }
 
     @Override

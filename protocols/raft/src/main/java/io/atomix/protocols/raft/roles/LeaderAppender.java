@@ -187,12 +187,6 @@ final class LeaderAppender extends AbstractAppender {
         sendConfigureRequest(member, buildConfigureRequest(member));
       }
     }
-    // If the member is a reserve or passive member, send an empty AppendRequest to it.
-    else if (member.getMember().getType() == RaftMember.Type.RESERVE) {
-      if (member.canAppend()) {
-        sendAppendRequest(member, buildAppendEmptyRequest(member));
-      }
-    }
     // If there's a snapshot at the member's nextIndex, replicate the snapshot.
     else if (member.getMember().getType() == RaftMember.Type.ACTIVE || member.getMember().getType() == RaftMember.Type.PASSIVE) {
       long currentIndex = member.getLogReader().getCurrentIndex();
@@ -229,9 +223,7 @@ final class LeaderAppender extends AbstractAppender {
   @Override
   protected boolean hasMoreEntries(RaftMemberContext member) {
     // If the member's nextIndex is an entry in the local log then more entries can be sent.
-    return member.getMember().getType() != RaftMember.Type.RESERVE
-        && member.getMember().getType() != RaftMember.Type.PASSIVE
-        && member.getLogReader().hasNext();
+    return member.getLogReader().hasNext();
   }
 
   /**

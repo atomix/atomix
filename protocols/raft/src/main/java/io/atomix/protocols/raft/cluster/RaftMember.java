@@ -48,16 +48,6 @@ public interface RaftMember {
     INACTIVE,
 
     /**
-     * Represents a member which does not participate in replication.
-     * <p>
-     * The {@code RESERVE} member type is representative of a member that does not participate in any
-     * replication of state but only maintains contact with the cluster leader and is an active member
-     * of the {@link RaftCluster}. Typically, reserve members act as standby nodes which can be
-     * {@link #promote() promoted} to a {@link #PASSIVE} or {@link #ACTIVE} role when needed.
-     */
-    RESERVE,
-
-    /**
      * Represents a member which participates in asynchronous replication but does not vote in elections
      * or otherwise participate in the Raft consensus algorithm.
      * <p>
@@ -69,6 +59,15 @@ public interface RaftMember {
      * members if necessary.
      */
     PASSIVE,
+
+    /**
+     * Represents a non-voting member being caught up to the leader for promotion.
+     * <p>
+     * This state is used to replicate committed and uncommitted entries to a node in the process of being
+     * promoted to {@link #ACTIVE}. It allows a node to be caught up to the leader prior to becoming a voting
+     * member to avoid blocking the cluster.
+     */
+    PROMOTABLE,
 
     /**
      * Represents a full voting member of the Raft cluster which participates fully in leader election

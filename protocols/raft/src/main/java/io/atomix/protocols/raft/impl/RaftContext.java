@@ -31,8 +31,8 @@ import io.atomix.protocols.raft.roles.FollowerRole;
 import io.atomix.protocols.raft.roles.InactiveRole;
 import io.atomix.protocols.raft.roles.LeaderRole;
 import io.atomix.protocols.raft.roles.PassiveRole;
+import io.atomix.protocols.raft.roles.PromotableRole;
 import io.atomix.protocols.raft.roles.RaftRole;
-import io.atomix.protocols.raft.roles.ReserveRole;
 import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.compactor.RaftLogCompactor;
@@ -87,13 +87,13 @@ public class RaftContext implements AutoCloseable {
   protected final RaftSessionRegistry sessions = new RaftSessionRegistry();
   private final LoadMonitor loadMonitor;
   private volatile State state = State.ACTIVE;
-  private MetaStore meta;
-  private RaftLog raftLog;
-  private RaftLogWriter logWriter;
-  private RaftLogReader logReader;
-  private RaftLogCompactor logCompactor;
-  private SnapshotStore snapshotStore;
-  private RaftServiceManager stateMachine;
+  private final MetaStore meta;
+  private final RaftLog raftLog;
+  private final RaftLogWriter logWriter;
+  private final RaftLogReader logReader;
+  private final RaftLogCompactor logCompactor;
+  private final SnapshotStore snapshotStore;
+  private final RaftServiceManager stateMachine;
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext loadContext;
   private final ThreadContext compactionContext;
@@ -111,7 +111,6 @@ public class RaftContext implements AutoCloseable {
   @SuppressWarnings("unchecked")
   public RaftContext(
       String name,
-      RaftMember.Type type,
       MemberId localMemberId,
       RaftServerProtocol protocol,
       RaftStorage storage,
@@ -142,10 +141,19 @@ public class RaftContext implements AutoCloseable {
     this.term = meta.loadTerm();
     this.lastVotedFor = meta.loadVote();
 
-    // Reset the log/state machine.
-    reset();
+    // Construct the core log, reader, writer, and compactor.
+    this.raftLog = storage.openLog();
+    this.logWriter = raftLog.writer();
+    this.logReader = raftLog.openReader(1, RaftLogReader.Mode.ALL);
+    this.logCompactor = new RaftLogCompactor(this, compactionContext);
 
-    this.cluster = new RaftClusterContext(type, localMemberId, this);
+    // Open the snapshot store.
+    this.snapshotStore = storage.openSnapshotStore();
+
+    // Create a new internal server state machine.
+    this.stateMachine = new RaftServiceManager(this, threadContextFactory);
+
+    this.cluster = new RaftClusterContext(localMemberId, this);
 
     // Register protocol listeners.
     registerHandlers(protocol);
@@ -343,10 +351,6 @@ public class RaftContext implements AutoCloseable {
           this.leader = leader;
           log.info("Found leader {}", member.memberId());
           electionListeners.forEach(l -> l.accept(member));
-          if (state == State.ACTIVE && cluster.getMember().getType() == RaftMember.Type.RESERVE) {
-            state = State.READY;
-            stateChangeListeners.forEach(l -> l.accept(State.READY));
-          }
         }
       }
 
@@ -624,35 +628,6 @@ public class RaftContext implements AutoCloseable {
   }
 
   /**
-   * Resets the log and state machine.
-   */
-  public void reset() {
-    // Delete the existing log.
-    if (raftLog != null) {
-      raftLog.close();
-      storage.deleteLog();
-    }
-
-    // Delete the existing snapshot store.
-    if (snapshotStore != null) {
-      snapshotStore.close();
-      storage.deleteSnapshotStore();
-    }
-
-    // Open the log.
-    raftLog = storage.openLog();
-    logWriter = raftLog.writer();
-    logReader = raftLog.openReader(1, RaftLogReader.Mode.ALL);
-    logCompactor = new RaftLogCompactor(this, compactionContext);
-
-    // Open the snapshot store.
-    snapshotStore = storage.openSnapshotStore();
-
-    // Create a new internal server state machine.
-    this.stateMachine = new RaftServiceManager(this, threadContextFactory);
-  }
-
-  /**
    * Returns the server snapshot store.
    *
    * @return The server snapshot store.
@@ -781,14 +756,14 @@ public class RaftContext implements AutoCloseable {
           transition(RaftServer.Role.FOLLOWER);
         }
         break;
+      case PROMOTABLE:
+        if (this.role.role() != RaftServer.Role.PROMOTABLE) {
+          transition(RaftServer.Role.PROMOTABLE);
+        }
+        break;
       case PASSIVE:
         if (this.role.role() != RaftServer.Role.PASSIVE) {
           transition(RaftServer.Role.PASSIVE);
-        }
-        break;
-      case RESERVE:
-        if (this.role.role() != RaftServer.Role.RESERVE) {
-          transition(RaftServer.Role.RESERVE);
         }
         break;
       default:
@@ -836,10 +811,10 @@ public class RaftContext implements AutoCloseable {
     switch (role) {
       case INACTIVE:
         return new InactiveRole(this);
-      case RESERVE:
-        return new ReserveRole(this);
       case PASSIVE:
         return new PassiveRole(this);
+      case PROMOTABLE:
+        return new PromotableRole(this);
       case FOLLOWER:
         return new FollowerRole(this);
       case CANDIDATE:

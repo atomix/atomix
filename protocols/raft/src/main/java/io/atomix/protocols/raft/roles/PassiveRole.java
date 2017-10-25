@@ -23,12 +23,32 @@ import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
+import io.atomix.protocols.raft.protocol.CloseSessionRequest;
+import io.atomix.protocols.raft.protocol.CloseSessionResponse;
+import io.atomix.protocols.raft.protocol.CommandRequest;
+import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.InstallRequest;
 import io.atomix.protocols.raft.protocol.InstallResponse;
+import io.atomix.protocols.raft.protocol.JoinRequest;
+import io.atomix.protocols.raft.protocol.JoinResponse;
+import io.atomix.protocols.raft.protocol.KeepAliveRequest;
+import io.atomix.protocols.raft.protocol.KeepAliveResponse;
+import io.atomix.protocols.raft.protocol.LeaveRequest;
+import io.atomix.protocols.raft.protocol.LeaveResponse;
+import io.atomix.protocols.raft.protocol.MetadataRequest;
+import io.atomix.protocols.raft.protocol.MetadataResponse;
+import io.atomix.protocols.raft.protocol.OpenSessionRequest;
+import io.atomix.protocols.raft.protocol.OpenSessionResponse;
 import io.atomix.protocols.raft.protocol.OperationResponse;
+import io.atomix.protocols.raft.protocol.PollRequest;
+import io.atomix.protocols.raft.protocol.PollResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.protocol.ReconfigureRequest;
+import io.atomix.protocols.raft.protocol.ReconfigureResponse;
+import io.atomix.protocols.raft.protocol.VoteRequest;
+import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
@@ -51,7 +71,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Passive state.
  */
-public class PassiveRole extends ReserveRole {
+public class PassiveRole extends InactiveRole {
   private final Map<Long, PendingSnapshot> pendingSnapshots = new HashMap<>();
 
   public PassiveRole(RaftContext context) {
@@ -530,6 +550,189 @@ public class PassiveRole extends ReserveRole {
     return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .build()));
+  }
+
+  @Override
+  public CompletableFuture<MetadataResponse> onMetadata(MetadataRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    if (raft.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(MetadataResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER)
+          .build()));
+    } else {
+      return forward(request, raft.getProtocol()::metadata)
+          .exceptionally(error -> MetadataResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER)
+              .build())
+          .thenApply(this::logResponse);
+    }
+  }
+
+  @Override
+  public CompletableFuture<PollResponse> onPoll(PollRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    return CompletableFuture.completedFuture(logResponse(PollResponse.newBuilder()
+        .withStatus(RaftResponse.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Cannot poll RESERVE member")
+        .build()));
+  }
+
+  @Override
+  public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
+    raft.checkThread();
+    logRequest(request);
+    updateTermAndLeader(request.term(), null);
+
+    return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
+        .withStatus(RaftResponse.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Cannot request vote from RESERVE member")
+        .build()));
+  }
+
+  @Override
+  public CompletableFuture<CommandResponse> onCommand(CommandRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    if (raft.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER)
+          .build()));
+    } else {
+      return forward(request, raft.getProtocol()::command)
+          .exceptionally(error -> CommandResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER)
+              .build())
+          .thenApply(this::logResponse);
+    }
+  }
+
+  @Override
+  public CompletableFuture<KeepAliveResponse> onKeepAlive(KeepAliveRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    if (raft.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER)
+          .build()));
+    } else {
+      return forward(request, raft.getProtocol()::keepAlive)
+          .exceptionally(error -> KeepAliveResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER)
+              .build())
+          .thenApply(this::logResponse);
+    }
+  }
+
+  @Override
+  public CompletableFuture<OpenSessionResponse> onOpenSession(OpenSessionRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    if (raft.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER)
+          .build()));
+    } else {
+      return forward(request, raft.getProtocol()::openSession)
+          .exceptionally(error -> OpenSessionResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER)
+              .build())
+          .thenApply(this::logResponse);
+    }
+  }
+
+  @Override
+  public CompletableFuture<CloseSessionResponse> onCloseSession(CloseSessionRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    if (raft.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER)
+          .build()));
+    } else {
+      return forward(request, raft.getProtocol()::closeSession)
+          .exceptionally(error -> CloseSessionResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER)
+              .build())
+          .thenApply(this::logResponse);
+    }
+  }
+
+  @Override
+  public CompletableFuture<JoinResponse> onJoin(JoinRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    if (raft.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER)
+          .build()));
+    } else {
+      return forward(request, raft.getProtocol()::join)
+          .exceptionally(error -> JoinResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER)
+              .build())
+          .thenApply(this::logResponse);
+    }
+  }
+
+  @Override
+  public CompletableFuture<ReconfigureResponse> onReconfigure(ReconfigureRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    if (raft.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER)
+          .build()));
+    } else {
+      return forward(request, raft.getProtocol()::reconfigure)
+          .exceptionally(error -> ReconfigureResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER)
+              .build())
+          .thenApply(this::logResponse);
+    }
+  }
+
+  @Override
+  public CompletableFuture<LeaveResponse> onLeave(LeaveRequest request) {
+    raft.checkThread();
+    logRequest(request);
+
+    if (raft.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.newBuilder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER)
+          .build()));
+    } else {
+      return forward(request, raft.getProtocol()::leave)
+          .exceptionally(error -> LeaveResponse.newBuilder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER)
+              .build())
+          .thenApply(this::logResponse);
+    }
   }
 
   @Override

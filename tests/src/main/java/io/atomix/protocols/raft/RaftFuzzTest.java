@@ -566,7 +566,6 @@ public class RaftFuzzTest implements Runnable {
     }
 
     RaftServer.Builder builder = RaftServer.newBuilder(member.memberId())
-        .withType(member.getType())
         .withProtocol(protocol)
         .withStorage(RaftStorage.newBuilder()
             .withStorageLevel(StorageLevel.DISK)
