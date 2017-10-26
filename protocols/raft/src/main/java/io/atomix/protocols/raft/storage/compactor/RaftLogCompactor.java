@@ -62,10 +62,9 @@ public class RaftLogCompactor {
    * Returns a boolean indicating whether the logs should be compacted.
    */
   private boolean shouldCompact() {
-    return raft.getStorage().storageLevel() == StorageLevel.MEMORY
-        || raft.getStorage().dynamicCompaction()
-        || raft.getStorage().statistics().getRemainingDuration().toMillis() / 2 < getCompactionTime()
-        || raft.getStorage().statistics().getUsableSpace() / (double) raft.getStorage().statistics().getTotalSpace() < raft.getStorage().freeDiskBuffer();
+    return raft.getStorage().dynamicCompaction()
+        && (raft.getStorage().statistics().getRemainingDuration().toMillis() / 2 < getCompactionTime()
+        || raft.getStorage().statistics().getUsableSpace() / (double) raft.getStorage().statistics().getTotalSpace() < raft.getStorage().freeDiskBuffer());
   }
 
   /**
@@ -102,8 +101,17 @@ public class RaftLogCompactor {
     // Only take snapshots if segments can be removed from the log below the lastApplied index.
     if (raft.getLog().isCompactable(lastApplied) && raft.getLog().getCompactableIndex(lastApplied) > lastCompacted) {
 
-      // If compaction is not being forced and the server is under high load, skip compaction and log a message.
-      if (!force && raft.getStorage().dynamicCompaction() && !shouldCompact && raft.getLoadMonitor().isUnderHighLoad()) {
+      // If compaction is not being forced...
+      if (!force
+          // And the log is not in-memory...
+          && raft.getStorage().storageLevel() != StorageLevel.MEMORY
+          // And dynamic compaction is enabled...
+          && raft.getStorage().dynamicCompaction()
+          // And the node isn't running out of disk space...
+          && !shouldCompact
+          // And the server is under high load...
+          && raft.getLoadMonitor().isUnderHighLoad()) {
+        // We can skip taking a snapshot for now.
         LOGGER.debug("Skipping compaction due to high load");
         if (rescheduleAfterCompletion) {
           scheduleSnapshots();
