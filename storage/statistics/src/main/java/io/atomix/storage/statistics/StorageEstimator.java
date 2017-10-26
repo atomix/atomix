@@ -62,14 +62,16 @@ public class StorageEstimator {
     this.previousSize = nextSize;
     this.previousTime = nextTime;
     long consumedSize = previousSize - nextSize;
-    long consumedTime = previousTime - nextTime;
+    long consumedTime = nextTime - previousTime;
     double consumedSizePerSecond = consumedSize / (consumedTime / 1000d);
     if (consumedSizePerSecond < 0) {
       stats.clear();
     } else if (previousSize > 0) {
       stats.addValue(consumedSizePerSecond);
       long averageSizePerSecond = (long) stats.getMean();
-      this.remaining = Duration.ofSeconds(nextSize / averageSizePerSecond);
+      if (averageSizePerSecond > 0) {
+        this.remaining = Duration.ofSeconds(nextSize / averageSizePerSecond);
+      }
     }
   }
 
