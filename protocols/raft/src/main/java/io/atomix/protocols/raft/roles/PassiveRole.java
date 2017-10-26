@@ -45,6 +45,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Passive state.
  */
@@ -518,4 +520,63 @@ public class PassiveRole extends ReserveRole {
     return super.close();
   }
 
+  /**
+   * Pending snapshot.
+   */
+  private static class PendingSnapshot {
+    private final Snapshot snapshot;
+    private long nextOffset;
+
+    public PendingSnapshot(Snapshot snapshot) {
+      this.snapshot = snapshot;
+    }
+
+    /**
+     * Returns the pending snapshot.
+     *
+     * @return the pending snapshot
+     */
+    public Snapshot snapshot() {
+      return snapshot;
+    }
+
+    /**
+     * Returns and increments the next snapshot offset.
+     *
+     * @return the next snapshot offset
+     */
+    public long nextOffset() {
+      return nextOffset;
+    }
+
+    /**
+     * Increments the next snapshot offset.
+     */
+    public void incrementOffset() {
+      nextOffset++;
+    }
+
+    /**
+     * Commits the snapshot to disk.
+     */
+    public void commit() {
+      snapshot.complete();
+    }
+
+    /**
+     * Closes and deletes the snapshot.
+     */
+    public void rollback() {
+      snapshot.close();
+      snapshot.delete();
+    }
+
+    @Override
+    public String toString() {
+      return toStringHelper(this)
+          .add("snapshot", snapshot)
+          .add("nextOffset", nextOffset)
+          .toString();
+    }
+  }
 }
