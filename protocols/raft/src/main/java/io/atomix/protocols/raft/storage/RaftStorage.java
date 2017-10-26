@@ -25,7 +25,6 @@ import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.JournalSegmentDescriptor;
 import io.atomix.storage.journal.JournalSegmentFile;
 import io.atomix.storage.statistics.StorageStatistics;
-import io.atomix.utils.concurrent.SingleThreadContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,7 +96,7 @@ public class RaftStorage {
     this.freeDiskBuffer = freeDiskBuffer;
     this.flushOnCommit = flushOnCommit;
     this.retainStaleSnapshots = retainStaleSnapshots;
-    this.statistics = new StorageStatistics(directory, new SingleThreadContext("raft-storage-statistics-%d"));
+    this.statistics = new StorageStatistics(directory);
     directory.mkdirs();
   }
 

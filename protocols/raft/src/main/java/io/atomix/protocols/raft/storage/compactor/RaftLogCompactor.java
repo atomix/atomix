@@ -21,7 +21,6 @@ import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.ThreadContext;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,13 +40,10 @@ public class RaftLogCompactor {
   private static final Duration SNAPSHOT_INTERVAL = Duration.ofSeconds(10);
   private static final Duration MIN_COMPACT_INTERVAL = Duration.ofSeconds(10);
 
-  private static final int COMPACTION_WINDOW_SIZE = 10;
-  private static final int COMPACTION_TIME_FACTOR = 10;
-  private static final long DEFAULT_COMPACTION_TIME = Duration.ofMinutes(1).toMillis();
+  private static final int SEGMENT_BUFFER_FACTOR = 5;
 
   private final RaftContext raft;
   private final ThreadContext threadContext;
-  private final DescriptiveStatistics compactionStats = new DescriptiveStatistics(COMPACTION_WINDOW_SIZE);
   private final Random random = new Random();
   private volatile CompletableFuture<Void> compactFuture;
   private long lastCompacted;
@@ -59,12 +55,13 @@ public class RaftLogCompactor {
   }
 
   /**
-   * Returns a boolean indicating whether the logs should be compacted.
+   * Returns a boolean indicating whether the node is running out of disk space.
    */
-  private boolean shouldCompact() {
-    return raft.getStorage().dynamicCompaction()
-        && (raft.getStorage().statistics().getRemainingDuration().toMillis() / 2 < getCompactionTime()
-        || raft.getStorage().statistics().getUsableSpace() / (double) raft.getStorage().statistics().getTotalSpace() < raft.getStorage().freeDiskBuffer());
+  private boolean isRunningOutOfDiskSpace() {
+    // If there's not enough space left to allocate two log segments
+    return raft.getStorage().statistics().getUsableSpace() < raft.getStorage().maxLogSegmentSize() * SEGMENT_BUFFER_FACTOR
+        // Or the used disk percentage has surpassed the free disk buffer percentage
+        || raft.getStorage().statistics().getUsableSpace() / (double) raft.getStorage().statistics().getTotalSpace() < raft.getStorage().freeDiskBuffer();
   }
 
   /**
@@ -95,21 +92,23 @@ public class RaftLogCompactor {
       return compactFuture;
     }
 
-    boolean shouldCompact = shouldCompact();
     long lastApplied = raft.getLastApplied();
 
     // Only take snapshots if segments can be removed from the log below the lastApplied index.
     if (raft.getLog().isCompactable(lastApplied) && raft.getLog().getCompactableIndex(lastApplied) > lastCompacted) {
 
-      // If compaction is not being forced...
+      // Determine whether the node is running out of disk space.
+      boolean runningOutOfDiskSpace = isRunningOutOfDiskSpace();
+
+      // If compaction is not already being forced...
       if (!force
-          // And the log is not in-memory...
+          // And the log is not in memory (we need to free up memory if it is)...
           && raft.getStorage().storageLevel() != StorageLevel.MEMORY
-          // And dynamic compaction is enabled...
+          // And dynamic compaction is enabled (we need to compact immediately if it's disabled)...
           && raft.getStorage().dynamicCompaction()
-          // And the node isn't running out of disk space...
-          && !shouldCompact
-          // And the server is under high load...
+          // And the node isn't running out of disk space (we need to compact immediately if it is)...
+          && !runningOutOfDiskSpace
+          // And the server is under high load (we can skip compaction at this point)...
           && raft.getLoadMonitor().isUnderHighLoad()) {
         // We can skip taking a snapshot for now.
         LOGGER.debug("Skipping compaction due to high load");
@@ -132,16 +131,15 @@ public class RaftLogCompactor {
       // We need to ensure that callbacks added to the compaction future are completed in the order in which they
       // were added in order to preserve the order of retries when appending to the log.
       compactFuture = new OrderedFuture<>();
-      long startTime = System.currentTimeMillis();
 
       // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
-      snapshotServices(services, force || shouldCompact)
+      snapshotServices(services, force || runningOutOfDiskSpace)
           .whenComplete((result, error) -> {
             // If log compaction is being forced, immediately compact the logs.
             if (force) {
-              compactLogs(lastApplied, startTime);
+              compactLogs(lastApplied);
             } else {
-              scheduleCompaction(lastApplied, startTime);
+              scheduleCompaction(lastApplied);
             }
           });
 
@@ -236,7 +234,7 @@ public class RaftLogCompactor {
       List<CompletableFuture<Void>> futures) {
     ComposableFuture<Void> future = new ComposableFuture<>();
     threadContext.schedule(Duration.ofSeconds(Math.min(2 ^ attempt, 10)), () ->
-        snapshotServices(services, force || shouldCompact(), attempt + 1, futures).whenComplete(future));
+        snapshotServices(services, force || isRunningOutOfDiskSpace(), attempt + 1, futures).whenComplete(future));
     return future;
   }
 
@@ -283,13 +281,12 @@ public class RaftLogCompactor {
    *
    * @param lastApplied the last applied index at the start of snapshotting. This represents the highest index before
    *                    which segments can be safely removed from disk
-   * @param startTime the time at which compaction was started
    */
-  private void scheduleCompaction(long lastApplied, long startTime) {
+  private void scheduleCompaction(long lastApplied) {
     // Schedule compaction after a randomized delay to discourage snapshots on multiple nodes at the same time.
     Duration delay = MIN_COMPACT_INTERVAL.plusMillis(random.nextInt((int) MIN_COMPACT_INTERVAL.toMillis()));
     LOGGER.trace("Scheduling compaction in {}", delay);
-    threadContext.schedule(delay, () -> compactLogs(lastApplied, startTime));
+    threadContext.schedule(delay, () -> compactLogs(lastApplied));
   }
 
   /**
@@ -297,36 +294,17 @@ public class RaftLogCompactor {
    *
    * @param compactIndex the index to which to compact logs
    */
-  private void compactLogs(long compactIndex, long startTime) {
+  private void compactLogs(long compactIndex) {
     LOGGER.debug("Compacting logs up to index {}", compactIndex);
     try {
       raft.getLog().compact(compactIndex);
     } catch (Exception e) {
       LOGGER.error("An exception occurred during log compaction: {}", e);
     } finally {
-      recordCompactionTime(System.currentTimeMillis() - startTime);
       this.compactFuture.complete(null);
       this.compactFuture = null;
       // Immediately attempt to take new snapshots since compaction is already run after a time interval.
       compact();
     }
-  }
-
-  /**
-   * Records the given compaction time.
-   *
-   * @param time the time it took to snapshot and compact logs
-   */
-  private void recordCompactionTime(long time) {
-    compactionStats.addValue(time);
-  }
-
-  /**
-   * Returns the estimated amount of time it takes to snapshot services and compact logs.
-   *
-   * @return the estimated amount of time it takes to snapshot services and compact logs
-   */
-  private long getCompactionTime() {
-    return (compactionStats.getN() == 0 ? DEFAULT_COMPACTION_TIME : (long) compactionStats.getMax() * COMPACTION_TIME_FACTOR) + DEFAULT_COMPACTION_TIME;
   }
 }

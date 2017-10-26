@@ -55,6 +55,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   }
 
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 64;
+  private static final int SEGMENT_BUFFER_FACTOR = 3;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final String name;
@@ -194,7 +195,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * Asserts that enough disk space is available to allocate a new segment.
    */
   private void assertDiskSpace() {
-    if (directory().getUsableSpace() < maxSegmentSize() * 3) {
+    if (directory().getUsableSpace() < maxSegmentSize() * SEGMENT_BUFFER_FACTOR) {
       throw new StorageException.OutOfDiskSpace("Not enough space to allocate a new journal segment");
     }
   }

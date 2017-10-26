@@ -30,6 +30,5 @@
     <module>api</module>
     <module>buffer</module>
     <module>journal</module>
-    <module>statistics</module>
   </modules>
 </project>

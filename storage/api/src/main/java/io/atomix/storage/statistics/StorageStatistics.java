@@ -15,21 +15,16 @@
  */
 package io.atomix.storage.statistics;
 
-import io.atomix.utils.concurrent.ThreadContext;
-
 import java.io.File;
-import java.time.Duration;
 
 /**
  * Atomix storage statistics.
  */
 public class StorageStatistics {
   private final File file;
-  private final StorageEstimator estimator;
 
-  public StorageStatistics(File file, ThreadContext context) {
+  public StorageStatistics(File file) {
     this.file = file;
-    this.estimator = new StorageEstimator(file, context);
   }
 
   /**
@@ -57,21 +52,5 @@ public class StorageStatistics {
    */
   public long getTotalSpace() {
     return file.getTotalSpace();
-  }
-
-  /**
-   * Returns the estimated remaining storage duration based on the rate at which space is being consumed.
-   *
-   * @return the estimated remaining storage duration based on the rate at which space is being consumed
-   */
-  public Duration getRemainingDuration() {
-    return estimator.estimateRemainingDuration();
-  }
-
-  /**
-   * Closes the storage statistics.
-   */
-  public void close() {
-    estimator.close();
   }
 }
