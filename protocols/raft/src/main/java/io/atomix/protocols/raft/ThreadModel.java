@@ -31,7 +31,7 @@ public enum ThreadModel {
   SHARED_THREAD_POOL {
     @Override
     public ThreadContextFactory factory(String nameFormat, int threadPoolSize, Logger logger) {
-      return new SingleThreadContextFactory(nameFormat, logger);
+      return new ThreadPoolContextFactory(nameFormat, threadPoolSize, logger);
     }
   },
 
@@ -41,7 +41,7 @@ public enum ThreadModel {
   THREAD_PER_SERVICE {
     @Override
     public ThreadContextFactory factory(String nameFormat, int threadPoolSize, Logger logger) {
-      return new ThreadPoolContextFactory(nameFormat, threadPoolSize, logger);
+      return new SingleThreadContextFactory(nameFormat, logger);
     }
   };
 
