@@ -503,9 +503,6 @@ public class RaftServiceManager implements AutoCloseable {
       return Futures.exceptionalFuture(new RaftException.UnknownSession("unknown session " + entry.entry().session()));
     }
 
-    // Increment the load counter to avoid snapshotting under high load.
-    raft.getLoadMonitor().recordEvent();
-
     // Execute the query using the state machine associated with the session.
     return session.getService()
         .executeQuery(
