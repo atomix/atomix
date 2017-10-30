@@ -47,34 +47,34 @@ public abstract class AbstractSnapshotStoreTest {
     assertEquals(snapshot.timestamp(), timestamp);
 
     assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotByIndex(2));
+    assertNull(store.getSnapshotsByIndex(2));
 
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
 
     assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotByIndex(2));
+    assertNull(store.getSnapshotsByIndex(2));
 
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(11);
     }
 
     assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotByIndex(2));
+    assertNull(store.getSnapshotsByIndex(2));
 
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(12);
     }
 
     assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotByIndex(2));
+    assertNull(store.getSnapshotsByIndex(2));
     snapshot.complete();
 
     assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceId(), ServiceId.from(1));
     assertEquals(store.getSnapshotById(ServiceId.from(1)).index(), 2);
-    assertEquals(store.getSnapshotByIndex(2).serviceId(), ServiceId.from(1));
-    assertEquals(store.getSnapshotByIndex(2).index(), 2);
+    assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceId(), ServiceId.from(1));
+    assertEquals(store.getSnapshotsByIndex(2).iterator().next().index(), 2);
 
     try (SnapshotReader reader = store.getSnapshotById(ServiceId.from(1)).openReader()) {
       assertEquals(reader.readLong(), 10);

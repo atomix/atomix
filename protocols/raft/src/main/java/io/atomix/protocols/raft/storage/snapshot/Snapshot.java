@@ -18,6 +18,8 @@ package io.atomix.protocols.raft.storage.snapshot;
 import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.time.WallClockTimestamp;
 
+import java.util.Objects;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -192,6 +194,20 @@ public abstract class Snapshot implements AutoCloseable {
    * Deletes the snapshot.
    */
   public void delete() {
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(serviceId(), index());
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (getClass() == object.getClass()) {
+      Snapshot snapshot = (Snapshot) object;
+      return snapshot.serviceId().equals(serviceId()) && snapshot.index() == index();
+    }
+    return false;
   }
 
 }

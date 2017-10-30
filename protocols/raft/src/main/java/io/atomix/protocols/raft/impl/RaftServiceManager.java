@@ -48,6 +48,7 @@ import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -68,7 +69,6 @@ public class RaftServiceManager implements AutoCloseable {
   private final ThreadContextFactory threadContextFactory;
   private final RaftLog log;
   private final RaftLogReader reader;
-  private long lastPrepared;
 
   public RaftServiceManager(RaftContext raft, ThreadContextFactory threadContextFactory) {
     this.raft = checkNotNull(raft, "state cannot be null");
@@ -199,9 +199,9 @@ public class RaftServiceManager implements AutoCloseable {
    * @param index the index for which to prepare sessions
    */
   private void prepareIndex(long index) {
-    if (index > lastPrepared) {
-      Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(index);
-      if (snapshot != null) {
+    Collection<Snapshot> snapshots = raft.getSnapshotStore().getSnapshotsByIndex(index - 1);
+    if (snapshots != null) {
+      for (Snapshot snapshot : snapshots) {
         try (SnapshotReader reader = snapshot.openReader()) {
           ServiceId serviceId = ServiceId.from(reader.readLong());
           ServiceType serviceType = ServiceType.from(reader.readString());
@@ -239,7 +239,6 @@ public class RaftServiceManager implements AutoCloseable {
             raft.getSessions().registerSession(session);
           }
         }
-        lastPrepared = index;
       }
     }
   }
