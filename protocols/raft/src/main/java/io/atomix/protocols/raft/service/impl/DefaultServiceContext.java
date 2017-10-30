@@ -300,9 +300,10 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Takes a snapshot of the service state.
    *
+   * @param index takes a snapshot at the given index
    * @return a future to be completed once the snapshot has been taken
    */
-  public CompletableFuture<Long> takeSnapshot() {
+  public CompletableFuture<Long> takeSnapshot(long index) {
     CompletableFuture<Long> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
       // If no entries have been applied to the state machine, skip the snapshot.
@@ -310,13 +311,15 @@ public class DefaultServiceContext implements ServiceContext {
         return;
       }
 
+      // Compute the snapshot index as the greater of the compaction index and the last index applied to this service.
+      long snapshotIndex = Math.max(index, currentIndex);
+
       // If there's already a snapshot taken at a higher index, skip the snapshot.
       Snapshot currentSnapshot = raft.getSnapshotStore().getSnapshotById(serviceId);
-      if (currentSnapshot != null && currentSnapshot.index() > currentIndex) {
+      if (currentSnapshot != null && currentSnapshot.index() > index) {
         return;
       }
 
-      long snapshotIndex = currentIndex;
       log.debug("Taking snapshot {}", snapshotIndex);
 
       // Create a temporary in-memory snapshot buffer.

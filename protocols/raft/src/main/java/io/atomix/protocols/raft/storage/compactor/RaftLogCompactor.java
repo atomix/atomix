@@ -133,7 +133,7 @@ public class RaftLogCompactor {
       compactFuture = new OrderedFuture<>();
 
       // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
-      snapshotServices(services, force || runningOutOfDiskSpace)
+      snapshotServices(services, lastApplied, force || runningOutOfDiskSpace)
           .whenComplete((result, error) -> {
             // If log compaction is being forced, immediately compact the logs.
             if (force) {
@@ -162,11 +162,12 @@ public class RaftLogCompactor {
    * Takes and persists snapshots of provided services.
    *
    * @param services a list of services to snapshot
+   * @param index the compaction index
    * @param force whether to force snapshotting all services to free disk space
    * @return future to be completed once all snapshots have been completed
    */
-  private CompletableFuture<Void> snapshotServices(List<DefaultServiceContext> services, boolean force) {
-    return snapshotServices(services, force, 0, new ArrayList<>());
+  private CompletableFuture<Void> snapshotServices(List<DefaultServiceContext> services, long index, boolean force) {
+    return snapshotServices(services, index, force, 0, new ArrayList<>());
   }
 
   /**
@@ -176,6 +177,7 @@ public class RaftLogCompactor {
    * that can be snapshotted, an attempt will be scheduled again for the future using exponential backoff.
    *
    * @param services a list of services to snapshot
+   * @param index the compaction index
    * @param force whether to force snapshotting all services to free disk space
    * @param attempt the current attempt count
    * @param futures reference to a list of futures for all service snapshots
@@ -183,6 +185,7 @@ public class RaftLogCompactor {
    */
   private CompletableFuture<Void> snapshotServices(
       List<DefaultServiceContext> services,
+      long index,
       boolean force,
       int attempt,
       List<CompletableFuture<Void>> futures) {
@@ -197,7 +200,7 @@ public class RaftLogCompactor {
     if (nextService != null) {
       // Take a snapshot and then persist the snapshot after some interval. This is done to avoid persisting snapshots
       // too close to the head of a follower's log such that the snapshot will be replicated in place of entries.
-      futures.add(nextService.takeSnapshot()
+      futures.add(nextService.takeSnapshot(index)
           .thenCompose(snapshotIndex -> {
             // If compaction need to be completed immediately, complete the snapshot immediately.
             if (force) {
@@ -210,9 +213,9 @@ public class RaftLogCompactor {
           }));
 
       // Recursively snapshot remaining services, resetting the attempt count.
-      return snapshotServices(services, force, 0, futures);
+      return snapshotServices(services, index, force, 0, futures);
     } else {
-      return rescheduleSnapshots(services, force, attempt, futures);
+      return rescheduleSnapshots(services, index, force, attempt, futures);
     }
   }
 
@@ -223,18 +226,20 @@ public class RaftLogCompactor {
    * on the {@code attempt} count.
    *
    * @param services a list of services to snapshot
+   * @param index the compaction index
    * @param attempt the current attempt count
    * @param futures reference to a list of futures for all service snapshots
    * @return future to be completed once all snapshots have been completed
    */
   private CompletableFuture<Void> rescheduleSnapshots(
       List<DefaultServiceContext> services,
+      long index,
       boolean force,
       int attempt,
       List<CompletableFuture<Void>> futures) {
     ComposableFuture<Void> future = new ComposableFuture<>();
     threadContext.schedule(Duration.ofSeconds(Math.min(2 ^ attempt, 10)), () ->
-        snapshotServices(services, force || isRunningOutOfDiskSpace(), attempt + 1, futures).whenComplete(future));
+        snapshotServices(services, index, force || isRunningOutOfDiskSpace(), attempt + 1, futures).whenComplete(future));
     return future;
   }
 
