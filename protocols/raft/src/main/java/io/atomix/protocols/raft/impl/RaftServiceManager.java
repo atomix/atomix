@@ -125,6 +125,7 @@ public class RaftServiceManager implements AutoCloseable {
         Indexed<RaftLogEntry> entry = reader.next();
         try {
           apply(entry);
+          restoreIndex(entry.index());
         } catch (Exception e) {
           logger.error("Failed to apply {}: {}", entry, e);
         } finally {
@@ -140,7 +141,9 @@ public class RaftServiceManager implements AutoCloseable {
           if (entry.index() != index) {
             throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
           }
-          return apply(entry);
+          CompletableFuture<T> future = apply(entry);
+          restoreIndex(entry.index());
+          return future;
         } catch (Exception e) {
           logger.error("Failed to apply {}: {}", entry, e);
         } finally {
@@ -173,7 +176,6 @@ public class RaftServiceManager implements AutoCloseable {
     if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());
     } else {
-      restoreIndex(entry.index());
       if (entry.type() == CommandEntry.class) {
         return (CompletableFuture<T>) applyCommand(entry.cast());
       } else if (entry.type() == OpenSessionEntry.class) {
@@ -199,10 +201,7 @@ public class RaftServiceManager implements AutoCloseable {
    * @param index the index for which to prepare sessions
    */
   private void restoreIndex(long index) {
-    // Get the collection of snapshots at the prior index. We use the prior index since snapshots are
-    // taken *after* the given index is applied, so snapshots of the prior index will represent the
-    // state prior to the current index being applied.
-    Collection<Snapshot> snapshots = raft.getSnapshotStore().getSnapshotsByIndex(index - 1);
+    Collection<Snapshot> snapshots = raft.getSnapshotStore().getSnapshotsByIndex(index);
 
     // If snapshots exist for the prior index, iterate through snapshots and populate services/sessions.
     if (snapshots != null) {
