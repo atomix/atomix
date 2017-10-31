@@ -94,28 +94,6 @@ public class RaftProxyConnection {
   }
 
   /**
-   * Resets the client connection.
-   *
-   * @return The client connection.
-   */
-  public RaftProxyConnection reset() {
-    selector.reset();
-    return this;
-  }
-
-  /**
-   * Resets the client connection.
-   *
-   * @param leader  The current cluster leader.
-   * @param servers The current servers.
-   * @return The client connection.
-   */
-  public RaftProxyConnection reset(MemberId leader, Collection<MemberId> servers) {
-    selector.reset(leader, servers);
-    return this;
-  }
-
-  /**
    * Sends an open session request to the given node.
    *
    * @param request the request to send
@@ -253,7 +231,7 @@ public class RaftProxyConnection {
       if (COMPLETE_PREDICATE.test(response)) {
         log.trace("Received {} from {}", response, member);
         future.complete(response);
-        reset();
+        selector.reset();
       } else {
         retryRequest(response.error().createException(), request, sender, member, future);
       }
@@ -281,7 +259,7 @@ public class RaftProxyConnection {
 
     if (!selector.hasNext()) {
       log.debug("Failed to connect to the cluster");
-      reset();
+      selector.reset();
       return null;
     } else {
       this.member = selector.next();
