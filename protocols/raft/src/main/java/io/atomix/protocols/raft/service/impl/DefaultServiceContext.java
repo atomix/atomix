@@ -289,6 +289,8 @@ public class DefaultServiceContext implements ServiceContext {
           session.setLastApplied(snapshot.index());
           sessions.openSession(session);
         }
+        currentIndex = snapshot.index();
+        currentTimestamp = snapshot.timestamp().unixTimestamp();
         service.install(reader);
       } catch (Exception e) {
         log.error("Snapshot installation failed: {}", e);
