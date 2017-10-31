@@ -28,26 +28,26 @@ import java.io.File;
  */
 public class RaftLog extends DelegatingJournal<RaftLogEntry> {
 
+  @Deprecated
+  public static Builder builder() {
+    return newBuilder();
+  }
+
   /**
    * Returns a new Raft log builder.
    *
    * @return A new Raft log builder.
    */
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
-
-  private static final long SEGMENT_BUFFER_FACTOR = 3;
-  private static final double FREE_DISK_BUFFER = .25;
 
   private final SegmentedJournal<RaftLogEntry> journal;
   private final boolean flushOnCommit;
   private final RaftLogWriter writer;
   private volatile long commitIndex;
 
-  public RaftLog(
-      SegmentedJournal<RaftLogEntry> journal,
-      boolean flushOnCommit) {
+  protected RaftLog(SegmentedJournal<RaftLogEntry> journal, boolean flushOnCommit) {
     super(journal);
     this.journal = journal;
     this.flushOnCommit = flushOnCommit;
@@ -123,17 +123,6 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
   }
 
   /**
-   * Returns a boolean indicating whether the log must be compacted if possible.
-   *
-   * @return indicates whether the log must be compacted if possible
-   */
-  public boolean mustCompact() {
-    return journal.storageLevel() == StorageLevel.MEMORY
-        || journal.directory().getFreeSpace() < journal.maxSegmentSize() * SEGMENT_BUFFER_FACTOR
-        || journal.directory().getFreeSpace() / (double) journal.directory().getTotalSpace() < FREE_DISK_BUFFER;
-  }
-
-  /**
    * Compacts the journal up to the given index.
    * <p>
    * The semantics of compaction are not specified by this interface.
@@ -149,6 +138,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    */
   public static class Builder implements io.atomix.utils.Builder<RaftLog> {
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
+
     private final SegmentedJournal.Builder<RaftLogEntry> journalBuilder = SegmentedJournal.newBuilder();
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
 

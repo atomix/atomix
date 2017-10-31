@@ -19,7 +19,7 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.impl.DefaultRaftServer;
-import io.atomix.protocols.raft.impl.RaftServiceRegistry;
+import io.atomix.protocols.raft.impl.RaftServiceFactoryRegistry;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.storage.RaftStorage;
@@ -553,7 +553,7 @@ public interface RaftServer {
     protected Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    protected final RaftServiceRegistry serviceRegistry = new RaftServiceRegistry();
+    protected final RaftServiceFactoryRegistry serviceRegistry = new RaftServiceFactoryRegistry();
     protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 

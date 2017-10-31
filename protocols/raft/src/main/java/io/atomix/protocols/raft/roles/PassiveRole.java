@@ -37,6 +37,7 @@ import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.storage.StorageException;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.time.WallClockTimestamp;
 
@@ -229,8 +230,9 @@ public class PassiveRole extends ReserveRole {
             // the log and append the leader's entry.
             if (existingEntry.entry().term() != entry.term()) {
               writer.truncate(index - 1);
-              Indexed<RaftLogEntry> indexed = writer.append(entry);
-              log.trace("Appended {}", indexed);
+              if (!appendEntry(index, entry, writer, future)) {
+                return;
+              }
             }
           }
           // If the last written entry is equal to the append entry index, we don't need
@@ -240,8 +242,9 @@ public class PassiveRole extends ReserveRole {
             // the log and append the leader's entry.
             if (lastEntry.entry().term() != entry.term()) {
               writer.truncate(index - 1);
-              Indexed<RaftLogEntry> indexed = writer.append(entry);
-              log.trace("Appended {}", indexed);
+              if (!appendEntry(index, entry, writer, future)) {
+                return;
+              }
             }
           }
           // Otherwise, this entry is being appended at the end of the log.
@@ -252,14 +255,16 @@ public class PassiveRole extends ReserveRole {
             }
 
             // Append the entry and log a message.
-            Indexed<RaftLogEntry> indexed = writer.append(entry);
-            log.trace("Appended {}", indexed);
+            if (!appendEntry(index, entry, writer, future)) {
+              return;
+            }
           }
         }
         // Otherwise, if the last entry is null just append the entry and log a message.
         else {
-          Indexed<RaftLogEntry> indexed = writer.append(entry);
-          log.trace("Appended {}", indexed);
+          if (!appendEntry(index, entry, writer, future)) {
+            return;
+          }
         }
 
         // If the last log index meets the commitIndex, break the append loop to avoid appending uncommitted entries.
@@ -281,6 +286,21 @@ public class PassiveRole extends ReserveRole {
 
     // Return a successful append response.
     succeedAppend(lastLogIndex, future);
+  }
+
+  /**
+   * Attempts to append an entry, returning {@code false} if the append fails due to an {@link StorageException.OutOfDiskSpace} exception.
+   */
+  private boolean appendEntry(long index, RaftLogEntry entry, RaftLogWriter writer, CompletableFuture<AppendResponse> future) {
+    try {
+      Indexed<RaftLogEntry> indexed = writer.append(entry);
+      log.trace("Appended {}", indexed);
+    } catch (StorageException.OutOfDiskSpace e) {
+      raft.getLogCompactor().compact();
+      failAppend(index - 1, future);
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -337,7 +357,7 @@ public class PassiveRole extends ReserveRole {
     }
 
     // Look up the client's session.
-    RaftSessionContext session = raft.getStateMachine().getSessions().getSession(request.session());
+    RaftSessionContext session = raft.getSessions().getSession(request.session());
     if (session == null) {
       log.trace("State out of sync, forwarding query to leader");
       return queryForward(request);

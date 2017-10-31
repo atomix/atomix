@@ -46,6 +46,15 @@ public class SnapshotReader implements BufferInput<SnapshotReader> {
     this.snapshot = checkNotNull(snapshot, "snapshot cannot be null");
   }
 
+  /**
+   * Returns the snapshot associated with the reader.
+   *
+   * @return The snapshot associated with the reader
+   */
+  public Snapshot snapshot() {
+    return snapshot;
+  }
+
   @Override
   public int position() {
     return buffer.position();

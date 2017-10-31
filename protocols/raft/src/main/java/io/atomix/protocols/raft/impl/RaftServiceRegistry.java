@@ -15,68 +15,50 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.protocols.raft.service.RaftService;
+import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * State machine registry.
+ * Raft service registry.
  */
-public class RaftServiceRegistry {
-  private final Map<String, Supplier<RaftService>> stateMachines = new ConcurrentHashMap<>();
+public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
+  private final Map<String, DefaultServiceContext> services = new ConcurrentHashMap<>();
 
   /**
-   * Returns the number of registered state machines.
+   * Registers a new service.
    *
-   * @return The number of registered state machines.
+   * @param service the service to register
    */
-  public int size() {
-    return stateMachines.size();
+  public void registerService(DefaultServiceContext service) {
+    services.put(service.serviceName(), service);
   }
 
   /**
-   * Registers a new state machine type.
+   * Gets a registered service by name.
    *
-   * @param type    The state machine type to register.
-   * @param factory The state machine factory.
-   * @return The state machine registry.
+   * @param name the service name
+   * @return the registered service
    */
-  public RaftServiceRegistry register(String type, Supplier<RaftService> factory) {
-    stateMachines.put(checkNotNull(type, "type cannot be null"), checkNotNull(factory, "factory cannot be null"));
-    return this;
-  }
-
-  /**
-   * Unregisters the given state machine type.
-   *
-   * @param type The state machine type to unregister.
-   * @return The state machine registry.
-   */
-  public RaftServiceRegistry unregister(String type) {
-    stateMachines.remove(type);
-    return this;
-  }
-
-  /**
-   * Returns the factory for the given state machine type.
-   *
-   * @param type The state machine type for which to return the factory.
-   * @return The factory for the given state machine type or {@code null} if the type is not registered.
-   */
-  public Supplier<RaftService> getFactory(String type) {
-    return stateMachines.get(type);
+  public DefaultServiceContext getService(String name) {
+    return services.get(name);
   }
 
   @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("stateMachines", stateMachines)
-        .toString();
+  public Iterator<DefaultServiceContext> iterator() {
+    return services.values().iterator();
   }
 
+  /**
+   * Returns a copy of the services registered in the registry.
+   *
+   * @return a copy of the registered services
+   */
+  public Collection<DefaultServiceContext> copyValues() {
+    return new ArrayList<>(services.values());
+  }
 }

@@ -47,6 +47,15 @@ public class SnapshotWriter implements BufferOutput<SnapshotWriter> {
   }
 
   /**
+   * Returns the snapshot associated with the writer.
+   *
+   * @return The snapshot associated with the writer
+   */
+  public Snapshot snapshot() {
+    return snapshot;
+  }
+
+  /**
    * Writes an object to the snapshot.
    *
    * @param object the object to write

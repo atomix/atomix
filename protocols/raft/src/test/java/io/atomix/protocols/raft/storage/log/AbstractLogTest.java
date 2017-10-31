@@ -85,7 +85,7 @@ public abstract class AbstractLogTest {
   protected abstract StorageLevel storageLevel();
 
   protected RaftLog createLog() {
-    return RaftLog.builder()
+    return RaftLog.newBuilder()
         .withName("test")
         .withDirectory(PATH.toFile())
         .withSerializer(serializer)

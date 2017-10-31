@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 /**
  * Session manager.
  */
-public class RaftSessionManager {
+public class RaftSessionRegistry {
   private final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
   private final Map<ServiceId, Set<RaftSessionListener>> listeners = new ConcurrentHashMap<>();
 
@@ -112,6 +112,15 @@ public class RaftSessionManager {
     return sessions.values().stream()
         .filter(session -> session.getService().serviceId().equals(serviceId))
         .collect(Collectors.toSet());
+  }
+
+  /**
+   * Removes all sessions registered for the given service.
+   *
+   * @param serviceId the service identifier
+   */
+  public void removeSessions(ServiceId serviceId) {
+    sessions.entrySet().removeIf(e -> e.getValue().getService().serviceId().equals(serviceId));
   }
 
   /**

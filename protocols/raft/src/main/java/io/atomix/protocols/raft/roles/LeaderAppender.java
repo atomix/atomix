@@ -29,6 +29,7 @@ import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -194,10 +195,26 @@ final class LeaderAppender extends AbstractAppender {
     }
     // If there's a snapshot at the member's nextIndex, replicate the snapshot.
     else if (member.getMember().getType() == RaftMember.Type.ACTIVE || member.getMember().getType() == RaftMember.Type.PASSIVE) {
-      Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
-      if (snapshot != null && member.getSnapshotIndex() < snapshot.index()) {
-        if (member.canInstall()) {
-          sendInstallRequest(member, buildInstallRequest(member));
+      long currentIndex = member.getLogReader().getCurrentIndex();
+      Collection<Snapshot> snapshots = raft.getSnapshotStore().getSnapshotsByIndex(member.getLogReader().getCurrentIndex());
+      if (snapshots != null && member.getSnapshotIndex() <= currentIndex) {
+        if (!member.canInstall()) {
+          return;
+        }
+
+        Snapshot nextSnapshot = null;
+        for (Snapshot snapshot : snapshots) {
+          if (snapshot.serviceId().id() > member.getSnapshotId()) {
+            nextSnapshot = snapshot;
+            break;
+          }
+        }
+
+        if (nextSnapshot != null) {
+          sendInstallRequest(member, buildInstallRequest(member, nextSnapshot));
+        } else if (member.canAppend()) {
+          member.setSnapshotIndex(currentIndex);
+          sendAppendRequest(member, buildAppendRequest(member, -1));
         }
       } else if (member.canAppend()) {
         sendAppendRequest(member, buildAppendRequest(member, -1));

@@ -17,6 +17,7 @@ package io.atomix.storage.journal;
 
 import com.google.common.collect.Sets;
 import io.atomix.serializer.Serializer;
+import io.atomix.storage.StorageException;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
@@ -54,6 +55,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   }
 
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 64;
+  private static final int SEGMENT_BUFFER_FACTOR = 3;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final String name;
@@ -190,6 +192,15 @@ public class SegmentedJournal<E> implements Journal<E> {
   }
 
   /**
+   * Asserts that enough disk space is available to allocate a new segment.
+   */
+  private void assertDiskSpace() {
+    if (directory().getUsableSpace() < maxSegmentSize() * SEGMENT_BUFFER_FACTOR) {
+      throw new StorageException.OutOfDiskSpace("Not enough space to allocate a new journal segment");
+    }
+  }
+
+  /**
    * Resets the current segment, creating a new segment if necessary.
    */
   private synchronized void resetCurrentSegment() {
@@ -265,17 +276,6 @@ public class SegmentedJournal<E> implements Journal<E> {
   }
 
   /**
-   * Returns the segment prior to the segment with the given ID.
-   *
-   * @param index The segment index with which to look up the prior segment.
-   * @return The prior segment for the given index.
-   */
-  JournalSegment<E> getPreviousSegment(long index) {
-    Map.Entry<Long, JournalSegment<E>> previousSegment = segments.lowerEntry(index);
-    return previousSegment != null ? previousSegment.getValue() : null;
-  }
-
-  /**
    * Creates and returns the next segment.
    *
    * @return The next segment.
@@ -283,6 +283,8 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   synchronized JournalSegment<E> getNextSegment() {
     assertOpen();
+    assertDiskSpace();
+
     JournalSegment lastSegment = getLastSegment();
     JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
         .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
@@ -586,7 +588,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   public boolean isCompactable(long index) {
     Map.Entry<Long, JournalSegment<E>> segmentEntry = segments.floorEntry(index);
-    return segmentEntry != null && segments.headMap(segmentEntry.getValue().index()).size() > 1;
+    return segmentEntry != null && segments.headMap(segmentEntry.getValue().index()).size() > 0;
   }
 
   /**

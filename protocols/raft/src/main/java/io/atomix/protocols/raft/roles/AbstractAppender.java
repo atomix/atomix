@@ -151,8 +151,7 @@ abstract class AbstractAppender implements AutoCloseable {
 
       // If a snapshot exists at the next index, complete the request. This will ensure that
       // the snapshot is sent on the next index.
-      Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(entry.index());
-      if (snapshot != null) {
+      if (raft.getSnapshotStore().getSnapshotsByIndex(entry.index()) != null) {
         break;
       }
     }
@@ -410,10 +409,13 @@ abstract class AbstractAppender implements AutoCloseable {
   /**
    * Builds an install request for the given member.
    */
-  protected InstallRequest buildInstallRequest(RaftMemberContext member) {
-    Snapshot snapshot = raft.getSnapshotStore().getSnapshotByIndex(member.getLogReader().getCurrentIndex());
+  protected InstallRequest buildInstallRequest(RaftMemberContext member, Snapshot snapshot) {
     if (member.getNextSnapshotIndex() != snapshot.index()) {
       member.setNextSnapshotIndex(snapshot.index());
+      member.setNextSnapshotId(snapshot.serviceId().id());
+      member.setNextSnapshotOffset(0);
+    } else if (member.getNextSnapshotId() != snapshot.serviceId().id()) {
+      member.setNextSnapshotId(snapshot.serviceId().id());
       member.setNextSnapshotOffset(0);
     }
 
@@ -479,6 +481,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // Reset the member's snapshot index and offset to resend the snapshot from the start
     // once a connection to the member is re-established.
     member.setNextSnapshotIndex(0);
+    member.setNextSnapshotId(0);
     member.setNextSnapshotOffset(0);
 
     // Log the failed attempt to contact the member.
@@ -508,8 +511,10 @@ abstract class AbstractAppender implements AutoCloseable {
     // the next snapshot index/offset.
     if (request.complete()) {
       member.setNextSnapshotIndex(0);
+      member.setNextSnapshotId(0);
       member.setNextSnapshotOffset(0);
       member.setSnapshotIndex(request.snapshotIndex());
+      member.setSnapshotId(request.snapshotId());
     }
     // If more install requests remain, increment the member's snapshot offset.
     else {

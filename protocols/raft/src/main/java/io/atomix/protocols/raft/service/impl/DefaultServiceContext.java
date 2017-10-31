@@ -33,16 +33,15 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
-import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.protocols.raft.utils.LoadMonitor;
 import io.atomix.storage.buffer.Bytes;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
-import io.atomix.utils.SlidingWindowCounter;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -61,21 +60,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DefaultServiceContext implements ServiceContext {
 
-  private static final int WINDOW_SIZE = 5;
-  private static final int LOAD_WINDOW = 2;
-  private static final int HIGH_LOAD_THRESHOLD = 2;
+  private static final int LOAD_WINDOW_SIZE = 5;
+  private static final int HIGH_LOAD_THRESHOLD = 50;
 
   private final Logger log;
   private final ServiceId serviceId;
   private final String serviceName;
   private final ServiceType serviceType;
   private final RaftService service;
-  private final RaftContext server;
+  private final RaftContext raft;
   private final DefaultServiceSessions sessions;
   private final ThreadContext serviceExecutor;
   private final ThreadContext snapshotExecutor;
   private final ThreadContextFactory threadContextFactory;
-  private final SlidingWindowCounter loadCounter;
+  private final LoadMonitor loadMonitor;
   private final Map<Long, PendingSnapshot> pendingSnapshots = new ConcurrentSkipListMap<>();
   private long snapshotIndex;
   private long currentIndex;
@@ -99,18 +97,17 @@ public class DefaultServiceContext implements ServiceContext {
       String serviceName,
       ServiceType serviceType,
       RaftService service,
-      RaftContext server,
-      RaftSessionManager sessionManager,
+      RaftContext raft,
       ThreadContextFactory threadContextFactory) {
     this.serviceId = checkNotNull(serviceId);
     this.serviceName = checkNotNull(serviceName);
     this.serviceType = checkNotNull(serviceType);
     this.service = checkNotNull(service);
-    this.server = checkNotNull(server);
-    this.sessions = new DefaultServiceSessions(serviceId, sessionManager);
+    this.raft = checkNotNull(raft);
+    this.sessions = new DefaultServiceSessions(serviceId, raft.getSessions());
     this.serviceExecutor = threadContextFactory.createContext();
     this.snapshotExecutor = threadContextFactory.createContext();
-    this.loadCounter = new SlidingWindowCounter(WINDOW_SIZE, serviceExecutor);
+    this.loadMonitor = new LoadMonitor(LOAD_WINDOW_SIZE, HIGH_LOAD_THRESHOLD, serviceExecutor);
     this.threadContextFactory = threadContextFactory;
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftService.class)
         .addValue(serviceId)
@@ -174,7 +171,7 @@ public class DefaultServiceContext implements ServiceContext {
    * @return indicates whether the service is under high load
    */
   public boolean isUnderHighLoad() {
-    return loadCounter.get(LOAD_WINDOW) > HIGH_LOAD_THRESHOLD;
+    return loadMonitor.isUnderHighLoad();
   }
 
   /**
@@ -258,7 +255,7 @@ public class DefaultServiceContext implements ServiceContext {
    */
   private void maybeInstallSnapshot(long index) {
     // Look up the latest snapshot for this state machine.
-    Snapshot snapshot = server.getSnapshotStore().getSnapshotById(serviceId);
+    Snapshot snapshot = raft.getSnapshotStore().getSnapshotById(serviceId);
 
     // If the latest snapshot is non-null, hasn't been installed, and has an index lower than the current index, install it.
     if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() < index) {
@@ -282,7 +279,7 @@ public class DefaultServiceContext implements ServiceContext {
               readConsistency,
               sessionTimeout,
               this,
-              server,
+              raft,
               threadContextFactory);
           session.setTimestamp(sessionTimestamp);
           session.setRequestSequence(reader.readLong());
@@ -292,6 +289,8 @@ public class DefaultServiceContext implements ServiceContext {
           session.setLastApplied(snapshot.index());
           sessions.openSession(session);
         }
+        currentIndex = snapshot.index();
+        currentTimestamp = snapshot.timestamp().unixTimestamp();
         service.install(reader);
       } catch (Exception e) {
         log.error("Snapshot installation failed: {}", e);
@@ -303,9 +302,10 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Takes a snapshot of the service state.
    *
+   * @param index takes a snapshot at the given index
    * @return a future to be completed once the snapshot has been taken
    */
-  public CompletableFuture<Long> takeSnapshot() {
+  public CompletableFuture<Long> takeSnapshot(long index) {
     CompletableFuture<Long> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
       // If no entries have been applied to the state machine, skip the snapshot.
@@ -313,11 +313,19 @@ public class DefaultServiceContext implements ServiceContext {
         return;
       }
 
-      long snapshotIndex = currentIndex;
+      // Compute the snapshot index as the greater of the compaction index and the last index applied to this service.
+      long snapshotIndex = Math.max(index, currentIndex);
+
+      // If there's already a snapshot taken at a higher index, skip the snapshot.
+      Snapshot currentSnapshot = raft.getSnapshotStore().getSnapshotById(serviceId);
+      if (currentSnapshot != null && currentSnapshot.index() > index) {
+        return;
+      }
+
       log.debug("Taking snapshot {}", snapshotIndex);
 
       // Create a temporary in-memory snapshot buffer.
-      Snapshot snapshot = server.getSnapshotStore()
+      Snapshot snapshot = raft.getSnapshotStore()
           .newTemporarySnapshot(serviceId, snapshotIndex, WallClockTimestamp.from(currentTimestamp));
 
       // Add the snapshot to the pending snapshots registry.
@@ -755,7 +763,7 @@ public class DefaultServiceContext implements ServiceContext {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("server", server.getName())
+        .add("server", raft.getName())
         .add("type", serviceType)
         .add("name", serviceName)
         .add("id", serviceId)
