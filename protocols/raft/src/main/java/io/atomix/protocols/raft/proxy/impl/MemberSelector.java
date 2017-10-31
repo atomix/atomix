@@ -57,18 +57,18 @@ public final class MemberSelector implements Iterator<MemberId>, AutoCloseable {
 
   private final MemberSelectorManager selectors;
   private MemberId leader;
-  private Collection<MemberId> servers = new LinkedList<>();
+  private Collection<MemberId> members = new LinkedList<>();
   private volatile MemberId selection;
   private final CommunicationStrategy strategy;
   private Collection<MemberId> selections = new LinkedList<>();
   private Iterator<MemberId> selectionsIterator;
 
-  public MemberSelector(MemberId leader, Collection<MemberId> servers, CommunicationStrategy strategy, MemberSelectorManager selectors) {
+  public MemberSelector(MemberId leader, Collection<MemberId> members, CommunicationStrategy strategy, MemberSelectorManager selectors) {
     this.leader = leader;
-    this.servers = checkNotNull(servers, "servers cannot be null");
+    this.members = checkNotNull(members, "servers cannot be null");
     this.strategy = checkNotNull(strategy, "strategy cannot be null");
     this.selectors = checkNotNull(selectors, "selectors cannot be null");
-    this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
+    this.selections = strategy.selectConnections(leader, new ArrayList<>(members));
   }
 
   /**
@@ -109,34 +109,34 @@ public final class MemberSelector implements Iterator<MemberId>, AutoCloseable {
    *
    * @return The current set of servers.
    */
-  public Collection<MemberId> servers() {
-    return servers;
+  public Collection<MemberId> members() {
+    return members;
   }
 
   /**
-   * Resets the addresses.
+   * Resets the member iterator.
    *
-   * @return The address selector.
+   * @return The member selector.
    */
   public MemberSelector reset() {
     if (selectionsIterator != null) {
-      this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
+      this.selections = strategy.selectConnections(leader, new ArrayList<>(members));
       this.selectionsIterator = null;
     }
     return this;
   }
 
   /**
-   * Resets the connection addresses.
+   * Resets the connection leader and members.
    *
-   * @param servers The collection of server addresses.
-   * @return The address selector.
+   * @param members The collection of members.
+   * @return The member selector.
    */
-  public MemberSelector reset(MemberId leader, Collection<MemberId> servers) {
-    if (changed(leader, servers)) {
+  public MemberSelector reset(MemberId leader, Collection<MemberId> members) {
+    if (changed(leader, members)) {
       this.leader = leader;
-      this.servers = servers;
-      this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
+      this.members = members;
+      this.selections = strategy.selectConnections(leader, new ArrayList<>(members));
       this.selectionsIterator = null;
     }
     return this;
@@ -156,7 +156,7 @@ public final class MemberSelector implements Iterator<MemberId>, AutoCloseable {
     } else if (this.leader != null && !this.leader.equals(leader)) {
       checkArgument(servers.contains(leader), "leader must be present in the servers list");
       return true;
-    } else if (!matches(this.servers, servers)) {
+    } else if (!matches(this.members, servers)) {
       return true;
     }
     return false;

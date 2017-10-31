@@ -111,7 +111,7 @@ final class RaftProxyListener {
           .withIndex(eventIndex)
           .build();
       log.trace("Sending {}", resetRequest);
-      protocol.reset(memberSelector.servers(), resetRequest);
+      protocol.reset(memberSelector.members(), resetRequest);
       return;
     }
 

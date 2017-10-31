@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public final class MemberSelectorManager {
   private final Set<MemberSelector> selectors = new CopyOnWriteArraySet<>();
   private volatile MemberId leader;
-  private volatile Collection<MemberId> servers = Collections.emptyList();
+  private volatile Collection<MemberId> members = Collections.emptyList();
 
   /**
    * Returns the current cluster leader.
@@ -42,12 +42,12 @@ public final class MemberSelectorManager {
   }
 
   /**
-   * Returns the set of servers in the cluster.
+   * Returns the set of members in the cluster.
    *
-   * @return The set of servers in the cluster.
+   * @return The set of members in the cluster.
    */
-  public Collection<MemberId> servers() {
-    return servers;
+  public Collection<MemberId> members() {
+    return members;
   }
 
   /**
@@ -57,7 +57,7 @@ public final class MemberSelectorManager {
    * @return A new address selector.
    */
   public MemberSelector createSelector(CommunicationStrategy selectionStrategy) {
-    MemberSelector selector = new MemberSelector(leader, servers, selectionStrategy, this);
+    MemberSelector selector = new MemberSelector(leader, members, selectionStrategy, this);
     selectors.add(selector);
     return selector;
   }
@@ -73,18 +73,18 @@ public final class MemberSelectorManager {
    * Resets all child selectors.
    *
    * @param leader  The current cluster leader.
-   * @param servers The collection of all active servers.
+   * @param members The collection of all active members.
    */
-  public void resetAll(MemberId leader, Collection<MemberId> servers) {
+  public void resetAll(MemberId leader, Collection<MemberId> members) {
     this.leader = leader;
-    this.servers = new LinkedList<>(servers);
-    selectors.forEach(s -> s.reset(leader, servers));
+    this.members = new LinkedList<>(members);
+    selectors.forEach(s -> s.reset(leader, members));
   }
 
   /**
    * Removes the given selector.
    *
-   * @param selector The address selector to remove.
+   * @param selector The member selector to remove.
    */
   void remove(MemberSelector selector) {
     selectors.remove(selector);

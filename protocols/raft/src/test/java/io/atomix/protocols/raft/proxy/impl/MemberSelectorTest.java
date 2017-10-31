@@ -133,7 +133,7 @@ public class MemberSelectorTest {
 
     selectorManager.resetAll(MemberId.from("a"), Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
     assertEquals(MemberId.from("a"), selector.leader());
-    assertEquals(3, selector.servers().size());
+    assertEquals(3, selector.members().size());
     assertTrue(selector.hasNext());
     assertNotNull(selector.next());
     assertFalse(selector.hasNext());

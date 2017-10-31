@@ -36,11 +36,20 @@ public interface RaftMetadataClient {
   MemberId getLeader();
 
   /**
-   * Returns the set of known servers in the cluster.
+   * Returns the set of known members in the cluster.
    *
-   * @return The set of known servers in the cluster.
+   * @return The set of known members in the cluster.
    */
-  Collection<MemberId> getServers();
+  default Collection<MemberId> getServers() {
+    return getMembers();
+  }
+
+  /**
+   * Returns the set of known members in the cluster.
+   *
+   * @return The set of known members in the cluster.
+   */
+  Collection<MemberId> getMembers();
 
   /**
    * Returns a list of open sessions.

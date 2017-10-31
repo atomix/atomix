@@ -76,6 +76,23 @@ public class RaftProxyConnection {
   }
 
   /**
+   * Resets the member selector.
+   */
+  public void reset() {
+    selector.reset();
+  }
+
+  /**
+   * Resets the member selector.
+   *
+   * @param leader the selector leader
+   * @param servers the selector servers
+   */
+  public void reset(MemberId leader, Collection<MemberId> servers) {
+    selector.reset(leader, servers);
+  }
+
+  /**
    * Returns the current selector leader.
    *
    * @return The current selector leader.
@@ -85,12 +102,12 @@ public class RaftProxyConnection {
   }
 
   /**
-   * Returns the current set of servers.
+   * Returns the current set of members.
    *
-   * @return The current set of servers.
+   * @return The current set of members.
    */
-  public Collection<MemberId> servers() {
-    return selector.servers();
+  public Collection<MemberId> members() {
+    return selector.members();
   }
 
   /**
