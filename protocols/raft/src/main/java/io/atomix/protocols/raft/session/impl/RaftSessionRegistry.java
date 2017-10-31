@@ -115,6 +115,15 @@ public class RaftSessionRegistry {
   }
 
   /**
+   * Removes all sessions registered for the given service.
+   *
+   * @param serviceId the service identifier
+   */
+  public void removeSessions(ServiceId serviceId) {
+    sessions.entrySet().removeIf(e -> e.getValue().getService().serviceId().equals(serviceId));
+  }
+
+  /**
    * Adds a session listener.
    *
    * @param serviceId the service ID for which to listen to sessions

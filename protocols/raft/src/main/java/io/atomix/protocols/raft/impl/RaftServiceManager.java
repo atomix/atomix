@@ -226,7 +226,7 @@ public class RaftServiceManager implements AutoCloseable {
 
     // Get or create the service associated with the snapshot.
     logger.debug("Restoring service {} {}", serviceId, serviceName);
-    DefaultServiceContext service = getOrInitializeService(serviceId, serviceType, serviceName);
+    DefaultServiceContext service = initializeService(serviceId, serviceType, serviceName);
     if (service == null) {
       return;
     }
@@ -379,20 +379,34 @@ public class RaftServiceManager implements AutoCloseable {
     // Get the state machine executor or create one if it doesn't already exist.
     DefaultServiceContext service = raft.getServices().getService(serviceName);
     if (service == null) {
-      Supplier<RaftService> serviceFactory = raft.getServiceFactories().getFactory(serviceType.id());
-      if (serviceFactory == null) {
-        logger.warn("Unknown service type: {}", serviceType);
-        return null;
-      }
+      service = initializeService(serviceId, serviceType, serviceName);
+    }
+    return service;
+  }
 
-      service = new DefaultServiceContext(
-          serviceId,
-          serviceName,
-          serviceType,
-          serviceFactory.get(),
-          raft,
-          threadContextFactory);
-      raft.getServices().registerService(service);
+  /**
+   * Initializes a new service.
+   */
+  private DefaultServiceContext initializeService(ServiceId serviceId, ServiceType serviceType, String serviceName) {
+    Supplier<RaftService> serviceFactory = raft.getServiceFactories().getFactory(serviceType.id());
+    if (serviceFactory == null) {
+      logger.warn("Unknown service type: {}", serviceType);
+      return null;
+    }
+
+    DefaultServiceContext oldService = raft.getServices().getService(serviceName);
+    DefaultServiceContext service = new DefaultServiceContext(
+        serviceId,
+        serviceName,
+        serviceType,
+        serviceFactory.get(),
+        raft,
+        threadContextFactory);
+    raft.getServices().registerService(service);
+
+    // If a service with this name was already registered, remove all of its sessions.
+    if (oldService != null) {
+      raft.getSessions().removeSessions(oldService.serviceId());
     }
     return service;
   }
