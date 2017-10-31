@@ -164,6 +164,15 @@ public interface RaftServerProtocol {
   CompletableFuture<AppendResponse> append(MemberId memberId, AppendRequest request);
 
   /**
+   * Sends a heartbeat request to the given node.
+   *
+   * @param memberId the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<HeartbeatResponse> heartbeat(MemberId memberId, HeartbeatRequest request);
+
+  /**
    * Unicasts a publish request to the given node.
    *
    * @param memberId  the node to which to send the request

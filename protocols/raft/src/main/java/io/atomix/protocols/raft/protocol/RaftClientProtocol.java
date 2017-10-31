@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Raft client protocol.
@@ -89,6 +90,18 @@ public interface RaftClientProtocol {
    * @param request the reset request to multicast
    */
   void reset(Collection<MemberId> members, ResetRequest request);
+
+  /**
+   * Registers a heartbeat request callback.
+   *
+   * @param handler the heartbeat request handler to register
+   */
+  void registerHeartbeatHandler(Function<HeartbeatRequest, CompletableFuture<HeartbeatResponse>> handler);
+
+  /**
+   * Unregisters the heartbeat request handler.
+   */
+  void unregisterHeartbeatHandler();
 
   /**
    * Registers a publish request listener.

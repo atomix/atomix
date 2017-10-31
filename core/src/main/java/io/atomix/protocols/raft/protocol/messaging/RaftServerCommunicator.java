@@ -28,6 +28,8 @@ import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.ConfigureRequest;
 import io.atomix.protocols.raft.protocol.ConfigureResponse;
+import io.atomix.protocols.raft.protocol.HeartbeatRequest;
+import io.atomix.protocols.raft.protocol.HeartbeatResponse;
 import io.atomix.protocols.raft.protocol.InstallRequest;
 import io.atomix.protocols.raft.protocol.InstallResponse;
 import io.atomix.protocols.raft.protocol.JoinRequest;
@@ -161,6 +163,11 @@ public class RaftServerCommunicator implements RaftServerProtocol {
   @Override
   public void publish(MemberId memberId, PublishRequest request) {
     clusterCommunicator.unicast(request, context.publishSubject(request.session()), serializer::encode, NodeId.from(memberId.id()));
+  }
+
+  @Override
+  public CompletableFuture<HeartbeatResponse> heartbeat(MemberId memberId, HeartbeatRequest request) {
+    return sendAndReceive(context.heartbeatSubject, request, memberId);
   }
 
   @Override

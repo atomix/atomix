@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.session;
 
+import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.event.EventType;
 import io.atomix.protocols.raft.event.RaftEvent;
-import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.service.ServiceType;
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.storage.buffer.HeapBytes;
 
 import java.util.function.Function;
@@ -89,7 +89,24 @@ public interface RaftSession {
    *
    * @return The session timeout.
    */
-  long timeout();
+  @Deprecated
+  default long timeout() {
+    return maxTimeout();
+  }
+
+  /**
+   * Returns the minimum session timeout.
+   *
+   * @return The minimum session timeout.
+   */
+  long minTimeout();
+
+  /**
+   * Returns the maximum session timeout.
+   *
+   * @return The maximum session timeout.
+   */
+  long maxTimeout();
 
   /**
    * Returns the session state.

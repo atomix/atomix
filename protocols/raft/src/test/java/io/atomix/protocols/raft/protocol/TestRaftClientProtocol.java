@@ -26,11 +26,13 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Test Raft client protocol.
  */
 public class TestRaftClientProtocol extends TestRaftProtocol implements RaftClientProtocol {
+  private Function<HeartbeatRequest, CompletableFuture<HeartbeatResponse>> heartbeatHandler;
   private final Map<Long, Consumer<PublishRequest>> publishListeners = Maps.newConcurrentMap();
 
   public TestRaftClientProtocol(MemberId memberId, Map<MemberId, TestRaftServerProtocol> servers, Map<MemberId, TestRaftClientProtocol> clients) {
@@ -45,6 +47,24 @@ public class TestRaftClientProtocol extends TestRaftProtocol implements RaftClie
     } else {
       return Futures.exceptionalFuture(new ConnectException());
     }
+  }
+
+  CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request) {
+    if (heartbeatHandler != null) {
+      return heartbeatHandler.apply(request);
+    } else {
+      return Futures.exceptionalFuture(new ConnectException());
+    }
+  }
+
+  @Override
+  public void registerHeartbeatHandler(Function<HeartbeatRequest, CompletableFuture<HeartbeatResponse>> handler) {
+    this.heartbeatHandler = handler;
+  }
+
+  @Override
+  public void unregisterHeartbeatHandler() {
+    this.heartbeatHandler = null;
   }
 
   @Override

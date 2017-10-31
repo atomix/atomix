@@ -258,7 +258,8 @@ public class RaftServiceManager implements AutoCloseable {
     logger.trace("Restoring session {} for {}", sessionId, service.serviceName());
     MemberId node = MemberId.from(reader.readString());
     ReadConsistency readConsistency = ReadConsistency.valueOf(reader.readString());
-    long sessionTimeout = reader.readLong();
+    long minTimeout = reader.readLong();
+    long maxTimeout = reader.readLong();
     long sessionTimestamp = reader.readLong();
     RaftSessionContext session = new RaftSessionContext(
         sessionId,
@@ -266,7 +267,8 @@ public class RaftServiceManager implements AutoCloseable {
         service.serviceName(),
         service.serviceType(),
         readConsistency,
-        sessionTimeout,
+        minTimeout,
+        maxTimeout,
         service,
         raft,
         threadContextFactory);
@@ -430,7 +432,8 @@ public class RaftServiceManager implements AutoCloseable {
         entry.entry().serviceName(),
         ServiceType.from(entry.entry().serviceType()),
         entry.entry().readConsistency(),
-        entry.entry().timeout(),
+        entry.entry().minTimeout(),
+        entry.entry().maxTimeout(),
         service,
         raft,
         threadContextFactory);
@@ -452,7 +455,7 @@ public class RaftServiceManager implements AutoCloseable {
 
     // Get the state machine executor associated with the session and unregister the session.
     DefaultServiceContext service = session.getService();
-    return service.closeSession(entry.index(), entry.entry().timestamp(), session);
+    return service.closeSession(entry.index(), entry.entry().timestamp(), session, entry.entry().expired());
   }
 
   /**

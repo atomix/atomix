@@ -46,7 +46,8 @@ public interface RaftProxyClient extends RaftProxyExecutor, Managed<RaftProxyCli
     protected Executor executor;
     protected CommunicationStrategy communicationStrategy = CommunicationStrategy.LEADER;
     protected RecoveryStrategy recoveryStrategy = RecoveryStrategy.RECOVER;
-    protected Duration timeout = Duration.ofMillis(0);
+    protected Duration minTimeout = Duration.ofMillis(250);
+    protected Duration maxTimeout = Duration.ofMillis(0);
 
     /**
      * Sets the session name.
@@ -168,8 +169,8 @@ public interface RaftProxyClient extends RaftProxyExecutor, Managed<RaftProxyCli
      * @return The session builder.
      * @throws IllegalArgumentException if the session timeout is not positive
      */
-    public Builder withTimeout(long timeoutMillis) {
-      return withTimeout(Duration.ofMillis(timeoutMillis));
+    public Builder withMinTimeout(long timeoutMillis) {
+      return withMinTimeout(Duration.ofMillis(timeoutMillis));
     }
 
     /**
@@ -180,9 +181,59 @@ public interface RaftProxyClient extends RaftProxyExecutor, Managed<RaftProxyCli
      * @throws IllegalArgumentException if the session timeout is not positive
      * @throws NullPointerException     if the timeout is null
      */
-    public Builder withTimeout(Duration timeout) {
+    public Builder withMinTimeout(Duration timeout) {
       checkArgument(!checkNotNull(timeout).isNegative(), "timeout must be positive");
-      this.timeout = timeout;
+      this.minTimeout = timeout;
+      return this;
+    }
+
+    /**
+     * Sets the session timeout.
+     *
+     * @param timeoutMillis The session timeout.
+     * @return The session builder.
+     * @throws IllegalArgumentException if the session timeout is not positive
+     */
+    @Deprecated
+    public Builder withTimeout(long timeoutMillis) {
+      return withMaxTimeout(Duration.ofMillis(timeoutMillis));
+    }
+
+    /**
+     * Sets the session timeout.
+     *
+     * @param timeout The session timeout.
+     * @return The session builder.
+     * @throws IllegalArgumentException if the session timeout is not positive
+     * @throws NullPointerException     if the timeout is null
+     */
+    @Deprecated
+    public Builder withTimeout(Duration timeout) {
+      return withMaxTimeout(timeout);
+    }
+
+    /**
+     * Sets the session timeout.
+     *
+     * @param timeoutMillis The session timeout.
+     * @return The session builder.
+     * @throws IllegalArgumentException if the session timeout is not positive
+     */
+    public Builder withMaxTimeout(long timeoutMillis) {
+      return withMaxTimeout(Duration.ofMillis(timeoutMillis));
+    }
+
+    /**
+     * Sets the session timeout.
+     *
+     * @param timeout The session timeout.
+     * @return The session builder.
+     * @throws IllegalArgumentException if the session timeout is not positive
+     * @throws NullPointerException     if the timeout is null
+     */
+    public Builder withMaxTimeout(Duration timeout) {
+      checkArgument(!checkNotNull(timeout).isNegative(), "timeout must be positive");
+      this.maxTimeout = timeout;
       return this;
     }
 

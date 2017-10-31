@@ -104,6 +104,7 @@ public class RaftContext implements AutoCloseable {
   private volatile MemberId leader;
   private volatile long term;
   private MemberId lastVotedFor;
+  private long lastHeartbeatTime;
   private long commitIndex;
   private volatile long firstCommitIndex;
   private volatile long lastApplied;
@@ -435,6 +436,31 @@ public class RaftContext implements AutoCloseable {
   }
 
   /**
+   * Returns the last time a request was received from the leader.
+   *
+   * @return The last time a request was received
+   */
+  public long getLastHeartbeatTime() {
+    return lastHeartbeatTime;
+  }
+
+  /**
+   * Sets the last time a request was received from the leader.
+   */
+  public void setLastHeartbeatTime() {
+    setLastHeartbeatTime(System.currentTimeMillis());
+  }
+
+  /**
+   * Sets the last time a request was received by the node.
+   *
+   * @param lastHeartbeatTime The last time a request was received
+   */
+  public void setLastHeartbeatTime(long lastHeartbeatTime) {
+    this.lastHeartbeatTime = lastHeartbeatTime;
+  }
+
+  /**
    * Returns the state last voted for candidate.
    *
    * @return The state last voted for candidate.
@@ -691,6 +717,7 @@ public class RaftContext implements AutoCloseable {
     protocol.unregisterJoinHandler();
     protocol.unregisterReconfigureHandler();
     protocol.unregisterLeaveHandler();
+    protocol.unregisterTransferHandler();
     protocol.unregisterAppendHandler();
     protocol.unregisterPollHandler();
     protocol.unregisterVoteHandler();

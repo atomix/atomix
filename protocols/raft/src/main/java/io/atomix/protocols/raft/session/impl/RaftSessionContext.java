@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
+import io.atomix.protocols.phi.PhiAccrualFailureDetector;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.event.RaftEvent;
@@ -52,19 +53,23 @@ import static com.google.common.base.Preconditions.checkState;
  * Raft session.
  */
 public class RaftSessionContext implements RaftSession {
+  private static final int PHI_FAILURE_THRESHOLD = 10;
   private final Logger log;
   private final SessionId sessionId;
   private final MemberId member;
   private final String name;
   private final ServiceType serviceType;
   private final ReadConsistency readConsistency;
-  private final long timeout;
+  private final long minTimeout;
+  private final long maxTimeout;
   private final RaftServerProtocol protocol;
   private final DefaultServiceContext context;
   private final RaftContext server;
   private final ThreadContext eventExecutor;
   private volatile State state = State.OPEN;
   private volatile long timestamp;
+  private long heartbeat;
+  private PhiAccrualFailureDetector failureDetector = new PhiAccrualFailureDetector();
   private long requestSequence;
   private volatile long commandSequence;
   private volatile long lastApplied;
@@ -84,7 +89,8 @@ public class RaftSessionContext implements RaftSession {
       String name,
       ServiceType serviceType,
       ReadConsistency readConsistency,
-      long timeout,
+      long minTimeout,
+      long maxTimeout,
       DefaultServiceContext context,
       RaftContext server,
       ThreadContextFactory threadContextFactory) {
@@ -93,7 +99,8 @@ public class RaftSessionContext implements RaftSession {
     this.name = name;
     this.serviceType = serviceType;
     this.readConsistency = readConsistency;
-    this.timeout = timeout;
+    this.minTimeout = minTimeout;
+    this.maxTimeout = maxTimeout;
     this.eventIndex = sessionId.id();
     this.completeIndex = sessionId.id();
     this.lastApplied = sessionId.id();
@@ -135,8 +142,13 @@ public class RaftSessionContext implements RaftSession {
   }
 
   @Override
-  public long timeout() {
-    return timeout;
+  public long minTimeout() {
+    return minTimeout;
+  }
+
+  @Override
+  public long maxTimeout() {
+    return maxTimeout;
   }
 
   /**
@@ -164,6 +176,52 @@ public class RaftSessionContext implements RaftSession {
    */
   public void setTimestamp(long timestamp) {
     this.timestamp = Math.max(this.timestamp, timestamp);
+  }
+
+  /**
+   * Returns a boolean indicating whether the session is timed out.
+   *
+   * @param timestamp the current timestamp
+   * @return indicates whether the session is timed out
+   */
+  public boolean isTimedOut(long timestamp) {
+    return timestamp - this.timestamp > maxTimeout;
+  }
+
+  /**
+   * Returns the current heartbeat time.
+   *
+   * @return The current heartbeat time.
+   */
+  public long getHeartbeat() {
+    return heartbeat;
+  }
+
+  /**
+   * Sets the current heartbeat time.
+   *
+   * @param heartbeat The current heartbeat time.
+   */
+  public void setHeartbeat(long heartbeat) {
+    this.heartbeat = Math.max(this.heartbeat, heartbeat);
+    failureDetector.report(heartbeat);
+  }
+
+  /**
+   * Resets heartbeat times.
+   */
+  public void resetHeartbeats() {
+    this.heartbeat = 0;
+    this.failureDetector = new PhiAccrualFailureDetector();
+  }
+
+  /**
+   * Returns a boolean indicating whether the session appears to have failed due to lack of heartbeats.
+   *
+   * @return Indicates whether the session has failed.
+   */
+  public boolean isFailed() {
+    return failureDetector.phi() >= PHI_FAILURE_THRESHOLD;
   }
 
   @Override

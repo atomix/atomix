@@ -106,11 +106,11 @@ public abstract class AbstractLogTest {
     // Append a couple entries.
     Indexed<RaftLogEntry> indexed;
     assertEquals(writer.getNextIndex(), 1);
-    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), "client", "test1", "test", ReadConsistency.LINEARIZABLE, 1000));
+    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), "client", "test1", "test", ReadConsistency.LINEARIZABLE, 100, 1000));
     assertEquals(indexed.index(), 1);
 
     assertEquals(writer.getNextIndex(), 2);
-    writer.append(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1), 0));
+    writer.append(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1, false), 0));
     reader.reset(2);
     indexed = reader.next();
     assertEquals(indexed.index(), 2);
@@ -124,7 +124,7 @@ public abstract class AbstractLogTest {
     assertEquals(openSession.entry().term(), 1);
     assertEquals(openSession.entry().serviceName(), "test1");
     assertEquals(openSession.entry().serviceType(), "test");
-    assertEquals(openSession.entry().timeout(), 1000);
+    assertEquals(openSession.entry().maxTimeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
 
@@ -148,7 +148,7 @@ public abstract class AbstractLogTest {
     assertEquals(openSession.entry().term(), 1);
     assertEquals(openSession.entry().serviceName(), "test1");
     assertEquals(openSession.entry().serviceType(), "test");
-    assertEquals(openSession.entry().timeout(), 1000);
+    assertEquals(openSession.entry().maxTimeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
     assertTrue(reader.hasNext());
@@ -174,7 +174,7 @@ public abstract class AbstractLogTest {
     assertEquals(openSession.entry().term(), 1);
     assertEquals(openSession.entry().serviceName(), "test1");
     assertEquals(openSession.entry().serviceType(), "test");
-    assertEquals(openSession.entry().timeout(), 1000);
+    assertEquals(openSession.entry().maxTimeout(), 1000);
     assertEquals(reader.getCurrentEntry(), openSession);
     assertEquals(reader.getCurrentIndex(), 1);
     assertTrue(reader.hasNext());
@@ -192,7 +192,7 @@ public abstract class AbstractLogTest {
     // Truncate the log and write a different entry.
     writer.truncate(1);
     assertEquals(writer.getNextIndex(), 2);
-    writer.append(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1), 0));
+    writer.append(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1, false), 0));
     reader.reset(2);
     indexed = reader.next();
     assertEquals(indexed.index(), 2);

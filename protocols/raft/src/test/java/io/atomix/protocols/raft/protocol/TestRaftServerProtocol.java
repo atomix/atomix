@@ -151,6 +151,11 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
     getClient(memberId).thenAccept(protocol -> protocol.publish(request));
   }
 
+  @Override
+  public CompletableFuture<HeartbeatResponse> heartbeat(MemberId memberId, HeartbeatRequest request) {
+    return getClient(memberId).thenCompose(protocol -> protocol.heartbeat(request));
+  }
+
   CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
     if (openSessionHandler != null) {
       return openSessionHandler.apply(request);
