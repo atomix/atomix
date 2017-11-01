@@ -257,7 +257,7 @@ public final class LeaderRole extends ActiveRole {
           }
         }
         // Otherwise, if the session is still active but has failed according to the failure detector, expire the session.
-        else if (session.getState().active() && session.isFailed()) {
+        else if (session.getState().active() && session.isFailed(raft.getSessionFailureThreshold())) {
           expireSession(session);
         }
       }

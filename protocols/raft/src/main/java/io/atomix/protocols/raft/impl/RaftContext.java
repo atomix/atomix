@@ -99,8 +99,10 @@ public class RaftContext implements AutoCloseable {
   private final ThreadContext compactionContext;
   protected RaftRole role = new InactiveRole(this);
   private Duration electionTimeout = Duration.ofMillis(500);
-  private Duration sessionTimeout = Duration.ofMillis(5000);
   private Duration heartbeatInterval = Duration.ofMillis(150);
+  private int electionThreshold = 3;
+  private Duration sessionTimeout = Duration.ofMillis(5000);
+  private int sessionFailureThreshold = 5;
   private volatile MemberId leader;
   private volatile long term;
   private MemberId lastVotedFor;
@@ -316,6 +318,24 @@ public class RaftContext implements AutoCloseable {
   }
 
   /**
+   * Sets the election threshold.
+   *
+   * @param electionThreshold the election threshold
+   */
+  public void setElectionThreshold(int electionThreshold) {
+    this.electionThreshold = electionThreshold;
+  }
+
+  /**
+   * Returns the election threshold.
+   *
+   * @return the election threshold
+   */
+  public int getElectionThreshold() {
+    return electionThreshold;
+  }
+
+  /**
    * Returns the session timeout.
    *
    * @return The session timeout.
@@ -331,6 +351,24 @@ public class RaftContext implements AutoCloseable {
    */
   public void setSessionTimeout(Duration sessionTimeout) {
     this.sessionTimeout = checkNotNull(sessionTimeout, "sessionTimeout cannot be null");
+  }
+
+  /**
+   * Returns the session failure threshold.
+   *
+   * @return the session failure threshold
+   */
+  public int getSessionFailureThreshold() {
+    return sessionFailureThreshold;
+  }
+
+  /**
+   * Sets the session failure threshold.
+   *
+   * @param sessionFailureThreshold the session failure threshold
+   */
+  public void setSessionFailureThreshold(int sessionFailureThreshold) {
+    this.sessionFailureThreshold = sessionFailureThreshold;
   }
 
   /**

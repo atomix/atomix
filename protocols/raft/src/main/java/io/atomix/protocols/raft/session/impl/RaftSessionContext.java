@@ -218,10 +218,11 @@ public class RaftSessionContext implements RaftSession {
   /**
    * Returns a boolean indicating whether the session appears to have failed due to lack of heartbeats.
    *
+   * @param threshold The phi failure threshold
    * @return Indicates whether the session has failed.
    */
-  public boolean isFailed() {
-    return failureDetector.phi() >= PHI_FAILURE_THRESHOLD;
+  public boolean isFailed(int threshold) {
+    return failureDetector.phi() >= threshold;
   }
 
   @Override
