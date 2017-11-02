@@ -246,11 +246,11 @@ public final class LeaderRole extends ActiveRole {
             .filter(m -> m != null)
             .collect(Collectors.toList()))
         .build();
-    log.trace("Sending {}", request);
+    log.trace("Sending {} to {}", request, member);
     raft.getProtocol().heartbeat(member, request).whenCompleteAsync((response, error) -> {
       long timestamp = System.currentTimeMillis();
       if (error == null && response.status() == RaftResponse.Status.OK) {
-        log.trace("Received {}", response);
+        log.trace("Received {} from {}", response, member);
         sessions.forEach(s -> s.setLastHeartbeat(timestamp));
       } else {
         sessions.forEach(session -> {

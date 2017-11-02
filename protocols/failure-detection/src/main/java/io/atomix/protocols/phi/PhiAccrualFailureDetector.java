@@ -18,7 +18,6 @@ package io.atomix.protocols.phi;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Phi Accrual failure detector.
@@ -27,6 +26,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class PhiAccrualFailureDetector {
 
+  /**
+   * Returns a new failure detector builder.
+   *
+   * @return a new failure detector builder
+   */
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
   // Default value
   private static final int DEFAULT_WINDOW_SIZE = 250;
   private static final int DEFAULT_MIN_SAMPLES = 25;
@@ -34,13 +42,13 @@ public class PhiAccrualFailureDetector {
 
   private final int minSamples;
   private final double phiFactor;
-  private final History history = new History();
+  private final History history;
 
   /**
    * Creates a new failure detector with the default configuration.
    */
   public PhiAccrualFailureDetector() {
-    this(DEFAULT_MIN_SAMPLES, DEFAULT_PHI_FACTOR);
+    this(DEFAULT_MIN_SAMPLES, DEFAULT_PHI_FACTOR, DEFAULT_WINDOW_SIZE);
   }
 
   /**
@@ -50,8 +58,20 @@ public class PhiAccrualFailureDetector {
    * @param phiFactor the phi factor
    */
   public PhiAccrualFailureDetector(int minSamples, double phiFactor) {
+    this(minSamples, phiFactor, DEFAULT_WINDOW_SIZE);
+  }
+
+  /**
+   * Creates a new failure detector.
+   *
+   * @param minSamples the minimum number of samples required to compute phi
+   * @param phiFactor the phi factor
+   * @param windowSize the phi accrual window size
+   */
+  public PhiAccrualFailureDetector(int minSamples, double phiFactor, int windowSize) {
     this.minSamples = minSamples;
     this.phiFactor = phiFactor;
+    this.history = new History(windowSize);
   }
 
   /**
@@ -67,7 +87,6 @@ public class PhiAccrualFailureDetector {
    * @param arrivalTime arrival time
    */
   public void report(long arrivalTime) {
-    checkNotNull("NodeId must not be null");
     checkArgument(arrivalTime >= 0, "arrivalTime must not be negative");
     long latestHeartbeat = history.latestHeartbeatTime();
     if (latestHeartbeat != -1) {
@@ -110,8 +129,12 @@ public class PhiAccrualFailureDetector {
    * Stores the history of heartbeats for a node.
    */
   private static class History {
-    DescriptiveStatistics samples = new DescriptiveStatistics(DEFAULT_WINDOW_SIZE);
+    private final DescriptiveStatistics samples;
     long lastHeartbeatTime = -1;
+
+    private History(int windowSize) {
+      this.samples = new DescriptiveStatistics(windowSize);
+    }
 
     DescriptiveStatistics samples() {
       return samples;
@@ -123,6 +146,55 @@ public class PhiAccrualFailureDetector {
 
     void setLatestHeartbeatTime(long value) {
       lastHeartbeatTime = value;
+    }
+  }
+
+  /**
+   * Phi accrual failure detector builder.
+   */
+  public static class Builder implements io.atomix.utils.Builder<PhiAccrualFailureDetector> {
+    private int minSamples = DEFAULT_MIN_SAMPLES;
+    private double phiFactor = DEFAULT_PHI_FACTOR;
+    private int windowSize = DEFAULT_WINDOW_SIZE;
+
+    /**
+     * Sets the minimum number of samples required to compute phi.
+     *
+     * @param minSamples the minimum number of samples
+     * @return the phi accrual failure detector builder
+     */
+    public Builder withMinSamples(int minSamples) {
+      checkArgument(minSamples > 0, "minSamples must be positive");
+      this.minSamples = minSamples;
+      return this;
+    }
+
+    /**
+     * Sets the phi factor.
+     *
+     * @param phiFactor the phi factor
+     * @return the phi accrual failure detector builder
+     */
+    public Builder withPhiFactor(double phiFactor) {
+      this.phiFactor = phiFactor;
+      return this;
+    }
+
+    /**
+     * Sets the history window size.
+     *
+     * @param windowSize the history window size
+     * @return the phi accrual failure detector builder
+     */
+    public Builder withWindowSize(int windowSize) {
+      checkArgument(windowSize > 0, "windowSize must be positive");
+      this.windowSize = windowSize;
+      return this;
+    }
+
+    @Override
+    public PhiAccrualFailureDetector build() {
+      return new PhiAccrualFailureDetector(minSamples, phiFactor, windowSize);
     }
   }
 }

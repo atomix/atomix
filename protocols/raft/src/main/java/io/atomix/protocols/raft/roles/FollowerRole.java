@@ -21,6 +21,8 @@ import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.PollRequest;
+import io.atomix.protocols.raft.protocol.VoteRequest;
+import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.utils.Quorum;
 import io.atomix.storage.journal.Indexed;
@@ -69,6 +71,7 @@ public final class FollowerRole extends ActiveRole {
       if (raft.getLastHeartbeatTime() > lastHeartbeat.get()) {
         failureDetector.report(raft.getLastHeartbeatTime());
       }
+      lastHeartbeat.set(raft.getLastHeartbeatTime());
     });
     resetHeartbeatTimeout();
   }
@@ -178,6 +181,16 @@ public final class FollowerRole extends ActiveRole {
         }
       }, raft.getThreadContext());
     }
+  }
+
+  @Override
+  protected VoteResponse handleVote(VoteRequest request) {
+    // Reset the heartbeat timeout if we voted for another candidate.
+    VoteResponse response = super.handleVote(request);
+    if (response.voted()) {
+      raft.setLastHeartbeatTime();
+    }
+    return response;
   }
 
   /**

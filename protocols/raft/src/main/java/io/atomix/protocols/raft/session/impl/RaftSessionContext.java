@@ -53,7 +53,6 @@ import static com.google.common.base.Preconditions.checkState;
  * Raft session.
  */
 public class RaftSessionContext implements RaftSession {
-  private static final int PHI_FAILURE_THRESHOLD = 10;
   private final Logger log;
   private final SessionId sessionId;
   private final MemberId member;
