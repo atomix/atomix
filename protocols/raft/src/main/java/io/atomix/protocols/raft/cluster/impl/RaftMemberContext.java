@@ -74,6 +74,7 @@ public final class RaftMemberContext {
       case PASSIVE:
         reader = log.openReader(log.writer().getLastIndex() + 1, RaftLogReader.Mode.COMMITS);
         break;
+      case PROMOTABLE:
       case ACTIVE:
         reader = log.openReader(log.writer().getLastIndex() + 1, RaftLogReader.Mode.ALL);
         break;

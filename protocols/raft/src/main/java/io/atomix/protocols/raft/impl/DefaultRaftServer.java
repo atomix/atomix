@@ -84,6 +84,11 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   @Override
+  public CompletableFuture<RaftServer> listen(Collection<MemberId> cluster) {
+    return start(() -> cluster().listen(cluster));
+  }
+
+  @Override
   public CompletableFuture<RaftServer> join(Collection<MemberId> cluster) {
     return start(() -> cluster().join(cluster));
   }
@@ -233,7 +238,7 @@ public class DefaultRaftServer implements RaftServer {
         storage = RaftStorage.newBuilder().build();
       }
 
-      RaftContext raft = new RaftContext(name, type, localMemberId, protocol, storage, serviceRegistry, threadModel, threadPoolSize);
+      RaftContext raft = new RaftContext(name, localMemberId, protocol, storage, serviceRegistry, threadModel, threadPoolSize);
       raft.setElectionTimeout(electionTimeout);
       raft.setHeartbeatInterval(heartbeatInterval);
       raft.setSessionTimeout(sessionTimeout);

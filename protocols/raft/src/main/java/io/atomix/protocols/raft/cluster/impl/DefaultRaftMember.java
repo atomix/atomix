@@ -40,13 +40,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   private final MemberId id;
   private final int hash;
-  private RaftMember.Type type;
+  private Type type;
   private Instant updated;
   private transient Scheduled configureTimeout;
   private transient RaftClusterContext cluster;
   private final transient Set<Consumer<Type>> typeChangeListeners = new CopyOnWriteArraySet<>();
 
-  public DefaultRaftMember(MemberId id, RaftMember.Type type, Instant updated) {
+  public DefaultRaftMember(MemberId id, Type type, Instant updated) {
     this.id = checkNotNull(id, "id cannot be null");
     this.hash = Hashing.murmur3_32()
         .hashUnencodedChars(id.id())
@@ -61,6 +61,15 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   DefaultRaftMember setCluster(RaftClusterContext cluster) {
     this.cluster = cluster;
     return this;
+  }
+
+  /**
+   * Sets the member type.
+   *
+   * @param type the member type
+   */
+  void setType(Type type) {
+    this.type = type;
   }
 
   @Override
@@ -95,7 +104,10 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
 
   @Override
   public CompletableFuture<Void> promote() {
-    return configure(Type.values()[type.ordinal() + 1]);
+    if (Type.values().length > type.ordinal() + 1) {
+      return configure(Type.values()[type.ordinal() + 1]);
+    }
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -105,7 +117,10 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
 
   @Override
   public CompletableFuture<Void> demote() {
-    return configure(Type.values()[type.ordinal() - 1]);
+    if (type.ordinal() > 0) {
+      return configure(Type.values()[type.ordinal() - 1]);
+    }
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -140,7 +155,10 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   /**
    * Demotes the server to the given type.
    */
-  CompletableFuture<Void> configure(RaftMember.Type type) {
+  private CompletableFuture<Void> configure(RaftMember.Type type) {
+    if (type == this.type) {
+      return CompletableFuture.completedFuture(null);
+    }
     CompletableFuture<Void> future = new CompletableFuture<>();
     cluster.getContext().getThreadContext().execute(() -> configure(type, future));
     return future;

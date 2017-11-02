@@ -206,6 +206,72 @@ public interface RaftCluster {
   CompletableFuture<Void> bootstrap(Collection<MemberId> cluster);
 
   /**
+   * Joins the cluster as a listener.
+   * <p>
+   * Joining the cluster results in the local server being added to an existing cluster that has already been
+   * bootstrapped. The provided configuration will be used to connect to the existing cluster and submit a join
+   * request. Once the server has been added to the existing cluster's configuration, the join operation is complete.
+   * <p>
+   * Any {@link RaftMember.Type type} of server may join a cluster. In order to join a cluster, the provided list of
+   * bootstrapped members must be non-empty and must include at least one active member of the cluster. If no member
+   * in the configuration is reachable, the server will continue to attempt to join the cluster until successful. If
+   * the provided cluster configuration is empty, the returned {@link CompletableFuture} will be completed exceptionally.
+   * <p>
+   * When the server joins the cluster, the local server will be transitioned into its initial state as defined by
+   * the configured {@link RaftMember.Type}. Once the server has joined, it will immediately begin participating in
+   * Raft and asynchronous replication according to its configuration.
+   * <p>
+   * It's important to note that the provided cluster configuration will only be used the first time the server attempts
+   * to join the cluster. Thereafter, in the event that the server crashes and is restarted by {@code join}ing the cluster
+   * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
+   * the server leaves the cluster will its configuration and log be reset.
+   * <p>
+   * In order to preserve safety during configuration changes, Raft leaders do not allow concurrent configuration
+   * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
+   * member being {@link RaftMember#promote() promoted} or {@link RaftMember#demote() demoted}) is under way, the local
+   * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
+   * the join will be retried until successful.
+   *
+   * @param cluster A list of cluster member addresses to join.
+   * @return A completable future to be completed once the local server has joined the cluster.
+   */
+  default CompletableFuture<Void> listen(MemberId... cluster) {
+    return join(Arrays.asList(cluster));
+  }
+
+  /**
+   * Joins the cluster as a listener.
+   * <p>
+   * Joining the cluster results in the local server being added to an existing cluster that has already been
+   * bootstrapped. The provided configuration will be used to connect to the existing cluster and submit a join
+   * request. Once the server has been added to the existing cluster's configuration, the join operation is complete.
+   * <p>
+   * Any {@link RaftMember.Type type} of server may join a cluster. In order to join a cluster, the provided list of
+   * bootstrapped members must be non-empty and must include at least one active member of the cluster. If no member
+   * in the configuration is reachable, the server will continue to attempt to join the cluster until successful. If
+   * the provided cluster configuration is empty, the returned {@link CompletableFuture} will be completed exceptionally.
+   * <p>
+   * When the server joins the cluster, the local server will be transitioned into its initial state as defined by
+   * the configured {@link RaftMember.Type}. Once the server has joined, it will immediately begin participating in
+   * Raft and asynchronous replication according to its configuration.
+   * <p>
+   * It's important to note that the provided cluster configuration will only be used the first time the server attempts
+   * to join the cluster. Thereafter, in the event that the server crashes and is restarted by {@code join}ing the cluster
+   * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
+   * the server leaves the cluster will its configuration and log be reset.
+   * <p>
+   * In order to preserve safety during configuration changes, Raft leaders do not allow concurrent configuration
+   * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
+   * member being {@link RaftMember#promote() promoted} or {@link RaftMember#demote() demoted}) is under way, the local
+   * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
+   * the join will be retried until successful.
+   *
+   * @param cluster A collection of cluster member addresses to join.
+   * @return A completable future to be completed once the local server has joined the cluster.
+   */
+  CompletableFuture<Void> listen(Collection<MemberId> cluster);
+
+  /**
    * Joins the cluster.
    * <p>
    * Joining the cluster results in the local server being added to an existing cluster that has already been
