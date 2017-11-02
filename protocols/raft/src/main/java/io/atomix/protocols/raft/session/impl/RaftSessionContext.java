@@ -67,8 +67,8 @@ public class RaftSessionContext implements RaftSession {
   private final RaftContext server;
   private final ThreadContext eventExecutor;
   private volatile State state = State.OPEN;
-  private volatile long timestamp;
-  private long heartbeat;
+  private volatile long lastUpdated;
+  private long lastHeartbeat;
   private PhiAccrualFailureDetector failureDetector = new PhiAccrualFailureDetector();
   private long requestSequence;
   private volatile long commandSequence;
@@ -165,17 +165,17 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The session update timestamp.
    */
-  public long getTimestamp() {
-    return timestamp;
+  public long getLastUpdated() {
+    return lastUpdated;
   }
 
   /**
    * Updates the session timestamp.
    *
-   * @param timestamp The session timestamp.
+   * @param lastUpdated The session timestamp.
    */
-  public void setTimestamp(long timestamp) {
-    this.timestamp = Math.max(this.timestamp, timestamp);
+  public void setLastUpdated(long lastUpdated) {
+    this.lastUpdated = Math.max(this.lastUpdated, lastUpdated);
   }
 
   /**
@@ -185,7 +185,7 @@ public class RaftSessionContext implements RaftSession {
    * @return indicates whether the session is timed out
    */
   public boolean isTimedOut(long timestamp) {
-    long lastUpdated = this.timestamp;
+    long lastUpdated = this.lastUpdated;
     return lastUpdated > 0 && timestamp - lastUpdated > maxTimeout;
   }
 
@@ -194,25 +194,25 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The current heartbeat time.
    */
-  public long getHeartbeat() {
-    return heartbeat;
+  public long getLastHeartbeat() {
+    return lastHeartbeat;
   }
 
   /**
-   * Sets the current heartbeat time.
+   * Sets the last heartbeat time.
    *
-   * @param heartbeat The current heartbeat time.
+   * @param lastHeartbeat The last heartbeat time.
    */
-  public void setHeartbeat(long heartbeat) {
-    this.heartbeat = Math.max(this.heartbeat, heartbeat);
-    failureDetector.report(heartbeat);
+  public void setLastHeartbeat(long lastHeartbeat) {
+    this.lastHeartbeat = Math.max(this.lastHeartbeat, lastHeartbeat);
+    failureDetector.report(lastHeartbeat);
   }
 
   /**
    * Resets heartbeat times.
    */
   public void resetHeartbeats() {
-    this.heartbeat = 0;
+    this.lastHeartbeat = 0;
     this.failureDetector = new PhiAccrualFailureDetector();
   }
 
@@ -242,13 +242,13 @@ public class RaftSessionContext implements RaftSession {
       log.debug("State changed: {}", state);
       switch (state) {
         case OPEN:
-          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.OPEN, this, getTimestamp())));
+          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.OPEN, this, getLastUpdated())));
           break;
         case EXPIRED:
-          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.EXPIRE, this, getTimestamp())));
+          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.EXPIRE, this, getLastUpdated())));
           break;
         case CLOSED:
-          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.CLOSE, this, getTimestamp())));
+          eventListeners.forEach(l -> l.onEvent(new RaftSessionEvent(RaftSessionEvent.Type.CLOSE, this, getLastUpdated())));
           break;
       }
     }
@@ -594,7 +594,7 @@ public class RaftSessionContext implements RaftSession {
     return toStringHelper(this)
         .addValue(context)
         .add("session", sessionId)
-        .add("timestamp", TimestampPrinter.of(timestamp))
+        .add("timestamp", TimestampPrinter.of(lastUpdated))
         .toString();
   }
 

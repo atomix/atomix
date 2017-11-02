@@ -239,7 +239,6 @@ public final class LeaderRole extends ActiveRole {
    * Attempts to send a heartbeat to the given session.
    */
   private void sendHeartbeat(MemberId member, Collection<RaftSessionContext> sessions) {
-    long timestamp = System.currentTimeMillis();
     HeartbeatRequest request = HeartbeatRequest.newBuilder()
         .withLeader(raft.getCluster().getMember().memberId())
         .withMembers(raft.getCluster().getMembers().stream()
@@ -249,13 +248,14 @@ public final class LeaderRole extends ActiveRole {
         .build();
     log.trace("Sending {}", request);
     raft.getProtocol().heartbeat(member, request).whenCompleteAsync((response, error) -> {
+      long timestamp = System.currentTimeMillis();
       if (error == null && response.status() == RaftResponse.Status.OK) {
         log.trace("Received {}", response);
-        sessions.forEach(s -> s.setHeartbeat(timestamp));
+        sessions.forEach(s -> s.setLastHeartbeat(timestamp));
       } else {
         sessions.forEach(session -> {
           // If no heartbeats have been received, use the session's minimum timeout.
-          if (session.getHeartbeat() == 0) {
+          if (session.getLastHeartbeat() == 0) {
             if (timestamp - raft.getLastHeartbeatTime() > session.minTimeout()) {
               expireSession(session);
             }

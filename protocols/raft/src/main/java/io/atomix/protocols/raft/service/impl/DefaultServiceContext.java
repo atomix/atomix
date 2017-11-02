@@ -210,7 +210,7 @@ public class DefaultServiceContext implements ServiceContext {
     // Iterate through registered sessions.
     for (RaftSessionContext session : sessions.getSessions()) {
       if (session.isTimedOut(timestamp)) {
-        log.debug("Session expired in {} milliseconds: {}", timestamp - session.getTimestamp(), session);
+        log.debug("Session expired in {} milliseconds: {}", timestamp - session.getLastUpdated(), session);
         log.debug("Closing session {}", session.sessionId());
         sessions.expireSession(session);
       }
@@ -279,7 +279,7 @@ public class DefaultServiceContext implements ServiceContext {
               this,
               raft,
               threadContextFactory);
-          session.setTimestamp(sessionTimestamp);
+          session.setLastUpdated(sessionTimestamp);
           session.setRequestSequence(reader.readLong());
           session.setCommandSequence(reader.readLong());
           session.setEventIndex(reader.readLong());
@@ -343,7 +343,7 @@ public class DefaultServiceContext implements ServiceContext {
           writer.writeString(session.readConsistency().name());
           writer.writeLong(session.minTimeout());
           writer.writeLong(session.maxTimeout());
-          writer.writeLong(session.getTimestamp());
+          writer.writeLong(session.getLastUpdated());
           writer.writeLong(session.getRequestSequence());
           writer.writeLong(session.getCommandSequence());
           writer.writeLong(session.getEventIndex());
@@ -391,7 +391,7 @@ public class DefaultServiceContext implements ServiceContext {
       log.debug("Opening session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
-      session.setTimestamp(timestamp);
+      session.setLastUpdated(timestamp);
 
       // Update the state machine index/timestamp.
       tick(index, timestamp);
@@ -439,7 +439,7 @@ public class DefaultServiceContext implements ServiceContext {
       // The session may have been closed by the time this update was executed on the service thread.
       if (session.getState() != RaftSession.State.CLOSED) {
         // Update the session's timestamp to prevent it from being expired.
-        session.setTimestamp(timestamp);
+        session.setLastUpdated(timestamp);
 
         // Clear results cached in the session.
         session.clearResults(commandSequence);
@@ -514,7 +514,7 @@ public class DefaultServiceContext implements ServiceContext {
       this.currentTimestamp = Math.max(currentTimestamp, timestamp);
 
       for (RaftSessionContext session : sessions.getSessions()) {
-        session.setTimestamp(timestamp);
+        session.setLastUpdated(timestamp);
       }
     });
     return future;
@@ -534,7 +534,7 @@ public class DefaultServiceContext implements ServiceContext {
       log.debug("Closing session {}", session.sessionId());
 
       // Update the session's timestamp to prevent it from being expired.
-      session.setTimestamp(timestamp);
+      session.setLastUpdated(timestamp);
 
       // Update the state machine index/timestamp.
       tick(index, timestamp);
@@ -585,7 +585,7 @@ public class DefaultServiceContext implements ServiceContext {
    */
   private void executeCommand(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // Update the session's timestamp to prevent it from being expired.
-    session.setTimestamp(timestamp);
+    session.setLastUpdated(timestamp);
 
     // Update the state machine index/timestamp.
     tick(index, timestamp);
