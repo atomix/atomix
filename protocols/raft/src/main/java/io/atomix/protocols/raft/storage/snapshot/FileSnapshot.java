@@ -15,10 +15,8 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
-import io.atomix.time.WallClockTimestamp;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,37 +31,20 @@ import static com.google.common.base.Preconditions.checkState;
  */
 final class FileSnapshot extends Snapshot {
   private final SnapshotFile file;
-  private final SnapshotStore store;
 
-  FileSnapshot(SnapshotFile file, SnapshotStore store) {
-    super(store);
+  FileSnapshot(SnapshotFile file, SnapshotDescriptor descriptor, SnapshotStore store) {
+    super(descriptor, store);
     this.file = checkNotNull(file, "file cannot be null");
-    this.store = checkNotNull(store, "store cannot be null");
   }
 
   @Override
-  public ServiceId serviceId() {
-    return file.snapshotId();
-  }
-
-  @Override
-  public long index() {
-    return file.index();
-  }
-
-  @Override
-  public WallClockTimestamp timestamp() {
-    return WallClockTimestamp.from(file.timestamp());
+  public String serviceName() {
+    return file.name();
   }
 
   @Override
   public synchronized SnapshotWriter openWriter() {
     checkWriter();
-    SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-        .withIndex(file.index())
-        .withTimestamp(file.timestamp())
-        .build();
-
     Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
     descriptor.copyTo(buffer);
 

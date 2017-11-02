@@ -434,7 +434,8 @@ abstract class AbstractAppender implements AutoCloseable {
         request = InstallRequest.newBuilder()
             .withTerm(raft.getTerm())
             .withLeader(leader != null ? leader.memberId() : null)
-            .withId(snapshot.serviceId().id())
+            .withServiceId(snapshot.serviceId().id())
+            .withServiceName(snapshot.serviceName())
             .withIndex(snapshot.index())
             .withOffset(member.getNextSnapshotOffset())
             .withData(data)
@@ -514,7 +515,7 @@ abstract class AbstractAppender implements AutoCloseable {
       member.setNextSnapshotId(0);
       member.setNextSnapshotOffset(0);
       member.setSnapshotIndex(request.snapshotIndex());
-      member.setSnapshotId(request.snapshotId());
+      member.setSnapshotId(request.serviceId());
     }
     // If more install requests remain, increment the member's snapshot offset.
     else {

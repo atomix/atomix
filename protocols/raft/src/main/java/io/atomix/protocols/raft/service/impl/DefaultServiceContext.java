@@ -326,7 +326,7 @@ public class DefaultServiceContext implements ServiceContext {
 
       // Create a temporary in-memory snapshot buffer.
       Snapshot snapshot = raft.getSnapshotStore()
-          .newTemporarySnapshot(serviceId, snapshotIndex, WallClockTimestamp.from(currentTimestamp));
+          .newTemporarySnapshot(serviceId, serviceName, snapshotIndex, WallClockTimestamp.from(currentTimestamp));
 
       // Add the snapshot to the pending snapshots registry.
       PendingSnapshot pendingSnapshot = new PendingSnapshot(snapshot);

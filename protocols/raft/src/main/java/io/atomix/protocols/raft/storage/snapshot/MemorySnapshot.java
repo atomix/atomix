@@ -15,10 +15,8 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.time.WallClockTimestamp;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -27,13 +25,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * In-memory snapshot backed by a {@link HeapBuffer}.
  */
 final class MemorySnapshot extends Snapshot {
+  private final String name;
   private final HeapBuffer buffer;
   private final SnapshotDescriptor descriptor;
   private final SnapshotStore store;
 
-  MemorySnapshot(HeapBuffer buffer, SnapshotDescriptor descriptor, SnapshotStore store) {
-    super(store);
+  MemorySnapshot(String name, HeapBuffer buffer, SnapshotDescriptor descriptor, SnapshotStore store) {
+    super(descriptor, store);
     buffer.mark();
+    this.name = checkNotNull(name, "name cannot be null");
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.buffer.position(SnapshotDescriptor.BYTES).mark();
     this.descriptor = checkNotNull(descriptor, "descriptor cannot be null");
@@ -41,18 +41,8 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public ServiceId serviceId() {
-    return ServiceId.from(descriptor.snapshotId());
-  }
-
-  @Override
-  public long index() {
-    return descriptor.index();
-  }
-
-  @Override
-  public WallClockTimestamp timestamp() {
-    return WallClockTimestamp.from(descriptor.timestamp());
+  public String serviceName() {
+    return name;
   }
 
   @Override
@@ -75,7 +65,7 @@ final class MemorySnapshot extends Snapshot {
   @Override
   public Snapshot persist() {
     if (store.storage.storageLevel() != StorageLevel.MEMORY) {
-      try (Snapshot newSnapshot = store.newSnapshot(serviceId(), index(), timestamp())) {
+      try (Snapshot newSnapshot = store.newSnapshot(serviceId(), name, index(), timestamp())) {
         try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter()) {
           buffer.flip().skip(SnapshotDescriptor.BYTES);
           newSnapshotWriter.write(buffer.array(), buffer.position(), buffer.remaining());

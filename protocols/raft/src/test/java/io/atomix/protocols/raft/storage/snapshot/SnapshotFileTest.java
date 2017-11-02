@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.storage.snapshot;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -33,10 +32,8 @@ public class SnapshotFileTest {
    */
   @Test
   public void testCreateSnapshotFileName() throws Exception {
-    long timestamp = 3;
-    String timestampString = SnapshotFile.TIMESTAMP_FORMAT.format(new Date(timestamp));
-    String fileName = SnapshotFile.createSnapshotFileName("test", 1, 2, timestamp);
-    assertEquals(fileName, "test-1-2-" + timestampString + ".snapshot");
+    assertEquals(SnapshotFile.createSnapshotFileName("foo", 1, 2), "foo-1-2.snapshot");
+    assertEquals(SnapshotFile.createSnapshotFileName("foo-bar", 1, 2), "foo-bar-1-2.snapshot");
   }
 
   /**
@@ -44,44 +41,14 @@ public class SnapshotFileTest {
    */
   @Test
   public void testCreateValidateSnapshotFile() throws Exception {
-    File file = SnapshotFile.createSnapshotFile("test", new File(System.getProperty("user.dir")), 1, 2, 3);
-    assertTrue(SnapshotFile.isSnapshotFile("test", file));
+    assertTrue(SnapshotFile.isSnapshotFile(SnapshotFile.createSnapshotFile(new File(System.getProperty("user.dir")), "foo", 1, 2)));
+    assertTrue(SnapshotFile.isSnapshotFile(SnapshotFile.createSnapshotFile(new File(System.getProperty("user.dir")), "foo-bar", 1, 2)));
   }
 
-  /**
-   * Tests parsing the snapshot identifier.
-   */
   @Test
-  public void testParseSnapshotId() throws Exception {
-    String fileName = SnapshotFile.createSnapshotFileName("test", 1, 2, 3);
-    assertEquals(SnapshotFile.parseId(fileName), 1);
-  }
-
-  /**
-   * Tests parsing the snapshot index.
-   */
-  @Test
-  public void testParseSnapshotIndex() throws Exception {
-    String fileName = SnapshotFile.createSnapshotFileName("test", 1, 2, 3);
-    assertEquals(SnapshotFile.parseIndex(fileName), 2);
-  }
-
-  /**
-   * Tests parsing the snapshot timestamp.
-   */
-  @Test
-  public void testParseSnapshotTimestamp() throws Exception {
-    String fileName = SnapshotFile.createSnapshotFileName("test", 1, 2, 3);
-    assertEquals(SnapshotFile.parseTimestamp(fileName), SnapshotFile.TIMESTAMP_FORMAT.parse(SnapshotFile.TIMESTAMP_FORMAT.format(3)).getTime());
-  }
-
-  /**
-   * Tests parsing a timestamp string.
-   */
-  @Test
-  public void testTimestampDecoder() throws Exception {
-    String timestampString = "20170624151018000";
-    SnapshotFile.TIMESTAMP_FORMAT.parse(timestampString);
+  public void testParseSnapshotName() throws Exception {
+    assertEquals("foo", SnapshotFile.parseName("foo-1-2.snapshot"));
+    assertEquals("foo-bar", SnapshotFile.parseName("foo-bar-1-2.snapshot"));
   }
 
 }
