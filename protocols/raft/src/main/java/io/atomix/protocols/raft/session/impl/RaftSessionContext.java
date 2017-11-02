@@ -185,7 +185,8 @@ public class RaftSessionContext implements RaftSession {
    * @return indicates whether the session is timed out
    */
   public boolean isTimedOut(long timestamp) {
-    return timestamp - this.timestamp > maxTimeout;
+    long lastUpdated = this.timestamp;
+    return lastUpdated > 0 && timestamp - lastUpdated > maxTimeout;
   }
 
   /**
