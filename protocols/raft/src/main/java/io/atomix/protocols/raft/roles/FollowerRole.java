@@ -17,13 +17,10 @@ package io.atomix.protocols.raft.roles;
 
 import io.atomix.protocols.phi.PhiAccrualFailureDetector;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.PollRequest;
-import io.atomix.protocols.raft.protocol.VoteRequest;
-import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.utils.Quorum;
 import io.atomix.storage.journal.Indexed;
@@ -35,6 +32,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +42,7 @@ public final class FollowerRole extends ActiveRole {
   private final PhiAccrualFailureDetector failureDetector = new PhiAccrualFailureDetector();
   private final Random random = new Random();
   private Scheduled heartbeatTimer;
+  private Scheduled heartbeatTimeout;
 
   public FollowerRole(RaftContext context) {
     super(context);
@@ -65,31 +64,31 @@ public final class FollowerRole extends ActiveRole {
    */
   private void startHeartbeatTimer() {
     log.trace("Starting heartbeat timer");
-    resetHeartbeatTimer();
+    AtomicLong lastHeartbeat = new AtomicLong();
+    heartbeatTimer = raft.getThreadContext().schedule(raft.getHeartbeatInterval(), () -> {
+      if (raft.getLastHeartbeatTime() > lastHeartbeat.get()) {
+        failureDetector.report(raft.getLastHeartbeatTime());
+      }
+    });
+    resetHeartbeatTimeout();
   }
 
   /**
    * Resets the heartbeat timer.
    */
-  private void resetHeartbeatTimer() {
+  private void resetHeartbeatTimeout() {
     Duration delay = raft.getHeartbeatInterval().dividedBy(2)
         .plus(Duration.ofMillis(random.nextInt((int) raft.getHeartbeatInterval().dividedBy(2).toMillis())));
-    heartbeatTimer = raft.getThreadContext().schedule(delay, () -> {
+    heartbeatTimeout = raft.getThreadContext().schedule(delay, () -> {
       if (isOpen()) {
         if (System.currentTimeMillis() - raft.getLastHeartbeatTime() > raft.getElectionTimeout().toMillis() || failureDetector.phi() >= raft.getElectionThreshold()) {
           log.debug("Heartbeat timed out in {}", System.currentTimeMillis() - raft.getLastHeartbeatTime());
           sendPollRequests();
         } else {
-          resetHeartbeatTimer();
+          resetHeartbeatTimeout();
         }
       }
     });
-  }
-
-  @Override
-  protected boolean updateTermAndLeader(long term, MemberId leader) {
-    failureDetector.report();
-    return super.updateTermAndLeader(term, leader);
   }
 
   /**
@@ -97,9 +96,9 @@ public final class FollowerRole extends ActiveRole {
    */
   private void sendPollRequests() {
     // Set a new timer within which other nodes must respond in order for this node to transition to candidate.
-    heartbeatTimer = raft.getThreadContext().schedule(raft.getElectionTimeout(), () -> {
+    heartbeatTimeout = raft.getThreadContext().schedule(raft.getElectionTimeout(), () -> {
       log.debug("Failed to poll a majority of the cluster in {}", raft.getElectionTimeout());
-      resetHeartbeatTimer();
+      resetHeartbeatTimeout();
     });
 
     // Create a quorum that will track the number of nodes that have responded to the poll request.
@@ -120,7 +119,7 @@ public final class FollowerRole extends ActiveRole {
         raft.setLeader(null);
         raft.transition(RaftServer.Role.CANDIDATE);
       } else {
-        resetHeartbeatTimer();
+        resetHeartbeatTimeout();
       }
     });
 
@@ -164,7 +163,7 @@ public final class FollowerRole extends ActiveRole {
               log.debug("Received rejected poll from {}", member);
               if (leader != null && response.term() == raft.getTerm() && member.memberId().equals(leader.memberId())) {
                 quorum.cancel();
-                resetHeartbeatTimer();
+                resetHeartbeatTimeout();
               } else {
                 quorum.fail();
               }
@@ -181,29 +180,22 @@ public final class FollowerRole extends ActiveRole {
     }
   }
 
-  @Override
-  protected VoteResponse handleVote(VoteRequest request) {
-    // Reset the heartbeat timeout if we voted for another candidate.
-    VoteResponse response = super.handleVote(request);
-    if (response.voted()) {
-      failureDetector.report();
-    }
-    return response;
-  }
-
   /**
    * Cancels the heartbeat timer.
    */
-  private void cancelHeartbeatTimer() {
+  private void cancelHeartbeatTimers() {
     if (heartbeatTimer != null) {
-      log.trace("Cancelling heartbeat timer");
       heartbeatTimer.cancel();
+    }
+    if (heartbeatTimeout != null) {
+      log.trace("Cancelling heartbeat timer");
+      heartbeatTimeout.cancel();
     }
   }
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    return super.close().thenRun(this::cancelHeartbeatTimer);
+    return super.close().thenRun(this::cancelHeartbeatTimers);
   }
 
 }
