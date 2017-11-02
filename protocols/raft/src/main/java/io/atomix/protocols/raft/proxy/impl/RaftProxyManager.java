@@ -317,7 +317,7 @@ public class RaftProxyManager {
           // If the timeout has not been passed, attempt to keep the session alive again with no delay.
           // We will continue to retry until the session expiration has passed.
           else if (System.currentTimeMillis() - lastKeepAliveTime < sessionTimeout) {
-            selectorManager.resetAll(null, connection.servers());
+            selectorManager.resetAll(null, connection.members());
             keepAliveSessions(lastKeepAliveTime, sessionTimeout);
           }
           // If no leader was set, set the session state to unstable and schedule another keep-alive.
@@ -330,7 +330,7 @@ public class RaftProxyManager {
         // If the timeout has not been passed, reset the connection and attempt to keep the session alive
         // again with no delay.
         else if (System.currentTimeMillis() - lastKeepAliveTime < sessionTimeout && connection.leader() != null) {
-          selectorManager.resetAll(null, connection.servers());
+          selectorManager.resetAll(null, connection.members());
           keepAliveSessions(lastKeepAliveTime, sessionTimeout);
         }
         // If no leader was set, set the session state to unstable and schedule another keep-alive.

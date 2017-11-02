@@ -38,9 +38,9 @@ public enum  CommunicationStrategy {
    */
   ANY {
     @Override
-    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
-      Collections.shuffle(servers);
-      return servers;
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> members) {
+      Collections.shuffle(members);
+      return members;
     }
   },
 
@@ -55,12 +55,12 @@ public enum  CommunicationStrategy {
    */
   LEADER {
     @Override
-    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> members) {
       if (leader != null) {
         return Collections.singletonList(leader);
       }
-      Collections.shuffle(servers);
-      return servers;
+      Collections.shuffle(members);
+      return members;
     }
   },
 
@@ -73,18 +73,18 @@ public enum  CommunicationStrategy {
    */
   FOLLOWERS {
     @Override
-    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
-      Collections.shuffle(servers);
-      if (leader != null && servers.size() > 1) {
-        List<MemberId> results = new ArrayList<>(servers.size());
-        for (MemberId memberId : servers) {
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> members) {
+      Collections.shuffle(members);
+      if (leader != null && members.size() > 1) {
+        List<MemberId> results = new ArrayList<>(members.size());
+        for (MemberId memberId : members) {
           if (!memberId.equals(leader)) {
             results.add(memberId);
           }
         }
         return results;
       }
-      return servers;
+      return members;
     }
   };
 
@@ -99,11 +99,11 @@ public enum  CommunicationStrategy {
    *
    * @param leader  The current cluster leader. The {@code leader} may be {@code null} if no current
    *                leader exists.
-   * @param servers The full list of available servers. The provided server list is representative
+   * @param members The full list of available servers. The provided server list is representative
    *                of the most recent membership update received by the client. The server list
    *                may evolve over time as the structure of the cluster changes.
    * @return A collection of servers to which the client can connect.
    */
-  public abstract List<MemberId> selectConnections(MemberId leader, List<MemberId> servers);
+  public abstract List<MemberId> selectConnections(MemberId leader, List<MemberId> members);
 
 }

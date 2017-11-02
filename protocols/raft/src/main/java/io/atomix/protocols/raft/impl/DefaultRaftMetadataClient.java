@@ -61,8 +61,8 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   }
 
   @Override
-  public Collection<MemberId> getServers() {
-    return selectorManager.servers();
+  public Collection<MemberId> getMembers() {
+    return selectorManager.members();
   }
 
   /**

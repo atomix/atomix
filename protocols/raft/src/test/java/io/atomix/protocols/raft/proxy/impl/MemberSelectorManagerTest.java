@@ -35,13 +35,13 @@ public class MemberSelectorManagerTest {
   public void testMemberSelectorManager() throws Exception {
     MemberSelectorManager selectorManager = new MemberSelectorManager();
     assertNull(selectorManager.leader());
-    assertEquals(0, selectorManager.servers().size());
+    assertEquals(0, selectorManager.members().size());
     selectorManager.resetAll();
     assertNull(selectorManager.leader());
-    assertEquals(0, selectorManager.servers().size());
+    assertEquals(0, selectorManager.members().size());
     selectorManager.resetAll(MemberId.from("a"), Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
     assertEquals(MemberId.from("a"), selectorManager.leader());
-    assertEquals(3, selectorManager.servers().size());
+    assertEquals(3, selectorManager.members().size());
   }
 
 }

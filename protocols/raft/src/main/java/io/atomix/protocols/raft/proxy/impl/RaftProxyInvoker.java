@@ -361,6 +361,9 @@ final class RaftProxyInvoker {
           retry(Duration.ofSeconds(FIBONACCI[Math.min(attempt - 1, FIBONACCI.length - 1)]));
         }
       } else if (EXCEPTION_PREDICATE.test(error) || (error instanceof CompletionException && EXCEPTION_PREDICATE.test(error.getCause()))) {
+        if (error instanceof ConnectException || error.getCause() instanceof ConnectException) {
+          leaderConnection.reset(null, leaderConnection.members());
+        }
         retry(Duration.ofSeconds(FIBONACCI[Math.min(attempt - 1, FIBONACCI.length - 1)]));
       } else {
         fail(error);
