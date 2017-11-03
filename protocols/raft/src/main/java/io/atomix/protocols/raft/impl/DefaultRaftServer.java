@@ -241,7 +241,9 @@ public class DefaultRaftServer implements RaftServer {
       RaftContext raft = new RaftContext(name, localMemberId, protocol, storage, serviceRegistry, threadModel, threadPoolSize);
       raft.setElectionTimeout(electionTimeout);
       raft.setHeartbeatInterval(heartbeatInterval);
+      raft.setElectionThreshold(electionThreshold);
       raft.setSessionTimeout(sessionTimeout);
+      raft.setSessionFailureThreshold(sessionFailureThreshold);
 
       return new DefaultRaftServer(raft);
     }

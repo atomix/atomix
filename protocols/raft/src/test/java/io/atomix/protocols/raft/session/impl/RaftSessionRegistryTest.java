@@ -118,6 +118,7 @@ public class RaftSessionRegistryTest {
         "test",
         ServiceType.from("test"),
         ReadConsistency.LINEARIZABLE,
+        100,
         5000,
         context,
         server,

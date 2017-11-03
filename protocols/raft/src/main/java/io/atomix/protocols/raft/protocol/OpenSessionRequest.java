@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.service.ServiceType;
 
 import java.util.Objects;
 
@@ -43,14 +43,16 @@ public class OpenSessionRequest extends AbstractRaftRequest {
   private final String name;
   private final String typeName;
   private final ReadConsistency readConsistency;
-  private final long timeout;
+  private final long minTimeout;
+  private final long maxTimeout;
 
-  public OpenSessionRequest(String member, String name, String typeName, ReadConsistency readConsistency, long timeout) {
+  public OpenSessionRequest(String member, String name, String typeName, ReadConsistency readConsistency, long minTimeout, long maxTimeout) {
     this.member = member;
     this.name = name;
     this.typeName = typeName;
     this.readConsistency = readConsistency;
-    this.timeout = timeout;
+    this.minTimeout = minTimeout;
+    this.maxTimeout = maxTimeout;
   }
 
   /**
@@ -90,17 +92,26 @@ public class OpenSessionRequest extends AbstractRaftRequest {
   }
 
   /**
-   * Returns the session timeout.
+   * Returns the minimum session timeout.
    *
-   * @return The session timeout.
+   * @return The minimum session timeout.
    */
-  public long timeout() {
-    return timeout;
+  public long minTimeout() {
+    return minTimeout;
+  }
+
+  /**
+   * Returns the maximum session timeout.
+   *
+   * @return The maximum session timeout.
+   */
+  public long maxTimeout() {
+    return maxTimeout;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), name, typeName, timeout);
+    return Objects.hash(getClass(), name, typeName, minTimeout, maxTimeout);
   }
 
   @Override
@@ -111,7 +122,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
           && request.name.equals(name)
           && request.typeName.equals(typeName)
           && request.readConsistency == readConsistency
-          && request.timeout == timeout;
+          && request.minTimeout == minTimeout
+          && request.maxTimeout == maxTimeout;
     }
     return false;
   }
@@ -123,7 +135,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
         .add("serviceName", name)
         .add("serviceType", typeName)
         .add("readConsistency", readConsistency)
-        .add("timeout", timeout)
+        .add("minTimeout", minTimeout)
+        .add("maxTimeout", maxTimeout)
         .toString();
   }
 
@@ -135,7 +148,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     private String serviceName;
     private String serviceType;
     private ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
-    private long timeout;
+    private long minTimeout;
+    private long maxTimeout;
 
     /**
      * Sets the client node identifier.
@@ -186,15 +200,28 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     }
 
     /**
-     * Sets the session timeout.
+     * Sets the minimum session timeout.
      *
-     * @param timeout The session timeout.
+     * @param timeout The minimum session timeout.
      * @return The open session request builder.
      * @throws IllegalArgumentException if {@code timeout} is not positive
      */
-    public Builder withTimeout(long timeout) {
+    public Builder withMinTimeout(long timeout) {
       checkArgument(timeout >= 0, "timeout must be positive");
-      this.timeout = timeout;
+      this.minTimeout = timeout;
+      return this;
+    }
+
+    /**
+     * Sets the maximum session timeout.
+     *
+     * @param timeout The maximum session timeout.
+     * @return The open session request builder.
+     * @throws IllegalArgumentException if {@code timeout} is not positive
+     */
+    public Builder withMaxTimeout(long timeout) {
+      checkArgument(timeout >= 0, "timeout must be positive");
+      this.maxTimeout = timeout;
       return this;
     }
 
@@ -204,7 +231,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
       checkNotNull(memberId, "client cannot be null");
       checkNotNull(serviceName, "name cannot be null");
       checkNotNull(serviceType, "typeName cannot be null");
-      checkArgument(timeout >= 0, "timeout must be positive");
+      checkArgument(minTimeout >= 0, "minTimeout must be positive");
+      checkArgument(maxTimeout >= 0, "maxTimeout must be positive");
     }
 
     /**
@@ -213,7 +241,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     public OpenSessionRequest build() {
       validate();
-      return new OpenSessionRequest(memberId, serviceName, serviceType, readConsistency, timeout);
+      return new OpenSessionRequest(memberId, serviceName, serviceType, readConsistency, minTimeout, maxTimeout);
     }
   }
 }

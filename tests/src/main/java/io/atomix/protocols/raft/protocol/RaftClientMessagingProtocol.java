@@ -66,6 +66,16 @@ public class RaftClientMessagingProtocol extends RaftMessagingProtocol implement
   }
 
   @Override
+  public void registerHeartbeatHandler(Function<HeartbeatRequest, CompletableFuture<HeartbeatResponse>> handler) {
+    registerHandler("heartbeat", handler);
+  }
+
+  @Override
+  public void unregisterHeartbeatHandler() {
+    unregisterHandler("heartbeat");
+  }
+
+  @Override
   public void reset(Collection<MemberId> members, ResetRequest request) {
     for (MemberId memberId : members) {
       sendAsync(memberId, String.format("reset-%d", request.session()), request);

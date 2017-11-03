@@ -22,6 +22,8 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
+import io.atomix.protocols.raft.protocol.HeartbeatRequest;
+import io.atomix.protocols.raft.protocol.HeartbeatResponse;
 import io.atomix.protocols.raft.protocol.KeepAliveRequest;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -68,7 +70,7 @@ public class RaftProxyManager {
   private final ThreadContext threadContext;
   private final MemberSelectorManager selectorManager;
   private final Map<Long, RaftProxyState> sessions = new ConcurrentHashMap<>();
-  private final Map<Long, Scheduled> keepAliveFutures = new ConcurrentHashMap<>();
+  private final Map<Long, Scheduled> keepAliveTimers = new ConcurrentHashMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
 
   public RaftProxyManager(String clientId, MemberId memberId, RaftClientProtocol protocol, MemberSelectorManager selectorManager, ThreadContextFactory threadContextFactory) {
@@ -83,11 +85,12 @@ public class RaftProxyManager {
 
     this.connection = new RaftProxyConnection(
         protocol,
-        selectorManager.createSelector(CommunicationStrategy.ANY),
+        selectorManager.createSelector(CommunicationStrategy.LEADER),
         threadContextFactory.createContext(),
         LoggerContext.builder(RaftClient.class)
             .addValue(clientId)
             .build());
+    protocol.registerHeartbeatHandler(this::handleHeartbeat);
     this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
   }
 
@@ -124,7 +127,8 @@ public class RaftProxyManager {
    * @param serviceName           The session name.
    * @param serviceType           The session type.
    * @param communicationStrategy The strategy with which to communicate with servers.
-   * @param timeout               The session timeout.
+   * @param minTimeout            The minimum session timeout.
+   * @param maxTimeout            The maximum session timeout.
    * @return A completable future to be completed once the session has been opened.
    */
   public CompletableFuture<RaftProxyClient> openSession(
@@ -132,11 +136,12 @@ public class RaftProxyManager {
       ServiceType serviceType,
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
-      Duration timeout) {
+      Duration minTimeout,
+      Duration maxTimeout) {
     checkNotNull(serviceName, "serviceName cannot be null");
     checkNotNull(serviceType, "serviceType cannot be null");
     checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
-    checkNotNull(timeout, "timeout cannot be null");
+    checkNotNull(maxTimeout, "timeout cannot be null");
 
     log.debug("Opening session; name: {}, type: {}", serviceName, serviceType);
     OpenSessionRequest request = OpenSessionRequest.newBuilder()
@@ -144,7 +149,8 @@ public class RaftProxyManager {
         .withServiceName(serviceName)
         .withServiceType(serviceType)
         .withReadConsistency(readConsistency)
-        .withTimeout(timeout.toMillis())
+        .withMinTimeout(minTimeout.toMillis())
+        .withMaxTimeout(maxTimeout.toMillis())
         .build();
 
     CompletableFuture<RaftProxyClient> future = new CompletableFuture<>();
@@ -286,7 +292,7 @@ public class RaftProxyManager {
       i++;
     }
 
-    log.debug("Keeping {} sessions alive", sessionIds.length);
+    log.trace("Keeping {} sessions alive", sessionIds.length);
 
     KeepAliveRequest request = KeepAliveRequest.newBuilder()
         .withSessionIds(sessionIds)
@@ -347,17 +353,30 @@ public class RaftProxyManager {
    * Schedules a keep-alive request.
    */
   private synchronized void scheduleKeepAlive(long lastKeepAliveTime, long timeout, long delta) {
-    Scheduled keepAliveFuture = keepAliveFutures.remove(timeout);
+    Scheduled keepAliveFuture = keepAliveTimers.remove(timeout);
     if (keepAliveFuture != null) {
       keepAliveFuture.cancel();
     }
 
     // Schedule the keep alive for 3/4 the timeout minus the delta from the last keep-alive request.
-    keepAliveFutures.put(timeout, threadContext.schedule(Duration.ofMillis(Math.max(Math.max((long)(timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0)), () -> {
+    keepAliveTimers.put(timeout, threadContext.schedule(Duration.ofMillis(Math.max(Math.max((long)(timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0)), () -> {
       if (open.get()) {
         keepAliveSessions(lastKeepAliveTime, timeout);
       }
     }));
+  }
+
+  /**
+   * Handles a heartbeat request.
+   */
+  private CompletableFuture<HeartbeatResponse> handleHeartbeat(HeartbeatRequest request) {
+    log.trace("Received {}", request);
+    selectorManager.resetAll(request.leader(), request.members());
+    HeartbeatResponse response = HeartbeatResponse.newBuilder()
+        .withStatus(RaftResponse.Status.OK)
+        .build();
+    log.trace("Sending {}", response);
+    return CompletableFuture.completedFuture(response);
   }
 
   /**
@@ -369,8 +388,11 @@ public class RaftProxyManager {
     if (open.compareAndSet(true, false)) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       threadContext.execute(() -> {
-        for (Scheduled keepAliveFuture : keepAliveFutures.values()) {
-          keepAliveFuture.cancel();
+        synchronized (this) {
+          for (Scheduled keepAliveFuture : keepAliveTimers.values()) {
+            keepAliveFuture.cancel();
+          }
+          protocol.unregisterHeartbeatHandler();
         }
         future.complete(null);
       });

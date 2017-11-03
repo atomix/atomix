@@ -107,7 +107,7 @@ public class DefaultRaftClient implements RaftClient {
 
   @Override
   public RaftProxy.Builder newProxyBuilder() {
-    return new SessionBuilder();
+    return new ProxyBuilder();
   }
 
   @Override
@@ -125,14 +125,14 @@ public class DefaultRaftClient implements RaftClient {
   /**
    * Default Raft session builder.
    */
-  private class SessionBuilder extends RaftProxy.Builder {
+  private class ProxyBuilder extends RaftProxy.Builder {
     @Override
     public RaftProxy build() {
-      // Create a client builder that uses the session manager to open a session.
+      // Create a proxy builder that uses the session manager to open a session.
       RaftProxyClient.Builder clientBuilder = new RaftProxyClient.Builder() {
         @Override
         public CompletableFuture<RaftProxyClient> buildAsync() {
-          return sessionManager.openSession(name, serviceType, readConsistency, communicationStrategy, timeout);
+          return sessionManager.openSession(name, serviceType, readConsistency, communicationStrategy, minTimeout, maxTimeout);
         }
       };
 
@@ -144,7 +144,8 @@ public class DefaultRaftClient implements RaftClient {
           .withRetryDelay(retryDelay)
           .withCommunicationStrategy(communicationStrategy)
           .withRecoveryStrategy(recoveryStrategy)
-          .withTimeout(timeout);
+          .withMinTimeout(minTimeout)
+          .withMaxTimeout(maxTimeout);
 
       RaftProxyClient client;
 

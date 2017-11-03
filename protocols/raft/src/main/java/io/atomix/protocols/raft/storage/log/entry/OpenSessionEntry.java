@@ -28,15 +28,17 @@ public class OpenSessionEntry extends TimestampedEntry {
   private final String serviceName;
   private final String serviceType;
   private final ReadConsistency readConsistency;
-  private final long timeout;
+  private final long minTimeout;
+  private final long maxTimeout;
 
-  public OpenSessionEntry(long term, long timestamp, String memberId, String serviceName, String serviceType, ReadConsistency readConsistency, long timeout) {
+  public OpenSessionEntry(long term, long timestamp, String memberId, String serviceName, String serviceType, ReadConsistency readConsistency, long minTimeout, long maxTimeout) {
     super(term, timestamp);
     this.memberId = memberId;
     this.serviceName = serviceName;
     this.serviceType = serviceType;
     this.readConsistency = readConsistency;
-    this.timeout = timeout;
+    this.minTimeout = minTimeout;
+    this.maxTimeout = maxTimeout;
   }
 
   /**
@@ -76,12 +78,21 @@ public class OpenSessionEntry extends TimestampedEntry {
   }
 
   /**
-   * Returns the session timeout.
+   * Returns the minimum session timeout.
    *
-   * @return The session timeout.
+   * @return The minimum session timeout.
    */
-  public long timeout() {
-    return timeout;
+  public long minTimeout() {
+    return minTimeout;
+  }
+
+  /**
+   * Returns the maximum session timeout.
+   *
+   * @return The maximum session timeout.
+   */
+  public long maxTimeout() {
+    return maxTimeout;
   }
 
   @Override
@@ -93,7 +104,8 @@ public class OpenSessionEntry extends TimestampedEntry {
         .add("serviceName", serviceName)
         .add("serviceType", serviceType)
         .add("readConsistency", readConsistency)
-        .add("timeout", timeout)
+        .add("minTimeout", minTimeout)
+        .add("maxTimeout", maxTimeout)
         .toString();
   }
 }

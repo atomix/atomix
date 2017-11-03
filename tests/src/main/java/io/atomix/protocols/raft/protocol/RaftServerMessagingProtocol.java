@@ -115,6 +115,11 @@ public class RaftServerMessagingProtocol extends RaftMessagingProtocol implement
   }
 
   @Override
+  public CompletableFuture<HeartbeatResponse> heartbeat(MemberId memberId, HeartbeatRequest request) {
+    return sendAndReceive(memberId, "heartbeat", request);
+  }
+
+  @Override
   public void registerOpenSessionHandler(Function<OpenSessionRequest, CompletableFuture<OpenSessionResponse>> handler) {
     registerHandler("open-session", handler);
   }

@@ -17,11 +17,11 @@ package io.atomix.protocols.phi;
 
 import com.google.common.collect.Maps;
 import io.atomix.event.AbstractListenerManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.atomix.protocols.phi.protocol.FailureDetectionProtocol;
 import io.atomix.protocols.phi.protocol.HeartbeatMessage;
 import io.atomix.utils.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -61,7 +61,9 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
   private final Supplier<Collection<T>> peerProvider;
   private final ScheduledFuture<?> heartbeatFuture;
   private final int phiFailureThreshold;
-  private final PhiAccrualFailureDetector<T> failureDetector;
+  private final int minSamples;
+  private final double phiFactor;
+  private final Map<T, PhiAccrualFailureDetector> nodes = Maps.newConcurrentMap();
 
   private final Map<T, FailureDetectionEvent.State> nodeStates = Maps.newConcurrentMap();
 
@@ -73,14 +75,14 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
       Duration heartbeatInterval,
       int phiFailureThreshold,
       int minSamples,
-      double phiFactor,
-      double bootstrapPhiValue) {
+      double phiFactor) {
     checkArgument(phiFailureThreshold > 0, "phiFailureThreshold must be positive");
     this.localNode = checkNotNull(localNode, "localNode cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.peerProvider = checkNotNull(peerProvider, "peerProvider cannot be null");
     this.phiFailureThreshold = phiFailureThreshold;
-    this.failureDetector = new PhiAccrualFailureDetector<>(minSamples, phiFactor, bootstrapPhiValue);
+    this.minSamples = minSamples;
+    this.phiFactor = phiFactor;
     this.heartbeatFuture = heartbeatExecutor.scheduleAtFixedRate(
         this::heartbeat, heartbeatInterval.toMillis(), heartbeatInterval.toMillis(), TimeUnit.MILLISECONDS);
     protocol.registerHeartbeatListener(new HeartbeatMessageHandler());
@@ -105,7 +107,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
       peers.forEach((node) -> {
         heartbeatToPeer(heartbeat, node);
         FailureDetectionEvent.State currentState = nodeStates.get(node.id());
-        double phi = failureDetector.phi(node);
+        double phi = nodes.computeIfAbsent(node, n -> new PhiAccrualFailureDetector(minSamples, phiFactor)).phi();
         if (phi >= phiFailureThreshold) {
           if (currentState == FailureDetectionEvent.State.ACTIVE) {
             updateState(node, FailureDetectionEvent.State.INACTIVE);
@@ -132,7 +134,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
   private class HeartbeatMessageHandler implements Consumer<HeartbeatMessage<T>> {
     @Override
     public void accept(HeartbeatMessage<T> heartbeat) {
-      failureDetector.report(heartbeat.source());
+      nodes.computeIfAbsent(heartbeat.source(), n -> new PhiAccrualFailureDetector(minSamples, phiFactor)).report();
       updateState(heartbeat.source(), heartbeat.state());
     }
   }
@@ -153,7 +155,6 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
     private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
     private static final int DEFAULT_MIN_SAMPLES = 25;
     private static final double DEFAULT_PHI_FACTOR = 1.0 / Math.log(10.0);
-    private static final double DEFAULT_BOOTSTRAP_PHI_VALUE = 100.0;
 
     private FailureDetectionProtocol<T> protocol;
     private T localNode;
@@ -163,7 +164,6 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
     private int phiFailureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
     private int minSamples = DEFAULT_MIN_SAMPLES;
     private double phiFactor = DEFAULT_PHI_FACTOR;
-    private double bootstrapPhiValue = DEFAULT_BOOTSTRAP_PHI_VALUE;
 
     /**
      * Sets the failure detection protocol.
@@ -264,19 +264,6 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
       return this;
     }
 
-    /**
-     * Sets the bootstrap phi value.
-     *
-     * @param bootstrapPhiValue the bootstrap phi value
-     * @return the failure detection service builder
-     * @throws IllegalArgumentException if the bootstrap phi value is not positive
-     */
-    public Builder<T> withBootstrapPhiValue(double bootstrapPhiValue) {
-      checkArgument(bootstrapPhiValue > 0, "bootstrapPhiValue must be positive");
-      this.bootstrapPhiValue = bootstrapPhiValue;
-      return this;
-    }
-
     @Override
     public FailureDetectionService<T> build() {
       return new PhiAccrualFailureDetectionService<>(
@@ -287,8 +274,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
           heartbeatInterval,
           phiFailureThreshold,
           minSamples,
-          phiFactor,
-          bootstrapPhiValue);
+          phiFactor);
     }
   }
 }

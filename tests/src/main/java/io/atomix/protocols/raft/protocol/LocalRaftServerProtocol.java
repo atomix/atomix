@@ -152,6 +152,11 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     getClient(memberId).thenAccept(protocol -> protocol.publish(request.session(), encode(request)));
   }
 
+  @Override
+  public CompletableFuture<HeartbeatResponse> heartbeat(MemberId memberId, HeartbeatRequest request) {
+    return getClient(memberId).thenCompose(protocol -> protocol.heartbeat(encode(request))).thenApply(this::decode);
+  }
+
   CompletableFuture<byte[]> openSession(byte[] request) {
     if (openSessionHandler != null) {
       return openSessionHandler.apply(decode(request)).thenApply(this::encode);
