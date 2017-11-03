@@ -316,6 +316,7 @@ public class PassiveRole extends InactiveRole {
       Indexed<RaftLogEntry> indexed = writer.append(entry);
       log.trace("Appended {}", indexed);
     } catch (StorageException.OutOfDiskSpace e) {
+      log.trace("Append failed: {}", e);
       raft.getLogCompactor().compact();
       failAppend(index - 1, future);
       return false;
