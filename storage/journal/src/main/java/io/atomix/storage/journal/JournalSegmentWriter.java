@@ -205,14 +205,14 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
       return;
     }
 
+    // Reset the last entry.
+    lastEntry = null;
+
     // If the index is less than the segment index, clear the segment buffer.
     if (index < descriptor.index()) {
       buffer.zero().clear();
       return;
     }
-
-    // Reset the last entry.
-    lastEntry = null;
 
     // Reset the writer to the given index.
     reset(index);

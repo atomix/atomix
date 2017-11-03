@@ -50,6 +50,7 @@ import java.util.HashSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -212,6 +213,33 @@ public abstract class AbstractLogTest {
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
+  }
+
+  @Test
+  public void testResetTruncateZero() throws Exception {
+    RaftLog log = createLog();
+    RaftLogWriter writer = log.writer();
+    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
+
+    assertEquals(0, writer.getLastIndex());
+    writer.reset(1);
+    assertEquals(0, writer.getLastIndex());
+    writer.append(new InitializeEntry(1, System.currentTimeMillis()));
+    assertEquals(1, writer.getLastIndex());
+    assertEquals(1, writer.getLastEntry().index());
+
+    assertTrue(reader.hasNext());
+    assertEquals(1, reader.next().index());
+
+    writer.truncate(0);
+    assertEquals(0, writer.getLastIndex());
+    assertNull(writer.getLastEntry());
+    writer.append(new InitializeEntry(1, System.currentTimeMillis()));
+    assertEquals(1, writer.getLastIndex());
+    assertEquals(1, writer.getLastEntry().index());
+
+    assertTrue(reader.hasNext());
+    assertEquals(1, reader.next().index());
   }
 
   @Test
