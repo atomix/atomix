@@ -281,7 +281,12 @@ public final class LeaderRole extends ActiveRole {
           }
 
           log.trace("Appended {}", entry);
-          appender.appendEntries(entry.index());
+          appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+            raft.checkThread();
+            if (isOpen() && commitError == null) {
+              raft.getStateMachine().<Long>apply(entry.index());
+            }
+          });
         }, raft.getThreadContext());
   }
 
