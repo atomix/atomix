@@ -21,7 +21,6 @@ import io.atomix.leadership.LeadershipService;
 import io.atomix.lock.LockService;
 import io.atomix.partition.PartitionService;
 import io.atomix.primitives.PrimitiveService;
-import io.atomix.transaction.TransactionService;
 
 /**
  * Atomix!
@@ -62,13 +61,6 @@ public interface Atomix {
    * @return the primitive service
    */
   PrimitiveService getPrimitiveService();
-
-  /**
-   * Returns the transaction service.
-   *
-   * @return the transaction service
-   */
-  TransactionService getTransactionService();
 
   /**
    * Returns the logical clock service.
