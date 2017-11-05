@@ -68,7 +68,7 @@ public interface Node {
    *
    * @return instance identifier
    */
-  NodeId nodeId();
+  NodeId id();
 
   /**
    * Returns the IP address of the controller instance.

@@ -30,7 +30,7 @@ public interface ClusterService extends ListenerService<ClusterEvent, ClusterEve
    *
    * @return local controller node
    */
-  Node localNode();
+  Node getLocalNode();
 
   /**
    * Returns the set of current cluster members.
