@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -34,11 +35,34 @@ public class TestClusterCommunicationService implements ClusterCommunicationServ
   private final NodeId localNodeId;
   private final Map<NodeId, TestClusterCommunicationService> nodes;
   private final Map<MessageSubject, Function<byte[], CompletableFuture<byte[]>>> subscribers = Maps.newConcurrentMap();
+  private final AtomicBoolean open = new AtomicBoolean();
 
   public TestClusterCommunicationService(NodeId localNodeId, Map<NodeId, TestClusterCommunicationService> nodes) {
     this.localNodeId = localNodeId;
     this.nodes = nodes;
     nodes.put(localNodeId, this);
+  }
+
+  @Override
+  public CompletableFuture<ClusterCommunicationService> open() {
+    open.set(true);
+    return CompletableFuture.completedFuture(this);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return open.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    open.set(false);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open.get();
   }
 
   @Override
@@ -56,15 +80,6 @@ public class TestClusterCommunicationService implements ClusterCommunicationServ
   }
 
   @Override
-  public <M> CompletableFuture<Void> unicast(M message, MessageSubject subject, Function<M, byte[]> encoder) {
-    nodes.values().stream()
-        .filter(n -> n.isSubscriber(subject))
-        .findAny()
-        .ifPresent(n -> n.handle(subject, encoder.apply(message)));
-    return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
   public <M> CompletableFuture<Void> unicast(M message, MessageSubject subject, Function<M, byte[]> encoder, NodeId toNodeId) {
     TestClusterCommunicationService node = nodes.get(toNodeId);
     if (node != null) {
@@ -74,29 +89,10 @@ public class TestClusterCommunicationService implements ClusterCommunicationServ
   }
 
   @Override
-  public <M> void multicast(M message, MessageSubject subject, Function<M, byte[]> encoder) {
-    nodes.values().stream()
-        .filter(n -> n.isSubscriber(subject))
-        .forEach(n -> n.handle(subject, encoder.apply(message)));
-  }
-
-  @Override
   public <M> void multicast(M message, MessageSubject subject, Function<M, byte[]> encoder, Set<NodeId> nodeIds) {
     nodes.values().stream()
         .filter(n -> nodeIds.contains(n))
         .forEach(n -> n.handle(subject, encoder.apply(message)));
-  }
-
-  @Override
-  public <M, R> CompletableFuture<R> sendAndReceive(M message, MessageSubject subject, Function<M, byte[]> encoder, Function<byte[], R> decoder) {
-    TestClusterCommunicationService node = nodes.values().stream()
-        .filter(n -> n.isSubscriber(subject))
-        .findAny()
-        .orElse(null);
-    if (node == null) {
-      return Futures.exceptionalFuture(new MessagingException.NoRemoteHandler());
-    }
-    return node.handle(subject, encoder.apply(message)).thenApply(decoder);
   }
 
   @Override
