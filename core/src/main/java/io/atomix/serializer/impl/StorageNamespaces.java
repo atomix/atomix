@@ -22,6 +22,8 @@ import io.atomix.primitives.map.impl.RaftConsistentMapOperations;
 import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations;
 import io.atomix.primitives.multimap.impl.RaftConsistentSetMultimapEvents;
 import io.atomix.primitives.multimap.impl.RaftConsistentSetMultimapOperations;
+import io.atomix.primitives.tree.impl.RaftDocumentTreeEvents;
+import io.atomix.primitives.tree.impl.RaftDocumentTreeOperations;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -164,8 +166,8 @@ public final class StorageNamespaces {
       .register(RaftConsistentSetMultimapEvents.class)
       .register(RaftConsistentTreeMapOperations.class)
       .register(RaftCounterOperations.class)
-      //.register(RaftDocumentTreeEvents.class)
-      //.register(RaftDocumentTreeOperations.class)
+      .register(RaftDocumentTreeEvents.class)
+      .register(RaftDocumentTreeOperations.class)
       //.register(RaftLeaderElectorEvents.class)
       //.register(RaftLeaderElectorOperations.class)
       //.register(RaftWorkQueueEvents.class)
@@ -200,7 +202,7 @@ public final class StorageNamespaces {
       .register(RaftConsistentSetMultimapOperations.class)
       .register(RaftConsistentTreeMapOperations.class)
       .register(RaftCounterOperations.class)
-      //.register(RaftDocumentTreeOperations.class)
+      .register(RaftDocumentTreeOperations.class)
       //.register(RaftLeaderElectorOperations.class)
       //.register(RaftWorkQueueOperations.class)
       .build("RaftStorage");
