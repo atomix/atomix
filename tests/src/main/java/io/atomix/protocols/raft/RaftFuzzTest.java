@@ -17,6 +17,7 @@ package io.atomix.protocols.raft;
 
 import com.google.common.collect.Maps;
 import io.atomix.messaging.Endpoint;
+import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingManager;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -232,7 +233,7 @@ public class RaftFuzzTest implements Runnable {
   private Map<Integer, Scheduled> shutdownTimers = new ConcurrentHashMap<>();
   private Map<Integer, Scheduled> restartTimers = new ConcurrentHashMap<>();
   private LocalRaftProtocolFactory protocolFactory;
-  private List<NettyMessagingManager> messagingManagers = new ArrayList<>();
+  private List<MessagingService> messagingServices = new ArrayList<>();
   private Map<MemberId, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private static final String[] KEYS = new String[1024];
   private final Random random = new Random();
@@ -554,8 +555,8 @@ public class RaftFuzzTest implements Runnable {
     if (USE_NETTY) {
       try {
         Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-        NettyMessagingManager messagingManager = new NettyMessagingManager(endpoint);
-        messagingManagers.add(messagingManager);
+        MessagingService messagingManager = NettyMessagingManager.newBuilder().withEndpoint(endpoint).build().open().join();
+        messagingServices.add(messagingManager);
         endpointMap.put(member.memberId(), endpoint);
         protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
       } catch (UnknownHostException e) {
@@ -589,7 +590,7 @@ public class RaftFuzzTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      NettyMessagingManager messagingManager = new NettyMessagingManager(endpoint);
+      MessagingService messagingManager = NettyMessagingManager.newBuilder().withEndpoint(endpoint).build().open().join();
       endpointMap.put(memberId, endpoint);
       protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
     } else {
