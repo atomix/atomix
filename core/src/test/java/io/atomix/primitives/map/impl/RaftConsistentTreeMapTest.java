@@ -40,9 +40,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Unit tests for {@link AtomixConsistentTreeMap}.
+ * Unit tests for {@link RaftConsistentTreeMap}.
  */
-public class AtomixConsistentTreeMapTest extends AbstractRaftPrimitiveTest<AtomixConsistentTreeMap> {
+public class RaftConsistentTreeMapTest extends AbstractRaftPrimitiveTest<RaftConsistentTreeMap> {
   private final String keyFour = "hello";
   private final String keyThree = "goodbye";
   private final String keyTwo = "foo";
@@ -61,12 +61,12 @@ public class AtomixConsistentTreeMapTest extends AbstractRaftPrimitiveTest<Atomi
 
   @Override
   protected RaftService createService() {
-    return new AtomixConsistentTreeMapService();
+    return new RaftConsistentTreeMapService();
   }
 
   @Override
-  protected AtomixConsistentTreeMap createPrimitive(RaftProxy proxy) {
-    return new AtomixConsistentTreeMap(proxy);
+  protected RaftConsistentTreeMap createPrimitive(RaftProxy proxy) {
+    return new RaftConsistentTreeMap(proxy);
   }
 
   /**
@@ -80,7 +80,7 @@ public class AtomixConsistentTreeMapTest extends AbstractRaftPrimitiveTest<Atomi
     //make sure that the previous section has been cleaned up, they serve
     //the secondary purpose of testing isEmpty but that is not their
     //primary purpose.
-    AtomixConsistentTreeMap map = createResource("basicTestMap");
+    RaftConsistentTreeMap map = createResource("basicTestMap");
     //test size
     map.size().thenAccept(result -> assertEquals(0, (int) result)).join();
     map.isEmpty().thenAccept(result -> assertTrue(result)).join();
@@ -265,7 +265,7 @@ public class AtomixConsistentTreeMapTest extends AbstractRaftPrimitiveTest<Atomi
     final byte[] value2 = "value2".getBytes();
     final byte[] value3 = "value3".getBytes();
 
-    AtomixConsistentTreeMap map = createResource("treeMapListenerTestMap");
+    RaftConsistentTreeMap map = createResource("treeMapListenerTestMap");
     TestMapEventListener listener = new TestMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event
@@ -327,13 +327,13 @@ public class AtomixConsistentTreeMapTest extends AbstractRaftPrimitiveTest<Atomi
   }
 
   /**
-   * Tests functionality specified in the {@link AtomixConsistentTreeMap}
+   * Tests functionality specified in the {@link RaftConsistentTreeMap}
    * interface, beyond the functionality provided in
    * {@link org.onosproject.store.service.AsyncConsistentMap}.
    */
   @Test
   public void treeMapFunctionsTest() {
-    AtomixConsistentTreeMap map = createResource("treeMapFunctionTestMap");
+    RaftConsistentTreeMap map = createResource("treeMapFunctionTestMap");
     //Tests on empty map
     map.firstKey().thenAccept(result -> assertNull(result)).join();
     map.lastKey().thenAccept(result -> assertNull(result)).join();
@@ -481,9 +481,9 @@ public class AtomixConsistentTreeMapTest extends AbstractRaftPrimitiveTest<Atomi
     //map.delete().join();
   }
 
-  private AtomixConsistentTreeMap createResource(String mapName) {
+  private RaftConsistentTreeMap createResource(String mapName) {
     try {
-      AtomixConsistentTreeMap map = newPrimitive(mapName);
+      RaftConsistentTreeMap map = newPrimitive(mapName);
       return map;
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());

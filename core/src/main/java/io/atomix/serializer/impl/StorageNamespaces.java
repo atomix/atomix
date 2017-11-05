@@ -15,9 +15,11 @@
  */
 package io.atomix.serializer.impl;
 
+import io.atomix.primitives.counter.impl.RaftCounterOperations;
 import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations;
 import io.atomix.primitives.map.impl.RaftConsistentMapEvents;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations;
 import io.atomix.primitives.multimap.impl.RaftConsistentSetMultimapEvents;
 import io.atomix.primitives.multimap.impl.RaftConsistentSetMultimapOperations;
 import io.atomix.protocols.raft.RaftError;
@@ -160,8 +162,8 @@ public final class StorageNamespaces {
       .register(RaftConsistentMapOperations.class)
       .register(RaftConsistentSetMultimapOperations.class)
       .register(RaftConsistentSetMultimapEvents.class)
-      //.register(RaftConsistentTreeMapOperations.class)
-      //.register(RaftCounterOperations.class)
+      .register(RaftConsistentTreeMapOperations.class)
+      .register(RaftCounterOperations.class)
       //.register(RaftDocumentTreeEvents.class)
       //.register(RaftDocumentTreeOperations.class)
       //.register(RaftLeaderElectorEvents.class)
@@ -196,8 +198,8 @@ public final class StorageNamespaces {
       .register(RaftAtomicCounterMapOperations.class)
       .register(RaftConsistentMapOperations.class)
       .register(RaftConsistentSetMultimapOperations.class)
-      //.register(RaftConsistentTreeMapOperations.class)
-      //.register(RaftCounterOperations.class)
+      .register(RaftConsistentTreeMapOperations.class)
+      .register(RaftCounterOperations.class)
       //.register(RaftDocumentTreeOperations.class)
       //.register(RaftLeaderElectorOperations.class)
       //.register(RaftWorkQueueOperations.class)

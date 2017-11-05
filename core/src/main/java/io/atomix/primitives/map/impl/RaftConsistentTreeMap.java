@@ -17,14 +17,14 @@
 package io.atomix.primitives.map.impl;
 
 import io.atomix.primitives.map.AsyncConsistentTreeMap;
-import io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.CeilingEntry;
-import io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.CeilingKey;
-import io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.FloorEntry;
-import io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.FloorKey;
-import io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.HigherEntry;
-import io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.HigherKey;
-import io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.LowerEntry;
-import io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.LowerKey;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.CeilingEntry;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.CeilingKey;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.FloorEntry;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.FloorKey;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.HigherEntry;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.HigherKey;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.LowerEntry;
+import io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.LowerKey;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
@@ -40,29 +40,29 @@ import java.util.NavigableSet;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.CEILING_ENTRY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.CEILING_KEY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.FIRST_ENTRY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.FIRST_KEY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.FLOOR_ENTRY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.FLOOR_KEY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.HIGHER_ENTRY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.HIGHER_KEY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.LAST_ENTRY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.LAST_KEY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.LOWER_ENTRY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.LOWER_KEY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.POLL_FIRST_ENTRY;
-import static io.atomix.primitives.map.impl.AtomixConsistentTreeMapOperations.POLL_LAST_ENTRY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.CEILING_ENTRY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.CEILING_KEY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.FIRST_ENTRY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.FIRST_KEY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.FLOOR_ENTRY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.FLOOR_KEY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.HIGHER_ENTRY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.HIGHER_KEY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.LAST_ENTRY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.LAST_KEY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.LOWER_ENTRY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.LOWER_KEY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.POLL_FIRST_ENTRY;
+import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.POLL_LAST_ENTRY;
 
 /**
  * Implementation of {@link io.atomix.primitives.map.AsyncConsistentTreeMap}.
  */
-public class AtomixConsistentTreeMap extends RaftConsistentMap implements AsyncConsistentTreeMap<byte[]> {
+public class RaftConsistentTreeMap extends RaftConsistentMap implements AsyncConsistentTreeMap<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
       .register(RaftConsistentMapOperations.NAMESPACE)
-      .register(AtomixConsistentTreeMapOperations.NAMESPACE)
+      .register(RaftConsistentTreeMapOperations.NAMESPACE)
       .register(RaftConsistentMapEvents.NAMESPACE)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 150)
       .register(RaftConsistentMapService.TransactionScope.class)
@@ -74,7 +74,7 @@ public class AtomixConsistentTreeMap extends RaftConsistentMap implements AsyncC
       .register(TreeMap.class)
       .build());
 
-  public AtomixConsistentTreeMap(RaftProxy proxy) {
+  public RaftConsistentTreeMap(RaftProxy proxy) {
     super(proxy);
   }
 

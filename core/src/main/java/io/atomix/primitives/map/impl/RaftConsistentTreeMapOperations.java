@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * {@link io.atomix.primitives.map.AsyncConsistentTreeMap} Resource
  * state machine operations.
  */
-public enum AtomixConsistentTreeMapOperations implements OperationId {
+public enum RaftConsistentTreeMapOperations implements OperationId {
   SUB_MAP("subMap", OperationType.QUERY),
   FIRST_KEY("firstKey", OperationType.QUERY),
   LAST_KEY("lastKey", OperationType.QUERY),
@@ -53,7 +53,7 @@ public enum AtomixConsistentTreeMapOperations implements OperationId {
   private final String id;
   private final OperationType type;
 
-  AtomixConsistentTreeMapOperations(String id, OperationType type) {
+  RaftConsistentTreeMapOperations(String id, OperationType type) {
     this.id = id;
     this.type = type;
   }
