@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,75 +15,45 @@
  */
 package io.atomix.messaging.netty;
 
-import io.atomix.messaging.Endpoint;
-import io.atomix.utils.ArraySizeHashPrinter;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
-
 /**
- * Internal message representation with additional attributes
- * for supporting, synchronous request/reply behavior.
+ * Base class for internal messages.
  */
-public final class InternalMessage {
+public abstract class InternalMessage {
 
   /**
-   * Message status.
+   * Internal message type.
    */
-  public enum Status {
-
-    // NOTE: For backwards compatibility enum constant IDs should not be changed.
-
-    /**
-     * All ok.
-     */
-    OK(0),
-
-    /**
-     * Response status signifying no registered handler.
-     */
-    ERROR_NO_HANDLER(1),
-
-    /**
-     * Response status signifying an exception handling the message.
-     */
-    ERROR_HANDLER_EXCEPTION(2),
-
-    /**
-     * Response status signifying invalid message structure.
-     */
-    PROTOCOL_EXCEPTION(3);
+  public enum Type {
+    REQUEST(1),
+    REPLY(2);
 
     private final int id;
 
-    Status(int id) {
+    Type(int id) {
       this.id = id;
     }
 
     /**
-     * Returns the unique status ID.
+     * Returns the unique message type ID.
      *
-     * @return the unique status ID.
+     * @return the unique message type ID.
      */
     public int id() {
       return id;
     }
 
     /**
-     * Returns the status enum associated with the given ID.
+     * Returns the message type enum associated with the given ID.
      *
-     * @param id the status ID.
-     * @return the status enum for the given ID.
+     * @param id the type ID.
+     * @return the type enum for the given ID.
      */
-    public static Status forId(int id) {
+    public static Type forId(int id) {
       switch (id) {
-        case 0:
-          return OK;
         case 1:
-          return ERROR_NO_HANDLER;
+          return REQUEST;
         case 2:
-          return ERROR_HANDLER_EXCEPTION;
-        case 3:
-          return PROTOCOL_EXCEPTION;
+          return REPLY;
         default:
           throw new IllegalArgumentException("Unknown status ID " + id);
       }
@@ -92,47 +62,24 @@ public final class InternalMessage {
 
   private final int preamble;
   private final long id;
-  private final Endpoint sender;
-  private final String type;
   private final byte[] payload;
-  private final Status status;
 
-  public InternalMessage(int preamble,
-                         long id,
-                         Endpoint sender,
-                         String type,
-                         byte[] payload) {
-    this(preamble, id, sender, type, payload, null);
-  }
-
-  public InternalMessage(int preamble,
-                         long id,
-                         Endpoint sender,
-                         byte[] payload,
-                         Status status) {
-    this(preamble, id, sender, "", payload, status);
-  }
-
-  InternalMessage(int preamble,
-                  long id,
-                  Endpoint sender,
-                  String type,
-                  byte[] payload,
-                  Status status) {
+  protected InternalMessage(int preamble,
+                            long id,
+                            byte[] payload) {
     this.preamble = preamble;
     this.id = id;
-    this.sender = sender;
-    this.type = type;
     this.payload = payload;
-    this.status = status;
   }
 
+  public abstract Type type();
+
   public boolean isRequest() {
-    return status == null;
+    return type() == Type.REQUEST;
   }
 
   public boolean isReply() {
-    return status != null;
+    return type() == Type.REPLY;
   }
 
   public int preamble() {
@@ -143,30 +90,7 @@ public final class InternalMessage {
     return id;
   }
 
-  public String type() {
-    return type;
-  }
-
-  public Endpoint sender() {
-    return sender;
-  }
-
   public byte[] payload() {
     return payload;
-  }
-
-  public Status status() {
-    return status;
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("id", id)
-        .add("type", type)
-        .add("sender", sender)
-        .add("status", status)
-        .add("payload", ArraySizeHashPrinter.of(payload))
-        .toString();
   }
 }

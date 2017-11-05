@@ -15,7 +15,6 @@
  */
 package io.atomix.messaging.netty;
 
-import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
@@ -53,15 +52,22 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.security.Key;
 import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -85,15 +91,61 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * Netty based MessagingService.
  */
 public class NettyMessagingManager implements MessagingService {
-  private static final String DEFAULT_NAME = "atomix";
+
+  /**
+   * Returns a new Netty messaging service builder.
+   *
+   * @return a new Netty messaging service builder
+   */
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
+  /**
+   * Netty messaging service builder.
+   */
+  public static class Builder extends MessagingService.Builder {
+    private static final String DEFAULT_NAME = "atomix";
+    private String name = DEFAULT_NAME;
+    private Endpoint endpoint;
+
+    /**
+     * Sets the cluster name.
+     *
+     * @param name the cluster name
+     * @return the Netty messaging service builder
+     * @throws NullPointerException if the name is null
+     */
+    public Builder withName(String name) {
+      this.name = checkNotNull(name);
+      return this;
+    }
+
+    /**
+     * Sets the messaging endpoint.
+     *
+     * @param endpoint the messaging endpoint
+     * @return the Netty messaging service builder
+     * @throws NullPointerException if the endpoint is null
+     */
+    public Builder withEndpoint(Endpoint endpoint) {
+      this.endpoint = checkNotNull(endpoint);
+      return this;
+    }
+
+    @Override
+    public MessagingService build() {
+      return new NettyMessagingManager(name.hashCode(), endpoint);
+    }
+  }
+
   private static final long DEFAULT_TIMEOUT_MILLIS = 500;
-  private static final long HISTORY_EXPIRE_MILLIS = Duration.ofMinutes(10).toMillis();
-  private static final long MIN_TIMEOUT_MILLIS = 100;
+  private static final long HISTORY_EXPIRE_MILLIS = Duration.ofMinutes(1).toMillis();
+  private static final long MIN_TIMEOUT_MILLIS = 250;
   private static final long MAX_TIMEOUT_MILLIS = 5000;
   private static final long TIMEOUT_INTERVAL = 50;
   private static final int WINDOW_SIZE = 100;
   private static final double TIMEOUT_MULTIPLIER = 2.5;
-  private static final short MIN_KS_LENGTH = 6;
   private static final int CHANNEL_POOL_SIZE = 8;
 
   private static final byte[] EMPTY_PAYLOAD = new byte[0];
@@ -103,10 +155,16 @@ public class NettyMessagingManager implements MessagingService {
   private final ClientConnection localClientConnection = new LocalClientConnection();
   private final ServerConnection localServerConnection = new LocalServerConnection(null);
 
+  //TODO CONFIG_DIR is duplicated from ConfigFileBasedClusterMetadataProvider
+  private static final String CONFIG_DIR = "../config";
+  private static final String KS_FILE_NAME = "onos.jks";
+  private static final File DEFAULT_KS_FILE = new File(CONFIG_DIR, KS_FILE_NAME);
+  private static final String DEFAULT_KS_PASSWORD = "changeit";
+
   private final Endpoint localEndpoint;
   private final int preamble;
   private final AtomicBoolean started = new AtomicBoolean(false);
-  private final Map<String, BiConsumer<InternalMessage, ServerConnection>> handlers = new ConcurrentHashMap<>();
+  private final Map<String, BiConsumer<InternalRequest, ServerConnection>> handlers = new ConcurrentHashMap<>();
   private final Map<Channel, RemoteClientConnection> clientConnections = Maps.newConcurrentMap();
   private final Map<Channel, RemoteServerConnection> serverConnections = Maps.newConcurrentMap();
   private final AtomicLong messageIdGenerator = new AtomicLong(0);
@@ -121,86 +179,118 @@ public class NettyMessagingManager implements MessagingService {
   private Class<? extends Channel> clientChannelClass;
   private ScheduledExecutorService timeoutExecutor;
 
+  protected static final boolean TLS_ENABLED = true;
   protected static final boolean TLS_DISABLED = false;
-  protected boolean enableNettyTls = TLS_DISABLED;
+  protected boolean enableNettyTls = TLS_ENABLED;
 
-  protected String ksLocation;
-  protected String tsLocation;
-  protected char[] ksPwd;
-  protected char[] tsPwd;
+  protected TrustManagerFactory trustManager;
+  protected KeyManagerFactory keyManager;
 
-  public NettyMessagingManager(Endpoint localEndpoint) {
-    this(DEFAULT_NAME, localEndpoint);
+  protected NettyMessagingManager(int preamble, Endpoint endpoint) {
+    this.preamble = preamble;
+    this.localEndpoint = endpoint;
   }
 
-  public NettyMessagingManager(String name, Endpoint localEndpoint) {
-    this.preamble = name.hashCode();
-    this.localEndpoint = checkNotNull(localEndpoint, "localEndpoint cannot be null");
-
-    try {
-      activate();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Activates the messaging service.
-   */
-  private void activate() throws Exception {
+  @Override
+  public CompletableFuture<MessagingService> open() {
     getTlsParameters();
     if (started.get()) {
       log.warn("Already running at local endpoint: {}", localEndpoint);
-      return;
+      return CompletableFuture.completedFuture(this);
     }
-    initEventLoopGroup();
-    startAcceptingConnections();
-    timeoutExecutor = Executors.newSingleThreadScheduledExecutor(
-        namedThreads("atomix-messaging-timeout-%d", log));
-    timeoutFuture = timeoutExecutor.scheduleAtFixedRate(
-        this::timeoutAllCallbacks, TIMEOUT_INTERVAL, TIMEOUT_INTERVAL, TimeUnit.MILLISECONDS);
-    started.set(true);
-    log.info("Started");
-  }
 
-  /**
-   * Closes the messaging service.
-   */
-  public void close() {
-    if (started.get()) {
-      serverGroup.shutdownGracefully();
-      clientGroup.shutdownGracefully();
-      timeoutFuture.cancel(false);
-      timeoutExecutor.shutdown();
-      started.set(false);
-    }
-    log.info("Stopped");
+    initEventLoopGroup();
+    return startAcceptingConnections().thenRun(() -> {
+      timeoutExecutor = Executors.newSingleThreadScheduledExecutor(
+          namedThreads("netty-messaging-timeout-%d", log));
+      timeoutFuture = timeoutExecutor.scheduleAtFixedRate(
+          this::timeoutAllCallbacks, TIMEOUT_INTERVAL, TIMEOUT_INTERVAL, TimeUnit.MILLISECONDS);
+      started.set(true);
+      log.info("Started");
+    }).thenApply(v -> this);
   }
 
   private void getTlsParameters() {
-    String tempString = System.getProperty("enableNettyTLS");
-    enableNettyTls = Strings.isNullOrEmpty(tempString) ? TLS_DISABLED : Boolean.parseBoolean(tempString);
-    log.info("enableNettyTLS = {}", enableNettyTls);
+    // default is TLS enabled unless key stores cannot be loaded
+    enableNettyTls = Boolean.parseBoolean(System.getProperty("enableNettyTLS", Boolean.toString(TLS_ENABLED)));
+
     if (enableNettyTls) {
-      ksLocation = System.getProperty("javax.net.ssl.keyStore");
-      if (Strings.isNullOrEmpty(ksLocation)) {
-        enableNettyTls = TLS_DISABLED;
-        return;
+      enableNettyTls = loadKeyStores();
+    }
+  }
+
+  @Override
+  public boolean isOpen() {
+    return started.get();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !isOpen();
+  }
+
+  private boolean loadKeyStores() {
+    // Maintain a local copy of the trust and key managers in case anything goes wrong
+    TrustManagerFactory tmf;
+    KeyManagerFactory kmf;
+    try {
+      String ksLocation = System.getProperty("javax.net.ssl.keyStore", DEFAULT_KS_FILE.toString());
+      String tsLocation = System.getProperty("javax.net.ssl.trustStore", DEFAULT_KS_FILE.toString());
+      char[] ksPwd = System.getProperty("javax.net.ssl.keyStorePassword", DEFAULT_KS_PASSWORD).toCharArray();
+      char[] tsPwd = System.getProperty("javax.net.ssl.trustStorePassword", DEFAULT_KS_PASSWORD).toCharArray();
+
+      tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      KeyStore ts = KeyStore.getInstance("JKS");
+      ts.load(new FileInputStream(tsLocation), tsPwd);
+      tmf.init(ts);
+
+      kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      KeyStore ks = KeyStore.getInstance("JKS");
+      ks.load(new FileInputStream(ksLocation), ksPwd);
+      kmf.init(ks, ksPwd);
+      if (log.isInfoEnabled()) {
+        logKeyStore(ks, ksLocation, ksPwd);
       }
-      tsLocation = System.getProperty("javax.net.ssl.trustStore");
-      if (Strings.isNullOrEmpty(tsLocation)) {
-        enableNettyTls = TLS_DISABLED;
-        return;
-      }
-      ksPwd = System.getProperty("javax.net.ssl.keyStorePassword").toCharArray();
-      if (MIN_KS_LENGTH > ksPwd.length) {
-        enableNettyTls = TLS_DISABLED;
-        return;
-      }
-      tsPwd = System.getProperty("javax.net.ssl.trustStorePassword").toCharArray();
-      if (MIN_KS_LENGTH > tsPwd.length) {
-        enableNettyTls = TLS_DISABLED;
-        return;
+    } catch (FileNotFoundException e) {
+      log.warn("Disabling TLS for intra-cluster messaging; Could not load cluster key store: {}", e.getMessage());
+      return TLS_DISABLED;
+    } catch (Exception e) {
+      //TODO we might want to catch exceptions more specifically
+      log.error("Error loading key store; disabling TLS for intra-cluster messaging", e);
+      return TLS_DISABLED;
+    }
+    this.trustManager = tmf;
+    this.keyManager = kmf;
+    return TLS_ENABLED;
+  }
+
+  private void logKeyStore(KeyStore ks, String ksLocation, char[] ksPwd) {
+    if (log.isInfoEnabled()) {
+      log.info("Loaded cluster key store from: {}", ksLocation);
+      try {
+        for (Enumeration<String> e = ks.aliases(); e.hasMoreElements();) {
+          String alias = e.nextElement();
+          Key key = ks.getKey(alias, ksPwd);
+          Certificate[] certs = ks.getCertificateChain(alias);
+          log.debug("{} -> {}", alias, certs);
+          final byte[] encodedKey;
+          if (certs != null && certs.length > 0) {
+            encodedKey = certs[0].getEncoded();
+          } else {
+            log.info("Could not find cert chain for {}, using fingerprint of key instead...", alias);
+            encodedKey = key.getEncoded();
+          }
+          // Compute the certificate's fingerprint (use the key if certificate cannot be found)
+          MessageDigest digest = MessageDigest.getInstance("SHA1");
+          digest.update(encodedKey);
+          StringJoiner fingerprint = new StringJoiner(":");
+          for (byte b : digest.digest()) {
+            fingerprint.add(String.format("%02X", b));
+          }
+          log.info("{} -> {}", alias, fingerprint);
+        }
+      } catch (Exception e) {
+        log.warn("Unable to print contents of key store: {}", ksLocation, e);
       }
     }
   }
@@ -208,8 +298,8 @@ public class NettyMessagingManager implements MessagingService {
   private void initEventLoopGroup() {
     // try Epoll first and if that does work, use nio.
     try {
-      clientGroup = new EpollEventLoopGroup(0, namedThreads("atomix-messaging-client-event-epoll-%d", log));
-      serverGroup = new EpollEventLoopGroup(0, namedThreads("atomix-messaging-server-event-epoll-%d", log));
+      clientGroup = new EpollEventLoopGroup(0, namedThreads("netty-messaging-event-epoll-client-%d", log));
+      serverGroup = new EpollEventLoopGroup(0, namedThreads("netty-messaging-event-epoll-server-%d", log));
       serverChannelClass = EpollServerSocketChannel.class;
       clientChannelClass = EpollSocketChannel.class;
       return;
@@ -217,8 +307,8 @@ public class NettyMessagingManager implements MessagingService {
       log.debug("Failed to initialize native (epoll) transport. "
           + "Reason: {}. Proceeding with nio.", e.getMessage());
     }
-    clientGroup = new NioEventLoopGroup(0, namedThreads("atomix-messaging-client-event-nio-%d", log));
-    serverGroup = new NioEventLoopGroup(0, namedThreads("atomix-messaging-server-event-nio-%d", log));
+    clientGroup = new NioEventLoopGroup(0, namedThreads("netty-messaging-event-nio-client-%d", log));
+    serverGroup = new NioEventLoopGroup(0, namedThreads("netty-messaging-event-nio-server-%d", log));
     serverChannelClass = NioServerSocketChannel.class;
     clientChannelClass = NioSocketChannel.class;
   }
@@ -235,7 +325,7 @@ public class NettyMessagingManager implements MessagingService {
 
   @Override
   public CompletableFuture<Void> sendAsync(Endpoint ep, String type, byte[] payload) {
-    InternalMessage message = new InternalMessage(preamble,
+    InternalRequest message = new InternalRequest(preamble,
         messageIdGenerator.incrementAndGet(),
         localEndpoint,
         type,
@@ -250,8 +340,8 @@ public class NettyMessagingManager implements MessagingService {
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Endpoint ep, String type, byte[] payload, Executor executor) {
-    Long messageId = messageIdGenerator.incrementAndGet();
-    InternalMessage message = new InternalMessage(preamble,
+    long messageId = messageIdGenerator.incrementAndGet();
+    InternalRequest message = new InternalRequest(preamble,
         messageId,
         localEndpoint,
         type,
@@ -377,11 +467,12 @@ public class NettyMessagingManager implements MessagingService {
   public void registerHandler(String type, BiFunction<Endpoint, byte[], byte[]> handler, Executor executor) {
     handlers.put(type, (message, connection) -> executor.execute(() -> {
       byte[] responsePayload = null;
-      InternalMessage.Status status = InternalMessage.Status.OK;
+      InternalReply.Status status = InternalReply.Status.OK;
       try {
         responsePayload = handler.apply(message.sender(), message.payload());
       } catch (Exception e) {
-        status = InternalMessage.Status.ERROR_HANDLER_EXCEPTION;
+        log.debug("An error occurred in a message handler: {}", e);
+        status = InternalReply.Status.ERROR_HANDLER_EXCEPTION;
       }
       connection.reply(message, status, Optional.ofNullable(responsePayload));
     }));
@@ -391,7 +482,13 @@ public class NettyMessagingManager implements MessagingService {
   public void registerHandler(String type, BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> handler) {
     handlers.put(type, (message, connection) -> {
       handler.apply(message.sender(), message.payload()).whenComplete((result, error) -> {
-        InternalMessage.Status status = error == null ? InternalMessage.Status.OK : InternalMessage.Status.ERROR_HANDLER_EXCEPTION;
+        InternalReply.Status status;
+        if (error == null) {
+          status = InternalReply.Status.OK;
+        } else {
+          log.debug("An error occurred in a message handler: {}", error);
+          status = InternalReply.Status.ERROR_HANDLER_EXCEPTION;
+        }
         connection.reply(message, status, Optional.ofNullable(result));
       });
     });
@@ -423,7 +520,8 @@ public class NettyMessagingManager implements MessagingService {
     return bootstrap;
   }
 
-  private void startAcceptingConnections() throws InterruptedException {
+  private CompletableFuture<Void> startAcceptingConnections() {
+    CompletableFuture<Void> future = new CompletableFuture<>();
     ServerBootstrap b = new ServerBootstrap();
     b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
         new WriteBufferWaterMark(8 * 1024, 32 * 1024));
@@ -441,15 +539,18 @@ public class NettyMessagingManager implements MessagingService {
     b.childOption(ChannelOption.SO_KEEPALIVE, true);
 
     // Bind and start to accept incoming connections.
-    b.bind(localEndpoint.port()).sync().addListener(future -> {
-      if (future.isSuccess()) {
+    b.bind(localEndpoint.port()).addListener(f -> {
+      if (f.isSuccess()) {
         log.info("{} accepting incoming connections on port {}",
             localEndpoint.host(), localEndpoint.port());
+        future.complete(null);
       } else {
         log.warn("{} failed to bind to port {} due to {}",
-            localEndpoint.host(), localEndpoint.port(), future.cause());
+            localEndpoint.host(), localEndpoint.port(), f.cause());
+        future.completeExceptionally(f.cause());
       }
     });
+    return future;
   }
 
   private CompletableFuture<Channel> openChannel(Endpoint ep) {
@@ -468,27 +569,29 @@ public class NettyMessagingManager implements MessagingService {
     return retFuture;
   }
 
+  @Override
+  public CompletableFuture<Void> close() {
+    if (started.get()) {
+      serverGroup.shutdownGracefully();
+      clientGroup.shutdownGracefully();
+      timeoutFuture.cancel(false);
+      timeoutExecutor.shutdown();
+      started.set(false);
+    }
+    log.info("Stopped");
+    return CompletableFuture.completedFuture(null);
+  }
+
   /**
    * Channel initializer for TLS servers.
    */
   private class SslServerCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final ChannelHandler dispatcher = new InboundMessageDispatcher();
-    private final ChannelHandler encoder = new MessageEncoder(preamble);
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
-      TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-      KeyStore ts = KeyStore.getInstance("JKS");
-      ts.load(new FileInputStream(tsLocation), tsPwd);
-      tmFactory.init(ts);
-
-      KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-      KeyStore ks = KeyStore.getInstance("JKS");
-      ks.load(new FileInputStream(ksLocation), ksPwd);
-      kmf.init(ks, ksPwd);
-
       SSLContext serverContext = SSLContext.getInstance("TLS");
-      serverContext.init(kmf.getKeyManagers(), tmFactory.getTrustManagers(), null);
+      serverContext.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
 
       SSLEngine serverSslEngine = serverContext.createSSLEngine();
 
@@ -499,7 +602,7 @@ public class NettyMessagingManager implements MessagingService {
       serverSslEngine.setEnableSessionCreation(true);
 
       channel.pipeline().addLast("ssl", new io.netty.handler.ssl.SslHandler(serverSslEngine))
-          .addLast("encoder", encoder)
+          .addLast("encoder", new MessageEncoder(localEndpoint, preamble))
           .addLast("decoder", new MessageDecoder())
           .addLast("handler", dispatcher);
     }
@@ -510,22 +613,11 @@ public class NettyMessagingManager implements MessagingService {
    */
   private class SslClientCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final ChannelHandler dispatcher = new InboundMessageDispatcher();
-    private final ChannelHandler encoder = new MessageEncoder(preamble);
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
-      TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-      KeyStore ts = KeyStore.getInstance("JKS");
-      ts.load(new FileInputStream(tsLocation), tsPwd);
-      tmFactory.init(ts);
-
-      KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-      KeyStore ks = KeyStore.getInstance("JKS");
-      ks.load(new FileInputStream(ksLocation), ksPwd);
-      kmf.init(ks, ksPwd);
-
       SSLContext clientContext = SSLContext.getInstance("TLS");
-      clientContext.init(kmf.getKeyManagers(), tmFactory.getTrustManagers(), null);
+      clientContext.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
 
       SSLEngine clientSslEngine = clientContext.createSSLEngine();
 
@@ -535,7 +627,7 @@ public class NettyMessagingManager implements MessagingService {
       clientSslEngine.setEnableSessionCreation(true);
 
       channel.pipeline().addLast("ssl", new io.netty.handler.ssl.SslHandler(clientSslEngine))
-          .addLast("encoder", encoder)
+          .addLast("encoder", new MessageEncoder(localEndpoint, preamble))
           .addLast("decoder", new MessageDecoder())
           .addLast("handler", dispatcher);
     }
@@ -546,12 +638,11 @@ public class NettyMessagingManager implements MessagingService {
    */
   private class BasicChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final ChannelHandler dispatcher = new InboundMessageDispatcher();
-    private final ChannelHandler encoder = new MessageEncoder(preamble);
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
       channel.pipeline()
-          .addLast("encoder", encoder)
+          .addLast("encoder", new MessageEncoder(localEndpoint, preamble))
           .addLast("decoder", new MessageDecoder())
           .addLast("handler", dispatcher);
     }
@@ -572,11 +663,11 @@ public class NettyMessagingManager implements MessagingService {
         if (message.isRequest()) {
           RemoteServerConnection connection =
               serverConnections.computeIfAbsent(ctx.channel(), RemoteServerConnection::new);
-          connection.dispatch(message);
+          connection.dispatch((InternalRequest) message);
         } else {
           RemoteClientConnection connection =
               clientConnections.computeIfAbsent(ctx.channel(), RemoteClientConnection::new);
-          connection.dispatch(message);
+          connection.dispatch((InternalReply) message);
         }
       } catch (RejectedExecutionException e) {
         log.warn("Unable to dispatch message due to {}", e.getMessage());
@@ -604,6 +695,7 @@ public class NettyMessagingManager implements MessagingService {
      *
      * @param msg inbound message
      * @return true if {@code msg} is {@link InternalMessage} instance.
+     *
      * @see SimpleChannelInboundHandler#acceptInboundMessage(Object)
      */
     @Override
@@ -645,7 +737,7 @@ public class NettyMessagingManager implements MessagingService {
      * @param message the message to send
      * @return a completable future to be completed once the message has been sent
      */
-    CompletableFuture<Void> sendAsync(InternalMessage message);
+    CompletableFuture<Void> sendAsync(InternalRequest message);
 
     /**
      * Sends a message to the other side of the connection, awaiting a reply.
@@ -653,7 +745,7 @@ public class NettyMessagingManager implements MessagingService {
      * @param message the message to send
      * @return a completable future to be completed once a reply is received or the request times out
      */
-    CompletableFuture<byte[]> sendAndReceive(InternalMessage message);
+    CompletableFuture<byte[]> sendAndReceive(InternalRequest message);
 
     /**
      * Closes the connection.
@@ -671,10 +763,10 @@ public class NettyMessagingManager implements MessagingService {
      * Sends a reply to the other side of the connection.
      *
      * @param message the message to which to reply
-     * @param status  the reply status
+     * @param status the reply status
      * @param payload the response payload
      */
-    void reply(InternalMessage message, InternalMessage.Status status, Optional<byte[]> payload);
+    void reply(InternalRequest message, InternalReply.Status status, Optional<byte[]> payload);
 
     /**
      * Closes the connection.
@@ -688,8 +780,8 @@ public class NettyMessagingManager implements MessagingService {
    */
   private final class LocalClientConnection implements ClientConnection {
     @Override
-    public CompletableFuture<Void> sendAsync(InternalMessage message) {
-      BiConsumer<InternalMessage, ServerConnection> handler = handlers.get(message.type());
+    public CompletableFuture<Void> sendAsync(InternalRequest message) {
+      BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
         handler.accept(message, localServerConnection);
       } else {
@@ -699,14 +791,15 @@ public class NettyMessagingManager implements MessagingService {
     }
 
     @Override
-    public CompletableFuture<byte[]> sendAndReceive(InternalMessage message) {
+    public CompletableFuture<byte[]> sendAndReceive(InternalRequest message) {
       CompletableFuture<byte[]> future = new CompletableFuture<>();
-      BiConsumer<InternalMessage, ServerConnection> handler = handlers.get(message.type());
+      BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
         handler.accept(message, new LocalServerConnection(future));
       } else {
         log.debug("No handler for message type {} from {}", message.type(), message.sender());
-        new LocalServerConnection(future).reply(message, InternalMessage.Status.ERROR_NO_HANDLER, Optional.empty());
+        new LocalServerConnection(future)
+            .reply(message, InternalReply.Status.ERROR_NO_HANDLER, Optional.empty());
       }
       return future;
     }
@@ -723,15 +816,15 @@ public class NettyMessagingManager implements MessagingService {
     }
 
     @Override
-    public void reply(InternalMessage message, InternalMessage.Status status, Optional<byte[]> payload) {
+    public void reply(InternalRequest message, InternalReply.Status status, Optional<byte[]> payload) {
       if (future != null) {
-        if (status == InternalMessage.Status.OK) {
+        if (status == InternalReply.Status.OK) {
           future.complete(payload.orElse(EMPTY_PAYLOAD));
-        } else if (status == InternalMessage.Status.ERROR_NO_HANDLER) {
+        } else if (status == InternalReply.Status.ERROR_NO_HANDLER) {
           future.completeExceptionally(new MessagingException.NoRemoteHandler());
-        } else if (status == InternalMessage.Status.ERROR_HANDLER_EXCEPTION) {
+        } else if (status == InternalReply.Status.ERROR_HANDLER_EXCEPTION) {
           future.completeExceptionally(new MessagingException.RemoteHandlerFailure());
-        } else if (status == InternalMessage.Status.PROTOCOL_EXCEPTION) {
+        } else if (status == InternalReply.Status.PROTOCOL_EXCEPTION) {
           future.completeExceptionally(new MessagingException.ProtocolException());
         }
       }
@@ -779,10 +872,15 @@ public class NettyMessagingManager implements MessagingService {
           throw new AssertionError();
         }
       }
+
+      // Iterate through all timeout histories and recompute the timeout.
+      for (TimeoutHistory timeoutHistory : timeoutHistories.asMap().values()) {
+        timeoutHistory.recomputeTimeoutMillis();
+      }
     }
 
     @Override
-    public CompletableFuture<Void> sendAsync(InternalMessage message) {
+    public CompletableFuture<Void> sendAsync(InternalRequest message) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       channel.writeAndFlush(message).addListener(channelFuture -> {
         if (!channelFuture.isSuccess()) {
@@ -795,9 +893,9 @@ public class NettyMessagingManager implements MessagingService {
     }
 
     @Override
-    public CompletableFuture<byte[]> sendAndReceive(InternalMessage message) {
+    public CompletableFuture<byte[]> sendAndReceive(InternalRequest message) {
       CompletableFuture<byte[]> future = new CompletableFuture<>();
-      Callback callback = new Callback(message.type(), future);
+      Callback callback = new Callback(message.subject(), future);
       futures.put(message.id(), callback);
       channel.writeAndFlush(message).addListener(channelFuture -> {
         if (!channelFuture.isSuccess()) {
@@ -813,21 +911,21 @@ public class NettyMessagingManager implements MessagingService {
      *
      * @param message the message to dispatch
      */
-    private void dispatch(InternalMessage message) {
+    private void dispatch(InternalReply message) {
       if (message.preamble() != preamble) {
-        log.debug("Received {} with invalid preamble from {}", message.type(), message.sender());
+        log.debug("Received {} with invalid preamble", message.type());
         return;
       }
 
       Callback callback = futures.remove(message.id());
       if (callback != null) {
-        if (message.status() == InternalMessage.Status.OK) {
+        if (message.status() == InternalReply.Status.OK) {
           callback.complete(message.payload());
-        } else if (message.status() == InternalMessage.Status.ERROR_NO_HANDLER) {
+        } else if (message.status() == InternalReply.Status.ERROR_NO_HANDLER) {
           callback.completeExceptionally(new MessagingException.NoRemoteHandler());
-        } else if (message.status() == InternalMessage.Status.ERROR_HANDLER_EXCEPTION) {
+        } else if (message.status() == InternalReply.Status.ERROR_HANDLER_EXCEPTION) {
           callback.completeExceptionally(new MessagingException.RemoteHandlerFailure());
-        } else if (message.status() == InternalMessage.Status.PROTOCOL_EXCEPTION) {
+        } else if (message.status() == InternalReply.Status.PROTOCOL_EXCEPTION) {
           callback.completeExceptionally(new MessagingException.ProtocolException());
         }
 
@@ -838,9 +936,9 @@ public class NettyMessagingManager implements MessagingService {
           throw new AssertionError();
         }
       } else {
-        log.debug("Received a reply for message id:[{}]. "
-            + " from {}. But was unable to locate the"
-            + " request handle", message.id(), message.sender());
+        log.debug("Received a reply for message id:[{}] "
+            + "but was unable to locate the"
+            + " request handle", message.id());
       }
     }
 
@@ -870,27 +968,26 @@ public class NettyMessagingManager implements MessagingService {
      *
      * @param message the message to dispatch
      */
-    private void dispatch(InternalMessage message) {
+    private void dispatch(InternalRequest message) {
       if (message.preamble() != preamble) {
         log.debug("Received {} with invalid preamble from {}", message.type(), message.sender());
-        reply(message, InternalMessage.Status.PROTOCOL_EXCEPTION, Optional.empty());
+        reply(message, InternalReply.Status.PROTOCOL_EXCEPTION, Optional.empty());
         return;
       }
 
-      BiConsumer<InternalMessage, ServerConnection> handler = handlers.get(message.type());
+      BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
         handler.accept(message, this);
       } else {
         log.debug("No handler for message type {} from {}", message.type(), message.sender());
-        reply(message, InternalMessage.Status.ERROR_NO_HANDLER, Optional.empty());
+        reply(message, InternalReply.Status.ERROR_NO_HANDLER, Optional.empty());
       }
     }
 
     @Override
-    public void reply(InternalMessage message, InternalMessage.Status status, Optional<byte[]> payload) {
-      InternalMessage response = new InternalMessage(preamble,
+    public void reply(InternalRequest message, InternalReply.Status status, Optional<byte[]> payload) {
+      InternalReply response = new InternalReply(preamble,
           message.id(),
-          localEndpoint,
           payload.orElse(EMPTY_PAYLOAD),
           status);
       channel.writeAndFlush(response);
