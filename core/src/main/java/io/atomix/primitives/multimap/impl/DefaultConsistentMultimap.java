@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package io.atomix.primitives.map.impl;
+package io.atomix.primitives.multimap.impl;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Multiset;
 import io.atomix.primitives.Synchronous;
-import io.atomix.primitives.map.AsyncConsistentMultimap;
+import io.atomix.primitives.multimap.AsyncConsistentMultimap;
 import io.atomix.primitives.map.ConsistentMapException;
-import io.atomix.primitives.map.ConsistentMultimap;
-import io.atomix.primitives.map.MultimapEventListener;
+import io.atomix.primitives.multimap.ConsistentMultimap;
+import io.atomix.primitives.multimap.MultimapEventListener;
 import io.atomix.time.Versioned;
 
 import java.util.Collection;

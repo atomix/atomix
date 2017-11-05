@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.primitives.map;
+package io.atomix.primitives.multimap;
 
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.DistributedPrimitiveBuilder;

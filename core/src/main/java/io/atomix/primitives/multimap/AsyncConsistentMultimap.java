@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package io.atomix.primitives.map;
+package io.atomix.primitives.multimap;
 
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.map.impl.DefaultConsistentMultimap;
+import io.atomix.primitives.multimap.impl.DefaultConsistentMultimap;
 import io.atomix.time.Versioned;
 
 import java.util.Collection;
