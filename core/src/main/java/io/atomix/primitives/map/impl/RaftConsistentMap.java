@@ -20,22 +20,22 @@ import io.atomix.primitives.map.AsyncConsistentMap;
 import io.atomix.primitives.map.ConsistentMapException;
 import io.atomix.primitives.map.MapEvent;
 import io.atomix.primitives.map.MapEventListener;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.ContainsKey;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.ContainsValue;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.Get;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.GetOrDefault;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.Put;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.Remove;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.RemoveValue;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.RemoveVersion;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.Replace;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.ReplaceValue;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.ReplaceVersion;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.TransactionBegin;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.TransactionCommit;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.TransactionPrepare;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.TransactionPrepareAndCommit;
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.TransactionRollback;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.ContainsKey;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.ContainsValue;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Get;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.GetOrDefault;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Put;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Remove;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.RemoveValue;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.RemoveVersion;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Replace;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.ReplaceValue;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.ReplaceVersion;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.TransactionBegin;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.TransactionCommit;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.TransactionPrepare;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.TransactionPrepareAndCommit;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.TransactionRollback;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
@@ -58,48 +58,48 @@ import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
-import static io.atomix.primitives.map.impl.AtomixConsistentMapEvents.CHANGE;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.ADD_LISTENER;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.BEGIN;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.CLEAR;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.COMMIT;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.CONTAINS_KEY;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.CONTAINS_VALUE;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.ENTRY_SET;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.GET;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.GET_OR_DEFAULT;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.IS_EMPTY;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.KEY_SET;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.PREPARE;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.PREPARE_AND_COMMIT;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.PUT;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.PUT_AND_GET;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.PUT_IF_ABSENT;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.REMOVE;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.REMOVE_LISTENER;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.REMOVE_VALUE;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.REMOVE_VERSION;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.REPLACE;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.REPLACE_VALUE;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.REPLACE_VERSION;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.ROLLBACK;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.SIZE;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.VALUES;
+import static io.atomix.primitives.map.impl.RaftConsistentMapEvents.CHANGE;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.ADD_LISTENER;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.BEGIN;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.CLEAR;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.COMMIT;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.CONTAINS_KEY;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.CONTAINS_VALUE;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.ENTRY_SET;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET_OR_DEFAULT;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.IS_EMPTY;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.KEY_SET;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.PREPARE;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.PREPARE_AND_COMMIT;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.PUT;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.PUT_AND_GET;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.PUT_IF_ABSENT;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.REMOVE;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.REMOVE_LISTENER;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.REMOVE_VALUE;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.REMOVE_VERSION;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.REPLACE;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.REPLACE_VALUE;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.REPLACE_VERSION;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.ROLLBACK;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.SIZE;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.VALUES;
 
 /**
  * Distributed resource providing the {@link AsyncConsistentMap} primitive.
  */
-public class AtomixConsistentMap extends AbstractRaftPrimitive implements AsyncConsistentMap<String, byte[]> {
+public class RaftConsistentMap extends AbstractRaftPrimitive implements AsyncConsistentMap<String, byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
-      .register(AtomixConsistentMapOperations.NAMESPACE)
-      .register(AtomixConsistentMapEvents.NAMESPACE)
+      .register(RaftConsistentMapOperations.NAMESPACE)
+      .register(RaftConsistentMapEvents.NAMESPACE)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 100)
       .build());
 
   private final Map<MapEventListener<String, byte[]>, Executor> mapEventListeners = new ConcurrentHashMap<>();
 
-  public AtomixConsistentMap(RaftProxy proxy) {
+  public RaftConsistentMap(RaftProxy proxy) {
     super(proxy);
     proxy.addEventListener(CHANGE, SERIALIZER::decode, this::handleEvent);
     proxy.addStateChangeListener(state -> {

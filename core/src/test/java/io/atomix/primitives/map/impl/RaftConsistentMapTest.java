@@ -47,18 +47,18 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Unit tests for {@link AtomixConsistentMap}.
+ * Unit tests for {@link RaftConsistentMap}.
  */
-public class AtomixConsistentMapTest extends AbstractRaftPrimitiveTest<AtomixConsistentMap> {
+public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsistentMap> {
 
   @Override
   protected RaftService createService() {
-    return new AtomixConsistentMapService();
+    return new RaftConsistentMapService();
   }
 
   @Override
-  protected AtomixConsistentMap createPrimitive(RaftProxy proxy) {
-    return new AtomixConsistentMap(proxy);
+  protected RaftConsistentMap createPrimitive(RaftProxy proxy) {
+    return new RaftConsistentMap(proxy);
   }
 
   /**
@@ -85,7 +85,7 @@ public class AtomixConsistentMapTest extends AbstractRaftPrimitiveTest<AtomixCon
     final byte[] rawFooValue = "Hello foo!".getBytes();
     final byte[] rawBarValue = "Hello bar!".getBytes();
 
-    AtomixConsistentMap map = newPrimitive("testNullValues");
+    RaftConsistentMap map = newPrimitive("testNullValues");
 
     map.get("foo")
         .thenAccept(v -> assertNull(v)).join();
@@ -151,7 +151,7 @@ public class AtomixConsistentMapTest extends AbstractRaftPrimitiveTest<AtomixCon
     final byte[] rawFooValue = "Hello foo!".getBytes();
     final byte[] rawBarValue = "Hello bar!".getBytes();
 
-    AtomixConsistentMap map = newPrimitive("testBasicMapOperationMap");
+    RaftConsistentMap map = newPrimitive("testBasicMapOperationMap");
 
     map.isEmpty().thenAccept(result -> {
       assertTrue(result);
@@ -280,7 +280,7 @@ public class AtomixConsistentMapTest extends AbstractRaftPrimitiveTest<AtomixCon
     final byte[] value2 = "value2".getBytes();
     final byte[] value3 = "value3".getBytes();
 
-    AtomixConsistentMap map = newPrimitive("testMapComputeOperationsMap");
+    RaftConsistentMap map = newPrimitive("testMapComputeOperationsMap");
 
     map.computeIfAbsent("foo", k -> value1).thenAccept(result -> {
       assertTrue(Arrays.equals(Versioned.valueOrElse(result, null), value1));
@@ -316,7 +316,7 @@ public class AtomixConsistentMapTest extends AbstractRaftPrimitiveTest<AtomixCon
     final byte[] value2 = "value2".getBytes();
     final byte[] value3 = "value3".getBytes();
 
-    AtomixConsistentMap map = newPrimitive("testMapListenerMap");
+    RaftConsistentMap map = newPrimitive("testMapListenerMap");
     TestMapEventListener listener = new TestMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event is received.
@@ -371,7 +371,7 @@ public class AtomixConsistentMapTest extends AbstractRaftPrimitiveTest<AtomixCon
   }
 
   protected void transactionPrepareTests() throws Throwable {
-    AtomixConsistentMap map = newPrimitive("testPrepareTestsMap");
+    RaftConsistentMap map = newPrimitive("testPrepareTestsMap");
 
     TransactionId transactionId1 = TransactionId.from("tx1");
     TransactionId transactionId2 = TransactionId.from("tx2");
@@ -447,7 +447,7 @@ public class AtomixConsistentMapTest extends AbstractRaftPrimitiveTest<AtomixCon
     final byte[] value1 = "value1".getBytes();
     final byte[] value2 = "value2".getBytes();
 
-    AtomixConsistentMap map = newPrimitive("testCommitTestsMap");
+    RaftConsistentMap map = newPrimitive("testCommitTestsMap");
     TestMapEventListener listener = new TestMapEventListener();
 
     map.addListener(listener).join();
@@ -547,7 +547,7 @@ public class AtomixConsistentMapTest extends AbstractRaftPrimitiveTest<AtomixCon
     final byte[] value1 = "value1".getBytes();
     final byte[] value2 = "value2".getBytes();
 
-    AtomixConsistentMap map = newPrimitive("testTransactionRollbackTestsMap");
+    RaftConsistentMap map = newPrimitive("testTransactionRollbackTestsMap");
     TestMapEventListener listener = new TestMapEventListener();
 
     map.addListener(listener).join();

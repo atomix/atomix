@@ -28,9 +28,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * {@link AtomixConsistentMap} resource state machine operations.
+ * {@link RaftConsistentMap} resource state machine operations.
  */
-public enum AtomixConsistentMapOperations implements OperationId {
+public enum RaftConsistentMapOperations implements OperationId {
   IS_EMPTY("isEmpty", OperationType.QUERY),
   SIZE("size", OperationType.QUERY),
   CONTAINS_KEY("containsKey", OperationType.QUERY),
@@ -61,7 +61,7 @@ public enum AtomixConsistentMapOperations implements OperationId {
   private final String id;
   private final OperationType type;
 
-  AtomixConsistentMapOperations(String id, OperationType type) {
+  RaftConsistentMapOperations(String id, OperationType type) {
     this.id = id;
     this.type = type;
   }

@@ -27,15 +27,15 @@ import io.atomix.storage.StorageLevel;
 import io.atomix.time.WallClockTimestamp;
 import org.junit.Test;
 
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.PUT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.PUT;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
  * Atomic counter map service test.
  */
-public class AtomixAtomicCounterMapServiceTest {
+public class RaftAtomicCounterMapServiceTest {
   @Test
   public void testSnapshot() throws Exception {
     SnapshotStore store = new SnapshotStore(RaftStorage.newBuilder()
@@ -44,11 +44,11 @@ public class AtomixAtomicCounterMapServiceTest {
         .build());
     Snapshot snapshot = store.newSnapshot(ServiceId.from(1), "test", 2, new WallClockTimestamp());
 
-    AtomixAtomicCounterMapService service = new AtomixAtomicCounterMapService();
+    RaftAtomicCounterMapService service = new RaftAtomicCounterMapService();
     service.put(new DefaultCommit<>(
         2,
         PUT,
-        new AtomixAtomicCounterMapOperations.Put("foo", 1),
+        new RaftAtomicCounterMapOperations.Put("foo", 1),
         mock(RaftSessionContext.class),
         System.currentTimeMillis()));
 
@@ -58,7 +58,7 @@ public class AtomixAtomicCounterMapServiceTest {
 
     snapshot.complete();
 
-    service = new AtomixAtomicCounterMapService();
+    service = new RaftAtomicCounterMapService();
     try (SnapshotReader reader = snapshot.openReader()) {
       service.install(reader);
     }
@@ -66,7 +66,7 @@ public class AtomixAtomicCounterMapServiceTest {
     long value = service.get(new DefaultCommit<>(
         2,
         GET,
-        new AtomixAtomicCounterMapOperations.Get("foo"),
+        new RaftAtomicCounterMapOperations.Get("foo"),
         mock(RaftSessionContext.class),
         System.currentTimeMillis()));
     assertEquals(1, value);

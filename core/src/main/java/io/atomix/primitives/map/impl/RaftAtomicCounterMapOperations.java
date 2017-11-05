@@ -23,7 +23,7 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 /**
  * Atomic counter map commands.
  */
-public enum AtomixAtomicCounterMapOperations implements OperationId {
+public enum RaftAtomicCounterMapOperations implements OperationId {
   PUT("put", OperationType.COMMAND),
   PUT_IF_ABSENT("putIfAbsent", OperationType.COMMAND),
   GET("get", OperationType.QUERY),
@@ -43,7 +43,7 @@ public enum AtomixAtomicCounterMapOperations implements OperationId {
   private final String id;
   private final OperationType type;
 
-  AtomixAtomicCounterMapOperations(String id, OperationType type) {
+  RaftAtomicCounterMapOperations(String id, OperationType type) {
     this.id = id;
     this.type = type;
   }

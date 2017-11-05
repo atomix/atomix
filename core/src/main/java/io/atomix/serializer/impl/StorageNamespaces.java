@@ -15,7 +15,7 @@
  */
 package io.atomix.serializer.impl;
 
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -151,7 +151,7 @@ public final class StorageNamespaces {
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
-      .register(AtomixAtomicCounterMapOperations.class)
+      .register(RaftAtomicCounterMapOperations.class)
       //.register(AtomixConsistentMapEvents.class)
       //.register(AtomixConsistentMapOperations.class)
       //.register(AtomixConsistentSetMultimapOperations.class)
@@ -189,7 +189,7 @@ public final class StorageNamespaces {
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
-      .register(AtomixAtomicCounterMapOperations.class)
+      .register(RaftAtomicCounterMapOperations.class)
       //.register(AtomixConsistentMapOperations.class)
       //.register(AtomixConsistentSetMultimapOperations.class)
       //.register(AtomixConsistentTreeMapOperations.class)

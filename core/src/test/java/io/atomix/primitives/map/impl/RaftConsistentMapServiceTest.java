@@ -15,7 +15,7 @@
  */
 package io.atomix.primitives.map.impl;
 
-import io.atomix.primitives.map.impl.AtomixConsistentMapOperations.Put;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Put;
 import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.service.impl.DefaultCommit;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
@@ -29,8 +29,8 @@ import io.atomix.time.Versioned;
 import io.atomix.time.WallClockTimestamp;
 import org.junit.Test;
 
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.GET;
-import static io.atomix.primitives.map.impl.AtomixConsistentMapOperations.PUT;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.PUT;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Consistent map service test.
  */
-public class AtomixConsistentMapServiceTest {
+public class RaftConsistentMapServiceTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testSnapshot() throws Exception {
@@ -48,7 +48,7 @@ public class AtomixConsistentMapServiceTest {
         .build());
     Snapshot snapshot = store.newSnapshot(ServiceId.from(1), "test", 2, new WallClockTimestamp());
 
-    AtomixConsistentMapService service = new AtomixConsistentMapService();
+    RaftConsistentMapService service = new RaftConsistentMapService();
     service.put(new DefaultCommit<>(
         2,
         PUT,
@@ -62,7 +62,7 @@ public class AtomixConsistentMapServiceTest {
 
     snapshot.complete();
 
-    service = new AtomixConsistentMapService();
+    service = new RaftConsistentMapService();
     try (SnapshotReader reader = snapshot.openReader()) {
       service.install(reader);
     }
@@ -70,7 +70,7 @@ public class AtomixConsistentMapServiceTest {
     Versioned<byte[]> value = service.get(new DefaultCommit<>(
         2,
         GET,
-        new AtomixConsistentMapOperations.Get("foo"),
+        new RaftConsistentMapOperations.Get("foo"),
         mock(RaftSessionContext.class),
         System.currentTimeMillis()));
     assertNotNull(value);

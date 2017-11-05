@@ -15,18 +15,18 @@
  */
 package io.atomix.primitives.map.impl;
 
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.AddAndGet;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.DecrementAndGet;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.Get;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GetAndAdd;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GetAndDecrement;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GetAndIncrement;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.IncrementAndGet;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.Put;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.PutIfAbsent;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.Remove;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.RemoveValue;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.Replace;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.AddAndGet;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.DecrementAndGet;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.Get;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GetAndAdd;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GetAndDecrement;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GetAndIncrement;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.IncrementAndGet;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.Put;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.PutIfAbsent;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.Remove;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.RemoveValue;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.Replace;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
@@ -39,21 +39,21 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.ADD_AND_GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.CLEAR;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.DECREMENT_AND_GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET_AND_ADD;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET_AND_DECREMENT;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET_AND_INCREMENT;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.INCREMENT_AND_GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.IS_EMPTY;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.PUT;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.PUT_IF_ABSENT;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.REMOVE;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.REMOVE_VALUE;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.REPLACE;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.SIZE;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.ADD_AND_GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.CLEAR;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.DECREMENT_AND_GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET_AND_ADD;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET_AND_DECREMENT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET_AND_INCREMENT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.INCREMENT_AND_GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.IS_EMPTY;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.PUT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.PUT_IF_ABSENT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.REMOVE;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.REMOVE_VALUE;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.REPLACE;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.SIZE;
 
 /**
  * Atomic counter map state for Atomix.
@@ -63,11 +63,11 @@ import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.SIZ
  * of all its increments. Note that this snapshotting large state machines may risk blocking of the
  * Raft cluster with the current implementation of snapshotting in Copycat.
  */
-public class AtomixAtomicCounterMapService extends AbstractRaftService {
+public class RaftAtomicCounterMapService extends AbstractRaftService {
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
-      .register(AtomixAtomicCounterMapOperations.NAMESPACE)
+      .register(RaftAtomicCounterMapOperations.NAMESPACE)
       .build());
 
   private Map<String, Long> map = new HashMap<>();
@@ -113,7 +113,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@link Put} command which implements {@link AtomixAtomicCounterMap#put(String, long)}.
+   * Handles a {@link Put} command which implements {@link RaftAtomicCounterMap#put(String, long)}.
    *
    * @param commit put commit
    * @return put result
@@ -123,7 +123,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@link PutIfAbsent} command which implements {@link AtomixAtomicCounterMap#putIfAbsent(String, long)}.
+   * Handles a {@link PutIfAbsent} command which implements {@link RaftAtomicCounterMap#putIfAbsent(String, long)}.
    *
    * @param commit putIfAbsent commit
    * @return putIfAbsent result
@@ -133,7 +133,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@link Get} query which implements {@link AtomixAtomicCounterMap#get(String)}}.
+   * Handles a {@link Get} query which implements {@link RaftAtomicCounterMap#get(String)}}.
    *
    * @param commit get commit
    * @return get result
@@ -143,7 +143,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@link Replace} command which implements {@link AtomixAtomicCounterMap#replace(String, long, long)}.
+   * Handles a {@link Replace} command which implements {@link RaftAtomicCounterMap#replace(String, long, long)}.
    *
    * @param commit replace commit
    * @return replace result
@@ -165,7 +165,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@link Remove} command which implements {@link AtomixAtomicCounterMap#remove(String)}.
+   * Handles a {@link Remove} command which implements {@link RaftAtomicCounterMap#remove(String)}.
    *
    * @param commit remove commit
    * @return remove result
@@ -175,7 +175,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@link RemoveValue} command which implements {@link AtomixAtomicCounterMap#remove(String, long)}.
+   * Handles a {@link RemoveValue} command which implements {@link RaftAtomicCounterMap#remove(String, long)}.
    *
    * @param commit removeValue commit
    * @return removeValue result
@@ -197,7 +197,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
 
   /**
    * Handles a {@link GetAndIncrement} command which implements
-   * {@link AtomixAtomicCounterMap#getAndIncrement(String)}.
+   * {@link RaftAtomicCounterMap#getAndIncrement(String)}.
    *
    * @param commit getAndIncrement commit
    * @return getAndIncrement result
@@ -210,7 +210,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
 
   /**
    * Handles a {@link GetAndDecrement} command which implements
-   * {@link AtomixAtomicCounterMap#getAndDecrement(String)}.
+   * {@link RaftAtomicCounterMap#getAndDecrement(String)}.
    *
    * @param commit getAndDecrement commit
    * @return getAndDecrement result
@@ -223,7 +223,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
 
   /**
    * Handles a {@link IncrementAndGet} command which implements
-   * {@link AtomixAtomicCounterMap#incrementAndGet(String)}.
+   * {@link RaftAtomicCounterMap#incrementAndGet(String)}.
    *
    * @param commit incrementAndGet commit
    * @return incrementAndGet result
@@ -236,7 +236,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
 
   /**
    * Handles a {@link DecrementAndGet} command which implements
-   * {@link AtomixAtomicCounterMap#decrementAndGet(String)}.
+   * {@link RaftAtomicCounterMap#decrementAndGet(String)}.
    *
    * @param commit decrementAndGet commit
    * @return decrementAndGet result
@@ -248,7 +248,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@link AddAndGet} command which implements {@link AtomixAtomicCounterMap#addAndGet(String, long)}.
+   * Handles a {@link AddAndGet} command which implements {@link RaftAtomicCounterMap#addAndGet(String, long)}.
    *
    * @param commit addAndGet commit
    * @return addAndGet result
@@ -261,7 +261,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@link GetAndAdd} command which implements {@link AtomixAtomicCounterMap#getAndAdd(String, long)}.
+   * Handles a {@link GetAndAdd} command which implements {@link RaftAtomicCounterMap#getAndAdd(String, long)}.
    *
    * @param commit getAndAdd commit
    * @return getAndAdd result
@@ -273,7 +273,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@code Size} query which implements {@link AtomixAtomicCounterMap#size()}.
+   * Handles a {@code Size} query which implements {@link RaftAtomicCounterMap#size()}.
    *
    * @param commit size commit
    * @return size result
@@ -283,7 +283,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles an {@code IsEmpty} query which implements {@link AtomixAtomicCounterMap#isEmpty()}.
+   * Handles an {@code IsEmpty} query which implements {@link RaftAtomicCounterMap#isEmpty()}.
    *
    * @param commit isEmpty commit
    * @return isEmpty result
@@ -293,7 +293,7 @@ public class AtomixAtomicCounterMapService extends AbstractRaftService {
   }
 
   /**
-   * Handles a {@code Clear} command which implements {@link AtomixAtomicCounterMap#clear()}.
+   * Handles a {@code Clear} command which implements {@link RaftAtomicCounterMap#clear()}.
    *
    * @param commit clear commit
    */

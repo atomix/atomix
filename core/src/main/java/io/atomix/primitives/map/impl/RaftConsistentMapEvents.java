@@ -23,12 +23,12 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 /**
  * Atomix consistent map events.
  */
-public enum AtomixConsistentMapEvents implements EventType {
+public enum RaftConsistentMapEvents implements EventType {
   CHANGE("change");
 
   private final String id;
 
-  AtomixConsistentMapEvents(String id) {
+  RaftConsistentMapEvents(String id) {
     this.id = id;
   }
 

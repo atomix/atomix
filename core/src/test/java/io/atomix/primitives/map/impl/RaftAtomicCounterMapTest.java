@@ -26,16 +26,16 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit test for {@code AtomixCounterMap}.
  */
-public class AtomixAtomicCounterMapTest extends AbstractRaftPrimitiveTest<AtomixAtomicCounterMap> {
+public class RaftAtomicCounterMapTest extends AbstractRaftPrimitiveTest<RaftAtomicCounterMap> {
 
   @Override
   protected RaftService createService() {
-    return new AtomixAtomicCounterMapService();
+    return new RaftAtomicCounterMapService();
   }
 
   @Override
-  protected AtomixAtomicCounterMap createPrimitive(RaftProxy proxy) {
-    return new AtomixAtomicCounterMap(proxy);
+  protected RaftAtomicCounterMap createPrimitive(RaftProxy proxy) {
+    return new RaftAtomicCounterMap(proxy);
   }
 
   /**
@@ -43,7 +43,7 @@ public class AtomixAtomicCounterMapTest extends AbstractRaftPrimitiveTest<Atomix
    */
   @Test
   public void testBasicCounterMapOperations() throws Throwable {
-    AtomixAtomicCounterMap map = newPrimitive("testBasicCounterMapOperationMap");
+    RaftAtomicCounterMap map = newPrimitive("testBasicCounterMapOperationMap");
 
     map.isEmpty().thenAccept(isEmpty -> {
       assertTrue(isEmpty);

@@ -17,18 +17,18 @@ package io.atomix.primitives.map.impl;
 
 import io.atomix.primitives.impl.AbstractRaftPrimitive;
 import io.atomix.primitives.map.AsyncAtomicCounterMap;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.AddAndGet;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.DecrementAndGet;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.Get;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GetAndAdd;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GetAndDecrement;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GetAndIncrement;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.IncrementAndGet;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.Put;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.PutIfAbsent;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.Remove;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.RemoveValue;
-import io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.Replace;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.AddAndGet;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.DecrementAndGet;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.Get;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GetAndAdd;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GetAndDecrement;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GetAndIncrement;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.IncrementAndGet;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.Put;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.PutIfAbsent;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.Remove;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.RemoveValue;
+import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.Replace;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
@@ -36,32 +36,32 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 
 import java.util.concurrent.CompletableFuture;
 
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.ADD_AND_GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.CLEAR;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.DECREMENT_AND_GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET_AND_ADD;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET_AND_DECREMENT;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.GET_AND_INCREMENT;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.INCREMENT_AND_GET;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.IS_EMPTY;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.PUT;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.PUT_IF_ABSENT;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.REMOVE;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.REMOVE_VALUE;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.REPLACE;
-import static io.atomix.primitives.map.impl.AtomixAtomicCounterMapOperations.SIZE;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.ADD_AND_GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.CLEAR;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.DECREMENT_AND_GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET_AND_ADD;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET_AND_DECREMENT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.GET_AND_INCREMENT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.INCREMENT_AND_GET;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.IS_EMPTY;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.PUT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.PUT_IF_ABSENT;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.REMOVE;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.REMOVE_VALUE;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.REPLACE;
+import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.SIZE;
 
 /**
  * {@code AsyncAtomicCounterMap} implementation backed by Atomix.
  */
-public class AtomixAtomicCounterMap extends AbstractRaftPrimitive implements AsyncAtomicCounterMap<String> {
+public class RaftAtomicCounterMap extends AbstractRaftPrimitive implements AsyncAtomicCounterMap<String> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
-      .register(AtomixAtomicCounterMapOperations.NAMESPACE)
+      .register(RaftAtomicCounterMapOperations.NAMESPACE)
       .build());
 
-  public AtomixAtomicCounterMap(RaftProxy proxy) {
+  public RaftAtomicCounterMap(RaftProxy proxy) {
     super(proxy);
   }
 
