@@ -31,6 +31,11 @@ import java.util.concurrent.CompletableFuture;
 @NotThreadSafe
 public interface AsyncDocumentTree<V> extends AsyncPrimitive {
 
+  @Override
+  default Type primitiveType() {
+    return Type.DOCUMENT_TREE;
+  }
+
   /**
    * Returns the {@link DocumentPath path} to root of the tree.
    *
