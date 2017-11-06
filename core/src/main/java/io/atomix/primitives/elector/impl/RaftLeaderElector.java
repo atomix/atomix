@@ -34,7 +34,6 @@ import io.atomix.primitives.impl.AbstractRaftPrimitive;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
 
 import java.util.List;
 import java.util.Map;
@@ -59,8 +58,6 @@ import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.WITH
  */
 public class RaftLeaderElector extends AbstractRaftPrimitive implements AsyncLeaderElector {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
-      .register(KryoNamespaces.BASIC)
-      .register(NodeId.class)
       .register(RaftLeaderElectorOperations.NAMESPACE)
       .register(RaftLeaderElectorEvents.NAMESPACE)
       .build());
