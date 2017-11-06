@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector;
+package io.atomix.primitives.leadership;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leadership;
-import io.atomix.leadership.LeadershipEvent;
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.elector.impl.DefaultLeaderElector;
+import io.atomix.primitives.leadership.impl.DefaultLeaderElector;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -122,7 +120,7 @@ public interface AsyncLeaderElector extends AsyncPrimitive {
    * @param listener listener to notify
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> addListener(LeaderElectorEventListener listener);
+  CompletableFuture<Void> addListener(LeadershipEventListener listener);
 
   /**
    * Unregisters a previously registered change notification listener.
@@ -132,7 +130,7 @@ public interface AsyncLeaderElector extends AsyncPrimitive {
    * @param listener listener to remove
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> removeListener(LeaderElectorEventListener listener);
+  CompletableFuture<Void> removeListener(LeadershipEventListener listener);
 
   /**
    * Returns a new {@link LeaderElector} that is backed by this instance.

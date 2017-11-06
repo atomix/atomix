@@ -16,8 +16,8 @@
 package io.atomix.serializer.impl;
 
 import io.atomix.primitives.counter.impl.RaftCounterOperations;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorEvents;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorEvents;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations;
 import io.atomix.primitives.lock.impl.RaftLockEvents;
 import io.atomix.primitives.lock.impl.RaftLockOperations;
 import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations;

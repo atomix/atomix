@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector.impl;
+package io.atomix.primitives.leadership.impl;
 
 import com.google.common.base.MoreObjects;
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leader;
-import io.atomix.leadership.Leadership;
+import io.atomix.primitives.leadership.Leader;
+import io.atomix.primitives.leadership.Leadership;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.serializer.kryo.KryoNamespace;

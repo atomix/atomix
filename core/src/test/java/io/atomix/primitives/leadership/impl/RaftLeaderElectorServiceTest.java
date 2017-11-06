@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector.impl;
+package io.atomix.primitives.leadership.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leadership;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorService;
+import io.atomix.primitives.leadership.Leadership;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.RaftContext;
@@ -42,8 +40,8 @@ import io.atomix.utils.concurrent.ThreadContext;
 import org.junit.Test;
 
 import static io.atomix.primitives.DistributedPrimitive.Type.LEADER_ELECTOR;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GET_LEADERSHIP;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.RUN;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GET_LEADERSHIP;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.RUN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector.impl;
+package io.atomix.primitives.leadership.impl;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
@@ -23,17 +23,17 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leader;
-import io.atomix.leadership.Leadership;
-import io.atomix.primitives.elector.LeaderElectionEvent;
-import io.atomix.primitives.elector.LeaderElectionEvent.Type;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Anoint;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Evict;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GetElectedTopics;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GetLeadership;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Promote;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Run;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Withdraw;
+import io.atomix.primitives.leadership.Leader;
+import io.atomix.primitives.leadership.Leadership;
+import io.atomix.primitives.leadership.LeadershipEvent;
+import io.atomix.primitives.leadership.LeadershipEvent.Type;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Anoint;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Evict;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GetElectedTopics;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GetLeadership;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Promote;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Run;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Withdraw;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
@@ -55,17 +55,17 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorEvents.CHANGE;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.ADD_LISTENER;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.ANOINT;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.EVICT;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GET_ALL_LEADERSHIPS;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GET_ELECTED_TOPICS;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GET_LEADERSHIP;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.PROMOTE;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.REMOVE_LISTENER;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.RUN;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.WITHDRAW;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorEvents.CHANGE;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.ADD_LISTENER;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.ANOINT;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.EVICT;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GET_ALL_LEADERSHIPS;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GET_ELECTED_TOPICS;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GET_LEADERSHIP;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.PROMOTE;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.REMOVE_LISTENER;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.RUN;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.WITHDRAW;
 
 /**
  * State machine for {@link RaftLeaderElector} resource.
@@ -121,10 +121,10 @@ public class RaftLeaderElectorService extends AbstractRaftService {
   }
 
   private void notifyLeadershipChange(Leadership previousLeadership, Leadership newLeadership) {
-    notifyLeadershipChanges(Lists.newArrayList(new LeaderElectionEvent(Type.CHANGE, previousLeadership, newLeadership)));
+    notifyLeadershipChanges(Lists.newArrayList(new LeadershipEvent(Type.CHANGE, previousLeadership, newLeadership)));
   }
 
-  private void notifyLeadershipChanges(List<LeaderElectionEvent> changes) {
+  private void notifyLeadershipChanges(List<LeadershipEvent> changes) {
     if (changes.isEmpty()) {
       return;
     }
@@ -263,7 +263,7 @@ public class RaftLeaderElectorService extends AbstractRaftService {
    */
   public void evict(Commit<? extends Evict> commit) {
     try {
-      List<LeaderElectionEvent> changes = Lists.newArrayList();
+      List<LeadershipEvent> changes = Lists.newArrayList();
       NodeId nodeId = commit.value().nodeId();
       Set<String> topics = Maps.filterValues(elections, e -> e.candidates().contains(nodeId)).keySet();
       topics.forEach(topic -> {
@@ -271,7 +271,7 @@ public class RaftLeaderElectorService extends AbstractRaftService {
         elections.compute(topic, (k, v) -> v.evict(nodeId, termCounter(topic)::incrementAndGet));
         Leadership newLeadership = leadership(topic);
         if (!Objects.equal(oldLeadership, newLeadership)) {
-          changes.add(new LeaderElectionEvent(Type.CHANGE, oldLeadership, newLeadership));
+          changes.add(new LeadershipEvent(Type.CHANGE, oldLeadership, newLeadership));
         }
       });
       notifyLeadershipChanges(changes);
@@ -352,13 +352,13 @@ public class RaftLeaderElectorService extends AbstractRaftService {
   private void onSessionEnd(RaftSession session) {
     listeners.remove(session.sessionId().id());
     Set<String> topics = elections.keySet();
-    List<LeaderElectionEvent> changes = Lists.newArrayList();
+    List<LeadershipEvent> changes = Lists.newArrayList();
     topics.forEach(topic -> {
       Leadership oldLeadership = leadership(topic);
       elections.compute(topic, (k, v) -> v.cleanup(session, termCounter(topic)::incrementAndGet));
       Leadership newLeadership = leadership(topic);
       if (!Objects.equal(oldLeadership, newLeadership)) {
-        changes.add(new LeaderElectionEvent(Type.CHANGE, oldLeadership, newLeadership));
+        changes.add(new LeadershipEvent(Type.CHANGE, oldLeadership, newLeadership));
       }
     });
     notifyLeadershipChanges(changes);

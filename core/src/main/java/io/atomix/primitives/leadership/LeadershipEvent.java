@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector;
+package io.atomix.primitives.leadership;
 
 import com.google.common.base.MoreObjects;
 import io.atomix.event.AbstractEvent;
-import io.atomix.leadership.Leadership;
 
 import java.util.Objects;
 
 /**
  * Describes leadership election event.
  */
-public class LeaderElectionEvent extends AbstractEvent<LeaderElectionEvent.Type, Leadership> {
+public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leadership> {
 
   /**
    * Type of leadership events.
@@ -47,7 +46,7 @@ public class LeaderElectionEvent extends AbstractEvent<LeaderElectionEvent.Type,
    * @param oldLeadership previous leadership
    * @param newLeadership new leadership
    */
-  public LeaderElectionEvent(Type type, Leadership oldLeadership, Leadership newLeadership) {
+  public LeadershipEvent(Type type, Leadership oldLeadership, Leadership newLeadership) {
     this(type, oldLeadership, newLeadership, System.currentTimeMillis());
   }
 
@@ -59,7 +58,7 @@ public class LeaderElectionEvent extends AbstractEvent<LeaderElectionEvent.Type,
    * @param newLeadership new leadership
    * @param time       occurrence time
    */
-  public LeaderElectionEvent(Type type, Leadership oldLeadership, Leadership newLeadership, long time) {
+  public LeadershipEvent(Type type, Leadership oldLeadership, Leadership newLeadership, long time) {
     super(type, newLeadership, time);
     this.oldLeadership = oldLeadership;
     this.newLeadership = newLeadership;
@@ -102,8 +101,8 @@ public class LeaderElectionEvent extends AbstractEvent<LeaderElectionEvent.Type,
     if (this == obj) {
       return true;
     }
-    if (obj instanceof LeaderElectionEvent) {
-      final LeaderElectionEvent other = (LeaderElectionEvent) obj;
+    if (obj instanceof LeadershipEvent) {
+      final LeadershipEvent other = (LeadershipEvent) obj;
       return Objects.equals(this.type(), other.type()) &&
           Objects.equals(this.subject(), other.subject()) &&
           Objects.equals(this.time(), other.time());

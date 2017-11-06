@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-present Open Networking Foundation
+ * Copyright 2016-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector;
+package io.atomix.primitives.leadership;
 
-import io.atomix.event.EventListener;
+import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.DistributedPrimitiveBuilder;
 
 /**
- * Entity capable of receiving leader elector events.
+ * Builder for constructing new {@link AsyncLeaderElector} instances.
  */
-public interface LeaderElectorEventListener extends EventListener<LeaderElectionEvent> {
+public abstract class LeaderElectorBuilder
+    extends DistributedPrimitiveBuilder<LeaderElectorBuilder, AsyncLeaderElector> {
+  public LeaderElectorBuilder() {
+    super(DistributedPrimitive.Type.LEADER_ELECTOR);
+  }
 }

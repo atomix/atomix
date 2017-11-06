@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector.impl;
+package io.atomix.primitives.leadership.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leadership;
-import io.atomix.primitives.elector.LeaderElectionEvent;
-import io.atomix.primitives.elector.LeaderElectorEventListener;
-import io.atomix.primitives.elector.impl.RaftLeaderElector;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorService;
+import io.atomix.primitives.leadership.Leadership;
+import io.atomix.primitives.leadership.LeadershipEvent;
+import io.atomix.primitives.leadership.LeadershipEventListener;
 import io.atomix.primitives.impl.AbstractRaftPrimitiveTest;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.RaftService;
@@ -322,12 +320,12 @@ public class RaftLeaderElectorTest extends AbstractRaftPrimitiveTest<RaftLeaderE
         }).join();
     }
 
-    private static class LeaderEventListener implements LeaderElectorEventListener {
-        Queue<LeaderElectionEvent> eventQueue = new LinkedList<>();
-        CompletableFuture<LeaderElectionEvent> pendingFuture;
+    private static class LeaderEventListener implements LeadershipEventListener {
+        Queue<LeadershipEvent> eventQueue = new LinkedList<>();
+        CompletableFuture<LeadershipEvent> pendingFuture;
 
         @Override
-        public void onEvent(LeaderElectionEvent event) {
+        public void onEvent(LeadershipEvent event) {
             synchronized (this) {
                 if (pendingFuture != null) {
                     pendingFuture.complete(event);
@@ -346,7 +344,7 @@ public class RaftLeaderElectorTest extends AbstractRaftPrimitiveTest<RaftLeaderE
             eventQueue.clear();
         }
 
-        public CompletableFuture<LeaderElectionEvent> nextEvent() {
+        public CompletableFuture<LeadershipEvent> nextEvent() {
             synchronized (this) {
                 if (eventQueue.isEmpty()) {
                     if (pendingFuture == null) {

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector.impl;
+package io.atomix.primitives.leadership.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leader;
-import io.atomix.leadership.Leadership;
-import io.atomix.primitives.elector.LeaderElectionEvent;
+import io.atomix.primitives.leadership.Leader;
+import io.atomix.primitives.leadership.Leadership;
+import io.atomix.primitives.leadership.LeadershipEvent;
 import io.atomix.protocols.raft.event.EventType;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
@@ -45,7 +45,7 @@ public enum RaftLeaderElectorEvents implements EventType {
       .register(NodeId.class)
       .register(Leadership.class)
       .register(Leader.class)
-      .register(LeaderElectionEvent.class)
-      .register(LeaderElectionEvent.Type.class)
+      .register(LeadershipEvent.class)
+      .register(LeadershipEvent.Type.class)
       .build(RaftLeaderElectorEvents.class.getSimpleName());
 }

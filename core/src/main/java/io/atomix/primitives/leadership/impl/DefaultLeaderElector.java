@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector.impl;
+package io.atomix.primitives.leadership.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leadership;
+import io.atomix.primitives.leadership.Leadership;
 import io.atomix.primitives.PrimitiveException;
 import io.atomix.primitives.Synchronous;
-import io.atomix.primitives.elector.AsyncLeaderElector;
-import io.atomix.primitives.elector.LeaderElector;
-import io.atomix.primitives.elector.LeaderElectorEventListener;
+import io.atomix.primitives.leadership.AsyncLeaderElector;
+import io.atomix.primitives.leadership.LeaderElector;
+import io.atomix.primitives.leadership.LeadershipEventListener;
 
 import java.util.Collection;
 import java.util.Map;
@@ -81,12 +81,12 @@ public class DefaultLeaderElector extends Synchronous<AsyncLeaderElector> implem
   }
 
   @Override
-  public void addListener(LeaderElectorEventListener listener) {
+  public void addListener(LeadershipEventListener listener) {
     complete(asyncElector.addListener(listener));
   }
 
   @Override
-  public void removeListener(LeaderElectorEventListener listener) {
+  public void removeListener(LeadershipEventListener listener) {
     complete(asyncElector.removeListener(listener));
   }
 

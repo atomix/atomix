@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector;
+package io.atomix.primitives.leadership;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leadership;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.SyncPrimitive;
 
@@ -100,7 +99,7 @@ public interface LeaderElector extends SyncPrimitive {
    *
    * @param listener listener to add
    */
-  void addListener(LeaderElectorEventListener listener);
+  void addListener(LeadershipEventListener listener);
 
   /**
    * Unregisters a previously registered change notification listener.
@@ -109,5 +108,5 @@ public interface LeaderElector extends SyncPrimitive {
    *
    * @param listener listener to remove
    */
-  void removeListener(LeaderElectorEventListener listener);
+  void removeListener(LeadershipEventListener listener);
 }

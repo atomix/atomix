@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.elector.impl;
+package io.atomix.primitives.leadership.impl;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.NodeId;
-import io.atomix.leadership.Leadership;
-import io.atomix.primitives.elector.AsyncLeaderElector;
-import io.atomix.primitives.elector.LeaderElectionEvent;
-import io.atomix.primitives.elector.LeaderElectorEventListener;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Anoint;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GetElectedTopics;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GetLeadership;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Promote;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Run;
-import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.Withdraw;
+import io.atomix.primitives.leadership.Leadership;
+import io.atomix.primitives.leadership.AsyncLeaderElector;
+import io.atomix.primitives.leadership.LeadershipEvent;
+import io.atomix.primitives.leadership.LeadershipEventListener;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Anoint;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GetElectedTopics;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GetLeadership;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Promote;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Run;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Withdraw;
 import io.atomix.primitives.impl.AbstractRaftPrimitive;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
@@ -41,17 +41,17 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorEvents.CHANGE;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.ADD_LISTENER;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.ANOINT;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.EVICT;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GET_ALL_LEADERSHIPS;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GET_ELECTED_TOPICS;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.GET_LEADERSHIP;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.PROMOTE;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.REMOVE_LISTENER;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.RUN;
-import static io.atomix.primitives.elector.impl.RaftLeaderElectorOperations.WITHDRAW;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorEvents.CHANGE;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.ADD_LISTENER;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.ANOINT;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.EVICT;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GET_ALL_LEADERSHIPS;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GET_ELECTED_TOPICS;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GET_LEADERSHIP;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.PROMOTE;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.REMOVE_LISTENER;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.RUN;
+import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.WITHDRAW;
 
 /**
  * Distributed resource providing the {@link AsyncLeaderElector} primitive.
@@ -62,8 +62,8 @@ public class RaftLeaderElector extends AbstractRaftPrimitive implements AsyncLea
       .register(RaftLeaderElectorEvents.NAMESPACE)
       .build());
 
-  private final Set<LeaderElectorEventListener> leadershipChangeListeners = Sets.newCopyOnWriteArraySet();
-  private final LeaderElectorEventListener cacheUpdater;
+  private final Set<LeadershipEventListener> leadershipChangeListeners = Sets.newCopyOnWriteArraySet();
+  private final LeadershipEventListener cacheUpdater;
   private final Consumer<Status> statusListener;
 
   private final LoadingCache<String, CompletableFuture<Leadership>> cache;
@@ -104,7 +104,7 @@ public class RaftLeaderElector extends AbstractRaftPrimitive implements AsyncLea
     return addListener(cacheUpdater).thenApply(v -> this);
   }
 
-  private void handleEvent(List<LeaderElectionEvent> changes) {
+  private void handleEvent(List<LeadershipEvent> changes) {
     changes.forEach(change -> leadershipChangeListeners.forEach(l -> l.onEvent(change)));
   }
 
@@ -158,7 +158,7 @@ public class RaftLeaderElector extends AbstractRaftPrimitive implements AsyncLea
   }
 
   @Override
-  public synchronized CompletableFuture<Void> addListener(LeaderElectorEventListener listener) {
+  public synchronized CompletableFuture<Void> addListener(LeadershipEventListener listener) {
     if (leadershipChangeListeners.isEmpty()) {
       return proxy.invoke(ADD_LISTENER).thenRun(() -> leadershipChangeListeners.add(listener));
     } else {
@@ -168,7 +168,7 @@ public class RaftLeaderElector extends AbstractRaftPrimitive implements AsyncLea
   }
 
   @Override
-  public synchronized CompletableFuture<Void> removeListener(LeaderElectorEventListener listener) {
+  public synchronized CompletableFuture<Void> removeListener(LeadershipEventListener listener) {
     if (leadershipChangeListeners.remove(listener) && leadershipChangeListeners.isEmpty()) {
       return proxy.invoke(REMOVE_LISTENER).thenApply(v -> null);
     }
