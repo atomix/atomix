@@ -19,8 +19,10 @@ import io.atomix.primitives.PrimitiveException;
 import io.atomix.primitives.Synchronous;
 import io.atomix.primitives.lock.AsyncDistributedLock;
 import io.atomix.primitives.lock.DistributedLock;
+import io.atomix.time.Version;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -41,17 +43,17 @@ public class DefaultDistributedLock extends Synchronous<AsyncDistributedLock> im
   }
 
   @Override
-  public void lock() {
-    complete(asyncLock.lock());
+  public Version lock() {
+    return complete(asyncLock.lock());
   }
 
   @Override
-  public boolean tryLock() {
+  public Optional<Version> tryLock() {
     return complete(asyncLock.tryLock());
   }
 
   @Override
-  public boolean tryLock(Duration timeout) {
+  public Optional<Version> tryLock(Duration timeout) {
     return complete(asyncLock.tryLock(timeout));
   }
 
