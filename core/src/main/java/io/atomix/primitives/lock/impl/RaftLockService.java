@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.atomix.primitives.lock.impl.RaftLockOperations.LOCK;
 import static io.atomix.primitives.lock.impl.RaftLockOperations.UNLOCK;
 
@@ -122,7 +123,7 @@ public class RaftLockService extends AbstractRaftService {
         }
       }));
     } else {
-      LockHolder holder = lock = new LockHolder(
+      LockHolder holder = new LockHolder(
           commit.value().id(),
           commit.index(),
           commit.session().sessionId().id(),
@@ -174,7 +175,7 @@ public class RaftLockService extends AbstractRaftService {
           if (lockSession == null || lockSession.getState() == RaftSession.State.EXPIRED || lockSession.getState() == RaftSession.State.CLOSED) {
             lock = queue.poll();
           } else {
-            session.publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, lock.index));
+            lockSession.publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, lock.index));
             break;
           }
         }
@@ -193,6 +194,16 @@ public class RaftLockService extends AbstractRaftService {
       this.index = index;
       this.session = session;
       this.expire = expire;
+    }
+
+    @Override
+    public String toString() {
+      return toStringHelper(this)
+          .add("id", id)
+          .add("index", index)
+          .add("session", session)
+          .add("expire", expire)
+          .toString();
     }
   }
 }
