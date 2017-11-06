@@ -16,11 +16,12 @@
 package io.atomix.primitives.map;
 
 import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 
 /**
  * Distributed version of com.google.common.util.concurrent.AtomicLongMap.
  */
-public interface AtomicCounterMap<K> extends DistributedPrimitive {
+public interface AtomicCounterMap<K> extends SyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {

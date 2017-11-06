@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.generator;
-
-import io.atomix.primitives.SyncPrimitive;
+package io.atomix.primitives;
 
 /**
- * Generator for globally unique numeric identifiers.
+ * Synchronous primitive.
  */
-public interface AtomicIdGenerator extends SyncPrimitive {
+public interface SyncPrimitive extends DistributedPrimitive {
 
-  @Override
-  default Type primitiveType() {
-    return Type.ID_GENERATOR;
+  /**
+   * Purges state associated with this primitive.
+   * <p>
+   * Implementations can override and provide appropriate clean up logic for purging
+   * any state state associated with the primitive. Whether modifications made within the
+   * destroy method have local or global visibility is left unspecified.
+   */
+  default void destroy() {
   }
 
   /**
-   * Gets the next globally unique numeric identifier.
-   *
-   * @return the next globally unique numeric identifier
+   * Closes the primitive.
    */
-  long nextId();
+  void close();
 
 }

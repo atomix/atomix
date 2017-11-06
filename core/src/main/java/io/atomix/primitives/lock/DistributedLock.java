@@ -15,14 +15,14 @@
  */
 package io.atomix.primitives.lock;
 
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 
 import java.time.Duration;
 
 /**
  * Asynchronous lock primitive.
  */
-public interface DistributedLock extends DistributedPrimitive {
+public interface DistributedLock extends SyncPrimitive {
 
   @Override
   default Type primitiveType() {

@@ -15,6 +15,7 @@
  */
 package io.atomix.primitives.set;
 
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.set.impl.DefaultDistributedSet;
 
@@ -31,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <E> set entry type
  */
-public interface AsyncDistributedSet<E> extends DistributedPrimitive {
+public interface AsyncDistributedSet<E> extends AsyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {

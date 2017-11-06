@@ -17,7 +17,6 @@ package io.atomix.primitives;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -148,19 +147,6 @@ public interface DistributedPrimitive {
   Type primitiveType();
 
   /**
-   * Purges state associated with this primitive.
-   * <p>
-   * Implementations can override and provide appropriate clean up logic for purging
-   * any state state associated with the primitive. Whether modifications made within the
-   * destroy method have local or global visibility is left unspecified.
-   *
-   * @return {@code CompletableFuture} that is completed when the operation completes
-   */
-  default CompletableFuture<Void> destroy() {
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
    * Registers a listener to be called when the primitive's status changes.
    *
    * @param listener The listener to be called when the status changes.
@@ -184,4 +170,5 @@ public interface DistributedPrimitive {
   default Collection<Consumer<Status>> statusChangeListeners() {
     return Collections.emptyList();
   }
+
 }

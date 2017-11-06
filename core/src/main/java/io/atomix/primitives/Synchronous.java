@@ -15,7 +15,11 @@
  */
 package io.atomix.primitives;
 
-import java.util.concurrent.CompletableFuture;
+import io.atomix.utils.AtomixRuntimeException;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * DistributedPrimitive that is a synchronous (blocking) version of
@@ -23,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <T> type of DistributedPrimitive
  */
-public abstract class Synchronous<T extends DistributedPrimitive> implements DistributedPrimitive {
+public abstract class Synchronous<T extends AsyncPrimitive> implements SyncPrimitive {
 
   private final T primitive;
 
@@ -42,7 +46,20 @@ public abstract class Synchronous<T extends DistributedPrimitive> implements Dis
   }
 
   @Override
-  public CompletableFuture<Void> destroy() {
-    return primitive.destroy();
+  public void destroy() {
+    try {
+      primitive.destroy().get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new AtomixRuntimeException(e);
+    }
+  }
+
+  @Override
+  public void close() {
+    try {
+      primitive.close().get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new AtomixRuntimeException(e);
+    }
   }
 }

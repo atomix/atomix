@@ -18,7 +18,7 @@ package io.atomix.primitives.multimap;
 
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 import io.atomix.time.Versioned;
 
 import java.util.Collection;
@@ -31,7 +31,7 @@ import java.util.concurrent.Executor;
  * {@link AsyncConsistentMultimap}.  Instead of returning futures this map
  * blocks until the future completes then returns the result.
  */
-public interface ConsistentMultimap<K, V> extends DistributedPrimitive {
+public interface ConsistentMultimap<K, V> extends SyncPrimitive {
   /**
    * Returns the number of key-value pairs in this multimap.
    *

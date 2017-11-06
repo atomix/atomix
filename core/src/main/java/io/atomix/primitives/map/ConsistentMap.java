@@ -17,7 +17,7 @@
 package io.atomix.primitives.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 import io.atomix.time.Versioned;
 
 import java.util.Collection;
@@ -36,7 +36,7 @@ import java.util.function.Predicate;
  * @param <K> type of key
  * @param <V> type of value
  */
-public interface ConsistentMap<K, V> extends DistributedPrimitive {
+public interface ConsistentMap<K, V> extends SyncPrimitive {
 
   /**
    * Returns the number of entries in the map.

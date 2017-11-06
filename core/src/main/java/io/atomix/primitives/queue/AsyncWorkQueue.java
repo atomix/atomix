@@ -16,6 +16,7 @@
 package io.atomix.primitives.queue;
 
 import com.google.common.collect.ImmutableList;
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
 
 import java.util.Arrays;
@@ -40,7 +41,7 @@ import java.util.function.Consumer;
  *
  * @param <E> task payload type.
  */
-public interface WorkQueue<E> extends DistributedPrimitive {
+public interface AsyncWorkQueue<E> extends AsyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {

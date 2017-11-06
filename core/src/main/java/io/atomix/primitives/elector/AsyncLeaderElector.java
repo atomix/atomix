@@ -15,15 +15,15 @@
  */
 package io.atomix.primitives.elector;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.leadership.Leadership;
 import io.atomix.leadership.LeadershipEvent;
-import io.atomix.cluster.NodeId;
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.elector.impl.DefaultLeaderElector;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 /**
  * Distributed mutual exclusion primitive.
@@ -44,7 +44,7 @@ import java.util.function.Consumer;
  * The operation itself is executed asynchronous and the returned future will be
  * {@link CompletableFuture#complete completed} when the operation finishes.
  */
-public interface AsyncLeaderElector extends DistributedPrimitive {
+public interface AsyncLeaderElector extends AsyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {
@@ -119,20 +119,20 @@ public interface AsyncLeaderElector extends DistributedPrimitive {
   /**
    * Registers a listener to be notified of Leadership changes for all topics.
    *
-   * @param consumer listener to notify
+   * @param listener listener to notify
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> addChangeListener(Consumer<LeadershipEvent> consumer);
+  CompletableFuture<Void> addListener(LeaderElectorEventListener listener);
 
   /**
    * Unregisters a previously registered change notification listener.
    * <p>
    * If the specified listener was not previously registered, this operation will be a noop.
    *
-   * @param consumer listener to remove
+   * @param listener listener to remove
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> removeChangeListener(Consumer<LeadershipEvent> consumer);
+  CompletableFuture<Void> removeListener(LeaderElectorEventListener listener);
 
   /**
    * Returns a new {@link LeaderElector} that is backed by this instance.

@@ -15,6 +15,7 @@
  */
 package io.atomix.primitives.counter;
 
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.counter.impl.DefaultAtomicCounter;
 
@@ -23,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * An async atomic counter dispenses monotonically increasing values.
  */
-public interface AsyncAtomicCounter extends DistributedPrimitive {
+public interface AsyncAtomicCounter extends AsyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {

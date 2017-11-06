@@ -16,11 +16,12 @@
 package io.atomix.primitives.counter;
 
 import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 
 /**
  * Distributed version of java.util.concurrent.atomic.AtomicLong.
  */
-public interface AtomicCounter extends DistributedPrimitive {
+public interface AtomicCounter extends SyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {

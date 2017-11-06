@@ -28,8 +28,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * API for a distributed tree map implementation.
  */
-public interface AsyncConsistentTreeMap<V>
-    extends AsyncConsistentMap<String, V> {
+public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V> {
 
   /**
    * Return the lowest key in the map.

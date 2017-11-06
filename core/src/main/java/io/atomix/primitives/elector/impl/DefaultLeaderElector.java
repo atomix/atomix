@@ -15,13 +15,13 @@
  */
 package io.atomix.primitives.elector.impl;
 
-import io.atomix.leadership.Leadership;
-import io.atomix.leadership.LeadershipEvent;
 import io.atomix.cluster.NodeId;
+import io.atomix.leadership.Leadership;
 import io.atomix.primitives.PrimitiveException;
 import io.atomix.primitives.Synchronous;
 import io.atomix.primitives.elector.AsyncLeaderElector;
 import io.atomix.primitives.elector.LeaderElector;
+import io.atomix.primitives.elector.LeaderElectorEventListener;
 
 import java.util.Collection;
 import java.util.Map;
@@ -81,13 +81,13 @@ public class DefaultLeaderElector extends Synchronous<AsyncLeaderElector> implem
   }
 
   @Override
-  public void addChangeListener(Consumer<LeadershipEvent> consumer) {
-    complete(asyncElector.addChangeListener(consumer));
+  public void addListener(LeaderElectorEventListener listener) {
+    complete(asyncElector.addListener(listener));
   }
 
   @Override
-  public void removeChangeListener(Consumer<LeadershipEvent> consumer) {
-    complete(asyncElector.removeChangeListener(consumer));
+  public void removeListener(LeaderElectorEventListener listener) {
+    complete(asyncElector.removeListener(listener));
   }
 
   @Override

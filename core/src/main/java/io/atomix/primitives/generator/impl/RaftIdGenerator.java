@@ -60,6 +60,11 @@ public class RaftIdGenerator implements AsyncAtomicIdGenerator {
     }
   }
 
+  @Override
+  public CompletableFuture<Void> close() {
+    return counter.close();
+  }
+
   private CompletableFuture<Long> reserve() {
     if (reserveFuture == null || reserveFuture.isDone()) {
       reserveFuture = counter.getAndAdd(batchSize);

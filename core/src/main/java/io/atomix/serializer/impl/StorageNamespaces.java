@@ -16,6 +16,8 @@
 package io.atomix.serializer.impl;
 
 import io.atomix.primitives.counter.impl.RaftCounterOperations;
+import io.atomix.primitives.elector.impl.RaftLeaderElectorEvents;
+import io.atomix.primitives.elector.impl.RaftLeaderElectorOperations;
 import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations;
 import io.atomix.primitives.map.impl.RaftConsistentMapEvents;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations;
@@ -168,8 +170,8 @@ public final class StorageNamespaces {
       .register(RaftCounterOperations.class)
       .register(RaftDocumentTreeEvents.class)
       .register(RaftDocumentTreeOperations.class)
-      //.register(RaftLeaderElectorEvents.class)
-      //.register(RaftLeaderElectorOperations.class)
+      .register(RaftLeaderElectorEvents.class)
+      .register(RaftLeaderElectorOperations.class)
       //.register(RaftWorkQueueEvents.class)
       //.register(RaftWorkQueueOperations.class)
       .build("RaftProtocol");
@@ -203,7 +205,7 @@ public final class StorageNamespaces {
       .register(RaftConsistentTreeMapOperations.class)
       .register(RaftCounterOperations.class)
       .register(RaftDocumentTreeOperations.class)
-      //.register(RaftLeaderElectorOperations.class)
+      .register(RaftLeaderElectorOperations.class)
       //.register(RaftWorkQueueOperations.class)
       .build("RaftStorage");
 

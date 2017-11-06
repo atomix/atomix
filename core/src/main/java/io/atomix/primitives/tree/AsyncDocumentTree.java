@@ -16,10 +16,7 @@
 
 package io.atomix.primitives.tree;
 
-import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.tree.DocumentPath;
-import io.atomix.primitives.tree.DocumentTreeListener;
-import io.atomix.primitives.tree.NoSuchDocumentPathException;
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.time.Versioned;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -32,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> document tree value type
  */
 @NotThreadSafe
-public interface AsyncDocumentTree<V> extends DistributedPrimitive {
+public interface AsyncDocumentTree<V> extends AsyncPrimitive {
 
   /**
    * Returns the {@link DocumentPath path} to root of the tree.

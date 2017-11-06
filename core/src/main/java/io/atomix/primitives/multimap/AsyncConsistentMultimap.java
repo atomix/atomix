@@ -18,6 +18,7 @@ package io.atomix.primitives.multimap;
 
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.multimap.impl.DefaultConsistentMultimap;
 import io.atomix.time.Versioned;
@@ -36,7 +37,7 @@ import java.util.concurrent.Executor;
  * Certain operations may be too expensive when backed by a distributed data
  * structure and have been labeled as such.
  */
-public interface AsyncConsistentMultimap<K, V> extends DistributedPrimitive {
+public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {

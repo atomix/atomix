@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2014-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.generator;
+package io.atomix.primitives.elector;
 
-import io.atomix.primitives.SyncPrimitive;
+import io.atomix.event.EventListener;
 
 /**
- * Generator for globally unique numeric identifiers.
+ * Entity capable of receiving leader elector events.
  */
-public interface AtomicIdGenerator extends SyncPrimitive {
-
-  @Override
-  default Type primitiveType() {
-    return Type.ID_GENERATOR;
-  }
-
-  /**
-   * Gets the next globally unique numeric identifier.
-   *
-   * @return the next globally unique numeric identifier
-   */
-  long nextId();
-
+public interface LeaderElectorEventListener extends EventListener<LeaderElectionEvent> {
 }

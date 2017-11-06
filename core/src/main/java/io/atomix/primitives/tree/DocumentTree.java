@@ -16,7 +16,7 @@
 
 package io.atomix.primitives.tree;
 
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 import io.atomix.time.Versioned;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -28,7 +28,7 @@ import java.util.Map;
  * @param <V> document tree value type
  */
 @NotThreadSafe
-public interface DocumentTree<V> extends DistributedPrimitive {
+public interface DocumentTree<V> extends SyncPrimitive {
 
   @Override
   default Type primitiveType() {

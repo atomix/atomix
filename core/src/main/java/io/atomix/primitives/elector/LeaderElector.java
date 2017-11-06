@@ -15,19 +15,18 @@
  */
 package io.atomix.primitives.elector;
 
-import io.atomix.leadership.Leadership;
-import io.atomix.leadership.LeadershipEvent;
 import io.atomix.cluster.NodeId;
+import io.atomix.leadership.Leadership;
 import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * {@code LeaderElector} provides the same functionality as {@link AsyncLeaderElector} with
  * the only difference that all its methods block until the corresponding operation completes.
  */
-public interface LeaderElector extends DistributedPrimitive {
+public interface LeaderElector extends SyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {
@@ -99,16 +98,16 @@ public interface LeaderElector extends DistributedPrimitive {
   /**
    * Registers a listener to be notified of Leadership changes for all topics.
    *
-   * @param consumer listener to add
+   * @param listener listener to add
    */
-  void addChangeListener(Consumer<LeadershipEvent> consumer);
+  void addListener(LeaderElectorEventListener listener);
 
   /**
    * Unregisters a previously registered change notification listener.
    * <p>
    * If the specified listener was not previously registered, this operation will be a noop.
    *
-   * @param consumer listener to remove
+   * @param listener listener to remove
    */
-  void removeChangeListener(Consumer<LeadershipEvent> consumer);
+  void removeListener(LeaderElectorEventListener listener);
 }

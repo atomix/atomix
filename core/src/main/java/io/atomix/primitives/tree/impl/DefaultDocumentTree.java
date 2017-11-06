@@ -184,6 +184,11 @@ public class DefaultDocumentTree<V> implements DocumentTree<V> {
     // TODO Auto-generated method stub
   }
 
+  @Override
+  public void close() {
+
+  }
+
   private DefaultDocumentTreeNode<V> getNode(DocumentPath path) {
     Iterator<String> pathElements = path.pathElements().iterator();
     DefaultDocumentTreeNode<V> currentNode = root;

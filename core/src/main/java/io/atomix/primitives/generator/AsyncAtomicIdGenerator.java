@@ -15,7 +15,7 @@
  */
 package io.atomix.primitives.generator;
 
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.generator.impl.DefaultAtomicIdGenerator;
 
 import java.util.concurrent.CompletableFuture;
@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * An async ID generator for generating globally unique numbers.
  */
-public interface AsyncAtomicIdGenerator extends DistributedPrimitive {
+public interface AsyncAtomicIdGenerator extends AsyncPrimitive {
 
   @Override
   default Type primitiveType() {

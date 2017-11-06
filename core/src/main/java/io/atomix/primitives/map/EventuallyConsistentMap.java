@@ -16,6 +16,7 @@
 package io.atomix.primitives.map;
 
 import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 
 import java.util.Collection;
 import java.util.Map;
@@ -41,7 +42,7 @@ import java.util.function.BiFunction;
  * Null values are not allowed in this map.
  * </p>
  */
-public interface EventuallyConsistentMap<K, V> extends DistributedPrimitive {
+public interface EventuallyConsistentMap<K, V> extends SyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {

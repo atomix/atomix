@@ -20,7 +20,7 @@ import com.google.common.base.MoreObjects;
 import java.util.function.Function;
 
 /**
- * {@link WorkQueue} task.
+ * {@link AsyncWorkQueue} task.
  *
  * @param <E> task payload type.
  */

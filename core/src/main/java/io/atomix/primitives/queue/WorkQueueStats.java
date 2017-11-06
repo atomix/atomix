@@ -18,7 +18,7 @@ package io.atomix.primitives.queue;
 import com.google.common.base.MoreObjects;
 
 /**
- * Statistics for a {@link WorkQueue}.
+ * Statistics for a {@link AsyncWorkQueue}.
  */
 public final class WorkQueueStats {
 

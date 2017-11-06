@@ -17,11 +17,12 @@ package io.atomix.primitives.impl;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -31,7 +32,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Abstract base class for primitives that interact with Raft replicated state machines via proxy.
  */
-public abstract class AbstractRaftPrimitive implements DistributedPrimitive {
+public abstract class AbstractRaftPrimitive implements AsyncPrimitive {
     private final Function<RaftProxy.State, Status> mapper = state -> {
         switch (state) {
             case CONNECTED:
@@ -80,6 +81,11 @@ public abstract class AbstractRaftPrimitive implements DistributedPrimitive {
     @Override
     public Collection<Consumer<Status>> statusChangeListeners() {
         return ImmutableSet.copyOf(statusChangeListeners);
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+        return proxy.close();
     }
 
     @Override
