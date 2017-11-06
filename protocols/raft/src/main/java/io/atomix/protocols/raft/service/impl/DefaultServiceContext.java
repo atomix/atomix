@@ -21,7 +21,6 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftContext;
-import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.service.Commit;
@@ -633,12 +632,6 @@ public class DefaultServiceContext implements ServiceContext {
    * Applies the given commit to the state machine.
    */
   private void applyCommand(long index, long sequence, long timestamp, RaftOperation operation, RaftSessionContext session, CompletableFuture<OperationResult> future) {
-    // Ignore no-op commands.
-    if (operation.id().equals(OperationId.NOOP)) {
-      future.complete(OperationResult.noop(index, session.getEventIndex()));
-      return;
-    }
-
     Commit<byte[]> commit = new DefaultCommit<>(index, operation.id(), operation.value(), session, timestamp);
 
     long eventIndex = session.getEventIndex();

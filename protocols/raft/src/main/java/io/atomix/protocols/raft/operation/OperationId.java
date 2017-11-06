@@ -22,7 +22,6 @@ import io.atomix.utils.Identifier;
  * Raft operation identifier.
  */
 public interface OperationId extends Identifier<String> {
-  OperationId NOOP = new DefaultOperationId(OperationType.COMMAND);
 
   /**
    * Returns a new command operation identifier.
