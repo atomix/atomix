@@ -21,6 +21,7 @@ import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.storage.buffer.HeapBytes;
+import io.atomix.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.function.Consumer;
@@ -67,6 +68,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see ServiceContext
  */
 public interface RaftServiceExecutor extends ThreadContext {
+
+  /**
+   * Increments the service clock.
+   *
+   * @param timestamp the wall clock timestamp
+   */
+  void tick(WallClockTimestamp timestamp);
 
   /**
    * Applies the given commit to the executor.

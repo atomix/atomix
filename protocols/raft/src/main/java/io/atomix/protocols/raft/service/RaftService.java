@@ -22,6 +22,7 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.storage.snapshot.Snapshottable;
+import io.atomix.time.WallClockTimestamp;
 
 /**
  * Base class for user-provided Raft state machines.
@@ -164,6 +165,13 @@ public interface RaftService extends Snapshottable, RaftSessionListener {
    * @throws NullPointerException if {@code context} is null
    */
   void init(ServiceContext context);
+
+  /**
+   * Increments the Raft service time to the given timestamp.
+   *
+   * @param timestamp the service timestamp
+   */
+  void tick(WallClockTimestamp timestamp);
 
   /**
    * Applies a commit to the state machine.
