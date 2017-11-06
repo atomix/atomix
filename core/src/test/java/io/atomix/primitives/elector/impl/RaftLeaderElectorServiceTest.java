@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.elector.impl;
+package io.atomix.primitives.elector.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.leadership.Leadership;
