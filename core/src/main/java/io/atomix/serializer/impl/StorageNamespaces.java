@@ -28,6 +28,8 @@ import io.atomix.primitives.queue.impl.RaftWorkQueueEvents;
 import io.atomix.primitives.queue.impl.RaftWorkQueueOperations;
 import io.atomix.primitives.tree.impl.RaftDocumentTreeEvents;
 import io.atomix.primitives.tree.impl.RaftDocumentTreeOperations;
+import io.atomix.primitives.value.impl.RaftValueEvents;
+import io.atomix.primitives.value.impl.RaftValueOperations;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -176,6 +178,8 @@ public final class StorageNamespaces {
       .register(RaftLeaderElectorOperations.class)
       .register(RaftWorkQueueEvents.class)
       .register(RaftWorkQueueOperations.class)
+      .register(RaftValueEvents.class)
+      .register(RaftValueOperations.class)
       .build("RaftProtocol");
 
   /**
@@ -209,6 +213,7 @@ public final class StorageNamespaces {
       .register(RaftDocumentTreeOperations.class)
       .register(RaftLeaderElectorOperations.class)
       .register(RaftWorkQueueOperations.class)
+      .register(RaftValueOperations.class)
       .build("RaftStorage");
 
   private StorageNamespaces() {
