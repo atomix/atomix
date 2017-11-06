@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Builder for constructing new {@link AsyncLeaderElector} instances.
  */
-public abstract class LeaderElectorBuilder
-    extends DistributedPrimitiveBuilder<LeaderElectorBuilder, LeaderElector, AsyncLeaderElector> {
+public abstract class LeaderElectorBuilder<T>
+    extends DistributedPrimitiveBuilder<LeaderElectorBuilder<T>, LeaderElector<T>, AsyncLeaderElector<T>> {
 
   private long electionTimeoutMillis = DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS;
 
@@ -39,7 +39,7 @@ public abstract class LeaderElectorBuilder
    * @param electionTimeoutMillis the election timeout in milliseconds
    * @return leader elector builder
    */
-  public LeaderElectorBuilder withElectionTimeout(long electionTimeoutMillis) {
+  public LeaderElectorBuilder<T> withElectionTimeout(long electionTimeoutMillis) {
     this.electionTimeoutMillis = electionTimeoutMillis;
     return this;
   }
@@ -51,7 +51,7 @@ public abstract class LeaderElectorBuilder
    * @param timeUnit        the timeout time unit
    * @return leader elector builder
    */
-  public LeaderElectorBuilder withElectionTimeout(long electionTimeout, TimeUnit timeUnit) {
+  public LeaderElectorBuilder<T> withElectionTimeout(long electionTimeout, TimeUnit timeUnit) {
     return withElectionTimeout(timeUnit.toMillis(electionTimeout));
   }
 
@@ -61,7 +61,7 @@ public abstract class LeaderElectorBuilder
    * @param electionTimeout the election timeout
    * @return leader elector builder
    */
-  public LeaderElectorBuilder withElectionTimeout(Duration electionTimeout) {
+  public LeaderElectorBuilder<T> withElectionTimeout(Duration electionTimeout) {
     return withElectionTimeout(electionTimeout.toMillis());
   }
 
@@ -75,7 +75,7 @@ public abstract class LeaderElectorBuilder
   }
 
   @Override
-  public LeaderElector build() {
+  public LeaderElector<T> build() {
     return buildAsync().asLeaderElector();
   }
 }

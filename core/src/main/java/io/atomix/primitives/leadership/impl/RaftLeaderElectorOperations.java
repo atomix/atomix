@@ -23,9 +23,7 @@ import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import io.atomix.utils.ArraySizeHashPrinter;
 
 /**
  * {@link RaftLeaderElector} resource state machine operations.
@@ -38,9 +36,7 @@ public enum RaftLeaderElectorOperations implements OperationId {
   ANOINT("anoint", OperationType.COMMAND),
   PROMOTE("promote", OperationType.COMMAND),
   EVICT("evict", OperationType.COMMAND),
-  GET_LEADERSHIP("getLeadership", OperationType.QUERY),
-  GET_ALL_LEADERSHIPS("getAllLeaderships", OperationType.QUERY),
-  GET_ELECTED_TOPICS("getElectedTopics", OperationType.QUERY);
+  GET_LEADERSHIP("getLeadership", OperationType.QUERY);
 
   private final String id;
   private final OperationType type;
@@ -67,94 +63,44 @@ public enum RaftLeaderElectorOperations implements OperationId {
       .register(Leadership.class)
       .register(Leader.class)
       .register(Run.class)
-      .register(Withdraw.class)
       .register(Anoint.class)
       .register(Promote.class)
       .register(Evict.class)
-      .register(GetLeadership.class)
-      .register(GetElectedTopics.class)
       .build(RaftLeaderElectorOperations.class.getSimpleName());
 
   /**
-   * Abstract election query.
+   * Abstract election operation.
    */
   @SuppressWarnings("serial")
   public abstract static class ElectionOperation {
   }
 
   /**
-   * Abstract election topic query.
+   * Election operation that uses an instance identifier.
    */
-  @SuppressWarnings("serial")
-  public abstract static class TopicOperation extends ElectionOperation {
-    String topic;
+  public abstract static class ElectionChangeOperation extends ElectionOperation {
+    private byte[] id;
 
-    public TopicOperation() {
+    public ElectionChangeOperation() {
     }
 
-    public TopicOperation(String topic) {
-      this.topic = checkNotNull(topic);
+    public ElectionChangeOperation(byte[] id) {
+      this.id = id;
     }
 
     /**
-     * Returns the topic.
+     * Returns the candidate identifier.
      *
-     * @return topic
+     * @return the candidate identifier
      */
-    public String topic() {
-      return topic;
-    }
-  }
-
-  /**
-   * GetLeader query.
-   */
-  @SuppressWarnings("serial")
-  public static class GetLeadership extends TopicOperation {
-
-    public GetLeadership() {
-    }
-
-    public GetLeadership(String topic) {
-      super(topic);
+    public byte[] id() {
+      return id;
     }
 
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(getClass())
-          .add("topic", topic)
-          .toString();
-    }
-  }
-
-  /**
-   * GetElectedTopics query.
-   */
-  @SuppressWarnings("serial")
-  public static class GetElectedTopics extends ElectionOperation {
-    private NodeId nodeId;
-
-    public GetElectedTopics() {
-    }
-
-    public GetElectedTopics(NodeId nodeId) {
-      checkArgument(nodeId != null, "nodeId cannot be null");
-      this.nodeId = nodeId;
-    }
-
-    /**
-     * Returns the nodeId to check.
-     *
-     * @return The nodeId to check.
-     */
-    public NodeId nodeId() {
-      return nodeId;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(getClass())
-          .add("nodeId", nodeId)
+          .add("id", ArraySizeHashPrinter.of(id))
           .toString();
     }
   }
@@ -163,118 +109,12 @@ public enum RaftLeaderElectorOperations implements OperationId {
    * Enter and run for leadership.
    */
   @SuppressWarnings("serial")
-  public static class Run extends ElectionOperation {
-    private String topic;
-    private NodeId nodeId;
-
+  public static class Run extends ElectionChangeOperation {
     public Run() {
     }
 
-    public Run(String topic, NodeId nodeId) {
-      this.topic = topic;
-      this.nodeId = nodeId;
-    }
-
-    /**
-     * Returns the topic.
-     *
-     * @return topic
-     */
-    public String topic() {
-      return topic;
-    }
-
-    /**
-     * Returns the nodeId.
-     *
-     * @return the nodeId
-     */
-    public NodeId nodeId() {
-      return nodeId;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(getClass())
-          .add("topic", topic)
-          .add("nodeId", nodeId)
-          .toString();
-    }
-  }
-
-  /**
-   * Withdraw from a leadership contest.
-   */
-  @SuppressWarnings("serial")
-  public static class Withdraw extends ElectionOperation {
-    private String topic;
-
-    public Withdraw() {
-    }
-
-    public Withdraw(String topic) {
-      this.topic = topic;
-    }
-
-    /**
-     * Returns the topic.
-     *
-     * @return The topic
-     */
-    public String topic() {
-      return topic;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(getClass())
-          .add("topic", topic)
-          .toString();
-    }
-  }
-
-  /**
-   * Command for administratively changing the leadership state for a node.
-   */
-  @SuppressWarnings("serial")
-  public abstract static class ElectionChangeOperation extends ElectionOperation {
-    private String topic;
-    private NodeId nodeId;
-
-    ElectionChangeOperation() {
-      topic = null;
-      nodeId = null;
-    }
-
-    public ElectionChangeOperation(String topic, NodeId nodeId) {
-      this.topic = topic;
-      this.nodeId = nodeId;
-    }
-
-    /**
-     * Returns the topic.
-     *
-     * @return The topic
-     */
-    public String topic() {
-      return topic;
-    }
-
-    /**
-     * Returns the nodeId to make leader.
-     *
-     * @return The nodeId
-     */
-    public NodeId nodeId() {
-      return nodeId;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(getClass())
-          .add("topic", topic)
-          .add("nodeId", nodeId)
-          .toString();
+    public Run(byte[] id) {
+      super(id);
     }
   }
 
@@ -283,12 +123,11 @@ public enum RaftLeaderElectorOperations implements OperationId {
    */
   @SuppressWarnings("serial")
   public static class Anoint extends ElectionChangeOperation {
-
     private Anoint() {
     }
 
-    public Anoint(String topic, NodeId nodeId) {
-      super(topic, nodeId);
+    public Anoint(byte[] id) {
+      super(id);
     }
   }
 
@@ -297,12 +136,11 @@ public enum RaftLeaderElectorOperations implements OperationId {
    */
   @SuppressWarnings("serial")
   public static class Promote extends ElectionChangeOperation {
-
     private Promote() {
     }
 
-    public Promote(String topic, NodeId nodeId) {
-      super(topic, nodeId);
+    public Promote(byte[] id) {
+      super(id);
     }
   }
 
@@ -310,30 +148,12 @@ public enum RaftLeaderElectorOperations implements OperationId {
    * Command for administratively evicting a node from all leadership topics.
    */
   @SuppressWarnings("serial")
-  public static class Evict extends ElectionOperation {
-    private NodeId nodeId;
-
+  public static class Evict extends ElectionChangeOperation {
     public Evict() {
     }
 
-    public Evict(NodeId nodeId) {
-      this.nodeId = nodeId;
-    }
-
-    /**
-     * Returns the node identifier.
-     *
-     * @return The nodeId
-     */
-    public NodeId nodeId() {
-      return nodeId;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(getClass())
-          .add("nodeId", nodeId)
-          .toString();
+    public Evict(byte[] id) {
+      super(id);
     }
   }
 }

@@ -15,12 +15,10 @@
  */
 package io.atomix.primitives.leadership;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.leadership.impl.BlockingLeaderElector;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -42,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
  * The operation itself is executed asynchronous and the returned future will be
  * {@link CompletableFuture#complete completed} when the operation finishes.
  */
-public interface AsyncLeaderElector extends AsyncPrimitive {
+public interface AsyncLeaderElector<T> extends AsyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {
@@ -52,30 +50,27 @@ public interface AsyncLeaderElector extends AsyncPrimitive {
   /**
    * Attempts to become leader for a topic.
    *
-   * @param topic  leadership topic
-   * @param nodeId instance identifier of the node
+   * @param identifier instance identifier of the node
    * @return CompletableFuture that is completed with the current Leadership state of the topic
    */
-  CompletableFuture<Leadership> run(String topic, NodeId nodeId);
+  CompletableFuture<Leadership<T>> run(T identifier);
 
   /**
    * Withdraws from leadership race for a topic.
    *
-   * @param topic leadership topic
    * @return CompletableFuture that is completed when the withdraw is done
    */
-  CompletableFuture<Void> withdraw(String topic);
+  CompletableFuture<Void> withdraw();
 
   /**
    * Attempts to promote a node to leadership displacing the current leader.
    *
-   * @param topic  leadership topic
-   * @param nodeId instance identifier of the new leader
+   * @param identifier instance identifier of the new leader
    * @return CompletableFuture that is completed with a boolean when the operation is done. Boolean is true if
    * leadership transfer was successfully executed; false if it failed. This operation can fail (i.e. return false)
    * if the node to be made new leader is not registering to run for election for the topic.
    */
-  CompletableFuture<Boolean> anoint(String topic, NodeId nodeId);
+  CompletableFuture<Boolean> anoint(T identifier);
 
   /**
    * Attempts to evict a node from all leadership elections it is registered for.
@@ -83,36 +78,27 @@ public interface AsyncLeaderElector extends AsyncPrimitive {
    * If the node is the current leader for a topic, this call will promote the next top candidate
    * (if one exists) to leadership.
    *
-   * @param nodeId node instance identifier
+   * @param identifier node instance identifier
    * @return CompletableFuture that is completed when the operation is done.
    */
-  CompletableFuture<Void> evict(NodeId nodeId);
+  CompletableFuture<Void> evict(T identifier);
 
   /**
    * Attempts to promote a node to top of candidate list without displacing the current leader.
    *
-   * @param topic  leadership topic
-   * @param nodeId instance identifier of the new top candidate
+   * @param identifier instance identifier of the new top candidate
    * @return CompletableFuture that is completed with a boolean when the operation is done. Boolean is true if
    * node is now the top candidate. This operation can fail (i.e. return false) if the node
    * is not registered to run for election for the topic.
    */
-  CompletableFuture<Boolean> promote(String topic, NodeId nodeId);
+  CompletableFuture<Boolean> promote(T identifier);
 
   /**
    * Returns the {@link Leadership} for the specified topic.
    *
-   * @param topic leadership topic
    * @return CompletableFuture that is completed with the current Leadership state of the topic
    */
-  CompletableFuture<Leadership> getLeadership(String topic);
-
-  /**
-   * Returns the current {@link Leadership}s for all topics.
-   *
-   * @return CompletableFuture that is completed with the topic to Leadership mapping
-   */
-  CompletableFuture<Map<String, Leadership>> getLeaderships();
+  CompletableFuture<Leadership<T>> getLeadership();
 
   /**
    * Registers a listener to be notified of Leadership changes for all topics.
@@ -120,7 +106,7 @@ public interface AsyncLeaderElector extends AsyncPrimitive {
    * @param listener listener to notify
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> addListener(LeadershipEventListener listener);
+  CompletableFuture<Void> addListener(LeadershipEventListener<T> listener);
 
   /**
    * Unregisters a previously registered change notification listener.
@@ -130,7 +116,16 @@ public interface AsyncLeaderElector extends AsyncPrimitive {
    * @param listener listener to remove
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> removeListener(LeadershipEventListener listener);
+  CompletableFuture<Void> removeListener(LeadershipEventListener<T> listener);
+
+  /**
+   * Returns a new {@link LeaderElector} that is backed by this instance and with a default operation timeout.
+   *
+   * @return new {@code LeaderElector} instance
+   */
+  default LeaderElector<T> asLeaderElector() {
+    return asLeaderElector(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  }
 
   /**
    * Returns a new {@link LeaderElector} that is backed by this instance.
@@ -138,16 +133,7 @@ public interface AsyncLeaderElector extends AsyncPrimitive {
    * @param timeoutMillis timeout duration for the returned LeaderElector operations
    * @return new {@code LeaderElector} instance
    */
-  default LeaderElector asLeaderElector(long timeoutMillis) {
-    return new BlockingLeaderElector(this, timeoutMillis);
-  }
-
-  /**
-   * Returns a new {@link LeaderElector} that is backed by this instance and with a default operation timeout.
-   *
-   * @return new {@code LeaderElector} instance
-   */
-  default LeaderElector asLeaderElector() {
-    return asLeaderElector(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  default LeaderElector<T> asLeaderElector(long timeoutMillis) {
+    return new BlockingLeaderElector<>(this, timeoutMillis);
   }
 }

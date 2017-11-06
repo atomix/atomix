@@ -15,16 +15,14 @@
  */
 package io.atomix.primitives.leadership.impl;
 
-import io.atomix.cluster.NodeId;
-import io.atomix.primitives.leadership.Leadership;
 import io.atomix.primitives.PrimitiveException;
 import io.atomix.primitives.Synchronous;
 import io.atomix.primitives.leadership.AsyncLeaderElector;
 import io.atomix.primitives.leadership.LeaderElector;
+import io.atomix.primitives.leadership.Leadership;
 import io.atomix.primitives.leadership.LeadershipEventListener;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -34,59 +32,54 @@ import java.util.function.Consumer;
 /**
  * Default implementation for a {@code LeaderElector} backed by a {@link AsyncLeaderElector}.
  */
-public class BlockingLeaderElector extends Synchronous<AsyncLeaderElector> implements LeaderElector {
+public class BlockingLeaderElector<T> extends Synchronous<AsyncLeaderElector<T>> implements LeaderElector<T> {
 
-  private final AsyncLeaderElector asyncElector;
+  private final AsyncLeaderElector<T> asyncElector;
   private final long operationTimeoutMillis;
 
-  public BlockingLeaderElector(AsyncLeaderElector asyncElector, long operationTimeoutMillis) {
+  public BlockingLeaderElector(AsyncLeaderElector<T> asyncElector, long operationTimeoutMillis) {
     super(asyncElector);
     this.asyncElector = asyncElector;
     this.operationTimeoutMillis = operationTimeoutMillis;
   }
 
   @Override
-  public Leadership run(String topic, NodeId nodeId) {
-    return complete(asyncElector.run(topic, nodeId));
+  public Leadership run(T identifier) {
+    return complete(asyncElector.run(identifier));
   }
 
   @Override
-  public void withdraw(String topic) {
-    complete(asyncElector.withdraw(topic));
+  public void withdraw() {
+    complete(asyncElector.withdraw());
   }
 
   @Override
-  public boolean anoint(String topic, NodeId nodeId) {
-    return complete(asyncElector.anoint(topic, nodeId));
+  public boolean anoint(T identifier) {
+    return complete(asyncElector.anoint(identifier));
   }
 
   @Override
-  public boolean promote(String topic, NodeId nodeId) {
-    return complete(asyncElector.promote(topic, nodeId));
+  public boolean promote(T identifier) {
+    return complete(asyncElector.promote(identifier));
   }
 
   @Override
-  public void evict(NodeId nodeId) {
-    complete(asyncElector.evict(nodeId));
+  public void evict(T identifier) {
+    complete(asyncElector.evict(identifier));
   }
 
   @Override
-  public Leadership getLeadership(String topic) {
-    return complete(asyncElector.getLeadership(topic));
+  public Leadership getLeadership() {
+    return complete(asyncElector.getLeadership());
   }
 
   @Override
-  public Map<String, Leadership> getLeaderships() {
-    return complete(asyncElector.getLeaderships());
-  }
-
-  @Override
-  public void addListener(LeadershipEventListener listener) {
+  public void addListener(LeadershipEventListener<T> listener) {
     complete(asyncElector.addListener(listener));
   }
 
   @Override
-  public void removeListener(LeadershipEventListener listener) {
+  public void removeListener(LeadershipEventListener<T> listener) {
     complete(asyncElector.removeListener(listener));
   }
 

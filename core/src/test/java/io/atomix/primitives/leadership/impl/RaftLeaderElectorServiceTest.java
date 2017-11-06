@@ -15,7 +15,6 @@
  */
 package io.atomix.primitives.leadership.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.primitives.leadership.Leadership;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -40,9 +39,8 @@ import io.atomix.utils.concurrent.ThreadContext;
 import org.junit.Test;
 
 import static io.atomix.primitives.DistributedPrimitive.Type.LEADER_ELECTOR;
-import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.GET_LEADERSHIP;
 import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.RUN;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -71,11 +69,11 @@ public class RaftLeaderElectorServiceTest {
     RaftLeaderElectorService service = new RaftLeaderElectorService();
     service.init(context);
 
-    NodeId nodeId = NodeId.from("1");
+    byte[] id = "a".getBytes();
     service.run(new DefaultCommit<>(
         2,
         RUN,
-        new RaftLeaderElectorOperations.Run("test", nodeId),
+        new RaftLeaderElectorOperations.Run(id),
         new RaftSessionContext(
             SessionId.from(1),
             MemberId.from("1"),
@@ -102,13 +100,8 @@ public class RaftLeaderElectorServiceTest {
       service.install(reader);
     }
 
-    Leadership value = service.getLeadership(new DefaultCommit<>(
-        2,
-        GET_LEADERSHIP,
-        new RaftLeaderElectorOperations.GetLeadership("test"),
-        mock(RaftSessionContext.class),
-        System.currentTimeMillis()));
+    Leadership<byte[]> value = service.getLeadership();
     assertNotNull(value);
-    assertEquals(value.leader().nodeId(), nodeId);
+    assertArrayEquals(value.leader().id(), id);
   }
 }

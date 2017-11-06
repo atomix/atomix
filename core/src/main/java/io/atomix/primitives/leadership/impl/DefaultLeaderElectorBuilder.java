@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Default implementation of {@code LeaderElectorBuilder}.
  */
-public class DefaultLeaderElectorBuilder extends LeaderElectorBuilder {
+public class DefaultLeaderElectorBuilder<T> extends LeaderElectorBuilder<T> {
 
   private final DistributedPrimitiveCreator primitiveCreator;
 
@@ -33,7 +33,7 @@ public class DefaultLeaderElectorBuilder extends LeaderElectorBuilder {
   }
 
   @Override
-  public AsyncLeaderElector buildAsync() {
+  public AsyncLeaderElector<T> buildAsync() {
     return primitiveCreator.newAsyncLeaderElector(name(), electionTimeoutMillis(), TimeUnit.MILLISECONDS);
   }
 }

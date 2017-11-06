@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * Describes leadership election event.
  */
-public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leadership> {
+public class LeadershipEvent<T> extends AbstractEvent<LeadershipEvent.Type, Leadership> {
 
   /**
    * Type of leadership events.
@@ -35,8 +35,8 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
     CHANGE,
   }
 
-  private final Leadership oldLeadership;
-  private final Leadership newLeadership;
+  private final Leadership<T> oldLeadership;
+  private final Leadership<T> newLeadership;
 
   /**
    * Creates an event of a given type and for the specified instance and the
@@ -46,7 +46,7 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
    * @param oldLeadership previous leadership
    * @param newLeadership new leadership
    */
-  public LeadershipEvent(Type type, Leadership oldLeadership, Leadership newLeadership) {
+  public LeadershipEvent(Type type, Leadership<T> oldLeadership, Leadership<T> newLeadership) {
     this(type, oldLeadership, newLeadership, System.currentTimeMillis());
   }
 
@@ -58,19 +58,10 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
    * @param newLeadership new leadership
    * @param time          occurrence time
    */
-  public LeadershipEvent(Type type, Leadership oldLeadership, Leadership newLeadership, long time) {
+  public LeadershipEvent(Type type, Leadership<T> oldLeadership, Leadership<T> newLeadership, long time) {
     super(type, newLeadership, time);
     this.oldLeadership = oldLeadership;
     this.newLeadership = newLeadership;
-  }
-
-  /**
-   * Returns the leader elector topic.
-   *
-   * @return the leader elector topic
-   */
-  public String topic() {
-    return newLeadership != null ? newLeadership.topic() : null;
   }
 
   /**
@@ -78,7 +69,7 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
    *
    * @return the prior leadership for the topic
    */
-  public Leadership oldLeadership() {
+  public Leadership<T> oldLeadership() {
     return oldLeadership;
   }
 
@@ -87,7 +78,7 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
    *
    * @return the new leadership for the topic
    */
-  public Leadership newLeadership() {
+  public Leadership<T> newLeadership() {
     return newLeadership;
   }
 

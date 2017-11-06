@@ -123,7 +123,7 @@ public interface DistributedPrimitiveCreator {
    * @param name leader elector name
    * @return leader elector
    */
-  default AsyncLeaderElector newAsyncLeaderElector(String name) {
+  default <T> AsyncLeaderElector<T> newAsyncLeaderElector(String name) {
     return newAsyncLeaderElector(name, DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
   }
 
@@ -135,7 +135,7 @@ public interface DistributedPrimitiveCreator {
    * @param timeUnit        leader election timeout time unit
    * @return leader elector
    */
-  AsyncLeaderElector newAsyncLeaderElector(String name, long electionTimeout, TimeUnit timeUnit);
+  <T> AsyncLeaderElector<T> newAsyncLeaderElector(String name, long electionTimeout, TimeUnit timeUnit);
 
   /**
    * Creates a new {@code AsyncDistributedLock}.

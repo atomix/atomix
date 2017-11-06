@@ -15,17 +15,14 @@
  */
 package io.atomix.primitives.leadership;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.SyncPrimitive;
-
-import java.util.Map;
 
 /**
  * {@code LeaderElector} provides the same functionality as {@link AsyncLeaderElector} with
  * the only difference that all its methods block until the corresponding operation completes.
  */
-public interface LeaderElector extends SyncPrimitive {
+public interface LeaderElector<T> extends SyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {
@@ -35,39 +32,34 @@ public interface LeaderElector extends SyncPrimitive {
   /**
    * Attempts to become leader for a topic.
    *
-   * @param topic  leadership topic
-   * @param nodeId instance identifier of the node
+   * @param identifier candidate identifier
    * @return current Leadership state of the topic
    */
-  Leadership run(String topic, NodeId nodeId);
+  Leadership run(T identifier);
 
   /**
    * Withdraws from leadership race for a topic.
-   *
-   * @param topic leadership topic
    */
-  void withdraw(String topic);
+  void withdraw();
 
   /**
    * Attempts to promote a node to leadership displacing the current leader.
    *
-   * @param topic  leadership topic
-   * @param nodeId instance identifier of the new leader
+   * @param identifier identifier of the new leader
    * @return {@code true} if leadership transfer was successfully executed; {@code false} if it failed.
    * This operation can return {@code false} if the node to be made new leader is not registered to
    * run for election for the topic.
    */
-  boolean anoint(String topic, NodeId nodeId);
+  boolean anoint(T identifier);
 
   /**
    * Attempts to promote a node to top of candidate list.
    *
-   * @param topic  leadership topic
-   * @param nodeId instance identifier of the new top candidate
+   * @param identifier identifier of the new top candidate
    * @return {@code true} if node is now the top candidate. This operation can fail (i.e. return
    * {@code false}) if the node is not registered to run for election for the topic.
    */
-  boolean promote(String topic, NodeId nodeId);
+  boolean promote(T identifier);
 
   /**
    * Attempts to evict a node from all leadership elections it is registered for.
@@ -75,31 +67,23 @@ public interface LeaderElector extends SyncPrimitive {
    * If the node the current leader for a topic, this call will force the next candidate (if one exists)
    * to be promoted to leadership.
    *
-   * @param nodeId node instance identifier
+   * @param identifier identifier
    */
-  void evict(NodeId nodeId);
+  void evict(T identifier);
 
   /**
    * Returns the {@link Leadership} for the specified topic.
    *
-   * @param topic leadership topic
    * @return current Leadership state of the topic
    */
-  Leadership getLeadership(String topic);
-
-  /**
-   * Returns the current {@link Leadership}s for all topics.
-   *
-   * @return topic name to Leadership mapping
-   */
-  Map<String, Leadership> getLeaderships();
+  Leadership getLeadership();
 
   /**
    * Registers a listener to be notified of Leadership changes for all topics.
    *
    * @param listener listener to add
    */
-  void addListener(LeadershipEventListener listener);
+  void addListener(LeadershipEventListener<T> listener);
 
   /**
    * Unregisters a previously registered change notification listener.
@@ -108,5 +92,5 @@ public interface LeaderElector extends SyncPrimitive {
    *
    * @param listener listener to remove
    */
-  void removeListener(LeadershipEventListener listener);
+  void removeListener(LeadershipEventListener<T> listener);
 }

@@ -21,6 +21,8 @@ import io.atomix.cluster.NodeId;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * State of leadership for topic.
@@ -29,34 +31,14 @@ import java.util.Objects;
  * {@link NodeId nodeId}s currently registered as candidates for election for the topic.
  * Keep in mind that only registered candidates can become leaders.
  */
-public class Leadership {
+public class Leadership<T> {
 
-  private final String topic;
-  private final Leader leader;
-  private final List<NodeId> candidates;
+  private final Leader<T> leader;
+  private final List<T> candidates;
 
-  public Leadership(String topic, Leader leader, List<NodeId> candidates) {
-    this.topic = topic;
+  public Leadership(Leader<T> leader, List<T> candidates) {
     this.leader = leader;
     this.candidates = ImmutableList.copyOf(candidates);
-  }
-
-  /**
-   * Returns the leadership topic.
-   *
-   * @return leadership topic.
-   */
-  public String topic() {
-    return topic;
-  }
-
-  /**
-   * Returns the {@link NodeId nodeId} of the leader.
-   *
-   * @return leader node identifier; will be null if there is no leader
-   */
-  public NodeId leaderNodeId() {
-    return leader == null ? null : leader.nodeId();
   }
 
   /**
@@ -64,7 +46,7 @@ public class Leadership {
    *
    * @return leader; will be null if there is no leader for topic
    */
-  public Leader leader() {
+  public Leader<T> leader() {
     return leader;
   }
 
@@ -74,13 +56,24 @@ public class Leadership {
    *
    * @return a list of NodeIds in priority-order, or an empty list.
    */
-  public List<NodeId> candidates() {
+  public List<T> candidates() {
     return candidates;
+  }
+
+  /**
+   * Maps the leadership identifiers using the given mapper.
+   *
+   * @param mapper the mapper with which to convert identifiers
+   * @param <U> the converted identifier type
+   * @return the converted leadership
+   */
+  public <U> Leadership<U> map(Function<T, U> mapper) {
+    return new Leadership<>(leader.map(mapper), candidates.stream().map(mapper).collect(Collectors.toList()));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(topic, leader, candidates);
+    return Objects.hash(leader, candidates);
   }
 
   @Override
@@ -90,8 +83,7 @@ public class Leadership {
     }
     if (obj instanceof Leadership) {
       final Leadership other = (Leadership) obj;
-      return Objects.equals(this.topic, other.topic) &&
-          Objects.equals(this.leader, other.leader) &&
+      return Objects.equals(this.leader, other.leader) &&
           Objects.equals(this.candidates, other.candidates);
     }
     return false;
@@ -100,7 +92,6 @@ public class Leadership {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this.getClass())
-        .add("topic", topic)
         .add("leader", leader)
         .add("candidates", candidates)
         .toString();
