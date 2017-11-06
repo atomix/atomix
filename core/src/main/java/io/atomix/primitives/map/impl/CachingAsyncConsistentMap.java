@@ -47,179 +47,179 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @param <V> value type
  */
 public class CachingAsyncConsistentMap<K, V> extends DelegatingAsyncConsistentMap<K, V> {
-    private static final int DEFAULT_CACHE_SIZE = 10000;
-    private final Logger log = getLogger(getClass());
+  private static final int DEFAULT_CACHE_SIZE = 10000;
+  private final Logger log = getLogger(getClass());
 
-    private final LoadingCache<K, CompletableFuture<Versioned<V>>> cache;
-    private final AsyncConsistentMap<K, V> backingMap;
-    private final MapEventListener<K, V> cacheUpdater;
-    private final Consumer<Status> statusListener;
+  private final LoadingCache<K, CompletableFuture<Versioned<V>>> cache;
+  private final AsyncConsistentMap<K, V> backingMap;
+  private final MapEventListener<K, V> cacheUpdater;
+  private final Consumer<Status> statusListener;
 
-    /**
-     * Default constructor.
-     *
-     * @param backingMap a distributed, strongly consistent map for backing
-     */
-    public CachingAsyncConsistentMap(AsyncConsistentMap<K, V> backingMap) {
-        this(backingMap, DEFAULT_CACHE_SIZE);
-    }
+  /**
+   * Default constructor.
+   *
+   * @param backingMap a distributed, strongly consistent map for backing
+   */
+  public CachingAsyncConsistentMap(AsyncConsistentMap<K, V> backingMap) {
+    this(backingMap, DEFAULT_CACHE_SIZE);
+  }
 
-    /**
-     * Constructor to configure cache size.
-     *
-     * @param backingMap a distributed, strongly consistent map for backing
-     * @param cacheSize the maximum size of the cache
-     */
-    public CachingAsyncConsistentMap(AsyncConsistentMap<K, V> backingMap, int cacheSize) {
-        super(backingMap);
-        this.backingMap = backingMap;
-        cache = CacheBuilder.newBuilder()
-                            .maximumSize(cacheSize)
-                            .build(CacheLoader.from(CachingAsyncConsistentMap.super::get));
-        cacheUpdater = event -> {
-            Versioned<V> newValue = event.newValue();
-            if (newValue == null) {
-                cache.invalidate(event.key());
-            } else {
-                cache.put(event.key(), CompletableFuture.completedFuture(newValue));
-            }
-        };
-        statusListener = status -> {
-            log.debug("{} status changed to {}", this.name(), status);
-            // If the status of the underlying map is SUSPENDED or INACTIVE
-            // we can no longer guarantee that the cache will be in sync.
-            if (status == SUSPENDED || status == INACTIVE) {
-                cache.invalidateAll();
-            }
-        };
-        super.addListener(cacheUpdater);
-        super.addStatusChangeListener(statusListener);
-    }
+  /**
+   * Constructor to configure cache size.
+   *
+   * @param backingMap a distributed, strongly consistent map for backing
+   * @param cacheSize  the maximum size of the cache
+   */
+  public CachingAsyncConsistentMap(AsyncConsistentMap<K, V> backingMap, int cacheSize) {
+    super(backingMap);
+    this.backingMap = backingMap;
+    cache = CacheBuilder.newBuilder()
+        .maximumSize(cacheSize)
+        .build(CacheLoader.from(CachingAsyncConsistentMap.super::get));
+    cacheUpdater = event -> {
+      Versioned<V> newValue = event.newValue();
+      if (newValue == null) {
+        cache.invalidate(event.key());
+      } else {
+        cache.put(event.key(), CompletableFuture.completedFuture(newValue));
+      }
+    };
+    statusListener = status -> {
+      log.debug("{} status changed to {}", this.name(), status);
+      // If the status of the underlying map is SUSPENDED or INACTIVE
+      // we can no longer guarantee that the cache will be in sync.
+      if (status == SUSPENDED || status == INACTIVE) {
+        cache.invalidateAll();
+      }
+    };
+    super.addListener(cacheUpdater);
+    super.addStatusChangeListener(statusListener);
+  }
 
-    @Override
-    public CompletableFuture<Void> destroy() {
-        super.removeStatusChangeListener(statusListener);
-        return super.destroy().thenCompose(v -> removeListener(cacheUpdater));
-    }
+  @Override
+  public CompletableFuture<Void> destroy() {
+    super.removeStatusChangeListener(statusListener);
+    return super.destroy().thenCompose(v -> removeListener(cacheUpdater));
+  }
 
-    @Override
-    public CompletableFuture<Versioned<V>> get(K key) {
-        return cache.getUnchecked(key)
-                .whenComplete((r, e) -> {
-                    if (e != null) {
-                        cache.invalidate(key);
-                    }
-                });
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> getOrDefault(K key, V defaultValue) {
-        return cache.getUnchecked(key).thenCompose(r -> {
-            if (r == null) {
-                CompletableFuture<Versioned<V>> versioned = backingMap.getOrDefault(key, defaultValue);
-                cache.put(key, versioned);
-                return versioned;
-            } else {
-                return CompletableFuture.completedFuture(r);
-            }
-        }).whenComplete((r, e) -> {
-            if (e != null) {
-                cache.invalidate(key);
-            }
+  @Override
+  public CompletableFuture<Versioned<V>> get(K key) {
+    return cache.getUnchecked(key)
+        .whenComplete((r, e) -> {
+          if (e != null) {
+            cache.invalidate(key);
+          }
         });
-    }
+  }
 
-    @Override
-    public CompletableFuture<Versioned<V>> computeIf(K key,
-            Predicate<? super V> condition,
-            BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return super.computeIf(key, condition, remappingFunction)
-                .whenComplete((r, e) -> cache.invalidate(key));
-    }
+  @Override
+  public CompletableFuture<Versioned<V>> getOrDefault(K key, V defaultValue) {
+    return cache.getUnchecked(key).thenCompose(r -> {
+      if (r == null) {
+        CompletableFuture<Versioned<V>> versioned = backingMap.getOrDefault(key, defaultValue);
+        cache.put(key, versioned);
+        return versioned;
+      } else {
+        return CompletableFuture.completedFuture(r);
+      }
+    }).whenComplete((r, e) -> {
+      if (e != null) {
+        cache.invalidate(key);
+      }
+    });
+  }
 
-    @Override
-    public CompletableFuture<Versioned<V>> put(K key, V value) {
-        return super.put(key, value)
-                .whenComplete((r, e) -> cache.invalidate(key));
-    }
+  @Override
+  public CompletableFuture<Versioned<V>> computeIf(K key,
+                                                   Predicate<? super V> condition,
+                                                   BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    return super.computeIf(key, condition, remappingFunction)
+        .whenComplete((r, e) -> cache.invalidate(key));
+  }
 
-    @Override
-    public CompletableFuture<Versioned<V>> putAndGet(K key, V value) {
-        return super.putAndGet(key, value)
-                .whenComplete((r, e) -> cache.invalidate(key));
-    }
+  @Override
+  public CompletableFuture<Versioned<V>> put(K key, V value) {
+    return super.put(key, value)
+        .whenComplete((r, e) -> cache.invalidate(key));
+  }
 
-    @Override
-    public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value) {
-        return super.putIfAbsent(key, value)
-                .whenComplete((r, e) -> cache.invalidate(key));
-    }
+  @Override
+  public CompletableFuture<Versioned<V>> putAndGet(K key, V value) {
+    return super.putAndGet(key, value)
+        .whenComplete((r, e) -> cache.invalidate(key));
+  }
 
-    @Override
-    public CompletableFuture<Versioned<V>> remove(K key) {
-        return super.remove(key)
-                .whenComplete((r, e) -> cache.invalidate(key));
-    }
+  @Override
+  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value) {
+    return super.putIfAbsent(key, value)
+        .whenComplete((r, e) -> cache.invalidate(key));
+  }
 
-    @Override
-    public CompletableFuture<Boolean> containsKey(K key) {
-        return cache.getUnchecked(key).thenApply(Objects::nonNull)
-                .whenComplete((r, e) -> {
-                    if (e != null) {
-                        cache.invalidate(key);
-                    }
-                });
-    }
+  @Override
+  public CompletableFuture<Versioned<V>> remove(K key) {
+    return super.remove(key)
+        .whenComplete((r, e) -> cache.invalidate(key));
+  }
 
-    @Override
-    public CompletableFuture<Void> clear() {
-        return super.clear()
-                .whenComplete((r, e) -> cache.invalidateAll());
-    }
+  @Override
+  public CompletableFuture<Boolean> containsKey(K key) {
+    return cache.getUnchecked(key).thenApply(Objects::nonNull)
+        .whenComplete((r, e) -> {
+          if (e != null) {
+            cache.invalidate(key);
+          }
+        });
+  }
 
-    @Override
-    public CompletableFuture<Boolean> remove(K key, V value) {
-        return super.remove(key, value)
-                .whenComplete((r, e) -> {
-                    if (r) {
-                        cache.invalidate(key);
-                    }
-                });
-    }
+  @Override
+  public CompletableFuture<Void> clear() {
+    return super.clear()
+        .whenComplete((r, e) -> cache.invalidateAll());
+  }
 
-    @Override
-    public CompletableFuture<Boolean> remove(K key, long version) {
-        return super.remove(key, version)
-                .whenComplete((r, e) -> {
-                    if (r) {
-                        cache.invalidate(key);
-                    }
-                });
-    }
+  @Override
+  public CompletableFuture<Boolean> remove(K key, V value) {
+    return super.remove(key, value)
+        .whenComplete((r, e) -> {
+          if (r) {
+            cache.invalidate(key);
+          }
+        });
+  }
 
-    @Override
-    public CompletableFuture<Versioned<V>> replace(K key, V value) {
-        return super.replace(key, value)
-                .whenComplete((r, e) -> cache.invalidate(key));
-    }
+  @Override
+  public CompletableFuture<Boolean> remove(K key, long version) {
+    return super.remove(key, version)
+        .whenComplete((r, e) -> {
+          if (r) {
+            cache.invalidate(key);
+          }
+        });
+  }
 
-    @Override
-    public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
-        return super.replace(key, oldValue, newValue)
-                .whenComplete((r, e) -> {
-                    if (r) {
-                        cache.invalidate(key);
-                    }
-                });
-    }
+  @Override
+  public CompletableFuture<Versioned<V>> replace(K key, V value) {
+    return super.replace(key, value)
+        .whenComplete((r, e) -> cache.invalidate(key));
+  }
 
-    @Override
-    public CompletableFuture<Boolean> replace(K key, long oldVersion, V newValue) {
-        return super.replace(key, oldVersion, newValue)
-                .whenComplete((r, e) -> {
-                    if (r) {
-                        cache.invalidate(key);
-                    }
-                });
-    }
+  @Override
+  public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
+    return super.replace(key, oldValue, newValue)
+        .whenComplete((r, e) -> {
+          if (r) {
+            cache.invalidate(key);
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> replace(K key, long oldVersion, V newValue) {
+    return super.replace(key, oldVersion, newValue)
+        .whenComplete((r, e) -> {
+          if (r) {
+            cache.invalidate(key);
+          }
+        });
+  }
 }

@@ -42,7 +42,7 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
    * Creates an event of a given type and for the specified instance and the
    * current time.
    *
-   * @param type       leadership event type
+   * @param type          leadership event type
    * @param oldLeadership previous leadership
    * @param newLeadership new leadership
    */
@@ -53,10 +53,10 @@ public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leaders
   /**
    * Creates an event of a given type and for the specified subject and time.
    *
-   * @param type       leadership event type
+   * @param type          leadership event type
    * @param oldLeadership previous leadership
    * @param newLeadership new leadership
-   * @param time       occurrence time
+   * @param time          occurrence time
    */
   public LeadershipEvent(Type type, Leadership oldLeadership, Leadership newLeadership, long time) {
     super(type, newLeadership, time);

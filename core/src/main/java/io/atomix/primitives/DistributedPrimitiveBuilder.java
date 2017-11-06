@@ -86,7 +86,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return {@code true} if yes; {@code false} otherwise
    */
-  public final boolean isReadOnly() {
+  public final boolean readOnly() {
     return readOnly;
   }
 
@@ -95,7 +95,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return {@code true} if yes; {@code false} otherwise
    */
-  public final boolean isRelaxedReadConsistency() {
+  public final boolean relaxedReadConsistency() {
     return relaxedReadConsistency;
   }
 
@@ -104,7 +104,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return serializer
    */
-  public final Serializer getSerializer() {
+  public final Serializer serializer() {
     return serializer;
   }
 
@@ -113,7 +113,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return primitive name
    */
-  public final String getName() {
+  public final String name() {
     return name;
   }
 
@@ -122,7 +122,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return primitive type
    */
-  public final DistributedPrimitive.Type getPrimitiveType() {
+  public final DistributedPrimitive.Type primitiveType() {
     return type;
   }
 

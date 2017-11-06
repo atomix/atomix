@@ -27,29 +27,29 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
 public abstract class ConsistentMapBuilder<K, V>
     extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>> {
 
-  private boolean purgeOnUninstall = false;
+  private boolean nullValues = false;
 
   public ConsistentMapBuilder() {
     super(DistributedPrimitive.Type.CONSISTENT_MAP);
   }
 
   /**
-   * Clears map contents when the owning application is uninstalled.
+   * Enables null values in the map.
    *
    * @return this builder
    */
-  public ConsistentMapBuilder<K, V> withPurgeOnUninstall() {
-    purgeOnUninstall = true;
+  public ConsistentMapBuilder<K, V> withNullValues() {
+    nullValues = true;
     return this;
   }
 
   /**
-   * Returns if map entries need to be cleared when owning application is uninstalled.
+   * Returns whether null values are supported by the map.
    *
-   * @return {@code true} if yes; {@code false} otherwise.
+   * @return {@code true} if null values are supported; {@code false} otherwise
    */
-  public boolean purgeOnUninstall() {
-    return purgeOnUninstall;
+  public boolean nullValues() {
+    return nullValues;
   }
 
   /**

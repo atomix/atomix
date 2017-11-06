@@ -43,185 +43,185 @@ import java.util.function.Predicate;
  * @param <V> value type
  */
 public class DelegatingAsyncConsistentMap<K, V>
-        extends DelegatingDistributedPrimitive implements AsyncConsistentMap<K, V> {
+    extends DelegatingDistributedPrimitive implements AsyncConsistentMap<K, V> {
 
-    private final AsyncConsistentMap<K, V> delegateMap;
+  private final AsyncConsistentMap<K, V> delegateMap;
 
-    DelegatingAsyncConsistentMap(AsyncConsistentMap<K, V> delegateMap) {
-        super(delegateMap);
-        this.delegateMap = delegateMap;
+  DelegatingAsyncConsistentMap(AsyncConsistentMap<K, V> delegateMap) {
+    super(delegateMap);
+    this.delegateMap = delegateMap;
+  }
+
+  @Override
+  public CompletableFuture<Integer> size() {
+    return delegateMap.size();
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsKey(K key) {
+    return delegateMap.containsKey(key);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsValue(V value) {
+    return delegateMap.containsValue(value);
+  }
+
+  @Override
+  public CompletableFuture<Versioned<V>> get(K key) {
+    return delegateMap.get(key);
+  }
+
+  @Override
+  public CompletableFuture<Versioned<V>> getOrDefault(K key, V defaultValue) {
+    return delegateMap.getOrDefault(key, defaultValue);
+  }
+
+  @Override
+  public CompletableFuture<Versioned<V>> computeIf(K key,
+                                                   Predicate<? super V> condition,
+                                                   BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    return delegateMap.computeIf(key, condition, remappingFunction);
+  }
+
+  @Override
+  public CompletableFuture<Versioned<V>> put(K key, V value) {
+    return delegateMap.put(key, value);
+  }
+
+  @Override
+  public CompletableFuture<Versioned<V>> putAndGet(K key, V value) {
+    return delegateMap.putAndGet(key, value);
+  }
+
+  @Override
+  public CompletableFuture<Versioned<V>> remove(K key) {
+    return delegateMap.remove(key);
+  }
+
+  @Override
+  public CompletableFuture<Void> clear() {
+    return delegateMap.clear();
+  }
+
+  @Override
+  public CompletableFuture<Set<K>> keySet() {
+    return delegateMap.keySet();
+  }
+
+  @Override
+  public CompletableFuture<Collection<Versioned<V>>> values() {
+    return delegateMap.values();
+  }
+
+  @Override
+  public CompletableFuture<Set<Entry<K, Versioned<V>>>> entrySet() {
+    return delegateMap.entrySet();
+  }
+
+  @Override
+  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value) {
+    return delegateMap.putIfAbsent(key, value);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> remove(K key, V value) {
+    return delegateMap.remove(key, value);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> remove(K key, long version) {
+    return delegateMap.remove(key, version);
+  }
+
+  @Override
+  public CompletableFuture<Versioned<V>> replace(K key, V value) {
+    return delegateMap.replace(key, value);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
+    return delegateMap.replace(key, oldValue, newValue);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> replace(K key, long oldVersion, V newValue) {
+    return delegateMap.replace(key, oldVersion, newValue);
+  }
+
+  @Override
+  public CompletableFuture<Void> addListener(MapEventListener<K, V> listener, Executor executor) {
+    return delegateMap.addListener(listener, executor);
+  }
+
+  @Override
+  public CompletableFuture<Void> removeListener(MapEventListener<K, V> listener) {
+    return delegateMap.removeListener(listener);
+  }
+
+  @Override
+  public CompletableFuture<Version> begin(TransactionId transactionId) {
+    return delegateMap.begin(transactionId);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K, V>> transactionLog) {
+    return delegateMap.prepare(transactionLog);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<K, V>> transactionLog) {
+    return delegateMap.prepareAndCommit(transactionLog);
+  }
+
+  @Override
+  public CompletableFuture<Void> commit(TransactionId transactionId) {
+    return delegateMap.commit(transactionId);
+  }
+
+  @Override
+  public CompletableFuture<Void> rollback(TransactionId transactionId) {
+    return delegateMap.rollback(transactionId);
+  }
+
+  @Override
+  public void addStatusChangeListener(Consumer<Status> listener) {
+    delegateMap.addStatusChangeListener(listener);
+  }
+
+  @Override
+  public void removeStatusChangeListener(Consumer<Status> listener) {
+    delegateMap.removeStatusChangeListener(listener);
+  }
+
+  @Override
+  public Collection<Consumer<Status>> statusChangeListeners() {
+    return delegateMap.statusChangeListeners();
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return delegateMap.close();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("delegateMap", delegateMap)
+        .toString();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(delegateMap);
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other instanceof DelegatingAsyncConsistentMap) {
+      DelegatingAsyncConsistentMap<K, V> that = (DelegatingAsyncConsistentMap) other;
+      return this.delegateMap.equals(that.delegateMap);
     }
-
-    @Override
-    public CompletableFuture<Integer> size() {
-        return delegateMap.size();
-    }
-
-    @Override
-    public CompletableFuture<Boolean> containsKey(K key) {
-        return delegateMap.containsKey(key);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> containsValue(V value) {
-        return delegateMap.containsValue(value);
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> get(K key) {
-        return delegateMap.get(key);
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> getOrDefault(K key, V defaultValue) {
-        return delegateMap.getOrDefault(key, defaultValue);
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> computeIf(K key,
-            Predicate<? super V> condition,
-            BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return delegateMap.computeIf(key, condition, remappingFunction);
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> put(K key, V value) {
-        return delegateMap.put(key, value);
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> putAndGet(K key, V value) {
-        return delegateMap.putAndGet(key, value);
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> remove(K key) {
-        return delegateMap.remove(key);
-    }
-
-    @Override
-    public CompletableFuture<Void> clear() {
-        return delegateMap.clear();
-    }
-
-    @Override
-    public CompletableFuture<Set<K>> keySet() {
-        return delegateMap.keySet();
-    }
-
-    @Override
-    public CompletableFuture<Collection<Versioned<V>>> values() {
-        return delegateMap.values();
-    }
-
-    @Override
-    public CompletableFuture<Set<Entry<K, Versioned<V>>>> entrySet() {
-        return delegateMap.entrySet();
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value) {
-        return delegateMap.putIfAbsent(key, value);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> remove(K key, V value) {
-        return delegateMap.remove(key, value);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> remove(K key, long version) {
-        return delegateMap.remove(key, version);
-    }
-
-    @Override
-    public CompletableFuture<Versioned<V>> replace(K key, V value) {
-        return delegateMap.replace(key, value);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
-        return delegateMap.replace(key, oldValue, newValue);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> replace(K key, long oldVersion, V newValue) {
-        return delegateMap.replace(key, oldVersion, newValue);
-    }
-
-    @Override
-    public CompletableFuture<Void> addListener(MapEventListener<K, V> listener, Executor executor) {
-        return delegateMap.addListener(listener, executor);
-    }
-
-    @Override
-    public CompletableFuture<Void> removeListener(MapEventListener<K, V> listener) {
-        return delegateMap.removeListener(listener);
-    }
-
-    @Override
-    public CompletableFuture<Version> begin(TransactionId transactionId) {
-        return delegateMap.begin(transactionId);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K, V>> transactionLog) {
-        return delegateMap.prepare(transactionLog);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<K, V>> transactionLog) {
-        return delegateMap.prepareAndCommit(transactionLog);
-    }
-
-    @Override
-    public CompletableFuture<Void> commit(TransactionId transactionId) {
-        return delegateMap.commit(transactionId);
-    }
-
-    @Override
-    public CompletableFuture<Void> rollback(TransactionId transactionId) {
-        return delegateMap.rollback(transactionId);
-    }
-
-    @Override
-    public void addStatusChangeListener(Consumer<Status> listener) {
-        delegateMap.addStatusChangeListener(listener);
-    }
-
-    @Override
-    public void removeStatusChangeListener(Consumer<Status> listener) {
-        delegateMap.removeStatusChangeListener(listener);
-    }
-
-    @Override
-    public Collection<Consumer<Status>> statusChangeListeners() {
-        return delegateMap.statusChangeListeners();
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        return delegateMap.close();
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                          .add("delegateMap", delegateMap)
-                          .toString();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(delegateMap);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other instanceof DelegatingAsyncConsistentMap) {
-            DelegatingAsyncConsistentMap<K, V> that = (DelegatingAsyncConsistentMap) other;
-            return this.delegateMap.equals(that.delegateMap);
-        }
-        return false;
-    }
+    return false;
+  }
 }

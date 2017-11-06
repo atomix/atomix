@@ -136,27 +136,27 @@ public class RaftLockService extends AbstractRaftService {
    * Applies an unlock commit.
    */
   protected void unlock(Commit<Unlock> commit) {
-      if (lock != null) {
-        if (lock.session != commit.session().sessionId().id()) {
-          return;
+    if (lock != null) {
+      if (lock.session != commit.session().sessionId().id()) {
+        return;
+      }
+
+      lock = queue.poll();
+      while (lock != null) {
+        Scheduled timer = timers.remove(lock.index);
+        if (timer != null) {
+          timer.cancel();
         }
 
-        lock = queue.poll();
-        while (lock != null) {
-          Scheduled timer = timers.remove(lock.index);
-          if (timer != null) {
-            timer.cancel();
-          }
-
-          RaftSession session = sessions().getSession(lock.session);
-          if (session == null || session.getState() == RaftSession.State.EXPIRED || session.getState() == RaftSession.State.CLOSED) {
-            lock = queue.poll();
-          } else {
-            session.publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, commit.index()));
-            break;
-          }
+        RaftSession session = sessions().getSession(lock.session);
+        if (session == null || session.getState() == RaftSession.State.EXPIRED || session.getState() == RaftSession.State.CLOSED) {
+          lock = queue.poll();
+        } else {
+          session.publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, commit.index()));
+          break;
         }
       }
+    }
   }
 
   private void releaseSession(RaftSession session) {

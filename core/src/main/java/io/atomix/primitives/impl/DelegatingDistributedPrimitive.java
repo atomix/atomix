@@ -29,57 +29,57 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Base class for primitive delegates.
  */
 public abstract class DelegatingDistributedPrimitive implements AsyncPrimitive {
-    private final AsyncPrimitive primitive;
+  private final AsyncPrimitive primitive;
 
-    public DelegatingDistributedPrimitive(AsyncPrimitive primitive) {
-        this.primitive = checkNotNull(primitive);
-    }
+  public DelegatingDistributedPrimitive(AsyncPrimitive primitive) {
+    this.primitive = checkNotNull(primitive);
+  }
 
-    @Override
-    public String name() {
-        return primitive.name();
-    }
+  @Override
+  public String name() {
+    return primitive.name();
+  }
 
-    @Override
-    public Type primitiveType() {
-        return primitive.primitiveType();
-    }
+  @Override
+  public Type primitiveType() {
+    return primitive.primitiveType();
+  }
 
-    @Override
-    public CompletableFuture<Void> destroy() {
-        return primitive.destroy();
-    }
+  @Override
+  public CompletableFuture<Void> destroy() {
+    return primitive.destroy();
+  }
 
-    @Override
-    public void addStatusChangeListener(Consumer<Status> listener) {
-        primitive.addStatusChangeListener(listener);
-    }
+  @Override
+  public void addStatusChangeListener(Consumer<Status> listener) {
+    primitive.addStatusChangeListener(listener);
+  }
 
-    @Override
-    public void removeStatusChangeListener(Consumer<Status> listener) {
-        primitive.removeStatusChangeListener(listener);
-    }
+  @Override
+  public void removeStatusChangeListener(Consumer<Status> listener) {
+    primitive.removeStatusChangeListener(listener);
+  }
 
-    @Override
-    public Collection<Consumer<Status>> statusChangeListeners() {
-        return primitive.statusChangeListeners();
-    }
+  @Override
+  public Collection<Consumer<Status>> statusChangeListeners() {
+    return primitive.statusChangeListeners();
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("delegate", primitive)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("delegate", primitive)
+        .toString();
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(primitive);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(primitive);
+  }
 
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof DelegatingDistributedPrimitive
-                && primitive.equals(((DelegatingDistributedPrimitive) other).primitive);
-    }
+  @Override
+  public boolean equals(Object other) {
+    return other instanceof DelegatingDistributedPrimitive
+        && primitive.equals(((DelegatingDistributedPrimitive) other).primitive);
+  }
 }

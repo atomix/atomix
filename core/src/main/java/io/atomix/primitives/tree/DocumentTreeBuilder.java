@@ -18,6 +18,7 @@ package io.atomix.primitives.tree;
 
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.DistributedPrimitiveBuilder;
+import io.atomix.primitives.Ordering;
 
 /**
  * Builder for {@link DocumentTree}.
@@ -25,29 +26,36 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
 public abstract class DocumentTreeBuilder<V>
     extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, AsyncDocumentTree<V>> {
 
-  private boolean purgeOnUninstall = false;
+  private Ordering ordering = Ordering.NATURAL;
 
   public DocumentTreeBuilder() {
     super(DistributedPrimitive.Type.DOCUMENT_TREE);
   }
 
   /**
-   * Clears document tree contents when the owning application is uninstalled.
+   * Sets the ordering of the tree nodes.
+   * <p>
+   * When {@link AsyncDocumentTree#getChildren(DocumentPath)} is called, children will be returned according to
+   * the specified sort order.
    *
+   * @param ordering ordering of the tree nodes
    * @return this builder
    */
-  public DocumentTreeBuilder<V> withPurgeOnUninstall() {
-    purgeOnUninstall = true;
+  public DocumentTreeBuilder<V> withOrdering(Ordering ordering) {
+    this.ordering = ordering;
     return this;
   }
 
   /**
-   * Return if document tree entries need to be cleared when owning application is uninstalled.
+   * Returns the ordering of tree nodes.
+   * <p>
+   * When {@link AsyncDocumentTree#getChildren(DocumentPath)} is called, children will be returned according to
+   * the specified sort order.
    *
-   * @return true if items are to be cleared on uninstall
+   * @return the ordering of tree nodes
    */
-  public boolean purgeOnUninstall() {
-    return purgeOnUninstall;
+  public Ordering ordering() {
+    return ordering;
   }
 
   /**

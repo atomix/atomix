@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.transaction;
+package io.atomix.primitives.counter.impl;
 
-import io.atomix.utils.AbstractIdentifier;
+import io.atomix.primitives.DistributedPrimitiveCreator;
+import io.atomix.primitives.counter.AsyncAtomicCounter;
+import io.atomix.primitives.counter.AtomicCounterBuilder;
 
 /**
- * Transaction identifier.
+ * Default implementation of AtomicCounterBuilder.
  */
-public final class TransactionId extends AbstractIdentifier<String> {
+public class DefaultAtomicCounterBuilder extends AtomicCounterBuilder {
 
-  /**
-   * Creates a new transaction identifier.
-   *
-   * @param id backing identifier value
-   * @return transaction identifier
-   */
-  public static TransactionId from(String id) {
-    return new TransactionId(id);
+  private final DistributedPrimitiveCreator primitiveCreator;
+
+  public DefaultAtomicCounterBuilder(DistributedPrimitiveCreator primitiveCreator) {
+    this.primitiveCreator = primitiveCreator;
   }
 
-  private TransactionId(String id) {
-    super(id);
+  @Override
+  public AsyncAtomicCounter build() {
+    return primitiveCreator.newAsyncCounter(name());
   }
 }

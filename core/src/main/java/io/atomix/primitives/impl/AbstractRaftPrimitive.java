@@ -33,65 +33,65 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Abstract base class for primitives that interact with Raft replicated state machines via proxy.
  */
 public abstract class AbstractRaftPrimitive implements AsyncPrimitive {
-    private final Function<RaftProxy.State, Status> mapper = state -> {
-        switch (state) {
-            case CONNECTED:
-                return Status.ACTIVE;
-            case SUSPENDED:
-                return Status.SUSPENDED;
-            case CLOSED:
-                return Status.INACTIVE;
-            default:
-                throw new IllegalStateException("Unknown state " + state);
-        }
-    };
-
-    protected final RaftProxy proxy;
-    private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
-
-    public AbstractRaftPrimitive(RaftProxy proxy) {
-        this.proxy = checkNotNull(proxy, "proxy cannot be null");
-        proxy.addStateChangeListener(this::onStateChange);
+  private final Function<RaftProxy.State, Status> mapper = state -> {
+    switch (state) {
+      case CONNECTED:
+        return Status.ACTIVE;
+      case SUSPENDED:
+        return Status.SUSPENDED;
+      case CLOSED:
+        return Status.INACTIVE;
+      default:
+        throw new IllegalStateException("Unknown state " + state);
     }
+  };
 
-    @Override
-    public String name() {
-        return proxy.name();
-    }
+  protected final RaftProxy proxy;
+  private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
 
-    /**
-     * Handles a Raft session state change.
-     *
-     * @param state the updated Raft session state
-     */
-    private void onStateChange(RaftProxy.State state) {
-        statusChangeListeners.forEach(listener -> listener.accept(mapper.apply(state)));
-    }
+  public AbstractRaftPrimitive(RaftProxy proxy) {
+    this.proxy = checkNotNull(proxy, "proxy cannot be null");
+    proxy.addStateChangeListener(this::onStateChange);
+  }
 
-    @Override
-    public void addStatusChangeListener(Consumer<Status> listener) {
-        statusChangeListeners.add(listener);
-    }
+  @Override
+  public String name() {
+    return proxy.name();
+  }
 
-    @Override
-    public void removeStatusChangeListener(Consumer<Status> listener) {
-        statusChangeListeners.remove(listener);
-    }
+  /**
+   * Handles a Raft session state change.
+   *
+   * @param state the updated Raft session state
+   */
+  private void onStateChange(RaftProxy.State state) {
+    statusChangeListeners.forEach(listener -> listener.accept(mapper.apply(state)));
+  }
 
-    @Override
-    public Collection<Consumer<Status>> statusChangeListeners() {
-        return ImmutableSet.copyOf(statusChangeListeners);
-    }
+  @Override
+  public void addStatusChangeListener(Consumer<Status> listener) {
+    statusChangeListeners.add(listener);
+  }
 
-    @Override
-    public CompletableFuture<Void> close() {
-        return proxy.close();
-    }
+  @Override
+  public void removeStatusChangeListener(Consumer<Status> listener) {
+    statusChangeListeners.remove(listener);
+  }
 
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("proxy", proxy)
-                .toString();
-    }
+  @Override
+  public Collection<Consumer<Status>> statusChangeListeners() {
+    return ImmutableSet.copyOf(statusChangeListeners);
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return proxy.close();
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("proxy", proxy)
+        .toString();
+  }
 }

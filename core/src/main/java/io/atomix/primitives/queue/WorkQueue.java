@@ -82,8 +82,8 @@ public interface WorkQueue<E> extends SyncPrimitive {
    * @param executor      executor to use for processing the tasks
    */
   void registerTaskProcessor(Consumer<E> taskProcessor,
-                                                int parallelism,
-                                                Executor executor);
+                             int parallelism,
+                             Executor executor);
 
   /**
    * Stops automatically processing tasks from work queue. This call nullifies the effect of a

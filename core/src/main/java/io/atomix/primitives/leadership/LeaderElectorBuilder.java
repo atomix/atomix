@@ -18,12 +18,59 @@ package io.atomix.primitives.leadership;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.DistributedPrimitiveBuilder;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Builder for constructing new {@link AsyncLeaderElector} instances.
  */
 public abstract class LeaderElectorBuilder
     extends DistributedPrimitiveBuilder<LeaderElectorBuilder, AsyncLeaderElector> {
+
+  private long electionTimeoutMillis = DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS;
+
   public LeaderElectorBuilder() {
     super(DistributedPrimitive.Type.LEADER_ELECTOR);
+  }
+
+  /**
+   * Sets the election timeout in milliseconds.
+   *
+   * @param electionTimeoutMillis the election timeout in milliseconds
+   * @return leader elector builder
+   */
+  public LeaderElectorBuilder withElectionTimeout(long electionTimeoutMillis) {
+    this.electionTimeoutMillis = electionTimeoutMillis;
+    return this;
+  }
+
+  /**
+   * Sets the election timeout.
+   *
+   * @param electionTimeout the election timeout
+   * @param timeUnit        the timeout time unit
+   * @return leader elector builder
+   */
+  public LeaderElectorBuilder withElectionTimeout(long electionTimeout, TimeUnit timeUnit) {
+    return withElectionTimeout(timeUnit.toMillis(electionTimeout));
+  }
+
+  /**
+   * Sets the election timeout.
+   *
+   * @param electionTimeout the election timeout
+   * @return leader elector builder
+   */
+  public LeaderElectorBuilder withElectionTimeout(Duration electionTimeout) {
+    return withElectionTimeout(electionTimeout.toMillis());
+  }
+
+  /**
+   * Returns the election timeout in milliseconds.
+   *
+   * @return the election timeout in milliseconds
+   */
+  public final long electionTimeoutMillis() {
+    return electionTimeoutMillis;
   }
 }

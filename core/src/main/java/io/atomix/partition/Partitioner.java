@@ -23,10 +23,11 @@ import io.atomix.cluster.PartitionId;
  * @param <K> object type.
  */
 public interface Partitioner<K> {
-    /**
-     * Returns the {@link PartitionId} to which the specified object maps.
-     * @param object object
-     * @return partition identifier
-     */
-    PartitionId hash(K object);
+  /**
+   * Returns the {@link PartitionId} to which the specified object maps.
+   *
+   * @param object object
+   * @return partition identifier
+   */
+  PartitionId hash(K object);
 }

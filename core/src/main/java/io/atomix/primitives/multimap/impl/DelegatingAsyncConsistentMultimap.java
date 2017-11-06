@@ -36,122 +36,122 @@ import java.util.concurrent.Executor;
  * @param <V> value type
  */
 public class DelegatingAsyncConsistentMultimap<K, V>
-        extends DelegatingDistributedPrimitive implements AsyncConsistentMultimap<K, V> {
+    extends DelegatingDistributedPrimitive implements AsyncConsistentMultimap<K, V> {
 
-    private final AsyncConsistentMultimap<K, V> delegateMap;
+  private final AsyncConsistentMultimap<K, V> delegateMap;
 
-    public DelegatingAsyncConsistentMultimap(
-            AsyncConsistentMultimap<K, V> delegateMap) {
-        super(delegateMap);
-        this.delegateMap = delegateMap;
-    }
+  public DelegatingAsyncConsistentMultimap(
+      AsyncConsistentMultimap<K, V> delegateMap) {
+    super(delegateMap);
+    this.delegateMap = delegateMap;
+  }
 
-    @Override
-    public CompletableFuture<Integer> size() {
-        return delegateMap.size();
-    }
+  @Override
+  public CompletableFuture<Integer> size() {
+    return delegateMap.size();
+  }
 
-    @Override
-    public CompletableFuture<Boolean> isEmpty() {
-        return delegateMap.isEmpty();
-    }
+  @Override
+  public CompletableFuture<Boolean> isEmpty() {
+    return delegateMap.isEmpty();
+  }
 
-    @Override
-    public CompletableFuture<Boolean> containsKey(K key) {
-        return delegateMap.containsKey(key);
-    }
+  @Override
+  public CompletableFuture<Boolean> containsKey(K key) {
+    return delegateMap.containsKey(key);
+  }
 
-    @Override
-    public CompletableFuture<Boolean> containsValue(V value) {
-        return delegateMap.containsValue(value);
-    }
+  @Override
+  public CompletableFuture<Boolean> containsValue(V value) {
+    return delegateMap.containsValue(value);
+  }
 
-    @Override
-    public CompletableFuture<Boolean> containsEntry(K key, V value) {
-        return delegateMap.containsEntry(key, value);
-    }
+  @Override
+  public CompletableFuture<Boolean> containsEntry(K key, V value) {
+    return delegateMap.containsEntry(key, value);
+  }
 
-    @Override
-    public CompletableFuture<Boolean> put(K key, V value) {
-        return delegateMap.put(key, value);
-    }
+  @Override
+  public CompletableFuture<Boolean> put(K key, V value) {
+    return delegateMap.put(key, value);
+  }
 
-    @Override
-    public CompletableFuture<Boolean> remove(K key, V value) {
-        return delegateMap.remove(key, value);
-    }
+  @Override
+  public CompletableFuture<Boolean> remove(K key, V value) {
+    return delegateMap.remove(key, value);
+  }
 
-    @Override
-    public CompletableFuture<Boolean> removeAll(
-            K key, Collection<? extends V> values) {
-        return delegateMap.removeAll(key, values);
-    }
+  @Override
+  public CompletableFuture<Boolean> removeAll(
+      K key, Collection<? extends V> values) {
+    return delegateMap.removeAll(key, values);
+  }
 
-    @Override
-    public CompletableFuture<Versioned<Collection<? extends V>>>
-        removeAll(K key) {
-        return delegateMap.removeAll(key);
-    }
+  @Override
+  public CompletableFuture<Versioned<Collection<? extends V>>>
+  removeAll(K key) {
+    return delegateMap.removeAll(key);
+  }
 
-    @Override
-    public CompletableFuture<Boolean> putAll(
-            K key, Collection<? extends V> values) {
-        return delegateMap.putAll(key, values);
-    }
+  @Override
+  public CompletableFuture<Boolean> putAll(
+      K key, Collection<? extends V> values) {
+    return delegateMap.putAll(key, values);
+  }
 
-    @Override
-    public CompletableFuture<Versioned<Collection<? extends V>>>
-        replaceValues(K key, Collection<V> values) {
-        return delegateMap.replaceValues(key, values);
-    }
+  @Override
+  public CompletableFuture<Versioned<Collection<? extends V>>>
+  replaceValues(K key, Collection<V> values) {
+    return delegateMap.replaceValues(key, values);
+  }
 
-    @Override
-    public CompletableFuture<Void> clear() {
-        return delegateMap.clear();
-    }
+  @Override
+  public CompletableFuture<Void> clear() {
+    return delegateMap.clear();
+  }
 
-    @Override
-    public CompletableFuture<Versioned<Collection<? extends V>>> get(K key) {
-        return delegateMap.get(key);
-    }
+  @Override
+  public CompletableFuture<Versioned<Collection<? extends V>>> get(K key) {
+    return delegateMap.get(key);
+  }
 
-    @Override
-    public CompletableFuture<Set<K>> keySet() {
-        return delegateMap.keySet();
-    }
+  @Override
+  public CompletableFuture<Set<K>> keySet() {
+    return delegateMap.keySet();
+  }
 
-    @Override
-    public CompletableFuture<Multiset<K>> keys() {
-        return delegateMap.keys();
-    }
+  @Override
+  public CompletableFuture<Multiset<K>> keys() {
+    return delegateMap.keys();
+  }
 
-    @Override
-    public CompletableFuture<Multiset<V>> values() {
-        return delegateMap.values();
-    }
+  @Override
+  public CompletableFuture<Multiset<V>> values() {
+    return delegateMap.values();
+  }
 
-    @Override
-    public CompletableFuture<Collection<Map.Entry<K, V>>> entries() {
-        return delegateMap.entries();
-    }
+  @Override
+  public CompletableFuture<Collection<Map.Entry<K, V>>> entries() {
+    return delegateMap.entries();
+  }
 
-    @Override
-    public CompletableFuture<Void> addListener(MultimapEventListener<K, V> listener, Executor executor) {
-        return delegateMap.addListener(listener, executor);
-    }
+  @Override
+  public CompletableFuture<Void> addListener(MultimapEventListener<K, V> listener, Executor executor) {
+    return delegateMap.addListener(listener, executor);
+  }
 
-    @Override
-    public CompletableFuture<Void> removeListener(MultimapEventListener<K, V> listener) {
-        return delegateMap.removeListener(listener);
-    }
+  @Override
+  public CompletableFuture<Void> removeListener(MultimapEventListener<K, V> listener) {
+    return delegateMap.removeListener(listener);
+  }
 
-    @Override
-    public CompletableFuture<Void> close() {
-        return delegateMap.close();
-    }
+  @Override
+  public CompletableFuture<Void> close() {
+    return delegateMap.close();
+  }
 
-    @Override
-    public CompletableFuture<Map<K, Collection<V>>> asMap() {
-        return delegateMap.asMap();
-    }
+  @Override
+  public CompletableFuture<Map<K, Collection<V>>> asMap() {
+    return delegateMap.asMap();
+  }
 }
