@@ -21,6 +21,7 @@ import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.time.Clock;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.WallClock;
+import io.atomix.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -44,6 +45,11 @@ public abstract class AbstractRaftService implements RaftService {
         .add("name", context.serviceName())
         .build());
     configure(executor);
+  }
+
+  @Override
+  public void tick(WallClockTimestamp timestamp) {
+    executor.tick(timestamp);
   }
 
   @Override
