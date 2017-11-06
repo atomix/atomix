@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.atomix.primitives.leadership.impl.RaftLeaderElectorEvents.CHANGE;
@@ -67,19 +66,24 @@ public class RaftLeaderElectorService extends AbstractRaftService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(RaftLeaderElectorOperations.NAMESPACE)
       .register(RaftLeaderElectorEvents.NAMESPACE)
-      .register(ElectionState.class)
       .register(Registration.class)
       .register(new LinkedHashMap<>().keySet().getClass())
       .build());
 
+  private Registration leader;
+  private long term;
+  private long termStartTime;
+  private List<Registration> registrations = new LinkedList<>();
   private AtomicLong termCounter = new AtomicLong();
-  private ElectionState election;
   private Map<Long, RaftSession> listeners = new LinkedHashMap<>();
 
   @Override
   public void snapshot(SnapshotWriter writer) {
     writer.writeLong(termCounter.get());
-    writer.writeObject(election, SERIALIZER::encode);
+    writer.writeObject(leader, SERIALIZER::encode);
+    writer.writeLong(term);
+    writer.writeLong(termStartTime);
+    writer.writeObject(registrations, SERIALIZER::encode);
     writer.writeObject(Sets.newHashSet(listeners.keySet()), SERIALIZER::encode);
     logger().debug("Took state machine snapshot");
   }
@@ -87,7 +91,10 @@ public class RaftLeaderElectorService extends AbstractRaftService {
   @Override
   public void install(SnapshotReader reader) {
     termCounter.set(reader.readLong());
-    election = reader.readObject(SERIALIZER::decode);
+    leader = reader.readObject(SERIALIZER::decode);
+    term = reader.readLong();
+    termStartTime = reader.readLong();
+    registrations = reader.readObject(SERIALIZER::decode);
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
       listeners.put(sessionId, sessions().getSession(sessionId));
@@ -149,11 +156,7 @@ public class RaftLeaderElectorService extends AbstractRaftService {
     try {
       Leadership<byte[]> oldLeadership = leadership();
       Registration registration = new Registration(commit.value().id(), commit.session().sessionId().id());
-      if (election == null) {
-        election = new ElectionState(registration, termCounter::incrementAndGet);
-      } else if (!election.isDuplicate(registration)) {
-        election = new ElectionState(election).addRegistration(registration, termCounter::incrementAndGet);
-      }
+      addRegistration(registration);
       Leadership<byte[]> newLeadership = leadership();
 
       if (!Objects.equal(oldLeadership, newLeadership)) {
@@ -172,9 +175,7 @@ public class RaftLeaderElectorService extends AbstractRaftService {
   protected void withdraw(Commit<Void> commit) {
     try {
       Leadership<byte[]> oldLeadership = leadership();
-      if (election != null) {
-        election = election.cleanup(commit.session(), termCounter::incrementAndGet);
-      }
+      cleanup(commit.session());
       Leadership<byte[]> newLeadership = leadership();
       if (!Objects.equal(oldLeadership, newLeadership)) {
         notifyLeadershipChange(oldLeadership, newLeadership);
@@ -195,14 +196,20 @@ public class RaftLeaderElectorService extends AbstractRaftService {
     try {
       byte[] id = commit.value().id();
       Leadership<byte[]> oldLeadership = leadership();
-      ElectionState electionState = election = election != null ? election.transferLeadership(id, termCounter) : null;
+      Registration newLeader = registrations.stream()
+          .filter(r -> Arrays.equals(r.id(), id))
+          .findFirst()
+          .orElse(null);
+      if (newLeader != null) {
+        this.leader = newLeader;
+        this.term = termCounter.incrementAndGet();
+        this.termStartTime = context().wallClock().getTime().unixTimestamp();
+      }
       Leadership<byte[]> newLeadership = leadership();
       if (!Objects.equal(oldLeadership, newLeadership)) {
         notifyLeadershipChange(oldLeadership, newLeadership);
       }
-      return electionState != null
-          && electionState.leader() != null
-          && Arrays.equals(commit.value().id(), electionState.leader().id());
+      return leader != null && Arrays.equals(commit.value().id(), leader.id());
     } catch (Exception e) {
       logger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
@@ -228,7 +235,16 @@ public class RaftLeaderElectorService extends AbstractRaftService {
           return false;
         }
       }
-      election = election.promote(id);
+      Registration registration = registrations.stream()
+          .filter(r -> Arrays.equals(r.id(), id))
+          .findFirst()
+          .orElse(null);
+      List<Registration> updatedRegistrations = Lists.newArrayList();
+      updatedRegistrations.add(registration);
+      registrations.stream()
+          .filter(r -> !Arrays.equals(r.id(), id))
+          .forEach(updatedRegistrations::add);
+      this.registrations = updatedRegistrations;
       Leadership<byte[]> newLeadership = leadership();
       if (!Objects.equal(oldLeadership, newLeadership)) {
         notifyLeadershipChange(oldLeadership, newLeadership);
@@ -249,7 +265,27 @@ public class RaftLeaderElectorService extends AbstractRaftService {
     try {
       byte[] id = commit.value().id();
       Leadership<byte[]> oldLeadership = leadership();
-      election = election.evict(id, termCounter::incrementAndGet);
+      Optional<Registration> registration =
+          registrations.stream().filter(r -> Arrays.equals(r.id, id)).findFirst();
+      if (registration.isPresent()) {
+        List<Registration> updatedRegistrations =
+            registrations.stream()
+                .filter(r -> !Arrays.equals(r.id(), id))
+                .collect(Collectors.toList());
+        if (Arrays.equals(leader.id(), id)) {
+          if (!updatedRegistrations.isEmpty()) {
+            this.registrations = updatedRegistrations;
+            this.leader = updatedRegistrations.get(0);
+            this.term = termCounter.incrementAndGet();
+            this.termStartTime = context().wallClock().getTime().unixTimestamp();
+          } else {
+            this.registrations = updatedRegistrations;
+            this.leader = null;
+          }
+        } else {
+          this.registrations = updatedRegistrations;
+        }
+      }
       Leadership<byte[]> newLeadership = leadership();
       if (!Objects.equal(oldLeadership, newLeadership)) {
         notifyLeadershipChange(oldLeadership, newLeadership);
@@ -275,21 +311,13 @@ public class RaftLeaderElectorService extends AbstractRaftService {
   }
 
   private Leadership<byte[]> leadership() {
-    return election != null ? new Leadership<>(leader(), candidates()) : null;
-  }
-
-  private Leader<byte[]> leader() {
-    return election == null ? null : election.leader();
-  }
-
-  private List<byte[]> candidates() {
-    return election == null ? new LinkedList<>() : election.candidates();
+    return new Leadership<>(leader(), candidates());
   }
 
   private void onSessionEnd(RaftSession session) {
     listeners.remove(session.sessionId().id());
     Leadership<byte[]> oldLeadership = leadership();
-    election = election.cleanup(session, termCounter::incrementAndGet);
+    cleanup(session);
     Leadership<byte[]> newLeadership = leadership();
     if (!Objects.equal(oldLeadership, newLeadership)) {
       notifyLeadershipChange(oldLeadership, newLeadership);
@@ -322,146 +350,54 @@ public class RaftLeaderElectorService extends AbstractRaftService {
     }
   }
 
-  private static class ElectionState {
-    final Registration leader;
-    final long term;
-    final long termStartTime;
-    final List<Registration> registrations;
-
-    protected ElectionState(Registration registration, Supplier<Long> termCounter) {
-      registrations = Arrays.asList(registration);
-      term = termCounter.get();
-      termStartTime = System.currentTimeMillis();
-      leader = registration;
-    }
-
-    protected ElectionState(ElectionState other) {
-      registrations = Lists.newArrayList(other.registrations);
-      leader = other.leader;
-      term = other.term;
-      termStartTime = other.termStartTime;
-    }
-
-    protected ElectionState(List<Registration> registrations,
-                         Registration leader,
-                         long term,
-                         long termStartTime) {
-      this.registrations = Lists.newArrayList(registrations);
-      this.leader = leader;
-      this.term = term;
-      this.termStartTime = termStartTime;
-    }
-
-    protected ElectionState cleanup(RaftSession session, Supplier<Long> termCounter) {
-      Optional<Registration> registration =
-          registrations.stream().filter(r -> r.sessionId() == session.sessionId().id()).findFirst();
-      if (registration.isPresent()) {
-        List<Registration> updatedRegistrations =
-            registrations.stream()
-                .filter(r -> r.sessionId() != session.sessionId().id())
-                .collect(Collectors.toList());
-        if (leader.sessionId() == session.sessionId().id()) {
-          if (!updatedRegistrations.isEmpty()) {
-            return new ElectionState(updatedRegistrations,
-                updatedRegistrations.get(0),
-                termCounter.get(),
-                System.currentTimeMillis());
-          } else {
-            return new ElectionState(updatedRegistrations, null, term, termStartTime);
-          }
+  protected void cleanup(RaftSession session) {
+    Optional<Registration> registration =
+        registrations.stream().filter(r -> r.sessionId() == session.sessionId().id()).findFirst();
+    if (registration.isPresent()) {
+      List<Registration> updatedRegistrations =
+          registrations.stream()
+              .filter(r -> r.sessionId() != session.sessionId().id())
+              .collect(Collectors.toList());
+      if (leader.sessionId() == session.sessionId().id()) {
+        if (!updatedRegistrations.isEmpty()) {
+          this.registrations = updatedRegistrations;
+          this.leader = updatedRegistrations.get(0);
+          this.term = termCounter.incrementAndGet();
+          this.termStartTime = context().wallClock().getTime().unixTimestamp();
         } else {
-          return new ElectionState(updatedRegistrations, leader, term, termStartTime);
+          this.registrations = updatedRegistrations;
+          this.leader = null;
         }
       } else {
-        return this;
+        this.registrations = updatedRegistrations;
       }
     }
+  }
 
-    protected ElectionState evict(byte[] id, Supplier<Long> termCounter) {
-      Optional<Registration> registration =
-          registrations.stream().filter(r -> Arrays.equals(r.id, id)).findFirst();
-      if (registration.isPresent()) {
-        List<Registration> updatedRegistrations =
-            registrations.stream()
-                .filter(r -> !Arrays.equals(r.id(), id))
-                .collect(Collectors.toList());
-        if (Arrays.equals(leader.id(), id)) {
-          if (!updatedRegistrations.isEmpty()) {
-            return new ElectionState(updatedRegistrations,
-                updatedRegistrations.get(0),
-                termCounter.get(),
-                System.currentTimeMillis());
-          } else {
-            return new ElectionState(updatedRegistrations, null, term, termStartTime);
-          }
-        } else {
-          return new ElectionState(updatedRegistrations, leader, term, termStartTime);
-        }
-      } else {
-        return this;
-      }
+  protected Leader<byte[]> leader() {
+    if (leader == null) {
+      return null;
+    } else {
+      byte[] leaderId = leader.id();
+      return new Leader<>(leaderId, term, termStartTime);
     }
+  }
 
-    protected boolean isDuplicate(Registration registration) {
-      return registrations.stream().anyMatch(r -> r.sessionId() == registration.sessionId());
-    }
+  protected List<byte[]> candidates() {
+    return registrations.stream().map(registration -> registration.id()).collect(Collectors.toList());
+  }
 
-    protected Leader<byte[]> leader() {
-      if (leader == null) {
-        return null;
-      } else {
-        byte[] leaderId = leader.id();
-        return new Leader<>(leaderId, term, termStartTime);
-      }
-    }
-
-    protected List<byte[]> candidates() {
-      return registrations.stream().map(registration -> registration.id()).collect(Collectors.toList());
-    }
-
-    protected ElectionState addRegistration(Registration registration, Supplier<Long> termCounter) {
-      if (!registrations.stream().anyMatch(r -> r.sessionId() == registration.sessionId())) {
-        List<Registration> updatedRegistrations = new LinkedList<>(registrations);
-        updatedRegistrations.add(registration);
-        boolean newLeader = leader == null;
-        return new ElectionState(updatedRegistrations,
-            newLeader ? registration : leader,
-            newLeader ? termCounter.get() : term,
-            newLeader ? System.currentTimeMillis() : termStartTime);
-      }
-      return this;
-    }
-
-    protected ElectionState transferLeadership(byte[] id, AtomicLong termCounter) {
-      Registration newLeader = registrations.stream()
-          .filter(r -> Arrays.equals(r.id(), id))
-          .findFirst()
-          .orElse(null);
-      if (newLeader != null) {
-        return new ElectionState(registrations,
-            newLeader,
-            termCounter.incrementAndGet(),
-            System.currentTimeMillis());
-      } else {
-        return this;
-      }
-    }
-
-    protected ElectionState promote(byte[] id) {
-      Registration registration = registrations.stream()
-          .filter(r -> Arrays.equals(r.id(), id))
-          .findFirst()
-          .orElse(null);
-      List<Registration> updatedRegistrations = Lists.newArrayList();
+  protected void addRegistration(Registration registration) {
+    if (!registrations.stream().anyMatch(r -> r.sessionId() == registration.sessionId())) {
+      List<Registration> updatedRegistrations = new LinkedList<>(registrations);
       updatedRegistrations.add(registration);
-      registrations.stream()
-          .filter(r -> !Arrays.equals(r.id(), id))
-          .forEach(updatedRegistrations::add);
-      return new ElectionState(updatedRegistrations,
-          leader,
-          term,
-          termStartTime);
-
+      boolean newLeader = leader == null;
+      this.registrations = updatedRegistrations;
+      if (newLeader) {
+        this.leader = registration;
+        this.term = termCounter.incrementAndGet();
+        this.termStartTime = context().wallClock().getTime().unixTimestamp();
+      }
     }
   }
 

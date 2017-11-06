@@ -32,6 +32,7 @@ import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.StorageLevel;
+import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.AtomixThreadFactory;
 import io.atomix.utils.concurrent.SingleThreadContextFactory;
@@ -62,6 +63,7 @@ public class RaftLeaderElectorServiceTest {
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(ServiceId.from(1));
     when(context.executor()).thenReturn(mock(ThreadContext.class));
+    when(context.wallClock()).thenReturn(new WallClock());
 
     RaftContext server = mock(RaftContext.class);
     when(server.getProtocol()).thenReturn(mock(RaftServerProtocol.class));
