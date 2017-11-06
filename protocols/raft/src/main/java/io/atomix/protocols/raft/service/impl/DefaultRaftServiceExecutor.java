@@ -22,6 +22,7 @@ import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.service.ServiceContext;
+import io.atomix.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -60,23 +61,16 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
         .build());
   }
 
-  /**
-   * Sets the current operation type.
-   *
-   * @param commit the current commit
-   */
-  private void prepareOperation(Commit<byte[]> commit) {
-    long timestamp = commit.wallClockTime().unixTimestamp();
-
-    // Trigger scheduled tasks if this is a command and tasks are waiting to be executed.
-    if (commit.operation().type() == OperationType.COMMAND && !scheduledTasks.isEmpty()) {
-
+  @Override
+  public void tick(WallClockTimestamp timestamp) {
+    long unixTimestamp = timestamp.unixTimestamp();
+    if (!scheduledTasks.isEmpty()) {
       // Iterate through scheduled tasks until we reach a task that has not met its scheduled time.
       // The tasks list is sorted by time on insertion.
       Iterator<ScheduledTask> iterator = scheduledTasks.iterator();
       while (iterator.hasNext()) {
         ScheduledTask task = iterator.next();
-        if (task.isRunnable(timestamp)) {
+        if (task.isRunnable(unixTimestamp)) {
           this.timestamp = task.time;
           this.operationType = OperationType.COMMAND;
           log.trace("Executing scheduled task {}", task);
@@ -94,10 +88,6 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
       }
       complete.clear();
     }
-
-    // Set the current operation type and timestamp.
-    this.operationType = commit.operation().type();
-    this.timestamp = timestamp;
   }
 
   /**
@@ -122,7 +112,8 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
   public byte[] apply(Commit<byte[]> commit) {
     log.trace("Executing {}", commit);
 
-    prepareOperation(commit);
+    this.operationType = commit.operation().type();
+    this.timestamp = commit.wallClockTime().unixTimestamp();
 
     // Look up the registered callback for the operation.
     Function<Commit<byte[]>, byte[]> callback = operations.get(commit.operation());

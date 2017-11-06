@@ -201,6 +201,8 @@ public class DefaultServiceContext implements ServiceContext {
 
     // Set the current operation type to COMMAND to allow events to be sent.
     setOperation(OperationType.COMMAND);
+
+    service.tick(WallClockTimestamp.from(timestamp));
   }
 
   /**
@@ -393,11 +395,11 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session's timestamp to prevent it from being expired.
       session.setLastUpdated(timestamp);
 
-      // Update the state machine index/timestamp.
-      tick(index, timestamp);
-
       // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
       maybeInstallSnapshot(index);
+
+      // Update the state machine index/timestamp.
+      tick(index, timestamp);
 
       // Expire sessions that have timed out.
       expireSessions(currentTimestamp);
@@ -430,11 +432,11 @@ public class DefaultServiceContext implements ServiceContext {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
 
-      // Update the state machine index/timestamp.
-      tick(index, timestamp);
-
       // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
       maybeInstallSnapshot(index);
+
+      // Update the state machine index/timestamp.
+      tick(index, timestamp);
 
       // The session may have been closed by the time this update was executed on the service thread.
       if (session.getState() != RaftSession.State.CLOSED) {
@@ -536,11 +538,11 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session's timestamp to prevent it from being expired.
       session.setLastUpdated(timestamp);
 
-      // Update the state machine index/timestamp.
-      tick(index, timestamp);
-
       // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
       maybeInstallSnapshot(index);
+
+      // Update the state machine index/timestamp.
+      tick(index, timestamp);
 
       // Expire sessions that have timed out.
       expireSessions(currentTimestamp);
@@ -587,11 +589,11 @@ public class DefaultServiceContext implements ServiceContext {
     // Update the session's timestamp to prevent it from being expired.
     session.setLastUpdated(timestamp);
 
-    // Update the state machine index/timestamp.
-    tick(index, timestamp);
-
     // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
     maybeInstallSnapshot(index);
+
+    // Update the state machine index/timestamp.
+    tick(index, timestamp);
 
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
