@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
-import io.atomix.protocols.raft.operation.OperationId;
+import io.atomix.protocols.raft.RaftException.ProtocolException;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
@@ -27,7 +27,6 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
-import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.net.ConnectException;
@@ -51,7 +50,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 final class RaftProxyInvoker {
   private static final int[] FIBONACCI = new int[]{1, 1, 2, 3, 5};
   private static final Predicate<Throwable> EXCEPTION_PREDICATE = e ->
-      e instanceof ConnectException
+      e instanceof ProtocolException
+          || e instanceof ConnectException
           || e instanceof TimeoutException
           || e instanceof ClosedChannelException;
   private static final Predicate<Throwable> CLOSED_PREDICATE = e ->
@@ -340,10 +340,6 @@ final class RaftProxyInvoker {
         else if (response.error().type() == RaftError.Type.COMMAND_FAILURE) {
           resubmit(response.lastSequenceNumber(), this);
         }
-        // If the request failed with a PROTOCOL_ERROR, we need to ensure sequencing of operations is still maintained.
-        else if (response.error().type() == RaftError.Type.PROTOCOL_ERROR) {
-          completeWithNoOp(response.error().createException());
-        }
         // If an APPLICATION_ERROR occurred, complete the request exceptionally with the error message.
         else if (response.error().type() == RaftError.Type.APPLICATION_ERROR) {
           complete(response.error().createException());
@@ -378,24 +374,6 @@ final class RaftProxyInvoker {
       if (CLOSED_PREDICATE.test(cause)) {
         state.setState(RaftProxy.State.CLOSED);
       }
-      // Otherwise, resend the request with a NOOP command. This is necessary to ensure that sequence
-      // numbers are not skipped which could otherwise prevent the client from progressing.
-      else {
-        completeWithNoOp(cause);
-      }
-    }
-
-    /**
-     * Sends a no-op command using this command's sequence number.
-     */
-    private void completeWithNoOp(Throwable cause) {
-      CommandRequest noOpRequest = CommandRequest.newBuilder()
-          .withSession(request.session())
-          .withSequence(request.sequenceNumber())
-          .withOperation(new RaftOperation(OperationId.NOOP, HeapBytes.EMPTY))
-          .build();
-      context.execute(() -> invoke(new CommandAttempt(sequence, attempt + 1, noOpRequest, new CompletableFuture<>())));
-      complete(cause);
     }
 
     @Override
