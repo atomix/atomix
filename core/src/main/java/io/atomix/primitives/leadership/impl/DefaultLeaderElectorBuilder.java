@@ -33,7 +33,7 @@ public class DefaultLeaderElectorBuilder extends LeaderElectorBuilder {
   }
 
   @Override
-  public AsyncLeaderElector build() {
+  public AsyncLeaderElector buildAsync() {
     return primitiveCreator.newAsyncLeaderElector(name(), electionTimeoutMillis(), TimeUnit.MILLISECONDS);
   }
 }

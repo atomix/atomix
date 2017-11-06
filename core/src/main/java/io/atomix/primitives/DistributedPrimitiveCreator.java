@@ -18,6 +18,7 @@ package io.atomix.primitives;
 import io.atomix.primitives.counter.AsyncAtomicCounter;
 import io.atomix.primitives.generator.AsyncAtomicIdGenerator;
 import io.atomix.primitives.leadership.AsyncLeaderElector;
+import io.atomix.primitives.lock.AsyncDistributedLock;
 import io.atomix.primitives.map.AsyncAtomicCounterMap;
 import io.atomix.primitives.map.AsyncConsistentMap;
 import io.atomix.primitives.map.AsyncConsistentTreeMap;
@@ -137,6 +138,14 @@ public interface DistributedPrimitiveCreator {
   AsyncLeaderElector newAsyncLeaderElector(String name, long electionTimeout, TimeUnit timeUnit);
 
   /**
+   * Creates a new {@code AsyncDistributedLock}.
+   *
+   * @param name lock name
+   * @return distributed lock
+   */
+  AsyncDistributedLock newAsyncDistributedLock(String name);
+
+  /**
    * Creates a new {@code WorkQueue}.
    *
    * @param <E>        work element type
@@ -144,7 +153,7 @@ public interface DistributedPrimitiveCreator {
    * @param serializer serializer
    * @return work queue
    */
-  <E> AsyncWorkQueue<E> newWorkQueue(String name, Serializer serializer);
+  <E> AsyncWorkQueue<E> newAsyncWorkQueue(String name, Serializer serializer);
 
   /**
    * Creates a new {@code AsyncDocumentTree}.

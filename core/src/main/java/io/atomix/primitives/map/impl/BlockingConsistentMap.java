@@ -45,14 +45,14 @@ import java.util.function.Predicate;
  * @param <K> type of key.
  * @param <V> type of value.
  */
-public class DefaultConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<K, V>> implements ConsistentMap<K, V> {
+public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<K, V>> implements ConsistentMap<K, V> {
 
   private static final int MAX_DELAY_BETWEEN_RETRY_MILLS = 50;
   private final AsyncConsistentMap<K, V> asyncMap;
   private final long operationTimeoutMillis;
   private Map<K, V> javaMap;
 
-  public DefaultConsistentMap(AsyncConsistentMap<K, V> asyncMap, long operationTimeoutMillis) {
+  public BlockingConsistentMap(AsyncConsistentMap<K, V> asyncMap, long operationTimeoutMillis) {
     super(asyncMap);
     this.asyncMap = asyncMap;
     this.operationTimeoutMillis = operationTimeoutMillis;

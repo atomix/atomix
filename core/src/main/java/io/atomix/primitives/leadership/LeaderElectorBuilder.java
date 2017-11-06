@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * Builder for constructing new {@link AsyncLeaderElector} instances.
  */
 public abstract class LeaderElectorBuilder
-    extends DistributedPrimitiveBuilder<LeaderElectorBuilder, AsyncLeaderElector> {
+    extends DistributedPrimitiveBuilder<LeaderElectorBuilder, LeaderElector, AsyncLeaderElector> {
 
   private long electionTimeoutMillis = DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS;
 
@@ -72,5 +72,10 @@ public abstract class LeaderElectorBuilder
    */
   public final long electionTimeoutMillis() {
     return electionTimeoutMillis;
+  }
+
+  @Override
+  public LeaderElector build() {
+    return buildAsync().asLeaderElector();
   }
 }

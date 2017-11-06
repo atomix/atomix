@@ -27,7 +27,7 @@ import io.atomix.primitives.map.impl.UnmodifiableAsyncConsistentMap;
 import io.atomix.primitives.multimap.AsyncConsistentMultimap;
 import io.atomix.primitives.multimap.impl.TranscodingAsyncConsistentMultimap;
 import io.atomix.primitives.set.AsyncDistributedSet;
-import io.atomix.primitives.set.impl.DefaultAsyncDistributedSet;
+import io.atomix.primitives.set.impl.DelegatingAsyncDistributedSet;
 import io.atomix.primitives.tree.AsyncDocumentTree;
 import io.atomix.primitives.tree.impl.CachingAsyncDocumentTree;
 
@@ -49,7 +49,7 @@ public final class DistributedPrimitives {
    * @return set
    */
   public static <E> AsyncDistributedSet<E> newSetFromMap(AsyncConsistentMap<E, Boolean> map) {
-    return new DefaultAsyncDistributedSet<>(map);
+    return new DelegatingAsyncDistributedSet<>(map);
   }
 
   /**

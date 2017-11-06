@@ -25,7 +25,7 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  * @param <V> type for map value
  */
 public abstract class ConsistentMapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>> {
+    extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>, AsyncConsistentMap<K, V>> {
 
   private boolean nullValues = false;
 
@@ -52,12 +52,8 @@ public abstract class ConsistentMapBuilder<K, V>
     return nullValues;
   }
 
-  /**
-   * Builds an async consistent map based on the configuration options
-   * supplied to this builder.
-   *
-   * @return new async consistent map
-   * @throws RuntimeException if a mandatory parameter is missing
-   */
-  public abstract AsyncConsistentMap<K, V> buildAsyncMap();
+  @Override
+  public ConsistentMap<K, V> build() {
+    return buildAsync().asConsistentMap();
+  }
 }

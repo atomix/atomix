@@ -18,14 +18,12 @@ package io.atomix.primitives.multimap.impl;
 
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.multimap.AsyncConsistentMultimap;
-import io.atomix.primitives.multimap.ConsistentMultimap;
 import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
 
 /**
  * Default {@link AsyncConsistentMultimap} builder.
  */
-public class DefaultConsistentMultimapBuilder<K, V>
-    extends ConsistentMultimapBuilder<K, V> {
+public class DefaultConsistentMultimapBuilder<K, V> extends ConsistentMultimapBuilder<K, V> {
 
   private final DistributedPrimitiveCreator primitiveCreator;
 
@@ -35,12 +33,7 @@ public class DefaultConsistentMultimapBuilder<K, V>
   }
 
   @Override
-  public AsyncConsistentMultimap<K, V> buildMultimap() {
+  public AsyncConsistentMultimap<K, V> buildAsync() {
     return primitiveCreator.newAsyncConsistentSetMultimap(name(), serializer());
-  }
-
-  @Override
-  public ConsistentMultimap<K, V> build() {
-    return buildMultimap().asMultimap();
   }
 }

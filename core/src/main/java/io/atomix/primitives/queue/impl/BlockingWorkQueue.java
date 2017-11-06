@@ -1,11 +1,11 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,63 +13,65 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.value.impl;
+package io.atomix.primitives.queue.impl;
 
 import io.atomix.primitives.PrimitiveException;
 import io.atomix.primitives.Synchronous;
-import io.atomix.primitives.value.AsyncAtomicValue;
-import io.atomix.primitives.value.AtomicValue;
-import io.atomix.primitives.value.AtomicValueEventListener;
+import io.atomix.primitives.queue.AsyncWorkQueue;
+import io.atomix.primitives.queue.Task;
+import io.atomix.primitives.queue.WorkQueue;
+import io.atomix.primitives.queue.WorkQueueStats;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 /**
- * Default implementation for a {@code AtomicValue} backed by a {@link AsyncAtomicValue}.
- *
- * @param <V> value type
+ * Default synchronous work queue implementation.
  */
-public class DefaultAtomicValue<V> extends Synchronous<AsyncAtomicValue<V>> implements AtomicValue<V> {
+public class BlockingWorkQueue<E> extends Synchronous<AsyncWorkQueue<E>> implements WorkQueue<E> {
 
-  private final AsyncAtomicValue<V> asyncValue;
+  private final AsyncWorkQueue<E> asyncQueue;
   private final long operationTimeoutMillis;
 
-  public DefaultAtomicValue(AsyncAtomicValue<V> asyncValue, long operationTimeoutMillis) {
-    super(asyncValue);
-    this.asyncValue = asyncValue;
+  public BlockingWorkQueue(AsyncWorkQueue<E> asyncQueue, long operationTimeoutMillis) {
+    super(asyncQueue);
+    this.asyncQueue = asyncQueue;
     this.operationTimeoutMillis = operationTimeoutMillis;
   }
 
   @Override
-  public boolean compareAndSet(V expect, V update) {
-    return complete(asyncValue.compareAndSet(expect, update));
+  public void addMultiple(Collection<E> items) {
+    complete(asyncQueue.addMultiple(items));
   }
 
   @Override
-  public V get() {
-    return complete(asyncValue.get());
+  public Collection<Task<E>> take(int maxItems) {
+    return complete(asyncQueue.take(maxItems));
   }
 
   @Override
-  public V getAndSet(V value) {
-    return complete(asyncValue.getAndSet(value));
+  public void complete(Collection<String> taskIds) {
+    complete(asyncQueue.complete(taskIds));
   }
 
   @Override
-  public void set(V value) {
-    complete(asyncValue.set(value));
+  public void registerTaskProcessor(Consumer<E> taskProcessor, int parallelism, Executor executor) {
+    complete(asyncQueue.registerTaskProcessor(taskProcessor, parallelism, executor));
   }
 
   @Override
-  public void addListener(AtomicValueEventListener<V> listener) {
-    complete(asyncValue.addListener(listener));
+  public void stopProcessing() {
+    complete(asyncQueue.stopProcessing());
   }
 
   @Override
-  public void removeListener(AtomicValueEventListener<V> listener) {
-    complete(asyncValue.removeListener(listener));
+  public WorkQueueStats stats() {
+    return complete(asyncQueue.stats());
   }
 
   private <T> T complete(CompletableFuture<T> future) {

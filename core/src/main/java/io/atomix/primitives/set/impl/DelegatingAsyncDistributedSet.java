@@ -18,6 +18,7 @@ package io.atomix.primitives.set.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.primitives.impl.DelegatingDistributedPrimitive;
 import io.atomix.primitives.map.AsyncConsistentMap;
 import io.atomix.primitives.map.MapEvent;
 import io.atomix.primitives.map.MapEventListener;
@@ -38,18 +39,14 @@ import java.util.stream.Collectors;
  *
  * @param <E> set entry type
  */
-public class DefaultAsyncDistributedSet<E> implements AsyncDistributedSet<E> {
+public class DelegatingAsyncDistributedSet<E> extends DelegatingDistributedPrimitive implements AsyncDistributedSet<E> {
 
   private final AsyncConsistentMap<E, Boolean> backingMap;
   private final Map<SetEventListener<E>, MapEventListener<E, Boolean>> listenerMapping = Maps.newIdentityHashMap();
 
-  public DefaultAsyncDistributedSet(AsyncConsistentMap<E, Boolean> backingMap) {
+  public DelegatingAsyncDistributedSet(AsyncConsistentMap<E, Boolean> backingMap) {
+    super(backingMap);
     this.backingMap = backingMap;
-  }
-
-  @Override
-  public String name() {
-    return backingMap.name();
   }
 
   @Override
@@ -133,10 +130,5 @@ public class DefaultAsyncDistributedSet<E> implements AsyncDistributedSet<E> {
       return backingMap.removeListener(mapEventListener);
     }
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return backingMap.close();
   }
 }

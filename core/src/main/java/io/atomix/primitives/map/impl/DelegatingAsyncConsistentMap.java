@@ -27,7 +27,6 @@ import io.atomix.transaction.TransactionLog;
 
 import java.util.Collection;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -200,28 +199,9 @@ public class DelegatingAsyncConsistentMap<K, V>
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    return delegateMap.close();
-  }
-
-  @Override
   public String toString() {
     return MoreObjects.toStringHelper(getClass())
         .add("delegateMap", delegateMap)
         .toString();
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(delegateMap);
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    if (other instanceof DelegatingAsyncConsistentMap) {
-      DelegatingAsyncConsistentMap<K, V> that = (DelegatingAsyncConsistentMap) other;
-      return this.delegateMap.equals(that.delegateMap);
-    }
-    return false;
   }
 }

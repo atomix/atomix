@@ -24,7 +24,7 @@ import io.atomix.primitives.Ordering;
  * Builder for {@link DocumentTree}.
  */
 public abstract class DocumentTreeBuilder<V>
-    extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, AsyncDocumentTree<V>> {
+    extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTree<V>, AsyncDocumentTree<V>> {
 
   private Ordering ordering = Ordering.NATURAL;
 
@@ -58,12 +58,8 @@ public abstract class DocumentTreeBuilder<V>
     return ordering;
   }
 
-  /**
-   * Builds the distributed Document tree based on the configuration options supplied
-   * to this builder.
-   *
-   * @return new distributed document tree
-   * @throws RuntimeException if a mandatory parameter is missing
-   */
-  public abstract AsyncDocumentTree<V> buildDocumentTree();
+  @Override
+  public DocumentTree<V> build() {
+    return buildAsync().asDocumentTree();
+  }
 }

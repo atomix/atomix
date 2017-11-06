@@ -23,40 +23,14 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  * Builder for {@link ConsistentTreeMap}.
  */
 public abstract class ConsistentTreeMapBuilder<V>
-    extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>> {
-
-  private boolean purgeOnUninstall = false;
+    extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>, AsyncConsistentTreeMap<V>> {
 
   public ConsistentTreeMapBuilder() {
     super(DistributedPrimitive.Type.CONSISTENT_TREEMAP);
   }
 
-  /**
-   * Clears map contents when the owning application is uninstalled.
-   *
-   * @return this builder
-   */
-  public ConsistentTreeMapBuilder<V> withPurgeOnUninstall() {
-    purgeOnUninstall = true;
-    return this;
+  @Override
+  public ConsistentTreeMap<V> build() {
+    return buildAsync().asTreeMap();
   }
-
-  /**
-   * Return if map entries need to be cleared when owning application is uninstalled.
-   *
-   * @return true if items are to be cleared on uninstall
-   */
-  public boolean purgeOnUninstall() {
-    return purgeOnUninstall;
-  }
-
-  /**
-   * Builds the distributed tree map based on the configuration options supplied
-   * to this builder.
-   *
-   * @return new distributed tree map
-   * @throws RuntimeException if a mandatory parameter is missing
-   */
-  public abstract AsyncConsistentTreeMap<V> buildTreeMap();
-
 }

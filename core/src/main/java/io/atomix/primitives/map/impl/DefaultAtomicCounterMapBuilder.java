@@ -17,7 +17,6 @@ package io.atomix.primitives.map.impl;
 
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.map.AsyncAtomicCounterMap;
-import io.atomix.primitives.map.AtomicCounterMap;
 import io.atomix.primitives.map.AtomicCounterMapBuilder;
 
 /**
@@ -32,12 +31,7 @@ public class DefaultAtomicCounterMapBuilder<K> extends AtomicCounterMapBuilder<K
   }
 
   @Override
-  public AsyncAtomicCounterMap<K> buildAsyncMap() {
+  public AsyncAtomicCounterMap<K> buildAsync() {
     return primitiveCreator.newAsyncAtomicCounterMap(name(), serializer());
-  }
-
-  @Override
-  public AtomicCounterMap<K> build() {
-    return buildAsyncMap().asAtomicCounterMap();
   }
 }

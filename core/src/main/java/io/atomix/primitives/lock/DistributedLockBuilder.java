@@ -17,14 +17,18 @@ package io.atomix.primitives.lock;
 
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.DistributedPrimitiveBuilder;
-import io.atomix.primitives.generator.AsyncAtomicIdGenerator;
 
 /**
  * Builder for AtomicIdGenerator.
  */
 public abstract class DistributedLockBuilder
-    extends DistributedPrimitiveBuilder<DistributedLockBuilder, AsyncDistributedLock> {
+    extends DistributedPrimitiveBuilder<DistributedLockBuilder, DistributedLock, AsyncDistributedLock> {
   public DistributedLockBuilder() {
     super(DistributedPrimitive.Type.LOCK);
+  }
+
+  @Override
+  public DistributedLock build() {
+    return buildAsync().asDistributedLock();
   }
 }

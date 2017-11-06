@@ -18,6 +18,7 @@ package io.atomix.primitives.queue;
 import com.google.common.collect.ImmutableList;
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.queue.impl.BlockingWorkQueue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -138,5 +139,26 @@ public interface AsyncWorkQueue<E> extends AsyncPrimitive {
    */
   default CompletableFuture<Task<E>> take() {
     return this.take(1).thenApply(tasks -> tasks.isEmpty() ? null : tasks.iterator().next());
+  }
+
+  /**
+   * Returns a synchronous {@link WorkQueue} instance that wraps this instance.
+   *
+   * @return a synchronous {@link WorkQueue}. Changes to the returned queue will be reflected in this queue
+   * and vice versa
+   */
+  default WorkQueue<E> asWorkQueue() {
+    return asWorkQueue(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  }
+
+  /**
+   * Returns a synchronous {@link WorkQueue} instance that wraps this instance.
+   *
+   * @param timeoutMillis number of milliseconds to block before timing out queue operations
+   * @return a synchronous {@link WorkQueue}. Changes to the returned queue will be reflected in this queue
+   * and vice versa
+   */
+  default WorkQueue<E> asWorkQueue(long timeoutMillis) {
+    return new BlockingWorkQueue<>(this, timeoutMillis);
   }
 }

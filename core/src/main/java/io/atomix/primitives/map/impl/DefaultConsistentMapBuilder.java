@@ -18,7 +18,6 @@ package io.atomix.primitives.map.impl;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.DistributedPrimitives;
 import io.atomix.primitives.map.AsyncConsistentMap;
-import io.atomix.primitives.map.ConsistentMap;
 import io.atomix.primitives.map.ConsistentMapBuilder;
 
 /**
@@ -36,12 +35,7 @@ public class DefaultConsistentMapBuilder<K, V> extends ConsistentMapBuilder<K, V
   }
 
   @Override
-  public ConsistentMap<K, V> build() {
-    return buildAsyncMap().asConsistentMap();
-  }
-
-  @Override
-  public AsyncConsistentMap<K, V> buildAsyncMap() {
+  public AsyncConsistentMap<K, V> buildAsync() {
     AsyncConsistentMap<K, V> map = primitiveCreator.newAsyncConsistentMap(name(), serializer());
     map = nullValues() ? map : DistributedPrimitives.newNotNullMap(map);
     map = relaxedReadConsistency() ? DistributedPrimitives.newCachingMap(map) : map;

@@ -16,7 +16,7 @@
 package io.atomix.primitives.generator;
 
 import io.atomix.primitives.AsyncPrimitive;
-import io.atomix.primitives.generator.impl.DefaultAtomicIdGenerator;
+import io.atomix.primitives.generator.impl.BlockingAtomicIdGenerator;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -44,7 +44,7 @@ public interface AsyncAtomicIdGenerator extends AsyncPrimitive {
    * @return new {@code AtomicIdGenerator} instance
    */
   default AtomicIdGenerator asAtomicIdGenerator(long timeoutMillis) {
-    return new DefaultAtomicIdGenerator(this, timeoutMillis);
+    return new BlockingAtomicIdGenerator(this, timeoutMillis);
   }
 
   /**
@@ -53,6 +53,6 @@ public interface AsyncAtomicIdGenerator extends AsyncPrimitive {
    * @return new {@code AtomicIdGenerator} instance
    */
   default AtomicIdGenerator asAtomicIdGenerator() {
-    return new DefaultAtomicIdGenerator(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
+    return new BlockingAtomicIdGenerator(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
   }
 }

@@ -22,8 +22,13 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  * Builder for AtomicCounter.
  */
 public abstract class AtomicCounterBuilder
-    extends DistributedPrimitiveBuilder<AtomicCounterBuilder, AsyncAtomicCounter> {
+    extends DistributedPrimitiveBuilder<AtomicCounterBuilder, AtomicCounter, AsyncAtomicCounter> {
   public AtomicCounterBuilder() {
     super(DistributedPrimitive.Type.COUNTER);
+  }
+
+  @Override
+  public AtomicCounter build() {
+    return buildAsync().asAtomicCounter();
   }
 }

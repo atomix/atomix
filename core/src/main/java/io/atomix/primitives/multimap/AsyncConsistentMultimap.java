@@ -20,7 +20,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.multimap.impl.DefaultConsistentMultimap;
+import io.atomix.primitives.multimap.impl.BlockingConsistentMultimap;
 import io.atomix.time.Versioned;
 
 import java.util.Collection;
@@ -293,6 +293,6 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    * synchronous access to this map
    */
   default ConsistentMultimap<K, V> asMultimap(long timeoutMillis) {
-    return new DefaultConsistentMultimap(this, timeoutMillis);
+    return new BlockingConsistentMultimap<>(this, timeoutMillis);
   }
 }

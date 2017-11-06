@@ -17,7 +17,6 @@ package io.atomix.primitives.map.impl;
 
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.map.AsyncConsistentTreeMap;
-import io.atomix.primitives.map.ConsistentTreeMap;
 import io.atomix.primitives.map.ConsistentTreeMapBuilder;
 
 /**
@@ -34,13 +33,7 @@ public class DefaultConsistentTreeMapBuilder<V> extends ConsistentTreeMapBuilder
   }
 
   @Override
-  public AsyncConsistentTreeMap<V> buildTreeMap() {
+  public AsyncConsistentTreeMap<V> buildAsync() {
     return primitiveCreator.newAsyncConsistentTreeMap(name(), serializer());
   }
-
-  @Override
-  public ConsistentTreeMap<V> build() {
-    return buildTreeMap().asTreeMap();
-  }
-
 }

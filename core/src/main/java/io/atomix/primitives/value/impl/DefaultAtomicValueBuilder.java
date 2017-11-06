@@ -32,7 +32,7 @@ public class DefaultAtomicValueBuilder<V> extends AtomicValueBuilder<V> {
   }
 
   @Override
-  public AsyncAtomicValue<V> build() {
+  public AsyncAtomicValue<V> buildAsync() {
     return primitiveCreator.newAsyncAtomicValue(name(), serializer());
   }
 }

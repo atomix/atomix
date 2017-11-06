@@ -17,7 +17,7 @@ package io.atomix.primitives.set;
 
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.set.impl.DefaultDistributedSet;
+import io.atomix.primitives.set.impl.BlockingDistributedSet;
 
 import java.util.Collection;
 import java.util.Set;
@@ -153,7 +153,7 @@ public interface AsyncDistributedSet<E> extends AsyncPrimitive {
    * @return new {@code DistributedSet} instance
    */
   default DistributedSet<E> asDistributedSet(long timeoutMillis) {
-    return new DefaultDistributedSet<>(this, timeoutMillis);
+    return new BlockingDistributedSet<>(this, timeoutMillis);
   }
 
   /**

@@ -38,14 +38,14 @@ import java.util.concurrent.TimeoutException;
  * Implementation of {@link ConsistentMultimap} providing synchronous access to
  * {@link AsyncConsistentMultimap}.
  */
-public class DefaultConsistentMultimap<K, V>
+public class BlockingConsistentMultimap<K, V>
     extends Synchronous<AsyncConsistentMultimap<K, V>>
     implements ConsistentMultimap<K, V> {
 
   private final AsyncConsistentMultimap<K, V> asyncMultimap;
   private final long operationTimeoutMillis;
 
-  public DefaultConsistentMultimap(
+  public BlockingConsistentMultimap(
       AsyncConsistentMultimap<K, V> asyncMultimap,
       long operationTimeoutMillis) {
     super(asyncMultimap);

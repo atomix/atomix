@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -272,25 +271,5 @@ public class DelegatingAsyncConsistentTreeMap<V> extends DelegatingDistributedPr
   @Override
   public CompletableFuture<Void> rollback(TransactionId transactionId) {
     return delegateMap.rollback(transactionId);
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return delegateMap.close();
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    if (other instanceof DelegatingAsyncConsistentTreeMap) {
-      DelegatingAsyncConsistentTreeMap<V> that =
-          (DelegatingAsyncConsistentTreeMap) other;
-      return this.delegateMap.equals(that.delegateMap);
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(delegateMap);
   }
 }

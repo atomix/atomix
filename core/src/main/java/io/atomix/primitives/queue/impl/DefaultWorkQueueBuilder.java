@@ -1,11 +1,11 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.counter.impl;
+package io.atomix.primitives.queue.impl;
 
 import io.atomix.primitives.DistributedPrimitiveCreator;
-import io.atomix.primitives.counter.AsyncAtomicCounter;
-import io.atomix.primitives.counter.AtomicCounterBuilder;
+import io.atomix.primitives.queue.AsyncWorkQueue;
+import io.atomix.primitives.queue.WorkQueueBuilder;
 
 /**
- * Default implementation of AtomicCounterBuilder.
+ * Default work queue builder implementation.
  */
-public class DefaultAtomicCounterBuilder extends AtomicCounterBuilder {
+public class DefaultWorkQueueBuilder<E> extends WorkQueueBuilder<E> {
 
   private final DistributedPrimitiveCreator primitiveCreator;
 
-  public DefaultAtomicCounterBuilder(DistributedPrimitiveCreator primitiveCreator) {
+  public DefaultWorkQueueBuilder(DistributedPrimitiveCreator primitiveCreator) {
     this.primitiveCreator = primitiveCreator;
   }
 
   @Override
-  public AsyncAtomicCounter buildAsync() {
-    return primitiveCreator.newAsyncCounter(name());
+  public AsyncWorkQueue<E> buildAsync() {
+    return primitiveCreator.newAsyncWorkQueue(name(), serializer());
   }
 }

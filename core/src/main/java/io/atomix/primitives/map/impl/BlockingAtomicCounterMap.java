@@ -31,12 +31,12 @@ import java.util.concurrent.TimeoutException;
  *
  * @param <K> map key type
  */
-public class DefaultAtomicCounterMap<K> extends Synchronous<AsyncAtomicCounterMap<K>> implements AtomicCounterMap<K> {
+public class BlockingAtomicCounterMap<K> extends Synchronous<AsyncAtomicCounterMap<K>> implements AtomicCounterMap<K> {
 
   private final AsyncAtomicCounterMap<K> asyncCounterMap;
   private final long operationTimeoutMillis;
 
-  public DefaultAtomicCounterMap(AsyncAtomicCounterMap<K> asyncCounterMap, long operationTimeoutMillis) {
+  public BlockingAtomicCounterMap(AsyncAtomicCounterMap<K> asyncCounterMap, long operationTimeoutMillis) {
     super(asyncCounterMap);
     this.asyncCounterMap = asyncCounterMap;
     this.operationTimeoutMillis = operationTimeoutMillis;

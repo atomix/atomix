@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,65 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.counter.impl;
+package io.atomix.primitives.lock.impl;
 
 import io.atomix.primitives.PrimitiveException;
 import io.atomix.primitives.Synchronous;
-import io.atomix.primitives.counter.AsyncAtomicCounter;
-import io.atomix.primitives.counter.AtomicCounter;
+import io.atomix.primitives.lock.AsyncDistributedLock;
+import io.atomix.primitives.lock.DistributedLock;
+import io.atomix.time.Version;
 
+import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Default implementation for a {@code AtomicCounter} backed by a {@link AsyncAtomicCounter}.
+ * Default implementation for a {@code DistributedLock} backed by a {@link AsyncDistributedLock}.
  */
-public class DefaultAtomicCounter extends Synchronous<AsyncAtomicCounter> implements AtomicCounter {
+public class BlockingDistributedLock extends Synchronous<AsyncDistributedLock> implements DistributedLock {
 
-  private final AsyncAtomicCounter asyncCounter;
+  private final AsyncDistributedLock asyncLock;
   private final long operationTimeoutMillis;
 
-  public DefaultAtomicCounter(AsyncAtomicCounter asyncCounter, long operationTimeoutMillis) {
-    super(asyncCounter);
-    this.asyncCounter = asyncCounter;
+  public BlockingDistributedLock(AsyncDistributedLock asyncLock, long operationTimeoutMillis) {
+    super(asyncLock);
+    this.asyncLock = asyncLock;
     this.operationTimeoutMillis = operationTimeoutMillis;
   }
 
   @Override
-  public long incrementAndGet() {
-    return complete(asyncCounter.incrementAndGet());
+  public Version lock() {
+    return complete(asyncLock.lock());
   }
 
   @Override
-  public long getAndIncrement() {
-    return complete(asyncCounter.getAndIncrement());
+  public Optional<Version> tryLock() {
+    return complete(asyncLock.tryLock());
   }
 
   @Override
-  public long getAndAdd(long delta) {
-    return complete(asyncCounter.getAndAdd(delta));
+  public Optional<Version> tryLock(Duration timeout) {
+    return complete(asyncLock.tryLock(timeout));
   }
 
   @Override
-  public long addAndGet(long delta) {
-    return complete(asyncCounter.addAndGet(delta));
-  }
-
-  @Override
-  public void set(long value) {
-    complete(asyncCounter.set(value));
-  }
-
-  @Override
-  public boolean compareAndSet(long expectedValue, long updateValue) {
-    return complete(asyncCounter.compareAndSet(expectedValue, updateValue));
-  }
-
-  @Override
-  public long get() {
-    return complete(asyncCounter.get());
+  public void unlock() {
+    complete(asyncLock.unlock());
   }
 
   private <T> T complete(CompletableFuture<T> future) {

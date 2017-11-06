@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2016-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives.generator.impl;
+package io.atomix.primitives.value.impl;
 
 import io.atomix.primitives.PrimitiveException;
 import io.atomix.primitives.Synchronous;
-import io.atomix.primitives.generator.AsyncAtomicIdGenerator;
-import io.atomix.primitives.generator.AtomicIdGenerator;
+import io.atomix.primitives.value.AsyncAtomicValue;
+import io.atomix.primitives.value.AtomicValue;
+import io.atomix.primitives.value.AtomicValueEventListener;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -26,22 +27,49 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Default implementation for a {@code AtomicIdGenerator} backed by a {@link AsyncAtomicIdGenerator}.
+ * Default implementation for a {@code AtomicValue} backed by a {@link AsyncAtomicValue}.
+ *
+ * @param <V> value type
  */
-public class DefaultAtomicIdGenerator extends Synchronous<AsyncAtomicIdGenerator> implements AtomicIdGenerator {
+public class BlockingAtomicValue<V> extends Synchronous<AsyncAtomicValue<V>> implements AtomicValue<V> {
 
-  private final AsyncAtomicIdGenerator asyncIdGenerator;
+  private final AsyncAtomicValue<V> asyncValue;
   private final long operationTimeoutMillis;
 
-  public DefaultAtomicIdGenerator(AsyncAtomicIdGenerator asyncIdGenerator, long operationTimeoutMillis) {
-    super(asyncIdGenerator);
-    this.asyncIdGenerator = asyncIdGenerator;
+  public BlockingAtomicValue(AsyncAtomicValue<V> asyncValue, long operationTimeoutMillis) {
+    super(asyncValue);
+    this.asyncValue = asyncValue;
     this.operationTimeoutMillis = operationTimeoutMillis;
   }
 
   @Override
-  public long nextId() {
-    return complete(asyncIdGenerator.nextId());
+  public boolean compareAndSet(V expect, V update) {
+    return complete(asyncValue.compareAndSet(expect, update));
+  }
+
+  @Override
+  public V get() {
+    return complete(asyncValue.get());
+  }
+
+  @Override
+  public V getAndSet(V value) {
+    return complete(asyncValue.getAndSet(value));
+  }
+
+  @Override
+  public void set(V value) {
+    complete(asyncValue.set(value));
+  }
+
+  @Override
+  public void addListener(AtomicValueEventListener<V> listener) {
+    complete(asyncValue.addListener(listener));
+  }
+
+  @Override
+  public void removeListener(AtomicValueEventListener<V> listener) {
+    complete(asyncValue.removeListener(listener));
   }
 
   private <T> T complete(CompletableFuture<T> future) {

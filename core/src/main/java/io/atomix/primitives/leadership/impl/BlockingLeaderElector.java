@@ -34,12 +34,12 @@ import java.util.function.Consumer;
 /**
  * Default implementation for a {@code LeaderElector} backed by a {@link AsyncLeaderElector}.
  */
-public class DefaultLeaderElector extends Synchronous<AsyncLeaderElector> implements LeaderElector {
+public class BlockingLeaderElector extends Synchronous<AsyncLeaderElector> implements LeaderElector {
 
   private final AsyncLeaderElector asyncElector;
   private final long operationTimeoutMillis;
 
-  public DefaultLeaderElector(AsyncLeaderElector asyncElector, long operationTimeoutMillis) {
+  public BlockingLeaderElector(AsyncLeaderElector asyncElector, long operationTimeoutMillis) {
     super(asyncElector);
     this.asyncElector = asyncElector;
     this.operationTimeoutMillis = operationTimeoutMillis;

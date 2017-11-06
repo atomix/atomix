@@ -16,7 +16,7 @@
 package io.atomix.primitives.lock;
 
 import io.atomix.primitives.AsyncPrimitive;
-import io.atomix.primitives.lock.impl.DefaultDistributedLock;
+import io.atomix.primitives.lock.impl.BlockingDistributedLock;
 import io.atomix.time.Version;
 
 import java.time.Duration;
@@ -69,7 +69,7 @@ public interface AsyncDistributedLock extends AsyncPrimitive {
    * @return new {@code DistributedLock} instance
    */
   default DistributedLock asDistributedLock(long timeoutMillis) {
-    return new DefaultDistributedLock(this, timeoutMillis);
+    return new BlockingDistributedLock(this, timeoutMillis);
   }
 
   /**
@@ -78,6 +78,6 @@ public interface AsyncDistributedLock extends AsyncPrimitive {
    * @return new {@code DistributedLock} instance
    */
   default DistributedLock asDistributedLock() {
-    return new DefaultDistributedLock(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
+    return new BlockingDistributedLock(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
   }
 }

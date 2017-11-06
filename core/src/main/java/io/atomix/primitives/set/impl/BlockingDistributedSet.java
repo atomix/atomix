@@ -35,13 +35,13 @@ import java.util.concurrent.TimeoutException;
  *
  * @param <E> set element type
  */
-public class DefaultDistributedSet<E> extends Synchronous<AsyncDistributedSet<E>> implements DistributedSet<E> {
+public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E>> implements DistributedSet<E> {
 
   private final long operationTimeoutMillis;
 
   private final AsyncDistributedSet<E> asyncSet;
 
-  public DefaultDistributedSet(AsyncDistributedSet<E> asyncSet, long operationTimeoutMillis) {
+  public BlockingDistributedSet(AsyncDistributedSet<E> asyncSet, long operationTimeoutMillis) {
     super(asyncSet);
     this.asyncSet = asyncSet;
     this.operationTimeoutMillis = operationTimeoutMillis;

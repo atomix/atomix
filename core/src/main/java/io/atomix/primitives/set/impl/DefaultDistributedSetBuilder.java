@@ -29,7 +29,6 @@ import java.util.function.Supplier;
  */
 public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
 
-  private String name;
   private ConsistentMapBuilder<E, Boolean> mapBuilder;
 
   public DefaultDistributedSetBuilder(Supplier<ConsistentMapBuilder<E, Boolean>> mapBuilderSupplier) {
@@ -39,7 +38,6 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
   @Override
   public DistributedSetBuilder<E> withName(String name) {
     mapBuilder.withName(name);
-    this.name = name;
     return this;
   }
 
@@ -62,7 +60,27 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
   }
 
   @Override
-  public AsyncDistributedSet<E> build() {
-    return new DefaultAsyncDistributedSet<E>(mapBuilder.buildAsyncMap());
+  public boolean readOnly() {
+    return mapBuilder.readOnly();
+  }
+
+  @Override
+  public boolean relaxedReadConsistency() {
+    return mapBuilder.relaxedReadConsistency();
+  }
+
+  @Override
+  public Serializer serializer() {
+    return mapBuilder.serializer();
+  }
+
+  @Override
+  public String name() {
+    return mapBuilder.name();
+  }
+
+  @Override
+  public AsyncDistributedSet<E> buildAsync() {
+    return new DelegatingAsyncDistributedSet<>(mapBuilder.buildAsync());
   }
 }

@@ -17,7 +17,7 @@
 package io.atomix.primitives.map;
 
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.map.impl.DefaultConsistentTreeMap;
+import io.atomix.primitives.map.impl.BlockingConsistentTreeMap;
 import io.atomix.time.Versioned;
 
 import java.util.Map;
@@ -170,7 +170,7 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
   }
 
   default ConsistentTreeMap<V> asTreeMap(long timeoutMillis) {
-    return new DefaultConsistentTreeMap<>(this, timeoutMillis);
+    return new BlockingConsistentTreeMap<>(this, timeoutMillis);
   }
 
 

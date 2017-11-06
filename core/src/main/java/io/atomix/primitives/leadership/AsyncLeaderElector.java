@@ -18,7 +18,7 @@ package io.atomix.primitives.leadership;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.leadership.impl.DefaultLeaderElector;
+import io.atomix.primitives.leadership.impl.BlockingLeaderElector;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -139,7 +139,7 @@ public interface AsyncLeaderElector extends AsyncPrimitive {
    * @return new {@code LeaderElector} instance
    */
   default LeaderElector asLeaderElector(long timeoutMillis) {
-    return new DefaultLeaderElector(this, timeoutMillis);
+    return new BlockingLeaderElector(this, timeoutMillis);
   }
 
   /**

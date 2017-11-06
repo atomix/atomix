@@ -66,6 +66,11 @@ public abstract class DelegatingDistributedPrimitive implements AsyncPrimitive {
   }
 
   @Override
+  public CompletableFuture<Void> close() {
+    return primitive.close();
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(getClass())
         .add("delegate", primitive)

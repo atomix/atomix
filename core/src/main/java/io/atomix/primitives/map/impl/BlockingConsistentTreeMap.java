@@ -42,15 +42,15 @@ import java.util.function.Predicate;
 /**
  * Implementation of the {@link ConsistentTreeMap} interface.
  */
-public class DefaultConsistentTreeMap<V>
+public class BlockingConsistentTreeMap<V>
     extends Synchronous<AsyncConsistentTreeMap<V>>
     implements ConsistentTreeMap<V> {
   private final AsyncConsistentTreeMap<V> treeMap;
   private final long operationTimeoutMillis;
   private Map<String, V> javaMap;
 
-  public DefaultConsistentTreeMap(AsyncConsistentTreeMap<V> treeMap,
-                                  long operationTimeoutMillis) {
+  public BlockingConsistentTreeMap(AsyncConsistentTreeMap<V> treeMap,
+                                   long operationTimeoutMillis) {
     super(treeMap);
     this.treeMap = treeMap;
     this.operationTimeoutMillis = operationTimeoutMillis;

@@ -17,6 +17,7 @@
 package io.atomix.primitives.tree;
 
 import io.atomix.primitives.AsyncPrimitive;
+import io.atomix.primitives.tree.impl.BlockingDocumentTree;
 import io.atomix.time.Versioned;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -154,5 +155,26 @@ public interface AsyncDocumentTree<V> extends AsyncPrimitive {
    */
   default CompletableFuture<Void> addListener(DocumentTreeListener<V> listener) {
     return addListener(root(), listener);
+  }
+
+  /**
+   * Returns a synchronous {@link DocumentTree} instance that wraps this instance.
+   *
+   * @return a synchronous {@link DocumentTree}. Changes to the returned tree will be reflected in this tree
+   * and vice versa
+   */
+  default DocumentTree<V> asDocumentTree() {
+    return asDocumentTree(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  }
+
+  /**
+   * Returns a synchronous {@link DocumentTree} instance that wraps this instance.
+   *
+   * @param timeoutMillis number of milliseconds to block before timing out queue operations
+   * @return a synchronous {@link DocumentTree}. Changes to the returned tree will be reflected in this tree
+   * and vice versa
+   */
+  default DocumentTree<V> asDocumentTree(long timeoutMillis) {
+    return new BlockingDocumentTree<>(this, timeoutMillis);
   }
 }

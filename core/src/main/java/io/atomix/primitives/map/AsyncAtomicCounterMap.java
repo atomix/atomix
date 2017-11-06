@@ -17,7 +17,7 @@ package io.atomix.primitives.map;
 
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.map.impl.DefaultAtomicCounterMap;
+import io.atomix.primitives.map.impl.BlockingAtomicCounterMap;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -181,6 +181,6 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @return new {@code AtomicCounterMap} instance
    */
   default AtomicCounterMap<K> asAtomicCounterMap(long timeoutMillis) {
-    return new DefaultAtomicCounterMap<>(this, timeoutMillis);
+    return new BlockingAtomicCounterMap<>(this, timeoutMillis);
   }
 }

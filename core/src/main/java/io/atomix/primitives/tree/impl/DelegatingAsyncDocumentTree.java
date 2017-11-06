@@ -23,7 +23,6 @@ import io.atomix.primitives.tree.DocumentTreeListener;
 import io.atomix.time.Versioned;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -93,28 +92,9 @@ public class DelegatingAsyncDocumentTree<V> extends DelegatingDistributedPrimiti
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    return delegateTree.close();
-  }
-
-  @Override
   public String toString() {
     return MoreObjects.toStringHelper(getClass())
         .add("delegateTree", delegateTree)
         .toString();
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(delegateTree);
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    if (other instanceof DelegatingAsyncDocumentTree) {
-      DelegatingAsyncDocumentTree<V> that = (DelegatingAsyncDocumentTree) other;
-      return this.delegateTree.equals(that.delegateTree);
-    }
-    return false;
   }
 }
