@@ -88,7 +88,7 @@ public enum RaftDocumentTreeOperations implements OperationId {
       .register(Versioned.class)
       .register(DocumentTreeResult.class)
       .register(DocumentTreeResult.Status.class)
-      .build("AtomixDocumentTreeOperations");
+      .build(RaftDocumentTreeOperations.class.getSimpleName());
 
   /**
    * Base class for document tree operations.

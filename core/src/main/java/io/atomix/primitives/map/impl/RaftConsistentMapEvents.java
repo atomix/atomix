@@ -42,6 +42,6 @@ public enum RaftConsistentMapEvents implements EventType {
       .register(MapEvent.class)
       .register(MapEvent.Type.class)
       .register(byte[].class)
-      .build("AtomixConsistentMapEvents");
+      .build(RaftConsistentMapEvents.class.getSimpleName());
 
 }

@@ -24,7 +24,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Raft lock test.
@@ -45,8 +45,6 @@ public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
    */
   @Test
   public void testLockUnlock() throws Throwable {
-    createServers(3);
-
     RaftLock lock = newPrimitive("test-lock-unlock");
     lock.lock().join();
     lock.unlock().join();
@@ -57,8 +55,6 @@ public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
    */
   @Test
   public void testReleaseOnClose() throws Throwable {
-    createServers(3);
-
     RaftLock lock1 = newPrimitive("test-lock-on-close");
     RaftLock lock2 = newPrimitive("test-lock-on-close");
     lock1.lock().join();
@@ -72,14 +68,12 @@ public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
    */
   @Test
   public void testTryLockFail() throws Throwable {
-    createServers(3);
-
     RaftLock lock1 = newPrimitive("test-try-lock-fail");
     RaftLock lock2 = newPrimitive("test-try-lock-fail");
 
     lock1.lock().join();
 
-    assertNull(lock2.tryLock(Duration.ofSeconds(1)).join());
+    assertFalse(lock2.tryLock(Duration.ofSeconds(1)).join().isPresent());
   }
 
   /**
@@ -87,8 +81,6 @@ public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
    */
   @Test
   public void testBlockingUnlock() throws Throwable {
-    createServers(3);
-
     RaftLock lock1 = newPrimitive("test-blocking-unlock");
     RaftLock lock2 = newPrimitive("test-blocking-unlock");
 

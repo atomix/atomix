@@ -84,6 +84,16 @@ public class RaftLockService extends AbstractRaftService {
     }
   }
 
+  @Override
+  public void onExpire(RaftSession session) {
+    releaseSession(session);
+  }
+
+  @Override
+  public void onClose(RaftSession session) {
+    releaseSession(session);
+  }
+
   /**
    * Applies a lock commit.
    */
@@ -97,22 +107,27 @@ public class RaftLockService extends AbstractRaftService {
       commit.session().publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
     } else if (commit.value().timeout() == 0) {
       commit.session().publish(RaftLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+    } else if (commit.value().timeout() > 0) {
+      LockHolder holder = lock = new LockHolder(
+          commit.value().id(),
+          commit.index(),
+          commit.session().sessionId().id(),
+          context().wallClock().getTime().unixTimestamp() + commit.value().timeout());
+      queue.add(holder);
+      timers.put(commit.index(), scheduler().schedule(Duration.ofMillis(commit.value().timeout()), () -> {
+        timers.remove(commit.index());
+        queue.remove(holder);
+        if (commit.session().getState().active()) {
+          commit.session().publish(RaftLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+        }
+      }));
     } else {
       LockHolder holder = lock = new LockHolder(
           commit.value().id(),
           commit.index(),
           commit.session().sessionId().id(),
-          commit.value().timeout() > 0 ? context().wallClock().getTime().unixTimestamp() + commit.value().timeout() : 0);
+          0);
       queue.add(holder);
-      if (commit.value().timeout() > 0) {
-        timers.put(commit.index(), scheduler().schedule(Duration.ofMillis(commit.value().timeout()), () -> {
-          timers.remove(commit.index());
-          queue.remove(holder);
-          if (commit.session().getState().active()) {
-            commit.session().publish(RaftLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
-          }
-        }));
-      }
     }
   }
 
@@ -141,6 +156,30 @@ public class RaftLockService extends AbstractRaftService {
           }
         }
       }
+  }
+
+  private void releaseSession(RaftSession session) {
+    if (lock.session == session.sessionId().id()) {
+      lock = queue.poll();
+      while (lock != null) {
+        if (lock.session == session.sessionId().id()) {
+          lock = queue.poll();
+        } else {
+          Scheduled timer = timers.remove(lock.index);
+          if (timer != null) {
+            timer.cancel();
+          }
+
+          RaftSession lockSession = sessions().getSession(lock.session);
+          if (lockSession == null || lockSession.getState() == RaftSession.State.EXPIRED || lockSession.getState() == RaftSession.State.CLOSED) {
+            lock = queue.poll();
+          } else {
+            session.publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, lock.index));
+            break;
+          }
+        }
+      }
+    }
   }
 
   private class LockHolder {

@@ -63,7 +63,7 @@ public enum RaftWorkQueueOperations implements OperationId {
       .register(Complete.class)
       .register(Task.class)
       .register(WorkQueueStats.class)
-      .build("AtomixWorkQueueOperations");
+      .build(RaftWorkQueueOperations.class.getSimpleName());
 
   /**
    * Work queue operation.

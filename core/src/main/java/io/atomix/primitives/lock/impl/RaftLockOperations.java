@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Counter commands.
  */
 public enum RaftLockOperations implements OperationId {
-  LOCK("lock", OperationType.QUERY),
+  LOCK("lock", OperationType.COMMAND),
   UNLOCK("unlock", OperationType.COMMAND);
 
   private final String id;
@@ -52,7 +52,7 @@ public enum RaftLockOperations implements OperationId {
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
       .register(Lock.class)
       .register(Unlock.class)
-      .build("AtomixCounterOperations");
+      .build(RaftLockOperations.class.getSimpleName());
 
   /**
    * Abstract lock operation.

@@ -41,5 +41,5 @@ public enum RaftDocumentTreeEvents implements EventType {
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
       .register(DocumentTreeEvent.class)
       .register(DocumentTreeEvent.Type.class)
-      .build("AtomixDocumentTreeEvents");
+      .build(RaftDocumentTreeEvents.class.getSimpleName());
 }

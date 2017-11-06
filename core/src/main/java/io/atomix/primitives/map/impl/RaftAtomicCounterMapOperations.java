@@ -73,7 +73,7 @@ public enum RaftAtomicCounterMapOperations implements OperationId {
       .register(Replace.class)
       .register(Remove.class)
       .register(RemoveValue.class)
-      .build("AtomixAtomicCounterMapOperations");
+      .build(RaftAtomicCounterMapOperations.class.getSimpleName());
 
   public abstract static class AtomicCounterMapOperation<V> {
   }

@@ -17,6 +17,8 @@ package io.atomix.primitives.elector.impl;
 
 import com.google.common.base.MoreObjects;
 import io.atomix.cluster.NodeId;
+import io.atomix.leadership.Leader;
+import io.atomix.leadership.Leadership;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.serializer.kryo.KryoNamespace;
@@ -62,6 +64,8 @@ public enum RaftLeaderElectorOperations implements OperationId {
       .register(KryoNamespaces.BASIC)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
       .register(NodeId.class)
+      .register(Leadership.class)
+      .register(Leader.class)
       .register(Run.class)
       .register(Withdraw.class)
       .register(Anoint.class)
@@ -69,7 +73,7 @@ public enum RaftLeaderElectorOperations implements OperationId {
       .register(Evict.class)
       .register(GetLeadership.class)
       .register(GetElectedTopics.class)
-      .build("AtomixLeaderElectorOperations");
+      .build(RaftLeaderElectorOperations.class.getSimpleName());
 
   /**
    * Abstract election query.

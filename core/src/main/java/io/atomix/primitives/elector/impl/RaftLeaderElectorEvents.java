@@ -16,6 +16,8 @@
 package io.atomix.primitives.elector.impl;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.leadership.Leader;
+import io.atomix.leadership.Leadership;
 import io.atomix.protocols.raft.event.EventType;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
@@ -40,5 +42,7 @@ public enum RaftLeaderElectorEvents implements EventType {
   public static final KryoNamespace NAMESPACE = KryoNamespace.newBuilder()
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
       .register(NodeId.class)
-      .build("AtomixLeaderElectorEvents");
+      .register(Leadership.class)
+      .register(Leader.class)
+      .build(RaftLeaderElectorEvents.class.getSimpleName());
 }

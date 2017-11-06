@@ -59,7 +59,7 @@ public enum RaftValueOperations implements OperationId {
       .register(Set.class)
       .register(CompareAndSet.class)
       .register(GetAndSet.class)
-      .build("AtomixCounterOperations");
+      .build(RaftValueOperations.class.getSimpleName());
 
   /**
    * Abstract value command.

@@ -42,6 +42,6 @@ public enum RaftValueEvents implements EventType {
       .register(AtomicValueEvent.class)
       .register(AtomicValueEvent.Type.class)
       .register(byte[].class)
-      .build("RaftValueEvents");
+      .build(RaftValueEvents.class.getSimpleName());
 
 }

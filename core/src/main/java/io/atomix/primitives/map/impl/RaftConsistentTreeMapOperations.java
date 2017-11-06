@@ -82,7 +82,7 @@ public enum RaftConsistentTreeMapOperations implements OperationId {
       .register(Versioned.class)
       .register(AbstractMap.SimpleImmutableEntry.class)
       .register(Maps.immutableEntry("", "").getClass())
-      .build("AtomixConsistentTreeMapOperations");
+      .build(RaftConsistentTreeMapOperations.class.getSimpleName());
 
   /**
    * Abstract treeMap command.

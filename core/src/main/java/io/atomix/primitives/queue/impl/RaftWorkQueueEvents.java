@@ -38,5 +38,5 @@ public enum RaftWorkQueueEvents implements EventType {
 
   public static final KryoNamespace NAMESPACE = KryoNamespace.newBuilder()
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
-      .build("AtomixWorkQueueEvents");
+      .build(RaftWorkQueueEvents.class.getSimpleName());
 }

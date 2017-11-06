@@ -42,5 +42,5 @@ public enum RaftConsistentSetMultimapEvents implements EventType {
       .register(MultimapEvent.class)
       .register(MultimapEvent.Type.class)
       .register(byte[].class)
-      .build("AtomixConsistentSetMultimapEvents");
+      .build(RaftConsistentSetMultimapEvents.class.getSimpleName());
 }

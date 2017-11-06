@@ -58,7 +58,7 @@ public enum RaftCounterOperations implements OperationId {
       .register(CompareAndSet.class)
       .register(AddAndGet.class)
       .register(GetAndAdd.class)
-      .build("AtomixCounterOperations");
+      .build(RaftCounterOperations.class.getSimpleName());
 
   /**
    * Abstract value command.

@@ -106,7 +106,7 @@ public enum RaftConsistentMapOperations implements OperationId {
       .register(MapEntryUpdateResult.Status.class)
       .register(Versioned.class)
       .register(byte[].class)
-      .build("AtomixConsistentMapOperations");
+      .build(RaftConsistentMapOperations.class.getSimpleName());
 
   /**
    * Abstract map command.

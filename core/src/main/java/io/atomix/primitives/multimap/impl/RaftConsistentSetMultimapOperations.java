@@ -85,7 +85,7 @@ public enum RaftConsistentSetMultimapOperations implements OperationId {
       .register(Versioned.class)
       .register(ArrayList.class)
       .register(Maps.immutableEntry("", "").getClass())
-      .build("AtomixConsistentSetMultimapOperations");
+      .build(RaftConsistentSetMultimap.class.getSimpleName());
 
   /**
    * Abstract multimap command.

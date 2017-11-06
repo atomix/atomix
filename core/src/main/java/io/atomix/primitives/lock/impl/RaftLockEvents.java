@@ -41,6 +41,6 @@ public enum RaftLockEvents implements EventType {
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
       .register(LockEvent.class)
       .register(byte[].class)
-      .build("RaftValueEvents");
+      .build(RaftLockEvents.class.getSimpleName());
 
 }
