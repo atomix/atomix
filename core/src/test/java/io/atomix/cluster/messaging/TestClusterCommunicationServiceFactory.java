@@ -24,7 +24,7 @@ import java.util.Map;
  * Test cluster communication service factory.
  */
 public class TestClusterCommunicationServiceFactory {
-  private final Map<NodeId, TestClusterCommunicationService> nodes = Maps.newConcurrentMap();
+  private final Map<NodeId, TestClusterCommunicator> nodes = Maps.newConcurrentMap();
 
   /**
    * Creates a new cluster communication service for the given node.
@@ -32,7 +32,7 @@ public class TestClusterCommunicationServiceFactory {
    * @param localNodeId the node for which to create the service
    * @return the communication service for the given node
    */
-  public ClusterCommunicationService newCommunicationService(NodeId localNodeId) {
-    return new TestClusterCommunicationService(localNodeId, nodes);
+  public ClusterCommunicator newCommunicationService(NodeId localNodeId) {
+    return new TestClusterCommunicator(localNodeId, nodes);
   }
 }

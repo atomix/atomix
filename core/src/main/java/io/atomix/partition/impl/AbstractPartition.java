@@ -18,7 +18,7 @@ package io.atomix.partition.impl;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterCommunicator;
 import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionInfo;
@@ -72,7 +72,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public abstract class AbstractPartition implements Partition {
   protected final AtomicBoolean isOpened = new AtomicBoolean(false);
-  protected final ClusterCommunicationService clusterCommunicator;
+  protected final ClusterCommunicator clusterCommunicator;
   protected PartitionInfo partition;
   protected NodeId localNodeId;
 
@@ -97,7 +97,7 @@ public abstract class AbstractPartition implements Partition {
   public AbstractPartition(
       NodeId nodeId,
       PartitionInfo partition,
-      ClusterCommunicationService clusterCommunicator) {
+      ClusterCommunicator clusterCommunicator) {
     this.localNodeId = nodeId;
     this.partition = partition;
     this.clusterCommunicator = clusterCommunicator;

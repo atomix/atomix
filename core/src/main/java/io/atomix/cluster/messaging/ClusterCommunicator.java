@@ -31,7 +31,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Service for assisting communications between controller cluster nodes.
  */
-public interface ClusterCommunicationService extends Managed<ClusterCommunicationService> {
+public interface ClusterCommunicator extends Managed<ClusterCommunicator> {
 
   /**
    * Broadcasts a message to all controller nodes.
@@ -163,7 +163,7 @@ public interface ClusterCommunicationService extends Managed<ClusterCommunicatio
   /**
    * Cluster communication service builder.
    */
-  abstract class Builder implements io.atomix.utils.Builder<ClusterCommunicationService> {
+  abstract class Builder implements io.atomix.utils.Builder<ClusterCommunicator> {
     protected ClusterService clusterService;
     protected MessagingService messagingService;
 

@@ -16,7 +16,7 @@
 package io.atomix.partition.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterCommunicator;
 import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionInfo;
 import io.atomix.primitives.DistributedPrimitiveCreator;
@@ -36,7 +36,7 @@ public class ClientPartition extends AbstractPartition {
   public ClientPartition(
       NodeId nodeId,
       PartitionInfo partition,
-      ClusterCommunicationService clusterCommunicator) {
+      ClusterCommunicator clusterCommunicator) {
     super(nodeId, partition, clusterCommunicator);
     this.client = createClient();
   }

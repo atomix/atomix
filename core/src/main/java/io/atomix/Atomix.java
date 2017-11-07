@@ -18,7 +18,7 @@ package io.atomix;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterCommunicator;
 import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionInfo;
@@ -169,7 +169,7 @@ public abstract class Atomix implements PrimitiveProvider {
     protected int numPartitions;
     protected int partitionSize = DEFAULT_PARTITION_SIZE;
     protected int numBuckets = DEFAULT_NUM_BUCKETS;
-    protected ClusterCommunicationService clusterCommunicator;
+    protected ClusterCommunicator clusterCommunicator;
 
     /**
      * Sets the local node identifier.
@@ -220,7 +220,7 @@ public abstract class Atomix implements PrimitiveProvider {
      * @param clusterCommunicator the cluster communicator
      * @return the Atomix builder
      */
-    public Builder withClusterCommunicator(ClusterCommunicationService clusterCommunicator) {
+    public Builder withClusterCommunicator(ClusterCommunicator clusterCommunicator) {
       this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
       return this;
     }

@@ -19,7 +19,7 @@ import com.google.common.base.Objects;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterCommunicator;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
@@ -43,7 +43,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster communication service implementation.
  */
-public class ClusterCommunicationManager implements ClusterCommunicationService {
+public class ClusterCommunicationManager implements ClusterCommunicator {
 
   /**
    * Returns a new cluster communication manager builder.
@@ -57,9 +57,9 @@ public class ClusterCommunicationManager implements ClusterCommunicationService 
   /**
    * Cluster communication manager builder.
    */
-  public static class Builder extends ClusterCommunicationService.Builder {
+  public static class Builder extends ClusterCommunicator.Builder {
     @Override
-    public ClusterCommunicationService build() {
+    public ClusterCommunicator build() {
       return new ClusterCommunicationManager(clusterService, messagingService);
     }
   }
@@ -78,7 +78,7 @@ public class ClusterCommunicationManager implements ClusterCommunicationService 
   }
 
   @Override
-  public CompletableFuture<ClusterCommunicationService> open() {
+  public CompletableFuture<ClusterCommunicator> open() {
     if (open.compareAndSet(false, true)) {
       log.info("Started");
     }
