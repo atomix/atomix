@@ -15,8 +15,6 @@
  */
 package io.atomix.partition;
 
-import io.atomix.cluster.PartitionId;
-
 /**
  * Interface for mapping from an object to {@link PartitionId}.
  *

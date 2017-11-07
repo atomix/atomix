@@ -15,7 +15,6 @@
  */
 package io.atomix.partition;
 
-import io.atomix.cluster.Partition;
 import io.atomix.event.AbstractEvent;
 
 import java.util.Objects;

@@ -16,7 +16,6 @@
 package io.atomix.partition;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.PartitionId;
 import io.atomix.event.ListenerService;
 
 import java.util.Set;

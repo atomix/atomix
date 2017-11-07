@@ -16,7 +16,7 @@
 package io.atomix.primitives.tree.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.PartitionId;
+import io.atomix.partition.PartitionId;
 import io.atomix.partition.Partitioner;
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.tree.AsyncDocumentTree;

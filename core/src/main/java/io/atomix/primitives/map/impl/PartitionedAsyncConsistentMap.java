@@ -18,7 +18,7 @@ package io.atomix.primitives.map.impl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import io.atomix.cluster.PartitionId;
+import io.atomix.partition.PartitionId;
 import io.atomix.partition.Partitioner;
 import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.map.AsyncConsistentMap;
