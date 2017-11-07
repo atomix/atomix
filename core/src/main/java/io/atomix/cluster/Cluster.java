@@ -30,14 +30,14 @@ public interface Cluster extends ListenerService<ClusterEvent, ClusterEventListe
    *
    * @return local controller node
    */
-  Node getLocalNode();
+  Node localNode();
 
   /**
    * Returns the set of current cluster members.
    *
    * @return set of cluster members
    */
-  Set<Node> getNodes();
+  Set<Node> nodes();
 
   /**
    * Returns the specified controller node.
@@ -45,16 +45,13 @@ public interface Cluster extends ListenerService<ClusterEvent, ClusterEventListe
    * @param nodeId controller node identifier
    * @return controller node
    */
-  Node getNode(NodeId nodeId);
+  Node node(NodeId nodeId);
 
   /**
-   * Returns the availability state of the specified controller node. Note
-   * that this does not imply that all the core and application components
-   * have been fully activated; only that the node has joined the cluster.
+   * Returns the cluster metadata.
    *
-   * @param nodeId controller node identifier
-   * @return availability state
+   * @return the cluster metadata
    */
-  Node.State getState(NodeId nodeId);
+  ClusterMetadata metadata();
 
 }

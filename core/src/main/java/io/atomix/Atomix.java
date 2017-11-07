@@ -15,14 +15,17 @@
  */
 package io.atomix;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.Cluster;
+import io.atomix.cluster.ClusterMetadata;
+import io.atomix.cluster.ManagedCluster;
 import io.atomix.cluster.messaging.ClusterCommunicator;
+import io.atomix.cluster.messaging.ManagedClusterCommunicator;
+import io.atomix.messaging.ManagedMessagingService;
+import io.atomix.messaging.MessagingService;
+import io.atomix.partition.ManagedPartition;
 import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionId;
-import io.atomix.partition.PartitionInfo;
-import io.atomix.partition.impl.AbstractPartition;
+import io.atomix.partition.impl.BasePartition;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.PrimitiveProvider;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
@@ -48,15 +51,16 @@ import io.atomix.primitives.tree.DocumentTreeBuilder;
 import io.atomix.primitives.tree.impl.DefaultDocumentTreeBuilder;
 import io.atomix.primitives.value.AtomicValueBuilder;
 import io.atomix.primitives.value.impl.DefaultAtomicValueBuilder;
+import io.atomix.utils.Managed;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -64,15 +68,50 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Atomix!
  */
-public abstract class Atomix implements PrimitiveProvider {
-  private final TreeMap<PartitionId, AbstractPartition> partitions = new TreeMap<>();
+public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
+  private final ManagedCluster cluster;
+  private final ManagedMessagingService messagingService;
+  private final ManagedClusterCommunicator clusterCommunicator;
+  private final TreeMap<PartitionId, ManagedPartition> partitions = new TreeMap<>();
   private final DistributedPrimitiveCreator federatedPrimitiveCreator;
+  private final AtomicBoolean open = new AtomicBoolean();
 
-  protected Atomix(Collection<AbstractPartition> partitions, int numBuckets) {
+  protected Atomix(ManagedCluster cluster, ManagedMessagingService messagingService, ManagedClusterCommunicator clusterCommunicator, Collection<BasePartition> partitions) {
+    this.cluster = checkNotNull(cluster, "cluster cannot be null");
+    this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
+    this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
     partitions.forEach(p -> this.partitions.put(p.getId(), p));
-    federatedPrimitiveCreator = new FederatedDistributedPrimitiveCreator(
-        Maps.transformValues(this.partitions, v -> v.getPrimitiveCreator()),
-        numBuckets);
+
+    Map<PartitionId, DistributedPrimitiveCreator> partitionPrimitiveCreators = new HashMap<>();
+    partitions.forEach(p -> partitionPrimitiveCreators.put(p.getId(), p.getPrimitiveCreator()));
+    federatedPrimitiveCreator = new FederatedDistributedPrimitiveCreator(partitionPrimitiveCreators, cluster.metadata().buckets());
+  }
+
+  /**
+   * Returns the Atomix cluster.
+   *
+   * @return the Atomix cluster
+   */
+  public Cluster cluster() {
+    return cluster;
+  }
+
+  /**
+   * Returns the cluster communicator.
+   *
+   * @return the cluster communicator
+   */
+  public ClusterCommunicator communicator() {
+    return clusterCommunicator;
+  }
+
+  /**
+   * Returns the cluster messenger.
+   *
+   * @return the cluster messenger
+   */
+  public MessagingService messenger() {
+    return messagingService;
   }
 
   /**
@@ -102,17 +141,17 @@ public abstract class Atomix implements PrimitiveProvider {
 
   @Override
   public <V> DocumentTreeBuilder<V> newDocumentTreeBuilder() {
-    return new DefaultDocumentTreeBuilder<V>(federatedPrimitiveCreator);
+    return new DefaultDocumentTreeBuilder<>(federatedPrimitiveCreator);
   }
 
   @Override
   public <V> ConsistentTreeMapBuilder<V> newConsistentTreeMapBuilder() {
-    return new DefaultConsistentTreeMapBuilder<V>(federatedPrimitiveCreator);
+    return new DefaultConsistentTreeMapBuilder<>(federatedPrimitiveCreator);
   }
 
   @Override
   public <K, V> ConsistentMultimapBuilder<K, V> newConsistentMultimapBuilder() {
-    return new DefaultConsistentMultimapBuilder<K, V>(federatedPrimitiveCreator);
+    return new DefaultConsistentMultimapBuilder<>(federatedPrimitiveCreator);
   }
 
   @Override
@@ -122,7 +161,7 @@ public abstract class Atomix implements PrimitiveProvider {
 
   @Override
   public <E> DistributedSetBuilder<E> newSetBuilder() {
-    return new DefaultDistributedSetBuilder<>(() -> this.<E, Boolean>newConsistentMapBuilder());
+    return new DefaultDistributedSetBuilder<>(() -> newConsistentMapBuilder());
   }
 
   @Override
@@ -151,6 +190,37 @@ public abstract class Atomix implements PrimitiveProvider {
   }
 
   @Override
+  public CompletableFuture<Atomix> open() {
+    return messagingService.open()
+        .thenCompose(v -> cluster.open())
+        .thenCompose(v -> clusterCommunicator.open())
+        .thenCompose(v -> {
+          List<CompletableFuture<Partition>> futures = partitions.values().stream()
+              .map(p -> p.open())
+              .collect(Collectors.toList());
+          return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+        }).thenApply(v -> {
+          open.set(true);
+          return this;
+        });
+  }
+
+  @Override
+  public boolean isOpen() {
+    return open.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return null;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open.get();
+  }
+
+  @Override
   public String toString() {
     return toStringHelper(this)
         .add("partitions", partitions())
@@ -161,83 +231,18 @@ public abstract class Atomix implements PrimitiveProvider {
    * Atomix builder.
    */
   public abstract static class Builder implements io.atomix.utils.Builder<Atomix> {
-    private static final int DEFAULT_PARTITION_SIZE = 3;
-    private static final int DEFAULT_NUM_BUCKETS = 128;
-
-    protected NodeId nodeId;
-    protected Collection<NodeId> nodes;
-    protected int numPartitions;
-    protected int partitionSize = DEFAULT_PARTITION_SIZE;
-    protected int numBuckets = DEFAULT_NUM_BUCKETS;
-    protected ClusterCommunicator clusterCommunicator;
+    protected ClusterMetadata clusterMetadata;
 
     /**
-     * Sets the local node identifier.
+     * Sets the cluster metadata.
      *
-     * @param nodeId the local node identifier
+     * @param clusterMetadata the cluster metadata
      * @return the Atomix builder
+     * @throws NullPointerException if the cluster metadata is null
      */
-    public Builder withNodeId(NodeId nodeId) {
-      this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
+    public Builder withClusterMetadata(ClusterMetadata clusterMetadata) {
+      this.clusterMetadata = checkNotNull(clusterMetadata, "clusterMetadata cannot be null");
       return this;
-    }
-
-    /**
-     * Sets the set of nodes in the cluster.
-     *
-     * @param nodes the set of nodes in the cluster
-     * @return the Atomix builder
-     */
-    public Builder withNodes(NodeId... nodes) {
-      return withNodes(Arrays.asList(nodes));
-    }
-
-    /**
-     * Sets the set of nodes in the cluster.
-     *
-     * @param nodes the set of nodes in the cluster
-     * @return the Atomix builder
-     */
-    public Builder withNodes(Collection<NodeId> nodes) {
-      this.nodes = checkNotNull(nodes, "nodes cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the number of partitions.
-     *
-     * @param numPartitions the number of partitions
-     * @return the Atomix builder
-     */
-    public Builder withNumPartitions(int numPartitions) {
-      this.numPartitions = numPartitions;
-      return this;
-    }
-
-    /**
-     * Sets the cluster communicator.
-     *
-     * @param clusterCommunicator the cluster communicator
-     * @return the Atomix builder
-     */
-    public Builder withClusterCommunicator(ClusterCommunicator clusterCommunicator) {
-      this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
-      return this;
-    }
-
-    static Set<PartitionInfo> buildPartitionInfo(Collection<NodeId> nodes, int numPartitions, int partitionSize) {
-      List<NodeId> sorted = new ArrayList<>(nodes);
-      Collections.sort(sorted);
-
-      Set<PartitionInfo> partitions = Sets.newHashSet();
-      for (int i = 0; i < numPartitions; i++) {
-        Set<NodeId> set = new HashSet<>(partitionSize);
-        for (int j = 0; j < partitionSize; j++) {
-          set.add(sorted.get((i + j) % numPartitions));
-        }
-        partitions.add(new PartitionInfo(PartitionId.from((i + 1)), set));
-      }
-      return partitions;
     }
   }
 }

@@ -18,7 +18,6 @@ package io.atomix.cluster.messaging;
 import io.atomix.cluster.Cluster;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.MessagingService;
-import io.atomix.utils.Managed;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -31,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Service for assisting communications between controller cluster nodes.
  */
-public interface ClusterCommunicator extends Managed<ClusterCommunicator> {
+public interface ClusterCommunicator {
 
   /**
    * Broadcasts a message to all controller nodes.

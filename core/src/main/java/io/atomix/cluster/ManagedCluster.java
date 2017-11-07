@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.partition;
+package io.atomix.cluster;
 
-import io.atomix.primitives.PrimitiveProvider;
+import io.atomix.utils.Managed;
 
 /**
- * Atomix partition.
+ * Managed cluster.
  */
-public interface Partition extends PrimitiveProvider {
+public interface ManagedCluster extends Cluster, Managed<Cluster> {
 }

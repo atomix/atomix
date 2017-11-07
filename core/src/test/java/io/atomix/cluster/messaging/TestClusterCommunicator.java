@@ -31,7 +31,7 @@ import java.util.function.Function;
 /**
  * Cluster communication service implementation used for testing.
  */
-public class TestClusterCommunicator implements ClusterCommunicator {
+public class TestClusterCommunicator implements ManagedClusterCommunicator {
   private final NodeId localNodeId;
   private final Map<NodeId, TestClusterCommunicator> nodes;
   private final Map<MessageSubject, Function<byte[], CompletableFuture<byte[]>>> subscribers = Maps.newConcurrentMap();

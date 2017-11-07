@@ -19,9 +19,9 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterCommunicator;
-import io.atomix.partition.Partition;
+import io.atomix.partition.ManagedPartition;
 import io.atomix.partition.PartitionId;
-import io.atomix.partition.PartitionInfo;
+import io.atomix.partition.PartitionMetadata;
 import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.DistributedPrimitive.Type;
 import io.atomix.primitives.DistributedPrimitiveCreator;
@@ -70,10 +70,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Abstract partition.
  */
-public abstract class AbstractPartition implements Partition {
+public abstract class BasePartition implements ManagedPartition {
   protected final AtomicBoolean isOpened = new AtomicBoolean(false);
   protected final ClusterCommunicator clusterCommunicator;
-  protected PartitionInfo partition;
+  protected PartitionMetadata partition;
   protected NodeId localNodeId;
 
   public static final Map<String, Supplier<RaftService>> RAFT_SERVICES =
@@ -94,9 +94,9 @@ public abstract class AbstractPartition implements Partition {
               () -> new RaftDocumentTreeService(Ordering.INSERTION))
           .build();
 
-  public AbstractPartition(
+  public BasePartition(
       NodeId nodeId,
-      PartitionInfo partition,
+      PartitionMetadata partition,
       ClusterCommunicator clusterCommunicator) {
     this.localNodeId = nodeId;
     this.partition = partition;
@@ -120,7 +120,7 @@ public abstract class AbstractPartition implements Partition {
   }
 
   /**
-   * Returns the identifier of the {@link PartitionInfo partition} associated with this instance.
+   * Returns the identifier of the {@link PartitionMetadata partition} associated with this instance.
    *
    * @return partition identifier
    */

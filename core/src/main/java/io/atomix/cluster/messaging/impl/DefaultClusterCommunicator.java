@@ -20,6 +20,7 @@ import io.atomix.cluster.Cluster;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterCommunicator;
+import io.atomix.cluster.messaging.ManagedClusterCommunicator;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
@@ -43,26 +44,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster communication service implementation.
  */
-public class ClusterCommunicationManager implements ClusterCommunicator {
-
-  /**
-   * Returns a new cluster communication manager builder.
-   *
-   * @return a new cluster communication manager builder
-   */
-  public static Builder newBuilder() {
-    return new Builder();
-  }
-
-  /**
-   * Cluster communication manager builder.
-   */
-  public static class Builder extends ClusterCommunicator.Builder {
-    @Override
-    public ClusterCommunicator build() {
-      return new ClusterCommunicationManager(cluster, messagingService);
-    }
-  }
+public class DefaultClusterCommunicator implements ManagedClusterCommunicator {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -71,10 +53,10 @@ public class ClusterCommunicationManager implements ClusterCommunicator {
   private final NodeId localNodeId;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  protected ClusterCommunicationManager(Cluster cluster, MessagingService messagingService) {
+  public DefaultClusterCommunicator(Cluster cluster, MessagingService messagingService) {
     this.cluster = checkNotNull(cluster, "clusterService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
-    this.localNodeId = cluster.getLocalNode().id();
+    this.localNodeId = cluster.localNode().id();
   }
 
   @Override
@@ -110,9 +92,9 @@ public class ClusterCommunicationManager implements ClusterCommunicator {
     multicast(message,
         subject,
         encoder,
-        cluster.getNodes()
+        cluster.nodes()
             .stream()
-            .filter(node -> !Objects.equal(node, cluster.getLocalNode()))
+            .filter(node -> !Objects.equal(node, cluster.localNode()))
             .map(Node::id)
             .collect(Collectors.toSet()));
   }
@@ -124,7 +106,7 @@ public class ClusterCommunicationManager implements ClusterCommunicator {
     multicast(message,
         subject,
         encoder,
-        cluster.getNodes()
+        cluster.nodes()
             .stream()
             .map(Node::id)
             .collect(Collectors.toSet()));
@@ -168,7 +150,7 @@ public class ClusterCommunicationManager implements ClusterCommunicator {
                                                     NodeId toNodeId) {
     try {
       ClusterMessage envelope = new ClusterMessage(
-          cluster.getLocalNode().id(),
+          cluster.localNode().id(),
           subject,
           encoder.apply(message));
       return sendAndReceive(subject, envelope.getBytes(), toNodeId).
@@ -179,16 +161,16 @@ public class ClusterCommunicationManager implements ClusterCommunicator {
   }
 
   private CompletableFuture<Void> doUnicast(MessageSubject subject, byte[] payload, NodeId toNodeId) {
-    Node node = cluster.getNode(toNodeId);
+    Node node = cluster.node(toNodeId);
     checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
-    Endpoint nodeEp = new Endpoint(node.getAddress(), node.getPort());
+    Endpoint nodeEp = new Endpoint(node.address(), node.port());
     return messagingService.sendAsync(nodeEp, subject.toString(), payload);
   }
 
   private CompletableFuture<byte[]> sendAndReceive(MessageSubject subject, byte[] payload, NodeId toNodeId) {
-    Node node = cluster.getNode(toNodeId);
+    Node node = cluster.node(toNodeId);
     checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
-    Endpoint nodeEp = new Endpoint(node.getAddress(), node.getPort());
+    Endpoint nodeEp = new Endpoint(node.address(), node.port());
     return messagingService.sendAndReceive(nodeEp, subject.toString(), payload);
   }
 

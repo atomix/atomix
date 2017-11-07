@@ -71,12 +71,12 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
 
   private final Logger log = getLogger(getClass());
 
-  private final AbstractPartition partition;
+  private final BasePartition partition;
   private final MemberId localMemberId;
   private final RaftClientProtocol protocol;
   private RaftClient client;
 
-  public RaftPartitionClient(AbstractPartition partition, MemberId localMemberId, RaftClientProtocol protocol) {
+  public RaftPartitionClient(BasePartition partition, MemberId localMemberId, RaftClientProtocol protocol) {
     this.partition = partition;
     this.localMemberId = localMemberId;
     this.protocol = protocol;

@@ -18,7 +18,7 @@ package io.atomix.partition.impl;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterCommunicator;
 import io.atomix.partition.Partition;
-import io.atomix.partition.PartitionInfo;
+import io.atomix.partition.PartitionMetadata;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.messaging.RaftClientCommunicator;
@@ -31,14 +31,14 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Replica partition.
  */
-public class ReplicaPartition extends AbstractPartition {
+public class ReplicaPartition extends BasePartition {
   private final File dataFolder;
   private final RaftPartitionClient client;
   private final RaftPartitionServer server;
 
   public ReplicaPartition(
       NodeId nodeId,
-      PartitionInfo partition,
+      PartitionMetadata partition,
       ClusterCommunicator clusterCommunicator,
       File dataFolder) {
     super(nodeId, partition, clusterCommunicator);

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.partition;
+package io.atomix.messaging;
 
-import io.atomix.primitives.PrimitiveProvider;
+import io.atomix.utils.Managed;
 
 /**
- * Atomix partition.
+ * Managed messaging service.
  */
-public interface Partition extends PrimitiveProvider {
+public interface ManagedMessagingService extends MessagingService, Managed<MessagingService> {
 }

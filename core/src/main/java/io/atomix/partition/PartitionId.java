@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import io.atomix.utils.AbstractIdentifier;
 
 /**
- * {@link PartitionInfo} identifier.
+ * {@link PartitionMetadata} identifier.
  */
 public class PartitionId extends AbstractIdentifier<Integer> implements Comparable<PartitionId> {
 

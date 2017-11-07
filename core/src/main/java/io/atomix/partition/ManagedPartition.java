@@ -15,10 +15,10 @@
  */
 package io.atomix.partition;
 
-import io.atomix.primitives.PrimitiveProvider;
+import io.atomix.utils.Managed;
 
 /**
- * Atomix partition.
+ * Managed partition.
  */
-public interface Partition extends PrimitiveProvider {
+public interface ManagedPartition extends Partition, Managed<Partition> {
 }

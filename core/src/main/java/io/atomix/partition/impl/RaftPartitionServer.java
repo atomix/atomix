@@ -141,7 +141,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
             .withDirectory(partition.getDataFolder())
             .withMaxSegmentSize(MAX_SEGMENT_SIZE)
             .build());
-    AbstractPartition.RAFT_SERVICES.forEach(builder::addService);
+    BasePartition.RAFT_SERVICES.forEach(builder::addService);
     return builder.build();
   }
 

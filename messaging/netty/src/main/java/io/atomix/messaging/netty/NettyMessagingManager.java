@@ -21,6 +21,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.messaging.Endpoint;
+import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingException;
 import io.atomix.messaging.MessagingService;
 import io.netty.bootstrap.Bootstrap;
@@ -90,7 +91,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Netty based MessagingService.
  */
-public class NettyMessagingManager implements MessagingService {
+public class NettyMessagingManager implements ManagedMessagingService {
 
   /**
    * Returns a new Netty messaging service builder.
@@ -134,7 +135,7 @@ public class NettyMessagingManager implements MessagingService {
     }
 
     @Override
-    public MessagingService build() {
+    public ManagedMessagingService build() {
       return new NettyMessagingManager(name.hashCode(), endpoint);
     }
   }

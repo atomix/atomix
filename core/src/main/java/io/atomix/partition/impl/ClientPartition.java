@@ -18,7 +18,7 @@ package io.atomix.partition.impl;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterCommunicator;
 import io.atomix.partition.Partition;
-import io.atomix.partition.PartitionInfo;
+import io.atomix.partition.PartitionMetadata;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.messaging.RaftClientCommunicator;
@@ -30,12 +30,12 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Client partition.
  */
-public class ClientPartition extends AbstractPartition {
+public class ClientPartition extends BasePartition {
   private final RaftPartitionClient client;
 
   public ClientPartition(
       NodeId nodeId,
-      PartitionInfo partition,
+      PartitionMetadata partition,
       ClusterCommunicator clusterCommunicator) {
     super(nodeId, partition, clusterCommunicator);
     this.client = createClient();

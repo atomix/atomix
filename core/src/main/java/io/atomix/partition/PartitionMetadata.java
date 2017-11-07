@@ -26,11 +26,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * A partition or shard is a group of controller nodes that are work together to maintain state.
  * A ONOS cluster is typically made of of one or partitions over which the the data is partitioned.
  */
-public class PartitionInfo {
+public class PartitionMetadata {
   private final PartitionId id;
   private final Collection<NodeId> members;
 
-  public PartitionInfo(PartitionId id, Collection<NodeId> members) {
+  public PartitionMetadata(PartitionId id, Collection<NodeId> members) {
     this.id = id;
     this.members = members;
   }
@@ -60,8 +60,8 @@ public class PartitionInfo {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof PartitionInfo) {
-      PartitionInfo partition = (PartitionInfo) object;
+    if (object instanceof PartitionMetadata) {
+      PartitionMetadata partition = (PartitionMetadata) object;
       return partition.id.equals(id) && partition.members.equals(members);
     }
     return false;
