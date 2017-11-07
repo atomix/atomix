@@ -13,20 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
-
-import io.atomix.time.Timestamp;
+package io.atomix;
 
 /**
- * Logical clock service.
+ * Atomix replica.
  */
-public interface LogicalClockService {
-
-  /**
-   * Returns the current logical timestamp.
-   *
-   * @return the current logical timestamp
-   */
-  Timestamp getTimestamp();
-
+public class AtomixReplica {
 }

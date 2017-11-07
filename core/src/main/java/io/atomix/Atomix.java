@@ -16,7 +16,6 @@
 package io.atomix;
 
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.LogicalClockService;
 import io.atomix.partition.PartitionService;
 import io.atomix.primitives.PrimitiveService;
 
@@ -45,12 +44,5 @@ public interface Atomix {
    * @return the primitive service
    */
   PrimitiveService getPrimitiveService();
-
-  /**
-   * Returns the logical clock service.
-   *
-   * @return the logical clock service
-   */
-  LogicalClockService getLogicalClockService();
 
 }
