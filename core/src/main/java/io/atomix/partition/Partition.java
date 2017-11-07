@@ -18,24 +18,60 @@ package io.atomix.partition;
 import io.atomix.cluster.NodeId;
 
 import java.util.Collection;
+import java.util.Objects;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * A partition or shard is a group of controller nodes that are work together to maintain state.
  * A ONOS cluster is typically made of of one or partitions over which the the data is partitioned.
  */
-public interface Partition {
+public class Partition {
+  private final PartitionId id;
+  private final Collection<NodeId> members;
+
+  public Partition(PartitionId id, Collection<NodeId> members) {
+    this.id = id;
+    this.members = members;
+  }
 
   /**
    * Returns the partition identifier.
    *
    * @return partition identifier
    */
-  PartitionId partitionId();
+  public PartitionId id() {
+    return id;
+  }
 
   /**
    * Returns the controller nodes that are members of this partition.
    *
    * @return collection of controller node identifiers
    */
-  Collection<NodeId> getMembers();
+  public Collection<NodeId> members() {
+    return members;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, members);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof Partition) {
+      Partition partition = (Partition) object;
+      return partition.id.equals(id) && partition.members.equals(members);
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("id", id)
+        .add("members", members)
+        .toString();
+  }
 }

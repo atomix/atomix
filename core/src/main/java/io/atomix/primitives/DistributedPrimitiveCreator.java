@@ -29,8 +29,8 @@ import io.atomix.primitives.tree.AsyncDocumentTree;
 import io.atomix.primitives.value.AsyncAtomicValue;
 import io.atomix.serializer.Serializer;
 
+import java.time.Duration;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static io.atomix.primitives.DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS;
 
@@ -121,21 +121,22 @@ public interface DistributedPrimitiveCreator {
    * Creates a new {@code AsyncLeaderElector}.
    *
    * @param name leader elector name
+   * @param serializer leader elector serializer
    * @return leader elector
    */
-  default <T> AsyncLeaderElector<T> newAsyncLeaderElector(String name) {
-    return newAsyncLeaderElector(name, DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+  default <T> AsyncLeaderElector<T> newAsyncLeaderElector(String name, Serializer serializer) {
+    return newAsyncLeaderElector(name, serializer, Duration.ofMillis(DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
   /**
    * Creates a new {@code AsyncLeaderElector}.
    *
    * @param name            leader elector name
+   * @param serializer leader elector serializer
    * @param electionTimeout leader election timeout
-   * @param timeUnit        leader election timeout time unit
    * @return leader elector
    */
-  <T> AsyncLeaderElector<T> newAsyncLeaderElector(String name, long electionTimeout, TimeUnit timeUnit);
+  <T> AsyncLeaderElector<T> newAsyncLeaderElector(String name, Serializer serializer, Duration electionTimeout);
 
   /**
    * Creates a new {@code AsyncDistributedLock}.
@@ -143,7 +144,18 @@ public interface DistributedPrimitiveCreator {
    * @param name lock name
    * @return distributed lock
    */
-  AsyncDistributedLock newAsyncDistributedLock(String name);
+  default AsyncDistributedLock newAsyncDistributedLock(String name) {
+    return newAsyncDistributedLock(name, Duration.ofMillis(DEFAULT_OPERATION_TIMEOUT_MILLIS));
+  }
+
+  /**
+   * Creates a new {@code AsyncDistributedLock}.
+   *
+   * @param name lock name
+   * @param timeout lock timeout
+   * @return distributed lock
+   */
+  AsyncDistributedLock newAsyncDistributedLock(String name, Duration timeout);
 
   /**
    * Creates a new {@code WorkQueue}.

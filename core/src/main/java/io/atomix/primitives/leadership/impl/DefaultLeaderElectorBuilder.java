@@ -18,8 +18,8 @@ package io.atomix.primitives.leadership.impl;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.leadership.AsyncLeaderElector;
 import io.atomix.primitives.leadership.LeaderElectorBuilder;
-
-import java.util.concurrent.TimeUnit;
+import io.atomix.serializer.Serializer;
+import io.atomix.serializer.kryo.KryoNamespaces;
 
 /**
  * Default implementation of {@code LeaderElectorBuilder}.
@@ -34,6 +34,7 @@ public class DefaultLeaderElectorBuilder<T> extends LeaderElectorBuilder<T> {
 
   @Override
   public AsyncLeaderElector<T> buildAsync() {
-    return primitiveCreator.newAsyncLeaderElector(name(), electionTimeoutMillis(), TimeUnit.MILLISECONDS);
+    Serializer serializer = serializer() != null ? serializer() : Serializer.using(KryoNamespaces.BASIC);
+    return primitiveCreator.newAsyncLeaderElector(name(), serializer, electionTimeout());
   }
 }

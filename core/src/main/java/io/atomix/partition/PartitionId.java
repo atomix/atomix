@@ -43,15 +43,6 @@ public class PartitionId extends AbstractIdentifier<Integer> implements Comparab
     return new PartitionId(id);
   }
 
-  /**
-   * Returns the partition identifier as an integer.
-   *
-   * @return number
-   */
-  public int asInt() {
-    return id();
-  }
-
   @Override
   public int compareTo(PartitionId that) {
     return Integer.compare(this.identifier, that.identifier);

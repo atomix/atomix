@@ -21,13 +21,15 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Builder for constructing new {@link AsyncLeaderElector} instances.
  */
 public abstract class LeaderElectorBuilder<T>
     extends DistributedPrimitiveBuilder<LeaderElectorBuilder<T>, LeaderElector<T>, AsyncLeaderElector<T>> {
 
-  private long electionTimeoutMillis = DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS;
+  private Duration electionTimeout = Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
 
   public LeaderElectorBuilder() {
     super(DistributedPrimitive.Type.LEADER_ELECTOR);
@@ -40,8 +42,7 @@ public abstract class LeaderElectorBuilder<T>
    * @return leader elector builder
    */
   public LeaderElectorBuilder<T> withElectionTimeout(long electionTimeoutMillis) {
-    this.electionTimeoutMillis = electionTimeoutMillis;
-    return this;
+    return withElectionTimeout(Duration.ofMillis(electionTimeoutMillis));
   }
 
   /**
@@ -52,7 +53,7 @@ public abstract class LeaderElectorBuilder<T>
    * @return leader elector builder
    */
   public LeaderElectorBuilder<T> withElectionTimeout(long electionTimeout, TimeUnit timeUnit) {
-    return withElectionTimeout(timeUnit.toMillis(electionTimeout));
+    return withElectionTimeout(Duration.ofMillis(timeUnit.toMillis(electionTimeout)));
   }
 
   /**
@@ -62,16 +63,17 @@ public abstract class LeaderElectorBuilder<T>
    * @return leader elector builder
    */
   public LeaderElectorBuilder<T> withElectionTimeout(Duration electionTimeout) {
-    return withElectionTimeout(electionTimeout.toMillis());
+    this.electionTimeout = checkNotNull(electionTimeout);
+    return this;
   }
 
   /**
-   * Returns the election timeout in milliseconds.
+   * Returns the election timeout.
    *
-   * @return the election timeout in milliseconds
+   * @return the election timeout
    */
-  public final long electionTimeoutMillis() {
-    return electionTimeoutMillis;
+  public Duration electionTimeout() {
+    return electionTimeout;
   }
 
   @Override
