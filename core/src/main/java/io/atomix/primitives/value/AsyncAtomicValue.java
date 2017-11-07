@@ -15,8 +15,9 @@
  */
 package io.atomix.primitives.value;
 
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.value.impl.DefaultAtomicValue;
+import io.atomix.primitives.value.impl.BlockingAtomicValue;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <V> value type
  */
-public interface AsyncAtomicValue<V> extends DistributedPrimitive {
+public interface AsyncAtomicValue<V> extends AsyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {
@@ -97,7 +98,7 @@ public interface AsyncAtomicValue<V> extends DistributedPrimitive {
    * @return new {@code AtomicValue} instance
    */
   default AtomicValue<V> asAtomicValue(long timeoutMillis) {
-    return new DefaultAtomicValue<>(this, timeoutMillis);
+    return new BlockingAtomicValue<>(this, timeoutMillis);
   }
 
   /**
@@ -106,6 +107,6 @@ public interface AsyncAtomicValue<V> extends DistributedPrimitive {
    * @return new {@code AtomicValue} instance
    */
   default AtomicValue<V> asAtomicValue() {
-    return new DefaultAtomicValue<>(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
+    return new BlockingAtomicValue<>(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
   }
 }

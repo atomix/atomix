@@ -17,7 +17,7 @@
 package io.atomix.primitives.map;
 
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.map.impl.DefaultConsistentTreeMap;
+import io.atomix.primitives.map.impl.BlockingConsistentTreeMap;
 import io.atomix.time.Versioned;
 
 import java.util.Map;
@@ -28,8 +28,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * API for a distributed tree map implementation.
  */
-public interface AsyncConsistentTreeMap<V>
-    extends AsyncConsistentMap<String, V> {
+public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V> {
 
   /**
    * Return the lowest key in the map.
@@ -171,7 +170,7 @@ public interface AsyncConsistentTreeMap<V>
   }
 
   default ConsistentTreeMap<V> asTreeMap(long timeoutMillis) {
-    return new DefaultConsistentTreeMap<>(this, timeoutMillis);
+    return new BlockingConsistentTreeMap<>(this, timeoutMillis);
   }
 
 

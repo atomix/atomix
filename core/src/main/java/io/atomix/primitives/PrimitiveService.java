@@ -16,12 +16,12 @@
 package io.atomix.primitives;
 
 import io.atomix.primitives.counter.AtomicCounterBuilder;
-import io.atomix.primitives.elector.LeaderElectorBuilder;
+import io.atomix.primitives.leadership.LeaderElectorBuilder;
 import io.atomix.primitives.generator.AtomicIdGeneratorBuilder;
 import io.atomix.primitives.lock.DistributedLockBuilder;
 import io.atomix.primitives.map.AtomicCounterMapBuilder;
 import io.atomix.primitives.map.ConsistentMapBuilder;
-import io.atomix.primitives.map.ConsistentMultimapBuilder;
+import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
 import io.atomix.primitives.map.ConsistentTreeMapBuilder;
 import io.atomix.primitives.map.EventuallyConsistentMapBuilder;
 import io.atomix.primitives.set.DistributedSetBuilder;

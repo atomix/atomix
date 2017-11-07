@@ -15,14 +15,14 @@
  */
 package io.atomix.primitives.value;
 
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 
 /**
  * Distributed version of java.util.concurrent.atomic.AtomicReference.
  *
  * @param <V> value type
  */
-public interface AtomicValue<V> extends DistributedPrimitive {
+public interface AtomicValue<V> extends SyncPrimitive {
 
   /**
    * Atomically sets the value to the given updated value if the current value is equal to the expected value.

@@ -15,15 +15,15 @@
  */
 package io.atomix.primitives.generator;
 
-import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.generator.impl.DefaultAtomicIdGenerator;
+import io.atomix.primitives.AsyncPrimitive;
+import io.atomix.primitives.generator.impl.BlockingAtomicIdGenerator;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
  * An async ID generator for generating globally unique numbers.
  */
-public interface AsyncAtomicIdGenerator extends DistributedPrimitive {
+public interface AsyncAtomicIdGenerator extends AsyncPrimitive {
 
   @Override
   default Type primitiveType() {
@@ -44,7 +44,7 @@ public interface AsyncAtomicIdGenerator extends DistributedPrimitive {
    * @return new {@code AtomicIdGenerator} instance
    */
   default AtomicIdGenerator asAtomicIdGenerator(long timeoutMillis) {
-    return new DefaultAtomicIdGenerator(this, timeoutMillis);
+    return new BlockingAtomicIdGenerator(this, timeoutMillis);
   }
 
   /**
@@ -53,6 +53,6 @@ public interface AsyncAtomicIdGenerator extends DistributedPrimitive {
    * @return new {@code AtomicIdGenerator} instance
    */
   default AtomicIdGenerator asAtomicIdGenerator() {
-    return new DefaultAtomicIdGenerator(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
+    return new BlockingAtomicIdGenerator(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
   }
 }

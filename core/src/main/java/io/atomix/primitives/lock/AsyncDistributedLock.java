@@ -15,16 +15,18 @@
  */
 package io.atomix.primitives.lock;
 
-import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.lock.impl.DefaultDistributedLock;
+import io.atomix.primitives.AsyncPrimitive;
+import io.atomix.primitives.lock.impl.BlockingDistributedLock;
+import io.atomix.time.Version;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Asynchronous lock primitive.
  */
-public interface AsyncDistributedLock extends DistributedPrimitive {
+public interface AsyncDistributedLock extends AsyncPrimitive {
 
   @Override
   default Type primitiveType() {
@@ -36,14 +38,14 @@ public interface AsyncDistributedLock extends DistributedPrimitive {
    *
    * @return future to be completed once the lock has been acquired
    */
-  CompletableFuture<Void> lock();
+  CompletableFuture<Version> lock();
 
   /**
    * Attempts to acquire the lock.
    *
    * @return future to be completed with a boolean indicating whether the lock was acquired
    */
-  CompletableFuture<Boolean> tryLock();
+  CompletableFuture<Optional<Version>> tryLock();
 
   /**
    * Attempts to acquire the lock for a specified amount of time.
@@ -51,7 +53,7 @@ public interface AsyncDistributedLock extends DistributedPrimitive {
    * @param timeout the timeout after which to give up attempting to acquire the lock
    * @return future to be completed with a boolean indicating whether the lock was acquired
    */
-  CompletableFuture<Boolean> tryLock(Duration timeout);
+  CompletableFuture<Optional<Version>> tryLock(Duration timeout);
 
   /**
    * Unlocks the lock.
@@ -67,7 +69,7 @@ public interface AsyncDistributedLock extends DistributedPrimitive {
    * @return new {@code DistributedLock} instance
    */
   default DistributedLock asDistributedLock(long timeoutMillis) {
-    return new DefaultDistributedLock(this, timeoutMillis);
+    return new BlockingDistributedLock(this, timeoutMillis);
   }
 
   /**
@@ -76,6 +78,6 @@ public interface AsyncDistributedLock extends DistributedPrimitive {
    * @return new {@code DistributedLock} instance
    */
   default DistributedLock asDistributedLock() {
-    return new DefaultDistributedLock(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
+    return new BlockingDistributedLock(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
   }
 }

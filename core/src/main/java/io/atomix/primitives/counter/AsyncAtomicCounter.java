@@ -15,15 +15,16 @@
  */
 package io.atomix.primitives.counter;
 
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.counter.impl.DefaultAtomicCounter;
+import io.atomix.primitives.counter.impl.BlockingAtomicCounter;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
  * An async atomic counter dispenses monotonically increasing values.
  */
-public interface AsyncAtomicCounter extends DistributedPrimitive {
+public interface AsyncAtomicCounter extends AsyncPrimitive {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {
@@ -93,7 +94,7 @@ public interface AsyncAtomicCounter extends DistributedPrimitive {
    * @return new {@code ConsistentMap} instance
    */
   default AtomicCounter asAtomicCounter(long timeoutMillis) {
-    return new DefaultAtomicCounter(this, timeoutMillis);
+    return new BlockingAtomicCounter(this, timeoutMillis);
   }
 
   /**
@@ -102,6 +103,6 @@ public interface AsyncAtomicCounter extends DistributedPrimitive {
    * @return new {@code ConsistentMap} instance
    */
   default AtomicCounter asAtomicCounter() {
-    return new DefaultAtomicCounter(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
+    return new BlockingAtomicCounter(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
   }
 }

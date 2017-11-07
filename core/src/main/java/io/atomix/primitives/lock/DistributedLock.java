@@ -15,14 +15,16 @@
  */
 package io.atomix.primitives.lock;
 
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
+import io.atomix.time.Version;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * Asynchronous lock primitive.
  */
-public interface DistributedLock extends DistributedPrimitive {
+public interface DistributedLock extends SyncPrimitive {
 
   @Override
   default Type primitiveType() {
@@ -31,15 +33,17 @@ public interface DistributedLock extends DistributedPrimitive {
 
   /**
    * Acquires the lock, blocking until it's available.
+   *
+   * @return the acquired lock version
    */
-  void lock();
+  Version lock();
 
   /**
    * Attempts to acquire the lock.
    *
    * @return indicates whether the lock was acquired
    */
-  boolean tryLock();
+  Optional<Version> tryLock();
 
   /**
    * Attempts to acquire the lock for a specified amount of time.
@@ -47,7 +51,7 @@ public interface DistributedLock extends DistributedPrimitive {
    * @param timeout the timeout after which to give up attempting to acquire the lock
    * @return indicates whether the lock was acquired
    */
-  boolean tryLock(Duration timeout);
+  Optional<Version> tryLock(Duration timeout);
 
   /**
    * Unlocks the lock.

@@ -16,14 +16,16 @@
 package io.atomix.primitives;
 
 import io.atomix.serializer.Serializer;
+import io.atomix.utils.Builder;
 
 /**
  * Abstract builder for distributed primitives.
  *
- * @param <T> distributed primitive type
+ * @param <B> builder type
+ * @param <S> synchronous primitive type
+ * @param <A> asynchronous primitive type
  */
-public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, T>,
-    T extends DistributedPrimitive> {
+public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> implements Builder<S> {
 
   private final DistributedPrimitive.Type type;
   private String name;
@@ -86,7 +88,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return {@code true} if yes; {@code false} otherwise
    */
-  public final boolean isReadOnly() {
+  public boolean readOnly() {
     return readOnly;
   }
 
@@ -95,7 +97,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return {@code true} if yes; {@code false} otherwise
    */
-  public final boolean isRelaxedReadConsistency() {
+  public boolean relaxedReadConsistency() {
     return relaxedReadConsistency;
   }
 
@@ -104,7 +106,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return serializer
    */
-  public final Serializer getSerializer() {
+  public Serializer serializer() {
     return serializer;
   }
 
@@ -113,7 +115,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return primitive name
    */
-  public final String getName() {
+  public String name() {
     return name;
   }
 
@@ -122,7 +124,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return primitive type
    */
-  public final DistributedPrimitive.Type getPrimitiveType() {
+  public DistributedPrimitive.Type primitiveType() {
     return type;
   }
 
@@ -131,5 +133,13 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return distributed primitive
    */
-  public abstract T build();
+  @Override
+  public abstract S build();
+
+  /**
+   * Constructs an instance of the asynchronous primitive.
+   *
+   * @return asynchronous distributed primitive
+   */
+  public abstract A buildAsync();
 }

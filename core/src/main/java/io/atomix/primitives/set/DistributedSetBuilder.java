@@ -23,31 +23,13 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  *
  * @param <E> type set elements.
  */
-public abstract class DistributedSetBuilder<E> extends DistributedPrimitiveBuilder<DistributedSetBuilder<E>,
-    AsyncDistributedSet<E>> {
-
-  private boolean purgeOnUninstall = false;
-
+public abstract class DistributedSetBuilder<E> extends DistributedPrimitiveBuilder<DistributedSetBuilder<E>, DistributedSet<E>, AsyncDistributedSet<E>> {
   public DistributedSetBuilder() {
     super(DistributedPrimitive.Type.SET);
   }
 
-  /**
-   * Enables clearing set contents when the owning application is uninstalled.
-   *
-   * @return this builder
-   */
-  public DistributedSetBuilder<E> withPurgeOnUninstall() {
-    purgeOnUninstall = true;
-    return this;
-  }
-
-  /**
-   * Returns if set contents need to be cleared when owning application is uninstalled.
-   *
-   * @return {@code true} if yes; {@code false} otherwise.
-   */
-  public boolean purgeOnUninstall() {
-    return purgeOnUninstall;
+  @Override
+  public DistributedSet<E> build() {
+    return buildAsync().asDistributedSet();
   }
 }

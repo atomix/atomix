@@ -15,8 +15,14 @@
  */
 package io.atomix.utils.concurrent;
 
+import com.google.common.collect.Lists;
+import io.atomix.utils.Match;
+
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * Utilities for creating completed and exceptional futures.
@@ -144,6 +150,68 @@ public final class Futures {
       }
     });
     return newFuture;
+  }
+
+  /**
+   * Returns a new CompletableFuture completed with a list of computed values
+   * when all of the given CompletableFuture complete.
+   *
+   * @param futures the CompletableFutures
+   * @param <T> value type of CompletableFuture
+   * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
+   */
+  public static <T> CompletableFuture<List<T>> allOf(List<CompletableFuture<T>> futures) {
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
+        .thenApply(v -> futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList())
+        );
+  }
+
+  /**
+   * Returns a new CompletableFuture completed by reducing a list of computed values
+   * when all of the given CompletableFuture complete.
+   *
+   * @param futures the CompletableFutures
+   * @param reducer reducer for computing the result
+   * @param emptyValue zero value to be returned if the input future list is empty
+   * @param <T> value type of CompletableFuture
+   * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
+   */
+  public static <T> CompletableFuture<T> allOf(List<CompletableFuture<T>> futures,
+                                               BinaryOperator<T> reducer,
+                                               T emptyValue) {
+    return allOf(futures).thenApply(resultList -> resultList.stream().reduce(reducer).orElse(emptyValue));
+  }
+
+  /**
+   * Returns a new CompletableFuture completed by with the first positive result from a list of
+   * input CompletableFutures.
+   *
+   * @param futures the input list of CompletableFutures
+   * @param positiveResultMatcher matcher to identify a positive result
+   * @param negativeResult value to complete with if none of the futures complete with a positive result
+   * @param <T> value type of CompletableFuture
+   * @return a new CompletableFuture
+   */
+  public static <T> CompletableFuture<T> firstOf(List<CompletableFuture<T>> futures,
+                                                 Match<T> positiveResultMatcher,
+                                                 T negativeResult) {
+    CompletableFuture<T> responseFuture = new CompletableFuture<>();
+    allOf(Lists.transform(futures, future -> future.thenAccept(r -> {
+      if (positiveResultMatcher.matches(r)) {
+        responseFuture.complete(r);
+      }
+    }))).whenComplete((r, e) -> {
+      if (!responseFuture.isDone()) {
+        if (e != null) {
+          responseFuture.completeExceptionally(e);
+        } else {
+          responseFuture.complete(negativeResult);
+        }
+      }
+    });
+    return responseFuture;
   }
 
 }

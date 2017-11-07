@@ -16,6 +16,7 @@
 
 package io.atomix.primitives.tree;
 
+import io.atomix.primitives.SyncPrimitive;
 import io.atomix.time.Versioned;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -27,7 +28,12 @@ import java.util.Map;
  * @param <V> document tree value type
  */
 @NotThreadSafe
-public interface DocumentTree<V> {
+public interface DocumentTree<V> extends SyncPrimitive {
+
+  @Override
+  default Type primitiveType() {
+    return Type.DOCUMENT_TREE;
+  }
 
   /**
    * Returns the {@link DocumentPath path} to root of the tree.

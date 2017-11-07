@@ -37,30 +37,18 @@ public final class AtomicValueEvent<V> {
     UPDATE,
   }
 
-  private final String name;
   private final V newValue;
   private final V oldValue;
 
   /**
    * Creates a new event object.
    *
-   * @param name     AtomicValue name
    * @param newValue the new value
    * @param oldValue the old value
    */
-  public AtomicValueEvent(String name, V newValue, V oldValue) {
-    this.name = name;
+  public AtomicValueEvent(V newValue, V oldValue) {
     this.newValue = newValue;
     this.oldValue = oldValue;
-  }
-
-  /**
-   * Returns the AtomicValue name.
-   *
-   * @return name of atomic value
-   */
-  public String name() {
-    return name;
   }
 
   /**
@@ -97,20 +85,18 @@ public final class AtomicValueEvent<V> {
     }
 
     AtomicValueEvent that = (AtomicValueEvent) o;
-    return Objects.equals(this.name, that.name) &&
-        Objects.equals(this.newValue, that.newValue) &&
+    return Objects.equals(this.newValue, that.newValue) &&
         Objects.equals(this.oldValue, that.oldValue);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, newValue, oldValue);
+    return Objects.hash(newValue, oldValue);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(getClass())
-        .add("name", name)
         .add("newValue", newValue)
         .add("oldValue", oldValue)
         .toString();

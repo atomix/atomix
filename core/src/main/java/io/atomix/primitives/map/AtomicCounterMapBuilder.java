@@ -22,17 +22,13 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  * Builder for AtomicCounterMap.
  */
 public abstract class AtomicCounterMapBuilder<K>
-    extends DistributedPrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMap<K>> {
+    extends DistributedPrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMap<K>, AsyncAtomicCounterMap<K>> {
   public AtomicCounterMapBuilder() {
     super(DistributedPrimitive.Type.COUNTER_MAP);
   }
 
-  /**
-   * Builds an async atomic counter map based on the configuration options
-   * supplied to this builder.
-   *
-   * @return new async atomic counter map
-   * @throws RuntimeException if a mandatory parameter is missing
-   */
-  public abstract AsyncAtomicCounterMap<K> buildAsyncMap();
+  @Override
+  public AtomicCounterMap<K> build() {
+    return buildAsync().asAtomicCounterMap();
+  }
 }

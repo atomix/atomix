@@ -17,9 +17,12 @@
 package io.atomix.primitives.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.primitives.AsyncPrimitive;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.map.impl.DefaultConsistentMap;
+import io.atomix.primitives.map.impl.BlockingConsistentMap;
+import io.atomix.primitives.map.impl.MapUpdate;
 import io.atomix.time.Versioned;
+import io.atomix.transaction.Transactional;
 
 import java.util.Collection;
 import java.util.Map.Entry;
@@ -55,7 +58,7 @@ import java.util.function.Predicate;
  * the returned future will be {@link CompletableFuture#complete completed} when the
  * operation finishes.
  */
-public interface AsyncConsistentMap<K, V> extends DistributedPrimitive {
+public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<MapUpdate<K, V>> {
 
   @Override
   default DistributedPrimitive.Type primitiveType() {
@@ -366,6 +369,6 @@ public interface AsyncConsistentMap<K, V> extends DistributedPrimitive {
    * @return new {@code ConsistentMap} instance
    */
   default ConsistentMap<K, V> asConsistentMap(long timeoutMillis) {
-    return new DefaultConsistentMap<>(this, timeoutMillis);
+    return new BlockingConsistentMap<>(this, timeoutMillis);
   }
 }

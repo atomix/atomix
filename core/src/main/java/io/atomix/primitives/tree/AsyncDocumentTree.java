@@ -16,10 +16,8 @@
 
 package io.atomix.primitives.tree;
 
-import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.tree.DocumentPath;
-import io.atomix.primitives.tree.DocumentTreeListener;
-import io.atomix.primitives.tree.NoSuchDocumentPathException;
+import io.atomix.primitives.AsyncPrimitive;
+import io.atomix.primitives.tree.impl.BlockingDocumentTree;
 import io.atomix.time.Versioned;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -32,7 +30,12 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> document tree value type
  */
 @NotThreadSafe
-public interface AsyncDocumentTree<V> extends DistributedPrimitive {
+public interface AsyncDocumentTree<V> extends AsyncPrimitive {
+
+  @Override
+  default Type primitiveType() {
+    return Type.DOCUMENT_TREE;
+  }
 
   /**
    * Returns the {@link DocumentPath path} to root of the tree.
@@ -152,5 +155,26 @@ public interface AsyncDocumentTree<V> extends DistributedPrimitive {
    */
   default CompletableFuture<Void> addListener(DocumentTreeListener<V> listener) {
     return addListener(root(), listener);
+  }
+
+  /**
+   * Returns a synchronous {@link DocumentTree} instance that wraps this instance.
+   *
+   * @return a synchronous {@link DocumentTree}. Changes to the returned tree will be reflected in this tree
+   * and vice versa
+   */
+  default DocumentTree<V> asDocumentTree() {
+    return asDocumentTree(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  }
+
+  /**
+   * Returns a synchronous {@link DocumentTree} instance that wraps this instance.
+   *
+   * @param timeoutMillis number of milliseconds to block before timing out queue operations
+   * @return a synchronous {@link DocumentTree}. Changes to the returned tree will be reflected in this tree
+   * and vice versa
+   */
+  default DocumentTree<V> asDocumentTree(long timeoutMillis) {
+    return new BlockingDocumentTree<>(this, timeoutMillis);
   }
 }

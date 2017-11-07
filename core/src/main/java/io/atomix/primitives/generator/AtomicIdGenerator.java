@@ -15,12 +15,12 @@
  */
 package io.atomix.primitives.generator;
 
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 
 /**
  * Generator for globally unique numeric identifiers.
  */
-public interface AtomicIdGenerator extends DistributedPrimitive {
+public interface AtomicIdGenerator extends SyncPrimitive {
 
   @Override
   default Type primitiveType() {

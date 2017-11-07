@@ -16,11 +16,10 @@
 package io.atomix.primitives.queue;
 
 import com.google.common.collect.ImmutableList;
-import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.SyncPrimitive;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -40,20 +39,19 @@ import java.util.function.Consumer;
  *
  * @param <E> task payload type.
  */
-public interface WorkQueue<E> extends DistributedPrimitive {
+public interface WorkQueue<E> extends SyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.WORK_QUEUE;
+  default Type primitiveType() {
+    return Type.WORK_QUEUE;
   }
 
   /**
    * Adds a collection of tasks to the work queue.
    *
    * @param items collection of task items
-   * @return future that is completed when the operation completes
    */
-  CompletableFuture<Void> addMultiple(Collection<E> items);
+  void addMultiple(Collection<E> items);
 
   /**
    * Picks up multiple tasks from the work queue to work on.
@@ -64,18 +62,16 @@ public interface WorkQueue<E> extends DistributedPrimitive {
    *
    * @param maxItems maximum number of items to take from the queue. The actual number of tasks returned
    *                 can be at the max this number
-   * @return future for the tasks. The future can be completed with an empty collection if there are no
-   * unassigned tasks in the work queue
+   * @return an empty collection if there are no unassigned tasks in the work queue
    */
-  CompletableFuture<Collection<Task<E>>> take(int maxItems);
+  Collection<Task<E>> take(int maxItems);
 
   /**
    * Completes a collection of tasks.
    *
    * @param taskIds ids of tasks to complete
-   * @return future that is completed when the operation completes
    */
-  CompletableFuture<Void> complete(Collection<String> taskIds);
+  void complete(Collection<String> taskIds);
 
   /**
    * Registers a task processing callback to be automatically invoked when new tasks are
@@ -84,45 +80,40 @@ public interface WorkQueue<E> extends DistributedPrimitive {
    * @param taskProcessor task processing callback
    * @param parallelism   max tasks that can be processed in parallel
    * @param executor      executor to use for processing the tasks
-   * @return future that is completed when the operation completes
    */
-  CompletableFuture<Void> registerTaskProcessor(Consumer<E> taskProcessor,
-                                                int parallelism,
-                                                Executor executor);
+  void registerTaskProcessor(Consumer<E> taskProcessor,
+                             int parallelism,
+                             Executor executor);
 
   /**
    * Stops automatically processing tasks from work queue. This call nullifies the effect of a
    * previous {@link #registerTaskProcessor registerTaskProcessor} call.
-   *
-   * @return future that is completed when the operation completes
    */
-  CompletableFuture<Void> stopProcessing();
+  void stopProcessing();
 
   /**
    * Returns work queue statistics.
    *
-   * @return future that is completed with work queue stats when the operation completes
+   * @return work queue stats
    */
-  CompletableFuture<WorkQueueStats> stats();
+  WorkQueueStats stats();
 
   /**
    * Completes a collection of tasks.
    *
    * @param taskIds var arg list of task ids
-   * @return future that is completed when the operation completes
    */
-  default CompletableFuture<Void> complete(String... taskIds) {
-    return complete(Arrays.asList(taskIds));
+  default void complete(String... taskIds) {
+    complete(Arrays.asList(taskIds));
   }
 
   /**
    * Adds a single task to the work queue.
    *
    * @param item task item
-   * @return future that is completed when the operation completes
    */
-  default CompletableFuture<Void> addOne(E item) {
-    return addMultiple(ImmutableList.of(item));
+  default void addOne(E item) {
+    addMultiple(ImmutableList.of(item));
   }
 
   /**
@@ -135,7 +126,8 @@ public interface WorkQueue<E> extends DistributedPrimitive {
    * @return future for the task. The future can be completed with null, if there are no
    * unassigned tasks in the work queue
    */
-  default CompletableFuture<Task<E>> take() {
-    return this.take(1).thenApply(tasks -> tasks.isEmpty() ? null : tasks.iterator().next());
+  default Task<E> take() {
+    Collection<Task<E>> tasks = take(1);
+    return tasks.isEmpty() ? null : tasks.iterator().next();
   }
 }

@@ -63,12 +63,25 @@ public class MapEvent<K, V> {
    * @param previousValue value that was replaced
    */
   public MapEvent(String name, K key, Versioned<V> currentValue, Versioned<V> previousValue) {
+    this(currentValue != null ? previousValue != null ? Type.UPDATE : Type.INSERT : Type.REMOVE,
+        name, key, currentValue, previousValue);
+  }
+
+  /**
+   * Creates a new event object.
+   *
+   * @param type          event type
+   * @param name          map name
+   * @param key           key the event concerns
+   * @param currentValue  new value key is mapped to
+   * @param previousValue value that was replaced
+   */
+  public MapEvent(Type type, String name, K key, Versioned<V> currentValue, Versioned<V> previousValue) {
+    this.type = type;
     this.name = name;
     this.key = key;
     this.newValue = currentValue;
     this.oldValue = previousValue;
-    this.type = currentValue != null ?
-        previousValue != null ? Type.UPDATE : Type.INSERT : Type.REMOVE;
   }
 
   /**
