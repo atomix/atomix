@@ -16,6 +16,7 @@
 package io.atomix.partition.impl;
 
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.messaging.RaftServerCommunicator;
@@ -39,9 +40,9 @@ import java.util.concurrent.CompletableFuture;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * {@link AtomixPartition} server.
+ * {@link Partition} server.
  */
-public class AtomixPartitionServer implements Managed<AtomixPartitionServer> {
+public class RaftPartitionServer implements Managed<RaftPartitionServer> {
 
   private final Logger log = getLogger(getClass());
 
@@ -50,12 +51,12 @@ public class AtomixPartitionServer implements Managed<AtomixPartitionServer> {
   private static final long HEARTBEAT_INTERVAL_MILLIS = 250;
 
   private final MemberId localMemberId;
-  private final AtomixPartition partition;
+  private final ReplicaPartition partition;
   private final ClusterCommunicationService clusterCommunicator;
   private RaftServer server;
 
-  public AtomixPartitionServer(
-      AtomixPartition partition,
+  public RaftPartitionServer(
+      ReplicaPartition partition,
       MemberId localMemberId,
       ClusterCommunicationService clusterCommunicator) {
     this.partition = partition;
@@ -64,7 +65,7 @@ public class AtomixPartitionServer implements Managed<AtomixPartitionServer> {
   }
 
   @Override
-  public CompletableFuture<AtomixPartitionServer> open() {
+  public CompletableFuture<RaftPartitionServer> open() {
     log.info("Starting server for partition {}", partition.getId());
     CompletableFuture<RaftServer> serverOpenFuture;
     if (partition.getMemberIds().contains(localMemberId)) {
@@ -140,7 +141,7 @@ public class AtomixPartitionServer implements Managed<AtomixPartitionServer> {
             .withDirectory(partition.getDataFolder())
             .withMaxSegmentSize(MAX_SEGMENT_SIZE)
             .build());
-    AtomixPartition.RAFT_SERVICES.forEach(builder::addService);
+    AbstractPartition.RAFT_SERVICES.forEach(builder::addService);
     return builder.build();
   }
 

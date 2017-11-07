@@ -40,6 +40,9 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * Cluster communication service implementation.
+ */
 public class ClusterCommunicationManager implements ClusterCommunicationService {
 
   /**
@@ -62,12 +65,6 @@ public class ClusterCommunicationManager implements ClusterCommunicationService 
   }
 
   private final Logger log = LoggerFactory.getLogger(getClass());
-
-  private static final String SERIALIZING = "serialization";
-  private static final String DESERIALIZING = "deserialization";
-  private static final String NODE_PREFIX = "node:";
-  private static final String ROUND_TRIP_SUFFIX = ".rtt";
-  private static final String ONE_WAY_SUFFIX = ".oneway";
 
   protected final ClusterService clusterService;
   protected final MessagingService messagingService;

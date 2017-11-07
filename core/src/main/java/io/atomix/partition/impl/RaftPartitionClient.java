@@ -67,24 +67,24 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * StoragePartition client.
  */
-public class AtomixPartitionClient implements DistributedPrimitiveCreator, Managed<AtomixPartitionClient> {
+public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed<RaftPartitionClient> {
 
   private final Logger log = getLogger(getClass());
 
-  private final AtomixPartition partition;
+  private final AbstractPartition partition;
   private final MemberId localMemberId;
   private final RaftClientProtocol protocol;
   private RaftClient client;
 
-  public AtomixPartitionClient(AtomixPartition partition, MemberId localMemberId, RaftClientProtocol protocol) {
+  public RaftPartitionClient(AbstractPartition partition, MemberId localMemberId, RaftClientProtocol protocol) {
     this.partition = partition;
     this.localMemberId = localMemberId;
     this.protocol = protocol;
   }
 
   @Override
-  public CompletableFuture<AtomixPartitionClient> open() {
-    synchronized (AtomixPartitionClient.this) {
+  public CompletableFuture<RaftPartitionClient> open() {
+    synchronized (RaftPartitionClient.this) {
       client = newRaftClient(protocol);
     }
     return client.connect(partition.getMemberIds()).whenComplete((r, e) -> {

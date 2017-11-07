@@ -16,57 +16,40 @@
 package io.atomix;
 
 import io.atomix.partition.impl.AbstractPartition;
-import io.atomix.partition.impl.ReplicaPartition;
+import io.atomix.partition.impl.ClientPartition;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
- * Atomix replica.
+ * Atomix client.
  */
-public class AtomixReplica extends Atomix {
+public class AtomixClient extends Atomix {
 
   /**
-   * Returns a new Atomix replica builder.
+   * Returns a new Atomix client builder.
    *
-   * @return a new Atomix replica builder
+   * @return a new Atomix client builder
    */
   public static Builder newBuilder() {
     return new Builder();
   }
 
-  public AtomixReplica(Collection<AbstractPartition> partitions, int numBuckets) {
+  public AtomixClient(Collection<AbstractPartition> partitions, int numBuckets) {
     super(partitions, numBuckets);
   }
 
   /**
-   * Atomix replica builder.
+   * Atomix client builder.
    */
   public static class Builder extends Atomix.Builder {
-    private File dataFolder = new File(System.getProperty("user.dir"), "data");
-
-    /**
-     * Sets the path to the data directory.
-     *
-     * @param dataFolder the path to the replica's data directory
-     * @return the replica builder
-     */
-    public Builder withDataFolder(File dataFolder) {
-      this.dataFolder = checkNotNull(dataFolder, "dataFolder cannot be null");
-      return this;
-    }
-
     @Override
     public Atomix build() {
-      File partitionsFolder = new File(this.dataFolder, "partitions");
       Collection<AbstractPartition> partitions = buildPartitionInfo(nodes, numPartitions, partitionSize)
           .stream()
-          .map(p -> new ReplicaPartition(nodeId, p, clusterCommunicator, new File(partitionsFolder, p.id().toString())))
+          .map(p -> new ClientPartition(nodeId, p, clusterCommunicator))
           .collect(Collectors.toList());
-      return new AtomixReplica(partitions, numBuckets);
+      return new AtomixClient(partitions, numBuckets);
     }
   }
 }

@@ -16,14 +16,13 @@
 package io.atomix.primitives;
 
 import io.atomix.primitives.counter.AtomicCounterBuilder;
-import io.atomix.primitives.leadership.LeaderElectorBuilder;
 import io.atomix.primitives.generator.AtomicIdGeneratorBuilder;
+import io.atomix.primitives.leadership.LeaderElectorBuilder;
 import io.atomix.primitives.lock.DistributedLockBuilder;
 import io.atomix.primitives.map.AtomicCounterMapBuilder;
 import io.atomix.primitives.map.ConsistentMapBuilder;
-import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
 import io.atomix.primitives.map.ConsistentTreeMapBuilder;
-import io.atomix.primitives.map.EventuallyConsistentMapBuilder;
+import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
 import io.atomix.primitives.set.DistributedSetBuilder;
 import io.atomix.primitives.tree.DocumentTreeBuilder;
 import io.atomix.primitives.value.AtomicValueBuilder;
@@ -31,16 +30,7 @@ import io.atomix.primitives.value.AtomicValueBuilder;
 /**
  * Primitive service.
  */
-public interface PrimitiveService {
-
-  /**
-   * Creates a new EventuallyConsistentMapBuilder.
-   *
-   * @param <K> key type
-   * @param <V> value type
-   * @return builder for an eventually consistent map
-   */
-  <K, V> EventuallyConsistentMapBuilder<K, V> newEventuallyConsistentMapBuilder();
+public interface PrimitiveProvider {
 
   /**
    * Creates a new ConsistentMapBuilder.
@@ -119,7 +109,7 @@ public interface PrimitiveService {
    *
    * @return leader elector builder
    */
-  LeaderElectorBuilder newLeaderElectorBuilder();
+  <T> LeaderElectorBuilder<T> newLeaderElectorBuilder();
 
   /**
    * Creates a new DistributedLockBuilder.
