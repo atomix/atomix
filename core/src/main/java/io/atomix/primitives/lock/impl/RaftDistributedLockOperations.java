@@ -25,14 +25,14 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Counter commands.
  */
-public enum RaftLockOperations implements OperationId {
+public enum RaftDistributedLockOperations implements OperationId {
   LOCK("lock", OperationType.COMMAND),
   UNLOCK("unlock", OperationType.COMMAND);
 
   private final String id;
   private final OperationType type;
 
-  RaftLockOperations(String id, OperationType type) {
+  RaftDistributedLockOperations(String id, OperationType type) {
     this.id = id;
     this.type = type;
   }
@@ -52,7 +52,7 @@ public enum RaftLockOperations implements OperationId {
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
       .register(Lock.class)
       .register(Unlock.class)
-      .build(RaftLockOperations.class.getSimpleName());
+      .build(RaftDistributedLockOperations.class.getSimpleName());
 
   /**
    * Abstract lock operation.

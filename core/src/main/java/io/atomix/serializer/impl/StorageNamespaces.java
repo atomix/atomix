@@ -18,8 +18,8 @@ package io.atomix.serializer.impl;
 import io.atomix.primitives.counter.impl.RaftCounterOperations;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorEvents;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations;
-import io.atomix.primitives.lock.impl.RaftLockEvents;
-import io.atomix.primitives.lock.impl.RaftLockOperations;
+import io.atomix.primitives.lock.impl.RaftDistributedLockEvents;
+import io.atomix.primitives.lock.impl.RaftDistributedLockOperations;
 import io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations;
 import io.atomix.primitives.map.impl.RaftConsistentMapEvents;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations;
@@ -30,8 +30,8 @@ import io.atomix.primitives.queue.impl.RaftWorkQueueEvents;
 import io.atomix.primitives.queue.impl.RaftWorkQueueOperations;
 import io.atomix.primitives.tree.impl.RaftDocumentTreeEvents;
 import io.atomix.primitives.tree.impl.RaftDocumentTreeOperations;
-import io.atomix.primitives.value.impl.RaftValueEvents;
-import io.atomix.primitives.value.impl.RaftValueOperations;
+import io.atomix.primitives.value.impl.RaftAtomicValueEvents;
+import io.atomix.primitives.value.impl.RaftAtomicValueOperations;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -180,10 +180,10 @@ public final class StorageNamespaces {
       .register(RaftLeaderElectorOperations.class)
       .register(RaftWorkQueueEvents.class)
       .register(RaftWorkQueueOperations.class)
-      .register(RaftValueEvents.class)
-      .register(RaftValueOperations.class)
-      .register(RaftLockEvents.class)
-      .register(RaftLockOperations.class)
+      .register(RaftAtomicValueEvents.class)
+      .register(RaftAtomicValueOperations.class)
+      .register(RaftDistributedLockEvents.class)
+      .register(RaftDistributedLockOperations.class)
       .build("RaftProtocol");
 
   /**
@@ -217,8 +217,8 @@ public final class StorageNamespaces {
       .register(RaftDocumentTreeOperations.class)
       .register(RaftLeaderElectorOperations.class)
       .register(RaftWorkQueueOperations.class)
-      .register(RaftValueOperations.class)
-      .register(RaftLockOperations.class)
+      .register(RaftAtomicValueOperations.class)
+      .register(RaftDistributedLockOperations.class)
       .build("RaftStorage");
 
   private StorageNamespaces() {

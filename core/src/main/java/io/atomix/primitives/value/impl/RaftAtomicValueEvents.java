@@ -23,12 +23,12 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 /**
  * Raft value events.
  */
-public enum RaftValueEvents implements EventType {
+public enum RaftAtomicValueEvents implements EventType {
   CHANGE("change");
 
   private final String id;
 
-  RaftValueEvents(String id) {
+  RaftAtomicValueEvents(String id) {
     this.id = id;
   }
 
@@ -42,6 +42,6 @@ public enum RaftValueEvents implements EventType {
       .register(AtomicValueEvent.class)
       .register(AtomicValueEvent.Type.class)
       .register(byte[].class)
-      .build(RaftValueEvents.class.getSimpleName());
+      .build(RaftAtomicValueEvents.class.getSimpleName());
 
 }

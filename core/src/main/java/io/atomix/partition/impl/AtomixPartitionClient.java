@@ -28,7 +28,7 @@ import io.atomix.primitives.leadership.AsyncLeaderElector;
 import io.atomix.primitives.leadership.impl.RaftLeaderElector;
 import io.atomix.primitives.leadership.impl.TranscodingAsyncLeaderElector;
 import io.atomix.primitives.lock.AsyncDistributedLock;
-import io.atomix.primitives.lock.impl.RaftLock;
+import io.atomix.primitives.lock.impl.RaftDistributedLock;
 import io.atomix.primitives.map.AsyncAtomicCounterMap;
 import io.atomix.primitives.map.AsyncConsistentMap;
 import io.atomix.primitives.map.AsyncConsistentTreeMap;
@@ -45,7 +45,7 @@ import io.atomix.primitives.tree.AsyncDocumentTree;
 import io.atomix.primitives.tree.impl.RaftDocumentTree;
 import io.atomix.primitives.tree.impl.TranscodingAsyncDocumentTree;
 import io.atomix.primitives.value.AsyncAtomicValue;
-import io.atomix.primitives.value.impl.RaftValue;
+import io.atomix.primitives.value.impl.RaftAtomicValue;
 import io.atomix.primitives.value.impl.TranscodingAsyncAtomicValue;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -224,7 +224,7 @@ public class AtomixPartitionClient implements DistributedPrimitiveCreator, Manag
 
   @Override
   public <V> AsyncAtomicValue<V> newAsyncAtomicValue(String name, Serializer serializer) {
-    RaftValue value = new RaftValue(client.newProxyBuilder()
+    RaftAtomicValue value = new RaftAtomicValue(client.newProxyBuilder()
         .withName(name)
         .withServiceType(DistributedPrimitive.Type.VALUE.name())
         .withReadConsistency(ReadConsistency.LINEARIZABLE_LEASE)
@@ -285,7 +285,7 @@ public class AtomixPartitionClient implements DistributedPrimitiveCreator, Manag
 
   @Override
   public AsyncDistributedLock newAsyncDistributedLock(String name, Duration lockTimeout) {
-    return new RaftLock(client.newProxyBuilder()
+    return new RaftDistributedLock(client.newProxyBuilder()
         .withName(name)
         .withServiceType(DistributedPrimitive.Type.LEADER_ELECTOR.name())
         .withReadConsistency(ReadConsistency.LINEARIZABLE)

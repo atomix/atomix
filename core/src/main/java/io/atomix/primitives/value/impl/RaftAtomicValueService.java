@@ -17,9 +17,9 @@ package io.atomix.primitives.value.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.primitives.value.AtomicValueEvent;
-import io.atomix.primitives.value.impl.RaftValueOperations.CompareAndSet;
-import io.atomix.primitives.value.impl.RaftValueOperations.GetAndSet;
-import io.atomix.primitives.value.impl.RaftValueOperations.Set;
+import io.atomix.primitives.value.impl.RaftAtomicValueOperations.CompareAndSet;
+import io.atomix.primitives.value.impl.RaftAtomicValueOperations.GetAndSet;
+import io.atomix.primitives.value.impl.RaftAtomicValueOperations.Set;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
@@ -33,22 +33,22 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import static io.atomix.primitives.value.impl.RaftValueEvents.CHANGE;
-import static io.atomix.primitives.value.impl.RaftValueOperations.ADD_LISTENER;
-import static io.atomix.primitives.value.impl.RaftValueOperations.COMPARE_AND_SET;
-import static io.atomix.primitives.value.impl.RaftValueOperations.GET;
-import static io.atomix.primitives.value.impl.RaftValueOperations.GET_AND_SET;
-import static io.atomix.primitives.value.impl.RaftValueOperations.REMOVE_LISTENER;
-import static io.atomix.primitives.value.impl.RaftValueOperations.SET;
+import static io.atomix.primitives.value.impl.RaftAtomicValueEvents.CHANGE;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.ADD_LISTENER;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.COMPARE_AND_SET;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.GET;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.GET_AND_SET;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.REMOVE_LISTENER;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.SET;
 
 /**
  * Raft atomic value service.
  */
-public class RaftValueService extends AbstractRaftService {
+public class RaftAtomicValueService extends AbstractRaftService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
-      .register(RaftValueOperations.NAMESPACE)
-      .register(RaftValueEvents.NAMESPACE)
+      .register(RaftAtomicValueOperations.NAMESPACE)
+      .register(RaftAtomicValueEvents.NAMESPACE)
       .build());
 
   private byte[] value = new byte[0];

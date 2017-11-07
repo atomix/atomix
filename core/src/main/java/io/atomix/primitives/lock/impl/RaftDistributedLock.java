@@ -17,8 +17,8 @@ package io.atomix.primitives.lock.impl;
 
 import io.atomix.primitives.impl.AbstractRaftPrimitive;
 import io.atomix.primitives.lock.AsyncDistributedLock;
-import io.atomix.primitives.lock.impl.RaftLockOperations.Lock;
-import io.atomix.primitives.lock.impl.RaftLockOperations.Unlock;
+import io.atomix.primitives.lock.impl.RaftDistributedLockOperations.Lock;
+import io.atomix.primitives.lock.impl.RaftDistributedLockOperations.Unlock;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
@@ -32,27 +32,27 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.atomix.primitives.lock.impl.RaftLockOperations.LOCK;
-import static io.atomix.primitives.lock.impl.RaftLockOperations.UNLOCK;
+import static io.atomix.primitives.lock.impl.RaftDistributedLockOperations.LOCK;
+import static io.atomix.primitives.lock.impl.RaftDistributedLockOperations.UNLOCK;
 
 /**
  * Raft lock.
  */
-public class RaftLock extends AbstractRaftPrimitive implements AsyncDistributedLock {
+public class RaftDistributedLock extends AbstractRaftPrimitive implements AsyncDistributedLock {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
-      .register(RaftLockOperations.NAMESPACE)
-      .register(RaftLockEvents.NAMESPACE)
+      .register(RaftDistributedLockOperations.NAMESPACE)
+      .register(RaftDistributedLockEvents.NAMESPACE)
       .build());
 
   private final Map<Integer, CompletableFuture<Version>> futures = new ConcurrentHashMap<>();
   private final AtomicInteger id = new AtomicInteger();
   private int lock;
 
-  public RaftLock(RaftProxy proxy) {
+  public RaftDistributedLock(RaftProxy proxy) {
     super(proxy);
-    proxy.addEventListener(RaftLockEvents.LOCK, SERIALIZER::decode, this::handleLocked);
-    proxy.addEventListener(RaftLockEvents.FAIL, SERIALIZER::decode, this::handleFailed);
+    proxy.addEventListener(RaftDistributedLockEvents.LOCK, SERIALIZER::decode, this::handleLocked);
+    proxy.addEventListener(RaftDistributedLockEvents.FAIL, SERIALIZER::decode, this::handleFailed);
   }
 
   private void handleLocked(LockEvent event) {

@@ -33,7 +33,7 @@ import io.atomix.primitives.map.impl.RaftConsistentTreeMapService;
 import io.atomix.primitives.multimap.impl.RaftConsistentSetMultimapService;
 import io.atomix.primitives.queue.impl.RaftWorkQueueService;
 import io.atomix.primitives.tree.impl.RaftDocumentTreeService;
-import io.atomix.primitives.value.impl.RaftValueService;
+import io.atomix.primitives.value.impl.RaftAtomicValueService;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.messaging.RaftClientCommunicator;
 import io.atomix.protocols.raft.service.RaftService;
@@ -74,7 +74,7 @@ public abstract class AtomixPartition implements Managed<AtomixPartition> {
           .put(DistributedPrimitive.Type.COUNTER.name(), RaftCounterService::new)
           .put(DistributedPrimitive.Type.LEADER_ELECTOR.name(), RaftLeaderElectorService::new)
           .put(DistributedPrimitive.Type.WORK_QUEUE.name(), RaftWorkQueueService::new)
-          .put(Type.VALUE.name(), RaftValueService::new)
+          .put(Type.VALUE.name(), RaftAtomicValueService::new)
           .put(DistributedPrimitive.Type.DOCUMENT_TREE.name(),
               () -> new RaftDocumentTreeService(Ordering.NATURAL))
           .put(String.format("%s-%s", DistributedPrimitive.Type.DOCUMENT_TREE.name(), Ordering.NATURAL),

@@ -19,8 +19,8 @@ import com.google.common.collect.Sets;
 import io.atomix.primitives.impl.AbstractRaftPrimitive;
 import io.atomix.primitives.value.AsyncAtomicValue;
 import io.atomix.primitives.value.AtomicValueEventListener;
-import io.atomix.primitives.value.impl.RaftValueOperations.CompareAndSet;
-import io.atomix.primitives.value.impl.RaftValueOperations.GetAndSet;
+import io.atomix.primitives.value.impl.RaftAtomicValueOperations.CompareAndSet;
+import io.atomix.primitives.value.impl.RaftAtomicValueOperations.GetAndSet;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
@@ -29,26 +29,26 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static io.atomix.primitives.value.impl.RaftValueOperations.ADD_LISTENER;
-import static io.atomix.primitives.value.impl.RaftValueOperations.COMPARE_AND_SET;
-import static io.atomix.primitives.value.impl.RaftValueOperations.GET;
-import static io.atomix.primitives.value.impl.RaftValueOperations.GET_AND_SET;
-import static io.atomix.primitives.value.impl.RaftValueOperations.REMOVE_LISTENER;
-import static io.atomix.primitives.value.impl.RaftValueOperations.SET;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.ADD_LISTENER;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.COMPARE_AND_SET;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.GET;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.GET_AND_SET;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.REMOVE_LISTENER;
+import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.SET;
 
 /**
  * Atomix counter implementation.
  */
-public class RaftValue extends AbstractRaftPrimitive implements AsyncAtomicValue<byte[]> {
+public class RaftAtomicValue extends AbstractRaftPrimitive implements AsyncAtomicValue<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
-      .register(RaftValueOperations.NAMESPACE)
-      .register(RaftValueEvents.NAMESPACE)
+      .register(RaftAtomicValueOperations.NAMESPACE)
+      .register(RaftAtomicValueEvents.NAMESPACE)
       .build());
 
   private final Set<AtomicValueEventListener<byte[]>> eventListeners = Sets.newConcurrentHashSet();
 
-  public RaftValue(RaftProxy proxy) {
+  public RaftAtomicValue(RaftProxy proxy) {
     super(proxy);
   }
 
@@ -59,7 +59,7 @@ public class RaftValue extends AbstractRaftPrimitive implements AsyncAtomicValue
 
   @Override
   public CompletableFuture<Void> set(byte[] value) {
-    return proxy.invoke(SET, SERIALIZER::encode, new RaftValueOperations.Set(value));
+    return proxy.invoke(SET, SERIALIZER::encode, new RaftAtomicValueOperations.Set(value));
   }
 
   @Override

@@ -15,8 +15,8 @@
  */
 package io.atomix.primitives.lock.impl;
 
-import io.atomix.primitives.lock.impl.RaftLockOperations.Lock;
-import io.atomix.primitives.lock.impl.RaftLockOperations.Unlock;
+import io.atomix.primitives.lock.impl.RaftDistributedLockOperations.Lock;
+import io.atomix.primitives.lock.impl.RaftDistributedLockOperations.Unlock;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
@@ -35,17 +35,17 @@ import java.util.Map;
 import java.util.Queue;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static io.atomix.primitives.lock.impl.RaftLockOperations.LOCK;
-import static io.atomix.primitives.lock.impl.RaftLockOperations.UNLOCK;
+import static io.atomix.primitives.lock.impl.RaftDistributedLockOperations.LOCK;
+import static io.atomix.primitives.lock.impl.RaftDistributedLockOperations.UNLOCK;
 
 /**
  * Raft atomic value service.
  */
-public class RaftLockService extends AbstractRaftService {
+public class RaftDistributedLockService extends AbstractRaftService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
-      .register(RaftLockOperations.NAMESPACE)
-      .register(RaftLockEvents.NAMESPACE)
+      .register(RaftDistributedLockOperations.NAMESPACE)
+      .register(RaftDistributedLockEvents.NAMESPACE)
       .register(LockHolder.class)
       .build());
 
@@ -78,7 +78,7 @@ public class RaftLockService extends AbstractRaftService {
           queue.remove(holder);
           RaftSession session = sessions().getSession(holder.session);
           if (session != null && session.getState().active()) {
-            session.publish(RaftLockEvents.FAIL, SERIALIZER::encode, new LockEvent(holder.id, holder.index));
+            session.publish(RaftDistributedLockEvents.FAIL, SERIALIZER::encode, new LockEvent(holder.id, holder.index));
           }
         }));
       }
@@ -105,9 +105,9 @@ public class RaftLockService extends AbstractRaftService {
           commit.index(),
           commit.session().sessionId().id(),
           0);
-      commit.session().publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+      commit.session().publish(RaftDistributedLockEvents.LOCK, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
     } else if (commit.value().timeout() == 0) {
-      commit.session().publish(RaftLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+      commit.session().publish(RaftDistributedLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
     } else if (commit.value().timeout() > 0) {
       LockHolder holder = lock = new LockHolder(
           commit.value().id(),
@@ -119,7 +119,7 @@ public class RaftLockService extends AbstractRaftService {
         timers.remove(commit.index());
         queue.remove(holder);
         if (commit.session().getState().active()) {
-          commit.session().publish(RaftLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+          commit.session().publish(RaftDistributedLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
         }
       }));
     } else {
@@ -152,7 +152,7 @@ public class RaftLockService extends AbstractRaftService {
         if (session == null || session.getState() == RaftSession.State.EXPIRED || session.getState() == RaftSession.State.CLOSED) {
           lock = queue.poll();
         } else {
-          session.publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, commit.index()));
+          session.publish(RaftDistributedLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, commit.index()));
           break;
         }
       }
@@ -175,7 +175,7 @@ public class RaftLockService extends AbstractRaftService {
           if (lockSession == null || lockSession.getState() == RaftSession.State.EXPIRED || lockSession.getState() == RaftSession.State.CLOSED) {
             lock = queue.poll();
           } else {
-            lockSession.publish(RaftLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, lock.index));
+            lockSession.publish(RaftDistributedLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, lock.index));
             break;
           }
         }

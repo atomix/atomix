@@ -29,15 +29,15 @@ import static org.junit.Assert.assertFalse;
 /**
  * Raft lock test.
  */
-public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
+public class RaftDistributedLockTest extends AbstractRaftPrimitiveTest<RaftDistributedLock> {
   @Override
   protected RaftService createService() {
-    return new RaftLockService();
+    return new RaftDistributedLockService();
   }
 
   @Override
-  protected RaftLock createPrimitive(RaftProxy proxy) {
-    return new RaftLock(proxy);
+  protected RaftDistributedLock createPrimitive(RaftProxy proxy) {
+    return new RaftDistributedLock(proxy);
   }
 
   /**
@@ -45,7 +45,7 @@ public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
    */
   @Test
   public void testLockUnlock() throws Throwable {
-    RaftLock lock = newPrimitive("test-lock-unlock");
+    RaftDistributedLock lock = newPrimitive("test-lock-unlock");
     lock.lock().join();
     lock.unlock().join();
   }
@@ -55,8 +55,8 @@ public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
    */
   @Test
   public void testReleaseOnClose() throws Throwable {
-    RaftLock lock1 = newPrimitive("test-lock-on-close");
-    RaftLock lock2 = newPrimitive("test-lock-on-close");
+    RaftDistributedLock lock1 = newPrimitive("test-lock-on-close");
+    RaftDistributedLock lock2 = newPrimitive("test-lock-on-close");
     lock1.lock().join();
     CompletableFuture<Version> future = lock2.lock();
     lock1.close();
@@ -68,8 +68,8 @@ public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
    */
   @Test
   public void testTryLockFail() throws Throwable {
-    RaftLock lock1 = newPrimitive("test-try-lock-fail");
-    RaftLock lock2 = newPrimitive("test-try-lock-fail");
+    RaftDistributedLock lock1 = newPrimitive("test-try-lock-fail");
+    RaftDistributedLock lock2 = newPrimitive("test-try-lock-fail");
 
     lock1.lock().join();
 
@@ -81,8 +81,8 @@ public class RaftLockTest extends AbstractRaftPrimitiveTest<RaftLock> {
    */
   @Test
   public void testBlockingUnlock() throws Throwable {
-    RaftLock lock1 = newPrimitive("test-blocking-unlock");
-    RaftLock lock2 = newPrimitive("test-blocking-unlock");
+    RaftDistributedLock lock1 = newPrimitive("test-blocking-unlock");
+    RaftDistributedLock lock2 = newPrimitive("test-blocking-unlock");
 
     lock1.lock().thenRun(() -> {
       lock1.unlock().join();

@@ -28,15 +28,15 @@ import static org.junit.Assert.assertTrue;
 /**
  * Raft atomic value test.
  */
-public class RaftValueTest extends AbstractRaftPrimitiveTest<RaftValue> {
+public class RaftAtomicValueTest extends AbstractRaftPrimitiveTest<RaftAtomicValue> {
   @Override
   protected RaftService createService() {
-    return new RaftValueService();
+    return new RaftAtomicValueService();
   }
 
   @Override
-  protected RaftValue createPrimitive(RaftProxy proxy) {
-    return new RaftValue(proxy);
+  protected RaftAtomicValue createPrimitive(RaftProxy proxy) {
+    return new RaftAtomicValue(proxy);
   }
 
   @Test
@@ -45,7 +45,7 @@ public class RaftValueTest extends AbstractRaftPrimitiveTest<RaftValue> {
     byte[] bytes2 = "b".getBytes();
     byte[] bytes3 = "c".getBytes();
 
-    RaftValue value = newPrimitive("test-value");
+    RaftAtomicValue value = newPrimitive("test-value");
     assertEquals(0, value.get().join().length);
     value.set(bytes1).join();
     assertArrayEquals(bytes1, value.get().join());

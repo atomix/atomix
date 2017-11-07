@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Counter commands.
  */
-public enum RaftValueOperations implements OperationId {
+public enum RaftAtomicValueOperations implements OperationId {
   GET("get", OperationType.QUERY),
   SET("set", OperationType.COMMAND),
   COMPARE_AND_SET("compareAndSet", OperationType.COMMAND),
@@ -37,7 +37,7 @@ public enum RaftValueOperations implements OperationId {
   private final String id;
   private final OperationType type;
 
-  RaftValueOperations(String id, OperationType type) {
+  RaftAtomicValueOperations(String id, OperationType type) {
     this.id = id;
     this.type = type;
   }
@@ -59,7 +59,7 @@ public enum RaftValueOperations implements OperationId {
       .register(Set.class)
       .register(CompareAndSet.class)
       .register(GetAndSet.class)
-      .build(RaftValueOperations.class.getSimpleName());
+      .build(RaftAtomicValueOperations.class.getSimpleName());
 
   /**
    * Abstract value command.

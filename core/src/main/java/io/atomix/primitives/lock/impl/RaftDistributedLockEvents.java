@@ -22,13 +22,13 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 /**
  * Raft value events.
  */
-public enum RaftLockEvents implements EventType {
+public enum RaftDistributedLockEvents implements EventType {
   LOCK("lock"),
   FAIL("fail");
 
   private final String id;
 
-  RaftLockEvents(String id) {
+  RaftDistributedLockEvents(String id) {
     this.id = id;
   }
 
@@ -41,6 +41,6 @@ public enum RaftLockEvents implements EventType {
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
       .register(LockEvent.class)
       .register(byte[].class)
-      .build(RaftLockEvents.class.getSimpleName());
+      .build(RaftDistributedLockEvents.class.getSimpleName());
 
 }
