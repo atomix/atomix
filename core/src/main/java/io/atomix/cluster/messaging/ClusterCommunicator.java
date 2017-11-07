@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster.messaging;
 
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.Cluster;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.Managed;
@@ -164,18 +164,18 @@ public interface ClusterCommunicator extends Managed<ClusterCommunicator> {
    * Cluster communication service builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<ClusterCommunicator> {
-    protected ClusterService clusterService;
+    protected Cluster cluster;
     protected MessagingService messagingService;
 
     /**
      * Sets the cluster service.
      *
-     * @param clusterService the cluster service
+     * @param cluster the cluster service
      * @return the cluster communication service builder
      * @throws NullPointerException if the cluster service is null
      */
-    public Builder withClusterService(ClusterService clusterService) {
-      this.clusterService = checkNotNull(clusterService, "clusterService cannot be null");
+    public Builder withClusterService(Cluster cluster) {
+      this.cluster = checkNotNull(cluster, "clusterService cannot be null");
       return this;
     }
 

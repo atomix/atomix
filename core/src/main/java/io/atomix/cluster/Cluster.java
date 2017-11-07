@@ -23,7 +23,7 @@ import java.util.Set;
  * Service for obtaining information about the individual nodes within
  * the controller cluster.
  */
-public interface ClusterService extends ListenerService<ClusterEvent, ClusterEventListener> {
+public interface Cluster extends ListenerService<ClusterEvent, ClusterEventListener> {
 
   /**
    * Returns the local controller node.
