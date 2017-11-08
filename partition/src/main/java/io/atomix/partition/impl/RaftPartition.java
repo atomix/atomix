@@ -103,6 +103,11 @@ public abstract class RaftPartition implements ManagedPartition {
     this.clusterCommunicator = clusterCommunicator;
   }
 
+  @Override
+  public PartitionId id() {
+    return partition.id();
+  }
+
   /**
    * Returns the partition primitive creator.
    *
@@ -115,17 +120,8 @@ public abstract class RaftPartition implements ManagedPartition {
    *
    * @return the partition name
    */
-  public String getName() {
+  public String name() {
     return String.format("partition-%d", partition.id().id());
-  }
-
-  /**
-   * Returns the identifier of the {@link PartitionMetadata partition} associated with this instance.
-   *
-   * @return partition identifier
-   */
-  public PartitionId getId() {
-    return partition.id();
   }
 
   /**
@@ -133,7 +129,7 @@ public abstract class RaftPartition implements ManagedPartition {
    *
    * @return partition member instance ids
    */
-  public Collection<NodeId> getMembers() {
+  public Collection<NodeId> members() {
     return partition.members();
   }
 
@@ -143,7 +139,7 @@ public abstract class RaftPartition implements ManagedPartition {
    * @return partition member identifiers
    */
   public Collection<MemberId> getMemberIds() {
-    return Collections2.transform(getMembers(), n -> MemberId.from(n.id()));
+    return Collections2.transform(members(), n -> MemberId.from(n.id()));
   }
 
   @Override
@@ -214,7 +210,7 @@ public abstract class RaftPartition implements ManagedPartition {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("partitionId", getId())
+        .add("partitionId", id())
         .toString();
   }
 }

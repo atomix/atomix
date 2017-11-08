@@ -47,11 +47,4 @@ public interface ClusterService extends ListenerService<ClusterEvent, ClusterEve
    */
   Node node(NodeId nodeId);
 
-  /**
-   * Returns the cluster metadata.
-   *
-   * @return the cluster metadata
-   */
-  ClusterMetadata metadata();
-
 }

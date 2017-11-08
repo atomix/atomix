@@ -15,18 +15,10 @@
  */
 package io.atomix.partition;
 
-import io.atomix.primitives.PrimitiveService;
+import io.atomix.utils.Managed;
 
 /**
- * Atomix partition.
+ * Managed partition service.
  */
-public interface Partition extends PrimitiveService {
-
-  /**
-   * Returns the partition identifier.
-   *
-   * @return the partition identifier
-   */
-  PartitionId id();
-
+public interface ManagedPartitionService extends PartitionService, Managed<PartitionService> {
 }

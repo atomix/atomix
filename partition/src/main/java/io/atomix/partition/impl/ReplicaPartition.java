@@ -97,7 +97,7 @@ public class ReplicaPartition extends RaftPartition {
         this,
         MemberId.from(localNodeId.id()),
         new RaftClientCommunicator(
-            getName(),
+            name(),
             Serializer.using(RaftNamespaces.RAFT_PROTOCOL),
             clusterCommunicator));
   }

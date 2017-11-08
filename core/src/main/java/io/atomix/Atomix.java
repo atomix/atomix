@@ -22,11 +22,9 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
-import io.atomix.partition.ManagedPartition;
-import io.atomix.partition.Partition;
-import io.atomix.partition.PartitionId;
+import io.atomix.partition.ManagedPartitionService;
 import io.atomix.partition.PartitionMetadata;
-import io.atomix.partition.impl.RaftPartition;
+import io.atomix.partition.PartitionService;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.PrimitiveService;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
@@ -57,12 +55,9 @@ import io.atomix.utils.Managed;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -75,7 +70,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
   private final ManagedClusterService cluster;
   private final ManagedMessagingService messagingService;
   private final ManagedClusterCommunicationService clusterCommunicator;
-  private final TreeMap<PartitionId, ManagedPartition> partitions = new TreeMap<>();
+  private final ManagedPartitionService partitions;
   private final DistributedPrimitiveCreator federatedPrimitiveCreator;
   private final AtomicBoolean open = new AtomicBoolean();
 
@@ -84,14 +79,14 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
       ManagedClusterService cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
-      Collection<RaftPartition> partitions) {
+      ManagedPartitionService partitions) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
-    partitions.forEach(p -> this.partitions.put(p.getId(), p));
+    this.partitions = checkNotNull(partitions, "partitions cannot be null");
 
     Map<Integer, DistributedPrimitiveCreator> partitionPrimitiveCreators = new HashMap<>();
-    partitions.forEach(p -> partitionPrimitiveCreators.put(p.getId().id(), p.getPrimitiveCreator()));
+    partitions.getPartitions().forEach(p -> partitionPrimitiveCreators.put(p.id().id(), partitions.getPrimitiveCreator(p.id())));
     federatedPrimitiveCreator = new FederatedDistributedPrimitiveCreator(partitionPrimitiveCreators, metadata.buckets());
   }
 
@@ -100,7 +95,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
    *
    * @return the Atomix cluster
    */
-  public ClusterService cluster() {
+  public ClusterService getClusterService() {
     return cluster;
   }
 
@@ -109,7 +104,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
    *
    * @return the cluster communicator
    */
-  public ClusterCommunicationService communicator() {
+  public ClusterCommunicationService getCommunicationService() {
     return clusterCommunicator;
   }
 
@@ -118,28 +113,17 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
    *
    * @return the cluster messenger
    */
-  public MessagingService messenger() {
+  public MessagingService getMessagingService() {
     return messagingService;
   }
 
   /**
-   * Returns the collection of partitions.
+   * Returns the partition service.
    *
-   * @return the collection of partitions
+   * @return the partition service
    */
-  @SuppressWarnings("unchecked")
-  public Collection<Partition> partitions() {
-    return (Collection) partitions.values();
-  }
-
-  /**
-   * Returns a partition by ID.
-   *
-   * @param partitionId the partition identifier
-   * @return the partition or {@code null} if no partition with the given ID exists
-   */
-  public Partition partition(PartitionId partitionId) {
-    return partitions.get(partitionId);
+  public PartitionService getPartitionService() {
+    return partitions;
   }
 
   @Override
@@ -202,12 +186,8 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
     return messagingService.open()
         .thenCompose(v -> cluster.open())
         .thenCompose(v -> clusterCommunicator.open())
-        .thenCompose(v -> {
-          List<CompletableFuture<Partition>> futures = partitions.values().stream()
-              .map(p -> p.open())
-              .collect(Collectors.toList());
-          return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-        }).thenApply(v -> {
+        .thenCompose(v -> partitions.open())
+        .thenApply(v -> {
           open.set(true);
           return this;
         });
@@ -231,7 +211,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("partitions", partitions())
+        .add("partitions", getPartitionService())
         .toString();
   }
 

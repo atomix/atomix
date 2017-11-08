@@ -64,7 +64,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
 
   @Override
   public CompletableFuture<RaftPartitionServer> open() {
-    log.info("Starting server for partition {}", partition.getId());
+    log.info("Starting server for partition {}", partition.id());
     CompletableFuture<RaftServer> serverOpenFuture;
     if (partition.getMemberIds().contains(localMemberId)) {
       if (server != null && server.isRunning()) {
@@ -79,9 +79,9 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
     }
     return serverOpenFuture.whenComplete((r, e) -> {
       if (e == null) {
-        log.info("Successfully started server for partition {}", partition.getId());
+        log.info("Successfully started server for partition {}", partition.id());
       } else {
-        log.info("Failed to start server for partition {}", partition.getId(), e);
+        log.info("Failed to start server for partition {}", partition.id(), e);
       }
     }).thenApply(v -> this);
   }
@@ -125,15 +125,15 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
 
   private RaftServer buildServer() {
     RaftServer.Builder builder = RaftServer.newBuilder(localMemberId)
-        .withName(String.format("partition-%s", partition.getId()))
+        .withName(partition.name())
         .withProtocol(new RaftServerCommunicator(
-            String.format("partition-%d", partition.getId().id()),
+            partition.name(),
             Serializer.using(RaftNamespaces.RAFT_PROTOCOL),
             clusterCommunicator))
         .withElectionTimeout(Duration.ofMillis(ELECTION_TIMEOUT_MILLIS))
         .withHeartbeatInterval(Duration.ofMillis(HEARTBEAT_INTERVAL_MILLIS))
         .withStorage(RaftStorage.newBuilder()
-            .withPrefix(String.format("partition-%s", partition.getId()))
+            .withPrefix(String.format("partition-%s", partition.id()))
             .withStorageLevel(StorageLevel.MAPPED)
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .withDirectory(partition.getDataFolder())
@@ -144,13 +144,13 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   }
 
   public CompletableFuture<Void> join(Collection<MemberId> otherMembers) {
-    log.info("Joining partition {} ({})", partition.getId(), partition.getName());
+    log.info("Joining partition {} ({})", partition.id(), partition.name());
     server = buildServer();
     return server.join(otherMembers).whenComplete((r, e) -> {
       if (e == null) {
-        log.info("Successfully joined partition {} ({})", partition.getId(), partition.getName());
+        log.info("Successfully joined partition {} ({})", partition.id(), partition.name());
       } else {
-        log.info("Failed to join partition {} ({})", partition.getId(), partition.getName(), e);
+        log.info("Failed to join partition {} ({})", partition.id(), partition.name(), e);
       }
     }).thenApply(v -> null);
   }

@@ -89,9 +89,9 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
     }
     return client.connect(partition.getMemberIds()).whenComplete((r, e) -> {
       if (e == null) {
-        log.info("Successfully started client for partition {}", partition.getId());
+        log.info("Successfully started client for partition {}", partition.id());
       } else {
-        log.info("Failed to start client for partition {}", partition.getId(), e);
+        log.info("Failed to start client for partition {}", partition.id(), e);
       }
     }).thenApply(v -> null);
   }
@@ -337,7 +337,7 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
 
   private RaftClient newRaftClient(RaftClientProtocol protocol) {
     return RaftClient.newBuilder()
-        .withClientId("partition-" + partition.getId())
+        .withClientId(partition.name())
         .withMemberId(localMemberId)
         .withProtocol(protocol)
         .build();

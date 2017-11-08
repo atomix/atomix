@@ -18,11 +18,11 @@ package io.atomix.cluster.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEvent.Type;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterMetadata;
+import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
@@ -109,11 +109,6 @@ public class DefaultClusterService implements ManagedClusterService {
   @Override
   public Node node(NodeId nodeId) {
     return nodes.get(nodeId);
-  }
-
-  @Override
-  public ClusterMetadata metadata() {
-    return clusterMetadata;
   }
 
   /**
