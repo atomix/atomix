@@ -52,13 +52,13 @@ import java.util.stream.Collectors;
 public class TestRaftClientCommunicator implements RaftClientProtocol {
   private final TestRaftMessageContext context;
   private final Serializer serializer;
-  private final ClusterCommunicator clusterCommunicator;
+  private final ClusterCommunicationService clusterCommunicator;
 
-  public TestRaftClientCommunicator(Serializer serializer, ClusterCommunicator clusterCommunicator) {
+  public TestRaftClientCommunicator(Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this(null, serializer, clusterCommunicator);
   }
 
-  public TestRaftClientCommunicator(String prefix, Serializer serializer, ClusterCommunicator clusterCommunicator) {
+  public TestRaftClientCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this.context = new TestRaftMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");

@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster.messaging;
 
-import io.atomix.cluster.Cluster;
+import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.MessagingService;
 
@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Service for assisting communications between controller cluster nodes.
  */
-public interface ClusterCommunicator {
+public interface ClusterCommunicationService {
 
   /**
    * Broadcasts a message to all controller nodes.
@@ -162,8 +162,8 @@ public interface ClusterCommunicator {
   /**
    * Cluster communication service builder.
    */
-  abstract class Builder implements io.atomix.utils.Builder<ClusterCommunicator> {
-    protected Cluster cluster;
+  abstract class Builder implements io.atomix.utils.Builder<ClusterCommunicationService> {
+    protected ClusterService cluster;
     protected MessagingService messagingService;
 
     /**
@@ -173,7 +173,7 @@ public interface ClusterCommunicator {
      * @return the cluster communication service builder
      * @throws NullPointerException if the cluster service is null
      */
-    public Builder withClusterService(Cluster cluster) {
+    public Builder withClusterService(ClusterService cluster) {
       this.cluster = checkNotNull(cluster, "clusterService cannot be null");
       return this;
     }

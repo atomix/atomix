@@ -15,11 +15,11 @@
  */
 package io.atomix;
 
-import io.atomix.cluster.Cluster;
-import io.atomix.cluster.ManagedCluster;
+import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.messaging.ClusterCommunicator;
-import io.atomix.cluster.messaging.ManagedClusterCommunicator;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.partition.ManagedPartition;
@@ -28,7 +28,7 @@ import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionMetadata;
 import io.atomix.partition.impl.RaftPartition;
 import io.atomix.primitives.DistributedPrimitiveCreator;
-import io.atomix.primitives.PrimitiveProvider;
+import io.atomix.primitives.PrimitiveService;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
 import io.atomix.primitives.counter.impl.DefaultAtomicCounterBuilder;
 import io.atomix.primitives.generator.AtomicIdGeneratorBuilder;
@@ -71,19 +71,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Atomix!
  */
-public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
-  private final ManagedCluster cluster;
+public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
+  private final ManagedClusterService cluster;
   private final ManagedMessagingService messagingService;
-  private final ManagedClusterCommunicator clusterCommunicator;
+  private final ManagedClusterCommunicationService clusterCommunicator;
   private final TreeMap<PartitionId, ManagedPartition> partitions = new TreeMap<>();
   private final DistributedPrimitiveCreator federatedPrimitiveCreator;
   private final AtomicBoolean open = new AtomicBoolean();
 
   protected Atomix(
       AtomixMetadata metadata,
-      ManagedCluster cluster,
+      ManagedClusterService cluster,
       ManagedMessagingService messagingService,
-      ManagedClusterCommunicator clusterCommunicator,
+      ManagedClusterCommunicationService clusterCommunicator,
       Collection<RaftPartition> partitions) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
@@ -100,7 +100,7 @@ public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
    *
    * @return the Atomix cluster
    */
-  public Cluster cluster() {
+  public ClusterService cluster() {
     return cluster;
   }
 
@@ -109,7 +109,7 @@ public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
    *
    * @return the cluster communicator
    */
-  public ClusterCommunicator communicator() {
+  public ClusterCommunicationService communicator() {
     return clusterCommunicator;
   }
 

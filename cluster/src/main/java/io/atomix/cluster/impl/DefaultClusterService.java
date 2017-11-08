@@ -18,12 +18,12 @@ package io.atomix.cluster.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.cluster.Cluster;
+import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEvent.Type;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterMetadata;
-import io.atomix.cluster.ManagedCluster;
+import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
@@ -53,9 +53,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Default cluster implementation.
  */
-public class DefaultCluster implements ManagedCluster {
+public class DefaultClusterService implements ManagedClusterService {
 
-  private static final Logger LOGGER = getLogger(DefaultCluster.class);
+  private static final Logger LOGGER = getLogger(DefaultClusterService.class);
 
   private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
@@ -88,7 +88,7 @@ public class DefaultCluster implements ManagedCluster {
       namedThreads("atomix-cluster-heartbeat-receiver", LOGGER));
   private ScheduledFuture<?> heartbeatFuture;
 
-  public DefaultCluster(ClusterMetadata clusterMetadata, MessagingService messagingService) {
+  public DefaultClusterService(ClusterMetadata clusterMetadata, MessagingService messagingService) {
     this.clusterMetadata = checkNotNull(clusterMetadata, "clusterMetadata cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.localNode = (DefaultNode) clusterMetadata.localNode();
@@ -212,7 +212,7 @@ public class DefaultCluster implements ManagedCluster {
   }
 
   @Override
-  public CompletableFuture<Cluster> open() {
+  public CompletableFuture<ClusterService> open() {
     if (open.compareAndSet(false, true)) {
       localNode.setState(State.ACTIVE);
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(this::sendHeartbeats, 0, heartbeatInterval, TimeUnit.MILLISECONDS);

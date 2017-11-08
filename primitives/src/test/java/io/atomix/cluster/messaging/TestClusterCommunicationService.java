@@ -31,20 +31,20 @@ import java.util.function.Function;
 /**
  * Cluster communication service implementation used for testing.
  */
-public class TestClusterCommunicator implements ManagedClusterCommunicator {
+public class TestClusterCommunicationService implements ManagedClusterCommunicationService {
   private final NodeId localNodeId;
-  private final Map<NodeId, TestClusterCommunicator> nodes;
+  private final Map<NodeId, TestClusterCommunicationService> nodes;
   private final Map<MessageSubject, Function<byte[], CompletableFuture<byte[]>>> subscribers = Maps.newConcurrentMap();
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public TestClusterCommunicator(NodeId localNodeId, Map<NodeId, TestClusterCommunicator> nodes) {
+  public TestClusterCommunicationService(NodeId localNodeId, Map<NodeId, TestClusterCommunicationService> nodes) {
     this.localNodeId = localNodeId;
     this.nodes = nodes;
     nodes.put(localNodeId, this);
   }
 
   @Override
-  public CompletableFuture<ClusterCommunicator> open() {
+  public CompletableFuture<ClusterCommunicationService> open() {
     open.set(true);
     return CompletableFuture.completedFuture(this);
   }
@@ -82,7 +82,7 @@ public class TestClusterCommunicator implements ManagedClusterCommunicator {
   @Override
   public <M> CompletableFuture<Void> unicast(
       M message, MessageSubject subject, Function<M, byte[]> encoder, NodeId toNodeId) {
-    TestClusterCommunicator node = nodes.get(toNodeId);
+    TestClusterCommunicationService node = nodes.get(toNodeId);
     if (node != null) {
       node.handle(subject, encoder.apply(message));
     }
@@ -103,7 +103,7 @@ public class TestClusterCommunicator implements ManagedClusterCommunicator {
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder,
       NodeId toNodeId) {
-    TestClusterCommunicator node = nodes.get(toNodeId);
+    TestClusterCommunicationService node = nodes.get(toNodeId);
     if (node == null) {
       return Futures.exceptionalFuture(new MessagingException.NoRemoteHandler());
     }

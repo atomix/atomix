@@ -30,7 +30,7 @@ import io.atomix.primitives.value.AtomicValueBuilder;
 /**
  * Primitive service.
  */
-public interface PrimitiveProvider {
+public interface PrimitiveService {
 
   /**
    * Creates a new ConsistentMapBuilder.

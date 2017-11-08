@@ -16,7 +16,7 @@
 package io.atomix.partition.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicator;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionMetadata;
 import io.atomix.primitives.DistributedPrimitiveCreator;
@@ -37,7 +37,7 @@ public class ReplicaPartition extends RaftPartition {
   public ReplicaPartition(
       NodeId nodeId,
       PartitionMetadata partition,
-      ClusterCommunicator clusterCommunicator,
+      ClusterCommunicationService clusterCommunicator,
       File dataFolder) {
     super(nodeId, partition, clusterCommunicator);
     this.dataFolder = dataFolder;

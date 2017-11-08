@@ -15,10 +15,10 @@
  */
 package io.atomix.partition;
 
-import io.atomix.primitives.PrimitiveProvider;
+import io.atomix.primitives.PrimitiveService;
 
 /**
  * Atomix partition.
  */
-public interface Partition extends PrimitiveProvider {
+public interface Partition extends PrimitiveService {
 }

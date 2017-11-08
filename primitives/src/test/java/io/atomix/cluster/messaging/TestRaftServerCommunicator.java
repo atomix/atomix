@@ -62,18 +62,18 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Raft server protocol that uses a {@link ClusterCommunicator}.
+ * Raft server protocol that uses a {@link ClusterCommunicationService}.
  */
 public class TestRaftServerCommunicator implements RaftServerProtocol {
   private final TestRaftMessageContext context;
   private final Serializer serializer;
-  private final ClusterCommunicator clusterCommunicator;
+  private final ClusterCommunicationService clusterCommunicator;
 
-  public TestRaftServerCommunicator(Serializer serializer, ClusterCommunicator clusterCommunicator) {
+  public TestRaftServerCommunicator(Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this(null, serializer, clusterCommunicator);
   }
 
-  public TestRaftServerCommunicator(String prefix, Serializer serializer, ClusterCommunicator clusterCommunicator) {
+  public TestRaftServerCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this.context = new TestRaftMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");

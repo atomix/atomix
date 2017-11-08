@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.messaging.impl;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
+import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.utils.ArraySizeHashPrinter;
 

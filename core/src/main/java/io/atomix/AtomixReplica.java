@@ -16,10 +16,10 @@
 package io.atomix;
 
 import io.atomix.cluster.ClusterMetadata;
-import io.atomix.cluster.ManagedCluster;
-import io.atomix.cluster.impl.DefaultCluster;
-import io.atomix.cluster.messaging.ManagedClusterCommunicator;
-import io.atomix.cluster.messaging.impl.DefaultClusterCommunicator;
+import io.atomix.cluster.ManagedClusterService;
+import io.atomix.cluster.impl.DefaultClusterService;
+import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
+import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.netty.NettyMessagingManager;
@@ -48,9 +48,9 @@ public class AtomixReplica extends Atomix {
 
   protected AtomixReplica(
       AtomixMetadata metadata,
-      ManagedCluster cluster,
+      ManagedClusterService cluster,
       ManagedMessagingService messagingService,
-      ManagedClusterCommunicator clusterCommunicator,
+      ManagedClusterCommunicationService clusterCommunicator,
       Collection<RaftPartition> partitions) {
     super(metadata, cluster, messagingService, clusterCommunicator, partitions);
   }
@@ -80,11 +80,11 @@ public class AtomixReplica extends Atomix {
           .withName(name)
           .withEndpoint(new Endpoint(localNode.address(), localNode.port()))
           .build();
-      ManagedCluster cluster = new DefaultCluster(ClusterMetadata.newBuilder()
+      ManagedClusterService cluster = new DefaultClusterService(ClusterMetadata.newBuilder()
           .withLocalNode(localNode)
           .withBootstrapNodes(bootstrapNodes)
           .build(), messagingService);
-      ManagedClusterCommunicator clusterCommunicator = new DefaultClusterCommunicator(cluster, messagingService);
+      ManagedClusterCommunicationService clusterCommunicator = new DefaultClusterCommunicationService(cluster, messagingService);
       Collection<RaftPartition> partitions = metadata.partitions().stream()
           .map(p -> new ReplicaPartition(localNode.id(), p, clusterCommunicator, new File(partitionsFolder, p.id().toString())))
           .collect(Collectors.toList());

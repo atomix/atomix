@@ -16,12 +16,11 @@
 package io.atomix.cluster.messaging.impl;
 
 import com.google.common.base.Objects;
-import io.atomix.cluster.Cluster;
-import io.atomix.cluster.ClusterMessage;
+import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicator;
-import io.atomix.cluster.messaging.ManagedClusterCommunicator;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
@@ -45,23 +44,23 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster communication service implementation.
  */
-public class DefaultClusterCommunicator implements ManagedClusterCommunicator {
+public class DefaultClusterCommunicationService implements ManagedClusterCommunicationService {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  protected final Cluster cluster;
+  protected final ClusterService cluster;
   protected final MessagingService messagingService;
   private final NodeId localNodeId;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public DefaultClusterCommunicator(Cluster cluster, MessagingService messagingService) {
+  public DefaultClusterCommunicationService(ClusterService cluster, MessagingService messagingService) {
     this.cluster = checkNotNull(cluster, "clusterService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.localNodeId = cluster.localNode().id();
   }
 
   @Override
-  public CompletableFuture<ClusterCommunicator> open() {
+  public CompletableFuture<ClusterCommunicationService> open() {
     if (open.compareAndSet(false, true)) {
       log.info("Started");
     }

@@ -18,7 +18,7 @@ package io.atomix.partition.impl;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicator;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.partition.ManagedPartition;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionMetadata;
@@ -72,7 +72,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public abstract class RaftPartition implements ManagedPartition {
   protected final AtomicBoolean isOpened = new AtomicBoolean(false);
-  protected final ClusterCommunicator clusterCommunicator;
+  protected final ClusterCommunicationService clusterCommunicator;
   protected PartitionMetadata partition;
   protected NodeId localNodeId;
 
@@ -97,7 +97,7 @@ public abstract class RaftPartition implements ManagedPartition {
   public RaftPartition(
       NodeId nodeId,
       PartitionMetadata partition,
-      ClusterCommunicator clusterCommunicator) {
+      ClusterCommunicationService clusterCommunicator) {
     this.localNodeId = nodeId;
     this.partition = partition;
     this.clusterCommunicator = clusterCommunicator;

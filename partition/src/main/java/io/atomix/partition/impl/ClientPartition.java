@@ -16,7 +16,7 @@
 package io.atomix.partition.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicator;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionMetadata;
 import io.atomix.primitives.DistributedPrimitiveCreator;
@@ -34,7 +34,7 @@ public class ClientPartition extends RaftPartition {
   public ClientPartition(
       NodeId nodeId,
       PartitionMetadata partition,
-      ClusterCommunicator clusterCommunicator) {
+      ClusterCommunicationService clusterCommunicator) {
     super(nodeId, partition, clusterCommunicator);
     this.client = createClient();
   }

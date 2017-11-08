@@ -20,5 +20,5 @@ import io.atomix.utils.Managed;
 /**
  * Managed cluster.
  */
-public interface ManagedCluster extends Cluster, Managed<Cluster> {
+public interface ManagedClusterService extends ClusterService, Managed<ClusterService> {
 }
