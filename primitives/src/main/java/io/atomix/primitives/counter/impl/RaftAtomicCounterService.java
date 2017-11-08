@@ -15,10 +15,10 @@
  */
 package io.atomix.primitives.counter.impl;
 
-import io.atomix.primitives.counter.impl.RaftCounterOperations.AddAndGet;
-import io.atomix.primitives.counter.impl.RaftCounterOperations.CompareAndSet;
-import io.atomix.primitives.counter.impl.RaftCounterOperations.GetAndAdd;
-import io.atomix.primitives.counter.impl.RaftCounterOperations.Set;
+import io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.AddAndGet;
+import io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.CompareAndSet;
+import io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.GetAndAdd;
+import io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.Set;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
@@ -30,21 +30,21 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 
 import java.util.Objects;
 
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.ADD_AND_GET;
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.COMPARE_AND_SET;
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.GET;
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.GET_AND_ADD;
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.GET_AND_INCREMENT;
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.INCREMENT_AND_GET;
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.SET;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.ADD_AND_GET;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.COMPARE_AND_SET;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.GET;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.GET_AND_ADD;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.GET_AND_INCREMENT;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.INCREMENT_AND_GET;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.SET;
 
 /**
  * Atomix long state.
  */
-public class RaftCounterService extends AbstractRaftService {
+public class RaftAtomicCounterService extends AbstractRaftService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
-      .register(RaftCounterOperations.NAMESPACE)
+      .register(RaftAtomicCounterOperations.NAMESPACE)
       .build());
 
   private Long value = 0L;

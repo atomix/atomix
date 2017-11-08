@@ -25,17 +25,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Unit tests for {@link RaftCounter}.
+ * Unit tests for {@link RaftAtomicCounter}.
  */
-public class RaftCounterTest extends AbstractRaftPrimitiveTest<RaftCounter> {
+public class RaftAtomicCounterTest extends AbstractRaftPrimitiveTest<RaftAtomicCounter> {
   @Override
   protected RaftService createService() {
-    return new RaftCounterService();
+    return new RaftAtomicCounterService();
   }
 
   @Override
-  protected RaftCounter createPrimitive(RaftProxy proxy) {
-    return new RaftCounter(proxy);
+  protected RaftAtomicCounter createPrimitive(RaftProxy proxy) {
+    return new RaftAtomicCounter(proxy);
   }
 
   @Test
@@ -44,7 +44,7 @@ public class RaftCounterTest extends AbstractRaftPrimitiveTest<RaftCounter> {
   }
 
   protected void basicOperationsTest() throws Throwable {
-    RaftCounter along = newPrimitive("test-counter-basic-operations");
+    RaftAtomicCounter along = newPrimitive("test-counter-basic-operations");
     assertEquals(0, along.get().join().longValue());
     assertEquals(1, along.incrementAndGet().join().longValue());
     along.set(100).join();

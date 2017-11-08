@@ -27,15 +27,15 @@ import io.atomix.storage.StorageLevel;
 import io.atomix.time.WallClockTimestamp;
 import org.junit.Test;
 
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.GET;
-import static io.atomix.primitives.counter.impl.RaftCounterOperations.SET;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.GET;
+import static io.atomix.primitives.counter.impl.RaftAtomicCounterOperations.SET;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
  * Counter service test.
  */
-public class RaftCounterServiceTest {
+public class RaftAtomicCounterServiceTest {
   @Test
   public void testSnapshot() throws Exception {
     SnapshotStore store = new SnapshotStore(RaftStorage.newBuilder()
@@ -44,11 +44,11 @@ public class RaftCounterServiceTest {
         .build());
     Snapshot snapshot = store.newSnapshot(ServiceId.from(1), "test", 2, new WallClockTimestamp());
 
-    RaftCounterService service = new RaftCounterService();
+    RaftAtomicCounterService service = new RaftAtomicCounterService();
     service.set(new DefaultCommit<>(
         2,
         SET,
-        new RaftCounterOperations.Set(1L),
+        new RaftAtomicCounterOperations.Set(1L),
         mock(RaftSessionContext.class),
         System.currentTimeMillis()));
 
@@ -58,7 +58,7 @@ public class RaftCounterServiceTest {
 
     snapshot.complete();
 
-    service = new RaftCounterService();
+    service = new RaftAtomicCounterService();
     try (SnapshotReader reader = snapshot.openReader()) {
       service.install(reader);
     }
