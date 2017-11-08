@@ -15,6 +15,7 @@
  */
 package io.atomix;
 
+import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ManagedCluster;
 import io.atomix.cluster.impl.DefaultCluster;
 import io.atomix.cluster.messaging.ManagedClusterCommunicator;
@@ -46,11 +47,12 @@ public class AtomixReplica extends Atomix {
   }
 
   protected AtomixReplica(
+      AtomixMetadata metadata,
       ManagedCluster cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicator clusterCommunicator,
       Collection<BasePartition> partitions) {
-    super(cluster, messagingService, clusterCommunicator, partitions);
+    super(metadata, cluster, messagingService, clusterCommunicator, partitions);
   }
 
   /**
@@ -72,18 +74,21 @@ public class AtomixReplica extends Atomix {
 
     @Override
     public Atomix build() {
+      AtomixMetadata metadata = buildMetadata();
       File partitionsFolder = new File(this.dataFolder, "partitions");
       ManagedMessagingService messagingService = NettyMessagingManager.newBuilder()
-          .withName(clusterMetadata.name())
-          .withEndpoint(new Endpoint(clusterMetadata.localNode().address(), clusterMetadata.localNode().port()))
+          .withName(name)
+          .withEndpoint(new Endpoint(localNode.address(), localNode.port()))
           .build();
-      ManagedCluster cluster = new DefaultCluster(clusterMetadata, messagingService);
+      ManagedCluster cluster = new DefaultCluster(ClusterMetadata.newBuilder()
+          .withLocalNode(localNode)
+          .withBootstrapNodes(bootstrapNodes)
+          .build(), messagingService);
       ManagedClusterCommunicator clusterCommunicator = new DefaultClusterCommunicator(cluster, messagingService);
-      Collection<BasePartition> partitions = clusterMetadata.partitions()
-          .stream()
-          .map(p -> new ReplicaPartition(clusterMetadata.localNode().id(), p, clusterCommunicator, new File(partitionsFolder, p.id().toString())))
+      Collection<BasePartition> partitions = metadata.partitions().stream()
+          .map(p -> new ReplicaPartition(localNode.id(), p, clusterCommunicator, new File(partitionsFolder, p.id().toString())))
           .collect(Collectors.toList());
-      return new AtomixReplica(cluster, messagingService, clusterCommunicator, partitions);
+      return new AtomixReplica(metadata, cluster, messagingService, clusterCommunicator, partitions);
     }
   }
 }

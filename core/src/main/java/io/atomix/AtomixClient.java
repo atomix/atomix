@@ -15,6 +15,7 @@
  */
 package io.atomix;
 
+import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ManagedCluster;
 import io.atomix.cluster.impl.DefaultCluster;
 import io.atomix.cluster.messaging.ManagedClusterCommunicator;
@@ -43,11 +44,12 @@ public class AtomixClient extends Atomix {
   }
 
   protected AtomixClient(
+      AtomixMetadata metadata,
       ManagedCluster cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicator clusterCommunicator,
       Collection<BasePartition> partitions) {
-    super(cluster, messagingService, clusterCommunicator, partitions);
+    super(metadata, cluster, messagingService, clusterCommunicator, partitions);
   }
 
   /**
@@ -56,17 +58,20 @@ public class AtomixClient extends Atomix {
   public static class Builder extends Atomix.Builder {
     @Override
     public Atomix build() {
+      AtomixMetadata metadata = buildMetadata();
       ManagedMessagingService messagingService = NettyMessagingManager.newBuilder()
-          .withName(clusterMetadata.name())
-          .withEndpoint(new Endpoint(clusterMetadata.localNode().address(), clusterMetadata.localNode().port()))
+          .withName(name)
+          .withEndpoint(new Endpoint(localNode.address(), localNode.port()))
           .build();
-      ManagedCluster cluster = new DefaultCluster(clusterMetadata, messagingService);
+      ManagedCluster cluster = new DefaultCluster(ClusterMetadata.newBuilder()
+          .withLocalNode(localNode)
+          .withBootstrapNodes(bootstrapNodes)
+          .build(), messagingService);
       ManagedClusterCommunicator clusterCommunicator = new DefaultClusterCommunicator(cluster, messagingService);
-      Collection<BasePartition> partitions = clusterMetadata.partitions()
-          .stream()
-          .map(p -> new ClientPartition(clusterMetadata.localNode().id(), p, clusterCommunicator))
+      Collection<BasePartition> partitions = metadata.partitions().stream()
+          .map(p -> new ClientPartition(localNode.id(), p, clusterCommunicator))
           .collect(Collectors.toList());
-      return new AtomixClient(cluster, messagingService, clusterCommunicator, partitions);
+      return new AtomixClient(metadata, cluster, messagingService, clusterCommunicator, partitions);
     }
   }
 }

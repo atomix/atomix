@@ -17,6 +17,7 @@ package io.atomix.cluster.messaging.impl;
 
 import com.google.common.base.Objects;
 import io.atomix.cluster.Cluster;
+import io.atomix.cluster.ClusterMessage;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterCommunicator;

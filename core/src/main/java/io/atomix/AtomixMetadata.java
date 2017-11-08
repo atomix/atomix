@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix;
 
 import com.google.common.collect.Sets;
+import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.Type;
+import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.DefaultNode;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionMetadata;
@@ -37,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster metadata.
  */
-public class ClusterMetadata {
+public class AtomixMetadata {
 
   /**
    * Returns a new cluster metadata builder.
@@ -54,7 +56,7 @@ public class ClusterMetadata {
   private final Collection<PartitionMetadata> partitions;
   private final int buckets;
 
-  protected ClusterMetadata(
+  protected AtomixMetadata(
       String name,
       Node localNode,
       Collection<Node> bootstrapNodes,
@@ -127,7 +129,7 @@ public class ClusterMetadata {
   /**
    * Cluster metadata builder.
    */
-  public static class Builder implements io.atomix.utils.Builder<ClusterMetadata> {
+  public static class Builder implements io.atomix.utils.Builder<AtomixMetadata> {
     private static final String DEFAULT_CLUSTER_NAME = "atomix";
     protected String name = DEFAULT_CLUSTER_NAME;
     protected Node localNode;
@@ -229,7 +231,7 @@ public class ClusterMetadata {
      * @return the cluster metadata builder
      */
     public Builder withPartitions(Collection<PartitionMetadata> partitions) {
-      this.partitions = checkNotNull(partitions, "partitions cannot be null");
+      this.partitions = partitions;
       return this;
     }
 
@@ -256,8 +258,8 @@ public class ClusterMetadata {
     }
 
     @Override
-    public ClusterMetadata build() {
-      return new ClusterMetadata(
+    public AtomixMetadata build() {
+      return new AtomixMetadata(
           name,
           localNode,
           bootstrapNodes,

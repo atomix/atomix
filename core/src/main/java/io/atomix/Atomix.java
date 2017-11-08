@@ -16,8 +16,8 @@
 package io.atomix;
 
 import io.atomix.cluster.Cluster;
-import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ManagedCluster;
+import io.atomix.cluster.Node;
 import io.atomix.cluster.messaging.ClusterCommunicator;
 import io.atomix.cluster.messaging.ManagedClusterCommunicator;
 import io.atomix.messaging.ManagedMessagingService;
@@ -25,6 +25,7 @@ import io.atomix.messaging.MessagingService;
 import io.atomix.partition.ManagedPartition;
 import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionId;
+import io.atomix.partition.PartitionMetadata;
 import io.atomix.partition.impl.BasePartition;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.PrimitiveProvider;
@@ -53,6 +54,7 @@ import io.atomix.primitives.value.AtomicValueBuilder;
 import io.atomix.primitives.value.impl.DefaultAtomicValueBuilder;
 import io.atomix.utils.Managed;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +65,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -76,7 +79,12 @@ public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
   private final DistributedPrimitiveCreator federatedPrimitiveCreator;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  protected Atomix(ManagedCluster cluster, ManagedMessagingService messagingService, ManagedClusterCommunicator clusterCommunicator, Collection<BasePartition> partitions) {
+  protected Atomix(
+      AtomixMetadata metadata,
+      ManagedCluster cluster,
+      ManagedMessagingService messagingService,
+      ManagedClusterCommunicator clusterCommunicator,
+      Collection<BasePartition> partitions) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
@@ -84,7 +92,7 @@ public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
 
     Map<PartitionId, DistributedPrimitiveCreator> partitionPrimitiveCreators = new HashMap<>();
     partitions.forEach(p -> partitionPrimitiveCreators.put(p.getId(), p.getPrimitiveCreator()));
-    federatedPrimitiveCreator = new FederatedDistributedPrimitiveCreator(partitionPrimitiveCreators, cluster.metadata().buckets());
+    federatedPrimitiveCreator = new FederatedDistributedPrimitiveCreator(partitionPrimitiveCreators, metadata.buckets());
   }
 
   /**
@@ -231,18 +239,123 @@ public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
    * Atomix builder.
    */
   public abstract static class Builder implements io.atomix.utils.Builder<Atomix> {
-    protected ClusterMetadata clusterMetadata;
+    private static final String DEFAULT_CLUSTER_NAME = "atomix";
+    protected String name = DEFAULT_CLUSTER_NAME;
+    protected Node localNode;
+    protected Collection<Node> bootstrapNodes;
+    protected int numPartitions;
+    protected int partitionSize;
+    protected int numBuckets;
+    protected Collection<PartitionMetadata> partitions;
 
     /**
-     * Sets the cluster metadata.
+     * Sets the cluster name.
      *
-     * @param clusterMetadata the cluster metadata
-     * @return the Atomix builder
-     * @throws NullPointerException if the cluster metadata is null
+     * @param name the cluster name
+     * @return the cluster metadata builder
+     * @throws NullPointerException if the name is null
      */
-    public Builder withClusterMetadata(ClusterMetadata clusterMetadata) {
-      this.clusterMetadata = checkNotNull(clusterMetadata, "clusterMetadata cannot be null");
+    public Builder withClusterName(String name) {
+      this.name = checkNotNull(name, "name cannot be null");
       return this;
+    }
+
+    /**
+     * Sets the local node metadata.
+     *
+     * @param localNode the local node metadata
+     * @return the cluster metadata builder
+     */
+    public Builder withLocalNode(Node localNode) {
+      this.localNode = checkNotNull(localNode, "localNode cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the bootstrap nodes.
+     *
+     * @param bootstrapNodes the nodes from which to bootstrap the cluster
+     * @return the cluster metadata builder
+     * @throws NullPointerException if the bootstrap nodes are {@code null}
+     */
+    public Builder withBootstrapNodes(Node... bootstrapNodes) {
+      return withBootstrapNodes(Arrays.asList(checkNotNull(bootstrapNodes)));
+    }
+
+    /**
+     * Sets the bootstrap nodes.
+     *
+     * @param bootstrapNodes the nodes from which to bootstrap the cluster
+     * @return the cluster metadata builder
+     * @throws NullPointerException if the bootstrap nodes are {@code null}
+     */
+    public Builder withBootstrapNodes(Collection<Node> bootstrapNodes) {
+      this.bootstrapNodes = checkNotNull(bootstrapNodes, "bootstrapNodes cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the number of partitions.
+     *
+     * @param numPartitions the number of partitions
+     * @return the cluster metadata builder
+     * @throws IllegalArgumentException if the number of partitions is not positive
+     */
+    public Builder withNumPartitions(int numPartitions) {
+      checkArgument(numPartitions > 0, "numPartitions must be positive");
+      this.numPartitions = numPartitions;
+      return this;
+    }
+
+    /**
+     * Sets the partition size.
+     *
+     * @param partitionSize the partition size
+     * @return the cluster metadata builder
+     * @throws IllegalArgumentException if the partition size is not positive
+     */
+    public Builder withPartitionSize(int partitionSize) {
+      checkArgument(partitionSize > 0, "partitionSize must be positive");
+      this.partitionSize = partitionSize;
+      return this;
+    }
+
+    /**
+     * Sets the number of buckets within each partition.
+     *
+     * @param numBuckets the number of buckets within each partition
+     * @return the cluster metadata builder
+     * @throws IllegalArgumentException if the number of buckets within each partition is not positive
+     */
+    public Builder withNumBuckets(int numBuckets) {
+      checkArgument(numBuckets > 0, "numBuckets must be positive");
+      this.numBuckets = numBuckets;
+      return this;
+    }
+
+    /**
+     * Sets the partitions.
+     *
+     * @param partitions the partitions
+     * @return the cluster metadata builder
+     */
+    public Builder withPartitions(Collection<PartitionMetadata> partitions) {
+      this.partitions = checkNotNull(partitions, "partitions cannot be null");
+      return this;
+    }
+
+    /**
+     * Builds Atomix metadata.
+     */
+    protected AtomixMetadata buildMetadata() {
+      return AtomixMetadata.newBuilder()
+          .withLocalNode(localNode)
+          .withBootstrapNodes(bootstrapNodes)
+          .withNumPartitions(numPartitions)
+          .withPartitionSize(partitionSize)
+          .withNumBuckets(numBuckets)
+          .withPartitions(partitions)
+          .build();
     }
   }
 }

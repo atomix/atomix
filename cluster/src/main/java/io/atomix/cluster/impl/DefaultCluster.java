@@ -30,7 +30,6 @@ import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
 import io.atomix.protocols.phi.PhiAccrualFailureDetector;
-import io.atomix.protocols.phi.protocol.HeartbeatMessage;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
@@ -71,7 +70,6 @@ public class DefaultCluster implements ManagedCluster {
           .register(KryoNamespaces.BASIC)
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
           .register(DefaultNode.class)
-          .register(HeartbeatMessage.class)
           .build("ClusterStore"));
 
   private static final String INSTANCE_ID_NULL = "Instance ID cannot be null";
