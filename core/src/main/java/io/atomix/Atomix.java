@@ -90,8 +90,8 @@ public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
     partitions.forEach(p -> this.partitions.put(p.getId(), p));
 
-    Map<PartitionId, DistributedPrimitiveCreator> partitionPrimitiveCreators = new HashMap<>();
-    partitions.forEach(p -> partitionPrimitiveCreators.put(p.getId(), p.getPrimitiveCreator()));
+    Map<Integer, DistributedPrimitiveCreator> partitionPrimitiveCreators = new HashMap<>();
+    partitions.forEach(p -> partitionPrimitiveCreators.put(p.getId().id(), p.getPrimitiveCreator()));
     federatedPrimitiveCreator = new FederatedDistributedPrimitiveCreator(partitionPrimitiveCreators, metadata.buckets());
   }
 
