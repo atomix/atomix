@@ -68,7 +68,7 @@ public class AtomixServer {
         .metavar("NAME:HOST:PORT")
         .type(nodeType)
         .help("Bootstraps a new cluster");
-    parser.addArgument("--http-port", "-h")
+    parser.addArgument("--http-port", "-p")
         .metavar("PORT")
         .required(false)
         .type(Integer.class)
