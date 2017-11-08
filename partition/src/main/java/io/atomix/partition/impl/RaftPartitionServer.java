@@ -19,10 +19,8 @@ import io.atomix.cluster.messaging.ClusterCommunicator;
 import io.atomix.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.protocol.messaging.RaftServerCommunicator;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.serializer.Serializer;
-import io.atomix.serializer.impl.StorageNamespaces;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.Managed;
 import org.slf4j.Logger;
@@ -130,18 +128,18 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         .withName(String.format("partition-%s", partition.getId()))
         .withProtocol(new RaftServerCommunicator(
             String.format("partition-%d", partition.getId().id()),
-            Serializer.using(StorageNamespaces.RAFT_PROTOCOL),
+            Serializer.using(RaftNamespaces.RAFT_PROTOCOL),
             clusterCommunicator))
         .withElectionTimeout(Duration.ofMillis(ELECTION_TIMEOUT_MILLIS))
         .withHeartbeatInterval(Duration.ofMillis(HEARTBEAT_INTERVAL_MILLIS))
         .withStorage(RaftStorage.newBuilder()
             .withPrefix(String.format("partition-%s", partition.getId()))
             .withStorageLevel(StorageLevel.MAPPED)
-            .withSerializer(Serializer.using(StorageNamespaces.RAFT_STORAGE))
+            .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .withDirectory(partition.getDataFolder())
             .withMaxSegmentSize(MAX_SEGMENT_SIZE)
             .build());
-    BasePartition.RAFT_SERVICES.forEach(builder::addService);
+    RaftPartition.RAFT_SERVICES.forEach(builder::addService);
     return builder.build();
   }
 

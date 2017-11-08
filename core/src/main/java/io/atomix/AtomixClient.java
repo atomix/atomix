@@ -23,7 +23,7 @@ import io.atomix.cluster.messaging.impl.DefaultClusterCommunicator;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.netty.NettyMessagingManager;
-import io.atomix.partition.impl.BasePartition;
+import io.atomix.partition.impl.RaftPartition;
 import io.atomix.partition.impl.ClientPartition;
 
 import java.util.Collection;
@@ -48,7 +48,7 @@ public class AtomixClient extends Atomix {
       ManagedCluster cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicator clusterCommunicator,
-      Collection<BasePartition> partitions) {
+      Collection<RaftPartition> partitions) {
     super(metadata, cluster, messagingService, clusterCommunicator, partitions);
   }
 
@@ -68,7 +68,7 @@ public class AtomixClient extends Atomix {
           .withBootstrapNodes(bootstrapNodes)
           .build(), messagingService);
       ManagedClusterCommunicator clusterCommunicator = new DefaultClusterCommunicator(cluster, messagingService);
-      Collection<BasePartition> partitions = metadata.partitions().stream()
+      Collection<RaftPartition> partitions = metadata.partitions().stream()
           .map(p -> new ClientPartition(localNode.id(), p, clusterCommunicator))
           .collect(Collectors.toList());
       return new AtomixClient(metadata, cluster, messagingService, clusterCommunicator, partitions);

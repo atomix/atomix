@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.protocol.messaging;
+package io.atomix.cluster.messaging;
 
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicator;
-import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -66,17 +64,17 @@ import java.util.function.Function;
 /**
  * Raft server protocol that uses a {@link ClusterCommunicator}.
  */
-public class RaftServerCommunicator implements RaftServerProtocol {
-  private final RaftMessageContext context;
+public class TestRaftServerCommunicator implements RaftServerProtocol {
+  private final TestRaftMessageContext context;
   private final Serializer serializer;
   private final ClusterCommunicator clusterCommunicator;
 
-  public RaftServerCommunicator(Serializer serializer, ClusterCommunicator clusterCommunicator) {
+  public TestRaftServerCommunicator(Serializer serializer, ClusterCommunicator clusterCommunicator) {
     this(null, serializer, clusterCommunicator);
   }
 
-  public RaftServerCommunicator(String prefix, Serializer serializer, ClusterCommunicator clusterCommunicator) {
-    this.context = new RaftMessageContext(prefix);
+  public TestRaftServerCommunicator(String prefix, Serializer serializer, ClusterCommunicator clusterCommunicator) {
+    this.context = new TestRaftMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }

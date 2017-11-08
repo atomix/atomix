@@ -29,16 +29,6 @@
   <dependencies>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix-event</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-time</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
       <artifactId>atomix-cluster</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -54,18 +44,8 @@
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix-kryo</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
       <artifactId>atomix-utils</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>${commons.lang3.version}</version>
     </dependency>
   </dependencies>
 

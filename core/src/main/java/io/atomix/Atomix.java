@@ -26,7 +26,7 @@ import io.atomix.partition.ManagedPartition;
 import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionMetadata;
-import io.atomix.partition.impl.BasePartition;
+import io.atomix.partition.impl.RaftPartition;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.PrimitiveProvider;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
@@ -84,7 +84,7 @@ public abstract class Atomix implements PrimitiveProvider, Managed<Atomix> {
       ManagedCluster cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicator clusterCommunicator,
-      Collection<BasePartition> partitions) {
+      Collection<RaftPartition> partitions) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");

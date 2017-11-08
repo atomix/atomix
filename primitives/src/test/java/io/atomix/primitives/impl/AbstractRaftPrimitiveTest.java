@@ -18,19 +18,18 @@ package io.atomix.primitives.impl;
 import com.google.common.collect.Lists;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.TestClusterCommunicationServiceFactory;
+import io.atomix.cluster.messaging.TestRaftClientCommunicator;
+import io.atomix.cluster.messaging.TestRaftServerCommunicator;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.protocol.messaging.RaftClientCommunicator;
-import io.atomix.protocols.raft.protocol.messaging.RaftServerCommunicator;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.serializer.Serializer;
-import io.atomix.serializer.impl.StorageNamespaces;
 import io.atomix.storage.StorageLevel;
 import org.junit.After;
 import org.junit.Before;
@@ -224,14 +223,14 @@ public abstract class AbstractRaftPrimitiveTest<T extends AbstractRaftPrimitive>
   private RaftServer createServer(RaftMember member) {
     RaftServer.Builder builder = RaftServer.newBuilder(member.memberId())
         .withType(member.getType())
-        .withProtocol(new RaftServerCommunicator(
+        .withProtocol(new TestRaftServerCommunicator(
             "partition-1",
-            Serializer.using(StorageNamespaces.RAFT_PROTOCOL),
+            Serializer.using(RaftTestNamespaces.RAFT_PROTOCOL),
             communicationServiceFactory.newCommunicationService(NodeId.from(member.memberId().id()))))
         .withStorage(RaftStorage.newBuilder()
             .withStorageLevel(StorageLevel.MEMORY)
             .withDirectory(new File(String.format("target/primitives/%s", member.memberId())))
-            .withSerializer(Serializer.using(StorageNamespaces.RAFT_STORAGE))
+            .withSerializer(Serializer.using(RaftTestNamespaces.RAFT_STORAGE))
             .withMaxSegmentSize(1024 * 1024)
             .build())
         .addService("test", this::createService);
@@ -248,9 +247,9 @@ public abstract class AbstractRaftPrimitiveTest<T extends AbstractRaftPrimitive>
     MemberId memberId = nextMemberId();
     RaftClient client = RaftClient.newBuilder()
         .withMemberId(memberId)
-        .withProtocol(new RaftClientCommunicator(
+        .withProtocol(new TestRaftClientCommunicator(
             "partition-1",
-            Serializer.using(StorageNamespaces.RAFT_PROTOCOL),
+            Serializer.using(RaftTestNamespaces.RAFT_PROTOCOL),
             communicationServiceFactory.newCommunicationService(NodeId.from(memberId.id()))))
         .build();
 

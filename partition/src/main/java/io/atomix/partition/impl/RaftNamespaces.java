@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.serializer.impl;
+package io.atomix.partition.impl;
 
 import io.atomix.primitives.counter.impl.RaftCounterOperations;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorEvents;
@@ -98,7 +98,7 @@ import java.util.LinkedList;
 /**
  * Storage serializer namespaces.
  */
-public final class StorageNamespaces {
+public final class RaftNamespaces {
 
   /**
    * Raft protocol namespace.
@@ -221,6 +221,6 @@ public final class StorageNamespaces {
       .register(RaftDistributedLockOperations.class)
       .build("RaftStorage");
 
-  private StorageNamespaces() {
+  private RaftNamespaces() {
   }
 }

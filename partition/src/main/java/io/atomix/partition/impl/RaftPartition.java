@@ -70,7 +70,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Abstract partition.
  */
-public abstract class BasePartition implements ManagedPartition {
+public abstract class RaftPartition implements ManagedPartition {
   protected final AtomicBoolean isOpened = new AtomicBoolean(false);
   protected final ClusterCommunicator clusterCommunicator;
   protected PartitionMetadata partition;
@@ -94,7 +94,7 @@ public abstract class BasePartition implements ManagedPartition {
               () -> new RaftDocumentTreeService(Ordering.INSERTION))
           .build();
 
-  public BasePartition(
+  public RaftPartition(
       NodeId nodeId,
       PartitionMetadata partition,
       ClusterCommunicator clusterCommunicator) {

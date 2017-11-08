@@ -23,7 +23,7 @@ import io.atomix.cluster.messaging.impl.DefaultClusterCommunicator;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.netty.NettyMessagingManager;
-import io.atomix.partition.impl.BasePartition;
+import io.atomix.partition.impl.RaftPartition;
 import io.atomix.partition.impl.ReplicaPartition;
 
 import java.io.File;
@@ -51,7 +51,7 @@ public class AtomixReplica extends Atomix {
       ManagedCluster cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicator clusterCommunicator,
-      Collection<BasePartition> partitions) {
+      Collection<RaftPartition> partitions) {
     super(metadata, cluster, messagingService, clusterCommunicator, partitions);
   }
 
@@ -85,7 +85,7 @@ public class AtomixReplica extends Atomix {
           .withBootstrapNodes(bootstrapNodes)
           .build(), messagingService);
       ManagedClusterCommunicator clusterCommunicator = new DefaultClusterCommunicator(cluster, messagingService);
-      Collection<BasePartition> partitions = metadata.partitions().stream()
+      Collection<RaftPartition> partitions = metadata.partitions().stream()
           .map(p -> new ReplicaPartition(localNode.id(), p, clusterCommunicator, new File(partitionsFolder, p.id().toString())))
           .collect(Collectors.toList());
       return new AtomixReplica(metadata, cluster, messagingService, clusterCommunicator, partitions);

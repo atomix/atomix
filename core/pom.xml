@@ -29,17 +29,12 @@
   <dependencies>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix-event</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-time</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
       <artifactId>atomix-cluster</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-netty</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -49,17 +44,7 @@
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix-raft</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
       <artifactId>atomix-primitives</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-kryo</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
