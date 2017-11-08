@@ -53,6 +53,8 @@
     <commons.lang3.version>3.5</commons.lang3.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <netty.version>4.1.8.Final</netty.version>
+    <vertx.version>3.5.0</vertx.version>
+    <resteasy.version>3.1.0.Final</resteasy.version>
 
     <!-- Maven plugins -->
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
@@ -101,6 +103,7 @@
     <module>partition</module>
     <module>primitives</module>
     <module>protocols</module>
+    <module>rest</module>
     <module>serializer</module>
     <module>storage</module>
     <module>tests</module>

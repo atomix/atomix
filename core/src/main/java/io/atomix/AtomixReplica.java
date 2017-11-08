@@ -21,6 +21,7 @@ import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.partition.ManagedPartitionService;
 import io.atomix.partition.impl.ReplicaPartition;
 import io.atomix.primitives.PrimitiveService;
+import io.atomix.rest.ManagedRestService;
 
 import java.io.File;
 
@@ -46,8 +47,9 @@ public class AtomixReplica extends Atomix {
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
       ManagedPartitionService partitions,
+      ManagedRestService restService,
       PrimitiveService primitives) {
-    super(metadata, cluster, messagingService, clusterCommunicator, partitions, primitives);
+    super(metadata, cluster, messagingService, clusterCommunicator, partitions, restService, primitives);
   }
 
   /**
@@ -77,12 +79,14 @@ public class AtomixReplica extends Atomix {
       ManagedPartitionService partitionService = buildPartitionService(metadata,
           p -> new ReplicaPartition(localNode.id(), p, clusterCommunicator, new File(partitionsFolder, p.id().toString())));
       PrimitiveService primitives = buildPrimitiveService(partitionService);
+      ManagedRestService restService = buildRestService(primitives);
       return new AtomixReplica(
           metadata,
           clusterService,
           messagingService,
           clusterCommunicator,
           partitionService,
+          restService,
           primitives);
     }
   }

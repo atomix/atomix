@@ -21,6 +21,7 @@ import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.partition.ManagedPartitionService;
 import io.atomix.partition.impl.ClientPartition;
 import io.atomix.primitives.PrimitiveService;
+import io.atomix.rest.ManagedRestService;
 
 /**
  * Atomix client.
@@ -42,8 +43,9 @@ public class AtomixClient extends Atomix {
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
       ManagedPartitionService partitions,
+      ManagedRestService restService,
       PrimitiveService primitives) {
-    super(metadata, cluster, messagingService, clusterCommunicator, partitions, primitives);
+    super(metadata, cluster, messagingService, clusterCommunicator, partitions, restService, primitives);
   }
 
   /**
@@ -58,12 +60,14 @@ public class AtomixClient extends Atomix {
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
       ManagedPartitionService partitionService = buildPartitionService(metadata, p -> new ClientPartition(localNode.id(), p, clusterCommunicator));
       PrimitiveService primitives = buildPrimitiveService(partitionService);
+      ManagedRestService restService = buildRestService(primitives);
       return new AtomixClient(
           metadata,
           clusterService,
           messagingService,
           clusterCommunicator,
           partitionService,
+          restService,
           primitives);
     }
   }

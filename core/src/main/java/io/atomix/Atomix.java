@@ -46,6 +46,8 @@ import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
 import io.atomix.primitives.set.DistributedSetBuilder;
 import io.atomix.primitives.tree.DocumentTreeBuilder;
 import io.atomix.primitives.value.AtomicValueBuilder;
+import io.atomix.rest.ManagedRestService;
+import io.atomix.rest.impl.VertxRestService;
 import io.atomix.utils.Managed;
 
 import java.util.Arrays;
@@ -69,6 +71,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
   private final ManagedMessagingService messagingService;
   private final ManagedClusterCommunicationService clusterCommunicator;
   private final ManagedPartitionService partitions;
+  private final ManagedRestService restService;
   private final PrimitiveService primitives;
   private final AtomicBoolean open = new AtomicBoolean();
 
@@ -78,11 +81,13 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
       ManagedPartitionService partitions,
+      ManagedRestService restService,
       PrimitiveService primitives) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
     this.partitions = checkNotNull(partitions, "partitions cannot be null");
+    this.restService = restService; // ManagedRestService can be null
     this.primitives = checkNotNull(primitives, "primitives cannot be null");
   }
 
@@ -192,6 +197,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
         .thenCompose(v -> cluster.open())
         .thenCompose(v -> clusterCommunicator.open())
         .thenCompose(v -> partitions.open())
+        .thenCompose(v -> restService != null ? restService.open() : CompletableFuture.completedFuture(null))
         .thenApply(v -> {
           open.set(true);
           return this;
@@ -226,6 +232,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
   public abstract static class Builder implements io.atomix.utils.Builder<Atomix> {
     private static final String DEFAULT_CLUSTER_NAME = "atomix";
     protected String name = DEFAULT_CLUSTER_NAME;
+    protected int httpPort;
     protected Node localNode;
     protected Collection<Node> bootstrapNodes;
     protected int numPartitions;
@@ -242,6 +249,17 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
      */
     public Builder withClusterName(String name) {
       this.name = checkNotNull(name, "name cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the HTTP port.
+     *
+     * @param httpPort the HTTP port
+     * @return the Atomix builder
+     */
+    public Builder withHttpPort(int httpPort) {
+      this.httpPort = httpPort;
       return this;
     }
 
@@ -349,7 +367,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
     protected ManagedMessagingService buildMessagingService() {
       return NettyMessagingService.newBuilder()
           .withName(name)
-          .withEndpoint(new Endpoint(localNode.address(), localNode.port()))
+          .withEndpoint(new Endpoint(localNode.address(), localNode.tcpPort()))
           .build();
     }
 
@@ -389,6 +407,13 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
       Map<Integer, DistributedPrimitiveCreator > members = new HashMap<>();
       partitionService.getPartitions().forEach(p -> members.put(p.id().id(), partitionService.getPrimitiveCreator(p.id())));
       return new FederatedPrimitiveService(members, numBuckets);
+    }
+
+    /**
+     * Builds a REST service.
+     */
+    protected ManagedRestService buildRestService(PrimitiveService primitiveService) {
+      return httpPort > 0 ? new VertxRestService(localNode.address().getHostAddress(), httpPort, primitiveService) : null;
     }
   }
 }

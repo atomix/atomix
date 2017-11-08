@@ -163,14 +163,14 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   private CompletableFuture<Void> doUnicast(MessageSubject subject, byte[] payload, NodeId toNodeId) {
     Node node = cluster.node(toNodeId);
     checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
-    Endpoint nodeEp = new Endpoint(node.address(), node.port());
+    Endpoint nodeEp = new Endpoint(node.address(), node.tcpPort());
     return messagingService.sendAsync(nodeEp, subject.toString(), payload);
   }
 
   private CompletableFuture<byte[]> sendAndReceive(MessageSubject subject, byte[] payload, NodeId toNodeId) {
     Node node = cluster.node(toNodeId);
     checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
-    Endpoint nodeEp = new Endpoint(node.address(), node.port());
+    Endpoint nodeEp = new Endpoint(node.address(), node.tcpPort());
     return messagingService.sendAndReceive(nodeEp, subject.toString(), payload);
   }
 

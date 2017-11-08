@@ -143,7 +143,7 @@ public class DefaultClusterService implements ManagedClusterService {
    * Sends a heartbeat to the given peer.
    */
   private void sendHeartbeat(byte[] messagePayload, Node peer) {
-    Endpoint remoteEp = new Endpoint(peer.address(), peer.port());
+    Endpoint remoteEp = new Endpoint(peer.address(), peer.tcpPort());
     messagingService.sendAsync(remoteEp, HEARTBEAT_MESSAGE, messagePayload).whenComplete((result, error) -> {
       if (error != null) {
         LOGGER.trace("Sending heartbeat to {} failed", remoteEp, error);

@@ -103,7 +103,7 @@ public abstract class Node {
    *
    * @return TCP port
    */
-  public int port() {
+  public int tcpPort() {
     return port;
   }
 

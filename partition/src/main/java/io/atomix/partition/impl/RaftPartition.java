@@ -28,7 +28,7 @@ import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.Ordering;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
 import io.atomix.primitives.counter.impl.DefaultAtomicCounterBuilder;
-import io.atomix.primitives.counter.impl.RaftCounterService;
+import io.atomix.primitives.counter.impl.RaftAtomicCounterService;
 import io.atomix.primitives.generator.AtomicIdGeneratorBuilder;
 import io.atomix.primitives.generator.impl.DefaultAtomicIdGeneratorBuilder;
 import io.atomix.primitives.leadership.LeaderElectorBuilder;
@@ -82,7 +82,7 @@ public abstract class RaftPartition implements ManagedPartition {
           .put(DistributedPrimitive.Type.CONSISTENT_TREEMAP.name(), RaftConsistentTreeMapService::new)
           .put(DistributedPrimitive.Type.CONSISTENT_MULTIMAP.name(), RaftConsistentSetMultimapService::new)
           .put(DistributedPrimitive.Type.COUNTER_MAP.name(), RaftAtomicCounterMapService::new)
-          .put(DistributedPrimitive.Type.COUNTER.name(), RaftCounterService::new)
+          .put(DistributedPrimitive.Type.COUNTER.name(), RaftAtomicCounterService::new)
           .put(DistributedPrimitive.Type.LEADER_ELECTOR.name(), RaftLeaderElectorService::new)
           .put(DistributedPrimitive.Type.WORK_QUEUE.name(), RaftWorkQueueService::new)
           .put(Type.VALUE.name(), RaftAtomicValueService::new)

@@ -21,7 +21,7 @@ import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.DistributedPrimitives;
 import io.atomix.primitives.Ordering;
 import io.atomix.primitives.counter.AsyncAtomicCounter;
-import io.atomix.primitives.counter.impl.RaftCounter;
+import io.atomix.primitives.counter.impl.RaftAtomicCounter;
 import io.atomix.primitives.generator.AsyncAtomicIdGenerator;
 import io.atomix.primitives.generator.impl.RaftIdGenerator;
 import io.atomix.primitives.leadership.AsyncLeaderElector;
@@ -205,7 +205,7 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
 
   @Override
   public AsyncAtomicCounter newAsyncCounter(String name) {
-    return new RaftCounter(client.newProxyBuilder()
+    return new RaftAtomicCounter(client.newProxyBuilder()
         .withName(name)
         .withServiceType(DistributedPrimitive.Type.COUNTER.name())
         .withReadConsistency(ReadConsistency.LINEARIZABLE_LEASE)

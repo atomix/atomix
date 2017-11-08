@@ -15,7 +15,7 @@
  */
 package io.atomix.partition.impl;
 
-import io.atomix.primitives.counter.impl.RaftCounterOperations;
+import io.atomix.primitives.counter.impl.RaftAtomicCounterOperations;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorEvents;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations;
 import io.atomix.primitives.lock.impl.RaftDistributedLockEvents;
@@ -173,7 +173,7 @@ public final class RaftNamespaces {
       .register(RaftConsistentSetMultimapOperations.class)
       .register(RaftConsistentSetMultimapEvents.class)
       .register(RaftConsistentTreeMapOperations.class)
-      .register(RaftCounterOperations.class)
+      .register(RaftAtomicCounterOperations.class)
       .register(RaftDocumentTreeEvents.class)
       .register(RaftDocumentTreeOperations.class)
       .register(RaftLeaderElectorEvents.class)
@@ -213,7 +213,7 @@ public final class RaftNamespaces {
       .register(RaftConsistentMapOperations.class)
       .register(RaftConsistentSetMultimapOperations.class)
       .register(RaftConsistentTreeMapOperations.class)
-      .register(RaftCounterOperations.class)
+      .register(RaftAtomicCounterOperations.class)
       .register(RaftDocumentTreeOperations.class)
       .register(RaftLeaderElectorOperations.class)
       .register(RaftWorkQueueOperations.class)
