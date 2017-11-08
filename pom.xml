@@ -95,8 +95,11 @@
 
   <modules>
     <module>core</module>
+    <module>cluster</module>
     <module>event</module>
     <module>messaging</module>
+    <module>partition</module>
+    <module>primitives</module>
     <module>protocols</module>
     <module>serializer</module>
     <module>storage</module>

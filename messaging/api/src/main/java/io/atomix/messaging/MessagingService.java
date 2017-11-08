@@ -15,8 +15,6 @@
  */
 package io.atomix.messaging;
 
-import io.atomix.utils.Managed;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
@@ -25,7 +23,7 @@ import java.util.function.BiFunction;
 /**
  * Interface for low level messaging primitives.
  */
-public interface MessagingService extends Managed<MessagingService> {
+public interface MessagingService {
 
   /**
    * Sends a message asynchronously to the specified communication end point.

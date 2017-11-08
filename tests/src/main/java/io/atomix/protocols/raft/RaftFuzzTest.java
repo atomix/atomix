@@ -18,7 +18,7 @@ package io.atomix.protocols.raft;
 import com.google.common.collect.Maps;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.netty.NettyMessagingManager;
+import io.atomix.messaging.netty.NettyMessagingService;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -555,7 +555,7 @@ public class RaftFuzzTest implements Runnable {
     if (USE_NETTY) {
       try {
         Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-        MessagingService messagingManager = NettyMessagingManager.newBuilder().withEndpoint(endpoint).build().open().join();
+        MessagingService messagingManager = NettyMessagingService.newBuilder().withEndpoint(endpoint).build().open().join();
         messagingServices.add(messagingManager);
         endpointMap.put(member.memberId(), endpoint);
         protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
@@ -590,7 +590,7 @@ public class RaftFuzzTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      MessagingService messagingManager = NettyMessagingManager.newBuilder().withEndpoint(endpoint).build().open().join();
+      MessagingService messagingManager = NettyMessagingService.newBuilder().withEndpoint(endpoint).build().open().join();
       endpointMap.put(memberId, endpoint);
       protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
     } else {

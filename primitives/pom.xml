@@ -23,10 +23,15 @@
   </parent>
 
   <packaging>bundle</packaging>
-  <artifactId>atomix</artifactId>
-  <name>Atomix</name>
+  <artifactId>atomix-primitives</artifactId>
+  <name>Atomix Primitives</name>
 
   <dependencies>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-event</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
       <artifactId>atomix-cluster</artifactId>
@@ -34,28 +39,18 @@
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix-netty</artifactId>
+      <artifactId>atomix-raft</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix-partition</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-primitives</artifactId>
+      <artifactId>atomix-kryo</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
       <artifactId>atomix-utils</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>${commons.lang3.version}</version>
     </dependency>
   </dependencies>
 
