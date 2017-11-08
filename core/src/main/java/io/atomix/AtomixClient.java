@@ -15,21 +15,12 @@
  */
 package io.atomix;
 
-import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ManagedClusterService;
-import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
-import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
-import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
-import io.atomix.messaging.netty.NettyMessagingManager;
 import io.atomix.partition.ManagedPartitionService;
 import io.atomix.partition.impl.ClientPartition;
-import io.atomix.partition.impl.DefaultPartitionService;
-import io.atomix.partition.impl.RaftPartition;
-
-import java.util.Collection;
-import java.util.stream.Collectors;
+import io.atomix.primitives.PrimitiveService;
 
 /**
  * Atomix client.
@@ -50,8 +41,9 @@ public class AtomixClient extends Atomix {
       ManagedClusterService cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
-      ManagedPartitionService partitions) {
-    super(metadata, cluster, messagingService, clusterCommunicator, partitions);
+      ManagedPartitionService partitions,
+      PrimitiveService primitives) {
+    super(metadata, cluster, messagingService, clusterCommunicator, partitions, primitives);
   }
 
   /**
@@ -61,20 +53,18 @@ public class AtomixClient extends Atomix {
     @Override
     public Atomix build() {
       AtomixMetadata metadata = buildMetadata();
-      ManagedMessagingService messagingService = NettyMessagingManager.newBuilder()
-          .withName(name)
-          .withEndpoint(new Endpoint(localNode.address(), localNode.port()))
-          .build();
-      ManagedClusterService cluster = new DefaultClusterService(ClusterMetadata.newBuilder()
-          .withLocalNode(localNode)
-          .withBootstrapNodes(bootstrapNodes)
-          .build(), messagingService);
-      ManagedClusterCommunicationService clusterCommunicator = new DefaultClusterCommunicationService(cluster, messagingService);
-      Collection<RaftPartition> partitions = metadata.partitions().stream()
-          .map(p -> new ClientPartition(localNode.id(), p, clusterCommunicator))
-          .collect(Collectors.toList());
-      ManagedPartitionService partitionService = new DefaultPartitionService(partitions);
-      return new AtomixClient(metadata, cluster, messagingService, clusterCommunicator, partitionService);
+      ManagedMessagingService messagingService = buildMessagingService();
+      ManagedClusterService clusterService = buildClusterService(messagingService);
+      ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
+      ManagedPartitionService partitionService = buildPartitionService(metadata, p -> new ClientPartition(localNode.id(), p, clusterCommunicator));
+      PrimitiveService primitives = buildPrimitiveService(partitionService);
+      return new AtomixClient(
+          metadata,
+          clusterService,
+          messagingService,
+          clusterCommunicator,
+          partitionService,
+          primitives);
     }
   }
 }

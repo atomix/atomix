@@ -15,41 +15,37 @@
  */
 package io.atomix;
 
+import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
+import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
+import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
+import io.atomix.messaging.netty.NettyMessagingService;
 import io.atomix.partition.ManagedPartitionService;
 import io.atomix.partition.PartitionMetadata;
 import io.atomix.partition.PartitionService;
+import io.atomix.partition.impl.DefaultPartitionService;
+import io.atomix.partition.impl.RaftPartition;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.PrimitiveService;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
-import io.atomix.primitives.counter.impl.DefaultAtomicCounterBuilder;
 import io.atomix.primitives.generator.AtomicIdGeneratorBuilder;
-import io.atomix.primitives.generator.impl.DefaultAtomicIdGeneratorBuilder;
-import io.atomix.primitives.impl.FederatedDistributedPrimitiveCreator;
+import io.atomix.primitives.impl.FederatedPrimitiveService;
 import io.atomix.primitives.leadership.LeaderElectorBuilder;
-import io.atomix.primitives.leadership.impl.DefaultLeaderElectorBuilder;
 import io.atomix.primitives.lock.DistributedLockBuilder;
-import io.atomix.primitives.lock.impl.DefaultDistributedLockBuilder;
 import io.atomix.primitives.map.AtomicCounterMapBuilder;
 import io.atomix.primitives.map.ConsistentMapBuilder;
 import io.atomix.primitives.map.ConsistentTreeMapBuilder;
-import io.atomix.primitives.map.impl.DefaultAtomicCounterMapBuilder;
-import io.atomix.primitives.map.impl.DefaultConsistentMapBuilder;
-import io.atomix.primitives.map.impl.DefaultConsistentTreeMapBuilder;
 import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
-import io.atomix.primitives.multimap.impl.DefaultConsistentMultimapBuilder;
 import io.atomix.primitives.set.DistributedSetBuilder;
-import io.atomix.primitives.set.impl.DefaultDistributedSetBuilder;
 import io.atomix.primitives.tree.DocumentTreeBuilder;
-import io.atomix.primitives.tree.impl.DefaultDocumentTreeBuilder;
 import io.atomix.primitives.value.AtomicValueBuilder;
-import io.atomix.primitives.value.impl.DefaultAtomicValueBuilder;
 import io.atomix.utils.Managed;
 
 import java.util.Arrays;
@@ -58,6 +54,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -71,7 +69,7 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
   private final ManagedMessagingService messagingService;
   private final ManagedClusterCommunicationService clusterCommunicator;
   private final ManagedPartitionService partitions;
-  private final DistributedPrimitiveCreator federatedPrimitiveCreator;
+  private final PrimitiveService primitives;
   private final AtomicBoolean open = new AtomicBoolean();
 
   protected Atomix(
@@ -79,15 +77,13 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
       ManagedClusterService cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
-      ManagedPartitionService partitions) {
+      ManagedPartitionService partitions,
+      PrimitiveService primitives) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
     this.partitions = checkNotNull(partitions, "partitions cannot be null");
-
-    Map<Integer, DistributedPrimitiveCreator> partitionPrimitiveCreators = new HashMap<>();
-    partitions.getPartitions().forEach(p -> partitionPrimitiveCreators.put(p.id().id(), partitions.getPrimitiveCreator(p.id())));
-    federatedPrimitiveCreator = new FederatedDistributedPrimitiveCreator(partitionPrimitiveCreators, metadata.buckets());
+    this.primitives = checkNotNull(primitives, "primitives cannot be null");
   }
 
   /**
@@ -126,59 +122,68 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
     return partitions;
   }
 
+  /**
+   * Returns the primitive service.
+   *
+   * @return the primitive service
+   */
+  public PrimitiveService getPrimitiveService() {
+    return primitives;
+  }
+
   @Override
   public <K, V> ConsistentMapBuilder<K, V> newConsistentMapBuilder() {
-    return new DefaultConsistentMapBuilder<>(federatedPrimitiveCreator);
+    return primitives.newConsistentMapBuilder();
   }
 
   @Override
   public <V> DocumentTreeBuilder<V> newDocumentTreeBuilder() {
-    return new DefaultDocumentTreeBuilder<>(federatedPrimitiveCreator);
+    return primitives.newDocumentTreeBuilder();
   }
 
   @Override
   public <V> ConsistentTreeMapBuilder<V> newConsistentTreeMapBuilder() {
-    return new DefaultConsistentTreeMapBuilder<>(federatedPrimitiveCreator);
+    return primitives.newConsistentTreeMapBuilder();
   }
 
   @Override
   public <K, V> ConsistentMultimapBuilder<K, V> newConsistentMultimapBuilder() {
-    return new DefaultConsistentMultimapBuilder<>(federatedPrimitiveCreator);
+    return primitives.newConsistentMultimapBuilder();
   }
 
   @Override
   public <K> AtomicCounterMapBuilder<K> newAtomicCounterMapBuilder() {
-    return new DefaultAtomicCounterMapBuilder<>(federatedPrimitiveCreator);
+    return primitives.newAtomicCounterMapBuilder();
   }
 
   @Override
   public <E> DistributedSetBuilder<E> newSetBuilder() {
-    return new DefaultDistributedSetBuilder<>(() -> newConsistentMapBuilder());
+    return primitives.newSetBuilder();
   }
 
   @Override
   public AtomicCounterBuilder newAtomicCounterBuilder() {
-    return new DefaultAtomicCounterBuilder(federatedPrimitiveCreator);
+    return primitives.newAtomicCounterBuilder();
   }
 
   @Override
   public AtomicIdGeneratorBuilder newAtomicIdGeneratorBuilder() {
-    return new DefaultAtomicIdGeneratorBuilder(federatedPrimitiveCreator);
+    return primitives.newAtomicIdGeneratorBuilder();
   }
 
   @Override
   public <V> AtomicValueBuilder<V> newAtomicValueBuilder() {
-    return new DefaultAtomicValueBuilder<>(federatedPrimitiveCreator);
+    return primitives.newAtomicValueBuilder();
   }
 
   @Override
   public <T> LeaderElectorBuilder<T> newLeaderElectorBuilder() {
-    return new DefaultLeaderElectorBuilder<>(federatedPrimitiveCreator);
+    return primitives.newLeaderElectorBuilder();
   }
 
   @Override
   public DistributedLockBuilder newLockBuilder() {
-    return new DefaultDistributedLockBuilder(federatedPrimitiveCreator);
+    return primitives.newLockBuilder();
   }
 
   @Override
@@ -336,6 +341,54 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
           .withNumBuckets(numBuckets)
           .withPartitions(partitions)
           .build();
+    }
+
+    /**
+     * Builds a default messaging service.
+     */
+    protected ManagedMessagingService buildMessagingService() {
+      return NettyMessagingService.newBuilder()
+          .withName(name)
+          .withEndpoint(new Endpoint(localNode.address(), localNode.port()))
+          .build();
+    }
+
+    /**
+     * Builds a cluster service.
+     */
+    protected ManagedClusterService buildClusterService(MessagingService messagingService) {
+      return new DefaultClusterService(ClusterMetadata.newBuilder()
+          .withLocalNode(localNode)
+          .withBootstrapNodes(bootstrapNodes)
+          .build(), messagingService);
+    }
+
+    /**
+     * Builds a cluster communication service.
+     */
+    protected ManagedClusterCommunicationService buildClusterCommunicationService(
+        ClusterService clusterService, MessagingService messagingService) {
+      return new DefaultClusterCommunicationService(clusterService, messagingService);
+    }
+
+    /**
+     * Builds a partition service.
+     */
+    protected ManagedPartitionService buildPartitionService(
+        AtomixMetadata metadata, Function<PartitionMetadata, RaftPartition> factory) {
+      Collection<RaftPartition> partitions = metadata.partitions().stream()
+          .map(factory)
+          .collect(Collectors.toList());
+      return new DefaultPartitionService(partitions);
+    }
+
+    /**
+     * Builds a primitive service.
+     */
+    protected PrimitiveService buildPrimitiveService(PartitionService partitionService) {
+      Map<Integer, DistributedPrimitiveCreator > members = new HashMap<>();
+      partitionService.getPartitions().forEach(p -> members.put(p.id().id(), partitionService.getPrimitiveCreator(p.id())));
+      return new FederatedPrimitiveService(members, numBuckets);
     }
   }
 }

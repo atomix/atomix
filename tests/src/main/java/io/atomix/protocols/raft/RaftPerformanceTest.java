@@ -19,7 +19,7 @@ import com.google.common.collect.Maps;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.netty.NettyMessagingManager;
+import io.atomix.messaging.netty.NettyMessagingService;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -448,7 +448,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftServerProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      ManagedMessagingService messagingService = (ManagedMessagingService) NettyMessagingManager.newBuilder().withEndpoint(endpoint).build().open().join();
+      ManagedMessagingService messagingService = (ManagedMessagingService) NettyMessagingService.newBuilder().withEndpoint(endpoint).build().open().join();
       messagingServices.add(messagingService);
       endpointMap.put(memberId, endpoint);
       protocol = new RaftServerMessagingProtocol(messagingService, protocolSerializer, endpointMap::get);
@@ -482,7 +482,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      MessagingService messagingService = NettyMessagingManager.newBuilder().withEndpoint(endpoint).build().open().join();
+      MessagingService messagingService = NettyMessagingService.newBuilder().withEndpoint(endpoint).build().open().join();
       endpointMap.put(memberId, endpoint);
       protocol = new RaftClientMessagingProtocol(messagingService, protocolSerializer, endpointMap::get);
     } else {

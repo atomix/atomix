@@ -91,7 +91,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Netty based MessagingService.
  */
-public class NettyMessagingManager implements ManagedMessagingService {
+public class NettyMessagingService implements ManagedMessagingService {
 
   /**
    * Returns a new Netty messaging service builder.
@@ -136,7 +136,7 @@ public class NettyMessagingManager implements ManagedMessagingService {
 
     @Override
     public ManagedMessagingService build() {
-      return new NettyMessagingManager(name.hashCode(), endpoint);
+      return new NettyMessagingService(name.hashCode(), endpoint);
     }
   }
 
@@ -187,7 +187,7 @@ public class NettyMessagingManager implements ManagedMessagingService {
   protected TrustManagerFactory trustManager;
   protected KeyManagerFactory keyManager;
 
-  protected NettyMessagingManager(int preamble, Endpoint endpoint) {
+  protected NettyMessagingService(int preamble, Endpoint endpoint) {
     this.preamble = preamble;
     this.localEndpoint = endpoint;
   }

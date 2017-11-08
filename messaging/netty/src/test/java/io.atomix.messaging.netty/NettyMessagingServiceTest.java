@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
 /**
  * Netty messaging service test.
  */
-public class NettyMessagingManagerTest {
+public class NettyMessagingServiceTest {
 
   ManagedMessagingService netty1;
   ManagedMessagingService netty2;
@@ -63,14 +63,14 @@ public class NettyMessagingManagerTest {
   @Before
   public void setUp() throws Exception {
     ep1 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5001));
-    netty1 = (ManagedMessagingService) NettyMessagingManager.newBuilder()
+    netty1 = (ManagedMessagingService) NettyMessagingService.newBuilder()
         .withEndpoint(ep1)
         .build()
         .open()
         .join();
 
     ep2 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5003));
-    netty2 = (ManagedMessagingService) NettyMessagingManager.newBuilder()
+    netty2 = (ManagedMessagingService) NettyMessagingService.newBuilder()
         .withEndpoint(ep2)
         .build()
         .open()
