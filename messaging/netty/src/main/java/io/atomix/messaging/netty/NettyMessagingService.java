@@ -57,6 +57,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.MessageDigest;
@@ -107,6 +109,8 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   public static class Builder extends MessagingService.Builder {
     private static final String DEFAULT_NAME = "atomix";
+    private static final int DEFAULT_PORT = 5678;
+
     private String name = DEFAULT_NAME;
     private Endpoint endpoint;
 
@@ -136,6 +140,13 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     @Override
     public ManagedMessagingService build() {
+      if (endpoint == null) {
+        try {
+          endpoint = new Endpoint(InetAddress.getByName("127.0.0.1"), DEFAULT_PORT);
+        } catch (UnknownHostException e) {
+          throw new IllegalStateException("Failed to instantiate address", e);
+        }
+      }
       return new NettyMessagingService(name.hashCode(), endpoint);
     }
   }

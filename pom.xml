@@ -55,6 +55,7 @@
     <netty.version>4.1.8.Final</netty.version>
     <vertx.version>3.5.0</vertx.version>
     <resteasy.version>3.1.0.Final</resteasy.version>
+    <argparse4j.version>0.7.0</argparse4j.version>
 
     <!-- Maven plugins -->
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
@@ -105,6 +106,7 @@
     <module>protocols</module>
     <module>rest</module>
     <module>serializer</module>
+    <module>server</module>
     <module>storage</module>
     <module>tests</module>
     <module>time</module>
