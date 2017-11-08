@@ -64,7 +64,7 @@ public class DefaultNode extends Node {
    * Default cluster node builder.
    */
   public static class Builder extends Node.Builder {
-    protected static final int DEFAULT_PORT = 5678;
+    protected static final int DEFAULT_PORT = 5679;
 
     @Override
     public Node build() {

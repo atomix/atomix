@@ -15,11 +15,11 @@
  */
 package io.atomix.server;
 
-import com.google.common.base.Joiner;
 import io.atomix.Atomix;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
+import io.atomix.messaging.netty.NettyMessagingService;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -61,7 +61,7 @@ public class AtomixServer {
     parser.addArgument("address")
         .required(true)
         .type(nodeType)
-        .metavar("NAME:HOST:TCP_PORT")
+        .metavar("NAME:HOST:PORT")
         .help("The server address");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
@@ -72,7 +72,7 @@ public class AtomixServer {
         .metavar("PORT")
         .required(false)
         .type(Integer.class)
-        .setDefault(0)
+        .setDefault(5678)
         .help("An optional HTTP server port");
     parser.addArgument("--data-dir", "-d")
         .required(false)
@@ -111,7 +111,7 @@ public class AtomixServer {
 
   private static String[] parseAddress(String address) {
     String[] parsed = address.split(":");
-    if (parsed.length > 3 || parsed.length < 2) {
+    if (parsed.length > 3) {
       throw new IllegalArgumentException("Malformed address " + address);
     }
     return parsed;
@@ -120,26 +120,39 @@ public class AtomixServer {
   private static NodeId parseNodeId(String[] address) {
     if (address.length == 3) {
       return NodeId.from(address[0]);
+    } else if (address.length == 2) {
+      return NodeId.from(parseEndpoint(address).toString());
     } else {
-      return NodeId.from(Joiner.on(":").join(address));
+      try {
+        InetAddress.getByName(address[0]);
+        return NodeId.from(parseEndpoint(address).toString());
+      } catch (UnknownHostException e) {
+        return NodeId.from(address[0]);
+      }
     }
   }
 
   private static Endpoint parseEndpoint(String[] address) {
     String host;
-    String port;
+    int port;
     if (address.length == 3) {
       host = address[1];
-      port = address[2];
+      port = Integer.parseInt(address[2]);
+    } else if (address.length == 2) {
+      try {
+        host = address[0];
+        port = Integer.parseInt(address[1]);
+      } catch (NumberFormatException e) {
+        host = address[1];
+        port = NettyMessagingService.DEFAULT_PORT;
+      }
     } else {
       host = address[0];
-      port = address[1];
+      port = NettyMessagingService.DEFAULT_PORT;
     }
 
     try {
-      return new Endpoint(InetAddress.getByName(host), Integer.parseInt(port));
-    } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("Malformed TCP port " + port);
+      return new Endpoint(InetAddress.getByName(host), port);
     } catch (UnknownHostException e) {
       throw new IllegalArgumentException("Failed to resolve host", e);
     }

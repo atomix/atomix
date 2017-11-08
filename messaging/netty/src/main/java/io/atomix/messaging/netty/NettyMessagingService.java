@@ -94,6 +94,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * Netty based MessagingService.
  */
 public class NettyMessagingService implements ManagedMessagingService {
+  private static final String DEFAULT_NAME = "atomix";
+  public static final int DEFAULT_PORT = 5679;
 
   /**
    * Returns a new Netty messaging service builder.
@@ -108,9 +110,6 @@ public class NettyMessagingService implements ManagedMessagingService {
    * Netty messaging service builder.
    */
   public static class Builder extends MessagingService.Builder {
-    private static final String DEFAULT_NAME = "atomix";
-    private static final int DEFAULT_PORT = 5678;
-
     private String name = DEFAULT_NAME;
     private Endpoint endpoint;
 
