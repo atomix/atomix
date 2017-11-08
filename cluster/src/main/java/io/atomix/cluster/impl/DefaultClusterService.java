@@ -217,6 +217,7 @@ public class DefaultClusterService implements ManagedClusterService {
       localNode.setState(State.ACTIVE);
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(this::sendHeartbeats, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
     }
+    LOGGER.info("Started");
     return CompletableFuture.completedFuture(this);
   }
 
@@ -231,6 +232,7 @@ public class DefaultClusterService implements ManagedClusterService {
       localNode.setState(State.INACTIVE);
       heartbeatFuture.cancel(true);
     }
+    LOGGER.info("Stopped");
     return CompletableFuture.completedFuture(null);
   }
 

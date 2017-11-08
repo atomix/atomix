@@ -42,7 +42,7 @@ public final class Endpoint {
 
   @Override
   public String toString() {
-    return String.format("%s:%d", host().getHostName(), port);
+    return String.format("%s:%d", host().getHostAddress(), port);
   }
 
   @Override

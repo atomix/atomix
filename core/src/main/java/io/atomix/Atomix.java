@@ -51,6 +51,10 @@ import io.atomix.primitives.value.AtomicValueBuilder;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.impl.VertxRestService;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.SingleThreadContext;
+import io.atomix.utils.concurrent.ThreadContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -85,6 +89,8 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     return new Builder();
   }
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
+
   private final ManagedClusterService cluster;
   private final ManagedMessagingService messagingService;
   private final ManagedClusterCommunicationService clusterCommunicator;
@@ -92,6 +98,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
   private final ManagedRestService restService;
   private final PrimitiveService primitives;
   private final AtomicBoolean open = new AtomicBoolean();
+  private final ThreadContext context = new SingleThreadContext("atomix-%d");
 
   protected Atomix(
       ManagedClusterService cluster,
@@ -211,14 +218,15 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
   @Override
   public CompletableFuture<Atomix> open() {
     return messagingService.open()
-        .thenCompose(v -> cluster.open())
-        .thenCompose(v -> clusterCommunicator.open())
-        .thenCompose(v -> partitions.open())
-        .thenCompose(v -> restService != null ? restService.open() : CompletableFuture.completedFuture(null))
-        .thenApply(v -> {
+        .thenComposeAsync(v -> cluster.open(), context)
+        .thenComposeAsync(v -> clusterCommunicator.open(), context)
+        .thenComposeAsync(v -> partitions.open(), context)
+        .thenComposeAsync(v -> restService != null ? restService.open() : CompletableFuture.completedFuture(null), context)
+        .thenApplyAsync(v -> {
           open.set(true);
+          LOGGER.info("Started");
           return this;
-        });
+        }, context);
   }
 
   @Override
@@ -228,7 +236,16 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
 
   @Override
   public CompletableFuture<Void> close() {
-    return null;
+    return restService.close()
+        .thenComposeAsync(v -> partitions.close(), context)
+        .thenComposeAsync(v -> clusterCommunicator.close(), context)
+        .thenComposeAsync(v -> cluster.close(), context)
+        .thenComposeAsync(v -> messagingService.close(), context)
+        .thenRunAsync(() -> {
+          context.close();
+          open.set(false);
+          LOGGER.info("Stopped");
+        });
   }
 
   @Override
@@ -256,7 +273,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     private int partitionSize;
     private int numBuckets;
     private Collection<PartitionMetadata> partitions;
-    private File dataFolder = new File(System.getProperty("user.dir"), "data");
+    private File dataDir = new File(System.getProperty("user.dir"), "data");
 
     /**
      * Sets the cluster name.
@@ -372,13 +389,13 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
      * @return the replica builder
      */
     public Builder withDataDir(File dataDir) {
-      this.dataFolder = checkNotNull(dataDir, "dataDir cannot be null");
+      this.dataDir = checkNotNull(dataDir, "dataDir cannot be null");
       return this;
     }
 
     @Override
     public Atomix build() {
-      File partitionsDir = new File(this.dataFolder, "partitions");
+      File partitionsDir = new File(this.dataDir, "partitions");
       ManagedMessagingService messagingService = buildMessagingService();
       ManagedClusterService clusterService = buildClusterService(messagingService);
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);

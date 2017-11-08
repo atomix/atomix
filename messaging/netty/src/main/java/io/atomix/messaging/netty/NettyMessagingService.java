@@ -168,7 +168,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   //TODO CONFIG_DIR is duplicated from ConfigFileBasedClusterMetadataProvider
   private static final String CONFIG_DIR = "../config";
-  private static final String KS_FILE_NAME = "onos.jks";
+  private static final String KS_FILE_NAME = "atomix.jks";
   private static final File DEFAULT_KS_FILE = new File(CONFIG_DIR, KS_FILE_NAME);
   private static final String DEFAULT_KS_PASSWORD = "changeit";
 

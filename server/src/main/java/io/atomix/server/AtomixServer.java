@@ -30,6 +30,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -90,8 +91,12 @@ public class AtomixServer {
 
     Node localNode = namespace.get("address");
     List<Node> bootstrap = namespace.getList("bootstrap");
-    File dataDir = namespace.get("data-dir");
-    Integer httpPort = namespace.getInt("http-port");
+    if (bootstrap == null) {
+      bootstrap = Collections.singletonList(localNode);
+    }
+
+    File dataDir = namespace.get("data_dir");
+    Integer httpPort = namespace.getInt("http_port");
 
     Atomix atomix = Atomix.newBuilder()
         .withLocalNode(localNode)
@@ -109,7 +114,7 @@ public class AtomixServer {
     }
   }
 
-  private static String[] parseAddress(String address) {
+  static String[] parseAddress(String address) {
     String[] parsed = address.split(":");
     if (parsed.length > 3) {
       throw new IllegalArgumentException("Malformed address " + address);
@@ -117,10 +122,15 @@ public class AtomixServer {
     return parsed;
   }
 
-  private static NodeId parseNodeId(String[] address) {
+  static NodeId parseNodeId(String[] address) {
     if (address.length == 3) {
       return NodeId.from(address[0]);
     } else if (address.length == 2) {
+      try {
+        InetAddress.getByName(address[0]);
+      } catch (UnknownHostException e) {
+        return NodeId.from(address[0]);
+      }
       return NodeId.from(parseEndpoint(address).toString());
     } else {
       try {
@@ -132,7 +142,7 @@ public class AtomixServer {
     }
   }
 
-  private static Endpoint parseEndpoint(String[] address) {
+  static Endpoint parseEndpoint(String[] address) {
     String host;
     int port;
     if (address.length == 3) {
@@ -147,7 +157,12 @@ public class AtomixServer {
         port = NettyMessagingService.DEFAULT_PORT;
       }
     } else {
-      host = address[0];
+      try {
+        InetAddress.getByName(address[0]);
+        host = address[0];
+      } catch (UnknownHostException e) {
+        host = "127.0.0.1";
+      }
       port = NettyMessagingService.DEFAULT_PORT;
     }
 

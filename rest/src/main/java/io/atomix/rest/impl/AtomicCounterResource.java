@@ -20,6 +20,7 @@ import io.atomix.primitives.counter.AsyncAtomicCounter;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
@@ -53,7 +54,7 @@ public class AtomicCounterResource extends AbstractRestResource {
     });
   }
 
-  @POST
+  @PUT
   @Path("/")
   @Consumes(MediaType.TEXT_PLAIN)
   public void set(Long value, @Suspended AsyncResponse response) {

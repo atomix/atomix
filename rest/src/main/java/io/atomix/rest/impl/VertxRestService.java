@@ -22,6 +22,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import org.jboss.resteasy.plugins.server.vertx.VertxRequestHandler;
 import org.jboss.resteasy.plugins.server.vertx.VertxResteasyDeployment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Vert.x REST service.
  */
 public class VertxRestService implements ManagedRestService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(VertxRestService.class);
   private static final int PRIMITIVE_CACHE_SIZE = 1000;
 
   private final String host;
@@ -59,6 +62,7 @@ public class VertxRestService implements ManagedRestService {
     server.listen(port, host, result -> {
       if (result.succeeded()) {
         open.set(true);
+        LOGGER.info("Started");
         future.complete(this);
       } else {
         future.completeExceptionally(result.cause());
@@ -76,7 +80,10 @@ public class VertxRestService implements ManagedRestService {
   public CompletableFuture<Void> close() {
     if (server != null) {
       CompletableFuture<Void> future = new CompletableFuture<>();
-      server.close(result -> future.complete(null));
+      server.close(result -> {
+        LOGGER.info("Stopped");
+        future.complete(null);
+      });
       deployment.stop();
       return future;
     }

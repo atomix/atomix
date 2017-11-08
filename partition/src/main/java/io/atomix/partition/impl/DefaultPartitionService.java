@@ -21,6 +21,8 @@ import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionService;
 import io.atomix.primitives.DistributedPrimitiveCreator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -33,6 +35,8 @@ import java.util.stream.Collectors;
  * Default partition service.
  */
 public class DefaultPartitionService implements ManagedPartitionService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionService.class);
+
   private final TreeMap<PartitionId, RaftPartition> partitions = new TreeMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
 
@@ -63,6 +67,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
       open.set(true);
+      LOGGER.info("Started");
       return this;
     });
   }
@@ -79,6 +84,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
       open.set(false);
+      LOGGER.info("Stopped");
     });
   }
 

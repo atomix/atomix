@@ -25,6 +25,7 @@ function atomix {
         mvn clean package
         ;;
     "server")
+        shift
         bash ${ATOMIX_ROOT}/bin/atomix "$@"
         ;;
     *)

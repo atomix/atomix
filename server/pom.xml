@@ -37,6 +37,11 @@
       <artifactId>argparse4j</artifactId>
       <version>${argparse4j.version}</version>
     </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
