@@ -32,27 +32,22 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Node> {
     /**
      * Signifies that a new cluster instance has been administratively added.
      */
-    INSTANCE_ADDED,
+    NODE_ADDED,
 
     /**
      * Signifies that a cluster instance has been administratively removed.
      */
-    INSTANCE_REMOVED,
+    NODE_REMOVED,
 
     /**
      * Signifies that a cluster instance became active.
      */
-    INSTANCE_ACTIVATED,
-
-    /**
-     * Signifies that a cluster instance became ready.
-     */
-    INSTANCE_READY,
+    NODE_ACTIVATED,
 
     /**
      * Signifies that a cluster instance became inactive.
      */
-    INSTANCE_DEACTIVATED
+    NODE_DEACTIVATED
   }
 
   /**

@@ -38,15 +38,25 @@ public abstract class Node {
   }
 
   /**
+   * Node type.
+   */
+  public enum Type {
+
+    /**
+     * Represents a core node.
+     */
+    CORE,
+
+    /**
+     * Represents a client node.
+     */
+    CLIENT,
+  }
+
+  /**
    * Represents the operational state of the instance.
    */
   public enum State {
-
-    /**
-     * Signifies that the instance is active and that all components are
-     * operating normally.
-     */
-    READY,
 
     /**
      * Signifies that the instance is active and operating normally.
@@ -57,25 +67,7 @@ public abstract class Node {
      * Signifies that the instance is inactive, which means either down or
      * up, but not operational.
      */
-    INACTIVE;
-
-    /**
-     * Indicates whether the state represents node which is active or ready.
-     *
-     * @return true if active or ready
-     */
-    public boolean isActive() {
-      return this == ACTIVE || this == READY;
-    }
-
-    /**
-     * Indicates whether the state represents a node which is ready.
-     *
-     * @return true if active and ready
-     */
-    public boolean isReady() {
-      return this == READY;
-    }
+    INACTIVE,
   }
 
   private final NodeId id;
@@ -114,6 +106,13 @@ public abstract class Node {
   public int port() {
     return port;
   }
+
+  /**
+   * Returns the node type.
+   *
+   * @return the node type
+   */
+  public abstract Type type();
 
   /**
    * Returns the node state.

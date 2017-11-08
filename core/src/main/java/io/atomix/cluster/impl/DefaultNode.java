@@ -25,10 +25,24 @@ import java.net.UnknownHostException;
  * Default cluster node.
  */
 public class DefaultNode extends Node {
+  private Type type = Type.CLIENT;
   private State state = State.INACTIVE;
 
   public DefaultNode(NodeId id, InetAddress address, int port) {
     super(id, address, port);
+  }
+
+  /**
+   * Updates the node type.
+   */
+  public DefaultNode setType(Type type) {
+    this.type = type;
+    return this;
+  }
+
+  @Override
+  public Type type() {
+    return type;
   }
 
   /**

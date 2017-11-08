@@ -16,6 +16,8 @@
 package io.atomix.cluster;
 
 import com.google.common.collect.Sets;
+import io.atomix.cluster.Node.Type;
+import io.atomix.cluster.impl.DefaultNode;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionMetadata;
 
@@ -26,6 +28,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -58,8 +61,10 @@ public class ClusterMetadata {
       Collection<PartitionMetadata> partitions,
       int buckets) {
     this.name = checkNotNull(name, "name cannot be null");
-    this.localNode = checkNotNull(localNode, "localNode cannot be null");
-    this.bootstrapNodes = checkNotNull(bootstrapNodes, "bootstrapNodes cannot be null");
+    this.localNode = ((DefaultNode) localNode).setType(bootstrapNodes.contains(localNode) ? Type.CORE : Type.CLIENT);
+    this.bootstrapNodes = bootstrapNodes.stream()
+        .map(node -> ((DefaultNode) node).setType(Type.CORE))
+        .collect(Collectors.toList());
     this.partitions = checkNotNull(partitions, "partitions cannot be null");
     this.buckets = buckets;
   }
