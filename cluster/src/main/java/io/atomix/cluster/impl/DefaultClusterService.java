@@ -69,7 +69,7 @@ public class DefaultClusterService implements ManagedClusterService {
       KryoNamespace.newBuilder()
           .register(KryoNamespaces.BASIC)
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
-          .register(DefaultNode.class)
+          .register(NodeId.class)
           .build("ClusterStore"));
 
   private static final String INSTANCE_ID_NULL = "Instance ID cannot be null";

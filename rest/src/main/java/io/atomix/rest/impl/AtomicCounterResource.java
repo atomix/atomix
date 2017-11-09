@@ -16,6 +16,8 @@
 package io.atomix.rest.impl;
 
 import io.atomix.primitives.counter.AsyncAtomicCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -33,6 +35,8 @@ import javax.ws.rs.core.Response.Status;
  * Atomic counter resource.
  */
 public class AtomicCounterResource extends AbstractRestResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AtomicCounterResource.class);
+
   private final AsyncAtomicCounter counter;
 
   public AtomicCounterResource(AsyncAtomicCounter counter) {
@@ -49,6 +53,7 @@ public class AtomicCounterResource extends AbstractRestResource {
             .entity(result)
             .build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });
@@ -62,6 +67,7 @@ public class AtomicCounterResource extends AbstractRestResource {
       if (error == null) {
         response.resume(Response.status(Status.OK).build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });
@@ -77,6 +83,7 @@ public class AtomicCounterResource extends AbstractRestResource {
             .entity(result)
             .build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });

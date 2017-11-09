@@ -21,7 +21,7 @@
         </encoder>
     </appender>
 
-    <logger name="io.atomix" level="INFO" />
+    <logger name="io.atomix" level="TRACE" />
     <logger name="io.netty.handler.logging.LoggingHandler" level="INFO"/>
 
     <root level="INFO">

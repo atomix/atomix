@@ -68,7 +68,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -265,13 +264,14 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
    */
   public static class Builder implements io.atomix.utils.Builder<Atomix> {
     private static final String DEFAULT_CLUSTER_NAME = "atomix";
+    private static final int DEFAULT_NUM_BUCKETS = 128;
     private String name = DEFAULT_CLUSTER_NAME;
     private int httpPort;
     private Node localNode;
     private Collection<Node> bootstrapNodes;
     private int numPartitions;
     private int partitionSize;
-    private int numBuckets;
+    private int numBuckets = DEFAULT_NUM_BUCKETS;
     private Collection<PartitionMetadata> partitions;
     private File dataDir = new File(System.getProperty("user.dir"), "data");
 
@@ -395,12 +395,10 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
 
     @Override
     public Atomix build() {
-      File partitionsDir = new File(this.dataDir, "partitions");
       ManagedMessagingService messagingService = buildMessagingService();
       ManagedClusterService clusterService = buildClusterService(messagingService);
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
-      ManagedPartitionService partitionService = buildPartitionService(
-          p -> new RaftPartition(localNode.id(), p, clusterCommunicator, new File(partitionsDir, p.id().toString())));
+      ManagedPartitionService partitionService = buildPartitionService(clusterCommunicator);
       PrimitiveService primitives = buildPrimitiveService(partitionService);
       ManagedRestService restService = buildRestService(primitives);
       return new Atomix(
@@ -443,9 +441,10 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     /**
      * Builds a partition service.
      */
-    private ManagedPartitionService buildPartitionService(Function<PartitionMetadata, RaftPartition> factory) {
+    private ManagedPartitionService buildPartitionService(ClusterCommunicationService clusterCommunicator) {
+      File partitionsDir = new File(this.dataDir, "partitions");
       Collection<RaftPartition> partitions = buildPartitions().stream()
-          .map(factory)
+          .map(p -> new RaftPartition(localNode.id(), p, clusterCommunicator, new File(partitionsDir, p.id().toString())))
           .collect(Collectors.toList());
       return new DefaultPartitionService(partitions);
     }
@@ -474,7 +473,15 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
         return partitions;
       }
 
-      List<Node> sorted = new ArrayList<>(bootstrapNodes.size());
+      if (numPartitions == 0) {
+        numPartitions = bootstrapNodes.size();
+      }
+
+      if (partitionSize == 0) {
+        partitionSize = Math.min(bootstrapNodes.size(), 3);
+      }
+
+      List<Node> sorted = new ArrayList<>(bootstrapNodes);
       sorted.sort(Comparator.comparing(Node::id));
 
       Set<PartitionMetadata> partitions = Sets.newHashSet();

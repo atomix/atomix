@@ -17,6 +17,8 @@ package io.atomix.rest.impl;
 
 import io.atomix.primitives.map.AsyncConsistentMap;
 import io.atomix.time.Versioned;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -36,6 +38,8 @@ import javax.ws.rs.core.Response.Status;
  * Consistent map resource.
  */
 public class ConsistentMapResource extends AbstractRestResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConsistentMapResource.class);
+
   private final AsyncConsistentMap<String, String> map;
 
   public ConsistentMapResource(AsyncConsistentMap<String, String> map) {
@@ -49,9 +53,10 @@ public class ConsistentMapResource extends AbstractRestResource {
     map.get(key).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.status(Status.OK)
-            .entity(new VersionedResult(result))
+            .entity(result != null ? new VersionedResult(result) : null)
             .build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });
@@ -68,6 +73,7 @@ public class ConsistentMapResource extends AbstractRestResource {
             .entity(result != null ? new VersionedResult(result) : null)
             .build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });
@@ -83,6 +89,7 @@ public class ConsistentMapResource extends AbstractRestResource {
             .entity(result != null ? new VersionedResult(result) : null)
             .build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });
@@ -98,6 +105,7 @@ public class ConsistentMapResource extends AbstractRestResource {
             .entity(result)
             .build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });
@@ -113,6 +121,7 @@ public class ConsistentMapResource extends AbstractRestResource {
             .entity(result)
             .build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });
@@ -125,6 +134,7 @@ public class ConsistentMapResource extends AbstractRestResource {
       if (error == null) {
         response.resume(Response.status(Status.NO_CONTENT).build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
       }
     });

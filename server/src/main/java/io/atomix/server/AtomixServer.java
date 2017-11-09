@@ -26,6 +26,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.ArgumentType;
 import net.sourceforge.argparse4j.inf.Namespace;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -37,6 +39,8 @@ import java.util.List;
  * Atomix server.
  */
 public class AtomixServer {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AtomixServer.class);
+
   public static void main(String[] args) throws Exception {
     ArgumentType<Node> nodeType = new ArgumentType<Node>() {
       @Override
@@ -59,11 +63,11 @@ public class AtomixServer {
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
         .description("Atomix server");
-    parser.addArgument("address")
+    parser.addArgument("node")
         .required(true)
         .type(nodeType)
         .metavar("NAME:HOST:PORT")
-        .help("The server address");
+        .help("The local node info");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
         .metavar("NAME:HOST:PORT")
@@ -89,7 +93,7 @@ public class AtomixServer {
       System.exit(1);
     }
 
-    Node localNode = namespace.get("address");
+    Node localNode = namespace.get("node");
     List<Node> bootstrap = namespace.getList("bootstrap");
     if (bootstrap == null) {
       bootstrap = Collections.singletonList(localNode);
@@ -97,6 +101,10 @@ public class AtomixServer {
 
     File dataDir = namespace.get("data_dir");
     Integer httpPort = namespace.getInt("http_port");
+
+    LOGGER.info("node: {}", localNode);
+    LOGGER.info("bootstrap: {}", bootstrap);
+    LOGGER.info("data directory: {}", dataDir);
 
     Atomix atomix = Atomix.newBuilder()
         .withLocalNode(localNode)
