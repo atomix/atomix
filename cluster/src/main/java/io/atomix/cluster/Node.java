@@ -18,6 +18,8 @@ package io.atomix.cluster;
 import io.atomix.cluster.impl.DefaultNode;
 import io.atomix.messaging.Endpoint;
 
+import java.util.Objects;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -107,6 +109,16 @@ public abstract class Node {
    * @return the node state
    */
   public abstract State state();
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Node && ((Node) object).id.equals(id);
+  }
 
   @Override
   public String toString() {

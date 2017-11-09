@@ -72,9 +72,6 @@ public class DefaultClusterService implements ManagedClusterService {
           .register(NodeId.class)
           .build("ClusterStore"));
 
-  private static final String INSTANCE_ID_NULL = "Instance ID cannot be null";
-
-  private final ClusterMetadata clusterMetadata;
   private final MessagingService messagingService;
   private final AtomicBoolean open = new AtomicBoolean();
   private final DefaultNode localNode;
@@ -89,7 +86,6 @@ public class DefaultClusterService implements ManagedClusterService {
   private ScheduledFuture<?> heartbeatFuture;
 
   public DefaultClusterService(ClusterMetadata clusterMetadata, MessagingService messagingService) {
-    this.clusterMetadata = checkNotNull(clusterMetadata, "clusterMetadata cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.localNode = (DefaultNode) clusterMetadata.localNode();
     if (clusterMetadata.bootstrapNodes().contains(localNode)) {
@@ -98,7 +94,7 @@ public class DefaultClusterService implements ManagedClusterService {
       localNode.setType(Node.Type.CLIENT);
     }
     nodes.put(localNode.id(), localNode);
-    clusterMetadata.bootstrapNodes().forEach(n -> nodes.put(n.id(), ((DefaultNode) n).setType(Node.Type.CORE)));
+    clusterMetadata.bootstrapNodes().forEach(n -> nodes.putIfAbsent(n.id(), ((DefaultNode) n).setType(Node.Type.CORE)));
     messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
   }
 
@@ -124,7 +120,7 @@ public class DefaultClusterService implements ManagedClusterService {
     try {
       Set<DefaultNode> peers = nodes.values()
           .stream()
-          .filter(node -> !(node.id().equals(localNode().id())))
+          .filter(node -> !node.id().equals(localNode().id()))
           .collect(Collectors.toSet());
       byte[] payload = SERIALIZER.encode(localNode.id());
       peers.forEach((node) -> {
@@ -193,6 +189,7 @@ public class DefaultClusterService implements ManagedClusterService {
           eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_DEACTIVATED, existingNode)));
           break;
         case CLIENT:
+          nodes.remove(node.id());
           eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_REMOVED, existingNode)));
           break;
         default:
