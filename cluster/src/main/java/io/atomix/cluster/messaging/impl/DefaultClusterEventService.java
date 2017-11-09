@@ -62,6 +62,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
       .register(KryoNamespaces.BASIC)
+      .register(NodeId.class)
       .register(Subscription.class)
       .register(MessageSubject.class)
       .register(LogicalTimestamp.class)
@@ -166,7 +167,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
    *
    * @param subject the subject for which to register the node as a subscriber
    */
-  private synchronized void registerSubscriber(MessageSubject subject) {
+  private synchronized CompletableFuture<Void> registerSubscriber(MessageSubject subject) {
     Map<NodeId, Subscription> nodeSubscriptions =
         subjectSubscriptions.computeIfAbsent(subject, s -> Maps.newConcurrentMap());
     Subscription subscription = new Subscription(
@@ -174,7 +175,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
         subject,
         new LogicalTimestamp(logicalTime.incrementAndGet()));
     nodeSubscriptions.put(localNodeId, subscription);
-    updateNodes();
+    return updateNodes();
   }
 
   /**
@@ -195,20 +196,21 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
 
   @Override
   public <M, R> CompletableFuture<Void> addSubscriber(MessageSubject subject, Function<byte[], M> decoder, Function<M, R> handler, Function<R, byte[]> encoder, Executor executor) {
-    registerSubscriber(subject);
-    return clusterCommunicator.addSubscriber(subject, decoder, handler, encoder, executor);
+    return clusterCommunicator.addSubscriber(subject, decoder, handler, encoder, executor)
+        .thenCompose(v -> registerSubscriber(subject));
   }
 
   @Override
   public <M, R> CompletableFuture<Void> addSubscriber(MessageSubject subject, Function<byte[], M> decoder, Function<M, CompletableFuture<R>> handler, Function<R, byte[]> encoder) {
     registerSubscriber(subject);
-    return clusterCommunicator.addSubscriber(subject, decoder, handler, encoder);
+    return clusterCommunicator.addSubscriber(subject, decoder, handler, encoder)
+        .thenCompose(v -> registerSubscriber(subject));
   }
 
   @Override
   public <M> CompletableFuture<Void> addSubscriber(MessageSubject subject, Function<byte[], M> decoder, Consumer<M> handler, Executor executor) {
-    registerSubscriber(subject);
-    return clusterCommunicator.addSubscriber(subject, decoder, handler, executor);
+    return clusterCommunicator.addSubscriber(subject, decoder, handler, executor)
+        .thenCompose(v -> registerSubscriber(subject));
   }
 
   @Override
@@ -256,12 +258,14 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
   /**
    * Updates all active peers with a given subscription.
    */
-  private void updateNodes() {
-    clusterService.nodes()
+  private CompletableFuture<Void> updateNodes() {
+    List<CompletableFuture<Void>> futures = clusterService.nodes()
         .stream()
         .filter(node -> !localNodeId.equals(node.id()))
         .map(Node::id)
-        .forEach(this::updateNode);
+        .map(this::updateNode)
+        .collect(Collectors.toList());
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
   }
 
   /**
@@ -269,22 +273,25 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
    *
    * @param nodeId the node to which to send the update
    */
-  private void updateNode(NodeId nodeId) {
+  private CompletableFuture<Void> updateNode(NodeId nodeId) {
     long updateTime = System.currentTimeMillis();
     long lastUpdateTime = updateTimes.getOrDefault(nodeId.id(), 0L);
 
     Collection<Subscription> subscriptions = new ArrayList<>();
     subjectSubscriptions.values().forEach(ns -> ns.values()
         .stream()
-        .filter(subscription -> subscription.timestamp().unixTimestamp() > lastUpdateTime)
+        .filter(subscription -> subscription.timestamp().unixTimestamp() >= lastUpdateTime)
         .forEach(subscriptions::add));
 
+    CompletableFuture<Void> future = new CompletableFuture<>();
     clusterCommunicator.sendAndReceive(subscriptions, GOSSIP_MESSAGE_SUBJECT, SERIALIZER::encode, SERIALIZER::decode, nodeId)
         .whenComplete((result, error) -> {
           if (error == null) {
             updateTimes.put(nodeId, updateTime);
           }
+          future.complete(null);
         });
+    return future;
   }
 
   /**
@@ -322,7 +329,10 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
         TOMBSTONE_EXPIRATION_MILLIS,
         TOMBSTONE_EXPIRATION_MILLIS,
         TimeUnit.MILLISECONDS);
-    clusterCommunicator.addSubscriber(GOSSIP_MESSAGE_SUBJECT, SERIALIZER::decode, this::update, gossipExecutor);
+    clusterCommunicator.<Collection<Subscription>, Void>addSubscriber(GOSSIP_MESSAGE_SUBJECT, SERIALIZER::decode, subscriptions -> {
+      update(subscriptions);
+      return null;
+    }, SERIALIZER::encode, gossipExecutor);
     LOGGER.info("Started");
     return CompletableFuture.completedFuture(this);
   }

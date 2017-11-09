@@ -64,7 +64,7 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
     if (open.compareAndSet(false, true)) {
       log.info("Started");
     }
-    return CompletableFuture.completedFuture(null);
+    return CompletableFuture.completedFuture(this);
   }
 
   @Override
@@ -153,8 +153,7 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
           cluster.localNode().id(),
           subject,
           encoder.apply(message));
-      return sendAndReceive(subject, envelope.getBytes(), toNodeId).
-          thenApply(bytes -> decoder.apply(bytes));
+      return sendAndReceive(subject, envelope.getBytes(), toNodeId).thenApply(decoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
