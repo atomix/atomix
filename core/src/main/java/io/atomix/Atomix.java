@@ -400,7 +400,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
       ManagedPartitionService partitionService = buildPartitionService(clusterCommunicator);
       PrimitiveService primitives = buildPrimitiveService(partitionService);
-      ManagedRestService restService = buildRestService(primitives);
+      ManagedRestService restService = buildRestService(clusterService, primitives);
       return new Atomix(
           clusterService,
           messagingService,
@@ -461,8 +461,8 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     /**
      * Builds a REST service.
      */
-    private ManagedRestService buildRestService(PrimitiveService primitiveService) {
-      return httpPort > 0 ? new VertxRestService(localNode.endpoint().host().getHostAddress(), httpPort, primitiveService) : null;
+    private ManagedRestService buildRestService(ClusterService clusterService, PrimitiveService primitiveService) {
+      return httpPort > 0 ? new VertxRestService(localNode.endpoint().host().getHostAddress(), httpPort, clusterService, primitiveService) : null;
     }
 
     /**

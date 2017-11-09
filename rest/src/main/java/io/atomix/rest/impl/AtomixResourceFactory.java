@@ -15,44 +15,41 @@
  */
 package io.atomix.rest.impl;
 
+import io.atomix.cluster.ClusterService;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResourceFactory;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
-import java.util.function.Function;
-
 /**
- * Vert.x REST resource factory.
+ * Atomix resource factory.
  */
-public class VertxRestResourceFactory implements ResourceFactory {
-  private final Class<?> resourceClass;
-  private final Function<PrimitiveCache, AbstractRestResource> resourceFactory;
+public class AtomixResourceFactory implements ResourceFactory {
+  private final ClusterService clusterService;
   private final PrimitiveCache primitiveCache;
 
-  public VertxRestResourceFactory(Class<?> resourceClass, Function<PrimitiveCache, AbstractRestResource> resourceFactory, PrimitiveCache primitiveCache) {
-    this.resourceClass = resourceClass;
-    this.resourceFactory = resourceFactory;
+  public AtomixResourceFactory(ClusterService clusterService, PrimitiveCache primitiveCache) {
+    this.clusterService = clusterService;
     this.primitiveCache = primitiveCache;
   }
 
   @Override
   public Class<?> getScannableClass() {
-    return resourceClass;
+    return AtomixResource.class;
   }
 
   @Override
-  public void registered(ResteasyProviderFactory factory) {
+  public void registered(ResteasyProviderFactory resteasyProviderFactory) {
 
   }
 
   @Override
-  public Object createResource(HttpRequest request, HttpResponse response, ResteasyProviderFactory factory) {
-    return resourceFactory.apply(primitiveCache);
+  public Object createResource(HttpRequest httpRequest, HttpResponse httpResponse, ResteasyProviderFactory resteasyProviderFactory) {
+    return new AtomixResource(clusterService, primitiveCache);
   }
 
   @Override
-  public void requestFinished(HttpRequest request, HttpResponse response, Object resource) {
+  public void requestFinished(HttpRequest httpRequest, HttpResponse httpResponse, Object o) {
 
   }
 

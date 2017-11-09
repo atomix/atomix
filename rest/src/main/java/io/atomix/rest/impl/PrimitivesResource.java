@@ -21,7 +21,6 @@ import javax.ws.rs.PathParam;
 /**
  * Primitives resource.
  */
-@Path("/primitives")
 public class PrimitivesResource extends AbstractRestResource {
   private final PrimitiveCache primitiveCache;
 
