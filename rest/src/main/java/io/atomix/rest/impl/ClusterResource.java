@@ -23,6 +23,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -31,31 +32,27 @@ import java.util.stream.Collectors;
 /**
  * Cluster resource.
  */
+@Path("/cluster")
 public class ClusterResource extends AbstractRestResource {
-  private final ClusterService clusterService;
-
-  public ClusterResource(ClusterService clusterService) {
-    this.clusterService = clusterService;
-  }
 
   @GET
   @Path("/node")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getNode() {
+  public Response getNode(@Context ClusterService clusterService) {
     return Response.ok(new NodeInfo(clusterService.localNode())).build();
   }
 
   @GET
   @Path("/nodes")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getNodes() {
+  public Response getNodes(@Context ClusterService clusterService) {
     return Response.ok(clusterService.nodes().stream().map(NodeInfo::new).collect(Collectors.toList())).build();
   }
 
   @GET
   @Path("/nodes/{node}")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getNodeInfo(@PathParam("node") String nodeId) {
+  public Response getNodeInfo(@PathParam("node") String nodeId, @Context ClusterService clusterService) {
     Node node = clusterService.node(NodeId.from(nodeId));
     if (node == null) {
       return Response.status(Status.NOT_FOUND).build();

@@ -17,22 +17,19 @@ package io.atomix.rest.impl;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
 
 /**
  * Primitives resource.
  */
+@Path("/primitives")
 public class PrimitivesResource extends AbstractRestResource {
-  private final PrimitiveCache primitiveCache;
-
-  public PrimitivesResource(PrimitiveCache primitiveCache) {
-    this.primitiveCache = primitiveCache;
-  }
 
   /**
    * Returns a counter resource by name.
    */
   @Path("/counter/{name}")
-  public AtomicCounterResource getCounter(@PathParam("name") String counterName) {
+  public AtomicCounterResource getCounter(@PathParam("name") String counterName, @Context PrimitiveCache primitiveCache) {
     return new AtomicCounterResource(primitiveCache.getPrimitive(counterName, primitives ->
         primitives.newAtomicCounterBuilder()
             .withName(counterName)
@@ -43,7 +40,7 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a map resource by name.
    */
   @Path("/map/{name}")
-  public ConsistentMapResource getMap(@PathParam("name") String mapName) {
+  public ConsistentMapResource getMap(@PathParam("name") String mapName, @Context PrimitiveCache primitiveCache) {
     return new ConsistentMapResource(primitiveCache.getPrimitive(mapName, primitives ->
         primitives.<String, String>newConsistentMapBuilder()
             .withName(mapName)
@@ -54,7 +51,7 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a value by name.
    */
   @Path("/value/{name}")
-  public AtomicValueResource getValue(@PathParam("name") String valueName) {
+  public AtomicValueResource getValue(@PathParam("name") String valueName, @Context PrimitiveCache primitiveCache) {
     return new AtomicValueResource(primitiveCache.getPrimitive(valueName, primitives ->
         primitives.<String>newAtomicValueBuilder()
             .withName(valueName)

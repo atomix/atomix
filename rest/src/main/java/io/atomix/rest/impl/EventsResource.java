@@ -21,142 +21,133 @@ import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespaces;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 /**
  * Events resource.
  */
+@Path("/events")
 public class EventsResource {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
-  private final ClusterEventService eventService;
-  private final Map<String, EventSubject> consumers = new ConcurrentHashMap<>();
-
-  public EventsResource(ClusterEventService eventService) {
-    this.eventService = eventService;
-  }
-
   @POST
   @Path("/{subject}")
-  public Response publish(@PathParam("subject") String subject, String body) {
+  @Consumes(MediaType.TEXT_PLAIN)
+  public Response publish(@PathParam("subject") String subject, @Context ClusterEventService eventService, String body) {
     eventService.broadcast(body, new MessageSubject(subject), SERIALIZER::encode);
     return Response.ok().build();
   }
 
-  @POST
-  @Path("/{subject}/subscribe")
-  public void subscribe(@PathParam("subject") String subject, @Suspended AsyncResponse response) {
-    EventSubject consumer = new EventSubject();
-    EventSubject existingConsumer = consumers.putIfAbsent(subject, consumer);
-    if (existingConsumer == null) {
-      eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, consumer, MoreExecutors.directExecutor())
+  @GET
+  @Path("/{subject}")
+  @Produces(MediaType.TEXT_PLAIN)
+  public void next(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<String> eventLog = events.getOrCreateRegistry(ClusterEventService.class, subject);
+    if (eventLog.register()) {
+      eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog, MoreExecutors.directExecutor())
           .whenComplete((result, error) -> {
             if (error == null) {
-              response.resume(Response.ok(consumer.newSession()).build());
+              eventLog.getGlobalSession().nextEvent().whenComplete((event, eventError) -> {
+                if (eventError == null) {
+                  response.resume(Response.ok(event).build());
+                } else {
+                  response.resume(Response.noContent().build());
+                }
+              });
             } else {
               response.resume(Response.serverError().build());
             }
           });
-    } else {
-      response.resume(Response.ok(existingConsumer.newSession()).build());
     }
+
+    eventLog.getGlobalSession().nextEvent().whenComplete((event, error) -> {
+      if (error == null) {
+        response.resume(Response.ok(event).build());
+      } else {
+        response.resume(Response.noContent().build());
+      }
+    });
+  }
+
+  @DELETE
+  @Path("/{subject}")
+  public Response delete(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events) {
+    EventLog<String> eventLog = events.getRegistry(ClusterEventService.class, subject);
+    if (eventLog != null) {
+      eventLog.deleteGlobalSession();
+      if (eventLog.unregister()) {
+        eventService.removeSubscriber(new MessageSubject(subject));
+        events.deleteRegistry(ClusterEventService.class, subject);
+      }
+    }
+    return Response.ok().build();
+  }
+
+  @POST
+  @Path("/{subject}/sub")
+  public void subscribe(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<String> eventLog = events.getOrCreateRegistry(ClusterEventService.class, subject);
+    eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog, MoreExecutors.directExecutor())
+        .whenComplete((result, error) -> {
+          if (error == null) {
+            response.resume(Response.ok(eventLog.newSession()).build());
+          } else {
+            response.resume(Response.serverError().build());
+          }
+        });
   }
 
   @GET
-  @Path("/{subject}")
-  public void next(@PathParam("subject") String subject, @QueryParam("session") Integer sessionId, @Suspended AsyncResponse response) {
-    EventSubject consumer = consumers.get(subject);
-    if (consumer == null) {
-      response.resume(Response.noContent().build());
+  @Path("/{subject}/sub/{sessionId}")
+  @Produces(MediaType.TEXT_PLAIN)
+  public void nextSession(@PathParam("subject") String subject, @QueryParam("session") Integer sessionId, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<String> eventLog = events.getRegistry(ClusterEventService.class, subject);
+    if (eventLog == null) {
+      response.resume(Response.status(Status.NOT_FOUND).build());
       return;
     }
 
-    if (sessionId == null) {
-      String event = consumer.nextEvent();
-      if (event != null) {
+    EventSession<String> session = eventLog.getSession(sessionId);
+    if (session == null) {
+      response.resume(Response.status(Status.NOT_FOUND).build());
+      return;
+    }
+
+    session.nextEvent().whenComplete((event, error) -> {
+      if (error == null) {
         response.resume(Response.ok(event).build());
       } else {
-        consumer.registerResponse(response);
+        response.resume(Response.noContent().build());
       }
-    } else {
-      EventSession session = consumer.getSession(sessionId);
-      if (session == null) {
-        response.resume(Response.status(Status.NOT_FOUND).build());
-      } else {
-        String event = session.nextEvent();
-        if (event != null) {
-          response.resume(Response.ok(event).build());
-        } else {
-          session.registerResponse(response);
-        }
-      }
-    }
+    });
   }
 
-  /**
-   * Event session.
-   */
-  static class EventSession {
-    private final Queue<String> events = new ConcurrentLinkedQueue<>();
-    private final Queue<AsyncResponse> responses = new ConcurrentLinkedQueue<>();
-
-    void addEvent(String event) {
-      AsyncResponse response = responses.poll();
-      if (response != null) {
-        response.resume(Response.ok(event).build());
-      } else {
-        events.add(event);
-        if (events.size() > 100) {
-          events.remove();
-        }
-      }
+  @DELETE
+  @Path("/{subject}/sub/{sessionId}")
+  public void unsubscribe(@PathParam("subject") String subject, @QueryParam("session") Integer sessionId, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<String> eventLog = events.getRegistry(ClusterEventService.class, subject);
+    if (eventLog == null) {
+      response.resume(Response.ok().build());
+      return;
     }
 
-    void registerResponse(AsyncResponse response) {
-      responses.add(response);
-    }
-
-    String nextEvent() {
-      return events.poll();
-    }
-  }
-
-  /**
-   * Event subject.
-   */
-  static class EventSubject extends EventSession implements Consumer<String> {
-    private final Map<Integer, EventSession> sessions = new ConcurrentHashMap<>();
-    private final AtomicInteger sessionId = new AtomicInteger();
-
-    EventSession getSession(int sessionId) {
-      return sessions.get(sessionId);
-    }
-
-    int newSession() {
-      int sessionId = this.sessionId.incrementAndGet();
-      EventSession session = new EventSession();
-      sessions.put(sessionId, session);
-      return sessionId;
-    }
-
-    @Override
-    public void accept(String event) {
-      addEvent(event);
-      sessions.values().forEach(s -> s.addEvent(event));
+    eventLog.deleteSession(sessionId);
+    if (eventLog.unregister()) {
+      eventService.removeSubscriber(new MessageSubject(subject));
+      events.deleteRegistry(ClusterEventService.class, subject);
     }
   }
 }

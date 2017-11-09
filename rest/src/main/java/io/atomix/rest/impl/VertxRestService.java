@@ -44,7 +44,9 @@ public class VertxRestService implements ManagedRestService {
   private final Vertx vertx;
   private final ClusterService clusterService;
   private final ClusterEventService eventService;
+  private final PrimitiveService primitiveService;
   private final PrimitiveCache primitiveCache;
+  private final EventManager eventManager = new EventManager();
   private HttpServer server;
   private VertxResteasyDeployment deployment;
   private final AtomicBoolean open = new AtomicBoolean();
@@ -55,6 +57,7 @@ public class VertxRestService implements ManagedRestService {
     this.vertx = Vertx.vertx();
     this.clusterService = checkNotNull(clusterService);
     this.eventService = checkNotNull(eventService);
+    this.primitiveService = checkNotNull(primitiveService);
     this.primitiveCache = new PrimitiveCache(primitiveService, PRIMITIVE_CACHE_SIZE);
   }
 
@@ -63,7 +66,17 @@ public class VertxRestService implements ManagedRestService {
     server = vertx.createHttpServer();
     deployment = new VertxResteasyDeployment();
     deployment.start();
-    deployment.getRegistry().addResourceFactory(new AtomixResourceFactory(clusterService, eventService, primitiveCache));
+
+    deployment.getDispatcher().getDefaultContextObjects().put(ClusterService.class, clusterService);
+    deployment.getDispatcher().getDefaultContextObjects().put(ClusterEventService.class, eventService);
+    deployment.getDispatcher().getDefaultContextObjects().put(PrimitiveService.class, primitiveService);
+    deployment.getDispatcher().getDefaultContextObjects().put(PrimitiveCache.class, primitiveCache);
+    deployment.getDispatcher().getDefaultContextObjects().put(EventManager.class, eventManager);
+
+    deployment.getRegistry().addPerInstanceResource(ClusterResource.class);
+    deployment.getRegistry().addPerInstanceResource(EventsResource.class);
+    deployment.getRegistry().addPerInstanceResource(PrimitivesResource.class);
+
     server.requestHandler(new VertxRequestHandler(vertx, deployment));
 
     CompletableFuture<RestService> future = new CompletableFuture<>();
