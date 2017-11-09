@@ -33,6 +33,8 @@ import io.atomix.primitives.map.impl.DefaultConsistentMapBuilder;
 import io.atomix.primitives.map.impl.DefaultConsistentTreeMapBuilder;
 import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
 import io.atomix.primitives.multimap.impl.DefaultConsistentMultimapBuilder;
+import io.atomix.primitives.queue.WorkQueueBuilder;
+import io.atomix.primitives.queue.impl.DefaultWorkQueueBuilder;
 import io.atomix.primitives.set.DistributedSetBuilder;
 import io.atomix.primitives.set.impl.DefaultDistributedSetBuilder;
 import io.atomix.primitives.tree.DocumentTreeBuilder;
@@ -105,5 +107,10 @@ public class FederatedPrimitiveService implements PrimitiveService {
   @Override
   public DistributedLockBuilder newLockBuilder() {
     return new DefaultDistributedLockBuilder(federatedPrimitiveCreator);
+  }
+
+  @Override
+  public <E> WorkQueueBuilder<E> newWorkQueueBuilder() {
+    return new DefaultWorkQueueBuilder<>(federatedPrimitiveCreator);
   }
 }

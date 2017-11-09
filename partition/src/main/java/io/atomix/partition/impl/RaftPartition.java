@@ -49,6 +49,8 @@ import io.atomix.primitives.map.impl.RaftConsistentTreeMapService;
 import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
 import io.atomix.primitives.multimap.impl.DefaultConsistentMultimapBuilder;
 import io.atomix.primitives.multimap.impl.RaftConsistentSetMultimapService;
+import io.atomix.primitives.queue.WorkQueueBuilder;
+import io.atomix.primitives.queue.impl.DefaultWorkQueueBuilder;
 import io.atomix.primitives.queue.impl.RaftWorkQueueService;
 import io.atomix.primitives.set.DistributedSetBuilder;
 import io.atomix.primitives.set.impl.DefaultDistributedSetBuilder;
@@ -212,6 +214,11 @@ public class RaftPartition implements ManagedPartition {
   @Override
   public <T> LeaderElectorBuilder<T> newLeaderElectorBuilder() {
     return new DefaultLeaderElectorBuilder<>(getPrimitiveCreator());
+  }
+
+  @Override
+  public <E> WorkQueueBuilder<E> newWorkQueueBuilder() {
+    return new DefaultWorkQueueBuilder<E>(getPrimitiveCreator());
   }
 
   @Override

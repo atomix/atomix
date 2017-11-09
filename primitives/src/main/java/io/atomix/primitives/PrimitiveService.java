@@ -23,6 +23,7 @@ import io.atomix.primitives.map.AtomicCounterMapBuilder;
 import io.atomix.primitives.map.ConsistentMapBuilder;
 import io.atomix.primitives.map.ConsistentTreeMapBuilder;
 import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
+import io.atomix.primitives.queue.WorkQueueBuilder;
 import io.atomix.primitives.set.DistributedSetBuilder;
 import io.atomix.primitives.tree.DocumentTreeBuilder;
 import io.atomix.primitives.value.AtomicValueBuilder;
@@ -117,5 +118,13 @@ public interface PrimitiveService {
    * @return distributed lock builder
    */
   DistributedLockBuilder newLockBuilder();
+
+  /**
+   * Creates a new WorkQueueBuilder.
+   *
+   * @param <E> work queue element type
+   * @return work queue builder
+   */
+  <E> WorkQueueBuilder<E> newWorkQueueBuilder();
 
 }

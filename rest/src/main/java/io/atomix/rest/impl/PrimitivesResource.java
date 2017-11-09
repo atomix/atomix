@@ -70,6 +70,17 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Returns a work queue resource by name.
+   */
+  @Path("/queue/{name}")
+  public WorkQueueResource getQueue(@PathParam("name") String queueName, @Context PrimitiveCache primitiveCache) {
+    return new WorkQueueResource(primitiveCache.getPrimitive(queueName, primitives ->
+        primitives.<String>newWorkQueueBuilder()
+            .withName(queueName)
+            .buildAsync()));
+  }
+
+  /**
    * Returns a value by name.
    */
   @Path("/value/{name}")
