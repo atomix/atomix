@@ -29,7 +29,6 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 /**
  * Atomic value resource.
@@ -49,12 +48,10 @@ public class AtomicValueResource extends AbstractRestResource {
   public void get(@Suspended AsyncResponse response) {
     value.get().whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.status(Status.OK)
-            .entity(result)
-            .build());
+        response.resume(Response.ok(result).build());
       } else {
         LOGGER.warn("{}", error);
-        response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
+        response.resume(Response.serverError().build());
       }
     });
   }
@@ -65,10 +62,10 @@ public class AtomicValueResource extends AbstractRestResource {
   public void set(String body, @Suspended AsyncResponse response) {
     value.set(body).whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.status(Status.OK).build());
+        response.resume(Response.ok().build());
       } else {
         LOGGER.warn("{}", error);
-        response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
+        response.resume(Response.serverError().build());
       }
     });
   }
@@ -79,12 +76,10 @@ public class AtomicValueResource extends AbstractRestResource {
   public void compareAndSet(CompareAndSetRequest request, @Suspended AsyncResponse response) {
     value.compareAndSet(request.getExpect(), request.getUpdate()).whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.status(Status.OK)
-            .entity(result)
-            .build());
+        response.resume(Response.ok(result).build());
       } else {
         LOGGER.warn("{}", error);
-        response.resume(Response.status(Status.INTERNAL_SERVER_ERROR).build());
+        response.resume(Response.serverError().build());
       }
     });
   }

@@ -19,6 +19,8 @@ import io.atomix.primitives.leadership.AsyncLeaderElector;
 import io.atomix.primitives.leadership.Leadership;
 import io.atomix.primitives.leadership.LeadershipEvent;
 import io.atomix.primitives.leadership.LeadershipEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,6 +41,8 @@ import java.util.UUID;
  * Leader elector resource.
  */
 public class LeaderElectorResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(LeaderElectorResource.class);
+
   private final AsyncLeaderElector<String> leaderElector;
 
   public LeaderElectorResource(AsyncLeaderElector<String> leaderElector) {
@@ -65,10 +69,12 @@ public class LeaderElectorResource {
           if (runError == null) {
             response.resume(Response.ok(id).build());
           } else {
+            LOGGER.warn("{}", runError);
             response.resume(Response.serverError().build());
           }
         });
       } else {
+        LOGGER.warn("{}", listenError);
         response.resume(Response.serverError().build());
       }
     });
@@ -81,6 +87,7 @@ public class LeaderElectorResource {
       if (error == null) {
         response.resume(Response.ok(new LeadershipResponse(result)).build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -124,6 +131,7 @@ public class LeaderElectorResource {
           if (withdrawError == null) {
             response.resume(Response.ok().build());
           } else {
+            LOGGER.warn("{}", removeError);
             response.resume(Response.serverError().build());
           }
         });
@@ -140,6 +148,7 @@ public class LeaderElectorResource {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -152,6 +161,7 @@ public class LeaderElectorResource {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -164,6 +174,7 @@ public class LeaderElectorResource {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });

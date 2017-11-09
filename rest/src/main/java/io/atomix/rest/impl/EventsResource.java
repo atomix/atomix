@@ -20,6 +20,8 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespaces;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -44,6 +46,7 @@ import java.util.function.Consumer;
  */
 @Path("/events")
 public class EventsResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(EventsResource.class);
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
   /**
@@ -84,6 +87,7 @@ public class EventsResource {
           }
         });
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -110,6 +114,7 @@ public class EventsResource {
           if (error == null) {
             response.resume(Response.ok(id).build());
           } else {
+            LOGGER.warn("{}", error);
             response.resume(Response.serverError().build());
           }
         });

@@ -46,6 +46,7 @@ public class DistributedLockResource {
       if (error == null) {
         response.resume(Response.ok(result.value()).build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -57,6 +58,7 @@ public class DistributedLockResource {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
+        LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
