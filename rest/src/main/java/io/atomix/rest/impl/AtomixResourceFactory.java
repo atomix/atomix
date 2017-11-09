@@ -16,6 +16,7 @@
 package io.atomix.rest.impl;
 
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResourceFactory;
@@ -26,10 +27,12 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
  */
 public class AtomixResourceFactory implements ResourceFactory {
   private final ClusterService clusterService;
+  private final ClusterEventService eventService;
   private final PrimitiveCache primitiveCache;
 
-  public AtomixResourceFactory(ClusterService clusterService, PrimitiveCache primitiveCache) {
+  public AtomixResourceFactory(ClusterService clusterService, ClusterEventService eventService, PrimitiveCache primitiveCache) {
     this.clusterService = clusterService;
+    this.eventService = eventService;
     this.primitiveCache = primitiveCache;
   }
 
@@ -45,7 +48,7 @@ public class AtomixResourceFactory implements ResourceFactory {
 
   @Override
   public Object createResource(HttpRequest httpRequest, HttpResponse httpResponse, ResteasyProviderFactory resteasyProviderFactory) {
-    return new AtomixResource(clusterService, primitiveCache);
+    return new AtomixResource(clusterService, eventService, primitiveCache);
   }
 
   @Override

@@ -23,8 +23,11 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
+import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
+import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingService;
@@ -93,6 +96,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
   private final ManagedClusterService cluster;
   private final ManagedMessagingService messagingService;
   private final ManagedClusterCommunicationService clusterCommunicator;
+  private final ManagedClusterEventService clusterEventService;
   private final ManagedPartitionService partitions;
   private final ManagedRestService restService;
   private final PrimitiveService primitives;
@@ -103,12 +107,14 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
       ManagedClusterService cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
+      ManagedClusterEventService clusterEventService,
       ManagedPartitionService partitions,
       ManagedRestService restService,
       PrimitiveService primitives) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
+    this.clusterEventService = checkNotNull(clusterEventService, "clusterEventService cannot be null");
     this.partitions = checkNotNull(partitions, "partitions cannot be null");
     this.restService = restService; // ManagedRestService can be null
     this.primitives = checkNotNull(primitives, "primitives cannot be null");
@@ -130,6 +136,15 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
    */
   public ClusterCommunicationService getCommunicationService() {
     return clusterCommunicator;
+  }
+
+  /**
+   * Returns the cluster event service.
+   *
+   * @return the cluster event service
+   */
+  public ClusterEventService getEventService() {
+    return clusterEventService;
   }
 
   /**
@@ -219,6 +234,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     return messagingService.open()
         .thenComposeAsync(v -> cluster.open(), context)
         .thenComposeAsync(v -> clusterCommunicator.open(), context)
+        .thenComposeAsync(v -> clusterEventService.open(), context)
         .thenComposeAsync(v -> partitions.open(), context)
         .thenComposeAsync(v -> restService != null ? restService.open() : CompletableFuture.completedFuture(null), context)
         .thenApplyAsync(v -> {
@@ -238,6 +254,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     return restService.close()
         .thenComposeAsync(v -> partitions.close(), context)
         .thenComposeAsync(v -> clusterCommunicator.close(), context)
+        .thenComposeAsync(v -> clusterEventService.close(), context)
         .thenComposeAsync(v -> cluster.close(), context)
         .thenComposeAsync(v -> messagingService.close(), context)
         .thenRunAsync(() -> {
@@ -398,13 +415,15 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
       ManagedMessagingService messagingService = buildMessagingService();
       ManagedClusterService clusterService = buildClusterService(messagingService);
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
+      ManagedClusterEventService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
       ManagedPartitionService partitionService = buildPartitionService(clusterCommunicator);
       PrimitiveService primitives = buildPrimitiveService(partitionService);
-      ManagedRestService restService = buildRestService(clusterService, primitives);
+      ManagedRestService restService = buildRestService(clusterService, clusterEventService, primitives);
       return new Atomix(
           clusterService,
           messagingService,
           clusterCommunicator,
+          clusterEventService,
           partitionService,
           restService,
           primitives);
@@ -439,6 +458,14 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     }
 
     /**
+     * Builds a cluster event service.
+     */
+    private ManagedClusterEventService buildClusterEventService(
+        ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
+      return new DefaultClusterEventService(clusterService, clusterCommunicator);
+    }
+
+    /**
      * Builds a partition service.
      */
     private ManagedPartitionService buildPartitionService(ClusterCommunicationService clusterCommunicator) {
@@ -453,7 +480,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
      * Builds a primitive service.
      */
     private PrimitiveService buildPrimitiveService(PartitionService partitionService) {
-      Map<Integer, DistributedPrimitiveCreator > members = new HashMap<>();
+      Map<Integer, DistributedPrimitiveCreator> members = new HashMap<>();
       partitionService.getPartitions().forEach(p -> members.put(p.id().id(), partitionService.getPrimitiveCreator(p.id())));
       return new FederatedPrimitiveService(members, numBuckets);
     }
@@ -461,8 +488,8 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     /**
      * Builds a REST service.
      */
-    private ManagedRestService buildRestService(ClusterService clusterService, PrimitiveService primitiveService) {
-      return httpPort > 0 ? new VertxRestService(localNode.endpoint().host().getHostAddress(), httpPort, clusterService, primitiveService) : null;
+    private ManagedRestService buildRestService(ClusterService clusterService, ClusterEventService eventService, PrimitiveService primitiveService) {
+      return httpPort > 0 ? new VertxRestService(localNode.endpoint().host().getHostAddress(), httpPort, clusterService, eventService, primitiveService) : null;
     }
 
     /**

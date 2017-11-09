@@ -16,6 +16,7 @@
 package io.atomix.rest.impl;
 
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.primitives.PrimitiveService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
@@ -42,16 +43,18 @@ public class VertxRestService implements ManagedRestService {
   private final int port;
   private final Vertx vertx;
   private final ClusterService clusterService;
+  private final ClusterEventService eventService;
   private final PrimitiveCache primitiveCache;
   private HttpServer server;
   private VertxResteasyDeployment deployment;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public VertxRestService(String host, int port, ClusterService clusterService, PrimitiveService primitiveService) {
+  public VertxRestService(String host, int port, ClusterService clusterService, ClusterEventService eventService, PrimitiveService primitiveService) {
     this.host = host;
     this.port = port;
     this.vertx = Vertx.vertx();
     this.clusterService = checkNotNull(clusterService);
+    this.eventService = checkNotNull(eventService);
     this.primitiveCache = new PrimitiveCache(primitiveService, PRIMITIVE_CACHE_SIZE);
   }
 
@@ -60,7 +63,7 @@ public class VertxRestService implements ManagedRestService {
     server = vertx.createHttpServer();
     deployment = new VertxResteasyDeployment();
     deployment.start();
-    deployment.getRegistry().addResourceFactory(new AtomixResourceFactory(clusterService, primitiveCache));
+    deployment.getRegistry().addResourceFactory(new AtomixResourceFactory(clusterService, eventService, primitiveCache));
     server.requestHandler(new VertxRequestHandler(vertx, deployment));
 
     CompletableFuture<RestService> future = new CompletableFuture<>();

@@ -16,6 +16,7 @@
 package io.atomix.rest.impl;
 
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.messaging.ClusterEventService;
 
 import javax.ws.rs.Path;
 
@@ -25,16 +26,23 @@ import javax.ws.rs.Path;
 @Path("/")
 public class AtomixResource {
   private final ClusterService clusterService;
+  private final ClusterEventService eventService;
   private final PrimitiveCache primitiveCache;
 
-  public AtomixResource(ClusterService clusterService, PrimitiveCache primitiveCache) {
+  public AtomixResource(ClusterService clusterService, ClusterEventService eventService, PrimitiveCache primitiveCache) {
     this.clusterService = clusterService;
+    this.eventService = eventService;
     this.primitiveCache = primitiveCache;
   }
 
   @Path("/cluster")
   public ClusterResource getCluster() {
     return new ClusterResource(clusterService);
+  }
+
+  @Path("/events")
+  public EventsResource getEvents() {
+    return new EventsResource(eventService);
   }
 
   @Path("/primitives")
