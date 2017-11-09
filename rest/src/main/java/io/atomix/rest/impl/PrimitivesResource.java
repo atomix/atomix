@@ -37,6 +37,17 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Returns a lock resource by name.
+   */
+  @Path("/lock/{name}")
+  public DistributedLockResource getLock(@PathParam("name") String lockName, @Context PrimitiveCache primitiveCache) {
+    return new DistributedLockResource(primitiveCache.getPrimitive(lockName, primitives ->
+        primitives.newLockBuilder()
+            .withName(lockName)
+            .buildAsync()));
+  }
+
+  /**
    * Returns a map resource by name.
    */
   @Path("/map/{name}")
