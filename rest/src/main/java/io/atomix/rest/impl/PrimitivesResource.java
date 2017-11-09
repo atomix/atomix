@@ -92,6 +92,17 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Returns a set resource by name.
+   */
+  @Path("/set/{name}")
+  public DistributedSetResource getSet(@PathParam("name") String setName, @Context PrimitiveCache primitiveCache) {
+    return new DistributedSetResource(primitiveCache.getPrimitive(setName, primitives ->
+        primitives.<String>newSetBuilder()
+            .withName(setName)
+            .buildAsync()));
+  }
+
+  /**
    * Returns a value by name.
    */
   @Path("/value/{name}")
