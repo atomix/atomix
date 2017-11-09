@@ -103,6 +103,17 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Returns a document tree resource by name.
+   */
+  @Path("/tree/{name}")
+  public DocumentTreeResource getTree(@PathParam("name") String treeName, @Context PrimitiveCache primitiveCache) {
+    return new DocumentTreeResource(primitiveCache.getPrimitive(treeName, primitives ->
+        primitives.<String>newDocumentTreeBuilder()
+            .withName(treeName)
+            .buildAsync()));
+  }
+
+  /**
    * Returns a value by name.
    */
   @Path("/value/{name}")
