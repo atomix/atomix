@@ -35,6 +35,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Events resource.
@@ -42,6 +45,13 @@ import javax.ws.rs.core.Response.Status;
 @Path("/events")
 public class EventsResource {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
+
+  /**
+   * Returns an event log name.
+   */
+  private String getEventLogName(String subject, String id) {
+    return String.format("%s-%s", subject, id);
+  }
 
   @POST
   @Path("/{subject}")
@@ -55,29 +65,26 @@ public class EventsResource {
   @Path("/{subject}")
   @Produces(MediaType.TEXT_PLAIN)
   public void next(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<String> eventLog = events.getOrCreateRegistry(ClusterEventService.class, subject);
-    if (eventLog.register()) {
-      eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog, MoreExecutors.directExecutor())
-          .whenComplete((result, error) -> {
-            if (error == null) {
-              eventLog.getGlobalSession().nextEvent().whenComplete((event, eventError) -> {
-                if (eventError == null) {
-                  response.resume(Response.ok(event).build());
-                } else {
-                  response.resume(Response.noContent().build());
-                }
-              });
-            } else {
-              response.resume(Response.serverError().build());
-            }
-          });
+    EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
+        ClusterEventService.class, subject, l -> e -> l.addEvent(e));
+    CompletableFuture<Void> openFuture;
+    if (eventLog.open()) {
+      openFuture = eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog.listener(), MoreExecutors.directExecutor());
+    } else {
+      openFuture = CompletableFuture.completedFuture(null);
     }
 
-    eventLog.getGlobalSession().nextEvent().whenComplete((event, error) -> {
+    openFuture.whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok(event).build());
+        eventLog.nextEvent().whenComplete((event, eventError) -> {
+          if (eventError == null) {
+            response.resume(Response.ok(event).build());
+          } else {
+            response.resume(Response.noContent().build());
+          }
+        });
       } else {
-        response.resume(Response.noContent().build());
+        response.resume(Response.serverError().build());
       }
     });
   }
@@ -85,13 +92,9 @@ public class EventsResource {
   @DELETE
   @Path("/{subject}")
   public Response delete(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events) {
-    EventLog<String> eventLog = events.getRegistry(ClusterEventService.class, subject);
-    if (eventLog != null) {
-      eventLog.deleteGlobalSession();
-      if (eventLog.unregister()) {
-        eventService.removeSubscriber(new MessageSubject(subject));
-        events.deleteRegistry(ClusterEventService.class, subject);
-      }
+    EventLog<Consumer<String>, String> eventLog = events.removeEventLog(ClusterEventService.class, subject);
+    if (eventLog != null && eventLog.close()) {
+      eventService.removeSubscriber(new MessageSubject(subject));
     }
     return Response.ok().build();
   }
@@ -99,11 +102,13 @@ public class EventsResource {
   @POST
   @Path("/{subject}/sub")
   public void subscribe(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<String> eventLog = events.getOrCreateRegistry(ClusterEventService.class, subject);
-    eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog, MoreExecutors.directExecutor())
+    String id = UUID.randomUUID().toString();
+    EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
+        ClusterEventService.class, getEventLogName(subject, id), l -> e -> l.addEvent(e));
+    eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog.listener(), MoreExecutors.directExecutor())
         .whenComplete((result, error) -> {
           if (error == null) {
-            response.resume(Response.ok(eventLog.newSession()).build());
+            response.resume(Response.ok(id).build());
           } else {
             response.resume(Response.serverError().build());
           }
@@ -111,22 +116,16 @@ public class EventsResource {
   }
 
   @GET
-  @Path("/{subject}/sub/{sessionId}")
+  @Path("/{subject}/sub/{id}")
   @Produces(MediaType.TEXT_PLAIN)
-  public void nextSession(@PathParam("subject") String subject, @QueryParam("session") Integer sessionId, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<String> eventLog = events.getRegistry(ClusterEventService.class, subject);
+  public void nextSession(@PathParam("subject") String subject, @QueryParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterEventService.class, getEventLogName(subject, id));
     if (eventLog == null) {
       response.resume(Response.status(Status.NOT_FOUND).build());
       return;
     }
 
-    EventSession<String> session = eventLog.getSession(sessionId);
-    if (session == null) {
-      response.resume(Response.status(Status.NOT_FOUND).build());
-      return;
-    }
-
-    session.nextEvent().whenComplete((event, error) -> {
+    eventLog.nextEvent().whenComplete((event, error) -> {
       if (error == null) {
         response.resume(Response.ok(event).build());
       } else {
@@ -136,18 +135,12 @@ public class EventsResource {
   }
 
   @DELETE
-  @Path("/{subject}/sub/{sessionId}")
-  public void unsubscribe(@PathParam("subject") String subject, @QueryParam("session") Integer sessionId, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<String> eventLog = events.getRegistry(ClusterEventService.class, subject);
-    if (eventLog == null) {
-      response.resume(Response.ok().build());
-      return;
-    }
-
-    eventLog.deleteSession(sessionId);
-    if (eventLog.unregister()) {
+  @Path("/{subject}/sub/{id}")
+  public Response unsubscribe(@PathParam("subject") String subject, @QueryParam("id") String id, @Context ClusterEventService eventService, @Context EventManager events) {
+    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterEventService.class, getEventLogName(subject, id));
+    if (eventLog != null && eventLog.close()) {
       eventService.removeSubscriber(new MessageSubject(subject));
-      events.deleteRegistry(ClusterEventService.class, subject);
     }
+    return Response.ok().build();
   }
 }

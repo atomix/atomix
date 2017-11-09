@@ -17,6 +17,7 @@ package io.atomix.rest.impl;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Rest event manager.
@@ -25,39 +26,45 @@ public class EventManager {
   private final Map<Class<?>, Map<String, EventLog>> eventRegistries = new ConcurrentHashMap<>();
 
   /**
-   * Returns an event registry if it already exists.
+   * Returns an event log if it already exists.
    *
-   * @param type the registry type
-   * @param name the registry name
-   * @param <T> the event type
-   * @return the event registry
+   * @param type the log type
+   * @param name the log name
+   * @param <L> the listener type
+   * @param <E> the event type
+   * @return the event log
    */
   @SuppressWarnings("unchecked")
-  public <T> EventLog<T> getRegistry(Class<?> type, String name) {
+  public <L, E> EventLog<L, E> getEventLog(Class<?> type, String name) {
     return eventRegistries.computeIfAbsent(type, t -> new ConcurrentHashMap<>()).get(name);
   }
 
   /**
-   * Returns an event registry.
+   * Returns an event log, creating a new log if none exists.
    *
-   * @param type the registry type
-   * @param name the registry name
-   * @param <T> the event type
-   * @return the event registry
+   * @param type the log type
+   * @param name the log name
+   * @param <L> the listener type
+   * @param <E> the event type
+   * @return the event log
    */
   @SuppressWarnings("unchecked")
-  public <T> EventLog<T> getOrCreateRegistry(Class<?> type, String name) {
+  public <L, E> EventLog<L, E> getOrCreateEventLog(Class<?> type, String name, Function<EventLog<L, E>, L> listenerFactory) {
     return eventRegistries.computeIfAbsent(type, t -> new ConcurrentHashMap<>())
-        .computeIfAbsent(name, n -> new EventLog<>());
+        .computeIfAbsent(name, n -> new EventLog<>(listenerFactory));
   }
 
   /**
-   * Deletes the given event registry.
+   * Removes and returns the given event log.
    *
-   * @param type the registry type
-   * @param name the registry name
+   * @param type the log type
+   * @param name the log name
+   * @param <L> the listener type
+   * @param <E> the event type
+   * @return the removed event log or {@code null} if non exits
    */
-  public void deleteRegistry(Class<?> type, String name) {
-    eventRegistries.computeIfAbsent(type, t -> new ConcurrentHashMap<>()).remove(name);
+  @SuppressWarnings("unchecked")
+  public <L, E> EventLog<L, E> removeEventLog(Class<?> type, String name) {
+    return eventRegistries.computeIfAbsent(type, t -> new ConcurrentHashMap<>()).remove(name);
   }
 }

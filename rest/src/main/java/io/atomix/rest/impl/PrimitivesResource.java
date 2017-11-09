@@ -37,6 +37,17 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Returns a leader election resource by name.
+   */
+  @Path("/election/{name}")
+  public LeaderElectorResource getElection(@PathParam("name") String electionName, @Context PrimitiveCache primitiveCache) {
+    return new LeaderElectorResource(primitiveCache.getPrimitive(electionName, primitives ->
+        primitives.<String>newLeaderElectorBuilder()
+            .withName(electionName)
+            .buildAsync()));
+  }
+
+  /**
    * Returns a lock resource by name.
    */
   @Path("/lock/{name}")

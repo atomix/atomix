@@ -58,9 +58,10 @@ public interface AsyncLeaderElector<T> extends AsyncPrimitive {
   /**
    * Withdraws from leadership race for a topic.
    *
+   * @param identifier instance identifier of the node to withdraw
    * @return CompletableFuture that is completed when the withdraw is done
    */
-  CompletableFuture<Void> withdraw();
+  CompletableFuture<Void> withdraw(T identifier);
 
   /**
    * Attempts to promote a node to leadership displacing the current leader.

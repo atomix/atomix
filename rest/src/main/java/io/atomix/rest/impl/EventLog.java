@@ -15,118 +15,84 @@
  */
 package io.atomix.rest.impl;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Session registry.
  */
-public class EventLog<T> implements Consumer<T> {
-  private volatile EventSession<T> globalSession;
-  private final Map<Integer, EventSession<T>> sessions = new ConcurrentHashMap<>();
-  private final AtomicInteger sessionId = new AtomicInteger();
-  private final AtomicBoolean registered = new AtomicBoolean();
+public class EventLog<L, E> {
+  private final L listener;
+  private final AtomicBoolean open = new AtomicBoolean();
+  private final Queue<E> events = new ConcurrentLinkedQueue<>();
+  private final Queue<CompletableFuture<E>> futures = new ConcurrentLinkedQueue<>();
+
+  EventLog(Function<EventLog<L, E>, L> listenerFactory) {
+    this.listener = listenerFactory.apply(this);
+  }
 
   /**
    * Returns a boolean indicating whether the event consumer needs to be registered.
    *
    * @return indicates whether the event consumer needs to be registered
    */
-  boolean register() {
-    return registered.compareAndSet(false, true);
+  public boolean open() {
+    return open.compareAndSet(false, true);
   }
 
   /**
-   * Returns a boolean indicating whether the event consumer needs to be unregistered.
+   * Returns the event listener.
    *
-   * @return indicates whether the event consumer needs to be unregistered
+   * @return the event listener
    */
-  synchronized boolean unregister() {
-    return globalSession == null && sessions.isEmpty() && registered.compareAndSet(true, false);
+  public L listener() {
+    return listener;
   }
 
   /**
-   * Returns the global session.
+   * Completes the given response with the next event.
    *
-   * @return the global session
+   * @return a future to be completed with the next event
    */
-  EventSession<T> getGlobalSession() {
-    EventSession<T> session = globalSession;
-    if (session == null) {
-      synchronized (this) {
-        if (globalSession == null) {
-          globalSession = new EventSession<>();
-          session = globalSession;
-        }
+  public CompletableFuture<E> nextEvent() {
+    E event = events.poll();
+    if (event != null) {
+      return CompletableFuture.completedFuture(event);
+    } else {
+      CompletableFuture<E> future = new CompletableFuture<>();
+      futures.add(future);
+      return future;
+    }
+  }
+
+  /**
+   * Adds an event to the log.
+   *
+   * @param event the event to add
+   */
+  public void addEvent(E event) {
+    CompletableFuture<E> future = futures.poll();
+    if (future != null) {
+      future.complete(event);
+    } else {
+      events.add(event);
+      if (events.size() > 100) {
+        events.remove();
       }
     }
-    return session;
   }
 
   /**
-   * Deletes the global session.
+   * Closes the session.
    */
-  void deleteGlobalSession() {
-    EventSession<T> session = globalSession;
-    if (session != null) {
-      session.close();
-      globalSession = null;
+  public boolean close() {
+    if (open.compareAndSet(true, false)) {
+      futures.forEach(future -> future.completeExceptionally(new IllegalStateException("Closed session")));
+      return true;
     }
-  }
-
-  /**
-   * Returns an event session by ID.
-   *
-   * @param sessionId the session identifier
-   * @return the event session
-   */
-  EventSession<T> getSession(Integer sessionId) {
-    return sessions.get(sessionId);
-  }
-
-  /**
-   * Deletes the given session.
-   *
-   * @param sessionId the session identifier
-   */
-  void deleteSession(int sessionId) {
-    EventSession<T> session = sessions.remove(sessionId);
-    if (session != null) {
-      session.close();
-    }
-  }
-
-  /**
-   * Returns all registered sessions.
-   *
-   * @return all registered sessions
-   */
-  Collection<EventSession<T>> getSessions() {
-    return sessions.values();
-  }
-
-  /**
-   * Registers a new session and returns the session identifier.
-   *
-   * @return the registered session identifier
-   */
-  int newSession() {
-    int sessionId = this.sessionId.incrementAndGet();
-    EventSession<T> session = new EventSession<>();
-    sessions.put(sessionId, session);
-    return sessionId;
-  }
-
-  @Override
-  public void accept(T event) {
-    EventSession<T> globalSession = this.globalSession;
-    if (globalSession != null) {
-      globalSession.addEvent(event);
-    }
-    sessions.values().forEach(session -> session.addEvent(event));
+    return false;
   }
 }

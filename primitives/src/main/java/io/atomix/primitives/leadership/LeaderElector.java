@@ -39,8 +39,10 @@ public interface LeaderElector<T> extends SyncPrimitive {
 
   /**
    * Withdraws from leadership race for a topic.
+   *
+   * @param identifier identifier of the node to withdraw
    */
-  void withdraw();
+  void withdraw(T identifier);
 
   /**
    * Attempts to promote a node to leadership displacing the current leader.

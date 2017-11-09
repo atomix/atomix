@@ -18,6 +18,7 @@ package io.atomix.rest.impl;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -29,61 +30,21 @@ import static org.junit.Assert.assertTrue;
 public class EventLogTest {
   @Test
   public void testEventLog() throws Exception {
-    EventLog<String> eventLog = new EventLog<>();
-    assertTrue(eventLog.register());
-    assertFalse(eventLog.register());
+    EventLog<Consumer<String>, String> eventLog = new EventLog<>(l -> e -> l.addEvent(e));
+    assertTrue(eventLog.open());
+    assertFalse(eventLog.open());
 
-    assertEquals(1, eventLog.newSession());
-    assertEquals(2, eventLog.newSession());
-    assertEquals(3, eventLog.newSession());
+    CompletableFuture<String> nextEvent = eventLog.nextEvent();
+    assertFalse(nextEvent.isDone());
 
-    eventLog.accept("a");
-    eventLog.accept("b");
-    eventLog.accept("c");
+    eventLog.listener().accept("a");
+    eventLog.listener().accept("b");
 
-    CompletableFuture<String> globalFuture = eventLog.getGlobalSession().nextEvent();
-    assertFalse(globalFuture.isDone());
-    eventLog.accept("d");
-    assertTrue(globalFuture.isDone());
-    assertEquals("d", globalFuture.get());
+    assertTrue(nextEvent.isDone());
+    assertEquals("a", nextEvent.get());
+    assertEquals("b", eventLog.nextEvent().get());
 
-    assertEquals("a", eventLog.getSession(1).nextEvent().get());
-    assertEquals("a", eventLog.getSession(2).nextEvent().get());
-    assertEquals("b", eventLog.getSession(1).nextEvent().get());
-    assertEquals("c", eventLog.getSession(1).nextEvent().get());
-    assertEquals("b", eventLog.getSession(2).nextEvent().get());
-    assertEquals("a", eventLog.getSession(3).nextEvent().get());
-    assertEquals("d", eventLog.getSession(1).nextEvent().get());
-
-    CompletableFuture<String> nextEvent1 = eventLog.getGlobalSession().nextEvent();
-    CompletableFuture<String> nextEvent2 = eventLog.getGlobalSession().nextEvent();
-
-    assertFalse(nextEvent1.isDone());
-    assertFalse(nextEvent2.isDone());
-
-    CompletableFuture<String> nextSessionEvent1 = eventLog.getSession(1).nextEvent();
-    CompletableFuture<String> nextSessionEvent2 = eventLog.getSession(1).nextEvent();
-
-    assertFalse(nextSessionEvent1.isDone());
-    assertFalse(nextSessionEvent2.isDone());
-
-    eventLog.accept("e");
-
-    assertTrue(nextEvent1.isDone());
-    assertEquals("e", nextEvent1.get());
-    assertFalse(nextEvent2.isDone());
-
-    assertTrue(nextSessionEvent1.isDone());
-    assertEquals("e", nextSessionEvent1.get());
-    assertFalse(nextSessionEvent2.isDone());
-
-    assertFalse(eventLog.unregister());
-    eventLog.deleteGlobalSession();
-    assertFalse(eventLog.unregister());
-    eventLog.deleteSession(1);
-    eventLog.deleteSession(2);
-    eventLog.deleteSession(3);
-    assertTrue(eventLog.unregister());
-    assertFalse(eventLog.unregister());
+    assertTrue(eventLog.close());
+    assertFalse(eventLog.close());
   }
 }

@@ -49,8 +49,8 @@ public class BlockingLeaderElector<T> extends Synchronous<AsyncLeaderElector<T>>
   }
 
   @Override
-  public void withdraw() {
-    complete(asyncElector.withdraw());
+  public void withdraw(T identifier) {
+    complete(asyncElector.withdraw(identifier));
   }
 
   @Override

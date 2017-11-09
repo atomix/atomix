@@ -28,6 +28,7 @@ import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Anoint;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Evict;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Promote;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Run;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Withdraw;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
@@ -109,7 +110,7 @@ public class RaftLeaderElectorService extends AbstractRaftService {
     executor.register(REMOVE_LISTENER, this::unlisten);
     // Commands
     executor.register(RUN, SERIALIZER::decode, this::run, SERIALIZER::encode);
-    executor.register(WITHDRAW, this::withdraw);
+    executor.register(WITHDRAW, SERIALIZER::decode, this::withdraw);
     executor.register(ANOINT, SERIALIZER::decode, this::anoint, SERIALIZER::encode);
     executor.register(PROMOTE, SERIALIZER::decode, this::promote, SERIALIZER::encode);
     executor.register(EVICT, SERIALIZER::decode, this::evict);
@@ -172,10 +173,10 @@ public class RaftLeaderElectorService extends AbstractRaftService {
   /**
    * Applies a withdraw commit.
    */
-  protected void withdraw(Commit<Void> commit) {
+  protected void withdraw(Commit<? extends Withdraw> commit) {
     try {
       Leadership<byte[]> oldLeadership = leadership();
-      cleanup(commit.session());
+      cleanup(commit.value().id());
       Leadership<byte[]> newLeadership = leadership();
       if (!Objects.equal(oldLeadership, newLeadership)) {
         notifyLeadershipChange(oldLeadership, newLeadership);
@@ -347,6 +348,30 @@ public class RaftLeaderElectorService extends AbstractRaftService {
           .add("id", ArraySizeHashPrinter.of(id))
           .add("sessionId", sessionId)
           .toString();
+    }
+  }
+
+  protected void cleanup(byte[] id) {
+    Optional<Registration> registration =
+        registrations.stream().filter(r -> Arrays.equals(r.id(), id)).findFirst();
+    if (registration.isPresent()) {
+      List<Registration> updatedRegistrations =
+          registrations.stream()
+              .filter(r -> !Arrays.equals(r.id(), id))
+              .collect(Collectors.toList());
+      if (Arrays.equals(leader.id(), id)) {
+        if (!updatedRegistrations.isEmpty()) {
+          this.registrations = updatedRegistrations;
+          this.leader = updatedRegistrations.get(0);
+          this.term = termCounter.incrementAndGet();
+          this.termStartTime = context().wallClock().getTime().unixTimestamp();
+        } else {
+          this.registrations = updatedRegistrations;
+          this.leader = null;
+        }
+      } else {
+        this.registrations = updatedRegistrations;
+      }
     }
   }
 

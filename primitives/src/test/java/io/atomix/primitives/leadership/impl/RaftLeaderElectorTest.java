@@ -84,7 +84,7 @@ public class RaftLeaderElectorTest extends AbstractRaftPrimitiveTest<RaftLeaderE
     LeaderEventListener listener2 = new LeaderEventListener();
     elector2.addListener(listener2).join();
 
-    elector1.withdraw().join();
+    elector1.withdraw(node1).join();
 
     listener1.nextEvent().thenAccept(result -> {
       assertArrayEquals(node2, result.newLeadership().leader().id());
