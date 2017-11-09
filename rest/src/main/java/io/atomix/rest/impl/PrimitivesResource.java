@@ -48,6 +48,17 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Returns an ID generator resource by name.
+   */
+  @Path("/id/{name}")
+  public AtomicIdGeneratorResource getIdGenerator(@PathParam("name") String generatorName, @Context PrimitiveCache primitiveCache) {
+    return new AtomicIdGeneratorResource(primitiveCache.getPrimitive(generatorName, primitives ->
+        primitives.<String>newAtomicIdGeneratorBuilder()
+            .withName(generatorName)
+            .buildAsync()));
+  }
+
+  /**
    * Returns a lock resource by name.
    */
   @Path("/lock/{name}")

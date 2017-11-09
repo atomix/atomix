@@ -75,6 +75,7 @@ public class WorkQueueResource {
             if (error == null) {
               takeTasks(eventLog, items, response);
             } else {
+              LOGGER.warn("{}", error);
               response.resume(Response.serverError().build());
             }
           });
