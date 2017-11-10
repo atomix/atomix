@@ -65,7 +65,7 @@ public class TestRaftClientCommunicator implements RaftClientProtocol {
   }
 
   private <T, U> CompletableFuture<U> sendAndReceive(MessageSubject subject, T request, MemberId memberId) {
-    return clusterCommunicator.sendAndReceive(request, subject, serializer::encode, serializer::decode, NodeId.from(memberId.id()));
+    return clusterCommunicator.sendAndReceive(subject, request, serializer::encode, serializer::decode, NodeId.from(memberId.id()));
   }
 
   @Override
@@ -111,7 +111,7 @@ public class TestRaftClientCommunicator implements RaftClientProtocol {
   @Override
   public void reset(Collection<MemberId> members, ResetRequest request) {
     Set<NodeId> nodes = members.stream().map(m -> NodeId.from(m.id())).collect(Collectors.toSet());
-    clusterCommunicator.multicast(request, context.resetSubject(request.session()), serializer::encode, nodes);
+    clusterCommunicator.multicast(context.resetSubject(request.session()), request, serializer::encode, nodes);
   }
 
   @Override

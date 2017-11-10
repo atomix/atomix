@@ -66,7 +66,7 @@ public class TestClusterCommunicationService implements ManagedClusterCommunicat
   }
 
   @Override
-  public <M> void broadcast(M message, MessageSubject subject, Function<M, byte[]> encoder) {
+  public <M> void broadcast(MessageSubject subject, M message, Function<M, byte[]> encoder) {
     nodes.forEach((nodeId, node) -> {
       if (!nodeId.equals(localNodeId)) {
         node.handle(subject, encoder.apply(message));
@@ -75,13 +75,13 @@ public class TestClusterCommunicationService implements ManagedClusterCommunicat
   }
 
   @Override
-  public <M> void broadcastIncludeSelf(M message, MessageSubject subject, Function<M, byte[]> encoder) {
+  public <M> void broadcastIncludeSelf(MessageSubject subject, M message, Function<M, byte[]> encoder) {
     nodes.values().forEach(node -> node.handle(subject, encoder.apply(message)));
   }
 
   @Override
   public <M> CompletableFuture<Void> unicast(
-      M message, MessageSubject subject, Function<M, byte[]> encoder, NodeId toNodeId) {
+      MessageSubject subject, M message, Function<M, byte[]> encoder, NodeId toNodeId) {
     TestClusterCommunicationService node = nodes.get(toNodeId);
     if (node != null) {
       node.handle(subject, encoder.apply(message));
@@ -90,7 +90,7 @@ public class TestClusterCommunicationService implements ManagedClusterCommunicat
   }
 
   @Override
-  public <M> void multicast(M message, MessageSubject subject, Function<M, byte[]> encoder, Set<NodeId> nodeIds) {
+  public <M> void multicast(MessageSubject subject, M message, Function<M, byte[]> encoder, Set<NodeId> nodeIds) {
     nodes.values().stream()
         .filter(n -> nodeIds.contains(n))
         .forEach(n -> n.handle(subject, encoder.apply(message)));
@@ -98,8 +98,8 @@ public class TestClusterCommunicationService implements ManagedClusterCommunicat
 
   @Override
   public <M, R> CompletableFuture<R> sendAndReceive(
-      M message,
       MessageSubject subject,
+      M message,
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder,
       NodeId toNodeId) {

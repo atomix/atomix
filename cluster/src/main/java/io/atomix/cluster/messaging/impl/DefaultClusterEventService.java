@@ -91,29 +91,29 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
   }
 
   @Override
-  public <M> void broadcast(M message, MessageSubject subject, Function<M, byte[]> encoder) {
+  public <M> void broadcast(MessageSubject subject, M message, Function<M, byte[]> encoder) {
     Collection<? extends NodeId> subscribers = getSubscriberNodes(subject);
     if (subscribers != null) {
-      subscribers.forEach(nodeId -> clusterCommunicator.unicast(message, subject, encoder, nodeId));
+      subscribers.forEach(nodeId -> clusterCommunicator.unicast(subject, message, encoder, nodeId));
     }
   }
 
   @Override
-  public <M> CompletableFuture<Void> unicast(M message, MessageSubject subject, Function<M, byte[]> encoder) {
+  public <M> CompletableFuture<Void> unicast(MessageSubject subject, M message, Function<M, byte[]> encoder) {
     NodeId nodeId = getNextNodeId(subject);
     if (nodeId != null) {
-      return clusterCommunicator.unicast(message, subject, encoder, nodeId);
+      return clusterCommunicator.unicast(subject, message, encoder, nodeId);
     }
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public <M, R> CompletableFuture<R> sendAndReceive(M message, MessageSubject subject, Function<M, byte[]> encoder, Function<byte[], R> decoder) {
+  public <M, R> CompletableFuture<R> sendAndReceive(MessageSubject subject, M message, Function<M, byte[]> encoder, Function<byte[], R> decoder) {
     NodeId nodeId = getNextNodeId(subject);
     if (nodeId == null) {
       return Futures.exceptionalFuture(new MessagingException.NoRemoteHandler());
     }
-    return clusterCommunicator.sendAndReceive(message, subject, encoder, decoder, nodeId);
+    return clusterCommunicator.sendAndReceive(subject, message, encoder, decoder, nodeId);
   }
 
   /**
@@ -284,7 +284,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
         .forEach(subscriptions::add));
 
     CompletableFuture<Void> future = new CompletableFuture<>();
-    clusterCommunicator.sendAndReceive(subscriptions, GOSSIP_MESSAGE_SUBJECT, SERIALIZER::encode, SERIALIZER::decode, nodeId)
+    clusterCommunicator.sendAndReceive(GOSSIP_MESSAGE_SUBJECT, subscriptions, SERIALIZER::encode, SERIALIZER::decode, nodeId)
         .whenComplete((result, error) -> {
           if (error == null) {
             updateTimes.put(nodeId, updateTime);

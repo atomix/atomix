@@ -53,7 +53,7 @@ public class MessagesResource {
   @Path("/{subject}")
   @Consumes(MediaType.TEXT_PLAIN)
   public Response publish(@PathParam("subject") String subject, @Context ClusterCommunicationService communicationService, String body) {
-    communicationService.broadcast(body, new MessageSubject(subject), SERIALIZER::encode);
+    communicationService.broadcast(new MessageSubject(subject), body, SERIALIZER::encode);
     return Response.ok().build();
   }
 

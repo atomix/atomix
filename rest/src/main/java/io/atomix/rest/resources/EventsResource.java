@@ -62,7 +62,7 @@ public class EventsResource {
   @Path("/{subject}")
   @Consumes(MediaType.TEXT_PLAIN)
   public Response publish(@PathParam("subject") String subject, @Context ClusterEventService eventService, String body) {
-    eventService.broadcast(body, new MessageSubject(subject), SERIALIZER::encode);
+    eventService.broadcast(new MessageSubject(subject), body, SERIALIZER::encode);
     return Response.ok().build();
   }
 

@@ -86,37 +86,34 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   }
 
   @Override
-  public <M> void broadcast(M message,
-                            MessageSubject subject,
-                            Function<M, byte[]> encoder) {
-    multicast(message,
-        subject,
-        encoder,
-        cluster.nodes()
-            .stream()
-            .filter(node -> !Objects.equal(node, cluster.localNode()))
-            .map(Node::id)
-            .collect(Collectors.toSet()));
+  public <M> void broadcast(
+      MessageSubject subject,
+      M message,
+      Function<M, byte[]> encoder) {
+    multicast(subject, message, encoder, cluster.nodes()
+        .stream()
+        .filter(node -> !Objects.equal(node, cluster.localNode()))
+        .map(Node::id)
+        .collect(Collectors.toSet()));
   }
 
   @Override
-  public <M> void broadcastIncludeSelf(M message,
-                                       MessageSubject subject,
-                                       Function<M, byte[]> encoder) {
-    multicast(message,
-        subject,
-        encoder,
-        cluster.nodes()
-            .stream()
-            .map(Node::id)
-            .collect(Collectors.toSet()));
+  public <M> void broadcastIncludeSelf(
+      MessageSubject subject,
+      M message,
+      Function<M, byte[]> encoder) {
+    multicast(subject, message, encoder, cluster.nodes()
+        .stream()
+        .map(Node::id)
+        .collect(Collectors.toSet()));
   }
 
   @Override
-  public <M> CompletableFuture<Void> unicast(M message,
-                                             MessageSubject subject,
-                                             Function<M, byte[]> encoder,
-                                             NodeId toNodeId) {
+  public <M> CompletableFuture<Void> unicast(
+      MessageSubject subject,
+      M message,
+      Function<M, byte[]> encoder,
+      NodeId toNodeId) {
     try {
       byte[] payload = new ClusterMessage(
           localNodeId,
@@ -130,10 +127,11 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   }
 
   @Override
-  public <M> void multicast(M message,
-                            MessageSubject subject,
-                            Function<M, byte[]> encoder,
-                            Set<NodeId> nodes) {
+  public <M> void multicast(
+      MessageSubject subject,
+      M message,
+      Function<M, byte[]> encoder,
+      Set<NodeId> nodes) {
     byte[] payload = new ClusterMessage(
         localNodeId,
         subject,
@@ -143,11 +141,12 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   }
 
   @Override
-  public <M, R> CompletableFuture<R> sendAndReceive(M message,
-                                                    MessageSubject subject,
-                                                    Function<M, byte[]> encoder,
-                                                    Function<byte[], R> decoder,
-                                                    NodeId toNodeId) {
+  public <M, R> CompletableFuture<R> sendAndReceive(
+      MessageSubject subject,
+      M message,
+      Function<M, byte[]> encoder,
+      Function<byte[], R> decoder,
+      NodeId toNodeId) {
     try {
       ClusterMessage envelope = new ClusterMessage(
           cluster.localNode().id(),

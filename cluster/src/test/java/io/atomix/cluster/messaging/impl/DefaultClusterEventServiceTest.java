@@ -104,7 +104,7 @@ public class DefaultClusterEventServiceTest {
       value2.set(message);
     }, MoreExecutors.directExecutor()).join();
 
-    eventService3.broadcast("Hello world!", new MessageSubject("test1"), SERIALIZER::encode);
+    eventService3.broadcast(new MessageSubject("test1"), "Hello world!", SERIALIZER::encode);
 
     Thread.sleep(100);
 
@@ -114,19 +114,19 @@ public class DefaultClusterEventServiceTest {
     value1.set(null);
     value2.set(null);
 
-    eventService3.unicast("Hello world again!", new MessageSubject("test1"), SERIALIZER::encode);
+    eventService3.unicast(new MessageSubject("test1"), "Hello world again!");
     Thread.sleep(100);
     assertEquals("Hello world again!", value2.get());
     assertNull(value1.get());
     value2.set(null);
 
-    eventService3.unicast("Hello world again!", new MessageSubject("test1"), SERIALIZER::encode);
+    eventService3.unicast(new MessageSubject("test1"), "Hello world again!");
     Thread.sleep(100);
     assertEquals("Hello world again!", value1.get());
     assertNull(value2.get());
     value1.set(null);
 
-    eventService3.unicast("Hello world again!", new MessageSubject("test1"), SERIALIZER::encode);
+    eventService3.unicast(new MessageSubject("test1"), "Hello world again!");
     Thread.sleep(100);
     assertEquals("Hello world again!", value2.get());
     assertNull(value1.get());
@@ -141,17 +141,17 @@ public class DefaultClusterEventServiceTest {
       return message;
     }, SERIALIZER::encode, MoreExecutors.directExecutor());
 
-    assertEquals("Hello world!", eventService3.sendAndReceive("Hello world!", new MessageSubject("test2"), SERIALIZER::encode, SERIALIZER::decode).join());
+    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
     assertEquals("Hello world!", value2.get());
     assertNull(value1.get());
     value2.set(null);
 
-    assertEquals("Hello world!", eventService3.sendAndReceive("Hello world!", new MessageSubject("test2"), SERIALIZER::encode, SERIALIZER::decode).join());
+    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
     assertEquals("Hello world!", value1.get());
     assertNull(value2.get());
     value1.set(null);
 
-    assertEquals("Hello world!", eventService3.sendAndReceive("Hello world!", new MessageSubject("test2"), SERIALIZER::encode, SERIALIZER::decode).join());
+    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
     assertEquals("Hello world!", value2.get());
     assertNull(value1.get());
   }
