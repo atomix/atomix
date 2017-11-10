@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.impl;
+package io.atomix.rest.resources;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.MessageSubject;
+import io.atomix.rest.utils.EventLog;
+import io.atomix.rest.utils.EventManager;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespaces;
 import org.slf4j.Logger;

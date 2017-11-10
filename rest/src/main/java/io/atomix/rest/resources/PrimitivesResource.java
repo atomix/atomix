@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.impl;
+package io.atomix.rest.resources;
+
+import io.atomix.rest.utils.PrimitiveCache;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.impl;
+package io.atomix.rest.utils;
 
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;

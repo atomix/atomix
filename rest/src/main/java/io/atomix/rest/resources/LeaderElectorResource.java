@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.impl;
+package io.atomix.rest.resources;
 
 import io.atomix.primitives.leadership.AsyncLeaderElector;
 import io.atomix.primitives.leadership.Leadership;
 import io.atomix.primitives.leadership.LeadershipEvent;
 import io.atomix.primitives.leadership.LeadershipEventListener;
+import io.atomix.rest.utils.EventLog;
+import io.atomix.rest.utils.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

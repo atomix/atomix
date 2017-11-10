@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.impl;
+package io.atomix.rest.resources;
 
-import io.atomix.primitives.map.AsyncConsistentMap;
-import io.atomix.time.Versioned;
+import io.atomix.primitives.set.AsyncDistributedSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -34,24 +31,23 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
- * Consistent map resource.
+ * Distributed set resource.
  */
-public class ConsistentMapResource extends AbstractRestResource {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ConsistentMapResource.class);
+public class DistributedSetResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedSetResource.class);
 
-  private final AsyncConsistentMap<String, String> map;
+  private final AsyncDistributedSet<String> set;
 
-  public ConsistentMapResource(AsyncConsistentMap<String, String> map) {
-    this.map = map;
+  public DistributedSetResource(AsyncDistributedSet<String> set) {
+    this.set = set;
   }
 
   @GET
-  @Path("/{key}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void get(@PathParam("key") String key, @Suspended AsyncResponse response) {
-    map.get(key).whenComplete((result, error) -> {
+  public void get(@Suspended AsyncResponse response) {
+    set.getAsImmutableSet().whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok(result != null ? new VersionedResult(result) : null).build());
+        response.resume(Response.ok(result).build());
       } else {
         LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
@@ -60,27 +56,12 @@ public class ConsistentMapResource extends AbstractRestResource {
   }
 
   @PUT
-  @Path("/{key}")
-  @Consumes(MediaType.TEXT_PLAIN)
+  @Path("/{element}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void put(@PathParam("key") String key, String value, @Suspended AsyncResponse response) {
-    map.put(key, value).whenComplete((result, error) -> {
+  public void add(@PathParam("element") String element, @Suspended AsyncResponse response) {
+    set.add(element).whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok(result != null ? new VersionedResult(result) : null).build());
-      } else {
-        LOGGER.warn("{}", error);
-        response.resume(Response.serverError().build());
-      }
-    });
-  }
-
-  @DELETE
-  @Path("/{key}")
-  @Produces(MediaType.APPLICATION_JSON)
-  public void remove(@PathParam("key") String key, @Suspended AsyncResponse response) {
-    map.remove(key).whenComplete((result, error) -> {
-      if (error == null) {
-        response.resume(Response.ok(result != null ? new VersionedResult(result) : null).build());
+        response.resume(Response.ok(result).build());
       } else {
         LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
@@ -89,10 +70,24 @@ public class ConsistentMapResource extends AbstractRestResource {
   }
 
   @GET
-  @Path("/keys")
+  @Path("/{element}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void keys(@Suspended AsyncResponse response) {
-    map.keySet().whenComplete((result, error) -> {
+  public void contains(@PathParam("element") String element, @Suspended AsyncResponse response) {
+    set.contains(element).whenComplete((result, error) -> {
+      if (error == null) {
+        response.resume(Response.ok(result).build());
+      } else {
+        LOGGER.warn("{}", error);
+        response.resume(Response.serverError().build());
+      }
+    });
+  }
+
+  @DELETE
+  @Path("/{element}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public void remove(@PathParam("element") String element, @Suspended AsyncResponse response) {
+    set.remove(element).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -106,7 +101,7 @@ public class ConsistentMapResource extends AbstractRestResource {
   @Path("/size")
   @Produces(MediaType.APPLICATION_JSON)
   public void size(@Suspended AsyncResponse response) {
-    map.size().whenComplete((result, error) -> {
+    set.size().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -116,42 +111,15 @@ public class ConsistentMapResource extends AbstractRestResource {
     });
   }
 
-  @POST
-  @Path("/clear")
+  @DELETE
   public void clear(@Suspended AsyncResponse response) {
-    map.clear().whenComplete((result, error) -> {
+    set.clear().whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.noContent().build());
+        response.resume(Response.ok().build());
       } else {
         LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
-  }
-
-  @DELETE
-  @Path("/")
-  @Produces(MediaType.APPLICATION_JSON)
-  public void delete(@Suspended AsyncResponse response) {
-    clear(response);
-  }
-
-  /**
-   * Versioned JSON result.
-   */
-  static class VersionedResult {
-    private final Versioned<String> value;
-
-    public VersionedResult(Versioned<String> value) {
-      this.value = value;
-    }
-
-    public String getValue() {
-      return value.value();
-    }
-
-    public long getVersion() {
-      return value.version();
-    }
   }
 }
