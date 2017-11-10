@@ -44,7 +44,7 @@ import java.util.function.Consumer;
 /**
  * Events resource.
  */
-@Path("/events")
+@Path("/v1/events")
 public class EventsResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventsResource.class);
 

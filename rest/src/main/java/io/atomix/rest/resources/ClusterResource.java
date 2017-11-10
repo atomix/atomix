@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 /**
  * Cluster resource.
  */
-@Path("/cluster")
+@Path("/v1/cluster")
 public class ClusterResource extends AbstractRestResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClusterResource.class);
 

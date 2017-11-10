@@ -24,7 +24,7 @@ import javax.ws.rs.core.Context;
 /**
  * Primitives resource.
  */
-@Path("/primitives")
+@Path("/v1/primitives")
 public class PrimitivesResource extends AbstractRestResource {
 
   /**

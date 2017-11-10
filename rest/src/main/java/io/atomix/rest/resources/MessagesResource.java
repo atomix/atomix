@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 /**
  * Messages resource.
  */
-@Path("/messages")
+@Path("/v1/messages")
 public class MessagesResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(MessagesResource.class);
 
