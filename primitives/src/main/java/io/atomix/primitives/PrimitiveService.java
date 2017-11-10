@@ -15,6 +15,7 @@
  */
 package io.atomix.primitives;
 
+import io.atomix.primitives.DistributedPrimitive.Type;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
 import io.atomix.primitives.generator.AtomicIdGeneratorBuilder;
 import io.atomix.primitives.leadership.LeaderElectorBuilder;
@@ -27,6 +28,8 @@ import io.atomix.primitives.queue.WorkQueueBuilder;
 import io.atomix.primitives.set.DistributedSetBuilder;
 import io.atomix.primitives.tree.DocumentTreeBuilder;
 import io.atomix.primitives.value.AtomicValueBuilder;
+
+import java.util.Set;
 
 /**
  * Primitive service.
@@ -126,5 +129,121 @@ public interface PrimitiveService {
    * @return work queue builder
    */
   <E> WorkQueueBuilder<E> newWorkQueueBuilder();
+
+  /**
+   * Returns a list of map names.
+   *
+   * @return a list of map names
+   */
+  default Set<String> getConsistentMapNames() {
+    return getPrimitiveNames(Type.CONSISTENT_MAP);
+  }
+
+  /**
+   * Returns a list of document tree names.
+   *
+   * @return a list of document tree names
+   */
+  default Set<String> getDocumentTreeNames() {
+    return getPrimitiveNames(Type.DOCUMENT_TREE);
+  }
+
+  /**
+   * Returns a list of tree map names.
+   *
+   * @return a list of tree map names
+   */
+  default Set<String> getConsistentTreeMapNames() {
+    return getPrimitiveNames(Type.CONSISTENT_TREEMAP);
+  }
+
+  /**
+   * Returns a list of multimap names.
+   *
+   * @return a list of multimap names
+   */
+  default Set<String> getConsistentMultimapNames() {
+    return getPrimitiveNames(Type.CONSISTENT_MULTIMAP);
+  }
+
+  /**
+   * Returns a list of counter map names.
+   *
+   * @return a list of counter map names
+   */
+  default Set<String> getAtomicCounterMapNames() {
+    return getPrimitiveNames(Type.COUNTER_MAP);
+  }
+
+  /**
+   * Returns a list of set names.
+   *
+   * @return a list of set names
+   */
+  default Set<String> getSetNames() {
+    return getPrimitiveNames(Type.SET);
+  }
+
+  /**
+   * Returns a list of counter names.
+   *
+   * @return a list of counter names
+   */
+  default Set<String> getAtomicCounterNames() {
+    return getPrimitiveNames(Type.COUNTER);
+  }
+
+  /**
+   * Returns a list of ID generator names.
+   *
+   * @return a list of ID generator names
+   */
+  default Set<String> getAtomicIdGeneratorNames() {
+    return getPrimitiveNames(Type.ID_GENERATOR);
+  }
+
+  /**
+   * Returns a list of atomic value names.
+   *
+   * @return a list of atomic value names
+   */
+  default Set<String> getAtomicValueNames() {
+    return getPrimitiveNames(Type.VALUE);
+  }
+
+  /**
+   * Returns a list of leader elector names.
+   *
+   * @return a list of leader elector names
+   */
+  default Set<String> getLeaderElectorNames() {
+    return getPrimitiveNames(Type.LEADER_ELECTOR);
+  }
+
+  /**
+   * Returns a list of lock names.
+   *
+   * @return a list of lock names
+   */
+  default Set<String> getDistributedLockNames() {
+    return getPrimitiveNames(Type.LOCK);
+  }
+
+  /**
+   * Returns a list of work queue names.
+   *
+   * @return a list of work queue names
+   */
+  default Set<String> getWorkQueueNames() {
+    return getPrimitiveNames(Type.WORK_QUEUE);
+  }
+
+  /**
+   * Returns a set of primitive names for the given primitive type.
+   *
+   * @param primitiveType the primitive type for which to return names
+   * @return a set of names of the given primitive type
+   */
+  Set<String> getPrimitiveNames(DistributedPrimitive.Type primitiveType);
 
 }

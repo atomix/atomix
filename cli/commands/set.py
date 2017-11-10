@@ -1,0 +1,128 @@
+# -*- coding: utf-8
+
+# Copyright 2017-present Open Networking Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+from . import Command, Action, Resource, command
+import requests
+
+
+class SetResource(Resource):
+    def _get_set_names(self):
+        response = requests.get(self.cli.path('/v1/primitives/sets'))
+        if response.status_code == 200:
+            return response.json()
+        return []
+
+    def suggest(self, prefix):
+        sets = self._get_set_names()
+        for set in sets:
+            if set.lower().startswith(prefix.lower()):
+                return set[len(prefix):]
+        return None
+
+    def complete(self, prefix):
+        sets = self._get_set_names()
+        for set in sets:
+            if set.lower().startswith(prefix.lower()):
+                yield set
+
+    def execute(self, name):
+        response = requests.put(self.cli.path('/v1/primitives/sets/{name}', name=name))
+        if response.status_code == 200:
+            print(response.json())
+        else:
+            print("Failed to read set")
+
+class AddAction(Action):
+    def execute(self, name, value):
+        response = requests.put(self.cli.path('/v1/primitives/sets/{name}/{value}', name=name, value=value))
+        if response.status_code == 200:
+            print(response.json())
+        else:
+            print("Failed to add item")
+
+
+class RemoveAction(Action):
+    def execute(self, name, value):
+        response = requests.delete(self.cli.path('/v1/primitives/sets/{name}/{value}', name=name, value=value))
+        if response.status_code == 200:
+            print(response.json())
+        else:
+            print("Failed to remove item")
+
+
+class ContainsAction(Action):
+    def execute(self, name, value):
+        response = requests.delete(self.cli.path('/v1/primitives/sets/{name}/{value}', name=name, value=value))
+        if response.status_code == 200:
+            print(response.json())
+        else:
+            print("Failed to check item")
+
+
+class SizeAction(Action):
+    def execute(self, name):
+        response = requests.get(self.cli.path('/v1/primitives/sets/{name}/size', name=name))
+        if response.status_code == 200:
+            print(response.json())
+        else:
+            print("Failed to read set")
+
+
+class ClearAction(Action):
+    def execute(self, name):
+        response = requests.delete(self.cli.path('/v1/primitives/sets/{name}', name=name),)
+        if response.status_code != 200:
+            print("Failed to clear set")
+
+
+class TextResource(Resource):
+    pass
+
+
+@command(
+    'set {set} add {text}',
+    type=Command.Type.PRIMITIVE,
+    set=SetResource,
+    add=AddAction,
+    text=TextResource
+)
+@command(
+    'set {set} remove {text}',
+    type=Command.Type.PRIMITIVE,
+    set=SetResource,
+    remove=RemoveAction,
+    text=TextResource
+)
+@command(
+    'set {set} contains {text}',
+    type=Command.Type.PRIMITIVE,
+    set=SetResource,
+    contains=ContainsAction,
+    text=TextResource
+)
+@command(
+    'set {set} size',
+    type=Command.Type.PRIMITIVE,
+    set=SetResource,
+    size=SizeAction
+)
+@command(
+    'set {set} clear',
+    type=Command.Type.PRIMITIVE,
+    set=SetResource,
+    clear=ClearAction
+)
+class SetCommand(Command):
+    """Set command"""

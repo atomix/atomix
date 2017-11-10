@@ -1,2 +1,18 @@
 #!/bin/bash
-java -jar ${ATOMIX_ROOT}/server/target/atomix-server.jar "$@"
+
+command=${1:-""}
+case "$command" in
+"build")
+    mvn clean package
+    ;;
+"cli")
+    shift
+    python ${ATOMIX_ROOT}/cli/main.py "$@"
+    ;;
+"server")
+    shift
+    java -jar ${ATOMIX_ROOT}/server/target/atomix-server.jar "$@"
+    ;;
+*)
+    python ${ATOMIX_ROOT}/cli/main.py "$@"
+esac

@@ -15,11 +15,16 @@
  */
 package io.atomix.rest.resources;
 
+import io.atomix.primitives.PrimitiveService;
 import io.atomix.rest.utils.PrimitiveCache;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  * Primitives resource.
@@ -30,7 +35,7 @@ public class PrimitivesResource extends AbstractRestResource {
   /**
    * Returns a counter resource by name.
    */
-  @Path("/counter/{name}")
+  @Path("/counters/{name}")
   public AtomicCounterResource getCounter(@PathParam("name") String counterName, @Context PrimitiveCache primitiveCache) {
     return new AtomicCounterResource(primitiveCache.getPrimitive(counterName, primitives ->
         primitives.newAtomicCounterBuilder()
@@ -39,9 +44,19 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Gets a set of counter names.
+   */
+  @GET
+  @Path("/counters")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getCounterNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getAtomicCounterNames()).build();
+  }
+
+  /**
    * Returns a leader election resource by name.
    */
-  @Path("/election/{name}")
+  @Path("/elections/{name}")
   public LeaderElectorResource getElection(@PathParam("name") String electionName, @Context PrimitiveCache primitiveCache) {
     return new LeaderElectorResource(primitiveCache.getPrimitive(electionName, primitives ->
         primitives.<String>newLeaderElectorBuilder()
@@ -50,9 +65,19 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Gets a set of election names.
+   */
+  @GET
+  @Path("/elections")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getElectionsNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getLeaderElectorNames()).build();
+  }
+
+  /**
    * Returns an ID generator resource by name.
    */
-  @Path("/id/{name}")
+  @Path("/ids/{name}")
   public AtomicIdGeneratorResource getIdGenerator(@PathParam("name") String generatorName, @Context PrimitiveCache primitiveCache) {
     return new AtomicIdGeneratorResource(primitiveCache.getPrimitive(generatorName, primitives ->
         primitives.<String>newAtomicIdGeneratorBuilder()
@@ -61,9 +86,19 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Gets a set of ID generator names.
+   */
+  @GET
+  @Path("/ids")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getIdGeneratorNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getAtomicIdGeneratorNames()).build();
+  }
+
+  /**
    * Returns a lock resource by name.
    */
-  @Path("/lock/{name}")
+  @Path("/locks/{name}")
   public DistributedLockResource getLock(@PathParam("name") String lockName, @Context PrimitiveCache primitiveCache) {
     return new DistributedLockResource(primitiveCache.getPrimitive(lockName, primitives ->
         primitives.newLockBuilder()
@@ -72,9 +107,19 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Gets a set of lock names.
+   */
+  @GET
+  @Path("/locks")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getLockNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getDistributedLockNames()).build();
+  }
+
+  /**
    * Returns a map resource by name.
    */
-  @Path("/map/{name}")
+  @Path("/maps/{name}")
   public ConsistentMapResource getMap(@PathParam("name") String mapName, @Context PrimitiveCache primitiveCache) {
     return new ConsistentMapResource(primitiveCache.getPrimitive(mapName, primitives ->
         primitives.<String, String>newConsistentMapBuilder()
@@ -83,9 +128,19 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Gets a set of map names.
+   */
+  @GET
+  @Path("/maps")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getMapNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getConsistentMapNames()).build();
+  }
+
+  /**
    * Returns a work queue resource by name.
    */
-  @Path("/queue/{name}")
+  @Path("/queues/{name}")
   public WorkQueueResource getQueue(@PathParam("name") String queueName, @Context PrimitiveCache primitiveCache) {
     return new WorkQueueResource(primitiveCache.getPrimitive(queueName, primitives ->
         primitives.<String>newWorkQueueBuilder()
@@ -94,9 +149,19 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Gets a set of queue names.
+   */
+  @GET
+  @Path("/queues")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getQueueNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getWorkQueueNames()).build();
+  }
+
+  /**
    * Returns a set resource by name.
    */
-  @Path("/set/{name}")
+  @Path("/sets/{name}")
   public DistributedSetResource getSet(@PathParam("name") String setName, @Context PrimitiveCache primitiveCache) {
     return new DistributedSetResource(primitiveCache.getPrimitive(setName, primitives ->
         primitives.<String>newSetBuilder()
@@ -105,9 +170,19 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Gets a set of map names.
+   */
+  @GET
+  @Path("/sets")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getSetNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getSetNames()).build();
+  }
+
+  /**
    * Returns a document tree resource by name.
    */
-  @Path("/tree/{name}")
+  @Path("/trees/{name}")
   public DocumentTreeResource getTree(@PathParam("name") String treeName, @Context PrimitiveCache primitiveCache) {
     return new DocumentTreeResource(primitiveCache.getPrimitive(treeName, primitives ->
         primitives.<String>newDocumentTreeBuilder()
@@ -116,13 +191,33 @@ public class PrimitivesResource extends AbstractRestResource {
   }
 
   /**
+   * Gets a set of tree names.
+   */
+  @GET
+  @Path("/trees")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getTreeNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getDocumentTreeNames()).build();
+  }
+
+  /**
    * Returns a value by name.
    */
-  @Path("/value/{name}")
+  @Path("/values/{name}")
   public AtomicValueResource getValue(@PathParam("name") String valueName, @Context PrimitiveCache primitiveCache) {
     return new AtomicValueResource(primitiveCache.getPrimitive(valueName, primitives ->
         primitives.<String>newAtomicValueBuilder()
             .withName(valueName)
             .buildAsync()));
+  }
+
+  /**
+   * Gets a set of value names.
+   */
+  @GET
+  @Path("/values")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getValueNames(@Context PrimitiveService primitiveService) {
+    return Response.ok(primitiveService.getAtomicValueNames()).build();
   }
 }

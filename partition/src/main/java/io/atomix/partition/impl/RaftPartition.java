@@ -67,6 +67,7 @@ import io.atomix.serializer.Serializer;
 import java.io.File;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -193,7 +194,7 @@ public class RaftPartition implements ManagedPartition {
 
   @Override
   public <E> DistributedSetBuilder<E> newSetBuilder() {
-    return new DefaultDistributedSetBuilder<E>(() -> newConsistentMapBuilder());
+    return new DefaultDistributedSetBuilder<>(() -> newConsistentMapBuilder());
   }
 
   @Override
@@ -218,12 +219,17 @@ public class RaftPartition implements ManagedPartition {
 
   @Override
   public <E> WorkQueueBuilder<E> newWorkQueueBuilder() {
-    return new DefaultWorkQueueBuilder<E>(getPrimitiveCreator());
+    return new DefaultWorkQueueBuilder<>(getPrimitiveCreator());
   }
 
   @Override
   public DistributedLockBuilder newLockBuilder() {
     return new DefaultDistributedLockBuilder(getPrimitiveCreator());
+  }
+
+  @Override
+  public Set<String> getPrimitiveNames(Type primitiveType) {
+    return getPrimitiveCreator().getPrimitiveNames(primitiveType);
   }
 
   @Override

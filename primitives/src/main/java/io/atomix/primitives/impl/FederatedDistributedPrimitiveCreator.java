@@ -24,6 +24,7 @@ import com.google.common.hash.Funnel;
 import com.google.common.hash.Funnels;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import io.atomix.primitives.DistributedPrimitive.Type;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.DistributedPrimitives;
 import io.atomix.primitives.Hasher;
@@ -165,28 +166,10 @@ public class FederatedDistributedPrimitiveCreator implements DistributedPrimitiv
   }
 
   @Override
-  public Set<String> getAsyncConsistentMapNames() {
+  public Set<String> getPrimitiveNames(Type primitiveType) {
     return members.values()
         .stream()
-        .map(DistributedPrimitiveCreator::getAsyncConsistentMapNames)
-        .reduce(Sets::union)
-        .orElse(ImmutableSet.of());
-  }
-
-  @Override
-  public Set<String> getAsyncAtomicCounterNames() {
-    return members.values()
-        .stream()
-        .map(DistributedPrimitiveCreator::getAsyncAtomicCounterNames)
-        .reduce(Sets::union)
-        .orElse(ImmutableSet.of());
-  }
-
-  @Override
-  public Set<String> getWorkQueueNames() {
-    return members.values()
-        .stream()
-        .map(DistributedPrimitiveCreator::getWorkQueueNames)
+        .map(m -> m.getPrimitiveNames(primitiveType))
         .reduce(Sets::union)
         .orElse(ImmutableSet.of());
   }

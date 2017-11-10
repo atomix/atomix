@@ -191,23 +191,10 @@ public interface DistributedPrimitiveCreator {
   <V> AsyncDocumentTree<V> newAsyncDocumentTree(String name, Serializer serializer, Ordering ordering);
 
   /**
-   * Returns the names of all created {@code AsyncConsistentMap} instances.
+   * Returns a set of primitive names for the given primitive type.
    *
-   * @return set of {@code AsyncConsistentMap} names
+   * @param primitiveType the primitive type for which to return names
+   * @return a set of names of the given primitive type
    */
-  Set<String> getAsyncConsistentMapNames();
-
-  /**
-   * Returns the names of all created {@code AsyncAtomicCounter} instances.
-   *
-   * @return set of {@code AsyncAtomicCounter} names
-   */
-  Set<String> getAsyncAtomicCounterNames();
-
-  /**
-   * Returns the names of all created {@code WorkQueue} instances.
-   *
-   * @return set of {@code WorkQueue} names
-   */
-  Set<String> getWorkQueueNames();
+  Set<String> getPrimitiveNames(DistributedPrimitive.Type primitiveType);
 }

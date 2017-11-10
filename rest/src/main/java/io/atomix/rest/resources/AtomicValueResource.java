@@ -43,7 +43,6 @@ public class AtomicValueResource extends AbstractRestResource {
   }
 
   @GET
-  @Path("/")
   @Produces(MediaType.APPLICATION_JSON)
   public void get(@Suspended AsyncResponse response) {
     value.get().whenComplete((result, error) -> {
@@ -57,7 +56,6 @@ public class AtomicValueResource extends AbstractRestResource {
   }
 
   @PUT
-  @Path("/")
   @Consumes(MediaType.TEXT_PLAIN)
   public void set(String body, @Suspended AsyncResponse response) {
     value.set(body).whenComplete((result, error) -> {

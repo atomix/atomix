@@ -15,6 +15,7 @@
  */
 package io.atomix.primitives.impl;
 
+import io.atomix.primitives.DistributedPrimitive.Type;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.PrimitiveService;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
@@ -43,6 +44,7 @@ import io.atomix.primitives.value.AtomicValueBuilder;
 import io.atomix.primitives.value.impl.DefaultAtomicValueBuilder;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Partitioned primitive service.
@@ -112,5 +114,10 @@ public class FederatedPrimitiveService implements PrimitiveService {
   @Override
   public <E> WorkQueueBuilder<E> newWorkQueueBuilder() {
     return new DefaultWorkQueueBuilder<>(federatedPrimitiveCreator);
+  }
+
+  @Override
+  public Set<String> getPrimitiveNames(Type primitiveType) {
+    return federatedPrimitiveCreator.getPrimitiveNames(primitiveType);
   }
 }
