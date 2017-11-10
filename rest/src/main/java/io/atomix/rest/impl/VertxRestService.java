@@ -16,12 +16,14 @@
 package io.atomix.rest.impl;
 
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.primitives.PrimitiveService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;
 import io.atomix.rest.resources.EventsResource;
+import io.atomix.rest.resources.MessagesResource;
 import io.atomix.rest.resources.PrimitivesResource;
 import io.atomix.rest.utils.EventManager;
 import io.atomix.rest.utils.PrimitiveCache;
@@ -48,6 +50,7 @@ public class VertxRestService implements ManagedRestService {
   private final int port;
   private final Vertx vertx;
   private final ClusterService clusterService;
+  private final ClusterCommunicationService communicationService;
   private final ClusterEventService eventService;
   private final PrimitiveService primitiveService;
   private final PrimitiveCache primitiveCache;
@@ -56,11 +59,18 @@ public class VertxRestService implements ManagedRestService {
   private VertxResteasyDeployment deployment;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public VertxRestService(String host, int port, ClusterService clusterService, ClusterEventService eventService, PrimitiveService primitiveService) {
+  public VertxRestService(
+      String host,
+      int port,
+      ClusterService clusterService,
+      ClusterCommunicationService communicationService,
+      ClusterEventService eventService,
+      PrimitiveService primitiveService) {
     this.host = host;
     this.port = port;
     this.vertx = Vertx.vertx();
     this.clusterService = checkNotNull(clusterService);
+    this.communicationService = checkNotNull(communicationService);
     this.eventService = checkNotNull(eventService);
     this.primitiveService = checkNotNull(primitiveService);
     this.primitiveCache = new PrimitiveCache(primitiveService, PRIMITIVE_CACHE_SIZE);
@@ -73,6 +83,7 @@ public class VertxRestService implements ManagedRestService {
     deployment.start();
 
     deployment.getDispatcher().getDefaultContextObjects().put(ClusterService.class, clusterService);
+    deployment.getDispatcher().getDefaultContextObjects().put(ClusterCommunicationService.class, communicationService);
     deployment.getDispatcher().getDefaultContextObjects().put(ClusterEventService.class, eventService);
     deployment.getDispatcher().getDefaultContextObjects().put(PrimitiveService.class, primitiveService);
     deployment.getDispatcher().getDefaultContextObjects().put(PrimitiveCache.class, primitiveCache);
@@ -80,6 +91,7 @@ public class VertxRestService implements ManagedRestService {
 
     deployment.getRegistry().addPerInstanceResource(ClusterResource.class);
     deployment.getRegistry().addPerInstanceResource(EventsResource.class);
+    deployment.getRegistry().addPerInstanceResource(MessagesResource.class);
     deployment.getRegistry().addPerInstanceResource(PrimitivesResource.class);
 
     server.requestHandler(new VertxRequestHandler(vertx, deployment));
