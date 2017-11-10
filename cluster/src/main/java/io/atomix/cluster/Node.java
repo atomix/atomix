@@ -16,9 +16,9 @@
 package io.atomix.cluster;
 
 import io.atomix.cluster.impl.DefaultNode;
+import io.atomix.messaging.Endpoint;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -71,13 +71,11 @@ public abstract class Node {
   }
 
   private final NodeId id;
-  private final InetAddress address;
-  private final int port;
+  private final Endpoint endpoint;
 
-  protected Node(NodeId id, InetAddress address, int port) {
+  protected Node(NodeId id, Endpoint endpoint) {
     this.id = checkNotNull(id, "id cannot be null");
-    this.address = checkNotNull(address, "address cannot be null");
-    this.port = port;
+    this.endpoint = checkNotNull(endpoint, "endpoint cannot be null");
   }
 
   /**
@@ -90,21 +88,12 @@ public abstract class Node {
   }
 
   /**
-   * Returns the IP address of the controller instance.
+   * Returns the node endpoint.
    *
-   * @return IP address
+   * @return the node endpoint
    */
-  public InetAddress address() {
-    return address;
-  }
-
-  /**
-   * Returns the TCP port on which the node listens for connections.
-   *
-   * @return TCP port
-   */
-  public int port() {
-    return port;
+  public Endpoint endpoint() {
+    return endpoint;
   }
 
   /**
@@ -122,11 +111,20 @@ public abstract class Node {
   public abstract State state();
 
   @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Node && ((Node) object).id.equals(id);
+  }
+
+  @Override
   public String toString() {
     return toStringHelper(this)
         .add("id", id)
-        .add("address", address)
-        .add("port", port)
+        .add("endpoint", endpoint)
         .toString();
   }
 
@@ -134,11 +132,8 @@ public abstract class Node {
    * Node builder.
    */
   public abstract static class Builder implements io.atomix.utils.Builder<Node> {
-    private static final int DEFAULT_PORT = 5678;
-
     protected NodeId id;
-    protected InetAddress address;
-    protected int port = DEFAULT_PORT;
+    protected Endpoint endpoint;
 
     /**
      * Sets the node identifier.
@@ -152,39 +147,13 @@ public abstract class Node {
     }
 
     /**
-     * Sets the node host.
+     * Sets the node endpoint.
      *
-     * @param host the node host
-     * @return the node builder
-     * @throws IllegalArgumentException if the host name cannot be resolved
-     */
-    public Builder withHost(String host) {
-      try {
-        return withAddress(InetAddress.getByName(host));
-      } catch (UnknownHostException e) {
-        throw new IllegalArgumentException("Failed to resolve host", e);
-      }
-    }
-
-    /**
-     * Sets the node address.
-     *
-     * @param address the node address
+     * @param endpoint the node endpoint
      * @return the node builder
      */
-    public Builder withAddress(InetAddress address) {
-      this.address = checkNotNull(address, "address cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the node port.
-     *
-     * @param port the node port
-     * @return the node builder
-     */
-    public Builder withPort(int port) {
-      this.port = port;
+    public Builder withEndpoint(Endpoint endpoint) {
+      this.endpoint = checkNotNull(endpoint, "endpoint cannot be null");
       return this;
     }
   }

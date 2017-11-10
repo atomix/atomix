@@ -25,6 +25,7 @@ import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Anoint;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Evict;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Promote;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Run;
+import io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.Withdraw;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
@@ -74,8 +75,8 @@ public class RaftLeaderElector extends AbstractRaftPrimitive implements AsyncLea
   }
 
   @Override
-  public CompletableFuture<Void> withdraw() {
-    return proxy.invoke(WITHDRAW);
+  public CompletableFuture<Void> withdraw(byte[] id) {
+    return proxy.invoke(WITHDRAW, SERIALIZER::encode, new Withdraw(id));
   }
 
   @Override

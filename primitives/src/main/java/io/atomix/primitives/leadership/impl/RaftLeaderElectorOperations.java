@@ -63,6 +63,7 @@ public enum RaftLeaderElectorOperations implements OperationId {
       .register(Leadership.class)
       .register(Leader.class)
       .register(Run.class)
+      .register(Withdraw.class)
       .register(Anoint.class)
       .register(Promote.class)
       .register(Evict.class)
@@ -114,6 +115,19 @@ public enum RaftLeaderElectorOperations implements OperationId {
     }
 
     public Run(byte[] id) {
+      super(id);
+    }
+  }
+
+  /**
+   * Command for withdrawing a candidate from an election.
+   */
+  @SuppressWarnings("serial")
+  public static class Withdraw extends ElectionChangeOperation {
+    private Withdraw() {
+    }
+
+    public Withdraw(byte[] id) {
       super(id);
     }
   }

@@ -49,12 +49,12 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   private static final long HEARTBEAT_INTERVAL_MILLIS = 250;
 
   private final MemberId localMemberId;
-  private final ReplicaPartition partition;
+  private final RaftPartition partition;
   private final ClusterCommunicationService clusterCommunicator;
   private RaftServer server;
 
   public RaftPartitionServer(
-      ReplicaPartition partition,
+      RaftPartition partition,
       MemberId localMemberId,
       ClusterCommunicationService clusterCommunicator) {
     this.partition = partition;
@@ -105,7 +105,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
    */
   public void delete() {
     try {
-      Files.walkFileTree(partition.getDataFolder().toPath(), new SimpleFileVisitor<Path>() {
+      Files.walkFileTree(partition.getDataDir().toPath(), new SimpleFileVisitor<Path>() {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
           Files.delete(file);
@@ -136,7 +136,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
             .withPrefix(String.format("partition-%s", partition.id()))
             .withStorageLevel(StorageLevel.MAPPED)
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
-            .withDirectory(partition.getDataFolder())
+            .withDirectory(partition.getDataDir())
             .withMaxSegmentSize(MAX_SEGMENT_SIZE)
             .build());
     RaftPartition.RAFT_SERVICES.forEach(builder::addService);

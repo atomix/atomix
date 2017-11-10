@@ -54,8 +54,8 @@ public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector
   }
 
   @Override
-  public CompletableFuture<Void> withdraw() {
-    return backingElector.withdraw();
+  public CompletableFuture<Void> withdraw(V1 identifier) {
+    return backingElector.withdraw(valueEncoder.apply(identifier));
   }
 
   @Override

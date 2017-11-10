@@ -15,13 +15,10 @@
  */
 package io.atomix.messaging;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
 import java.net.InetAddress;
 import java.util.Objects;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Representation of a TCP/UDP communication end point.
@@ -45,10 +42,7 @@ public final class Endpoint {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(getClass())
-        .add("ip", ip)
-        .add("port", port)
-        .toString();
+    return String.format("%s:%d", host().getHostAddress(), port);
   }
 
   @Override

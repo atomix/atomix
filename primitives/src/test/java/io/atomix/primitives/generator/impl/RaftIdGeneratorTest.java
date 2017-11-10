@@ -15,8 +15,8 @@
  */
 package io.atomix.primitives.generator.impl;
 
-import io.atomix.primitives.counter.impl.RaftCounter;
-import io.atomix.primitives.counter.impl.RaftCounterService;
+import io.atomix.primitives.counter.impl.RaftAtomicCounter;
+import io.atomix.primitives.counter.impl.RaftAtomicCounterService;
 import io.atomix.primitives.impl.AbstractRaftPrimitiveTest;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.RaftService;
@@ -29,16 +29,16 @@ import static org.junit.Assert.assertEquals;
 /**
  * Unit test for {@code AtomixIdGenerator}.
  */
-public class RaftIdGeneratorTest extends AbstractRaftPrimitiveTest<RaftCounter> {
+public class RaftIdGeneratorTest extends AbstractRaftPrimitiveTest<RaftAtomicCounter> {
 
   @Override
   protected RaftService createService() {
-    return new RaftCounterService();
+    return new RaftAtomicCounterService();
   }
 
   @Override
-  protected RaftCounter createPrimitive(RaftProxy proxy) {
-    return new RaftCounter(proxy);
+  protected RaftAtomicCounter createPrimitive(RaftProxy proxy) {
+    return new RaftAtomicCounter(proxy);
   }
 
   /**

@@ -23,7 +23,7 @@ import io.atomix.serializer.kryo.KryoNamespaces;
 /**
  * Counter commands.
  */
-public enum RaftCounterOperations implements OperationId {
+public enum RaftAtomicCounterOperations implements OperationId {
   SET("set", OperationType.COMMAND),
   COMPARE_AND_SET("compareAndSet", OperationType.COMMAND),
   INCREMENT_AND_GET("incrementAndGet", OperationType.COMMAND),
@@ -35,7 +35,7 @@ public enum RaftCounterOperations implements OperationId {
   private final String id;
   private final OperationType type;
 
-  RaftCounterOperations(String id, OperationType type) {
+  RaftAtomicCounterOperations(String id, OperationType type) {
     this.id = id;
     this.type = type;
   }
@@ -58,7 +58,7 @@ public enum RaftCounterOperations implements OperationId {
       .register(CompareAndSet.class)
       .register(AddAndGet.class)
       .register(GetAndAdd.class)
-      .build(RaftCounterOperations.class.getSimpleName());
+      .build(RaftAtomicCounterOperations.class.getSimpleName());
 
   /**
    * Abstract value command.

@@ -16,6 +16,7 @@
 package io.atomix.primitives;
 
 import io.atomix.serializer.Serializer;
+import io.atomix.serializer.kryo.KryoNamespaces;
 import io.atomix.utils.Builder;
 
 /**
@@ -107,6 +108,9 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @return serializer
    */
   public Serializer serializer() {
+    if (serializer == null) {
+      serializer = Serializer.using(KryoNamespaces.BASIC);
+    }
     return serializer;
   }
 

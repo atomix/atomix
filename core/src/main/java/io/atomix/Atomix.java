@@ -15,19 +15,24 @@
  */
 package io.atomix;
 
+import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
+import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
-import io.atomix.messaging.Endpoint;
+import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingService;
 import io.atomix.partition.ManagedPartitionService;
+import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionMetadata;
 import io.atomix.partition.PartitionService;
 import io.atomix.partition.impl.DefaultPartitionService;
@@ -43,18 +48,30 @@ import io.atomix.primitives.map.AtomicCounterMapBuilder;
 import io.atomix.primitives.map.ConsistentMapBuilder;
 import io.atomix.primitives.map.ConsistentTreeMapBuilder;
 import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
+import io.atomix.primitives.queue.WorkQueueBuilder;
 import io.atomix.primitives.set.DistributedSetBuilder;
 import io.atomix.primitives.tree.DocumentTreeBuilder;
 import io.atomix.primitives.value.AtomicValueBuilder;
+import io.atomix.rest.ManagedRestService;
+import io.atomix.rest.impl.VertxRestService;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.SingleThreadContext;
+import io.atomix.utils.concurrent.ThreadContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -64,25 +81,43 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Atomix!
  */
-public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
+public class Atomix implements PrimitiveService, Managed<Atomix> {
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @return a new Atomix builder
+   */
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
+
   private final ManagedClusterService cluster;
   private final ManagedMessagingService messagingService;
   private final ManagedClusterCommunicationService clusterCommunicator;
+  private final ManagedClusterEventService clusterEventService;
   private final ManagedPartitionService partitions;
+  private final ManagedRestService restService;
   private final PrimitiveService primitives;
   private final AtomicBoolean open = new AtomicBoolean();
+  private final ThreadContext context = new SingleThreadContext("atomix-%d");
 
   protected Atomix(
-      AtomixMetadata metadata,
       ManagedClusterService cluster,
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
+      ManagedClusterEventService clusterEventService,
       ManagedPartitionService partitions,
+      ManagedRestService restService,
       PrimitiveService primitives) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
+    this.clusterEventService = checkNotNull(clusterEventService, "clusterEventService cannot be null");
     this.partitions = checkNotNull(partitions, "partitions cannot be null");
+    this.restService = restService; // ManagedRestService can be null
     this.primitives = checkNotNull(primitives, "primitives cannot be null");
   }
 
@@ -102,6 +137,15 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
    */
   public ClusterCommunicationService getCommunicationService() {
     return clusterCommunicator;
+  }
+
+  /**
+   * Returns the cluster event service.
+   *
+   * @return the cluster event service
+   */
+  public ClusterEventService getEventService() {
+    return clusterEventService;
   }
 
   /**
@@ -187,15 +231,23 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
   }
 
   @Override
+  public <E> WorkQueueBuilder<E> newWorkQueueBuilder() {
+    return primitives.newWorkQueueBuilder();
+  }
+
+  @Override
   public CompletableFuture<Atomix> open() {
     return messagingService.open()
-        .thenCompose(v -> cluster.open())
-        .thenCompose(v -> clusterCommunicator.open())
-        .thenCompose(v -> partitions.open())
-        .thenApply(v -> {
+        .thenComposeAsync(v -> cluster.open(), context)
+        .thenComposeAsync(v -> clusterCommunicator.open(), context)
+        .thenComposeAsync(v -> clusterEventService.open(), context)
+        .thenComposeAsync(v -> partitions.open(), context)
+        .thenComposeAsync(v -> restService != null ? restService.open() : CompletableFuture.completedFuture(null), context)
+        .thenApplyAsync(v -> {
           open.set(true);
+          LOGGER.info("Started");
           return this;
-        });
+        }, context);
   }
 
   @Override
@@ -205,7 +257,17 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
 
   @Override
   public CompletableFuture<Void> close() {
-    return null;
+    return restService.close()
+        .thenComposeAsync(v -> partitions.close(), context)
+        .thenComposeAsync(v -> clusterCommunicator.close(), context)
+        .thenComposeAsync(v -> clusterEventService.close(), context)
+        .thenComposeAsync(v -> cluster.close(), context)
+        .thenComposeAsync(v -> messagingService.close(), context)
+        .thenRunAsync(() -> {
+          context.close();
+          open.set(false);
+          LOGGER.info("Stopped");
+        });
   }
 
   @Override
@@ -223,15 +285,18 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
   /**
    * Atomix builder.
    */
-  public abstract static class Builder implements io.atomix.utils.Builder<Atomix> {
+  public static class Builder implements io.atomix.utils.Builder<Atomix> {
     private static final String DEFAULT_CLUSTER_NAME = "atomix";
-    protected String name = DEFAULT_CLUSTER_NAME;
-    protected Node localNode;
-    protected Collection<Node> bootstrapNodes;
-    protected int numPartitions;
-    protected int partitionSize;
-    protected int numBuckets;
-    protected Collection<PartitionMetadata> partitions;
+    private static final int DEFAULT_NUM_BUCKETS = 128;
+    private String name = DEFAULT_CLUSTER_NAME;
+    private int httpPort;
+    private Node localNode;
+    private Collection<Node> bootstrapNodes;
+    private int numPartitions;
+    private int partitionSize;
+    private int numBuckets = DEFAULT_NUM_BUCKETS;
+    private Collection<PartitionMetadata> partitions;
+    private File dataDir = new File(System.getProperty("user.dir"), "data");
 
     /**
      * Sets the cluster name.
@@ -242,6 +307,17 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
      */
     public Builder withClusterName(String name) {
       this.name = checkNotNull(name, "name cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the HTTP port.
+     *
+     * @param httpPort the HTTP port
+     * @return the Atomix builder
+     */
+    public Builder withHttpPort(int httpPort) {
+      this.httpPort = httpPort;
       return this;
     }
 
@@ -330,33 +406,49 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
     }
 
     /**
-     * Builds Atomix metadata.
+     * Sets the path to the data directory.
+     *
+     * @param dataDir the path to the replica's data directory
+     * @return the replica builder
      */
-    protected AtomixMetadata buildMetadata() {
-      return AtomixMetadata.newBuilder()
-          .withLocalNode(localNode)
-          .withBootstrapNodes(bootstrapNodes)
-          .withNumPartitions(numPartitions)
-          .withPartitionSize(partitionSize)
-          .withNumBuckets(numBuckets)
-          .withPartitions(partitions)
-          .build();
+    public Builder withDataDir(File dataDir) {
+      this.dataDir = checkNotNull(dataDir, "dataDir cannot be null");
+      return this;
+    }
+
+    @Override
+    public Atomix build() {
+      ManagedMessagingService messagingService = buildMessagingService();
+      ManagedClusterService clusterService = buildClusterService(messagingService);
+      ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
+      ManagedClusterEventService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
+      ManagedPartitionService partitionService = buildPartitionService(clusterCommunicator);
+      PrimitiveService primitives = buildPrimitiveService(partitionService);
+      ManagedRestService restService = buildRestService(clusterService, clusterCommunicator, clusterEventService, primitives);
+      return new Atomix(
+          clusterService,
+          messagingService,
+          clusterCommunicator,
+          clusterEventService,
+          partitionService,
+          restService,
+          primitives);
     }
 
     /**
      * Builds a default messaging service.
      */
-    protected ManagedMessagingService buildMessagingService() {
+    private ManagedMessagingService buildMessagingService() {
       return NettyMessagingService.newBuilder()
           .withName(name)
-          .withEndpoint(new Endpoint(localNode.address(), localNode.port()))
+          .withEndpoint(localNode.endpoint())
           .build();
     }
 
     /**
      * Builds a cluster service.
      */
-    protected ManagedClusterService buildClusterService(MessagingService messagingService) {
+    private ManagedClusterService buildClusterService(MessagingService messagingService) {
       return new DefaultClusterService(ClusterMetadata.newBuilder()
           .withLocalNode(localNode)
           .withBootstrapNodes(bootstrapNodes)
@@ -366,18 +458,26 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
     /**
      * Builds a cluster communication service.
      */
-    protected ManagedClusterCommunicationService buildClusterCommunicationService(
+    private ManagedClusterCommunicationService buildClusterCommunicationService(
         ClusterService clusterService, MessagingService messagingService) {
       return new DefaultClusterCommunicationService(clusterService, messagingService);
     }
 
     /**
+     * Builds a cluster event service.
+     */
+    private ManagedClusterEventService buildClusterEventService(
+        ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
+      return new DefaultClusterEventService(clusterService, clusterCommunicator);
+    }
+
+    /**
      * Builds a partition service.
      */
-    protected ManagedPartitionService buildPartitionService(
-        AtomixMetadata metadata, Function<PartitionMetadata, RaftPartition> factory) {
-      Collection<RaftPartition> partitions = metadata.partitions().stream()
-          .map(factory)
+    private ManagedPartitionService buildPartitionService(ClusterCommunicationService clusterCommunicator) {
+      File partitionsDir = new File(this.dataDir, "partitions");
+      Collection<RaftPartition> partitions = buildPartitions().stream()
+          .map(p -> new RaftPartition(localNode.id(), p, clusterCommunicator, new File(partitionsDir, p.id().toString())))
           .collect(Collectors.toList());
       return new DefaultPartitionService(partitions);
     }
@@ -385,10 +485,51 @@ public abstract class Atomix implements PrimitiveService, Managed<Atomix> {
     /**
      * Builds a primitive service.
      */
-    protected PrimitiveService buildPrimitiveService(PartitionService partitionService) {
-      Map<Integer, DistributedPrimitiveCreator > members = new HashMap<>();
+    private PrimitiveService buildPrimitiveService(PartitionService partitionService) {
+      Map<Integer, DistributedPrimitiveCreator> members = new HashMap<>();
       partitionService.getPartitions().forEach(p -> members.put(p.id().id(), partitionService.getPrimitiveCreator(p.id())));
       return new FederatedPrimitiveService(members, numBuckets);
+    }
+
+    /**
+     * Builds a REST service.
+     */
+    private ManagedRestService buildRestService(
+        ClusterService clusterService,
+        ClusterCommunicationService communicationService,
+        ClusterEventService eventService,
+        PrimitiveService primitiveService) {
+      return httpPort > 0 ? new VertxRestService(localNode.endpoint().host().getHostAddress(), httpPort, clusterService, communicationService, eventService, primitiveService) : null;
+    }
+
+    /**
+     * Builds the cluster partitions.
+     */
+    private Collection<PartitionMetadata> buildPartitions() {
+      if (partitions != null) {
+        return partitions;
+      }
+
+      if (numPartitions == 0) {
+        numPartitions = bootstrapNodes.size();
+      }
+
+      if (partitionSize == 0) {
+        partitionSize = Math.min(bootstrapNodes.size(), 3);
+      }
+
+      List<Node> sorted = new ArrayList<>(bootstrapNodes);
+      sorted.sort(Comparator.comparing(Node::id));
+
+      Set<PartitionMetadata> partitions = Sets.newHashSet();
+      for (int i = 0; i < numPartitions; i++) {
+        Set<NodeId> set = new HashSet<>(partitionSize);
+        for (int j = 0; j < partitionSize; j++) {
+          set.add(sorted.get((i + j) % numPartitions).id());
+        }
+        partitions.add(new PartitionMetadata(PartitionId.from((i + 1)), set));
+      }
+      return partitions;
     }
   }
 }

@@ -69,12 +69,9 @@ public class DefaultClusterService implements ManagedClusterService {
       KryoNamespace.newBuilder()
           .register(KryoNamespaces.BASIC)
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
-          .register(DefaultNode.class)
+          .register(NodeId.class)
           .build("ClusterStore"));
 
-  private static final String INSTANCE_ID_NULL = "Instance ID cannot be null";
-
-  private final ClusterMetadata clusterMetadata;
   private final MessagingService messagingService;
   private final AtomicBoolean open = new AtomicBoolean();
   private final DefaultNode localNode;
@@ -89,10 +86,15 @@ public class DefaultClusterService implements ManagedClusterService {
   private ScheduledFuture<?> heartbeatFuture;
 
   public DefaultClusterService(ClusterMetadata clusterMetadata, MessagingService messagingService) {
-    this.clusterMetadata = checkNotNull(clusterMetadata, "clusterMetadata cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.localNode = (DefaultNode) clusterMetadata.localNode();
-    clusterMetadata.bootstrapNodes().forEach(n -> nodes.put(n.id(), (DefaultNode) n));
+    if (clusterMetadata.bootstrapNodes().contains(localNode)) {
+      localNode.setType(Node.Type.CORE);
+    } else {
+      localNode.setType(Node.Type.CLIENT);
+    }
+    nodes.put(localNode.id(), localNode);
+    clusterMetadata.bootstrapNodes().forEach(n -> nodes.putIfAbsent(n.id(), ((DefaultNode) n).setType(Node.Type.CORE)));
     messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
   }
 
@@ -118,11 +120,11 @@ public class DefaultClusterService implements ManagedClusterService {
     try {
       Set<DefaultNode> peers = nodes.values()
           .stream()
-          .filter(node -> !(node.id().equals(localNode().id())))
+          .filter(node -> !node.id().equals(localNode().id()))
           .collect(Collectors.toSet());
-      byte[] hbMessagePayload = SERIALIZER.encode(localNode);
+      byte[] payload = SERIALIZER.encode(localNode.id());
       peers.forEach((node) -> {
-        sendHeartbeat(hbMessagePayload, node);
+        sendHeartbeat(node.endpoint(), payload);
         double phi = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector()).phi();
         if (phi >= phiFailureThreshold) {
           if (node.state() == State.ACTIVE) {
@@ -142,11 +144,10 @@ public class DefaultClusterService implements ManagedClusterService {
   /**
    * Sends a heartbeat to the given peer.
    */
-  private void sendHeartbeat(byte[] messagePayload, Node peer) {
-    Endpoint remoteEp = new Endpoint(peer.address(), peer.port());
-    messagingService.sendAsync(remoteEp, HEARTBEAT_MESSAGE, messagePayload).whenComplete((result, error) -> {
+  private void sendHeartbeat(Endpoint endpoint, byte[] payload) {
+    messagingService.sendAsync(endpoint, HEARTBEAT_MESSAGE, payload).whenComplete((result, error) -> {
       if (error != null) {
-        LOGGER.trace("Sending heartbeat to {} failed", remoteEp, error);
+        LOGGER.trace("Sending heartbeat to {} failed", endpoint, error);
       }
     });
   }
@@ -155,9 +156,9 @@ public class DefaultClusterService implements ManagedClusterService {
    * Handles a heartbeat message.
    */
   private void handleHeartbeat(Endpoint endpoint, byte[] message) {
-    DefaultNode node = SERIALIZER.decode(message);
-    failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector()).report();
-    activateNode(node);
+    NodeId nodeId = SERIALIZER.decode(message);
+    failureDetectors.computeIfAbsent(nodeId, n -> new PhiAccrualFailureDetector()).report();
+    activateNode(new DefaultNode(nodeId, endpoint));
   }
 
   /**
@@ -169,7 +170,7 @@ public class DefaultClusterService implements ManagedClusterService {
       node.setState(State.ACTIVE);
       nodes.put(node.id(), node);
       eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_ADDED, node)));
-      sendHeartbeat(SERIALIZER.encode(localNode), node);
+      sendHeartbeat(node.endpoint(), SERIALIZER.encode(localNode.id()));
     } else if (existingNode.state() == State.INACTIVE) {
       existingNode.setState(State.ACTIVE);
       eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_ACTIVATED, existingNode)));
@@ -188,6 +189,7 @@ public class DefaultClusterService implements ManagedClusterService {
           eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_DEACTIVATED, existingNode)));
           break;
         case CLIENT:
+          nodes.remove(node.id());
           eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_REMOVED, existingNode)));
           break;
         default:
@@ -212,6 +214,7 @@ public class DefaultClusterService implements ManagedClusterService {
       localNode.setState(State.ACTIVE);
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(this::sendHeartbeats, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
     }
+    LOGGER.info("Started");
     return CompletableFuture.completedFuture(this);
   }
 
@@ -226,6 +229,7 @@ public class DefaultClusterService implements ManagedClusterService {
       localNode.setState(State.INACTIVE);
       heartbeatFuture.cancel(true);
     }
+    LOGGER.info("Stopped");
     return CompletableFuture.completedFuture(null);
   }
 

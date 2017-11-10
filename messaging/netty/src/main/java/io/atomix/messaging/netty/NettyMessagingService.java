@@ -57,6 +57,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.MessageDigest;
@@ -92,6 +94,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * Netty based MessagingService.
  */
 public class NettyMessagingService implements ManagedMessagingService {
+  private static final String DEFAULT_NAME = "atomix";
+  public static final int DEFAULT_PORT = 5679;
 
   /**
    * Returns a new Netty messaging service builder.
@@ -106,7 +110,6 @@ public class NettyMessagingService implements ManagedMessagingService {
    * Netty messaging service builder.
    */
   public static class Builder extends MessagingService.Builder {
-    private static final String DEFAULT_NAME = "atomix";
     private String name = DEFAULT_NAME;
     private Endpoint endpoint;
 
@@ -136,6 +139,13 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     @Override
     public ManagedMessagingService build() {
+      if (endpoint == null) {
+        try {
+          endpoint = new Endpoint(InetAddress.getByName("127.0.0.1"), DEFAULT_PORT);
+        } catch (UnknownHostException e) {
+          throw new IllegalStateException("Failed to instantiate address", e);
+        }
+      }
       return new NettyMessagingService(name.hashCode(), endpoint);
     }
   }
@@ -158,7 +168,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   //TODO CONFIG_DIR is duplicated from ConfigFileBasedClusterMetadataProvider
   private static final String CONFIG_DIR = "../config";
-  private static final String KS_FILE_NAME = "onos.jks";
+  private static final String KS_FILE_NAME = "atomix.jks";
   private static final File DEFAULT_KS_FILE = new File(CONFIG_DIR, KS_FILE_NAME);
   private static final String DEFAULT_KS_PASSWORD = "changeit";
 
