@@ -21,8 +21,6 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.rest.utils.EventLog;
 import io.atomix.rest.utils.EventManager;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespaces;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,13 +45,12 @@ import java.util.function.Consumer;
 @Path("/messages")
 public class MessagesResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(MessagesResource.class);
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
   @POST
   @Path("/{subject}")
   @Consumes(MediaType.TEXT_PLAIN)
   public Response publish(@PathParam("subject") String subject, @Context ClusterCommunicationService communicationService, String body) {
-    communicationService.broadcast(new MessageSubject(subject), body, SERIALIZER::encode);
+    communicationService.broadcast(new MessageSubject(subject), body);
     return Response.ok().build();
   }
 
@@ -65,7 +62,7 @@ public class MessagesResource {
         ClusterEventService.class, subject, l -> e -> l.addEvent(e));
     CompletableFuture<Void> openFuture;
     if (eventLog.open()) {
-      openFuture = communicationService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog.listener(), MoreExecutors.directExecutor());
+      openFuture = communicationService.addSubscriber(new MessageSubject(subject), eventLog.listener(), MoreExecutors.directExecutor());
     } else {
       openFuture = CompletableFuture.completedFuture(null);
     }

@@ -20,8 +20,6 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.rest.utils.EventLog;
 import io.atomix.rest.utils.EventManager;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespaces;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +47,6 @@ import java.util.function.Consumer;
 @Path("/events")
 public class EventsResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventsResource.class);
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
   /**
    * Returns an event log name.
@@ -62,7 +59,7 @@ public class EventsResource {
   @Path("/{subject}")
   @Consumes(MediaType.TEXT_PLAIN)
   public Response publish(@PathParam("subject") String subject, @Context ClusterEventService eventService, String body) {
-    eventService.broadcast(new MessageSubject(subject), body, SERIALIZER::encode);
+    eventService.broadcast(new MessageSubject(subject), body);
     return Response.ok().build();
   }
 
@@ -74,7 +71,7 @@ public class EventsResource {
         ClusterEventService.class, subject, l -> e -> l.addEvent(e));
     CompletableFuture<Void> openFuture;
     if (eventLog.open()) {
-      openFuture = eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog.listener(), MoreExecutors.directExecutor());
+      openFuture = eventService.addSubscriber(new MessageSubject(subject), eventLog.listener(), MoreExecutors.directExecutor());
     } else {
       openFuture = CompletableFuture.completedFuture(null);
     }
@@ -111,7 +108,7 @@ public class EventsResource {
     String id = UUID.randomUUID().toString();
     EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
         ClusterEventService.class, getEventLogName(subject, id), l -> e -> l.addEvent(e));
-    eventService.addSubscriber(new MessageSubject(subject), SERIALIZER::decode, eventLog.listener(), MoreExecutors.directExecutor())
+    eventService.addSubscriber(new MessageSubject(subject), eventLog.listener(), MoreExecutors.directExecutor())
         .whenComplete((result, error) -> {
           if (error == null) {
             response.resume(Response.ok(id).build());
