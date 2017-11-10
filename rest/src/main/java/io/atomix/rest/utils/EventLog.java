@@ -30,7 +30,7 @@ public class EventLog<L, E> {
   private final Queue<E> events = new ConcurrentLinkedQueue<>();
   private final Queue<CompletableFuture<E>> futures = new ConcurrentLinkedQueue<>();
 
-  EventLog(Function<EventLog<L, E>, L> listenerFactory) {
+  public EventLog(Function<EventLog<L, E>, L> listenerFactory) {
     this.listener = listenerFactory.apply(this);
   }
 
