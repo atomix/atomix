@@ -14,12 +14,11 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class ValueResource(Resource):
     def _get_value_names(self):
-        response = requests.get(self.cli.path('/v1/primitives/values'))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/values'))
         if response.status_code == 200:
             return response.json()
         return []
@@ -40,7 +39,7 @@ class ValueResource(Resource):
 
 class GetAction(Action):
     def execute(self, name):
-        response = requests.get(self.cli.path('/v1/primitives/values/{name}', name=name))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/values/{name}', name=name))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -49,15 +48,15 @@ class GetAction(Action):
 
 class SetAction(Action):
     def execute(self, name, value):
-        response = requests.put(self.cli.path('/v1/primitives/values/{name}', name=name), data=value, headers={'content-type': 'text/plain'})
+        response = self.cli.service.put(self.cli.service.url('/v1/primitives/values/{name}', name=name), data=value, headers={'content-type': 'text/plain'})
         if response.status_code != 200:
             print("Failed to update value")
 
 
 class CompareAndSetAction(Action):
     def execute(self, name, expect, update):
-        response = requests.post(
-            self.cli.path('/v1/primitives/values/{name}/cas', name=name),
+        response = self.cli.service.post(
+            self.cli.service.url('/v1/primitives/values/{name}/cas', name=name),
             data={'expect': expect, 'update': update},
             headers={'content-type': 'application/json'}
         )
@@ -73,7 +72,7 @@ class TextResource(Resource):
 
 class ExpectResource(Resource):
     def _get_value(self, name):
-        response = requests.get(self.cli.path('/v1/primitives/values/{name}', name=name))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/values/{name}', name=name), log=False)
         if response.status_code == 200:
             return response.json()
         return None

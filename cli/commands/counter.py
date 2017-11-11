@@ -14,12 +14,11 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class CounterResource(Resource):
     def _get_counter_names(self):
-        response = requests.get(self.cli.path('/v1/primitives/counters'))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/counters'), log=False)
         if response.status_code == 200:
             return response.json()
         return []
@@ -40,7 +39,7 @@ class CounterResource(Resource):
 
 class GetAction(Action):
     def execute(self, name):
-        response = requests.get(self.cli.path('/v1/primitives/counters/{name}', name=name))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/counters/{name}', name=name))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -49,7 +48,7 @@ class GetAction(Action):
 
 class IncrementAction(Action):
     def execute(self, name):
-        response = requests.post(self.cli.path('/v1/primitives/counters/{name}/inc', name=name))
+        response = self.cli.service.post(self.cli.service.url('/v1/primitives/counters/{name}/inc', name=name))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -58,8 +57,8 @@ class IncrementAction(Action):
 
 class SetAction(Action):
     def execute(self, name, value):
-        response = requests.put(
-            self.cli.path('/v1/primitives/counters/{name}', name=name),
+        response = self.cli.service.put(
+            self.cli.url('/v1/primitives/counters/{name}', name=name),
             data=value,
             headers={'content-type': 'text/plain'}
         )

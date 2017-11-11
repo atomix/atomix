@@ -14,12 +14,11 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class SetResource(Resource):
     def _get_set_names(self):
-        response = requests.get(self.cli.path('/v1/primitives/sets'))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/sets'), log=False)
         if response.status_code == 200:
             return response.json()
         return []
@@ -38,7 +37,7 @@ class SetResource(Resource):
                 yield set
 
     def execute(self, name):
-        response = requests.put(self.cli.path('/v1/primitives/sets/{name}', name=name))
+        response = self.cli.service.put(self.cli.service.url('/v1/primitives/sets/{name}', name=name))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -46,7 +45,7 @@ class SetResource(Resource):
 
 class AddAction(Action):
     def execute(self, name, value):
-        response = requests.put(self.cli.path('/v1/primitives/sets/{name}/{value}', name=name, value=value))
+        response = self.cli.service.put(self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -55,7 +54,7 @@ class AddAction(Action):
 
 class RemoveAction(Action):
     def execute(self, name, value):
-        response = requests.delete(self.cli.path('/v1/primitives/sets/{name}/{value}', name=name, value=value))
+        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -64,7 +63,7 @@ class RemoveAction(Action):
 
 class ContainsAction(Action):
     def execute(self, name, value):
-        response = requests.delete(self.cli.path('/v1/primitives/sets/{name}/{value}', name=name, value=value))
+        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -73,7 +72,7 @@ class ContainsAction(Action):
 
 class SizeAction(Action):
     def execute(self, name):
-        response = requests.get(self.cli.path('/v1/primitives/sets/{name}/size', name=name))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/sets/{name}/size', name=name))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -82,7 +81,7 @@ class SizeAction(Action):
 
 class ClearAction(Action):
     def execute(self, name):
-        response = requests.delete(self.cli.path('/v1/primitives/sets/{name}', name=name),)
+        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/sets/{name}', name=name),)
         if response.status_code != 200:
             print("Failed to clear set")
 

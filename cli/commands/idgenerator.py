@@ -14,12 +14,11 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class GeneratorResource(Resource):
     def _get_generator_names(self):
-        response = requests.get(self.cli.path('/v1/primitives/ids'))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/ids'), log=False)
         if response.status_code == 200:
             return response.json()
         return []
@@ -40,7 +39,7 @@ class GeneratorResource(Resource):
 
 class NextAction(Action):
     def execute(self, name):
-        response = requests.put(self.cli.path('/v1/primitives/ids/{name}', name=name))
+        response = self.cli.service.put(self.cli.service.url('/v1/primitives/ids/{name}', name=name))
         if response.status_code == 200:
             print(response.json())
         else:

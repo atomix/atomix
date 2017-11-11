@@ -14,12 +14,11 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class LockResource(Resource):
     def _get_lock_names(self):
-        response = requests.get(self.cli.path('/v1/primitives/locks'))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/locks'), log=False)
         if response.status_code == 200:
             return response.json()
         return []
@@ -40,7 +39,7 @@ class LockResource(Resource):
 
 class LockAction(Action):
     def execute(self, name):
-        response = requests.post(self.cli.path('/v1/primitives/locks/{name}', name=name))
+        response = self.cli.service.post(self.cli.service.url('/v1/primitives/locks/{name}', name=name))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -49,7 +48,7 @@ class LockAction(Action):
 
 class UnlockAction(Action):
     def execute(self, name):
-        response = requests.delete(self.cli.path('/v1/primitives/locks/{name}', name=name))
+        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/locks/{name}', name=name))
         if response.status_code == 200:
             print(response.json())
         else:

@@ -14,12 +14,11 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class MapResource(Resource):
     def _get_map_names(self):
-        response = requests.get(self.cli.path('/v1/primitives/maps'))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/maps'), log=False)
         if response.status_code == 200:
             return response.json()
         return []
@@ -40,7 +39,7 @@ class MapResource(Resource):
 
 class GetAction(Action):
     def execute(self, name, key):
-        response = requests.get(self.cli.path('/v1/primitives/maps/{name}/{key}', name=name, key=key))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key))
         if response.status_code == 200:
             if response.text != '':
                 print(response.json())
@@ -50,7 +49,7 @@ class GetAction(Action):
 
 class PutAction(Action):
     def execute(self, name, key, value):
-        response = requests.put(self.cli.path('/v1/primitives/maps/{name}/{key}', name=name, key=key, value=value), headers={'content-type': 'text/plain'})
+        response = self.cli.service.put(self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key, value=value), headers={'content-type': 'text/plain'})
         if response.status_code == 200:
             if response.text != '':
                 print(response.json())
@@ -60,7 +59,7 @@ class PutAction(Action):
 
 class RemoveAction(Action):
     def execute(self, name, key):
-        response = requests.delete(self.cli.path('/v1/primitives/maps/{name}/{key}', name=name, key=key))
+        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key))
         if response.status_code == 200:
             if response.text != '':
                 print(response.json())
@@ -70,7 +69,7 @@ class RemoveAction(Action):
 
 class SizeAction(Action):
     def execute(self, name):
-        response = requests.get(self.cli.path('/v1/primitives/maps/{name}/size', name=name))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/maps/{name}/size', name=name))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -79,14 +78,14 @@ class SizeAction(Action):
 
 class ClearAction(Action):
     def execute(self, name):
-        response = requests.delete(self.cli.path('/v1/primitives/maps/{name}', name=name),)
+        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/maps/{name}', name=name),)
         if response.status_code != 200:
             print("Failed to clear map")
 
 
 class KeyResource(Resource):
     def _get_map_keys(self, name):
-        response = requests.get(self.cli.path('/v1/primitives/maps/{name}/keys', name=name))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/maps/{name}/keys', name=name), log=False)
         if response.status_code == 200:
             return response.json()
         return []

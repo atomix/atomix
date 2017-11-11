@@ -40,6 +40,9 @@ def get_style(theme):
         Token.Toolbar.Search.Text: 'nobold',
         Token.Toolbar.System: 'noinherit bold',
         Token.Toolbar.Arg: 'noinherit bold',
-        Token.Toolbar.Arg.Text: 'nobold'
+        Token.Toolbar.Arg.Text: 'nobold',
+        Token.Method: 'bg:#222222 #dddddd',
+        Token.Url: 'bg:#222222 #dddddd noinherit italic',
+        Token.Headers: 'bg:#222222 #999999'
     })
     return style_from_dict(styles)

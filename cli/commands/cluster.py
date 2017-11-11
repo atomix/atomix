@@ -14,28 +14,27 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class NodesAction(Action):
     def execute(self):
-        response = requests.get(self.cli.path('/v1/cluster/nodes'))
+        response = self.cli.service.get(self.cli.service.url('/v1/cluster/nodes'))
         print(response.json())
 
 
 class NodeAction(Action):
     def execute(self, node=None):
         if node is None:
-            response = requests.get(self.cli.path('/v1/cluster/node'))
+            response = self.cli.service.get(self.cli.service.url('/v1/cluster/node'))
             print(response.json())
         else:
-            response = requests.get(self.cli.path('/v1/cluster/nodes/{node}', node=node))
+            response = self.cli.service.get(self.cli.service.url('/v1/cluster/nodes/{node}', node=node))
             print(response.json())
 
 
 class NodeResource(Resource):
     def _get_nodes(self):
-        response = requests.get(self.cli.path('/v1/cluster/nodes'))
+        response = self.cli.service.get(self.cli.service.url('/v1/cluster/nodes'), log=False)
         if response.status_code == 200:
             return response.json()
         return []

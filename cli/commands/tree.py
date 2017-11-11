@@ -14,12 +14,11 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class TreeResource(Resource):
     def _get_tree_names(self):
-        response = requests.get(self.cli.path('/v1/primitives/trees'))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/trees'), log=False)
         if response.status_code == 200:
             return response.json()
         return []
@@ -40,7 +39,7 @@ class TreeResource(Resource):
 
 class GetAction(Action):
     def execute(self, name, path):
-        response = requests.get(self.cli.path('/v1/primitives/trees/{name}/{path}', name=name))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name))
         if response.status_code == 200:
             if response.text != '':
                 print(response.json())
@@ -50,8 +49,8 @@ class GetAction(Action):
 
 class CreateAction(Action):
     def execute(self, name, path, value):
-        response = requests.post(
-            self.cli.path('/v1/primitives/trees/{name}/{path}', name=name, path=path),
+        response = self.cli.service.post(
+            self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name, path=path),
             data=value,
             headers={'content-type': 'text/plain'}
         )
@@ -63,8 +62,8 @@ class CreateAction(Action):
 
 class SetAction(Action):
     def execute(self, name, path, value):
-        response = requests.put(
-            self.cli.path('/v1/primitives/trees/{name}/{path}', name=name, path=path),
+        response = self.cli.service.put(
+            self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name, path=path),
             data=value,
             headers={'content-type': 'text/plain'}
         )
@@ -76,8 +75,8 @@ class SetAction(Action):
 
 class ReplaceAction(Action):
     def execute(self, name, path, value, version):
-        response = requests.put(
-            self.cli.path('/v1/primitives/trees/{name}/{path}?version={version}', name=name, path=path, version=version),
+        response = self.cli.service.put(
+            self.cli.service.url('/v1/primitives/trees/{name}/{path}?version={version}', name=name, path=path, version=version),
             data=value,
             headers={'content-type': 'text/plain'}
         )
@@ -89,7 +88,7 @@ class ReplaceAction(Action):
 
 class PathResource(Resource):
     def _get_children(self, name, path):
-        response = requests.get(self.cli.path('/v1/primitives/trees/{name}/{path}/children', name=name, path=path))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/trees/{name}/{path}/children', name=name, path=path), log=False)
         if response.status_code == 200:
             return response.json()
         return []

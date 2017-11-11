@@ -14,12 +14,11 @@
 # language governing permissions and limitations under the License.
 
 from . import Command, Action, Resource, command
-import requests
 
 
 class QueueResource(Resource):
     def _get_queue_names(self):
-        response = requests.get(self.cli.path('/v1/primitives/queues'))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/queues'), log=False)
         if response.status_code == 200:
             return response.json()
         return []
@@ -40,14 +39,14 @@ class QueueResource(Resource):
 
 class AddAction(Action):
     def execute(self, queue, data):
-        response = requests.post(self.cli.path('/v1/primitives/queues/{queue}', queue=queue), data=data, headers={'content-type': 'text/plain'})
+        response = self.cli.service.post(self.cli.service.url('/v1/primitives/queues/{queue}', queue=queue), data=data, headers={'content-type': 'text/plain'})
         if response.status_code != 200:
             print("Add failed: " + response.status_code)
 
 
 class TakeAction(Action):
     def execute(self, queue, count=1):
-        response = requests.get(self.cli.path('/v1/primitives/queues/{queue}?items={count}', queue=queue, count=count))
+        response = self.cli.service.get(self.cli.service.url('/v1/primitives/queues/{queue}?items={count}', queue=queue, count=count))
         if response.status_code == 200:
             print(response.json())
         else:
@@ -56,7 +55,7 @@ class TakeAction(Action):
 
 class CompleteAction(Action):
     def execute(self, queue, task):
-        response = requests.delete(self.cli.path('/v1/primitives/queues/{queue}/{task}', queue=queue, task=task))
+        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/queues/{queue}/{task}', queue=queue, task=task))
         if response.status_code != 200:
             print("Complete failed: " + response.status_code)
 
