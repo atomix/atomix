@@ -107,7 +107,7 @@ final class RaftProxyInvoker {
    * Submits a command to the cluster.
    */
   private void invokeCommand(RaftOperation operation, CompletableFuture<byte[]> future) {
-    CommandRequest request = CommandRequest.newBuilder()
+    CommandRequest request = CommandRequest.builder()
         .withSession(state.getSessionId().id())
         .withSequence(state.nextCommandRequest())
         .withOperation(operation)
@@ -126,7 +126,7 @@ final class RaftProxyInvoker {
    * Submits a query to the cluster.
    */
   private void invokeQuery(RaftOperation operation, CompletableFuture<byte[]> future) {
-    QueryRequest request = QueryRequest.newBuilder()
+    QueryRequest request = QueryRequest.builder()
         .withSession(state.getSessionId().id())
         .withSequence(state.getCommandRequest())
         .withOperation(operation)

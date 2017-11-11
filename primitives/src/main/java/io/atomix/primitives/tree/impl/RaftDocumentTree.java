@@ -60,7 +60,7 @@ import static io.atomix.primitives.tree.impl.DocumentTreeResult.Status.OK;
  * Distributed resource providing the {@link AsyncDocumentTree} primitive.
  */
 public class RaftDocumentTree extends AbstractRaftPrimitive implements AsyncDocumentTree<byte[]> {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftDocumentTreeOperations.NAMESPACE)
       .register(RaftDocumentTreeEvents.NAMESPACE)

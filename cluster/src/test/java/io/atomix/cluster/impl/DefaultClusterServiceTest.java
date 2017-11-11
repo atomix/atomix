@@ -50,14 +50,14 @@ public class DefaultClusterServiceTest {
   }
 
   private ClusterMetadata buildClusterMetadata(int nodeId, int... bootstrapNodes) {
-    ClusterMetadata.Builder metadataBuilder = ClusterMetadata.newBuilder()
-        .withLocalNode(Node.newBuilder()
+    ClusterMetadata.Builder metadataBuilder = ClusterMetadata.builder()
+        .withLocalNode(Node.builder()
             .withId(NodeId.from(String.valueOf(nodeId)))
             .withEndpoint(new Endpoint(localhost, nodeId))
             .build());
     List<Node> bootstrap = new ArrayList<>();
     for (int bootstrapNode : bootstrapNodes) {
-      bootstrap.add(Node.newBuilder()
+      bootstrap.add(Node.builder()
           .withId(NodeId.from(String.valueOf(bootstrapNode)))
           .withEndpoint(new Endpoint(localhost, bootstrapNode))
           .build());
@@ -79,9 +79,9 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clusterService3 = new DefaultClusterService(
         clusterMetadata3, messagingServiceFactory.newMessagingService(clusterMetadata3.localNode().endpoint()).open().join());
 
-    assertEquals(State.INACTIVE, clusterService1.node(NodeId.from("1")).state());
-    assertEquals(State.INACTIVE, clusterService1.node(NodeId.from("2")).state());
-    assertEquals(State.INACTIVE, clusterService1.node(NodeId.from("3")).state());
+    assertEquals(State.INACTIVE, clusterService1.getNode(NodeId.from("1")).state());
+    assertEquals(State.INACTIVE, clusterService1.getNode(NodeId.from("2")).state());
+    assertEquals(State.INACTIVE, clusterService1.getNode(NodeId.from("3")).state());
 
     CompletableFuture<ClusterService>[] futures = new CompletableFuture[3];
     futures[0] = clusterService1.open();
@@ -92,54 +92,54 @@ public class DefaultClusterServiceTest {
 
     Thread.sleep(1000);
 
-    assertEquals(3, clusterService1.nodes().size());
-    assertEquals(3, clusterService2.nodes().size());
-    assertEquals(3, clusterService3.nodes().size());
+    assertEquals(3, clusterService1.getNodes().size());
+    assertEquals(3, clusterService2.getNodes().size());
+    assertEquals(3, clusterService3.getNodes().size());
 
-    assertEquals(Type.CORE, clusterService1.localNode().type());
-    assertEquals(Type.CORE, clusterService1.node(NodeId.from("1")).type());
-    assertEquals(Type.CORE, clusterService1.node(NodeId.from("2")).type());
-    assertEquals(Type.CORE, clusterService1.node(NodeId.from("3")).type());
+    assertEquals(Type.CORE, clusterService1.getLocalNode().type());
+    assertEquals(Type.CORE, clusterService1.getNode(NodeId.from("1")).type());
+    assertEquals(Type.CORE, clusterService1.getNode(NodeId.from("2")).type());
+    assertEquals(Type.CORE, clusterService1.getNode(NodeId.from("3")).type());
 
-    assertEquals(State.ACTIVE, clusterService1.localNode().state());
-    assertEquals(State.ACTIVE, clusterService1.node(NodeId.from("1")).state());
-    assertEquals(State.ACTIVE, clusterService1.node(NodeId.from("2")).state());
-    assertEquals(State.ACTIVE, clusterService1.node(NodeId.from("3")).state());
+    assertEquals(State.ACTIVE, clusterService1.getLocalNode().state());
+    assertEquals(State.ACTIVE, clusterService1.getNode(NodeId.from("1")).state());
+    assertEquals(State.ACTIVE, clusterService1.getNode(NodeId.from("2")).state());
+    assertEquals(State.ACTIVE, clusterService1.getNode(NodeId.from("3")).state());
 
     ClusterMetadata clientMetadata = buildClusterMetadata(4, 1, 2, 3);
 
     ManagedClusterService clientClusterService = new DefaultClusterService(
         clientMetadata, messagingServiceFactory.newMessagingService(clientMetadata.localNode().endpoint()).open().join());
 
-    assertEquals(State.INACTIVE, clientClusterService.localNode().state());
+    assertEquals(State.INACTIVE, clientClusterService.getLocalNode().state());
 
-    assertEquals(State.INACTIVE, clientClusterService.node(NodeId.from("1")).state());
-    assertEquals(State.INACTIVE, clientClusterService.node(NodeId.from("2")).state());
-    assertEquals(State.INACTIVE, clientClusterService.node(NodeId.from("3")).state());
-    assertEquals(State.INACTIVE, clientClusterService.node(NodeId.from("4")).state());
+    assertEquals(State.INACTIVE, clientClusterService.getNode(NodeId.from("1")).state());
+    assertEquals(State.INACTIVE, clientClusterService.getNode(NodeId.from("2")).state());
+    assertEquals(State.INACTIVE, clientClusterService.getNode(NodeId.from("3")).state());
+    assertEquals(State.INACTIVE, clientClusterService.getNode(NodeId.from("4")).state());
 
     clientClusterService.open().join();
 
     Thread.sleep(100);
 
-    assertEquals(4, clusterService1.nodes().size());
-    assertEquals(4, clusterService2.nodes().size());
-    assertEquals(4, clusterService3.nodes().size());
-    assertEquals(4, clientClusterService.nodes().size());
+    assertEquals(4, clusterService1.getNodes().size());
+    assertEquals(4, clusterService2.getNodes().size());
+    assertEquals(4, clusterService3.getNodes().size());
+    assertEquals(4, clientClusterService.getNodes().size());
 
-    assertEquals(Type.CLIENT, clientClusterService.localNode().type());
+    assertEquals(Type.CLIENT, clientClusterService.getLocalNode().type());
 
-    assertEquals(Type.CORE, clientClusterService.node(NodeId.from("1")).type());
-    assertEquals(Type.CORE, clientClusterService.node(NodeId.from("2")).type());
-    assertEquals(Type.CORE, clientClusterService.node(NodeId.from("3")).type());
-    assertEquals(Type.CLIENT, clientClusterService.node(NodeId.from("4")).type());
+    assertEquals(Type.CORE, clientClusterService.getNode(NodeId.from("1")).type());
+    assertEquals(Type.CORE, clientClusterService.getNode(NodeId.from("2")).type());
+    assertEquals(Type.CORE, clientClusterService.getNode(NodeId.from("3")).type());
+    assertEquals(Type.CLIENT, clientClusterService.getNode(NodeId.from("4")).type());
 
-    assertEquals(State.ACTIVE, clientClusterService.localNode().state());
+    assertEquals(State.ACTIVE, clientClusterService.getLocalNode().state());
 
-    assertEquals(State.ACTIVE, clientClusterService.node(NodeId.from("1")).state());
-    assertEquals(State.ACTIVE, clientClusterService.node(NodeId.from("2")).state());
-    assertEquals(State.ACTIVE, clientClusterService.node(NodeId.from("3")).state());
-    assertEquals(State.ACTIVE, clientClusterService.node(NodeId.from("4")).state());
+    assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("1")).state());
+    assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("2")).state());
+    assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("3")).state());
+    assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("4")).state());
 
     Thread.sleep(2500);
 
@@ -147,28 +147,28 @@ public class DefaultClusterServiceTest {
 
     Thread.sleep(2500);
 
-    assertEquals(4, clusterService2.nodes().size());
-    assertEquals(Type.CORE, clusterService2.node(NodeId.from("1")).type());
+    assertEquals(4, clusterService2.getNodes().size());
+    assertEquals(Type.CORE, clusterService2.getNode(NodeId.from("1")).type());
 
-    assertEquals(State.INACTIVE, clusterService2.node(NodeId.from("1")).state());
-    assertEquals(State.ACTIVE, clusterService2.node(NodeId.from("2")).state());
-    assertEquals(State.ACTIVE, clusterService2.node(NodeId.from("3")).state());
-    assertEquals(State.ACTIVE, clusterService2.node(NodeId.from("4")).state());
+    assertEquals(State.INACTIVE, clusterService2.getNode(NodeId.from("1")).state());
+    assertEquals(State.ACTIVE, clusterService2.getNode(NodeId.from("2")).state());
+    assertEquals(State.ACTIVE, clusterService2.getNode(NodeId.from("3")).state());
+    assertEquals(State.ACTIVE, clusterService2.getNode(NodeId.from("4")).state());
 
-    assertEquals(State.INACTIVE, clientClusterService.node(NodeId.from("1")).state());
-    assertEquals(State.ACTIVE, clientClusterService.node(NodeId.from("2")).state());
-    assertEquals(State.ACTIVE, clientClusterService.node(NodeId.from("3")).state());
-    assertEquals(State.ACTIVE, clientClusterService.node(NodeId.from("4")).state());
+    assertEquals(State.INACTIVE, clientClusterService.getNode(NodeId.from("1")).state());
+    assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("2")).state());
+    assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("3")).state());
+    assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("4")).state());
 
     clientClusterService.close().join();
 
     Thread.sleep(2500);
 
-    assertEquals(3, clusterService2.nodes().size());
+    assertEquals(3, clusterService2.getNodes().size());
 
-    assertEquals(State.INACTIVE, clusterService2.node(NodeId.from("1")).state());
-    assertEquals(State.ACTIVE, clusterService2.node(NodeId.from("2")).state());
-    assertEquals(State.ACTIVE, clusterService2.node(NodeId.from("3")).state());
-    assertNull(clusterService2.node(NodeId.from("4")));
+    assertEquals(State.INACTIVE, clusterService2.getNode(NodeId.from("1")).state());
+    assertEquals(State.ACTIVE, clusterService2.getNode(NodeId.from("2")).state());
+    assertEquals(State.ACTIVE, clusterService2.getNode(NodeId.from("3")).state());
+    assertNull(clusterService2.getNode(NodeId.from("4")));
   }
 }

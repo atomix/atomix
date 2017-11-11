@@ -41,7 +41,7 @@ public class KeepAliveRequest extends AbstractRaftRequest {
    *
    * @return A new keep alive request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

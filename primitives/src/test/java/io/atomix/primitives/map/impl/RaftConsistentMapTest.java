@@ -381,13 +381,13 @@ public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsist
     Version lock1 = map.begin(transactionId1).join();
 
     MapUpdate<String, byte[]> update1 =
-        MapUpdate.<String, byte[]>newBuilder()
+        MapUpdate.<String, byte[]>builder()
             .withType(MapUpdate.Type.LOCK)
             .withKey("foo")
             .withVersion(lock1.value())
             .build();
     MapUpdate<String, byte[]> update2 =
-        MapUpdate.<String, byte[]>newBuilder()
+        MapUpdate.<String, byte[]>builder()
             .withType(MapUpdate.Type.LOCK)
             .withKey("bar")
             .withVersion(lock1.value())
@@ -401,7 +401,7 @@ public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsist
     Version lock2 = map.begin(transactionId2).join();
 
     MapUpdate<String, byte[]> update3 =
-        MapUpdate.<String, byte[]>newBuilder()
+        MapUpdate.<String, byte[]>builder()
             .withType(MapUpdate.Type.LOCK)
             .withKey("foo")
             .withVersion(lock2.value())
@@ -416,7 +416,7 @@ public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsist
     Version lock3 = map.begin(transactionId3).join();
 
     MapUpdate<String, byte[]> update4 =
-        MapUpdate.<String, byte[]>newBuilder()
+        MapUpdate.<String, byte[]>builder()
             .withType(MapUpdate.Type.LOCK)
             .withKey("baz")
             .withVersion(0)
@@ -431,7 +431,7 @@ public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsist
     Version lock4 = map.begin(transactionId4).join();
 
     MapUpdate<String, byte[]> update5 =
-        MapUpdate.<String, byte[]>newBuilder()
+        MapUpdate.<String, byte[]>builder()
             .withType(MapUpdate.Type.LOCK)
             .withKey("baz")
             .withVersion(lock4.value())
@@ -459,7 +459,7 @@ public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsist
 
     // PUT_IF_VERSION_MATCH
     MapUpdate<String, byte[]> update1 =
-        MapUpdate.<String, byte[]>newBuilder().withType(MapUpdate.Type.PUT_IF_VERSION_MATCH)
+        MapUpdate.<String, byte[]>builder().withType(MapUpdate.Type.PUT_IF_VERSION_MATCH)
             .withKey("foo")
             .withValue(value1)
             .withVersion(lock.value())
@@ -507,7 +507,7 @@ public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsist
     byte[] currFoo = map.get("foo").get().value();
     long currFooVersion = map.get("foo").get().version();
     MapUpdate<String, byte[]> remove1 =
-        MapUpdate.<String, byte[]>newBuilder().withType(MapUpdate.Type.REMOVE_IF_VERSION_MATCH)
+        MapUpdate.<String, byte[]>builder().withType(MapUpdate.Type.REMOVE_IF_VERSION_MATCH)
             .withKey("foo")
             .withVersion(currFooVersion)
             .build();
@@ -557,7 +557,7 @@ public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsist
     Version lock = map.begin(transactionId).join();
 
     MapUpdate<String, byte[]> update1 =
-        MapUpdate.<String, byte[]>newBuilder().withType(MapUpdate.Type.PUT_IF_VERSION_MATCH)
+        MapUpdate.<String, byte[]>builder().withType(MapUpdate.Type.PUT_IF_VERSION_MATCH)
             .withKey("foo")
             .withValue(value1)
             .withVersion(lock.value())

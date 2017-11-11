@@ -76,7 +76,7 @@ public enum RaftConsistentMapOperations implements OperationId {
     return type;
   }
 
-  public static final KryoNamespace NAMESPACE = KryoNamespace.newBuilder()
+  public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
       .register(ContainsKey.class)

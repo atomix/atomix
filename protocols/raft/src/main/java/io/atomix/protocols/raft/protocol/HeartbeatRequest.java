@@ -33,7 +33,7 @@ public class HeartbeatRequest extends AbstractRaftRequest {
    *
    * @return A new heartbeat request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

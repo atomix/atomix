@@ -37,7 +37,7 @@ public enum RaftDocumentTreeEvents implements EventType {
     return id;
   }
 
-  public static final KryoNamespace NAMESPACE = KryoNamespace.newBuilder()
+  public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
       .register(DocumentTreeEvent.class)
       .register(DocumentTreeEvent.Type.class)

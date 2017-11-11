@@ -63,7 +63,7 @@ import static io.atomix.primitives.queue.impl.RaftWorkQueueOperations.UNREGISTER
  */
 public class RaftWorkQueueService extends AbstractRaftService {
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftWorkQueueOperations.NAMESPACE)
       .register(RaftWorkQueueEvents.NAMESPACE)

@@ -46,7 +46,7 @@ public class AtomixServer {
       @Override
       public Node convert(ArgumentParser argumentParser, Argument argument, String value) throws ArgumentParserException {
         String[] address = parseAddress(value);
-        return Node.newBuilder()
+        return Node.builder()
             .withId(parseNodeId(address))
             .withEndpoint(parseEndpoint(address))
             .build();
@@ -67,7 +67,7 @@ public class AtomixServer {
         .type(nodeType)
         .nargs("?")
         .metavar("NAME:HOST:PORT")
-        .setDefault(Node.newBuilder()
+        .setDefault(Node.builder()
             .withId(NodeId.from("local"))
             .withEndpoint(new Endpoint(InetAddress.getByName("127.0.0.1"), NettyMessagingService.DEFAULT_PORT))
             .build())
@@ -112,7 +112,7 @@ public class AtomixServer {
     LOGGER.info("bootstrap: {}", bootstrap);
     LOGGER.info("data directory: {}", dataDir);
 
-    Atomix atomix = Atomix.newBuilder()
+    Atomix atomix = Atomix.builder()
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrap)
         .withDataDir(dataDir)

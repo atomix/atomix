@@ -65,7 +65,7 @@ import static io.atomix.primitives.map.impl.RaftAtomicCounterMapOperations.SIZE;
  */
 public class RaftAtomicCounterMapService extends AbstractRaftService {
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftAtomicCounterMapOperations.NAMESPACE)
       .build());

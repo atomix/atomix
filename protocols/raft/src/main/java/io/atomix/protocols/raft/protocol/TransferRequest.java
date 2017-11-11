@@ -32,7 +32,7 @@ public class TransferRequest extends AbstractRaftRequest {
    *
    * @return A new transfer request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

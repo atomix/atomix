@@ -89,7 +89,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
    *
    * @return a new Atomix builder
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 
@@ -177,63 +177,63 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
   }
 
   @Override
-  public <K, V> ConsistentMapBuilder<K, V> newConsistentMapBuilder() {
-    return primitives.newConsistentMapBuilder();
+  public <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder() {
+    return primitives.consistentMapBuilder();
   }
 
   @Override
-  public <V> DocumentTreeBuilder<V> newDocumentTreeBuilder() {
-    return primitives.newDocumentTreeBuilder();
+  public <V> DocumentTreeBuilder<V> documentTreeBuilder() {
+    return primitives.documentTreeBuilder();
   }
 
   @Override
-  public <V> ConsistentTreeMapBuilder<V> newConsistentTreeMapBuilder() {
-    return primitives.newConsistentTreeMapBuilder();
+  public <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder() {
+    return primitives.consistentTreeMapBuilder();
   }
 
   @Override
-  public <K, V> ConsistentMultimapBuilder<K, V> newConsistentMultimapBuilder() {
-    return primitives.newConsistentMultimapBuilder();
+  public <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder() {
+    return primitives.consistentMultimapBuilder();
   }
 
   @Override
-  public <K> AtomicCounterMapBuilder<K> newAtomicCounterMapBuilder() {
-    return primitives.newAtomicCounterMapBuilder();
+  public <K> AtomicCounterMapBuilder<K> atomicCounterMapBuilder() {
+    return primitives.atomicCounterMapBuilder();
   }
 
   @Override
-  public <E> DistributedSetBuilder<E> newSetBuilder() {
-    return primitives.newSetBuilder();
+  public <E> DistributedSetBuilder<E> setBuilder() {
+    return primitives.setBuilder();
   }
 
   @Override
-  public AtomicCounterBuilder newAtomicCounterBuilder() {
-    return primitives.newAtomicCounterBuilder();
+  public AtomicCounterBuilder atomicCounterBuilder() {
+    return primitives.atomicCounterBuilder();
   }
 
   @Override
-  public AtomicIdGeneratorBuilder newAtomicIdGeneratorBuilder() {
-    return primitives.newAtomicIdGeneratorBuilder();
+  public AtomicIdGeneratorBuilder atomicIdGeneratorBuilder() {
+    return primitives.atomicIdGeneratorBuilder();
   }
 
   @Override
-  public <V> AtomicValueBuilder<V> newAtomicValueBuilder() {
-    return primitives.newAtomicValueBuilder();
+  public <V> AtomicValueBuilder<V> atomicValueBuilder() {
+    return primitives.atomicValueBuilder();
   }
 
   @Override
-  public <T> LeaderElectorBuilder<T> newLeaderElectorBuilder() {
-    return primitives.newLeaderElectorBuilder();
+  public <T> LeaderElectorBuilder<T> leaderElectorBuilder() {
+    return primitives.leaderElectorBuilder();
   }
 
   @Override
-  public DistributedLockBuilder newLockBuilder() {
-    return primitives.newLockBuilder();
+  public DistributedLockBuilder lockBuilder() {
+    return primitives.lockBuilder();
   }
 
   @Override
-  public <E> WorkQueueBuilder<E> newWorkQueueBuilder() {
-    return primitives.newWorkQueueBuilder();
+  public <E> WorkQueueBuilder<E> workQueueBuilder() {
+    return primitives.workQueueBuilder();
   }
 
   @Override
@@ -445,7 +445,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
      * Builds a default messaging service.
      */
     private ManagedMessagingService buildMessagingService() {
-      return NettyMessagingService.newBuilder()
+      return NettyMessagingService.builder()
           .withName(name)
           .withEndpoint(localNode.endpoint())
           .build();
@@ -455,7 +455,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
      * Builds a cluster service.
      */
     private ManagedClusterService buildClusterService(MessagingService messagingService) {
-      return new DefaultClusterService(ClusterMetadata.newBuilder()
+      return new DefaultClusterService(ClusterMetadata.builder()
           .withLocalNode(localNode)
           .withBootstrapNodes(bootstrapNodes)
           .build(), messagingService);

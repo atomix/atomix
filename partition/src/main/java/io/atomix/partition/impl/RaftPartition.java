@@ -168,62 +168,62 @@ public class RaftPartition implements ManagedPartition {
   }
 
   @Override
-  public <K, V> ConsistentMapBuilder<K, V> newConsistentMapBuilder() {
+  public <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder() {
     return new DefaultConsistentMapBuilder<>(getPrimitiveCreator());
   }
 
   @Override
-  public <V> DocumentTreeBuilder<V> newDocumentTreeBuilder() {
+  public <V> DocumentTreeBuilder<V> documentTreeBuilder() {
     return new DefaultDocumentTreeBuilder<>(getPrimitiveCreator());
   }
 
   @Override
-  public <V> ConsistentTreeMapBuilder<V> newConsistentTreeMapBuilder() {
+  public <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder() {
     return new DefaultConsistentTreeMapBuilder<>(getPrimitiveCreator());
   }
 
   @Override
-  public <K, V> ConsistentMultimapBuilder<K, V> newConsistentMultimapBuilder() {
+  public <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder() {
     return new DefaultConsistentMultimapBuilder<>(getPrimitiveCreator());
   }
 
   @Override
-  public <K> AtomicCounterMapBuilder<K> newAtomicCounterMapBuilder() {
+  public <K> AtomicCounterMapBuilder<K> atomicCounterMapBuilder() {
     return new DefaultAtomicCounterMapBuilder<>(getPrimitiveCreator());
   }
 
   @Override
-  public <E> DistributedSetBuilder<E> newSetBuilder() {
-    return new DefaultDistributedSetBuilder<>(() -> newConsistentMapBuilder());
+  public <E> DistributedSetBuilder<E> setBuilder() {
+    return new DefaultDistributedSetBuilder<>(() -> consistentMapBuilder());
   }
 
   @Override
-  public AtomicCounterBuilder newAtomicCounterBuilder() {
+  public AtomicCounterBuilder atomicCounterBuilder() {
     return new DefaultAtomicCounterBuilder(getPrimitiveCreator());
   }
 
   @Override
-  public AtomicIdGeneratorBuilder newAtomicIdGeneratorBuilder() {
+  public AtomicIdGeneratorBuilder atomicIdGeneratorBuilder() {
     return new DefaultAtomicIdGeneratorBuilder(getPrimitiveCreator());
   }
 
   @Override
-  public <V> AtomicValueBuilder<V> newAtomicValueBuilder() {
+  public <V> AtomicValueBuilder<V> atomicValueBuilder() {
     return new DefaultAtomicValueBuilder<>(getPrimitiveCreator());
   }
 
   @Override
-  public <T> LeaderElectorBuilder<T> newLeaderElectorBuilder() {
+  public <T> LeaderElectorBuilder<T> leaderElectorBuilder() {
     return new DefaultLeaderElectorBuilder<>(getPrimitiveCreator());
   }
 
   @Override
-  public <E> WorkQueueBuilder<E> newWorkQueueBuilder() {
+  public <E> WorkQueueBuilder<E> workQueueBuilder() {
     return new DefaultWorkQueueBuilder<>(getPrimitiveCreator());
   }
 
   @Override
-  public DistributedLockBuilder newLockBuilder() {
+  public DistributedLockBuilder lockBuilder() {
     return new DefaultDistributedLockBuilder(getPrimitiveCreator());
   }
 

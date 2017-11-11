@@ -33,7 +33,7 @@ public abstract class Node {
    *
    * @return a new node builder
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new DefaultNode.Builder();
   }
 

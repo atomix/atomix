@@ -90,7 +90,7 @@ import static io.atomix.primitives.multimap.impl.RaftConsistentSetMultimapOperat
  */
 public class RaftConsistentSetMultimapService extends AbstractRaftService {
 
-  private final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
+  private final Serializer serializer = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftConsistentSetMultimapOperations.NAMESPACE)
       .register(RaftConsistentSetMultimapEvents.NAMESPACE)

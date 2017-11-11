@@ -45,8 +45,8 @@ public interface RaftClient {
    * @return The client builder.
    */
   @SuppressWarnings("unchecked")
-  static Builder newBuilder() {
-    return newBuilder(Collections.EMPTY_LIST);
+  static Builder builder() {
+    return builder(Collections.EMPTY_LIST);
   }
 
   /**
@@ -59,8 +59,8 @@ public interface RaftClient {
    * @param cluster The cluster to which to connect.
    * @return The client builder.
    */
-  static Builder newBuilder(MemberId... cluster) {
-    return newBuilder(Arrays.asList(cluster));
+  static Builder builder(MemberId... cluster) {
+    return builder(Arrays.asList(cluster));
   }
 
   /**
@@ -73,8 +73,32 @@ public interface RaftClient {
    * @param cluster The cluster to which to connect.
    * @return The client builder.
    */
-  static Builder newBuilder(Collection<MemberId> cluster) {
+  static Builder builder(Collection<MemberId> cluster) {
     return new DefaultRaftClient.Builder(cluster);
+  }
+
+  /**
+   * @deprecated since 2.1
+   */
+  @Deprecated
+  static Builder newBuilder() {
+    return builder();
+  }
+
+  /**
+   * @deprecated since 2.1
+   */
+  @Deprecated
+  static Builder newBuilder(MemberId... cluster) {
+    return builder(cluster);
+  }
+
+  /**
+   * @deprecated since 2.1
+   */
+  @Deprecated
+  static Builder newBuilder(Collection<MemberId> cluster) {
+    return builder(cluster);
   }
 
   /**
@@ -151,7 +175,7 @@ public interface RaftClient {
   /**
    * Builds a new Raft client.
    * <p>
-   * New client builders should be constructed using the static {@link #newBuilder()} factory method.
+   * New client builders should be constructed using the static {@link #builder()} factory method.
    * <pre>
    *   {@code
    *     RaftClient client = RaftClient.builder(new Address("123.456.789.0", 5000), new Address("123.456.789.1", 5000)

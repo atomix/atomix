@@ -28,7 +28,7 @@ public class SnapshotDescriptorTest {
 
   @Test
   public void testSnapshotDescriptor() throws Exception {
-    SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
+    SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
         .withServiceId(1)
         .withIndex(2)
         .withTimestamp(3)
@@ -40,7 +40,7 @@ public class SnapshotDescriptorTest {
 
   @Test
   public void testCopySnapshotDescriptor() throws Exception {
-    SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
+    SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
         .withServiceId(1)
         .withIndex(2)
         .withTimestamp(3)

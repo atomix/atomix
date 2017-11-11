@@ -31,7 +31,7 @@ public class PhiAccrualFailureDetector {
    *
    * @return a new failure detector builder
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

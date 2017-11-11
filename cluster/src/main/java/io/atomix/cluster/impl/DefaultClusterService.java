@@ -66,7 +66,7 @@ public class DefaultClusterService implements ManagedClusterService {
   private int phiFailureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
 
   private static final Serializer SERIALIZER = Serializer.using(
-      KryoNamespace.newBuilder()
+      KryoNamespace.builder()
           .register(KryoNamespaces.BASIC)
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
           .register(NodeId.class)
@@ -99,17 +99,17 @@ public class DefaultClusterService implements ManagedClusterService {
   }
 
   @Override
-  public Node localNode() {
+  public Node getLocalNode() {
     return localNode;
   }
 
   @Override
-  public Set<Node> nodes() {
+  public Set<Node> getNodes() {
     return ImmutableSet.copyOf(nodes.values());
   }
 
   @Override
-  public Node node(NodeId nodeId) {
+  public Node getNode(NodeId nodeId) {
     return nodes.get(nodeId);
   }
 
@@ -120,7 +120,7 @@ public class DefaultClusterService implements ManagedClusterService {
     try {
       Set<DefaultNode> peers = nodes.values()
           .stream()
-          .filter(node -> !node.id().equals(localNode().id()))
+          .filter(node -> !node.id().equals(getLocalNode().id()))
           .collect(Collectors.toSet());
       byte[] payload = SERIALIZER.encode(localNode.id());
       peers.forEach((node) -> {

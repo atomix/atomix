@@ -116,7 +116,7 @@ public final class MapUpdate<K, V> {
    * @return new instance
    */
   public <S, T> MapUpdate<S, T> map(Function<K, S> keyMapper, Function<V, T> valueMapper) {
-    return MapUpdate.<S, T>newBuilder()
+    return MapUpdate.<S, T>builder()
         .withType(type)
         .withKey(keyMapper.apply(key))
         .withValue(value == null ? null : valueMapper.apply(value))
@@ -158,7 +158,7 @@ public final class MapUpdate<K, V> {
    * @param <V> value type
    * @return builder.
    */
-  public static <K, V> Builder<K, V> newBuilder() {
+  public static <K, V> Builder<K, V> builder() {
     return new Builder<>();
   }
 

@@ -221,13 +221,13 @@ public abstract class AbstractRaftPrimitiveTest<T extends AbstractRaftPrimitive>
    * Creates a Raft server.
    */
   private RaftServer createServer(RaftMember member) {
-    RaftServer.Builder builder = RaftServer.newBuilder(member.memberId())
+    RaftServer.Builder builder = RaftServer.builder(member.memberId())
         .withType(member.getType())
         .withProtocol(new TestRaftServerCommunicator(
             "partition-1",
             Serializer.using(RaftTestNamespaces.RAFT_PROTOCOL),
             communicationServiceFactory.newCommunicationService(NodeId.from(member.memberId().id()))))
-        .withStorage(RaftStorage.newBuilder()
+        .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MEMORY)
             .withDirectory(new File(String.format("target/primitives/%s", member.memberId())))
             .withSerializer(Serializer.using(RaftTestNamespaces.RAFT_STORAGE))
@@ -245,7 +245,7 @@ public abstract class AbstractRaftPrimitiveTest<T extends AbstractRaftPrimitive>
    */
   private RaftClient createClient() {
     MemberId memberId = nextMemberId();
-    RaftClient client = RaftClient.newBuilder()
+    RaftClient client = RaftClient.builder()
         .withMemberId(memberId)
         .withProtocol(new TestRaftClientCommunicator(
             "partition-1",

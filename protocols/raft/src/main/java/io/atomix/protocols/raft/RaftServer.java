@@ -149,8 +149,8 @@ public interface RaftServer {
    *
    * @return The server builder.
    */
-  static Builder newBuilder() {
-    return newBuilder(null);
+  static Builder builder() {
+    return builder(null);
   }
 
   /**
@@ -161,8 +161,21 @@ public interface RaftServer {
    * @param localMemberId The local node identifier.
    * @return The server builder.
    */
-  static Builder newBuilder(MemberId localMemberId) {
+  static Builder builder(MemberId localMemberId) {
     return new DefaultRaftServer.Builder(localMemberId);
+  }
+
+  @Deprecated
+  static Builder newBuilder() {
+    return builder();
+  }
+
+  /**
+   * @deprecated since 2.1
+   */
+  @Deprecated
+  static Builder newBuilder(MemberId localMemberId) {
+    return builder(localMemberId);
   }
 
   /**
@@ -254,7 +267,7 @@ public interface RaftServer {
    * <p>
    * The {@link RaftCluster} is representative of the server's current view of the cluster configuration. The first time
    * the server is {@link #bootstrap() started}, the cluster configuration will be initialized using the {@link MemberId}
-   * list provided to the server {@link #newBuilder(MemberId) builder}. For {@link StorageLevel#DISK persistent}
+   * list provided to the server {@link #builder(MemberId) builder}. For {@link StorageLevel#DISK persistent}
    * servers, subsequent starts will result in the last known cluster configuration being loaded from disk.
    * <p>
    * The returned {@link RaftCluster} can be used to modify the state of the cluster to which this server belongs. Note,
@@ -509,7 +522,7 @@ public interface RaftServer {
    * This builder should be used to programmatically configure and construct a new {@link RaftServer} instance.
    * The builder provides methods for configuring all aspects of a Raft server. The {@code RaftServer.Builder}
    * class cannot be instantiated directly. To create a new builder, use one of the
-   * {@link RaftServer#newBuilder(MemberId) server builder factory} methods.
+   * {@link RaftServer#builder(MemberId) server builder factory} methods.
    * <pre>
    *   {@code
    *   RaftServer.Builder builder = RaftServer.builder(address);

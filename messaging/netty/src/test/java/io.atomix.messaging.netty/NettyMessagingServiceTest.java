@@ -63,14 +63,14 @@ public class NettyMessagingServiceTest {
   @Before
   public void setUp() throws Exception {
     ep1 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5001));
-    netty1 = (ManagedMessagingService) NettyMessagingService.newBuilder()
+    netty1 = (ManagedMessagingService) NettyMessagingService.builder()
         .withEndpoint(ep1)
         .build()
         .open()
         .join();
 
     ep2 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5003));
-    netty2 = (ManagedMessagingService) NettyMessagingService.newBuilder()
+    netty2 = (ManagedMessagingService) NettyMessagingService.builder()
         .withEndpoint(ep2)
         .build()
         .open()

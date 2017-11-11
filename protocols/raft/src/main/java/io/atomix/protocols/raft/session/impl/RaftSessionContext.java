@@ -549,7 +549,7 @@ public class RaftSessionContext implements RaftSession {
     // Only send events to the client if this server is the leader.
     if (server.isLeader()) {
       eventExecutor.execute(() -> {
-        PublishRequest request = PublishRequest.newBuilder()
+        PublishRequest request = PublishRequest.builder()
             .withSession(sessionId().id())
             .withEventIndex(event.eventIndex)
             .withPreviousIndex(Math.max(event.previousIndex, completeIndex))

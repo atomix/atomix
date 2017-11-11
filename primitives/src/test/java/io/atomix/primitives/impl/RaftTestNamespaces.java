@@ -103,7 +103,7 @@ public final class RaftTestNamespaces {
   /**
    * Raft protocol namespace.
    */
-  public static final KryoNamespace RAFT_PROTOCOL = KryoNamespace.newBuilder()
+  public static final KryoNamespace RAFT_PROTOCOL = KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
       .register(OpenSessionRequest.class)
@@ -189,7 +189,7 @@ public final class RaftTestNamespaces {
   /**
    * Raft storage namespace.
    */
-  public static final KryoNamespace RAFT_STORAGE = KryoNamespace.newBuilder()
+  public static final KryoNamespace RAFT_STORAGE = KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 100)
       .register(CloseSessionEntry.class)

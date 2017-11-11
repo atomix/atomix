@@ -94,7 +94,7 @@ import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.VALUES;
  */
 public class RaftConsistentMapService extends AbstractRaftService {
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftConsistentMapOperations.NAMESPACE)
       .register(RaftConsistentMapEvents.NAMESPACE)

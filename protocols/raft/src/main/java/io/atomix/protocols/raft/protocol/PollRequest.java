@@ -37,7 +37,7 @@ public class PollRequest extends AbstractRaftRequest {
    *
    * @return A new poll request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

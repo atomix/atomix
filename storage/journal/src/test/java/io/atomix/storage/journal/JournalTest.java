@@ -30,13 +30,13 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class JournalTest {
-  private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer serializer = Serializer.using(KryoNamespace.builder()
       .register(TestEntry.class)
       .register(byte[].class)
       .build());
 
   private Journal<TestEntry> createJournal() {
-    return SegmentedJournal.<TestEntry>newBuilder()
+    return SegmentedJournal.<TestEntry>builder()
         .withName("test")
         .withSerializer(serializer)
         .withStorageLevel(StorageLevel.MEMORY)

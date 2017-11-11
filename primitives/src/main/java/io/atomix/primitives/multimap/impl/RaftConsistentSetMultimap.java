@@ -73,7 +73,7 @@ public class RaftConsistentSetMultimap
     extends AbstractRaftPrimitive
     implements AsyncConsistentMultimap<String, byte[]> {
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftConsistentSetMultimapOperations.NAMESPACE)
       .register(RaftConsistentSetMultimapEvents.NAMESPACE)

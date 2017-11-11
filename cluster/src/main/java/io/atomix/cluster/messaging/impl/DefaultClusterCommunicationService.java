@@ -56,7 +56,7 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   public DefaultClusterCommunicationService(ClusterService cluster, MessagingService messagingService) {
     this.cluster = checkNotNull(cluster, "clusterService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
-    this.localNodeId = cluster.localNode().id();
+    this.localNodeId = cluster.getLocalNode().id();
   }
 
   @Override
@@ -90,9 +90,9 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
       MessageSubject subject,
       M message,
       Function<M, byte[]> encoder) {
-    multicast(subject, message, encoder, cluster.nodes()
+    multicast(subject, message, encoder, cluster.getNodes()
         .stream()
-        .filter(node -> !Objects.equal(node, cluster.localNode()))
+        .filter(node -> !Objects.equal(node, cluster.getLocalNode()))
         .map(Node::id)
         .collect(Collectors.toSet()));
   }
@@ -102,7 +102,7 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
       MessageSubject subject,
       M message,
       Function<M, byte[]> encoder) {
-    multicast(subject, message, encoder, cluster.nodes()
+    multicast(subject, message, encoder, cluster.getNodes()
         .stream()
         .map(Node::id)
         .collect(Collectors.toSet()));
@@ -149,7 +149,7 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
       NodeId toNodeId) {
     try {
       ClusterMessage envelope = new ClusterMessage(
-          cluster.localNode().id(),
+          cluster.getLocalNode().id(),
           subject,
           encoder.apply(message));
       return sendAndReceive(subject, envelope.getBytes(), toNodeId).thenApply(decoder);
@@ -159,13 +159,13 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   }
 
   private CompletableFuture<Void> doUnicast(MessageSubject subject, byte[] payload, NodeId toNodeId) {
-    Node node = cluster.node(toNodeId);
+    Node node = cluster.getNode(toNodeId);
     checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
     return messagingService.sendAsync(node.endpoint(), subject.toString(), payload);
   }
 
   private CompletableFuture<byte[]> sendAndReceive(MessageSubject subject, byte[] payload, NodeId toNodeId) {
-    Node node = cluster.node(toNodeId);
+    Node node = cluster.getNode(toNodeId);
     checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
     return messagingService.sendAndReceive(node.endpoint(), subject.toString(), payload);
   }

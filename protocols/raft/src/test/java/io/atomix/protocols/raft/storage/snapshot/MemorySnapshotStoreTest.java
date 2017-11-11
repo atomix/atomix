@@ -29,7 +29,7 @@ public class MemorySnapshotStoreTest extends AbstractSnapshotStoreTest {
    * Returns a new snapshot store.
    */
   protected SnapshotStore createSnapshotStore() {
-    RaftStorage storage = RaftStorage.newBuilder()
+    RaftStorage storage = RaftStorage.builder()
         .withPrefix("test")
         .withStorageLevel(StorageLevel.MEMORY)
         .build();

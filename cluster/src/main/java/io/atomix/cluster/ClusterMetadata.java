@@ -35,7 +35,7 @@ public class ClusterMetadata {
    *
    * @return a new cluster metadata builder
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

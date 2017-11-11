@@ -27,7 +27,7 @@ public class ConfigureResponse extends AbstractRaftResponse {
    *
    * @return A new configure response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

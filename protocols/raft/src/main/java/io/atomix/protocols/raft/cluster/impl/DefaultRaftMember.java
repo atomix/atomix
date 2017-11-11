@@ -176,7 +176,7 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
     // Attempt to leave the cluster by submitting a LeaveRequest directly to the server state.
     // Non-leader states should forward the request to the leader if there is one. Leader states
     // will log, replicate, and commit the reconfiguration.
-    cluster.getContext().getRaftRole().onReconfigure(ReconfigureRequest.newBuilder()
+    cluster.getContext().getRaftRole().onReconfigure(ReconfigureRequest.builder()
         .withIndex(cluster.getConfiguration().index())
         .withTerm(cluster.getConfiguration().term())
         .withMember(new DefaultRaftMember(id, type, updated))

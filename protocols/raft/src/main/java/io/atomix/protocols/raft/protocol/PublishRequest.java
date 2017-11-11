@@ -42,7 +42,7 @@ public class PublishRequest extends SessionRequest {
    *
    * @return A new publish request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

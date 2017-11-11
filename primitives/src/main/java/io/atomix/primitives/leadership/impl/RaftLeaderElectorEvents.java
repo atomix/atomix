@@ -40,7 +40,7 @@ public enum RaftLeaderElectorEvents implements EventType {
     return id;
   }
 
-  public static final KryoNamespace NAMESPACE = KryoNamespace.newBuilder()
+  public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
       .register(NodeId.class)
       .register(Leadership.class)

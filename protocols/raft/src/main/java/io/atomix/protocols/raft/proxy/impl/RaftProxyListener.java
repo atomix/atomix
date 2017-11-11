@@ -106,7 +106,7 @@ final class RaftProxyListener {
     // to resend events starting at eventIndex + 1.
     if (request.previousIndex() != eventIndex) {
       log.trace("Inconsistent event index: {}", request.previousIndex());
-      ResetRequest resetRequest = ResetRequest.newBuilder()
+      ResetRequest resetRequest = ResetRequest.builder()
           .withSession(state.getSessionId().id())
           .withIndex(eventIndex)
           .build();

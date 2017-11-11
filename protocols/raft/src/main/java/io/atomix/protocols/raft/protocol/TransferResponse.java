@@ -27,7 +27,7 @@ public class TransferResponse extends AbstractRaftResponse {
    *
    * @return A new transfer response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

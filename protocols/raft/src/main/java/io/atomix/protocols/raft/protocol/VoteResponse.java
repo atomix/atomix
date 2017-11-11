@@ -36,7 +36,7 @@ public class VoteResponse extends AbstractRaftResponse {
    *
    * @return A new vote response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

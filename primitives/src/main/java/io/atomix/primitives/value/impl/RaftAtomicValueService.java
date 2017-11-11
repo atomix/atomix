@@ -45,7 +45,7 @@ import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.SET;
  * Raft atomic value service.
  */
 public class RaftAtomicValueService extends AbstractRaftService {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftAtomicValueOperations.NAMESPACE)
       .register(RaftAtomicValueEvents.NAMESPACE)

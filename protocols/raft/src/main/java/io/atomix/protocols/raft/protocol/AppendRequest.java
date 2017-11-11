@@ -40,7 +40,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return A new append request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

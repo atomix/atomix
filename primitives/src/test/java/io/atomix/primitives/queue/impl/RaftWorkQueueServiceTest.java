@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
 public class RaftWorkQueueServiceTest {
   @Test
   public void testSnapshot() throws Exception {
-    SnapshotStore store = new SnapshotStore(RaftStorage.newBuilder()
+    SnapshotStore store = new SnapshotStore(RaftStorage.builder()
         .withPrefix("test")
         .withStorageLevel(StorageLevel.MEMORY)
         .build());

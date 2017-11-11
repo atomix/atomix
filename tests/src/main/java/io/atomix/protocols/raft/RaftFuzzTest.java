@@ -135,7 +135,7 @@ public class RaftFuzzTest implements Runnable {
     new RaftFuzzTest().run();
   }
 
-  private static final Serializer protocolSerializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer protocolSerializer = Serializer.using(KryoNamespace.builder()
       .register(OpenSessionRequest.class)
       .register(OpenSessionResponse.class)
       .register(CloseSessionRequest.class)
@@ -196,7 +196,7 @@ public class RaftFuzzTest implements Runnable {
       .register(Configuration.class)
       .build());
 
-  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -220,7 +220,7 @@ public class RaftFuzzTest implements Runnable {
       .register(long[].class)
       .build());
 
-  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.builder()
       .register(ReadConsistency.class)
       .register(Maps.immutableEntry("", "").getClass())
       .build());
@@ -555,7 +555,7 @@ public class RaftFuzzTest implements Runnable {
     if (USE_NETTY) {
       try {
         Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-        MessagingService messagingManager = NettyMessagingService.newBuilder().withEndpoint(endpoint).build().open().join();
+        MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
         messagingServices.add(messagingManager);
         endpointMap.put(member.memberId(), endpoint);
         protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
@@ -566,9 +566,9 @@ public class RaftFuzzTest implements Runnable {
       protocol = protocolFactory.newServerProtocol(member.memberId());
     }
 
-    RaftServer.Builder builder = RaftServer.newBuilder(member.memberId())
+    RaftServer.Builder builder = RaftServer.builder(member.memberId())
         .withProtocol(protocol)
-        .withStorage(RaftStorage.newBuilder()
+        .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/fuzz-logs/%s", member.memberId())))
             .withSerializer(storageSerializer)
@@ -590,14 +590,14 @@ public class RaftFuzzTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      MessagingService messagingManager = NettyMessagingService.newBuilder().withEndpoint(endpoint).build().open().join();
+      MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
       endpointMap.put(memberId, endpoint);
       protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
     } else {
       protocol = protocolFactory.newClientProtocol(memberId);
     }
 
-    RaftClient client = RaftClient.newBuilder()
+    RaftClient client = RaftClient.builder()
         .withMemberId(memberId)
         .withProtocol(protocol)
         .build();

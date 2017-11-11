@@ -40,7 +40,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * This class provides a factory for {@link RaftLog} objects. {@code Storage} objects are immutable and
  * can be created only via the {@link RaftStorage.Builder}. To create a new
- * {@code Storage.Builder}, use the static {@link #newBuilder()} factory method:
+ * {@code Storage.Builder}, use the static {@link #builder()} factory method:
  * <pre>
  *   {@code
  *     Storage storage = Storage.builder()
@@ -59,8 +59,16 @@ public class RaftStorage {
    *
    * @return A new storage builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
+  }
+
+  /**
+   * @deprecated since 2.1
+   */
+  @Deprecated
+  public static Builder newBuilder() {
+    return builder();
   }
 
   private final String prefix;
@@ -272,7 +280,7 @@ public class RaftStorage {
    * @return The opened log.
    */
   public RaftLog openLog() {
-    return RaftLog.newBuilder()
+    return RaftLog.builder()
         .withName(prefix)
         .withDirectory(directory)
         .withStorageLevel(storageLevel)
@@ -320,7 +328,7 @@ public class RaftStorage {
    * Builds a {@link RaftStorage} configuration.
    * <p>
    * The storage builder provides simplifies building more complex {@link RaftStorage} configurations. To
-   * create a storage builder, use the {@link #newBuilder()} factory method. Set properties of the configured
+   * create a storage builder, use the {@link #builder()} factory method. Set properties of the configured
    * {@code Storage} object with the various {@code with*} methods. Once the storage has been configured,
    * call {@link #build()} to build the object.
    * <pre>

@@ -124,7 +124,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   }
 
   private RaftServer buildServer() {
-    RaftServer.Builder builder = RaftServer.newBuilder(localMemberId)
+    RaftServer.Builder builder = RaftServer.builder(localMemberId)
         .withName(partition.name())
         .withProtocol(new RaftServerCommunicator(
             partition.name(),
@@ -132,7 +132,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
             clusterCommunicator))
         .withElectionTimeout(Duration.ofMillis(ELECTION_TIMEOUT_MILLIS))
         .withHeartbeatInterval(Duration.ofMillis(HEARTBEAT_INTERVAL_MILLIS))
-        .withStorage(RaftStorage.newBuilder()
+        .withStorage(RaftStorage.builder()
             .withPrefix(String.format("partition-%s", partition.id()))
             .withStorageLevel(StorageLevel.MAPPED)
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))

@@ -63,7 +63,7 @@ public abstract class AbstractLogTest {
   protected static final int MAX_SEGMENT_SIZE = 1024 * 8;
   private static final Path PATH = Paths.get("target/test-logs/");
 
-  private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer serializer = Serializer.using(KryoNamespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -86,7 +86,7 @@ public abstract class AbstractLogTest {
   protected abstract StorageLevel storageLevel();
 
   protected RaftLog createLog() {
-    return RaftLog.newBuilder()
+    return RaftLog.builder()
         .withName("test")
         .withDirectory(PATH.toFile())
         .withSerializer(serializer)

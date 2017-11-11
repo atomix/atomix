@@ -39,7 +39,7 @@ public class JournalSegmentDescriptorTest {
    */
   @Test
   public void testDescriptorBuilder() {
-    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES))
+    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES))
       .withId(2)
       .withIndex(1025)
       .withMaxSegmentSize(1024 * 1024)
@@ -64,7 +64,7 @@ public class JournalSegmentDescriptorTest {
   @Test
   public void testDescriptorPersist() {
     Buffer buffer = FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES);
-    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder(buffer)
+    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder(buffer)
       .withId(2)
       .withIndex(1025)
       .withMaxSegmentSize(1024 * 1024)
@@ -101,7 +101,7 @@ public class JournalSegmentDescriptorTest {
    */
   @Test
   public void testDescriptorCopy() {
-    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
+    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
       .withId(2)
       .withIndex(1025)
       .withMaxSegmentSize(1024 * 1024)

@@ -64,7 +64,7 @@ import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.W
  */
 public class RaftLeaderElectorService extends AbstractRaftService {
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(RaftLeaderElectorOperations.NAMESPACE)
       .register(RaftLeaderElectorEvents.NAMESPACE)
       .register(Registration.class)

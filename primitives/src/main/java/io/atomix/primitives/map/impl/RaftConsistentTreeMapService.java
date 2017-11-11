@@ -63,7 +63,7 @@ import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.SUB_
  */
 public class RaftConsistentTreeMapService extends RaftConsistentMapService {
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftConsistentMapOperations.NAMESPACE)
       .register(RaftConsistentTreeMapOperations.NAMESPACE)
