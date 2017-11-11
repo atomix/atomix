@@ -40,7 +40,7 @@ import static io.atomix.primitives.value.impl.RaftAtomicValueOperations.SET;
  * Atomix counter implementation.
  */
 public class RaftAtomicValue extends AbstractRaftPrimitive implements AsyncAtomicValue<byte[]> {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftAtomicValueOperations.NAMESPACE)
       .register(RaftAtomicValueEvents.NAMESPACE)

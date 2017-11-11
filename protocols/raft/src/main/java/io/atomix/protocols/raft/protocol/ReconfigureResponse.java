@@ -30,7 +30,7 @@ public class ReconfigureResponse extends ConfigurationResponse {
    *
    * @return A new reconfigure response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

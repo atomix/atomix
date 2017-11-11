@@ -77,7 +77,7 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
   /**
    * Default Kryo namespace.
    */
-  public static Namespace DEFAULT = newBuilder().build();
+  public static Namespace DEFAULT = builder().build();
 
   private final KryoPool pool = new KryoPool.Builder(this)
       .softReferences()
@@ -241,7 +241,7 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
    *
    * @return builder
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

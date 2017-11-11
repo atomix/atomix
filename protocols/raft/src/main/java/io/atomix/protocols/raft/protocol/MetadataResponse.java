@@ -36,7 +36,7 @@ public class MetadataResponse extends AbstractRaftResponse {
    *
    * @return A new metadata response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

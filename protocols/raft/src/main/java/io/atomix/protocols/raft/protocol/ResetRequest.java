@@ -33,7 +33,7 @@ public class ResetRequest extends SessionRequest {
    *
    * @return A new publish response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

@@ -31,7 +31,7 @@ public class LeaveRequest extends ConfigurationRequest {
    *
    * @return A new leave request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

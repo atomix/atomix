@@ -40,7 +40,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return A new configuration request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

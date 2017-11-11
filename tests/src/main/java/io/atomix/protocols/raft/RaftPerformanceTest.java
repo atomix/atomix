@@ -138,7 +138,7 @@ public class RaftPerformanceTest implements Runnable {
     new RaftPerformanceTest().run();
   }
 
-  private static final Serializer protocolSerializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer protocolSerializer = Serializer.using(KryoNamespace.builder()
       .register(HeartbeatRequest.class)
       .register(HeartbeatResponse.class)
       .register(OpenSessionRequest.class)
@@ -201,7 +201,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(Configuration.class)
       .build());
 
-  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -225,7 +225,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(long[].class)
       .build());
 
-  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.builder()
       .register(ReadConsistency.class)
       .register(Maps.immutableEntry("", "").getClass())
       .build());
@@ -448,7 +448,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftServerProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      ManagedMessagingService messagingService = (ManagedMessagingService) NettyMessagingService.newBuilder().withEndpoint(endpoint).build().open().join();
+      ManagedMessagingService messagingService = (ManagedMessagingService) NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
       messagingServices.add(messagingService);
       endpointMap.put(memberId, endpoint);
       protocol = new RaftServerMessagingProtocol(messagingService, protocolSerializer, endpointMap::get);
@@ -456,10 +456,10 @@ public class RaftPerformanceTest implements Runnable {
       protocol = protocolFactory.newServerProtocol(memberId);
     }
 
-    RaftServer.Builder builder = RaftServer.newBuilder(memberId)
+    RaftServer.Builder builder = RaftServer.builder(memberId)
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
-        .withStorage(RaftStorage.newBuilder()
+        .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MAPPED)
             .withDirectory(new File(String.format("target/perf-logs/%s", memberId)))
             .withSerializer(storageSerializer)
@@ -482,14 +482,14 @@ public class RaftPerformanceTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      MessagingService messagingService = NettyMessagingService.newBuilder().withEndpoint(endpoint).build().open().join();
+      MessagingService messagingService = NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
       endpointMap.put(memberId, endpoint);
       protocol = new RaftClientMessagingProtocol(messagingService, protocolSerializer, endpointMap::get);
     } else {
       protocol = protocolFactory.newClientProtocol(memberId);
     }
 
-    RaftClient client = RaftClient.newBuilder()
+    RaftClient client = RaftClient.builder()
         .withMemberId(memberId)
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)

@@ -100,7 +100,7 @@ public final class NodeUpdate<V> {
    * @return new instance
    */
   public <T> NodeUpdate<T> map(Function<V, T> valueMapper) {
-    return NodeUpdate.<T>newBuilder()
+    return NodeUpdate.<T>builder()
         .withType(type)
         //.withKey(keyMapper.apply(key))
         .withValue(value == null ? null : valueMapper.apply(value))
@@ -142,7 +142,7 @@ public final class NodeUpdate<V> {
    * @param <V> value type
    * @return builder.
    */
-  public static <V> Builder<V> newBuilder() {
+  public static <V> Builder<V> builder() {
     return new Builder<>();
   }
 

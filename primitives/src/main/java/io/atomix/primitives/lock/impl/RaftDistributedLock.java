@@ -39,7 +39,7 @@ import static io.atomix.primitives.lock.impl.RaftDistributedLockOperations.UNLOC
  * Raft lock.
  */
 public class RaftDistributedLock extends AbstractRaftPrimitive implements AsyncDistributedLock {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftDistributedLockOperations.NAMESPACE)
       .register(RaftDistributedLockEvents.NAMESPACE)

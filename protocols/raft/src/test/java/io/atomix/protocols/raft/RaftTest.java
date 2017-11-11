@@ -84,7 +84,7 @@ import static org.junit.Assert.assertTrue;
  * Raft test.
  */
 public class RaftTest extends ConcurrentTestCase {
-  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -1205,9 +1205,9 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a Raft server.
    */
   private RaftServer createServer(MemberId memberId) {
-    RaftServer.Builder builder = RaftServer.newBuilder(memberId)
+    RaftServer.Builder builder = RaftServer.builder(memberId)
         .withProtocol(protocolFactory.newServerProtocol(memberId))
-        .withStorage(RaftStorage.newBuilder()
+        .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/test-logs/%s", memberId)))
             .withSerializer(storageSerializer)
@@ -1226,7 +1226,7 @@ public class RaftTest extends ConcurrentTestCase {
    */
   private RaftClient createClient() throws Throwable {
     MemberId memberId = nextMemberId();
-    RaftClient client = RaftClient.newBuilder()
+    RaftClient client = RaftClient.builder()
         .withMemberId(memberId)
         .withProtocol(protocolFactory.newClientProtocol(memberId))
         .build();

@@ -60,7 +60,7 @@ public class RaftProxyInvokerTest {
   public void testSubmitCommand() throws Throwable {
     RaftProxyConnection connection = mock(RaftProxyConnection.class);
     when(connection.command(any(CommandRequest.class)))
-      .thenReturn(CompletableFuture.completedFuture(CommandResponse.newBuilder()
+      .thenReturn(CompletableFuture.completedFuture(CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(10)
         .withResult("Hello world!".getBytes())
@@ -99,7 +99,7 @@ public class RaftProxyInvokerTest {
     CompletableFuture<byte[]> result1 = submitter.invoke(new RaftOperation(COMMAND, HeapBytes.EMPTY));
     CompletableFuture<byte[]> result2 = submitter.invoke(new RaftOperation(COMMAND, HeapBytes.EMPTY));
 
-    future2.complete(CommandResponse.newBuilder()
+    future2.complete(CommandResponse.builder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(10)
       .withResult("Hello world again!".getBytes())
@@ -112,7 +112,7 @@ public class RaftProxyInvokerTest {
     assertFalse(result1.isDone());
     assertFalse(result2.isDone());
 
-    future1.complete(CommandResponse.newBuilder()
+    future1.complete(CommandResponse.builder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(9)
       .withResult("Hello world!".getBytes())
@@ -135,7 +135,7 @@ public class RaftProxyInvokerTest {
   public void testSubmitQuery() throws Throwable {
     RaftProxyConnection connection = mock(RaftProxyConnection.class);
     when(connection.query(any(QueryRequest.class)))
-      .thenReturn(CompletableFuture.completedFuture(QueryResponse.newBuilder()
+      .thenReturn(CompletableFuture.completedFuture(QueryResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(10)
         .withResult("Hello world!".getBytes())
@@ -172,7 +172,7 @@ public class RaftProxyInvokerTest {
     CompletableFuture<byte[]> result1 = submitter.invoke(new RaftOperation(QUERY, HeapBytes.EMPTY));
     CompletableFuture<byte[]> result2 = submitter.invoke(new RaftOperation(QUERY, HeapBytes.EMPTY));
 
-    future2.complete(QueryResponse.newBuilder()
+    future2.complete(QueryResponse.builder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(10)
       .withResult("Hello world again!".getBytes())
@@ -183,7 +183,7 @@ public class RaftProxyInvokerTest {
     assertFalse(result1.isDone());
     assertFalse(result2.isDone());
 
-    future1.complete(QueryResponse.newBuilder()
+    future1.complete(QueryResponse.builder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(9)
       .withResult("Hello world!".getBytes())
@@ -225,7 +225,7 @@ public class RaftProxyInvokerTest {
     assertFalse(result2.isDone());
 
     future1.completeExceptionally(new RaftException.QueryFailure("failure"));
-    future2.complete(QueryResponse.newBuilder()
+    future2.complete(QueryResponse.builder()
       .withStatus(RaftResponse.Status.OK)
       .withIndex(10)
       .withResult("Hello world!".getBytes())

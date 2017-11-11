@@ -48,7 +48,7 @@ import static io.atomix.primitives.leadership.impl.RaftLeaderElectorOperations.W
  * Distributed resource providing the {@link AsyncLeaderElector} primitive.
  */
 public class RaftLeaderElector extends AbstractRaftPrimitive implements AsyncLeaderElector<byte[]> {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(RaftLeaderElectorOperations.NAMESPACE)
       .register(RaftLeaderElectorEvents.NAMESPACE)
       .build());

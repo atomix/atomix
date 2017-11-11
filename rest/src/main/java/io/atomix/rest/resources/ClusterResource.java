@@ -52,21 +52,21 @@ public class ClusterResource extends AbstractRestResource {
   @Path("/node")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getNode(@Context ClusterService clusterService) {
-    return Response.ok(new NodeInfo(clusterService.localNode())).build();
+    return Response.ok(new NodeInfo(clusterService.getLocalNode())).build();
   }
 
   @GET
   @Path("/nodes")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getNodes(@Context ClusterService clusterService) {
-    return Response.ok(clusterService.nodes().stream().map(NodeInfo::new).collect(Collectors.toList())).build();
+    return Response.ok(clusterService.getNodes().stream().map(NodeInfo::new).collect(Collectors.toList())).build();
   }
 
   @GET
   @Path("/nodes/{node}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getNodeInfo(@PathParam("node") String nodeId, @Context ClusterService clusterService) {
-    Node node = clusterService.node(NodeId.from(nodeId));
+    Node node = clusterService.getNode(NodeId.from(nodeId));
     if (node == null) {
       return Response.status(Status.NOT_FOUND).build();
     }

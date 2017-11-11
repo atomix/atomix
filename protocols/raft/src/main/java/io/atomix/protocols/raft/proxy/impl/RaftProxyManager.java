@@ -144,7 +144,7 @@ public class RaftProxyManager {
     checkNotNull(maxTimeout, "timeout cannot be null");
 
     log.debug("Opening session; name: {}, type: {}", serviceName, serviceType);
-    OpenSessionRequest request = OpenSessionRequest.newBuilder()
+    OpenSessionRequest request = OpenSessionRequest.builder()
         .withMemberId(memberId)
         .withServiceName(serviceName)
         .withServiceType(serviceType)
@@ -209,7 +209,7 @@ public class RaftProxyManager {
     }
 
     log.info("Closing session {}", sessionId);
-    CloseSessionRequest request = CloseSessionRequest.newBuilder()
+    CloseSessionRequest request = CloseSessionRequest.builder()
         .withSession(sessionId.id())
         .build();
 
@@ -243,7 +243,7 @@ public class RaftProxyManager {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
 
-    KeepAliveRequest request = KeepAliveRequest.newBuilder()
+    KeepAliveRequest request = KeepAliveRequest.builder()
         .withSessionIds(new long[]{sessionId.id()})
         .withCommandSequences(new long[]{sessionState.getCommandResponse()})
         .withEventIndexes(new long[]{sessionState.getEventIndex()})
@@ -294,7 +294,7 @@ public class RaftProxyManager {
 
     log.trace("Keeping {} sessions alive", sessionIds.length);
 
-    KeepAliveRequest request = KeepAliveRequest.newBuilder()
+    KeepAliveRequest request = KeepAliveRequest.builder()
         .withSessionIds(sessionIds)
         .withCommandSequences(commandResponses)
         .withEventIndexes(eventIndexes)
@@ -372,7 +372,7 @@ public class RaftProxyManager {
   private CompletableFuture<HeartbeatResponse> handleHeartbeat(HeartbeatRequest request) {
     log.trace("Received {}", request);
     selectorManager.resetAll(request.leader(), request.members());
-    HeartbeatResponse response = HeartbeatResponse.newBuilder()
+    HeartbeatResponse response = HeartbeatResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .build();
     log.trace("Sending {}", response);

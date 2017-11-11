@@ -32,7 +32,7 @@ public class AppendResponse extends AbstractRaftResponse {
    *
    * @return A new append response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

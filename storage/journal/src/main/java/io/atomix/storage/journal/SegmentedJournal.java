@@ -50,7 +50,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return A new segmented journal builder.
    */
-  public static <E> Builder<E> newBuilder() {
+  public static <E> Builder<E> builder() {
     return new Builder<>();
   }
 
@@ -168,7 +168,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     if (!segments.isEmpty()) {
       currentSegment = segments.lastEntry().getValue();
     } else {
-      JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
+      JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
           .withId(1)
           .withIndex(1)
           .withMaxSegmentSize(maxSegmentSize)
@@ -208,7 +208,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     if (lastSegment != null) {
       currentSegment = lastSegment;
     } else {
-      JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
+      JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
           .withId(1)
           .withIndex(1)
           .withMaxSegmentSize(maxSegmentSize)
@@ -242,7 +242,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     }
     segments.clear();
 
-    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
+    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
         .withId(1)
         .withIndex(index)
         .withMaxSegmentSize(maxSegmentSize)
@@ -286,7 +286,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     assertDiskSpace();
 
     JournalSegment lastSegment = getLastSegment();
-    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.newBuilder()
+    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
         .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
         .withIndex(currentSegment.lastIndex() + 1)
         .withMaxSegmentSize(maxSegmentSize)

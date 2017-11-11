@@ -74,7 +74,7 @@ import static io.atomix.primitives.tree.impl.RaftDocumentTreeOperations.UPDATE;
  * State Machine for {@link RaftDocumentTree} resource.
  */
 public class RaftDocumentTreeService extends AbstractRaftService {
-  private final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
+  private final Serializer serializer = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftDocumentTreeOperations.NAMESPACE)
       .register(RaftDocumentTreeEvents.NAMESPACE)

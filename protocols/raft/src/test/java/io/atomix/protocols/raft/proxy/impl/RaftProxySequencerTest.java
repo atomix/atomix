@@ -47,14 +47,14 @@ public class RaftProxySequencerTest {
     RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
     long sequence = sequencer.nextRequest();
 
-    PublishRequest request = PublishRequest.newBuilder()
+    PublishRequest request = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(1)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
 
-    CommandResponse response = CommandResponse.newBuilder()
+    CommandResponse response = CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(2)
         .withEventIndex(1)
@@ -74,14 +74,14 @@ public class RaftProxySequencerTest {
     RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
     long sequence = sequencer.nextRequest();
 
-    PublishRequest request = PublishRequest.newBuilder()
+    PublishRequest request = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(1)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
 
-    CommandResponse response = CommandResponse.newBuilder()
+    CommandResponse response = CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(2)
         .withEventIndex(1)
@@ -101,14 +101,14 @@ public class RaftProxySequencerTest {
     RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
     long sequence = sequencer.nextRequest();
 
-    PublishRequest request = PublishRequest.newBuilder()
+    PublishRequest request = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(2)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
 
-    CommandResponse response = CommandResponse.newBuilder()
+    CommandResponse response = CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(2)
         .withEventIndex(2)
@@ -128,21 +128,21 @@ public class RaftProxySequencerTest {
     RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
     long sequence = sequencer.nextRequest();
 
-    PublishRequest request1 = PublishRequest.newBuilder()
+    PublishRequest request1 = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(2)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
 
-    PublishRequest request2 = PublishRequest.newBuilder()
+    PublishRequest request2 = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(3)
         .withPreviousIndex(2)
         .withEvents(Collections.emptyList())
         .build();
 
-    CommandResponse response = CommandResponse.newBuilder()
+    CommandResponse response = CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(2)
         .withEventIndex(2)
@@ -162,14 +162,14 @@ public class RaftProxySequencerTest {
   public void testSequenceEventAbsentCommand() throws Throwable {
     RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
 
-    PublishRequest request1 = PublishRequest.newBuilder()
+    PublishRequest request1 = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(2)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
 
-    PublishRequest request2 = PublishRequest.newBuilder()
+    PublishRequest request2 = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(3)
         .withPreviousIndex(2)
@@ -192,13 +192,13 @@ public class RaftProxySequencerTest {
     long sequence2 = sequencer.nextRequest();
     assertTrue(sequence2 == sequence1 + 1);
 
-    CommandResponse commandResponse = CommandResponse.newBuilder()
+    CommandResponse commandResponse = CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(2)
         .withEventIndex(0)
         .build();
 
-    QueryResponse queryResponse = QueryResponse.newBuilder()
+    QueryResponse queryResponse = QueryResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(2)
         .withEventIndex(0)
@@ -227,14 +227,14 @@ public class RaftProxySequencerTest {
     sequencer.responseSequence = 1;
     sequencer.eventIndex = 5;
 
-    CommandResponse commandResponse = CommandResponse.newBuilder()
+    CommandResponse commandResponse = CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(20)
         .withEventIndex(10)
         .build();
     sequencer.sequenceResponse(2, commandResponse, () -> assertEquals(run.getAndIncrement(), 0));
 
-    PublishRequest publishRequest = PublishRequest.newBuilder()
+    PublishRequest publishRequest = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(25)
         .withPreviousIndex(5)
@@ -262,21 +262,21 @@ public class RaftProxySequencerTest {
     sequencer.responseSequence = 1;
     sequencer.eventIndex = 5;
 
-    CommandResponse commandResponse2 = CommandResponse.newBuilder()
+    CommandResponse commandResponse2 = CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(20)
         .withEventIndex(10)
         .build();
     sequencer.sequenceResponse(3, commandResponse2, () -> assertEquals(run.getAndIncrement(), 1));
 
-    CommandResponse commandResponse1 = CommandResponse.newBuilder()
+    CommandResponse commandResponse1 = CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withIndex(18)
         .withEventIndex(8)
         .build();
     sequencer.sequenceResponse(2, commandResponse1, () -> assertEquals(run.getAndIncrement(), 0));
 
-    PublishRequest publishRequest1 = PublishRequest.newBuilder()
+    PublishRequest publishRequest1 = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(25)
         .withPreviousIndex(5)
@@ -284,7 +284,7 @@ public class RaftProxySequencerTest {
         .build();
     sequencer.sequenceEvent(publishRequest1, () -> assertEquals(run.getAndIncrement(), 2));
 
-    PublishRequest publishRequest2 = PublishRequest.newBuilder()
+    PublishRequest publishRequest2 = PublishRequest.builder()
         .withSession(1)
         .withEventIndex(28)
         .withPreviousIndex(8)

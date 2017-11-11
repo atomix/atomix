@@ -49,7 +49,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
    * Returns a new snapshot store.
    */
   protected SnapshotStore createSnapshotStore() {
-    RaftStorage storage = RaftStorage.newBuilder()
+    RaftStorage storage = RaftStorage.builder()
         .withPrefix("test")
         .withDirectory(new File(String.format("target/test-logs/%s", testId)))
         .withStorageLevel(StorageLevel.DISK)

@@ -30,7 +30,7 @@ public class RaftStorageTest {
 
   @Test
   public void testDefaultConfiguration() throws Exception {
-    RaftStorage storage = RaftStorage.newBuilder().build();
+    RaftStorage storage = RaftStorage.builder().build();
     assertEquals("atomix", storage.prefix());
     assertEquals(new File(System.getProperty("user.dir")), storage.directory());
     assertEquals(1024 * 1024 * 32, storage.maxLogSegmentSize());
@@ -43,7 +43,7 @@ public class RaftStorageTest {
 
   @Test
   public void testCustomConfiguration() throws Exception {
-    RaftStorage storage = RaftStorage.newBuilder()
+    RaftStorage storage = RaftStorage.builder()
         .withPrefix("foo")
         .withDirectory(new File(System.getProperty("user.dir"), "foo"))
         .withMaxSegmentSize(1024 * 1024)

@@ -84,7 +84,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    *
    * @return The descriptor builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder(HeapBuffer.allocate(BYTES));
   }
 
@@ -95,7 +95,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    * @return The descriptor builder.
    * @throws NullPointerException if {@code buffer} is null
    */
-  public static Builder newBuilder(Buffer buffer) {
+  public static Builder builder(Buffer buffer) {
     return new Builder(buffer);
   }
 

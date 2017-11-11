@@ -77,19 +77,19 @@ public abstract class ActiveRole extends PassiveRole {
     // as up to date as us.
     if (request.term() < raft.getTerm()) {
       log.debug("Rejected {}: candidate's term is less than the current term", request);
-      return PollResponse.newBuilder()
+      return PollResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withAccepted(false)
           .build();
     } else if (isLogUpToDate(request.lastLogIndex(), request.lastLogTerm(), request)) {
-      return PollResponse.newBuilder()
+      return PollResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withAccepted(true)
           .build();
     } else {
-      return PollResponse.newBuilder()
+      return PollResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withAccepted(false)
@@ -122,7 +122,7 @@ public abstract class ActiveRole extends PassiveRole {
     // as up to date as us.
     if (request.term() < raft.getTerm()) {
       log.debug("Rejected {}: candidate's term is less than the current term", request);
-      return VoteResponse.newBuilder()
+      return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withVoted(false)
@@ -131,7 +131,7 @@ public abstract class ActiveRole extends PassiveRole {
     // If a leader was already determined for this term then reject the request.
     else if (raft.getLeader() != null) {
       log.debug("Rejected {}: leader already exists", request);
-      return VoteResponse.newBuilder()
+      return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withVoted(false)
@@ -141,7 +141,7 @@ public abstract class ActiveRole extends PassiveRole {
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!raft.getCluster().getRemoteMemberStates().stream().map(m -> m.getMember().memberId()).collect(Collectors.toSet()).contains(request.candidate())) {
       log.debug("Rejected {}: candidate is not known to the local member", request);
-      return VoteResponse.newBuilder()
+      return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withVoted(false)
@@ -151,13 +151,13 @@ public abstract class ActiveRole extends PassiveRole {
     else if (raft.getLastVotedFor() == null) {
       if (isLogUpToDate(request.lastLogIndex(), request.lastLogTerm(), request)) {
         raft.setLastVotedFor(request.candidate());
-        return VoteResponse.newBuilder()
+        return VoteResponse.builder()
             .withStatus(RaftResponse.Status.OK)
             .withTerm(raft.getTerm())
             .withVoted(true)
             .build();
       } else {
-        return VoteResponse.newBuilder()
+        return VoteResponse.builder()
             .withStatus(RaftResponse.Status.OK)
             .withTerm(raft.getTerm())
             .withVoted(false)
@@ -167,7 +167,7 @@ public abstract class ActiveRole extends PassiveRole {
     // If we already voted for the requesting server, respond successfully.
     else if (raft.getLastVotedFor() == request.candidate()) {
       log.debug("Accepted {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).memberId());
-      return VoteResponse.newBuilder()
+      return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withVoted(true)
@@ -176,7 +176,7 @@ public abstract class ActiveRole extends PassiveRole {
     // In this case, we've already voted for someone else.
     else {
       log.debug("Rejected {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).memberId());
-      return VoteResponse.newBuilder()
+      return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withVoted(false)

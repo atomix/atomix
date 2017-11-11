@@ -59,7 +59,7 @@ import static io.atomix.primitives.map.impl.RaftConsistentTreeMapOperations.POLL
  * Implementation of {@link io.atomix.primitives.map.AsyncConsistentTreeMap}.
  */
 public class RaftConsistentTreeMap extends RaftConsistentMap implements AsyncConsistentTreeMap<byte[]> {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftConsistentMapOperations.NAMESPACE)
       .register(RaftConsistentTreeMapOperations.NAMESPACE)

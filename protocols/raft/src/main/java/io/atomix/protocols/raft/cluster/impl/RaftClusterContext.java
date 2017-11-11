@@ -391,7 +391,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
       log.debug("Attempting to join via {}", member.getMember().memberId());
 
-      JoinRequest request = JoinRequest.newBuilder()
+      JoinRequest request = JoinRequest.builder()
           .withMember(new DefaultRaftMember(getMember().memberId(), getMember().getType(), getMember().getLastUpdated()))
           .build();
       raft.getProtocol().join(member.getMember().memberId(), request).whenCompleteAsync((response, error) -> {
@@ -502,7 +502,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     // Attempt to leave the cluster by submitting a LeaveRequest directly to the server state.
     // Non-leader states should forward the request to the leader if there is one. Leader states
     // will log, replicate, and commit the reconfiguration.
-    raft.getRaftRole().onLeave(LeaveRequest.newBuilder()
+    raft.getRaftRole().onLeave(LeaveRequest.builder()
         .withMember(getMember())
         .build()).whenComplete((response, error) -> {
       // Cancel the leave timer.

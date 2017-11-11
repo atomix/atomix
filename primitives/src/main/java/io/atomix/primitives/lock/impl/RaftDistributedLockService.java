@@ -42,7 +42,7 @@ import static io.atomix.primitives.lock.impl.RaftDistributedLockOperations.UNLOC
  * Raft atomic value service.
  */
 public class RaftDistributedLockService extends AbstractRaftService {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftDistributedLockOperations.NAMESPACE)
       .register(RaftDistributedLockEvents.NAMESPACE)

@@ -177,7 +177,7 @@ public class SnapshotStore implements AutoCloseable {
    * @return The snapshot.
    */
   public Snapshot newTemporarySnapshot(ServiceId serviceId, String serviceName, long index, WallClockTimestamp timestamp) {
-    SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
+    SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
         .withServiceId(serviceId.id())
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())
@@ -195,7 +195,7 @@ public class SnapshotStore implements AutoCloseable {
    * @return The snapshot.
    */
   public Snapshot newSnapshot(ServiceId serviceId, String serviceName, long index, WallClockTimestamp timestamp) {
-    SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
+    SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
         .withServiceId(serviceId.id())
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())

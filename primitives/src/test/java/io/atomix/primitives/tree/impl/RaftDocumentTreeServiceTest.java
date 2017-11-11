@@ -55,7 +55,7 @@ public class RaftDocumentTreeServiceTest {
   }
 
   private void testSnapshot(Ordering ordering) throws Exception {
-    SnapshotStore store = new SnapshotStore(RaftStorage.newBuilder()
+    SnapshotStore store = new SnapshotStore(RaftStorage.builder()
         .withPrefix("test")
         .withStorageLevel(StorageLevel.MEMORY)
         .build());

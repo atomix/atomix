@@ -35,7 +35,7 @@ public class QueryResponse extends OperationResponse {
    *
    * @return A new query response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

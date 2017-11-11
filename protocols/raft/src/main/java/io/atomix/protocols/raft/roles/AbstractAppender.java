@@ -101,7 +101,7 @@ abstract class AbstractAppender implements AutoCloseable {
     Indexed<RaftLogEntry> prevEntry = reader != null ? reader.getCurrentEntry() : null;
 
     DefaultRaftMember leader = raft.getLeader();
-    return AppendRequest.newBuilder()
+    return AppendRequest.builder()
         .withTerm(raft.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
         .withPrevLogIndex(prevEntry != null ? prevEntry.index() : reader != null ? reader.getFirstIndex() - 1 : 0)
@@ -121,7 +121,7 @@ abstract class AbstractAppender implements AutoCloseable {
     final Indexed<RaftLogEntry> prevEntry = reader.getCurrentEntry();
 
     final DefaultRaftMember leader = raft.getLeader();
-    AppendRequest.Builder builder = AppendRequest.newBuilder()
+    AppendRequest.Builder builder = AppendRequest.builder()
         .withTerm(raft.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
         .withPrevLogIndex(prevEntry != null ? prevEntry.index() : reader.getFirstIndex() - 1)
@@ -325,7 +325,7 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected ConfigureRequest buildConfigureRequest(RaftMemberContext member) {
     DefaultRaftMember leader = raft.getLeader();
-    return ConfigureRequest.newBuilder()
+    return ConfigureRequest.builder()
         .withTerm(raft.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
         .withIndex(raft.getCluster().getConfiguration().index())
@@ -431,7 +431,7 @@ abstract class AbstractAppender implements AutoCloseable {
         // Create the install request, indicating whether this is the last chunk of data based on the number
         // of bytes remaining in the buffer.
         DefaultRaftMember leader = raft.getLeader();
-        request = InstallRequest.newBuilder()
+        request = InstallRequest.builder()
             .withTerm(raft.getTerm())
             .withLeader(leader != null ? leader.memberId() : null)
             .withServiceId(snapshot.serviceId().id())

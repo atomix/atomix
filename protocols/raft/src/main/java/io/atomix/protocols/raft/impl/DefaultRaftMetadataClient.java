@@ -72,7 +72,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
    */
   private CompletableFuture<MetadataResponse> getMetadata() {
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
-    connection.metadata(MetadataRequest.newBuilder().build()).whenComplete((response, error) -> {
+    connection.metadata(MetadataRequest.builder().build()).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
           future.complete(response);

@@ -59,7 +59,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Distributed resource providing the {@link WorkQueue} primitive.
  */
 public class RaftWorkQueue extends AbstractRaftPrimitive implements AsyncWorkQueue<byte[]> {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftWorkQueueOperations.NAMESPACE)
       .register(RaftWorkQueueEvents.NAMESPACE)

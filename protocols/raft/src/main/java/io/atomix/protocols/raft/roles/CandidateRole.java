@@ -142,7 +142,7 @@ public final class CandidateRole extends ActiveRole {
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
       log.debug("Requesting vote from {} for term {}", member, raft.getTerm());
-      VoteRequest request = VoteRequest.newBuilder()
+      VoteRequest request = VoteRequest.builder()
           .withTerm(raft.getTerm())
           .withCandidate(raft.getCluster().getMember().memberId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
@@ -205,13 +205,13 @@ public final class CandidateRole extends ActiveRole {
 
     // If the vote request is not for this candidate then reject the vote.
     if (request.candidate() == raft.getCluster().getMember().memberId()) {
-      return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withVoted(true)
           .build()));
     } else {
-      return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
           .withVoted(false)

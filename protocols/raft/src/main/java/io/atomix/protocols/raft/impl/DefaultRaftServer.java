@@ -235,7 +235,7 @@ public class DefaultRaftServer implements RaftServer {
 
       // If the storage is not configured, create a new Storage instance with the configured serializer.
       if (storage == null) {
-        storage = RaftStorage.newBuilder().build();
+        storage = RaftStorage.builder().build();
       }
 
       RaftContext raft = new RaftContext(name, localMemberId, protocol, storage, serviceRegistry, threadModel, threadPoolSize);

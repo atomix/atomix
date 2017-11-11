@@ -145,7 +145,7 @@ public final class FollowerRole extends ActiveRole {
     // of the cluster and vote each member for a vote.
     for (DefaultRaftMember member : votingMembers) {
       log.debug("Polling {} for next term {}", member, raft.getTerm() + 1);
-      PollRequest request = PollRequest.newBuilder()
+      PollRequest request = PollRequest.builder()
           .withTerm(raft.getTerm())
           .withCandidate(raft.getCluster().getMember().memberId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)

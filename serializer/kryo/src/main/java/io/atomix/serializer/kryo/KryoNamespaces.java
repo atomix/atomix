@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class KryoNamespaces {
 
     public static final int BASIC_MAX_SIZE = 50;
-    public static final KryoNamespace BASIC = KryoNamespace.newBuilder()
+    public static final KryoNamespace BASIC = KryoNamespace.builder()
             .nextId(KryoNamespace.FLOATING_ID)
             .register(byte[].class)
             .register(AtomicBoolean.class)

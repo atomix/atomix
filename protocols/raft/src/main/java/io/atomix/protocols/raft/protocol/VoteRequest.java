@@ -37,7 +37,7 @@ public class VoteRequest extends AbstractRaftRequest {
    *
    * @return A new vote request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

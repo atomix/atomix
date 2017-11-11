@@ -60,7 +60,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 public class DefaultClusterEventService implements ManagedClusterEventService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClusterEventService.class);
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(NodeId.class)
       .register(Subscription.class)
@@ -87,7 +87,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
   public DefaultClusterEventService(ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
     this.clusterService = clusterService;
     this.clusterCommunicator = clusterCommunicator;
-    this.localNodeId = clusterService.localNode().id();
+    this.localNodeId = clusterService.getLocalNode().id();
   }
 
   @Override
@@ -130,7 +130,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     return nodeSubscriptions.values()
         .stream()
         .filter(s -> {
-          Node node = clusterService.node(s.nodeId());
+          Node node = clusterService.getNode(s.nodeId());
           return node != null && node.state() == State.ACTIVE && !s.isTombstone();
         })
         .map(s -> s.nodeId())
@@ -241,7 +241,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
    * Sends a gossip message to an active peer.
    */
   private void gossip() {
-    List<NodeId> nodes = clusterService.nodes()
+    List<NodeId> nodes = clusterService.getNodes()
         .stream()
         .filter(node -> !localNodeId.equals(node.id()))
         .filter(node -> node.state() == State.ACTIVE)
@@ -259,7 +259,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
    * Updates all active peers with a given subscription.
    */
   private CompletableFuture<Void> updateNodes() {
-    List<CompletableFuture<Void>> futures = clusterService.nodes()
+    List<CompletableFuture<Void>> futures = clusterService.getNodes()
         .stream()
         .filter(node -> !localNodeId.equals(node.id()))
         .map(Node::id)
@@ -298,7 +298,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
    * Purges tombstones from the subscription list.
    */
   private void purgeTombstones() {
-    long minTombstoneTime = clusterService.nodes()
+    long minTombstoneTime = clusterService.getNodes()
         .stream()
         .map(node -> updateTimes.getOrDefault(node.id(), 0L))
         .reduce(Math::min)

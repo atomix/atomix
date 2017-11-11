@@ -793,7 +793,7 @@ public class RaftContext implements AutoCloseable {
       RaftMember member = getCluster().getMember();
       RaftMember leader = getLeader();
       if (leader != null) {
-        protocol.transfer(leader.memberId(), TransferRequest.newBuilder()
+        protocol.transfer(leader.memberId(), TransferRequest.builder()
             .withMember(member.memberId())
             .build()).whenCompleteAsync((response, error) -> {
           if (error != null) {

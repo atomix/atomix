@@ -90,7 +90,7 @@ import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.VALUES;
  * Distributed resource providing the {@link AsyncConsistentMap} primitive.
  */
 public class RaftConsistentMap extends AbstractRaftPrimitive implements AsyncConsistentMap<String, byte[]> {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(RaftConsistentMapOperations.NAMESPACE)
       .register(RaftConsistentMapEvents.NAMESPACE)

@@ -28,18 +28,18 @@ import java.io.File;
  */
 public class RaftLog extends DelegatingJournal<RaftLogEntry> {
 
-  @Deprecated
-  public static Builder builder() {
-    return newBuilder();
-  }
-
   /**
    * Returns a new Raft log builder.
    *
    * @return A new Raft log builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
+  }
+
+  @Deprecated
+  public static Builder newBuilder() {
+    return builder();
   }
 
   private final SegmentedJournal<RaftLogEntry> journal;
@@ -139,7 +139,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
   public static class Builder implements io.atomix.utils.Builder<RaftLog> {
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
 
-    private final SegmentedJournal.Builder<RaftLogEntry> journalBuilder = SegmentedJournal.newBuilder();
+    private final SegmentedJournal.Builder<RaftLogEntry> journalBuilder = SegmentedJournal.builder();
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
 
     protected Builder() {

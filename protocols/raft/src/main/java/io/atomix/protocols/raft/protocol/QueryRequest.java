@@ -39,7 +39,7 @@ public class QueryRequest extends OperationRequest {
    *
    * @return A new query request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

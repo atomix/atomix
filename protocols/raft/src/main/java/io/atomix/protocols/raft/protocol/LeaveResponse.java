@@ -30,7 +30,7 @@ public class LeaveResponse extends ConfigurationResponse {
    *
    * @return A new leave response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

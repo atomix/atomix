@@ -355,7 +355,7 @@ public class PassiveRole extends InactiveRole {
    * @return the append response status
    */
   protected boolean completeAppend(boolean succeeded, long lastLogIndex, CompletableFuture<AppendResponse> future) {
-    future.complete(logResponse(AppendResponse.newBuilder()
+    future.complete(logResponse(AppendResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .withTerm(raft.getTerm())
         .withSucceeded(succeeded)
@@ -414,7 +414,7 @@ public class PassiveRole extends InactiveRole {
    */
   private CompletableFuture<QueryResponse> queryForward(QueryRequest request) {
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(QueryResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
@@ -422,7 +422,7 @@ public class PassiveRole extends InactiveRole {
 
     log.trace("Forwarding {}", request);
     return forward(request, raft.getProtocol()::query)
-        .exceptionally(error -> QueryResponse.newBuilder()
+        .exceptionally(error -> QueryResponse.builder()
             .withStatus(RaftResponse.Status.ERROR)
             .withError(RaftError.Type.NO_LEADER)
             .build())
@@ -444,7 +444,7 @@ public class PassiveRole extends InactiveRole {
     // indexes will be the last applied index.
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
     raft.getStateMachine().<OperationResult>apply(entry).whenComplete((result, error) -> {
-      completeOperation(result, QueryResponse.newBuilder(), error, future);
+      completeOperation(result, QueryResponse.builder(), error, future);
     });
     return future;
   }
@@ -489,7 +489,7 @@ public class PassiveRole extends InactiveRole {
 
     // If the request is for a lesser term, reject the request.
     if (request.term() < raft.getTerm()) {
-      return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request term is less than the local term " + request.term())
           .build()));
@@ -513,7 +513,7 @@ public class PassiveRole extends InactiveRole {
     if (pendingSnapshot == null) {
       // For new snapshots, the initial snapshot offset must be 0.
       if (request.chunkOffset() > 0) {
-        return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
+        return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
             .withStatus(RaftResponse.Status.ERROR)
             .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request chunk offset is invalid")
             .build()));
@@ -529,7 +529,7 @@ public class PassiveRole extends InactiveRole {
 
     // If the request offset is greater than the next expected snapshot offset, fail the request.
     if (request.chunkOffset() > pendingSnapshot.nextOffset()) {
-      return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request chunk offset does not match the next chunk offset")
           .build()));
@@ -549,7 +549,7 @@ public class PassiveRole extends InactiveRole {
       pendingSnapshots.put(request.serviceId(), pendingSnapshot);
     }
 
-    return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
+    return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .build()));
   }
@@ -560,13 +560,13 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
 
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(MetadataResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(MetadataResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, raft.getProtocol()::metadata)
-          .exceptionally(error -> MetadataResponse.newBuilder()
+          .exceptionally(error -> MetadataResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
               .build())
@@ -579,7 +579,7 @@ public class PassiveRole extends InactiveRole {
     raft.checkThread();
     logRequest(request);
 
-    return CompletableFuture.completedFuture(logResponse(PollResponse.newBuilder()
+    return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
         .withStatus(RaftResponse.Status.ERROR)
         .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Cannot poll RESERVE member")
         .build()));
@@ -591,7 +591,7 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
     updateTermAndLeader(request.term(), null);
 
-    return CompletableFuture.completedFuture(logResponse(VoteResponse.newBuilder()
+    return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
         .withStatus(RaftResponse.Status.ERROR)
         .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Cannot request vote from RESERVE member")
         .build()));
@@ -603,13 +603,13 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
 
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, raft.getProtocol()::command)
-          .exceptionally(error -> CommandResponse.newBuilder()
+          .exceptionally(error -> CommandResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
               .build())
@@ -623,13 +623,13 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
 
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, raft.getProtocol()::keepAlive)
-          .exceptionally(error -> KeepAliveResponse.newBuilder()
+          .exceptionally(error -> KeepAliveResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
               .build())
@@ -643,13 +643,13 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
 
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, raft.getProtocol()::openSession)
-          .exceptionally(error -> OpenSessionResponse.newBuilder()
+          .exceptionally(error -> OpenSessionResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
               .build())
@@ -663,13 +663,13 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
 
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, raft.getProtocol()::closeSession)
-          .exceptionally(error -> CloseSessionResponse.newBuilder()
+          .exceptionally(error -> CloseSessionResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
               .build())
@@ -683,13 +683,13 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
 
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(JoinResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, raft.getProtocol()::join)
-          .exceptionally(error -> JoinResponse.newBuilder()
+          .exceptionally(error -> JoinResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
               .build())
@@ -703,13 +703,13 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
 
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, raft.getProtocol()::reconfigure)
-          .exceptionally(error -> ReconfigureResponse.newBuilder()
+          .exceptionally(error -> ReconfigureResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
               .build())
@@ -723,13 +723,13 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
 
     if (raft.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(LeaveResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER)
           .build()));
     } else {
       return forward(request, raft.getProtocol()::leave)
-          .exceptionally(error -> LeaveResponse.newBuilder()
+          .exceptionally(error -> LeaveResponse.builder()
               .withStatus(RaftResponse.Status.ERROR)
               .withError(RaftError.Type.NO_LEADER)
               .build())

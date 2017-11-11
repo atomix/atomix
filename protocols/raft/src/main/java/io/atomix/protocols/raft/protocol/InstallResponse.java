@@ -31,7 +31,7 @@ public class InstallResponse extends AbstractRaftResponse {
    *
    * @return A new install response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

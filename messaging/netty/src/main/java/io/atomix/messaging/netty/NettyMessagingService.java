@@ -102,7 +102,7 @@ public class NettyMessagingService implements ManagedMessagingService {
    *
    * @return a new Netty messaging service builder
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

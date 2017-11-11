@@ -42,7 +42,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return A new install request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

@@ -35,7 +35,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    *
    * @return A new open session request builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

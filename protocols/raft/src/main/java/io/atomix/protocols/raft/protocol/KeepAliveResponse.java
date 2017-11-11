@@ -40,7 +40,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    *
    * @return A new keep alive response builder.
    */
-  public static Builder newBuilder() {
+  public static Builder builder() {
     return new Builder();
   }
 

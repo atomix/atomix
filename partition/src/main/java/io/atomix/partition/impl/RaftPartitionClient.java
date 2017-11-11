@@ -319,7 +319,7 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
   }
 
   private RaftClient newRaftClient(RaftClientProtocol protocol) {
-    return RaftClient.newBuilder()
+    return RaftClient.builder()
         .withClientId(partition.name())
         .withMemberId(localMemberId)
         .withProtocol(protocol)
