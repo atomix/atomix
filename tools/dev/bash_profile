@@ -18,17 +18,4 @@ fi
 
 export MAVEN=${MAVEN:-~/Applications/apache-maven-3.3.9}
 
-function atomix {
-    command=${1:-""}
-    case "$command" in
-    "build")
-        mvn clean package
-        ;;
-    "server")
-        shift
-        bash ${ATOMIX_ROOT}/bin/atomix "$@"
-        ;;
-    *)
-        bash ${ATOMIX_ROOT}/bin/atomix "$@"
-    esac
-}
+alias atomix=${ATOMIX_ROOT}/bin/atomix

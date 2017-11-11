@@ -17,6 +17,7 @@ package io.atomix.partition.impl;
 
 import com.google.common.io.BaseEncoding;
 import io.atomix.primitives.DistributedPrimitive;
+import io.atomix.primitives.DistributedPrimitive.Type;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.DistributedPrimitives;
 import io.atomix.primitives.Ordering;
@@ -299,26 +300,8 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
   }
 
   @Override
-  public Set<String> getAsyncConsistentMapNames() {
-    return client.metadata().getSessions(DistributedPrimitive.Type.CONSISTENT_MAP.name())
-        .join()
-        .stream()
-        .map(RaftSessionMetadata::serviceName)
-        .collect(Collectors.toSet());
-  }
-
-  @Override
-  public Set<String> getAsyncAtomicCounterNames() {
-    return client.metadata().getSessions(DistributedPrimitive.Type.COUNTER.name())
-        .join()
-        .stream()
-        .map(RaftSessionMetadata::serviceName)
-        .collect(Collectors.toSet());
-  }
-
-  @Override
-  public Set<String> getWorkQueueNames() {
-    return client.metadata().getSessions(DistributedPrimitive.Type.WORK_QUEUE.name())
+  public Set<String> getPrimitiveNames(Type primitiveType) {
+    return client.metadata().getSessions(primitiveType.name())
         .join()
         .stream()
         .map(RaftSessionMetadata::serviceName)

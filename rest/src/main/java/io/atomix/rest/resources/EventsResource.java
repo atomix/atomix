@@ -30,7 +30,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -40,6 +39,7 @@ import javax.ws.rs.core.Response.Status;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Events resource.
@@ -47,6 +47,7 @@ import java.util.function.Consumer;
 @Path("/v1/events")
 public class EventsResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventsResource.class);
+  private static final int UUID_STRING_LENGTH = UUID.randomUUID().toString().length();
 
   /**
    * Returns an event log name.
@@ -102,8 +103,19 @@ public class EventsResource {
     return Response.ok().build();
   }
 
+  @GET
+  @Path("/{subject}/subscribers")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getSubscribers(@PathParam("subject") String subject, @Context EventManager events) {
+    return Response.ok(events.getEventLogNames(ClusterEventService.class)
+        .stream()
+        .map(name -> name.length() == subject.length() + UUID_STRING_LENGTH && name.substring(0, UUID_STRING_LENGTH).equals(subject))
+        .collect(Collectors.toList())).build();
+  }
+
   @POST
-  @Path("/{subject}/sub")
+  @Path("/{subject}/subscribers")
+  @Produces(MediaType.TEXT_PLAIN)
   public void subscribe(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
     String id = UUID.randomUUID().toString();
     EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
@@ -120,11 +132,12 @@ public class EventsResource {
   }
 
   @GET
-  @Path("/{subject}/sub/{id}")
+  @Path("/{subject}/subscribers/{id}")
   @Produces(MediaType.TEXT_PLAIN)
-  public void nextSession(@PathParam("subject") String subject, @QueryParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
+  public void nextSession(@PathParam("subject") String subject, @PathParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
     EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterEventService.class, getEventLogName(subject, id));
     if (eventLog == null) {
+      LOGGER.warn("Unknown subscriber {}", id);
       response.resume(Response.status(Status.NOT_FOUND).build());
       return;
     }
@@ -133,14 +146,15 @@ public class EventsResource {
       if (error == null) {
         response.resume(Response.ok(event).build());
       } else {
+        LOGGER.warn("Subscriber {} closed", id);
         response.resume(Response.noContent().build());
       }
     });
   }
 
   @DELETE
-  @Path("/{subject}/sub/{id}")
-  public Response unsubscribe(@PathParam("subject") String subject, @QueryParam("id") String id, @Context ClusterEventService eventService, @Context EventManager events) {
+  @Path("/{subject}/subscribers/{id}")
+  public Response unsubscribe(@PathParam("subject") String subject, @PathParam("id") String id, @Context ClusterEventService eventService, @Context EventManager events) {
     EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterEventService.class, getEventLogName(subject, id));
     if (eventLog != null && eventLog.close()) {
       eventService.removeSubscriber(new MessageSubject(subject));

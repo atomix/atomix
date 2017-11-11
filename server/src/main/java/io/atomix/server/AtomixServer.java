@@ -64,24 +64,30 @@ public class AtomixServer {
         .defaultHelp(true)
         .description("Atomix server");
     parser.addArgument("node")
-        .required(true)
         .type(nodeType)
+        .nargs("?")
         .metavar("NAME:HOST:PORT")
+        .setDefault(Node.newBuilder()
+            .withId(NodeId.from("local"))
+            .withEndpoint(new Endpoint(InetAddress.getByName("127.0.0.1"), NettyMessagingService.DEFAULT_PORT))
+            .build())
         .help("The local node info");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
-        .metavar("NAME:HOST:PORT")
         .type(nodeType)
+        .metavar("NAME:HOST:PORT")
+        .required(false)
         .help("Bootstraps a new cluster");
     parser.addArgument("--http-port", "-p")
+        .type(Integer.class)
         .metavar("PORT")
         .required(false)
-        .type(Integer.class)
         .setDefault(5678)
         .help("An optional HTTP server port");
     parser.addArgument("--data-dir", "-d")
-        .required(false)
         .type(fileType)
+        .metavar("FILE")
+        .required(false)
         .setDefault(new File(System.getProperty("user.dir"), "data"))
         .help("The server data directory");
 

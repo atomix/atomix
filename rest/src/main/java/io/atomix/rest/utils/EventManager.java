@@ -16,6 +16,7 @@
 package io.atomix.rest.utils;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -67,4 +68,15 @@ public class EventManager {
   public <L, E> EventLog<L, E> removeEventLog(Class<?> type, String name) {
     return eventRegistries.computeIfAbsent(type, t -> new ConcurrentHashMap<>()).remove(name);
   }
+
+  /**
+   * Returns event log names for the given type.
+   *
+   * @param type the type for which to return event log names
+   * @return event log names for the given type
+   */
+  public Set<String> getEventLogNames(Class<?> type) {
+    return eventRegistries.computeIfAbsent(type, t -> new ConcurrentHashMap<>()).keySet();
+  }
+
 }
