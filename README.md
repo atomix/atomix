@@ -103,7 +103,7 @@ try {
 
 #### Asynchronous distributed lock
 ```java
-DistributedLock lock = atomix.lockBuilder()
+AsyncDistributedLock lock = atomix.lockBuilder()
   .withName("my-lock")
   .buildAsync();
 
