@@ -32,6 +32,6 @@ public class DefaultDistributedLockBuilder extends DistributedLockBuilder {
 
   @Override
   public AsyncDistributedLock buildAsync() {
-    return null;
+    return primitiveCreator.newAsyncDistributedLock(name(), lockTimeout());
   }
 }

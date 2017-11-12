@@ -288,7 +288,7 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
   public AsyncDistributedLock newAsyncDistributedLock(String name, Duration lockTimeout) {
     return new RaftDistributedLock(client.newProxyBuilder()
         .withName(name)
-        .withServiceType(DistributedPrimitive.Type.LEADER_ELECTOR.name())
+        .withServiceType(DistributedPrimitive.Type.LOCK.name())
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withCommunicationStrategy(CommunicationStrategy.LEADER)
         .withMinTimeout(lockTimeout)

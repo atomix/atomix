@@ -24,7 +24,6 @@ import io.atomix.partition.Partition;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionMetadata;
 import io.atomix.primitives.DistributedPrimitive;
-import io.atomix.primitives.DistributedPrimitive.Type;
 import io.atomix.primitives.DistributedPrimitiveCreator;
 import io.atomix.primitives.Ordering;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
@@ -37,6 +36,7 @@ import io.atomix.primitives.leadership.impl.DefaultLeaderElectorBuilder;
 import io.atomix.primitives.leadership.impl.RaftLeaderElectorService;
 import io.atomix.primitives.lock.DistributedLockBuilder;
 import io.atomix.primitives.lock.impl.DefaultDistributedLockBuilder;
+import io.atomix.primitives.lock.impl.RaftDistributedLockService;
 import io.atomix.primitives.map.AtomicCounterMapBuilder;
 import io.atomix.primitives.map.ConsistentMapBuilder;
 import io.atomix.primitives.map.ConsistentTreeMapBuilder;
@@ -94,8 +94,9 @@ public class RaftPartition implements ManagedPartition {
           .put(DistributedPrimitive.Type.COUNTER_MAP.name(), RaftAtomicCounterMapService::new)
           .put(DistributedPrimitive.Type.COUNTER.name(), RaftAtomicCounterService::new)
           .put(DistributedPrimitive.Type.LEADER_ELECTOR.name(), RaftLeaderElectorService::new)
+          .put(DistributedPrimitive.Type.LOCK.name(), RaftDistributedLockService::new)
           .put(DistributedPrimitive.Type.WORK_QUEUE.name(), RaftWorkQueueService::new)
-          .put(Type.VALUE.name(), RaftAtomicValueService::new)
+          .put(DistributedPrimitive.Type.VALUE.name(), RaftAtomicValueService::new)
           .put(DistributedPrimitive.Type.DOCUMENT_TREE.name(),
               () -> new RaftDocumentTreeService(Ordering.NATURAL))
           .put(String.format("%s-%s", DistributedPrimitive.Type.DOCUMENT_TREE.name(), Ordering.NATURAL),
@@ -228,7 +229,7 @@ public class RaftPartition implements ManagedPartition {
   }
 
   @Override
-  public Set<String> getPrimitiveNames(Type primitiveType) {
+  public Set<String> getPrimitiveNames(DistributedPrimitive.Type primitiveType) {
     return getPrimitiveCreator().getPrimitiveNames(primitiveType);
   }
 

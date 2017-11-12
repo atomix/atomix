@@ -34,24 +34,19 @@ public interface DistributedPrimitive {
     CONSISTENT_MAP,
 
     /**
-     * Map with eventual consistency semantics.
-     */
-    EVENTUALLY_CONSISTENT_MAP,
-
-    /**
      * Consistent Multimap.
      */
     CONSISTENT_MULTIMAP,
 
     /**
-     * Distributed set.
-     */
-    SET,
-
-    /**
      * Tree map.
      */
     CONSISTENT_TREEMAP,
+
+    /**
+     * Distributed set.
+     */
+    SET,
 
     /**
      * Atomic counter.
