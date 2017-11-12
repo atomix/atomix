@@ -109,7 +109,8 @@ public class EventsResource {
   public Response getSubscribers(@PathParam("subject") String subject, @Context EventManager events) {
     return Response.ok(events.getEventLogNames(ClusterEventService.class)
         .stream()
-        .map(name -> name.length() == subject.length() + UUID_STRING_LENGTH && name.substring(0, UUID_STRING_LENGTH).equals(subject))
+        .filter(name -> name.length() == subject.length() + 1 + UUID_STRING_LENGTH && name.substring(0, name.length() - UUID_STRING_LENGTH - 1).equals(subject))
+        .map(name -> name.substring(subject.length() + 1))
         .collect(Collectors.toList())).build();
   }
 

@@ -19,6 +19,8 @@ from __future__ import unicode_literals
 import click
 import shlex
 import traceback
+import webbrowser
+
 from prompt_toolkit.buffer import Buffer, AcceptAction
 from prompt_toolkit.enums import DEFAULT_BUFFER, SEARCH_BUFFER
 from prompt_toolkit.filters import Always
@@ -80,7 +82,6 @@ class Cli(object):
                 A list of Token.Toolbar.
             """
             return [
-                (Token.Toolbar, ' [F5] Refresh '),
                 (Token.Toolbar, ' [F9] Docs '),
                 (Token.Toolbar, ' [F10] Exit ')
             ]
@@ -126,6 +127,16 @@ class Cli(object):
             enable_system_bindings=True,
             enable_auto_suggest_bindings=True
         )
+
+        @key_manager.registry.add_binding(Keys.F9)
+        def handle_f9(_):
+            """Inputs the "docs" command when the `F9` key is pressed.
+            Args:
+                * _: An instance of prompt_toolkit's Event (not used).
+            Returns:
+                None.
+            """
+            webbrowser.open('http://atomix.io')
 
         @key_manager.registry.add_binding(Keys.F10)
         def handle_f10(_):
