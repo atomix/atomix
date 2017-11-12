@@ -18,7 +18,10 @@ from . import Command, Action, Resource, command
 
 class LockResource(Resource):
     def _get_lock_names(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/locks'), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/locks'),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -39,20 +42,16 @@ class LockResource(Resource):
 
 class LockAction(Action):
     def execute(self, name):
-        response = self.cli.service.post(self.cli.service.url('/v1/primitives/locks/{name}', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to acquire lock")
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/primitives/locks/{name}', name=name)
+        ))
 
 
 class UnlockAction(Action):
     def execute(self, name):
-        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/locks/{name}', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to release lock")
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/primitives/locks/{name}', name=name)
+        ))
 
 
 @command(

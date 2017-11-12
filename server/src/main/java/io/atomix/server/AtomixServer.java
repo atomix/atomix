@@ -108,9 +108,9 @@ public class AtomixServer {
     File dataDir = namespace.get("data_dir");
     Integer httpPort = namespace.getInt("http_port");
 
-    LOGGER.info("node: {}", localNode);
-    LOGGER.info("bootstrap: {}", bootstrap);
-    LOGGER.info("data directory: {}", dataDir);
+    LOGGER.info("Node: {}", localNode);
+    LOGGER.info("Bootstrap: {}", bootstrap);
+    LOGGER.info("Data: {}", dataDir);
 
     Atomix atomix = Atomix.builder()
         .withLocalNode(localNode)
@@ -120,6 +120,8 @@ public class AtomixServer {
         .build();
 
     atomix.open().join();
+
+    LOGGER.info("Server listening at {}:{}", localNode.endpoint().host().getHostAddress(), httpPort);
 
     synchronized (Atomix.class) {
       while (atomix.isOpen()) {

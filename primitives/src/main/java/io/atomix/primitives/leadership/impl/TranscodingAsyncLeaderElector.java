@@ -122,8 +122,8 @@ public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector
     public void onEvent(LeadershipEvent<V2> event) {
       listener.onEvent(new LeadershipEvent<>(
           event.type(),
-          event.oldLeadership().map(valueDecoder),
-          event.newLeadership().map(valueDecoder)));
+          event.oldLeadership() != null ? event.oldLeadership().map(valueDecoder) : null,
+          event.newLeadership() != null ? event.newLeadership().map(valueDecoder) : null));
     }
   }
 }

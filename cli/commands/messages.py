@@ -22,54 +22,79 @@ class SubjectResource(Resource):
 
 class PublishAction(Action):
     def execute(self, subject, data):
-        response = self.cli.service.post(self.cli.service.url('/v1/messages/{subject}', subject=subject), data=data, headers={'content-type': 'text/plain'})
-        if response.status_code != 200:
-            print("Publish failed: " + response.status_code)
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/messages/{subject}', subject=subject),
+            data=data,
+            headers={'content-type': 'text/plain'}
+        ))
 
 
 class SendAction(Action):
     def execute(self, subject, node, data):
-        response = self.cli.service.post(self.cli.service.url('/v1/messages/{subject}/{node}', subject=subject, node=node), data=data, headers={'content-type': 'text/plain'})
-        if response.status_code != 200:
-            print("Publish failed: " + response.status_code)
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/messages/{subject}/{node}', subject=subject, node=node),
+            data=data,
+            headers={'content-type': 'text/plain'}
+        ))
 
 
 class SubscribeAction(Action):
     def execute(self, subject):
-        response = self.cli.service.post(self.cli.service.url('/v1/messages/{subject}/subscribers', subject=subject))
-        print(response.json())
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/messages/{subject}/subscribers', subject=subject)
+        ))
 
 
 class ConsumeAction(Action):
     def execute(self, subject, subscriber):
-        response = self.cli.service.get(self.cli.service.url('/v1/messages/{subject}/subscribers/{subscriber}', subject=subject, subscriber=subscriber))
-        print(response.json())
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/messages/{subject}/subscribers/{subscriber}', subject=subject,
+                                 subscriber=subscriber)
+        ))
 
 
 class UnsubscribeAction(Action):
     def execute(self, subject, subscriber):
-        response = self.cli.service.delete(self.cli.service.url('/v1/messages/{subject}/subscribers/{subscriber}', subject=subject, subscriber=subscriber))
-        print(response.json())
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/messages/{subject}/subscribers/{subscriber}', subject=subject,
+                                 subscriber=subscriber)
+        ))
 
 
 class ListenAction(Action):
     def execute(self, subject):
-        response = self.cli.service.post(self.cli.service.url('/v1/messages/{subject}/subscribers', subject=subject))
+        response = self.cli.service.post(self.cli.service.url(
+            '/v1/messages/{subject}/subscribers',
+            subject=subject
+        ))
+        response.raise_for_status()
+
         subscriber = response.text
         try:
             while True:
-                response = self.cli.service.get(self.cli.service.url('/v1/messages/{subject}/subscribers/{subscriber}', subject=subject, subscriber=subscriber))
+                response = self.cli.service.get(self.cli.service.url(
+                    '/v1/messages/{subject}/subscribers/{subscriber}',
+                    subject=subject,
+                    subscriber=subscriber
+                ))
                 if response.status_code == 200:
-                    print(response.text)
+                    self.cli.service.output(response)
                 else:
                     break
         except KeyboardInterrupt:
-            self.cli.service.delete(self.cli.service.url('/v1/messages/{subject}/subscribers/{subscriber}', subject=subject, subscriber=subscriber))
+            self.cli.service.delete(self.cli.service.url(
+                '/v1/messages/{subject}/subscribers/{subscriber}',
+                subject=subject,
+                subscriber=subscriber
+            ))
 
 
 class SubscriberResource(Resource):
     def _get_event_subscribers(self, subject):
-        response = self.cli.service.get(self.cli.service.url('/v1/messages/{subject}/subscribers', subject=subject), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/messages/{subject}/subscribers', subject=subject),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -90,7 +115,10 @@ class SubscriberResource(Resource):
 
 class NodeResource(Resource):
     def _get_nodes(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/cluster/nodes'), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/cluster/nodes'),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []

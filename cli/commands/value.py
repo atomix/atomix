@@ -18,7 +18,9 @@ from . import Command, Action, Resource, command
 
 class ValueResource(Resource):
     def _get_value_names(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/values'))
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/values', log=False)
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -39,31 +41,27 @@ class ValueResource(Resource):
 
 class GetAction(Action):
     def execute(self, name):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/values/{name}', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to read value")
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/values/{name}', name=name)
+        ))
 
 
 class SetAction(Action):
     def execute(self, name, value):
-        response = self.cli.service.put(self.cli.service.url('/v1/primitives/values/{name}', name=name), data=value, headers={'content-type': 'text/plain'})
-        if response.status_code != 200:
-            print("Failed to update value")
+        self.cli.service.output(self.cli.service.put(
+            self.cli.service.url('/v1/primitives/values/{name}', name=name),
+            data=value,
+            headers={'content-type': 'text/plain'}
+        ))
 
 
 class CompareAndSetAction(Action):
     def execute(self, name, expect, update):
-        response = self.cli.service.post(
+        self.cli.service.output(self.cli.service.post(
             self.cli.service.url('/v1/primitives/values/{name}/cas', name=name),
             data={'expect': expect, 'update': update},
             headers={'content-type': 'application/json'}
-        )
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to update value")
+        ))
 
 
 class TextResource(Resource):
@@ -72,7 +70,10 @@ class TextResource(Resource):
 
 class ExpectResource(Resource):
     def _get_value(self, name):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/values/{name}', name=name), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/values/{name}', name=name),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return None

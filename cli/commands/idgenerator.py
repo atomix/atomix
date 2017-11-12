@@ -18,7 +18,10 @@ from . import Command, Action, Resource, command
 
 class GeneratorResource(Resource):
     def _get_generator_names(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/ids'), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/ids'),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -39,11 +42,9 @@ class GeneratorResource(Resource):
 
 class NextAction(Action):
     def execute(self, name):
-        response = self.cli.service.put(self.cli.service.url('/v1/primitives/ids/{name}', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to increment ID generator")
+        self.cli.service.output(self.cli.service.put(
+            self.cli.service.url('/v1/primitives/ids/{name}', name=name)
+        ))
 
 
 @command(

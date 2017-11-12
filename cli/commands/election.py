@@ -39,62 +39,59 @@ class ElectionResource(Resource):
 
 class RunAction(Action):
     def execute(self, name):
-        response = self.cli.service.post(self.cli.service.url('/v1/primitives/elections/{name}', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to enter election")
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/primitives/elections/{name}', name=name)
+        ))
 
 
 class LeaderAction(Action):
     def execute(self, name):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/elections/{name}', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to find leader")
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/elections/{name}', name=name)
+        ))
 
 
 class ListenAction(Action):
     def execute(self, name, id):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/elections/{name}/{id}', name=name, id=id))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to listen for election")
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/elections/{name}/{id}', name=name, id=id)
+        ))
 
 
 class WithdrawAction(Action):
     def execute(self, name, id):
-        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/elections/{name}/{id}', name=name, id=id))
-        if response.status_code != 200:
-            print("Failed to withdraw from election")
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/primitives/elections/{name}/{id}', name=name, id=id)
+        ))
 
 
 class AnointAction(Action):
     def execute(self, name, id):
-        response = self.cli.service.post(self.cli.service.url('/v1/primitives/elections/{name}/{id}/anoint', name=name, id=id))
-        if response.status_code != 200:
-            print("Failed to anoint leader")
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/primitives/elections/{name}/{id}/anoint', name=name, id=id)
+        ))
 
 
 class PromoteAction(Action):
     def execute(self, name, id):
-        response = self.cli.service.post(self.cli.service.url('/v1/primitives/elections/{name}/{id}/promote', name=name, id=id))
-        if response.status_code != 200:
-            print("Failed to promote candidate")
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/primitives/elections/{name}/{id}/promote', name=name, id=id)
+        ))
 
 
 class EvictAction(Action):
     def execute(self, name, id):
-        response = self.cli.service.post(self.cli.service.url('/v1/primitives/elections/{name}/{id}/evict', name=name, id=id))
-        if response.status_code != 200:
-            print("Failed to evict candidate")
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/primitives/elections/{name}/{id}/evict', name=name, id=id)
+        ))
 
 
 class CandidateResource(Resource):
     def _get_candidates(self, name):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/elections/{name}', name=name), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/elections/{name}', name=name),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -109,6 +106,7 @@ class CandidateResource(Resource):
         for node in self._get_candidates(name):
             if node.lower().startswith(prefix.lower()):
                 yield node
+
 
 @command(
     'election {election} run',

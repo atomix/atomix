@@ -18,7 +18,10 @@ from . import Command, Action, Resource, command
 
 class SetResource(Resource):
     def _get_set_names(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/sets'), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/sets'),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -37,53 +40,44 @@ class SetResource(Resource):
                 yield set
 
     def execute(self, name):
-        response = self.cli.service.put(self.cli.service.url('/v1/primitives/sets/{name}', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to read set")
+        self.cli.service.output(self.cli.service.put(
+            self.cli.service.url('/v1/primitives/sets/{name}', name=name)
+        ))
+
 
 class AddAction(Action):
     def execute(self, name, value):
-        response = self.cli.service.put(self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to add item")
+        self.cli.service.output(self.cli.service.put(
+            self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value)
+        ))
 
 
 class RemoveAction(Action):
     def execute(self, name, value):
-        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to remove item")
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value)
+        ))
 
 
 class ContainsAction(Action):
     def execute(self, name, value):
-        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to check item")
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/primitives/sets/{name}/{value}', name=name, value=value)
+        ))
 
 
 class SizeAction(Action):
     def execute(self, name):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/sets/{name}/size', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to read set")
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/sets/{name}/size', name=name)
+        ))
 
 
 class ClearAction(Action):
     def execute(self, name):
-        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/sets/{name}', name=name),)
-        if response.status_code != 200:
-            print("Failed to clear set")
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/primitives/sets/{name}', name=name)
+        ))
 
 
 class TextResource(Resource):

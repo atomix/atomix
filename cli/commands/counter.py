@@ -18,7 +18,10 @@ from . import Command, Action, Resource, command
 
 class CounterResource(Resource):
     def _get_counter_names(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/counters'), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/counters'),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -39,31 +42,25 @@ class CounterResource(Resource):
 
 class GetAction(Action):
     def execute(self, name):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/counters/{name}', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to read counter")
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/counters/{name}', name=name)
+        ))
 
 
 class IncrementAction(Action):
     def execute(self, name):
-        response = self.cli.service.post(self.cli.service.url('/v1/primitives/counters/{name}/inc', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to increment counter")
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/primitives/counters/{name}/inc', name=name)
+        ))
 
 
 class SetAction(Action):
     def execute(self, name, value):
-        response = self.cli.service.put(
-            self.cli.url('/v1/primitives/counters/{name}', name=name),
+        self.cli.service.output(self.cli.service.put(
+            self.cli.service.url('/v1/primitives/counters/{name}', name=name),
             data=value,
             headers={'content-type': 'text/plain'}
-        )
-        if response.status_code != 200:
-            print("Failed to update counter")
+        ))
 
 
 class ValueResource(Resource):

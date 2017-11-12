@@ -36,6 +36,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,12 +58,12 @@ public class DocumentTreeResource {
   /**
    * Returns a document path for the given path params.
    */
-  private DocumentPath getDocumentPath(List<PathParam> params) {
+  private DocumentPath getDocumentPath(List<PathSegment> params) {
     if (params.isEmpty()) {
       return documentTree.root();
     } else {
       List<String> path = new ArrayList<>(documentTree.root().pathElements());
-      path.addAll(params.stream().map(PathParam::value).collect(Collectors.toList()));
+      path.addAll(params.stream().map(PathSegment::getPath).collect(Collectors.toList()));
       return DocumentPath.from(path);
     }
   }
@@ -70,7 +71,7 @@ public class DocumentTreeResource {
   @GET
   @Path("/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void get(@PathParam("path") List<PathParam> path, @Suspended AsyncResponse response) {
+  public void get(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
     documentTree.get(getDocumentPath(path)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new VersionedResult(result)).build());
@@ -85,7 +86,7 @@ public class DocumentTreeResource {
   @Path("/{path: .*}")
   @Consumes(MediaType.TEXT_PLAIN)
   @Produces(MediaType.APPLICATION_JSON)
-  public void create(@PathParam("path") List<PathParam> path, String value, @Suspended AsyncResponse response) {
+  public void create(@PathParam("path") List<PathSegment> path, String value, @Suspended AsyncResponse response) {
     documentTree.createRecursive(getDocumentPath(path), value).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
@@ -100,7 +101,7 @@ public class DocumentTreeResource {
   @Path("/{path: .*}")
   @Consumes(MediaType.TEXT_PLAIN)
   @Produces(MediaType.APPLICATION_JSON)
-  public void set(@PathParam("path") List<PathParam> path, String value, @QueryParam("version") Long version, @Suspended AsyncResponse response) {
+  public void set(@PathParam("path") List<PathSegment> path, String value, @QueryParam("version") Long version, @Suspended AsyncResponse response) {
     CompletableFuture<Boolean> future;
     if (version != null) {
       future = documentTree.replace(getDocumentPath(path), value, version);
@@ -126,9 +127,23 @@ public class DocumentTreeResource {
   }
 
   @GET
-  @Path("/{path: .*}/children")
+  @Path("/children")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getChildren(@PathParam("path") List<PathParam> path, @Suspended AsyncResponse response) {
+  public void getRootChildren(@Suspended AsyncResponse response) {
+    documentTree.getChildren(documentTree.root()).whenComplete((result, error) -> {
+      if (error == null) {
+        response.resume(Response.ok(Maps.transformValues(result, VersionedResult::new)).build());
+      } else {
+        LOGGER.warn("{}", error);
+        response.resume(Response.serverError().build());
+      }
+    });
+  }
+
+  @GET
+  @Path("/children/{path: .*}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public void getChildren(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
     documentTree.getChildren(getDocumentPath(path)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(Maps.transformValues(result, VersionedResult::new)).build());
@@ -142,7 +157,7 @@ public class DocumentTreeResource {
   @DELETE
   @Path("/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void removeNode(@PathParam("path") List<PathParam> path, @Suspended AsyncResponse response) {
+  public void removeNode(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
     documentTree.removeNode(getDocumentPath(path)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new VersionedResult(result)).build());

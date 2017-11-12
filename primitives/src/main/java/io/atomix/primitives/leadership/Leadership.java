@@ -68,7 +68,9 @@ public class Leadership<T> {
    * @return the converted leadership
    */
   public <U> Leadership<U> map(Function<T, U> mapper) {
-    return new Leadership<>(leader.map(mapper), candidates.stream().map(mapper).collect(Collectors.toList()));
+    return new Leadership<>(
+        leader != null ? leader.map(mapper) : null,
+        candidates.stream().map(mapper).collect(Collectors.toList()));
   }
 
   @Override

@@ -413,7 +413,7 @@ public class RaftLeaderElectorService extends AbstractRaftService {
   }
 
   protected void addRegistration(Registration registration) {
-    if (!registrations.stream().anyMatch(r -> r.sessionId() == registration.sessionId())) {
+    if (registrations.stream().noneMatch(r -> Arrays.equals(registration.id(), r.id()))) {
       List<Registration> updatedRegistrations = new LinkedList<>(registrations);
       updatedRegistrations.add(registration);
       boolean newLeader = leader == null;
