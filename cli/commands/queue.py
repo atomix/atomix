@@ -50,17 +50,23 @@ class AddAction(Action):
 
 
 class TakeAction(Action):
-    def execute(self, queue, count=1):
+    def execute(self, queue):
         self.cli.service.output(self.cli.service.get(
-            self.cli.service.url('/v1/primitives/queues/{queue}?items={count}', queue=queue, count=count)
+            self.cli.service.url('/v1/primitives/queues/{queue}', queue=queue)
         ))
 
 
-class CompleteAction(Action):
-    def execute(self, queue, task):
-        self.cli.service.output(self.cli.service.delete(
-            self.cli.service.url('/v1/primitives/queues/{queue}/{task}', queue=queue, task=task)
-        ))
+class ConsumeAction(Action):
+    def execute(self, queue):
+        try:
+            while True:
+                response = self.cli.service.get(self.cli.service.url('/v1/primitives/queues/{queue}', queue=queue))
+                if response.status_code == 200:
+                    self.cli.service.output(response)
+                else:
+                    break
+        except KeyboardInterrupt:
+            return
 
 
 class ItemResource(Resource):
@@ -68,10 +74,6 @@ class ItemResource(Resource):
 
 
 class CountResource(Resource):
-    pass
-
-
-class TaskResource(Resource):
     pass
 
 
@@ -83,18 +85,16 @@ class TaskResource(Resource):
     item=ItemResource
 )
 @command(
-    'queue {queue} take [count]',
+    'queue {queue} take',
     type=Command.Type.PRIMITIVE,
     queue=QueueResource,
-    take=TakeAction,
-    count=CountResource
+    take=TakeAction
 )
 @command(
-    'queue {queue} complete {task}',
+    'queue {queue} consume',
     type=Command.Type.PRIMITIVE,
     queue=QueueResource,
-    complete=CompleteAction,
-    task=TaskResource
+    consume=ConsumeAction
 )
 class QueueCommand(Command):
     """Queue command"""
