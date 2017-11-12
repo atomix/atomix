@@ -7,49 +7,265 @@
 
 **An advanced platform for building fault-tolerant distributed systems on the JVM**
 
-## Atomix 2.0 is coming!
+### Atomix 2.x
 
-The current _master_ branch is the current working branch for Atomix 2.0 development. The new release is the
-culmination of years of experience working with and building on the protocols in Atomix and Copycat to create
-more scalable, dynamic framework for building fault-tolerant distributed systems.
+*Atomix 2.x documentation is currently under development. Check the website for updates!*
 
-The core of Atomix 2.0 features the following high-level abstractions:
-* [Cluster management][Cluster management]
-* [Cluster communication][Messaging]
-  * Point-to-point messaging
-  * Publish-subscribe messaging
-* [Scalable, persistent, consistent distributed systems primitives][Distributed systems primitives]
-  * Leader election
-  * Locks
-  * Maps
-  * Sets
-  * Trees
-  * Counters
-  * Global ID generators
-  * Work queues
-  * Transactions
-  * Custom primitives
-  * etc
-* [Scalable, ephemeral, eventually consistent primitives][Distributed systems primitives]
-  * Maps
-  * Sets
-* [Transactions][Transactions]
+Atomix 2.x has been completely rewritten for better performance, scalability, and usability.
+* [Cluster management](https://github.com/atomix/atomix/tree/master/cluster)
+* [Cluster communication](https://github.com/atomix/atomix/tree/master/cluster)
+* [Mature Raft implementation](https://github.com/atomix/atomix/tree/master/protocols/raft)
+  * Pre-vote election protocol (§[4.2.3][dissertation])
+  * Session-based linearizable writes (§[6.3][dissertation])
+  * Lease-based fast linearizable reads from leaders (§[6.4.1][dissertation])
+  * Fast sequential reads from followers (§[6.4.1][dissertation])
+  * FIFO consistency for concurrent/asynchronous operations (§[11.1.2][dissertation])
+  * Session-based state machine events (§[6.3][dissertation])
+  * Membership changes (§[4.3][dissertation])
+  * Snapshots (§[5.1][dissertation])
+  * Phi accrual failure detection
+* [Distributed systems primitives](https://github.com/atomix/atomix/tree/master/primitives)
+  * [AtomicCounter](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/counter)
+  * [AtomicIdGenerator](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/generator)
+  * [LeaderElector](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/leadership)
+  * [DistributedLock](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/lock)
+  * [ConsistentMap](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/map)
+  * [ConsistentTreeMap](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/map)
+  * [AtomicCounterMap](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/map)
+  * [ConsistentMultimap](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/multimap)
+  * [WorkQueue](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/queue)
+  * [DistributedSet](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/set)
+  * [DocumentTree](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/tree)
+  * [AtomicValue](https://github.com/atomix/atomix/tree/master/primitives/src/main/java/io/atomix/primitives/value)
+* [Partitioning](https://github.com/atomix/atomix/tree/master/partition)
+* [REST API](https://github.com/atomix/atomix/tree/master/rest)
+* [Interactive CLI](https://github.com/atomix/atomix/tree/master/cli)
 
-Underlying these abstractions is a variety of generic implementations of common distributed systems
-[protocols and algorithms][Protocols]:
-* [Raft consensus protocol][Raft protocol] (formerly [Copycat][Copycat])
-* [Partitioning][Partitioning] (partitioned Raft clusters)
-* [Failure detection][Failure detection protocol] (phi acrrual failure detectors)
-* [Gossip][Gossip protocol]
-* [Anti-entropy][Gossip protocol]
-* [Primary-backup replication][Primary-backup protocol]
-* [Time protocols][Time protocols] (logical clocks, vector clocks, etc)
-* etc
+### Java API
 
-[Copycat][Copycat] has also undergone significant refactoring for better performance, scalability, and
-fault tolerance in Atomix 2.0. It can now be found in the [Raft][Raft protocol] module.
+#### Create a node
+```java
+Atomix atomix = Atomix.builder()
+  .withLocalNode(Node.builder()
+    .withId(NodeId.from("a"))
+    .withEndpoint(Endpoint.from("localhost", 5678))
+    .build())
+  .withBootstrapNodes(bootstrap) // A list of `Node`s that replicate state
+  .build()
+  .open()
+  .join();
+```
 
-Atomix 2.0 is targeted for release in fall 2017
+#### Get a list of nodes in the cluster
+```java
+Collection<Node> nodes = atomix.getClusterService().getNodes();
+```
+
+#### Send a direct message
+```java
+MessageSubject subject = new MessageSubject("message");
+atomix.getCommuncationService().unicast(subject, "Hello world!", NodeId.from("b"));
+```
+
+#### Receive messages
+```java
+atomix.getCommunicationService().addSubscriber(subject, message -> {
+  System.out.println("Received " + message);
+});
+```
+
+#### Send an event
+```java
+atomix.getEventService().unicast(subject, "Hello world!");
+```
+
+#### Subscribe to receive events
+```java
+// Subscribe to events
+atomix.getEventService().addSubscriber(subject, message -> {
+  System.out.println("Received " + message);
+});
+```
+
+#### Synchronous distributed lock
+```java
+DistributedLock lock = atomix.lockBuilder()
+  .withName("my-lock")
+  .build();
+
+lock.lock();
+try {
+  // Do stuff...
+} finally {
+  lock.unlock();
+}
+```
+
+#### Asynchronous distributed lock
+```java
+DistributedLock lock = atomix.lockBuilder()
+  .withName("my-lock")
+  .buildAsync();
+
+lock.lock().thenAccept(version -> {
+  // Do stuff...
+  lock.unlock();
+});
+```
+
+### HTTP API
+
+#### Run a standalone server
+```
+mvn clean package
+bin/atomix server
+```
+
+#### Start a cluster
+```
+bin/atomix server a:localhost:5000 --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002 --http-port 6000 --data-dir data/a
+```
+
+```
+bin/atomix server a:localhost:5001 --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002 --http-port 6001 --data-dir data/b
+```
+
+```
+bin/atomix server a:localhost:5002 --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002 --http-port 6002 --data-dir data/c
+```
+
+#### Start a client node
+```
+bin/atomix server --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002
+```
+
+#### Acquire a lock
+```
+curl -XPOST http://localhost:5678/v1/primitives/locks/my-lock
+```
+
+#### Release a lock
+```
+curl -XDELETE http://localhost:5678/v1/primitives/locks/my-lock
+```
+
+#### Set a value in a map
+```
+curl -XPUT http://localhost:5678/primitives/maps/my-map/foo -d value="Hello world!" -H "Content-Type: text/plain"
+```
+
+#### Get a value in a map
+```
+curl -XGET http://localhost:5678/primitives/maps/my-map/foo
+```
+
+#### Send an event
+```
+curl -XPOST http://localhost:5678/events/something-happened -d "Something happened!" -H "Content-Type: text/plain"
+```
+
+#### Receive events
+```
+curl -XGET http://localhost:5678/events/something-happened
+```
+
+### Docker
+```
+mvn clean package
+docker build -t atomix .
+docker run -p 5678:5678 -p 5679:5679 atomix docker:0.0.0.0
+```
+
+### Command line interface
+
+```
+bin/atomix
+```
+
+#### Print help
+
+```
+atomix> help
+cluster:
+    cluster node [id]
+    cluster nodes
+counter:
+    counter {counter} get
+    counter {counter} set {value}
+    counter {counter} increment
+election:
+    election {election} run
+    election {election} leader
+    election {election} listen {candidate}
+    election {election} anoint {candidate}
+    election {election} evict {candidate}
+    election {election} promote {candidate}
+    election {election} withdraw {candidate}
+events:
+    events {topic} publish {text}
+    events {topic} listen
+    events {topic} subscribe
+    events {topic} consume {subscriber}
+    events {topic} unsubscribe {subscriber}
+exit:
+    exit
+help:
+    help [command]
+id:
+    id {generator} next
+lock:
+    lock {id} lock
+    lock {id} unlock
+map:
+    map {map} get {key}
+    map {map} put {key} {text}
+    map {map} remove {key}
+    map {map} size
+    map {map} clear
+messages:
+    messages {subject} publish {text}
+    messages {subject} send {node} {text}
+    messages {subject} listen
+    messages {subject} subscribe
+    messages {subject} consume {subscriber}
+    messages {subject} unsubscribe {subscriber}
+queue:
+    queue {queue} add {item}
+    queue {queue} take
+    queue {queue} consume
+set:
+    set {set} add {text}
+    set {set} remove {text}
+    set {set} contains {text}
+    set {set} size
+    set {set} clear
+tree:
+    tree {tree} create {path} {text}
+    tree {tree} set {path} {text}
+    tree {tree} get {path}
+    tree {tree} replace {path} {text} {version}
+value:
+    value {value} get
+    value {value} set {text}
+    value {value} compare-and-set {expect} {update}
+```
+
+#### Print command help
+```
+atomix> election foo leader
+{
+  "candidates": [
+    "d718897a-e651-416c-94c3-9ddc09b2d0e5",
+    "7f01be7d-514f-4561-a2ba-3ccbf3edfbb2"
+  ],
+  "leader": "d718897a-e651-416c-94c3-9ddc09b2d0e5"
+}
+```
+
+#### Run a command
+```
+election foo leader
+```
 
 ### Acknowledgements
 
