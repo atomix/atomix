@@ -37,7 +37,9 @@ class AtomixService(object):
         self.address = 'http://%s:%s' % (self.host, self.port)
         self.last_request = None
 
-    def url(self, path, *args, **kwargs):
+    def url(self, *args, **kwargs):
+        args = list(args)
+        path = args.pop(0)
         return self.address + path.format(*args, **kwargs)
 
     def get(self, url, headers=None, log=True):
@@ -62,7 +64,7 @@ class AtomixService(object):
 
     def output(self, response):
         response.raise_for_status()
-        if response.text != '':
+        if response.status_code == 200 and response.text != '':
             try:
                 data = json.loads(response.text)
             except:

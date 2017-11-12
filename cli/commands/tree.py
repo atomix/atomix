@@ -43,7 +43,7 @@ class TreeResource(Resource):
 class GetAction(Action):
     def execute(self, name, path):
         self.cli.service.output(self.cli.service.get(
-            self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name)
+            self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name, path=path)
         ))
 
 
@@ -81,25 +81,33 @@ class ReplaceAction(Action):
 
 class PathResource(Resource):
     def _get_children(self, name, path):
-        response = self.cli.service.get(
-            self.cli.service.url('/v1/primitives/trees/{name}/{path}/children', name=name, path=path),
-            log=False
-        )
+        if len(path) > 0:
+            response = self.cli.service.get(
+                self.cli.service.url('/v1/primitives/trees/{name}/children/{path}', name=name, path=path),
+                log=False
+            )
+        else:
+            response = self.cli.service.get(
+                self.cli.service.url('/v1/primitives/trees/{name}/children', name=name),
+                log=False
+            )
         if response.status_code == 200:
             return response.json()
         return []
 
     def suggest(self, name, prefix):
         path = prefix.split('/')
-        for child in self._get_children(name, '/'.join(path[:-1])):
-            if child.lower().startswith(prefix.lower()):
-                return child[len(prefix):]
+        parent, child_prefix = '/'.join(path[:-1]), path[-1]
+        for child in self._get_children(name, parent):
+            if child.lower().startswith(child_prefix.lower()):
+                return child[len(child_prefix):]
         return None
 
     def complete(self, name, prefix):
         path = prefix.split('/')
-        for child in self._get_children(name, '/'.join(path[:-1])):
-            if child.lower().startswith(prefix.lower()):
+        parent, child_prefix = '/'.join(path[:-1]), path[-1]
+        for child in self._get_children(name, parent):
+            if child.lower().startswith(child_prefix.lower()):
                 yield child
 
 
