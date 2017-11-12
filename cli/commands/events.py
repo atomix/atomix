@@ -22,47 +22,68 @@ class TopicResource(Resource):
 
 class PublishAction(Action):
     def execute(self, topic, data):
-        response = self.cli.service.post(self.cli.service.url('/v1/events/{topic}', topic=topic), data=data, headers={'content-type': 'text/plain'})
-        if response.status_code != 200:
-            print("Publish failed: " + response.status_code)
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/events/{topic}', topic=topic),
+            data=data,
+            headers={'content-type': 'text/plain'}
+        ))
 
 
 class SubscribeAction(Action):
     def execute(self, topic):
-        response = self.cli.service.post(self.cli.service.url('/v1/events/{topic}/subscribers', topic=topic))
-        print(response.json())
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/events/{topic}/subscribers', topic=topic)
+        ))
 
 
 class ConsumeAction(Action):
     def execute(self, topic, subscriber):
-        response = self.cli.service.get(self.cli.service.url('/v1/events/{topic}/subscribers/{subscriber}', topic=topic, subscriber=subscriber))
-        print(response.json())
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/events/{topic}/subscribers/{subscriber}', topic=topic, subscriber=subscriber)
+        ))
 
 
 class UnsubscribeAction(Action):
     def execute(self, topic, subscriber):
-        response = self.cli.service.delete(self.cli.service.url('/v1/events/{topic}/subscribers/{subscriber}', topic=topic, subscriber=subscriber))
-        print(response.json())
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/events/{topic}/subscribers/{subscriber}', topic=topic, subscriber=subscriber)
+        ))
 
 
 class ListenAction(Action):
     def execute(self, topic):
-        response = self.cli.service.post(self.cli.service.url('/v1/events/{topic}/subscribers', topic=topic))
+        response = self.cli.service.post(self.cli.service.url(
+            '/v1/events/{topic}/subscribers',
+            topic=topic
+        ))
+        response.raise_for_status()
+
         subscriber = response.text
         try:
             while True:
-                response = self.cli.service.get(self.cli.service.url('/v1/events/{topic}/subscribers/{subscriber}', topic=topic, subscriber=subscriber))
+                response = self.cli.service.get(self.cli.service.url(
+                    '/v1/events/{topic}/subscribers/{subscriber}',
+                    topic=topic,
+                    subscriber=subscriber
+                ))
                 if response.status_code == 200:
-                    print(response.text)
+                    self.cli.service.output(response)
                 else:
                     break
         except KeyboardInterrupt:
-            self.cli.service.delete(self.cli.service.url('/v1/events/{topic}/subscribers/{subscriber}', topic=topic, subscriber=subscriber))
+            self.cli.service.delete(self.cli.service.url(
+                '/v1/events/{topic}/subscribers/{subscriber}',
+                topic=topic,
+                subscriber=subscriber
+            ))
 
 
 class SubscriberResource(Resource):
     def _get_event_subscribers(self, topic):
-        response = self.cli.service.get(self.cli.service.url('/v1/events/{topic}/subscribers', topic=topic), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/events/{topic}/subscribers', topic=topic),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []

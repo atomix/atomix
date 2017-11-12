@@ -20,7 +20,6 @@ import requests
 import json
 from pygments import highlight
 from pygments.lexers import JsonLexer
-from pygments.lexers.textfmts import HttpLexer
 from pygments.formatters import TerminalFormatter
 
 class AtomixService(object):
@@ -29,6 +28,8 @@ class AtomixService(object):
     POST = 'POST'
     PUT = 'PUT'
     DELETE = 'DELETE'
+
+    JSON_INDENT = 2
 
     def __init__(self, host='localhost', port=5678):
         self.host = host
@@ -59,6 +60,16 @@ class AtomixService(object):
             self._log_request(self.DELETE, url, headers=headers)
         return requests.delete(url, headers=headers)
 
+    def output(self, response):
+        response.raise_for_status()
+        if response.text != '':
+            try:
+                data = json.loads(response.text)
+            except:
+                print(response.text)
+            else:
+                print(highlight(json.dumps(data, indent=self.JSON_INDENT, sort_keys=True), JsonLexer(), TerminalFormatter()))
+
     def _log_request(self, method, url, data=None, headers=None):
         self.last_request = {
             'method': method,
@@ -66,18 +77,3 @@ class AtomixService(object):
             'data': data,
             'headers': headers
         }
-
-    def _print_headers(self, headers):
-        if headers is not None:
-            for key, value in headers.iteritems():
-                print(highlight(key + ': ' + value, HttpLexer(), TerminalFormatter()))
-
-    def _print_request(self, method, url):
-        print(highlight(method + ' ' + url, HttpLexer(), TerminalFormatter()))
-
-    def _print_data(self, data):
-        if data is not None:
-            if isinstance(data, dict):
-                print(highlight(json.dumps(data), JsonLexer(), TerminalFormatter()))
-            else:
-                print(data)

@@ -18,7 +18,10 @@ from . import Command, Action, Resource, command
 
 class TreeResource(Resource):
     def _get_tree_names(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/trees'), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/trees'),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -39,56 +42,49 @@ class TreeResource(Resource):
 
 class GetAction(Action):
     def execute(self, name, path):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name))
-        if response.status_code == 200:
-            if response.text != '':
-                print(response.json())
-        else:
-            print("Failed to read node")
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name)
+        ))
 
 
 class CreateAction(Action):
     def execute(self, name, path, value):
-        response = self.cli.service.post(
+        self.cli.service.output(self.cli.service.post(
             self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name, path=path),
             data=value,
             headers={'content-type': 'text/plain'}
-        )
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to create node")
+        ))
 
 
 class SetAction(Action):
     def execute(self, name, path, value):
-        response = self.cli.service.put(
+        self.cli.service.output(self.cli.service.put(
             self.cli.service.url('/v1/primitives/trees/{name}/{path}', name=name, path=path),
             data=value,
             headers={'content-type': 'text/plain'}
-        )
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to update node")
+        ))
 
 
 class ReplaceAction(Action):
     def execute(self, name, path, value, version):
-        response = self.cli.service.put(
-            self.cli.service.url('/v1/primitives/trees/{name}/{path}?version={version}', name=name, path=path, version=version),
+        self.cli.service.output(self.cli.service.put(
+            self.cli.service.url(
+                '/v1/primitives/trees/{name}/{path}?version={version}',
+                name=name,
+                path=path,
+                version=version
+            ),
             data=value,
             headers={'content-type': 'text/plain'}
-        )
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to replace node")
+        ))
 
 
 class PathResource(Resource):
     def _get_children(self, name, path):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/trees/{name}/{path}/children', name=name, path=path), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/trees/{name}/{path}/children', name=name, path=path),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []

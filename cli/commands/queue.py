@@ -18,7 +18,10 @@ from . import Command, Action, Resource, command
 
 class QueueResource(Resource):
     def _get_queue_names(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/queues'), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/queues'),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -39,25 +42,25 @@ class QueueResource(Resource):
 
 class AddAction(Action):
     def execute(self, queue, data):
-        response = self.cli.service.post(self.cli.service.url('/v1/primitives/queues/{queue}', queue=queue), data=data, headers={'content-type': 'text/plain'})
-        if response.status_code != 200:
-            print("Add failed: " + response.status_code)
+        self.cli.service.output(self.cli.service.post(
+            self.cli.service.url('/v1/primitives/queues/{queue}', queue=queue),
+            data=data,
+            headers={'content-type': 'text/plain'}
+        ))
 
 
 class TakeAction(Action):
     def execute(self, queue, count=1):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/queues/{queue}?items={count}', queue=queue, count=count))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Take failed: " + response.status_code)
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/queues/{queue}?items={count}', queue=queue, count=count)
+        ))
 
 
 class CompleteAction(Action):
     def execute(self, queue, task):
-        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/queues/{queue}/{task}', queue=queue, task=task))
-        if response.status_code != 200:
-            print("Complete failed: " + response.status_code)
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/primitives/queues/{queue}/{task}', queue=queue, task=task)
+        ))
 
 
 class ItemResource(Resource):
@@ -95,4 +98,3 @@ class TaskResource(Resource):
 )
 class QueueCommand(Command):
     """Queue command"""
-

@@ -18,18 +18,19 @@ from . import Command, Action, Resource, command
 
 class NodesAction(Action):
     def execute(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/cluster/nodes'))
-        print(response.json())
+        self.cli.service.output(self.cli.service.get(self.cli.service.url('/v1/cluster/nodes')))
 
 
 class NodeAction(Action):
     def execute(self, node=None):
         if node is None:
-            response = self.cli.service.get(self.cli.service.url('/v1/cluster/node'))
-            print(response.json())
+            self.cli.service.output(self.cli.service.get(
+                self.cli.service.url('/v1/cluster/node')
+            ))
         else:
-            response = self.cli.service.get(self.cli.service.url('/v1/cluster/nodes/{node}', node=node))
-            print(response.json())
+            self.cli.service.output(self.cli.service.get(
+                self.cli.service.url('/v1/cluster/nodes/{node}', node=node)
+            ))
 
 
 class NodeResource(Resource):

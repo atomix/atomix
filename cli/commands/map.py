@@ -18,7 +18,10 @@ from . import Command, Action, Resource, command
 
 class MapResource(Resource):
     def _get_map_names(self):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/maps'), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/maps'),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
@@ -39,53 +42,46 @@ class MapResource(Resource):
 
 class GetAction(Action):
     def execute(self, name, key):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key))
-        if response.status_code == 200:
-            if response.text != '':
-                print(response.json())
-        else:
-            print("Failed to get from map")
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key)
+        ))
 
 
 class PutAction(Action):
     def execute(self, name, key, value):
-        response = self.cli.service.put(self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key, value=value), headers={'content-type': 'text/plain'})
-        if response.status_code == 200:
-            if response.text != '':
-                print(response.json())
-        else:
-            print("Failed to put to map")
+        self.cli.service.output(self.cli.service.put(
+            self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key, value=value),
+            headers={'content-type': 'text/plain'}
+        ))
 
 
 class RemoveAction(Action):
     def execute(self, name, key):
-        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key))
-        if response.status_code == 200:
-            if response.text != '':
-                print(response.json())
-        else:
-            print("Failed to remove key")
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/primitives/maps/{name}/{key}', name=name, key=key)
+        ))
 
 
 class SizeAction(Action):
     def execute(self, name):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/maps/{name}/size', name=name))
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            print("Failed to read map")
+        self.cli.service.output(self.cli.service.get(
+            self.cli.service.url('/v1/primitives/maps/{name}/size', name=name)
+        ))
 
 
 class ClearAction(Action):
     def execute(self, name):
-        response = self.cli.service.delete(self.cli.service.url('/v1/primitives/maps/{name}', name=name),)
-        if response.status_code != 200:
-            print("Failed to clear map")
+        self.cli.service.output(self.cli.service.delete(
+            self.cli.service.url('/v1/primitives/maps/{name}', name=name)
+        ))
 
 
 class KeyResource(Resource):
     def _get_map_keys(self, name):
-        response = self.cli.service.get(self.cli.service.url('/v1/primitives/maps/{name}/keys', name=name), log=False)
+        response = self.cli.service.get(
+            self.cli.service.url('/v1/primitives/maps/{name}/keys', name=name),
+            log=False
+        )
         if response.status_code == 200:
             return response.json()
         return []
