@@ -127,11 +127,11 @@ bin/atomix server a:localhost:5000 --bootstrap a:localhost:5000 b:localhost:5001
 ```
 
 ```
-bin/atomix server a:localhost:5001 --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002 --http-port 6001 --data-dir data/b
+bin/atomix server b:localhost:5001 --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002 --http-port 6001 --data-dir data/b
 ```
 
 ```
-bin/atomix server a:localhost:5002 --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002 --http-port 6002 --data-dir data/c
+bin/atomix server c:localhost:5002 --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002 --http-port 6002 --data-dir data/c
 ```
 
 #### Start a client node
