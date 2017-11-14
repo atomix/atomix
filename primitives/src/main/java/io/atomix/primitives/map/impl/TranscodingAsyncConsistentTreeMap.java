@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
@@ -46,155 +47,137 @@ import java.util.stream.Collectors;
  * @param <V2> value type of other map
  * @param <V1> value type of this map
  */
-public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsistentTreeMap<V1> {
-  private final AsyncConsistentTreeMap<V2> backingMap;
+public class TranscodingAsyncConsistentTreeMap<K1, V1, K2, V2> implements AsyncConsistentTreeMap<K1, V1> {
+  private final AsyncConsistentTreeMap<K2, V2> backingMap;
+  private final Function<K1, K2> keyEncoder;
+  private final Function<K2, K1> keyDecoder;
   private final Function<V2, V1> valueDecoder;
   private final Function<V1, V2> valueEncoder;
   private final Function<Versioned<V2>, Versioned<V1>>
       versionedValueTransform;
-  private final Map<MapEventListener<String, V1>,
+  private final Map<MapEventListener<K1, V1>,
       InternalBackingMapEventListener>
       listeners = Maps.newIdentityHashMap();
 
   public TranscodingAsyncConsistentTreeMap(
-      AsyncConsistentTreeMap<V2> backingMap,
+      AsyncConsistentTreeMap<K2, V2> backingMap,
+      Function<K1, K2> keyEncoder,
+      Function<K2, K1> keyDecoder,
       Function<V1, V2> valueEncoder,
       Function<V2, V1> valueDecoder) {
     this.backingMap = backingMap;
+    this.keyEncoder = k -> k == null ? null : keyEncoder.apply(k);
+    this.keyDecoder = k -> k == null ? null : keyDecoder.apply(k);
     this.valueEncoder = v -> v == null ? null : valueEncoder.apply(v);
     this.valueDecoder = v -> v == null ? null : valueDecoder.apply(v);
-    this.versionedValueTransform = v -> v == null ? null :
-        v.map(valueDecoder);
+    this.versionedValueTransform = v -> v == null ? null : v.map(valueDecoder);
   }
 
   @Override
-  public CompletableFuture<String> firstKey() {
-    return backingMap.firstKey();
+  public CompletableFuture<K1> firstKey() {
+    return backingMap.firstKey().thenApply(keyDecoder);
   }
 
   @Override
-  public CompletableFuture<String> lastKey() {
-    return backingMap.lastKey();
+  public CompletableFuture<K1> lastKey() {
+    return backingMap.lastKey().thenApply(keyDecoder);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>>
-  ceilingEntry(String key) {
-    return backingMap.ceilingEntry(key)
-        .thenApply(
-            entry ->
-                Maps.immutableEntry(
-                    entry.getKey(),
-                    versionedValueTransform
-                        .apply(entry.getValue())));
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>>
-  floorEntry(String key) {
-    return backingMap.floorEntry(key)
-        .thenApply(
-            entry ->
-                Maps.immutableEntry(
-                    entry.getKey(),
-                    versionedValueTransform
-                        .apply(entry.getValue())));
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>>
-  higherEntry(String key) {
-    return backingMap
-        .higherEntry(key)
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
+  ceilingEntry(K1 key) {
+    return backingMap.ceilingEntry(keyEncoder.apply(key))
         .thenApply(entry ->
-            Maps.immutableEntry(
-                entry.getKey(),
-                versionedValueTransform
-                    .apply(entry.getValue())));
+            Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>>
-  lowerEntry(String key) {
-    return backingMap.lowerEntry(key).thenApply(
-        entry ->
-            Maps.immutableEntry(
-                entry.getKey(),
-                versionedValueTransform
-                    .apply(entry.getValue())));
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
+  floorEntry(K1 key) {
+    return backingMap.floorEntry(keyEncoder.apply(key))
+        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>>
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
+  higherEntry(K1 key) {
+    return backingMap.higherEntry(keyEncoder.apply(key))
+        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+  }
+
+  @Override
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
+  lowerEntry(K1 key) {
+    return backingMap.lowerEntry(keyEncoder.apply(key)).thenApply(
+        entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+  }
+
+  @Override
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
   firstEntry() {
     return backingMap.firstEntry()
-        .thenApply(entry ->
-            Maps.immutableEntry(
-                entry.getKey(),
-                versionedValueTransform
-                    .apply(entry.getValue())));
+        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>>
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
   lastEntry() {
     return backingMap.lastEntry()
-        .thenApply(
-            entry -> Maps.immutableEntry(
-                entry.getKey(),
-                versionedValueTransform
-                    .apply(entry.getValue())));
+        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>>
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
   pollFirstEntry() {
     return backingMap.pollFirstEntry()
-        .thenApply(
-            entry -> Maps.immutableEntry(
-                entry.getKey(),
-                versionedValueTransform
-                    .apply(entry.getValue())));
+        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>>
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
   pollLastEntry() {
     return backingMap.pollLastEntry()
         .thenApply(entry -> Maps.immutableEntry(
-            entry.getKey(),
+            keyDecoder.apply(entry.getKey()),
             versionedValueTransform.apply(entry.getValue())));
   }
 
   @Override
-  public CompletableFuture<String> lowerKey(String key) {
-    return backingMap.lowerKey(key);
+  public CompletableFuture<K1> lowerKey(K1 key) {
+    return backingMap.lowerKey(keyEncoder.apply(key))
+        .thenApply(keyDecoder);
   }
 
   @Override
-  public CompletableFuture<String> floorKey(String key) {
-    return backingMap.floorKey(key);
+  public CompletableFuture<K1> floorKey(K1 key) {
+    return backingMap.floorKey(keyEncoder.apply(key))
+        .thenApply(keyDecoder);
   }
 
   @Override
-  public CompletableFuture<String> ceilingKey(String key) {
-    return backingMap.ceilingKey(key);
+  public CompletableFuture<K1> ceilingKey(K1 key) {
+    return backingMap.ceilingKey(keyEncoder.apply(key))
+        .thenApply(keyDecoder);
   }
 
   @Override
-  public CompletableFuture<String> higherKey(String key) {
-    return backingMap.higherKey(key);
+  public CompletableFuture<K1> higherKey(K1 key) {
+    return backingMap.higherKey(keyEncoder.apply(key))
+        .thenApply(keyDecoder);
   }
 
   @Override
-  public CompletableFuture<NavigableSet<String>> navigableKeySet() {
-    return backingMap.navigableKeySet();
+  public CompletableFuture<NavigableSet<K1>> navigableKeySet() {
+    return backingMap.navigableKeySet()
+        .thenApply(set -> set.stream()
+        .map(keyDecoder)
+        .collect(Collectors.toCollection(TreeSet::new)));
   }
 
   @Override
-  public CompletableFuture<NavigableMap<String, V1>> subMap(
-      String upperKey,
-      String lowerKey,
+  public CompletableFuture<NavigableMap<K1, V1>> subMap(
+      K1 upperKey,
+      K1 lowerKey,
       boolean inclusiveUpper,
       boolean inclusiveLower) {
     throw new UnsupportedOperationException("This operation is not yet" +
@@ -212,8 +195,8 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Boolean> containsKey(String key) {
-    return backingMap.containsKey(key);
+  public CompletableFuture<Boolean> containsKey(K1 key) {
+    return backingMap.containsKey(keyEncoder.apply(key));
   }
 
   @Override
@@ -222,30 +205,25 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> get(String key) {
-    return backingMap.get(key).thenApply(versionedValueTransform);
+  public CompletableFuture<Versioned<V1>> get(K1 key) {
+    return backingMap.get(keyEncoder.apply(key)).thenApply(versionedValueTransform);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> getOrDefault(String key, V1 defaultValue) {
-    return backingMap.getOrDefault(key, valueEncoder.apply(defaultValue)).thenApply(versionedValueTransform);
+  public CompletableFuture<Versioned<V1>> getOrDefault(K1 key, V1 defaultValue) {
+    return backingMap.getOrDefault(keyEncoder.apply(key), valueEncoder.apply(defaultValue)).thenApply(versionedValueTransform);
   }
 
   @Override
   public CompletableFuture<Versioned<V1>> computeIf(
-      String key, Predicate<? super V1> condition,
-      BiFunction<? super String, ? super V1, ? extends V1>
-          remappingFunction) {
+      K1 key,
+      Predicate<? super V1> condition,
+      BiFunction<? super K1, ? super V1, ? extends V1> remappingFunction) {
     try {
-      return backingMap
-          .computeIf(
-              key,
-              v -> condition.test(valueDecoder.apply(v)),
-              (k, v) -> valueEncoder
-                  .apply(
-                      remappingFunction.apply(
-                          key,
-                          valueDecoder.apply(v))))
+      return backingMap.computeIf(
+          keyEncoder.apply(key),
+          v -> condition.test(valueDecoder.apply(v)),
+          (k, v) -> valueEncoder.apply(remappingFunction.apply(key, valueDecoder.apply(v))))
           .thenApply(versionedValueTransform);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
@@ -253,20 +231,20 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> put(String key, V1 value) {
-    return backingMap.put(key, valueEncoder.apply(value))
+  public CompletableFuture<Versioned<V1>> put(K1 key, V1 value) {
+    return backingMap.put(keyEncoder.apply(key), valueEncoder.apply(value))
         .thenApply(versionedValueTransform);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> putAndGet(String key, V1 value) {
-    return backingMap.putAndGet(key, valueEncoder.apply(value))
+  public CompletableFuture<Versioned<V1>> putAndGet(K1 key, V1 value) {
+    return backingMap.putAndGet(keyEncoder.apply(key), valueEncoder.apply(value))
         .thenApply(versionedValueTransform);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> remove(String key) {
-    return backingMap.remove(key).thenApply(versionedValueTransform);
+  public CompletableFuture<Versioned<V1>> remove(K1 key) {
+    return backingMap.remove(keyEncoder.apply(key)).thenApply(versionedValueTransform);
   }
 
   @Override
@@ -275,84 +253,78 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Set<String>> keySet() {
-    return backingMap.keySet();
+  public CompletableFuture<Set<K1>> keySet() {
+    return backingMap.keySet()
+        .thenApply(keys -> keys.stream()
+            .map(keyDecoder)
+            .collect(Collectors.toSet()));
   }
 
   @Override
   public CompletableFuture<Collection<Versioned<V1>>> values() {
-    return backingMap.values().thenApply(valueSet -> valueSet.stream()
-        .map(versionedValueTransform).collect(Collectors.toSet()));
+    return backingMap.values()
+        .thenApply(valueSet -> valueSet.stream()
+            .map(versionedValueTransform)
+            .collect(Collectors.toSet()));
   }
 
   @Override
-  public CompletableFuture<Set<Map.Entry<String, Versioned<V1>>>>
-  entrySet() {
+  public CompletableFuture<Set<Map.Entry<K1, Versioned<V1>>>> entrySet() {
     return backingMap.entrySet()
-        .thenApply(
-            entries -> entries
-                .stream()
-                .map(entry ->
-                    Maps.immutableEntry(
-                        entry.getKey(),
-                        versionedValueTransform
-                            .apply(entry.getValue())
-                    ))
-                .collect(Collectors.toSet()));
+        .thenApply(entries -> entries.stream()
+            .map(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())))
+            .collect(Collectors.toSet()));
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> putIfAbsent(String key, V1 value) {
-    return backingMap.putIfAbsent(key, valueEncoder.apply(value))
+  public CompletableFuture<Versioned<V1>> putIfAbsent(K1 key, V1 value) {
+    return backingMap.putIfAbsent(keyEncoder.apply(key), valueEncoder.apply(value))
         .thenApply(versionedValueTransform);
   }
 
   @Override
-  public CompletableFuture<Boolean> remove(String key, V1 value) {
-    return backingMap.remove(key, valueEncoder.apply(value));
+  public CompletableFuture<Boolean> remove(K1 key, V1 value) {
+    return backingMap.remove(keyEncoder.apply(key), valueEncoder.apply(value));
   }
 
   @Override
-  public CompletableFuture<Boolean> remove(String key, long version) {
-    return backingMap.remove(key, version);
+  public CompletableFuture<Boolean> remove(K1 key, long version) {
+    return backingMap.remove(keyEncoder.apply(key), version);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> replace(String key, V1 value) {
-    return backingMap.replace(key, valueEncoder.apply(value))
+  public CompletableFuture<Versioned<V1>> replace(K1 key, V1 value) {
+    return backingMap.replace(keyEncoder.apply(key), valueEncoder.apply(value))
         .thenApply(versionedValueTransform);
   }
 
   @Override
-  public CompletableFuture<Boolean> replace(String key, V1 oldValue,
+  public CompletableFuture<Boolean> replace(K1 key, V1 oldValue,
                                             V1 newValue) {
-    return backingMap.replace(key, valueEncoder.apply(oldValue),
+    return backingMap.replace(keyEncoder.apply(key), valueEncoder.apply(oldValue),
         valueEncoder.apply(newValue));
   }
 
   @Override
-  public CompletableFuture<Boolean> replace(String key, long oldVersion,
+  public CompletableFuture<Boolean> replace(K1 key, long oldVersion,
                                             V1 newValue) {
-    return backingMap.replace(key, oldVersion,
+    return backingMap.replace(keyEncoder.apply(key), oldVersion,
         valueEncoder.apply(newValue));
   }
 
   @Override
   public CompletableFuture<Void> addListener(
-      MapEventListener<String, V1> listener,
+      MapEventListener<K1, V1> listener,
       Executor executor) {
     InternalBackingMapEventListener backingMapEventListener =
-        listeners.computeIfAbsent(
-            listener,
-            k -> new InternalBackingMapEventListener(listener));
+        listeners.computeIfAbsent(listener, k -> new InternalBackingMapEventListener(listener));
     return backingMap.addListener(backingMapEventListener, executor);
   }
 
   @Override
   public CompletableFuture<Void> removeListener(
-      MapEventListener<String, V1> listener) {
-    InternalBackingMapEventListener backingMapEventListener =
-        listeners.remove(listener);
+      MapEventListener<K1, V1> listener) {
+    InternalBackingMapEventListener backingMapEventListener = listeners.remove(listener);
     if (backingMapEventListener == null) {
       return CompletableFuture.completedFuture(null);
     } else {
@@ -366,12 +338,12 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, V1>> transactionLog) {
+  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K1, V1>> transactionLog) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 
   @Override
-  public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<String, V1>> transactionLog) {
+  public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<K1, V1>> transactionLog) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 
@@ -390,22 +362,19 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
     return backingMap.close();
   }
 
-  private class InternalBackingMapEventListener
-      implements MapEventListener<String, V2> {
+  private class InternalBackingMapEventListener implements MapEventListener<K2, V2> {
+    private final MapEventListener<K1, V1> listener;
 
-    private final MapEventListener<String, V1> listener;
-
-    InternalBackingMapEventListener(
-        MapEventListener<String, V1> listener) {
+    InternalBackingMapEventListener(MapEventListener<K1, V1> listener) {
       this.listener = listener;
     }
 
     @Override
-    public void event(MapEvent<String, V2> event) {
-      listener.event(new MapEvent<String, V1>(
+    public void event(MapEvent<K2, V2> event) {
+      listener.event(new MapEvent<>(
           event.type(),
           event.name(),
-          event.key(),
+          keyDecoder.apply(event.key()),
           event.newValue() != null ?
               event.newValue().map(valueDecoder) : null,
           event.oldValue() != null ?

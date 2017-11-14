@@ -56,10 +56,11 @@ public interface PrimitiveService {
   /**
    * Creates a new {@code AsyncConsistentTreeMapBuilder}.
    *
+   * @param <K> key type
    * @param <V> value type
    * @return builder for a async consistent tree map
    */
-  <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder();
+  <K, V> ConsistentTreeMapBuilder<K, V> consistentTreeMapBuilder();
 
   /**
    * Creates a new {@code AsyncConsistentSetMultimapBuilder}.

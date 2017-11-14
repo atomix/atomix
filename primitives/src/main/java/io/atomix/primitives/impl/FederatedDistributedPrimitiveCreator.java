@@ -100,7 +100,7 @@ public class FederatedDistributedPrimitiveCreator implements DistributedPrimitiv
   }
 
   @Override
-  public <V> AsyncConsistentTreeMap<V> newAsyncConsistentTreeMap(String name, Serializer serializer) {
+  public <K, V> AsyncConsistentTreeMap<K, V> newAsyncConsistentTreeMap(String name, Serializer serializer) {
     return getCreator(name).newAsyncConsistentTreeMap(name, serializer);
   }
 

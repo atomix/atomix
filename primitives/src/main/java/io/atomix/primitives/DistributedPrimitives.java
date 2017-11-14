@@ -142,11 +142,15 @@ public final class DistributedPrimitives {
    * @param <V2>         input map key type
    * @return new map
    */
-  public static <V1, V2> AsyncConsistentTreeMap<V1> newTranscodingTreeMap(
-      AsyncConsistentTreeMap<V2> map,
+  public static <K1, V1, K2, V2> AsyncConsistentTreeMap<K1, V1> newTranscodingTreeMap(
+      AsyncConsistentTreeMap<K2, V2> map,
+      Function<K1, K2> keyEncoder,
+      Function<K2, K1> keyDecoder,
       Function<V1, V2> valueEncoder,
       Function<V2, V1> valueDecoder) {
     return new TranscodingAsyncConsistentTreeMap<>(map,
+        keyEncoder,
+        keyDecoder,
         valueEncoder,
         valueDecoder);
   }

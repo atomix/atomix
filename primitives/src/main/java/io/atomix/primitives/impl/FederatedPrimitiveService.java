@@ -67,7 +67,7 @@ public class FederatedPrimitiveService implements PrimitiveService {
   }
 
   @Override
-  public <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder() {
+  public <K, V> ConsistentTreeMapBuilder<K, V> consistentTreeMapBuilder() {
     return new DefaultConsistentTreeMapBuilder<>(federatedPrimitiveCreator);
   }
 

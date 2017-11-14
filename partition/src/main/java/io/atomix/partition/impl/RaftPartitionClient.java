@@ -128,7 +128,7 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
 
   @Override
   @SuppressWarnings("unchecked")
-  public <V> AsyncConsistentTreeMap<V> newAsyncConsistentTreeMap(String name, Serializer serializer) {
+  public <K, V> AsyncConsistentTreeMap<K, V> newAsyncConsistentTreeMap(String name, Serializer serializer) {
     RaftConsistentTreeMap rawMap =
         new RaftConsistentTreeMap(client.newProxyBuilder()
             .withName(name)
@@ -144,10 +144,12 @@ public class RaftPartitionClient implements DistributedPrimitiveCreator, Managed
     if (serializer != null) {
       return DistributedPrimitives.newTranscodingTreeMap(
           rawMap,
+          key -> BaseEncoding.base16().encode(serializer.encode(key)),
+          string -> serializer.decode(BaseEncoding.base16().decode(string)),
           value -> value == null ? null : serializer.encode(value),
           bytes -> serializer.decode(bytes));
     }
-    return (AsyncConsistentTreeMap<V>) rawMap;
+    return (AsyncConsistentTreeMap<K, V>) rawMap;
   }
 
   @Override

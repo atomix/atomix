@@ -22,15 +22,15 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
 /**
  * Builder for {@link ConsistentTreeMap}.
  */
-public abstract class ConsistentTreeMapBuilder<V>
-    extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>, AsyncConsistentTreeMap<V>> {
+public abstract class ConsistentTreeMapBuilder<K, V>
+    extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<K, V>, ConsistentTreeMap<K, V>, AsyncConsistentTreeMap<K, V>> {
 
   public ConsistentTreeMapBuilder() {
     super(DistributedPrimitive.Type.CONSISTENT_TREEMAP);
   }
 
   @Override
-  public ConsistentTreeMap<V> build() {
+  public ConsistentTreeMap<K, V> build() {
     return buildAsync().asTreeMap();
   }
 }
