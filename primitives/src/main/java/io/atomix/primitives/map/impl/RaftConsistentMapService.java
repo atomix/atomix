@@ -25,6 +25,7 @@ import io.atomix.primitives.map.MapEvent;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.ContainsKey;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.ContainsValue;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Get;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.GetAllPresent;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.GetOrDefault;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Put;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Remove;
@@ -70,6 +71,7 @@ import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.CONTAINS
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.CONTAINS_VALUE;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.ENTRY_SET;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET_ALL_PRESENT;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET_OR_DEFAULT;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.IS_EMPTY;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.KEY_SET;
@@ -160,6 +162,7 @@ public class RaftConsistentMapService extends AbstractRaftService {
     executor.register(CONTAINS_VALUE, serializer()::decode, this::containsValue, serializer()::encode);
     executor.register(ENTRY_SET, (Commit<Void> c) -> entrySet(), serializer()::encode);
     executor.register(GET, serializer()::decode, this::get, serializer()::encode);
+    executor.register(GET_ALL_PRESENT, serializer()::decode, this::getAllPresent, serializer()::encode);
     executor.register(GET_OR_DEFAULT, serializer()::decode, this::getOrDefault, serializer()::encode);
     executor.register(IS_EMPTY, (Commit<Void> c) -> isEmpty(), serializer()::encode);
     executor.register(KEY_SET, (Commit<Void> c) -> keySet(), serializer()::encode);
@@ -214,6 +217,19 @@ public class RaftConsistentMapService extends AbstractRaftService {
    */
   protected Versioned<byte[]> get(Commit<? extends Get> commit) {
     return toVersioned(entries().get(commit.value().key()));
+  }
+
+  /**
+   * Handles a get all present commit.
+   *
+   * @param commit get all present commit
+   * @return keys present in map
+   */
+  protected Map<String, Versioned<byte[]>> getAllPresent(Commit<? extends GetAllPresent> commit) {
+    return entries().entrySet().stream()
+            .filter(entry -> entry.getValue().type() != MapEntryValue.Type.TOMBSTONE
+                    && commit.value().keys().contains(entry.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, o -> toVersioned(o.getValue())));
   }
 
   /**

@@ -29,6 +29,7 @@ import io.atomix.time.Versioned;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -172,6 +173,12 @@ public class RaftConsistentMapTest extends AbstractRaftPrimitiveTest<RaftConsist
     map.putIfAbsent("foo", "Hello foo again!".getBytes()).thenAccept(result -> {
       assertNotNull(result);
       assertTrue(Arrays.equals(Versioned.valueOrElse(result, null), rawFooValue));
+    }).join();
+
+    map.getAllPresent(Collections.singleton("foo")).thenAccept(result -> {
+      assertNotNull(result);
+      assertTrue(result.size() == 1);
+      assertTrue(Arrays.equals(result.get("foo").value(), rawFooValue));
     }).join();
 
     map.putIfAbsent("bar", rawBarValue).thenAccept(result -> {

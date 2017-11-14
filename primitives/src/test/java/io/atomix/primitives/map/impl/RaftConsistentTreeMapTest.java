@@ -97,6 +97,11 @@ public class RaftConsistentTreeMapTest extends AbstractRaftPrimitiveTest<RaftCon
     allKeys.forEach(key -> map.get(key).
         thenAccept(result -> assertNull(result)).join());
 
+    // test getAllPresent
+    map.getAllPresent(allKeys).thenAccept(m -> {
+      assertTrue(m.isEmpty());
+    }).join();
+
     //test getOrDefault
     allKeys.forEach(key -> map.getOrDefault(key, null).thenAccept(result -> {
       assertEquals(0, result.version());
@@ -124,6 +129,13 @@ public class RaftConsistentTreeMapTest extends AbstractRaftPrimitiveTest<RaftCon
     allKeys.forEach(key -> map.get(key).thenAccept(result -> {
       assertArrayEquals(allValues.get(allKeys.indexOf(key)), result.value());
     }).join());
+
+    // test getAllPresent
+    map.getAllPresent(allKeys).thenAccept(m -> {
+      allKeys.forEach(key -> {
+        assertArrayEquals(allValues.get(allKeys.indexOf(key)), m.get(key).value());
+      });
+    }).join();
 
     allKeys.forEach(key -> map.getOrDefault(key, null).thenAccept(result -> {
       assertNotEquals(0, result.version());
