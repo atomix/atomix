@@ -151,22 +151,22 @@ curl -XDELETE http://localhost:5678/v1/primitives/locks/my-lock
 
 #### Set a value in a map
 ```
-curl -XPUT http://localhost:5678/primitives/maps/my-map/foo -d value="Hello world!" -H "Content-Type: text/plain"
+curl -XPUT http://localhost:5678/v1/primitives/maps/my-map/foo -d value="Hello world!" -H "Content-Type: text/plain"
 ```
 
 #### Get a value in a map
 ```
-curl -XGET http://localhost:5678/primitives/maps/my-map/foo
+curl -XGET http://localhost:5678/v1/primitives/maps/my-map/foo
 ```
 
 #### Send an event
 ```
-curl -XPOST http://localhost:5678/events/something-happened -d "Something happened!" -H "Content-Type: text/plain"
+curl -XPOST http://localhost:5678/v1/events/something-happened -d "Something happened!" -H "Content-Type: text/plain"
 ```
 
 #### Receive events
 ```
-curl -XGET http://localhost:5678/events/something-happened
+curl -XGET http://localhost:5678/v1/events/something-happened
 ```
 
 ### Docker
