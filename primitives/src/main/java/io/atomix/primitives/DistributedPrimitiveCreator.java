@@ -55,10 +55,11 @@ public interface DistributedPrimitiveCreator {
    *
    * @param name       tree name
    * @param serializer serializer to use for serializing/deserializing map entries
+   * @param <K>        key type
    * @param <V>        value type
    * @return distributedTreeMap
    */
-  <V> AsyncConsistentTreeMap<V> newAsyncConsistentTreeMap(String name, Serializer serializer);
+  <K, V> AsyncConsistentTreeMap<K, V> newAsyncConsistentTreeMap(String name, Serializer serializer);
 
   /**
    * Creates a new set backed {@code AsyncConsistentMultimap}.

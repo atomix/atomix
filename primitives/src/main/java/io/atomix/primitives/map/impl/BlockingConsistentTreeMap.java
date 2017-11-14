@@ -42,15 +42,14 @@ import java.util.function.Predicate;
 /**
  * Implementation of the {@link ConsistentTreeMap} interface.
  */
-public class BlockingConsistentTreeMap<V>
-    extends Synchronous<AsyncConsistentTreeMap<V>>
-    implements ConsistentTreeMap<V> {
-  private final AsyncConsistentTreeMap<V> treeMap;
+public class BlockingConsistentTreeMap<K, V>
+    extends Synchronous<AsyncConsistentTreeMap<K, V>>
+    implements ConsistentTreeMap<K, V> {
+  private final AsyncConsistentTreeMap<K, V> treeMap;
   private final long operationTimeoutMillis;
-  private Map<String, V> javaMap;
+  private Map<K, V> javaMap;
 
-  public BlockingConsistentTreeMap(AsyncConsistentTreeMap<V> treeMap,
-                                   long operationTimeoutMillis) {
+  public BlockingConsistentTreeMap(AsyncConsistentTreeMap<K, V> treeMap, long operationTimeoutMillis) {
     super(treeMap);
     this.treeMap = treeMap;
     this.operationTimeoutMillis = operationTimeoutMillis;
@@ -71,82 +70,77 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public String firstKey() {
+  public K firstKey() {
     return complete(treeMap.firstKey());
   }
 
   @Override
-  public String lastKey() {
+  public K lastKey() {
     return complete(treeMap.lastKey());
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> ceilingEntry(String key) {
+  public Map.Entry<K, Versioned<V>> ceilingEntry(K key) {
     return complete(treeMap.ceilingEntry(key));
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> floorEntry(String key) {
+  public Map.Entry<K, Versioned<V>> floorEntry(K key) {
     return complete(treeMap.floorEntry(key));
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> higherEntry(String key) {
+  public Map.Entry<K, Versioned<V>> higherEntry(K key) {
     return complete(treeMap.higherEntry(key));
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> lowerEntry(String key) {
+  public Map.Entry<K, Versioned<V>> lowerEntry(K key) {
     return complete(treeMap.lowerEntry(key));
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> firstEntry() {
+  public Map.Entry<K, Versioned<V>> firstEntry() {
     return complete(treeMap.firstEntry());
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> lastEntry() {
+  public Map.Entry<K, Versioned<V>> lastEntry() {
     return complete(treeMap.lastEntry());
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> pollFirstEntry() {
+  public Map.Entry<K, Versioned<V>> pollFirstEntry() {
     return complete(treeMap.pollFirstEntry());
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> pollLastEntry() {
+  public Map.Entry<K, Versioned<V>> pollLastEntry() {
     return complete(treeMap.pollLastEntry());
   }
 
   @Override
-  public String lowerKey(String key) {
+  public K lowerKey(K key) {
     return complete(treeMap.lowerKey(key));
   }
 
   @Override
-  public String floorKey(String key) {
+  public K floorKey(K key) {
     return complete(treeMap.floorKey(key));
   }
 
   @Override
-  public String ceilingKey(String key) {
+  public K ceilingKey(K key) {
     return complete(treeMap.ceilingKey(key));
   }
 
   @Override
-  public String higherKey(String key) {
+  public K higherKey(K key) {
     return complete(treeMap.higherKey(key));
   }
 
-
   @Override
-  /**
-   * {@inheritDoc}
-   * <p>This may be a long operation with greater risk of timeout.</p>
-   */
-  public NavigableSet<String> navigableKeySet() {
+  public NavigableSet<K> navigableKeySet() {
     return complete(treeMap.navigableKeySet());
   }
 
@@ -161,7 +155,7 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public boolean containsKey(String key) {
+  public boolean containsKey(K key) {
     return complete(treeMap.containsKey(key));
   }
 
@@ -171,59 +165,49 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public Versioned<V> get(String key) {
+  public Versioned<V> get(K key) {
     return complete(treeMap.get(key));
   }
 
   @Override
-  public Versioned<V> getOrDefault(String key, V defaultValue) {
+  public Versioned<V> getOrDefault(K key, V defaultValue) {
     return complete(treeMap.getOrDefault(key, defaultValue));
   }
 
   @Override
-  public Versioned<V> computeIfAbsent(String key,
-                                      Function<? super String,
-                                          ? extends V> mappingFunction) {
+  public Versioned<V> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
     return complete(treeMap.computeIfAbsent(key, mappingFunction));
   }
 
   @Override
-  public Versioned<V> compute(String key,
-                              BiFunction<? super String,
-                                  ? super V,
-                                  ? extends V> remappingFunction) {
+  public Versioned<V> compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return complete(treeMap.compute(key, remappingFunction));
   }
 
   @Override
-  public Versioned<V> computeIfPresent(
-      String key,
-      BiFunction<? super String,
-          ? super V,
-          ? extends V> remappingFunction) {
+  public Versioned<V> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return complete(treeMap.computeIfPresent(key, remappingFunction));
   }
 
   @Override
-  public Versioned<V> computeIf(String key, Predicate<? super V> condition,
-                                BiFunction<? super String,
-                                    ? super V,
-                                    ? extends V> remappingFunction) {
+  public Versioned<V> computeIf(K key,
+                                Predicate<? super V> condition,
+                                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return complete(treeMap.computeIf(key, condition, remappingFunction));
   }
 
   @Override
-  public Versioned<V> put(String key, V value) {
+  public Versioned<V> put(K key, V value) {
     return complete(treeMap.put(key, value));
   }
 
   @Override
-  public Versioned<V> putAndGet(String key, V value) {
+  public Versioned<V> putAndGet(K key, V value) {
     return complete(treeMap.putAndGet(key, value));
   }
 
   @Override
-  public Versioned<V> remove(String key) {
+  public Versioned<V> remove(K key) {
     return complete(treeMap.remove(key));
   }
 
@@ -233,7 +217,7 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public Set<String> keySet() {
+  public Set<K> keySet() {
     return complete(treeMap.keySet());
   }
 
@@ -243,53 +227,52 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public Set<Map.Entry<String, Versioned<V>>> entrySet() {
+  public Set<Map.Entry<K, Versioned<V>>> entrySet() {
     return complete(treeMap.entrySet());
   }
 
   @Override
-  public Versioned<V> putIfAbsent(String key, V value) {
+  public Versioned<V> putIfAbsent(K key, V value) {
     return complete(treeMap.putIfAbsent(key, value));
   }
 
   @Override
-  public boolean remove(String key, V value) {
+  public boolean remove(K key, V value) {
     return complete(treeMap.remove(key, value));
   }
 
   @Override
-  public boolean remove(String key, long version) {
+  public boolean remove(K key, long version) {
     return complete(treeMap.remove(key, version));
   }
 
   @Override
-  public Versioned<V> replace(String key, V value) {
+  public Versioned<V> replace(K key, V value) {
     return complete(treeMap.replace(key, value));
   }
 
   @Override
-  public boolean replace(String key, V oldValue, V newValue) {
+  public boolean replace(K key, V oldValue, V newValue) {
     return complete(treeMap.replace(key, oldValue, newValue));
   }
 
   @Override
-  public boolean replace(String key, long oldVersion, V newValue) {
+  public boolean replace(K key, long oldVersion, V newValue) {
     return complete(treeMap.replace(key, oldVersion, newValue));
   }
 
   @Override
-  public void addListener(MapEventListener<String, V> listener,
-                          Executor executor) {
+  public void addListener(MapEventListener<K, V> listener, Executor executor) {
     complete(treeMap.addListener(listener, executor));
   }
 
   @Override
-  public void removeListener(MapEventListener<String, V> listener) {
+  public void removeListener(MapEventListener<K, V> listener) {
     complete(treeMap.removeListener(listener));
   }
 
   @Override
-  public Map<String, V> asJavaMap() {
+  public Map<K, V> asJavaMap() {
     synchronized (this) {
       if (javaMap == null) {
         javaMap = new ConsistentMapBackedJavaMap<>(this);
@@ -299,10 +282,7 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public NavigableMap<String, V> subMap(String upperKey,
-                                        String lowerKey,
-                                        boolean inclusiveUpper,
-                                        boolean inclusiveLower) {
+  public NavigableMap<K, V> subMap(K upperKey, K lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
     return complete(treeMap.subMap(upperKey, lowerKey,
         inclusiveUpper, inclusiveLower));
   }

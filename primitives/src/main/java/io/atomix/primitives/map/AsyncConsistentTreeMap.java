@@ -16,7 +16,6 @@
 
 package io.atomix.primitives.map;
 
-import io.atomix.primitives.DistributedPrimitive;
 import io.atomix.primitives.map.impl.BlockingConsistentTreeMap;
 import io.atomix.time.Versioned;
 
@@ -28,21 +27,21 @@ import java.util.concurrent.CompletableFuture;
 /**
  * API for a distributed tree map implementation.
  */
-public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V> {
+public interface AsyncConsistentTreeMap<K, V> extends AsyncConsistentMap<K, V> {
 
   /**
    * Return the lowest key in the map.
    *
    * @return the key or null if none exist
    */
-  CompletableFuture<String> firstKey();
+  CompletableFuture<K> firstKey();
 
   /**
    * Return the highest key in the map.
    *
    * @return the key or null if none exist
    */
-  CompletableFuture<String> lastKey();
+  CompletableFuture<K> lastKey();
 
   /**
    * Returns the entry associated with the least key greater than or equal to
@@ -51,8 +50,7 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> ceilingEntry(
-      String key);
+  CompletableFuture<Map.Entry<K, Versioned<V>>> ceilingEntry(K key);
 
   /**
    * Returns the entry associated with the greatest key less than or equal
@@ -61,7 +59,7 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> floorEntry(String key);
+  CompletableFuture<Map.Entry<K, Versioned<V>>> floorEntry(K key);
 
   /**
    * Returns the entry associated with the least key greater than key.
@@ -69,7 +67,7 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> higherEntry(String key);
+  CompletableFuture<Map.Entry<K, Versioned<V>>> higherEntry(K key);
 
   /**
    * Returns the entry associated with the largest key less than key.
@@ -77,35 +75,35 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> lowerEntry(String key);
+  CompletableFuture<Map.Entry<K, Versioned<V>>> lowerEntry(K key);
 
   /**
    * Return the entry associated with the lowest key in the map.
    *
    * @return the entry or null if none exist
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> firstEntry();
+  CompletableFuture<Map.Entry<K, Versioned<V>>> firstEntry();
 
   /**
    * Return the entry associated with the highest key in the map.
    *
    * @return the entry or null if none exist
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> lastEntry();
+  CompletableFuture<Map.Entry<K, Versioned<V>>> lastEntry();
 
   /**
    * Return and remove the entry associated with the lowest key.
    *
    * @return the entry or null if none exist
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> pollFirstEntry();
+  CompletableFuture<Map.Entry<K, Versioned<V>>> pollFirstEntry();
 
   /**
    * Return and remove the entry associated with the highest key.
    *
    * @return the entry or null if none exist
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> pollLastEntry();
+  CompletableFuture<Map.Entry<K, Versioned<V>>> pollLastEntry();
 
   /**
    * Return the entry associated with the greatest key less than key.
@@ -113,7 +111,7 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<String> lowerKey(String key);
+  CompletableFuture<K> lowerKey(K key);
 
   /**
    * Return the highest key less than or equal to key.
@@ -121,7 +119,7 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<String> floorKey(String key);
+  CompletableFuture<K> floorKey(K key);
 
   /**
    * Return the lowest key greater than or equal to key.
@@ -129,7 +127,7 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<String> ceilingKey(String key);
+  CompletableFuture<K> ceilingKey(K key);
 
   /**
    * Return the lowest key greater than key.
@@ -137,14 +135,14 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<String> higherKey(String key);
+  CompletableFuture<K> higherKey(K key);
 
   /**
    * Returns a navigable set of the keys in this map.
    *
    * @return a navigable key set (this may be empty)
    */
-  CompletableFuture<NavigableSet<String>> navigableKeySet();
+  CompletableFuture<NavigableSet<K>> navigableKeySet();
 
   /**
    * Returns a navigable map containing the entries from the original map
@@ -160,18 +158,17 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
    * @return a navigable map containing entries in the specified range (this
    * may be empty)
    */
-  CompletableFuture<NavigableMap<String, V>> subMap(String upperKey,
-                                                    String lowerKey,
-                                                    boolean inclusiveUpper,
-                                                    boolean inclusiveLower);
+  CompletableFuture<NavigableMap<K, V>> subMap(K upperKey,
+                                               K lowerKey,
+                                               boolean inclusiveUpper,
+                                               boolean inclusiveLower);
 
-  default ConsistentTreeMap<V> asTreeMap() {
+  default ConsistentTreeMap<K, V> asTreeMap() {
     return asTreeMap(DEFAULT_OPERATION_TIMEOUT_MILLIS);
   }
 
-  default ConsistentTreeMap<V> asTreeMap(long timeoutMillis) {
+  default ConsistentTreeMap<K, V> asTreeMap(long timeoutMillis) {
     return new BlockingConsistentTreeMap<>(this, timeoutMillis);
   }
-
 
 }

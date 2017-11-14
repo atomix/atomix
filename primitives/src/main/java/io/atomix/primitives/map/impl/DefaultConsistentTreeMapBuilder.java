@@ -24,7 +24,7 @@ import io.atomix.primitives.map.ConsistentTreeMapBuilder;
  *
  * @param <V> type for map value
  */
-public class DefaultConsistentTreeMapBuilder<V> extends ConsistentTreeMapBuilder<V> {
+public class DefaultConsistentTreeMapBuilder<K, V> extends ConsistentTreeMapBuilder<K, V> {
 
   private final DistributedPrimitiveCreator primitiveCreator;
 
@@ -33,7 +33,7 @@ public class DefaultConsistentTreeMapBuilder<V> extends ConsistentTreeMapBuilder
   }
 
   @Override
-  public AsyncConsistentTreeMap<V> buildAsync() {
+  public AsyncConsistentTreeMap<K, V> buildAsync() {
     return primitiveCreator.newAsyncConsistentTreeMap(name(), serializer());
   }
 }

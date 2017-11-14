@@ -179,7 +179,7 @@ public class RaftPartition implements ManagedPartition {
   }
 
   @Override
-  public <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder() {
+  public <K, V> ConsistentTreeMapBuilder<K, V> consistentTreeMapBuilder() {
     return new DefaultConsistentTreeMapBuilder<>(getPrimitiveCreator());
   }
 
