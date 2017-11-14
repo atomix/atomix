@@ -25,6 +25,7 @@ import io.atomix.primitives.map.MapEventListener;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.ContainsKey;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.ContainsValue;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Get;
+import io.atomix.primitives.map.impl.RaftConsistentMapOperations.GetAllPresent;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.GetOrDefault;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Put;
 import io.atomix.primitives.map.impl.RaftConsistentMapOperations.Remove;
@@ -48,6 +49,7 @@ import io.atomix.utils.concurrent.Futures;
 
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -67,6 +69,7 @@ import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.CONTAINS
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.CONTAINS_VALUE;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.ENTRY_SET;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET;
+import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET_ALL_PRESENT;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.GET_OR_DEFAULT;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.IS_EMPTY;
 import static io.atomix.primitives.map.impl.RaftConsistentMapOperations.KEY_SET;
@@ -141,6 +144,19 @@ public class RaftConsistentMap extends AbstractRaftPrimitive implements AsyncCon
   @Override
   public CompletableFuture<Versioned<byte[]>> get(String key) {
     return proxy.invoke(GET, serializer()::encode, new Get(key), serializer()::decode);
+  }
+
+  @Override
+  public CompletableFuture<Map<String, Versioned<byte[]>>> getAllPresent(Iterable<String> keys) {
+    Set<String> uniqueKeys = new HashSet<>();
+    for (String key : keys) {
+      uniqueKeys.add(key);
+    }
+    return proxy.invoke(
+            GET_ALL_PRESENT,
+            serializer()::encode,
+            new GetAllPresent(uniqueKeys),
+            serializer()::decode);
   }
 
   @Override

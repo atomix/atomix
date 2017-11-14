@@ -26,6 +26,7 @@ import io.atomix.time.Version;
 import io.atomix.time.Versioned;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +70,11 @@ public class DelegatingAsyncConsistentMap<K, V>
   @Override
   public CompletableFuture<Versioned<V>> get(K key) {
     return delegateMap.get(key);
+  }
+
+  @Override
+  public CompletableFuture<Map<K, Versioned<V>>> getAllPresent(Iterable<K> keys) {
+    return delegateMap.getAllPresent(keys);
   }
 
   @Override

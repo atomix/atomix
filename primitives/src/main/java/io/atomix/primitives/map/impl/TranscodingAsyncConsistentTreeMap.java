@@ -16,6 +16,7 @@
 
 package io.atomix.primitives.map.impl;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import io.atomix.primitives.TransactionId;
 import io.atomix.primitives.TransactionLog;
@@ -27,6 +28,7 @@ import io.atomix.time.Versioned;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -207,6 +209,18 @@ public class TranscodingAsyncConsistentTreeMap<K1, V1, K2, V2> implements AsyncC
   @Override
   public CompletableFuture<Versioned<V1>> get(K1 key) {
     return backingMap.get(keyEncoder.apply(key)).thenApply(versionedValueTransform);
+  }
+
+  @Override
+  public CompletableFuture<Map<K1, Versioned<V1>>> getAllPresent(Iterable<K1> keys) {
+    Set<K2> uniqueKeys = new HashSet<>();
+    for (K1 key : keys) {
+      uniqueKeys.add(keyEncoder.apply(key));
+    }
+    return backingMap.getAllPresent(uniqueKeys).thenApply(
+            entries -> ImmutableMap.copyOf(entries.entrySet().stream()
+                    .collect(Collectors.toMap(o -> keyDecoder.apply(o.getKey()),
+                            o -> versionedValueTransform.apply(o.getValue())))));
   }
 
   @Override
