@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.primitives.PrimitiveService;
+import io.atomix.primitive.PrimitiveService;
 import io.atomix.rest.utils.PrimitiveCache;
 
 import javax.ws.rs.GET;

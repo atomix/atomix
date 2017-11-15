@@ -18,7 +18,7 @@ package io.atomix.rest.impl;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
-import io.atomix.primitives.PrimitiveService;
+import io.atomix.primitive.PrimitiveService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;

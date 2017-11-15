@@ -28,36 +28,36 @@ import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
+import io.atomix.counter.AtomicCounterBuilder;
+import io.atomix.generator.AtomicIdGeneratorBuilder;
+import io.atomix.leadership.LeaderElectorBuilder;
+import io.atomix.lock.DistributedLockBuilder;
+import io.atomix.map.AtomicCounterMapBuilder;
+import io.atomix.map.ConsistentMapBuilder;
+import io.atomix.map.ConsistentTreeMapBuilder;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingService;
+import io.atomix.multimap.ConsistentMultimapBuilder;
 import io.atomix.partition.ManagedPartitionService;
 import io.atomix.partition.PartitionId;
 import io.atomix.partition.PartitionMetadata;
 import io.atomix.partition.PartitionService;
 import io.atomix.partition.impl.DefaultPartitionService;
 import io.atomix.partition.impl.RaftPartition;
-import io.atomix.primitives.DistributedPrimitive.Type;
-import io.atomix.primitives.DistributedPrimitiveCreator;
-import io.atomix.primitives.PrimitiveService;
-import io.atomix.primitives.counter.AtomicCounterBuilder;
-import io.atomix.primitives.generator.AtomicIdGeneratorBuilder;
-import io.atomix.primitives.impl.FederatedPrimitiveService;
-import io.atomix.primitives.leadership.LeaderElectorBuilder;
-import io.atomix.primitives.lock.DistributedLockBuilder;
-import io.atomix.primitives.map.AtomicCounterMapBuilder;
-import io.atomix.primitives.map.ConsistentMapBuilder;
-import io.atomix.primitives.map.ConsistentTreeMapBuilder;
-import io.atomix.primitives.multimap.ConsistentMultimapBuilder;
-import io.atomix.primitives.queue.WorkQueueBuilder;
-import io.atomix.primitives.set.DistributedSetBuilder;
-import io.atomix.primitives.tree.DocumentTreeBuilder;
-import io.atomix.primitives.value.AtomicValueBuilder;
+import io.atomix.primitive.DistributedPrimitive.Type;
+import io.atomix.primitive.DistributedPrimitiveCreator;
+import io.atomix.primitive.PrimitiveService;
+import io.atomix.primitive.impl.FederatedPrimitiveService;
+import io.atomix.queue.WorkQueueBuilder;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.impl.VertxRestService;
+import io.atomix.set.DistributedSetBuilder;
+import io.atomix.tree.DocumentTreeBuilder;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.value.AtomicValueBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -492,8 +492,8 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
      * Builds a primitive service.
      */
     private PrimitiveService buildPrimitiveService(PartitionService partitionService) {
-      Map<Integer, DistributedPrimitiveCreator> members = new HashMap<>();
-      partitionService.getPartitions().forEach(p -> members.put(p.id().id(), partitionService.getPrimitiveCreator(p.id())));
+      Map<PartitionId, DistributedPrimitiveCreator> members = new HashMap<>();
+      partitionService.getPartitions().forEach(p -> members.put(p.id(), partitionService.getPrimitiveCreator(p.id())));
       return new FederatedPrimitiveService(members, numBuckets);
     }
 
