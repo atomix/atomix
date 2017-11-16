@@ -15,8 +15,8 @@
  */
 package io.atomix.map;
 
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * Builder for {@link ConsistentMap} instances.
@@ -30,7 +30,7 @@ public abstract class ConsistentMapBuilder<K, V>
   private boolean nullValues = false;
 
   public ConsistentMapBuilder() {
-    super(DistributedPrimitive.Type.CONSISTENT_MAP);
+    super(PrimitiveTypes.CONSISTENT_MAP);
   }
 
   /**

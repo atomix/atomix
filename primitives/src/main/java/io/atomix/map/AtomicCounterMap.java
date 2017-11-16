@@ -15,7 +15,8 @@
  */
 package io.atomix.map;
 
-import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.SyncPrimitive;
 
 /**
@@ -24,8 +25,8 @@ import io.atomix.primitive.SyncPrimitive;
 public interface AtomicCounterMap<K> extends SyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.COUNTER_MAP;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.COUNTER_MAP;
   }
 
   /**

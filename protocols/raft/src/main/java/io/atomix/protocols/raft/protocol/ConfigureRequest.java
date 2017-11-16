@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 
 import java.util.Collection;
@@ -72,8 +72,8 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public MemberId leader() {
-    return MemberId.from(leader);
+  public NodeId leader() {
+    return NodeId.from(leader);
   }
 
   /**
@@ -162,7 +162,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
      * @return The append request builder.
      * @throws IllegalArgumentException if the {@code leader} is not positive
      */
-    public Builder withLeader(MemberId leader) {
+    public Builder withLeader(NodeId leader) {
       this.leader = checkNotNull(leader, "leader cannot be null").id();
       return this;
     }

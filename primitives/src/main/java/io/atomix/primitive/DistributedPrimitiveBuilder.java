@@ -28,13 +28,13 @@ import io.atomix.utils.Builder;
  */
 public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> implements Builder<S> {
 
-  private final DistributedPrimitive.Type type;
+  private final PrimitiveType type;
   private String name;
   private Serializer serializer;
   private boolean readOnly = false;
   private boolean relaxedReadConsistency = false;
 
-  public DistributedPrimitiveBuilder(DistributedPrimitive.Type type) {
+  public DistributedPrimitiveBuilder(PrimitiveType type) {
     this.type = type;
   }
 
@@ -128,7 +128,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return primitive type
    */
-  public DistributedPrimitive.Type primitiveType() {
+  public PrimitiveType primitiveType() {
     return type;
   }
 

@@ -18,7 +18,7 @@ package io.atomix.rest.impl;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
-import io.atomix.primitive.PrimitiveService;
+import io.atomix.primitive.PrimitivesService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;
@@ -52,7 +52,7 @@ public class VertxRestService implements ManagedRestService {
   private final ClusterService clusterService;
   private final ClusterCommunicationService communicationService;
   private final ClusterEventService eventService;
-  private final PrimitiveService primitiveService;
+  private final PrimitivesService primitivesService;
   private final PrimitiveCache primitiveCache;
   private final EventManager eventManager = new EventManager();
   private HttpServer server;
@@ -65,15 +65,15 @@ public class VertxRestService implements ManagedRestService {
       ClusterService clusterService,
       ClusterCommunicationService communicationService,
       ClusterEventService eventService,
-      PrimitiveService primitiveService) {
+      PrimitivesService primitivesService) {
     this.host = host;
     this.port = port;
     this.vertx = Vertx.vertx();
     this.clusterService = checkNotNull(clusterService);
     this.communicationService = checkNotNull(communicationService);
     this.eventService = checkNotNull(eventService);
-    this.primitiveService = checkNotNull(primitiveService);
-    this.primitiveCache = new PrimitiveCache(primitiveService, PRIMITIVE_CACHE_SIZE);
+    this.primitivesService = checkNotNull(primitivesService);
+    this.primitiveCache = new PrimitiveCache(primitivesService, PRIMITIVE_CACHE_SIZE);
   }
 
   @Override
@@ -85,7 +85,7 @@ public class VertxRestService implements ManagedRestService {
     deployment.getDispatcher().getDefaultContextObjects().put(ClusterService.class, clusterService);
     deployment.getDispatcher().getDefaultContextObjects().put(ClusterCommunicationService.class, communicationService);
     deployment.getDispatcher().getDefaultContextObjects().put(ClusterEventService.class, eventService);
-    deployment.getDispatcher().getDefaultContextObjects().put(PrimitiveService.class, primitiveService);
+    deployment.getDispatcher().getDefaultContextObjects().put(PrimitivesService.class, primitivesService);
     deployment.getDispatcher().getDefaultContextObjects().put(PrimitiveCache.class, primitiveCache);
     deployment.getDispatcher().getDefaultContextObjects().put(EventManager.class, eventManager);
 

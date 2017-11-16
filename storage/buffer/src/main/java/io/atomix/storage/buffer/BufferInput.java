@@ -16,6 +16,7 @@
 package io.atomix.storage.buffer;
 
 import java.nio.charset.Charset;
+import java.util.function.Function;
 
 /**
  * Readable buffer.
@@ -100,6 +101,18 @@ public interface BufferInput<T extends BufferInput<?>> extends AutoCloseable {
    * @return The buffer.
    */
   T read(Buffer buffer);
+
+  /**
+   * Reads an object from the buffer.
+   *
+   * @param decoder the object decoder
+   * @param <U> the type of the object to read
+   * @return the read object.
+   */
+  default <U> U readObject(Function<byte[], U> decoder) {
+    byte[] bytes = readBytes(readInt());
+    return decoder.apply(bytes);
+  }
 
   /**
    * Reads a byte array.

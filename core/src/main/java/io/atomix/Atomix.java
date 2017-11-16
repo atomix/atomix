@@ -39,16 +39,17 @@ import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingService;
 import io.atomix.multimap.ConsistentMultimapBuilder;
-import io.atomix.partition.ManagedPartitionService;
-import io.atomix.partition.PartitionId;
-import io.atomix.partition.PartitionMetadata;
-import io.atomix.partition.PartitionService;
-import io.atomix.partition.impl.DefaultPartitionService;
-import io.atomix.partition.impl.RaftPartition;
-import io.atomix.primitive.DistributedPrimitive.Type;
 import io.atomix.primitive.DistributedPrimitiveCreator;
-import io.atomix.primitive.PrimitiveService;
-import io.atomix.primitive.impl.FederatedPrimitiveService;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitivesService;
+import io.atomix.primitive.impl.PartitionedPrimitivesService;
+import io.atomix.primitive.partition.ManagedPartition;
+import io.atomix.primitive.partition.ManagedPartitionService;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.partition.PartitionMetadata;
+import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.partition.impl.DefaultPartitionService;
+import io.atomix.protocols.raft.partition.impl.RaftPartition;
 import io.atomix.queue.WorkQueueBuilder;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.impl.VertxRestService;
@@ -82,7 +83,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Atomix!
  */
-public class Atomix implements PrimitiveService, Managed<Atomix> {
+public class Atomix implements PrimitivesService, Managed<Atomix> {
 
   /**
    * Returns a new Atomix builder.
@@ -101,7 +102,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
   private final ManagedClusterEventService clusterEventService;
   private final ManagedPartitionService partitions;
   private final ManagedRestService restService;
-  private final PrimitiveService primitives;
+  private final PrimitivesService primitives;
   private final AtomicBoolean open = new AtomicBoolean();
   private final ThreadContext context = new SingleThreadContext("atomix-%d");
 
@@ -112,7 +113,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
       ManagedClusterEventService clusterEventService,
       ManagedPartitionService partitions,
       ManagedRestService restService,
-      PrimitiveService primitives) {
+      PrimitivesService primitives) {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
@@ -172,7 +173,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
    *
    * @return the primitive service
    */
-  public PrimitiveService getPrimitiveService() {
+  public PrimitivesService getPrimitiveService() {
     return primitives;
   }
 
@@ -237,7 +238,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
   }
 
   @Override
-  public Set<String> getPrimitiveNames(Type primitiveType) {
+  public Set<String> getPrimitiveNames(PrimitiveType primitiveType) {
     return primitives.getPrimitiveNames(primitiveType);
   }
 
@@ -429,7 +430,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
       ManagedClusterEventService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
       ManagedPartitionService partitionService = buildPartitionService(clusterCommunicator);
-      PrimitiveService primitives = buildPrimitiveService(partitionService);
+      PrimitivesService primitives = buildPrimitiveService(partitionService);
       ManagedRestService restService = buildRestService(clusterService, clusterCommunicator, clusterEventService, primitives);
       return new Atomix(
           clusterService,
@@ -482,7 +483,7 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
      */
     private ManagedPartitionService buildPartitionService(ClusterCommunicationService clusterCommunicator) {
       File partitionsDir = new File(this.dataDir, "partitions");
-      Collection<RaftPartition> partitions = buildPartitions().stream()
+      Collection<ManagedPartition> partitions = buildPartitions().stream()
           .map(p -> new RaftPartition(localNode.id(), p, clusterCommunicator, new File(partitionsDir, p.id().toString())))
           .collect(Collectors.toList());
       return new DefaultPartitionService(partitions);
@@ -491,10 +492,10 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
     /**
      * Builds a primitive service.
      */
-    private PrimitiveService buildPrimitiveService(PartitionService partitionService) {
+    private PrimitivesService buildPrimitiveService(PartitionService partitionService) {
       Map<PartitionId, DistributedPrimitiveCreator> members = new HashMap<>();
       partitionService.getPartitions().forEach(p -> members.put(p.id(), partitionService.getPrimitiveCreator(p.id())));
-      return new FederatedPrimitiveService(members, numBuckets);
+      return new PartitionedPrimitivesService(members, numBuckets);
     }
 
     /**
@@ -504,8 +505,8 @@ public class Atomix implements PrimitiveService, Managed<Atomix> {
         ClusterService clusterService,
         ClusterCommunicationService communicationService,
         ClusterEventService eventService,
-        PrimitiveService primitiveService) {
-      return httpPort > 0 ? new VertxRestService(localNode.endpoint().host().getHostAddress(), httpPort, clusterService, communicationService, eventService, primitiveService) : null;
+        PrimitivesService primitivesService) {
+      return httpPort > 0 ? new VertxRestService(localNode.endpoint().host().getHostAddress(), httpPort, clusterService, communicationService, eventService, primitivesService) : null;
     }
 
     /**

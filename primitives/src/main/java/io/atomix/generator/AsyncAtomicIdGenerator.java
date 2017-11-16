@@ -15,8 +15,10 @@
  */
 package io.atomix.generator;
 
-import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.generator.impl.BlockingAtomicIdGenerator;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -26,8 +28,8 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncAtomicIdGenerator extends AsyncPrimitive {
 
   @Override
-  default Type primitiveType() {
-    return Type.ID_GENERATOR;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.ID_GENERATOR;
   }
 
   /**

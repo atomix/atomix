@@ -15,8 +15,8 @@
  */
 package io.atomix.counter;
 
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * Builder for AtomicCounter.
@@ -24,7 +24,7 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
 public abstract class AtomicCounterBuilder
     extends DistributedPrimitiveBuilder<AtomicCounterBuilder, AtomicCounter, AsyncAtomicCounter> {
   public AtomicCounterBuilder() {
-    super(DistributedPrimitive.Type.COUNTER);
+    super(PrimitiveTypes.COUNTER);
   }
 
   @Override

@@ -15,10 +15,10 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
@@ -53,7 +53,7 @@ import io.atomix.protocols.raft.protocol.TransferRequest;
 import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.session.impl.RaftSessionContext;
+import io.atomix.protocols.raft.session.impl.RaftSession;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
 import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;
@@ -87,7 +87,7 @@ public final class LeaderRole extends ActiveRole {
 
   private final LeaderAppender appender;
   private Scheduled appendTimer;
-  private final Map<MemberId, Scheduled> heartbeatTimers = new HashMap<>();
+  private final Map<NodeId, Scheduled> heartbeatTimers = new HashMap<>();
   private long configuring;
   private boolean transferring;
 
@@ -122,7 +122,7 @@ public final class LeaderRole extends ActiveRole {
    * Sets the current node as the cluster leader.
    */
   private void takeLeadership() {
-    raft.setLeader(raft.getCluster().getMember().memberId());
+    raft.setLeader(raft.getCluster().getMember().nodeId());
     raft.getCluster().getRemoteMemberStates().forEach(m -> m.resetState(raft.getLog()));
   }
 
@@ -192,7 +192,7 @@ public final class LeaderRole extends ActiveRole {
     raft.getSessions().getSessions().forEach(s -> s.resetHeartbeats());
     log.trace("Starting heartbeat timers");
     raft.getSessions().getSessions().stream()
-        .map(s -> s.memberId())
+        .map(s -> s.nodeId())
         .distinct()
         .forEach(this::resetHeartbeatTimer);
   }
@@ -200,10 +200,10 @@ public final class LeaderRole extends ActiveRole {
   /**
    * Resets the heartbeat timer.
    */
-  private void resetHeartbeatTimer(MemberId member) {
+  private void resetHeartbeatTimer(NodeId member) {
     // Compute the smallest timeout of all open sessions for the member.
     OptionalLong minTimeout = raft.getSessions().getSessions().stream()
-        .filter(s -> s.memberId().equals(member))
+        .filter(s -> s.nodeId().equals(member))
         .mapToLong(s -> s.minTimeout())
         .min();
 
@@ -229,20 +229,20 @@ public final class LeaderRole extends ActiveRole {
    *
    * @param member the member to which to send heartbeats
    */
-  private void sendHeartbeats(MemberId member) {
+  private void sendHeartbeats(NodeId member) {
     sendHeartbeat(member, raft.getSessions().getSessions().stream()
-        .filter(s -> s.memberId().equals(member))
+        .filter(s -> s.nodeId().equals(member))
         .collect(Collectors.toList()));
   }
 
   /**
    * Attempts to send a heartbeat to the given session.
    */
-  private void sendHeartbeat(MemberId member, Collection<RaftSessionContext> sessions) {
+  private void sendHeartbeat(NodeId member, Collection<RaftSession> sessions) {
     HeartbeatRequest request = HeartbeatRequest.builder()
-        .withLeader(raft.getCluster().getMember().memberId())
+        .withLeader(raft.getCluster().getMember().nodeId())
         .withMembers(raft.getCluster().getMembers().stream()
-            .map(RaftMember::memberId)
+            .map(RaftMember::nodeId)
             .filter(m -> m != null)
             .collect(Collectors.toList()))
         .build();
@@ -272,7 +272,7 @@ public final class LeaderRole extends ActiveRole {
   /**
    * Expires the given session.
    */
-  private void expireSession(RaftSessionContext session) {
+  private void expireSession(RaftSession session) {
     log.debug("Expiring session due to heartbeat failure: {}", session);
     appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
         .whenCompleteAsync((entry, error) -> {
@@ -352,7 +352,7 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // If the member is already a known member of the cluster, complete the join successfully.
-    if (raft.getCluster().getMember(request.member().memberId()) != null) {
+    if (raft.getCluster().getMember(request.member().nodeId()) != null) {
       return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withIndex(raft.getCluster().getConfiguration().index())
@@ -367,7 +367,7 @@ public final class LeaderRole extends ActiveRole {
     // Add the joining member to the members list. If the joining member's type is ACTIVE, join the member in the
     // PROMOTABLE state to allow it to get caught up without impacting the quorum size.
     Collection<RaftMember> members = raft.getCluster().getMembers();
-    members.add(new DefaultRaftMember(member.memberId(), member.getType(), Instant.now()));
+    members.add(new DefaultRaftMember(member.nodeId(), member.getType(), Instant.now()));
 
     CompletableFuture<JoinResponse> future = new CompletableFuture<>();
     configure(members).whenComplete((index, error) -> {
@@ -405,7 +405,7 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // If the member is not a known member of the cluster, fail the promotion.
-    DefaultRaftMember existingMember = raft.getCluster().getMember(request.member().memberId());
+    DefaultRaftMember existingMember = raft.getCluster().getMember(request.member().nodeId());
     if (existingMember == null) {
       return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
@@ -476,7 +476,7 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // If the leaving member is not a known member of the cluster, complete the leave successfully.
-    if (raft.getCluster().getMember(request.member().memberId()) == null) {
+    if (raft.getCluster().getMember(request.member().nodeId()) == null) {
       return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withMembers(raft.getCluster().getMembers())
@@ -659,7 +659,7 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // Get the client's server session. If the session doesn't exist, return an unknown session error.
-    RaftSessionContext session = raft.getSessions().getSession(request.session());
+    RaftSession session = raft.getSessions().getSession(request.session());
     if (session == null) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
@@ -771,7 +771,7 @@ public final class LeaderRole extends ActiveRole {
     }
 
     // Look up the client's session.
-    RaftSessionContext session = raft.getSessions().getSession(request.session());
+    RaftSession session = raft.getSessions().getSession(request.session());
     if (session == null) {
       log.warn("Unknown session {}", request.session());
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
@@ -852,7 +852,7 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
-    appendAndCompact(new OpenSessionEntry(term, timestamp, request.member(), request.serviceName(), request.serviceType(), request.readConsistency(), minTimeout, maxTimeout))
+    appendAndCompact(new OpenSessionEntry(term, timestamp, request.node(), request.serviceName(), request.serviceType(), request.readConsistency(), minTimeout, maxTimeout))
         .whenCompleteAsync((entry, error) -> {
           if (error != null) {
             future.complete(logResponse(OpenSessionResponse.builder()
@@ -870,7 +870,7 @@ public final class LeaderRole extends ActiveRole {
               if (commitError == null) {
                 raft.getStateMachine().<Long>apply(entry.index()).whenComplete((sessionId, sessionError) -> {
                   if (sessionError == null) {
-                    resetHeartbeatTimer(MemberId.from(request.member()));
+                    resetHeartbeatTimer(NodeId.from(request.node()));
                     future.complete(logResponse(OpenSessionResponse.builder()
                         .withStatus(RaftResponse.Status.OK)
                         .withSession(sessionId)
@@ -925,7 +925,7 @@ public final class LeaderRole extends ActiveRole {
           if (error != null) {
             future.complete(logResponse(KeepAliveResponse.builder()
                 .withStatus(RaftResponse.Status.ERROR)
-                .withLeader(raft.getCluster().getMember().memberId())
+                .withLeader(raft.getCluster().getMember().nodeId())
                 .withError(RaftError.Type.PROTOCOL_ERROR)
                 .build()));
             return;
@@ -941,9 +941,9 @@ public final class LeaderRole extends ActiveRole {
                   if (sessionError == null) {
                     future.complete(logResponse(KeepAliveResponse.builder()
                         .withStatus(RaftResponse.Status.OK)
-                        .withLeader(raft.getCluster().getMember().memberId())
+                        .withLeader(raft.getCluster().getMember().nodeId())
                         .withMembers(raft.getCluster().getMembers().stream()
-                            .map(RaftMember::memberId)
+                            .map(RaftMember::nodeId)
                             .filter(m -> m != null)
                             .collect(Collectors.toList()))
                         .withSessionIds(sessionResult)
@@ -951,19 +951,19 @@ public final class LeaderRole extends ActiveRole {
                   } else if (sessionError instanceof CompletionException && sessionError.getCause() instanceof RaftException) {
                     future.complete(logResponse(KeepAliveResponse.builder()
                         .withStatus(RaftResponse.Status.ERROR)
-                        .withLeader(raft.getCluster().getMember().memberId())
+                        .withLeader(raft.getCluster().getMember().nodeId())
                         .withError(((RaftException) sessionError.getCause()).getType(), sessionError.getMessage())
                         .build()));
                   } else if (sessionError instanceof RaftException) {
                     future.complete(logResponse(KeepAliveResponse.builder()
                         .withStatus(RaftResponse.Status.ERROR)
-                        .withLeader(raft.getCluster().getMember().memberId())
+                        .withLeader(raft.getCluster().getMember().nodeId())
                         .withError(((RaftException) sessionError).getType(), sessionError.getMessage())
                         .build()));
                   } else {
                     future.complete(logResponse(KeepAliveResponse.builder()
                         .withStatus(RaftResponse.Status.ERROR)
-                        .withLeader(raft.getCluster().getMember().memberId())
+                        .withLeader(raft.getCluster().getMember().nodeId())
                         .withError(RaftError.Type.PROTOCOL_ERROR, sessionError.getMessage())
                         .build()));
                   }
@@ -971,7 +971,7 @@ public final class LeaderRole extends ActiveRole {
               } else {
                 future.complete(logResponse(KeepAliveResponse.builder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withLeader(raft.getCluster().getMember().memberId())
+                    .withLeader(raft.getCluster().getMember().nodeId())
                     .withError(RaftError.Type.PROTOCOL_ERROR)
                     .build()));
               }
@@ -979,7 +979,7 @@ public final class LeaderRole extends ActiveRole {
               RaftMember leader = raft.getLeader();
               future.complete(logResponse(KeepAliveResponse.builder()
                   .withStatus(RaftResponse.Status.ERROR)
-                  .withLeader(leader != null ? leader.memberId() : null)
+                  .withLeader(leader != null ? leader.nodeId() : null)
                   .withError(RaftError.Type.ILLEGAL_MEMBER_STATE)
                   .build()));
             }

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.event.RaftEvent;
+import io.atomix.primitive.event.RaftEvent;
 
 import java.util.Arrays;
 import java.util.List;

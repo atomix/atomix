@@ -17,6 +17,7 @@ package io.atomix.leadership;
 
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,7 @@ public abstract class LeaderElectorBuilder<T>
   private Duration electionTimeout = Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
 
   public LeaderElectorBuilder() {
-    super(DistributedPrimitive.Type.LEADER_ELECTOR);
+    super(PrimitiveTypes.LEADER_ELECTOR);
   }
 
   /**

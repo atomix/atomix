@@ -419,7 +419,7 @@ final class LeaderAppender extends AbstractAppender {
   protected void handleAppendResponseError(RaftMemberContext member, AppendRequest request, AppendResponse response) {
     // If we've received a greater term, update the term and transition back to follower.
     if (response.term() > raft.getTerm()) {
-      log.debug("Received higher term from {}", member.getMember().memberId());
+      log.debug("Received higher term from {}", member.getMember().nodeId());
       raft.setTerm(response.term());
       raft.setLeader(null);
       raft.transition(RaftServer.Role.FOLLOWER);

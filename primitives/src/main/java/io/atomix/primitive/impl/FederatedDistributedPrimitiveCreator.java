@@ -24,12 +24,6 @@ import com.google.common.hash.Funnel;
 import com.google.common.hash.Funnels;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-import io.atomix.partition.PartitionId;
-import io.atomix.primitive.DistributedPrimitive.Type;
-import io.atomix.primitive.DistributedPrimitiveCreator;
-import io.atomix.primitive.DistributedPrimitives;
-import io.atomix.partition.Partitioner;
-import io.atomix.primitive.Ordering;
 import io.atomix.counter.AsyncAtomicCounter;
 import io.atomix.generator.AsyncAtomicIdGenerator;
 import io.atomix.leadership.AsyncLeaderElector;
@@ -39,13 +33,19 @@ import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.AsyncConsistentTreeMap;
 import io.atomix.map.impl.PartitionedAsyncConsistentMap;
 import io.atomix.multimap.AsyncConsistentMultimap;
+import io.atomix.primitive.DistributedPrimitiveCreator;
+import io.atomix.primitive.DistributedPrimitives;
+import io.atomix.primitive.Ordering;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.partition.Partitioner;
 import io.atomix.queue.AsyncWorkQueue;
+import io.atomix.serializer.Serializer;
 import io.atomix.set.AsyncDistributedSet;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.impl.PartitionedAsyncDocumentTree;
 import io.atomix.value.AsyncAtomicValue;
-import io.atomix.serializer.Serializer;
 
 import java.time.Duration;
 import java.util.List;
@@ -167,7 +167,7 @@ public class FederatedDistributedPrimitiveCreator implements DistributedPrimitiv
   }
 
   @Override
-  public Set<String> getPrimitiveNames(Type primitiveType) {
+  public Set<String> getPrimitiveNames(PrimitiveType primitiveType) {
     return members.values()
         .stream()
         .map(m -> m.getPrimitiveNames(primitiveType))

@@ -16,6 +16,7 @@
 package io.atomix.storage.buffer;
 
 import java.nio.charset.Charset;
+import java.util.function.Function;
 
 /**
  * Writable buffer.
@@ -70,6 +71,20 @@ public interface BufferOutput<T extends BufferOutput<?>> extends AutoCloseable {
    * @return The written buffer.
    */
   T write(Buffer buffer);
+
+  /**
+   * Writes an object to the snapshot.
+   *
+   * @param object the object to write
+   * @param encoder the object encoder
+   * @return The snapshot writer.
+   */
+  @SuppressWarnings("unchecked")
+  default <U> T writeObject(U object, Function<U, byte[]> encoder) {
+    byte[] bytes = encoder.apply(object);
+    writeInt(bytes.length).write(bytes);
+    return (T) this;
+  }
 
   /**
    * Writes a byte array.

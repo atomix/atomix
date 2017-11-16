@@ -16,6 +16,8 @@
 package io.atomix.queue;
 
 import com.google.common.collect.ImmutableList;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.SyncPrimitive;
 
 import java.util.Arrays;
@@ -42,8 +44,8 @@ import java.util.function.Consumer;
 public interface WorkQueue<E> extends SyncPrimitive {
 
   @Override
-  default Type primitiveType() {
-    return Type.WORK_QUEUE;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.WORK_QUEUE;
   }
 
   /**

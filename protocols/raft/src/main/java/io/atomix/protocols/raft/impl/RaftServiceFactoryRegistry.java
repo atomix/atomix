@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.protocols.raft.service.RaftService;
+import io.atomix.primitive.service.PrimitiveService;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * State machine registry.
  */
 public class RaftServiceFactoryRegistry {
-  private final Map<String, Supplier<RaftService>> stateMachines = new ConcurrentHashMap<>();
+  private final Map<String, Supplier<PrimitiveService>> stateMachines = new ConcurrentHashMap<>();
 
   /**
    * Returns the number of registered state machines.
@@ -46,7 +46,7 @@ public class RaftServiceFactoryRegistry {
    * @param factory The state machine factory.
    * @return The state machine registry.
    */
-  public RaftServiceFactoryRegistry register(String type, Supplier<RaftService> factory) {
+  public RaftServiceFactoryRegistry register(String type, Supplier<PrimitiveService> factory) {
     stateMachines.put(checkNotNull(type, "type cannot be null"), checkNotNull(factory, "factory cannot be null"));
     return this;
   }
@@ -68,7 +68,7 @@ public class RaftServiceFactoryRegistry {
    * @param type The state machine type for which to return the factory.
    * @return The factory for the given state machine type or {@code null} if the type is not registered.
    */
-  public Supplier<RaftService> getFactory(String type) {
+  public Supplier<PrimitiveService> getFactory(String type) {
     return stateMachines.get(type);
   }
 

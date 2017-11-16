@@ -15,8 +15,8 @@
  */
 package io.atomix.set;
 
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * Builder for distributed set.
@@ -25,7 +25,7 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  */
 public abstract class DistributedSetBuilder<E> extends DistributedPrimitiveBuilder<DistributedSetBuilder<E>, DistributedSet<E>, AsyncDistributedSet<E>> {
   public DistributedSetBuilder() {
-    super(DistributedPrimitive.Type.SET);
+    super(PrimitiveTypes.SET);
   }
 
   @Override

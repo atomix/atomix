@@ -15,8 +15,8 @@
  */
 package io.atomix.generator;
 
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * Builder for AtomicIdGenerator.
@@ -24,7 +24,7 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
 public abstract class AtomicIdGeneratorBuilder
     extends DistributedPrimitiveBuilder<AtomicIdGeneratorBuilder, AtomicIdGenerator, AsyncAtomicIdGenerator> {
   public AtomicIdGeneratorBuilder() {
-    super(DistributedPrimitive.Type.ID_GENERATOR);
+    super(PrimitiveTypes.ID_GENERATOR);
   }
 
   @Override

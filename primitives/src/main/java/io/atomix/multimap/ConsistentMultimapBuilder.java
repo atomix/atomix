@@ -16,8 +16,8 @@
 
 package io.atomix.multimap;
 
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * A builder class for {@code AsyncConsistentMultimap}.
@@ -26,7 +26,7 @@ public abstract class ConsistentMultimapBuilder<K, V>
     extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>, ConsistentMultimap<K, V>, AsyncConsistentMultimap<K, V>> {
 
   public ConsistentMultimapBuilder() {
-    super(DistributedPrimitive.Type.CONSISTENT_MULTIMAP);
+    super(PrimitiveTypes.CONSISTENT_MULTIMAP);
   }
 
   @Override

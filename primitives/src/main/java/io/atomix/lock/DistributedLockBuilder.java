@@ -17,6 +17,7 @@ package io.atomix.lock;
 
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,7 @@ public abstract class DistributedLockBuilder
   private Duration lockTimeout = Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
 
   public DistributedLockBuilder() {
-    super(DistributedPrimitive.Type.LOCK);
+    super(PrimitiveTypes.LOCK);
   }
 
   /**

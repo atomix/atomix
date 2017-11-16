@@ -15,6 +15,8 @@
  */
 package io.atomix.generator;
 
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.SyncPrimitive;
 
 /**
@@ -23,8 +25,8 @@ import io.atomix.primitive.SyncPrimitive;
 public interface AtomicIdGenerator extends SyncPrimitive {
 
   @Override
-  default Type primitiveType() {
-    return Type.ID_GENERATOR;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.ID_GENERATOR;
   }
 
   /**

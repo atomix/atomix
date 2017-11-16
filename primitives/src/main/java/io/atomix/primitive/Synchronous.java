@@ -41,7 +41,7 @@ public abstract class Synchronous<T extends AsyncPrimitive> implements SyncPrimi
   }
 
   @Override
-  public Type primitiveType() {
+  public PrimitiveType primitiveType() {
     return primitive.primitiveType();
   }
 

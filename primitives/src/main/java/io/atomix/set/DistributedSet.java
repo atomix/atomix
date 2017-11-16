@@ -15,6 +15,8 @@
  */
 package io.atomix.set;
 
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.SyncPrimitive;
 
 import java.util.Set;
@@ -25,6 +27,10 @@ import java.util.Set;
  * @param <E> set entry type
  */
 public interface DistributedSet<E> extends Set<E>, SyncPrimitive {
+  @Override
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.SET;
+  }
 
   /**
    * Registers the specified listener to be notified whenever

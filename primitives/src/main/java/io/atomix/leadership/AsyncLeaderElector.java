@@ -15,9 +15,10 @@
  */
 package io.atomix.leadership;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.leadership.impl.BlockingLeaderElector;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -43,8 +44,8 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncLeaderElector<T> extends AsyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.LEADER_ELECTOR;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.LEADER_ELECTOR;
   }
 
   /**

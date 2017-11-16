@@ -16,6 +16,8 @@
 
 package io.atomix.map;
 
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.time.Versioned;
 
 import java.util.Map;
@@ -26,6 +28,11 @@ import java.util.NavigableSet;
  * Tree map interface counterpart to {@link AsyncConsistentTreeMap}.
  */
 public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
+
+  @Override
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.CONSISTENT_TREEMAP;
+  }
 
   /**
    * Returns the lowest key in the map.

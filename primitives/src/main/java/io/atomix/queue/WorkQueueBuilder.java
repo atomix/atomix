@@ -15,8 +15,8 @@
  */
 package io.atomix.queue;
 
-import io.atomix.primitive.DistributedPrimitive.Type;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * Work queue builder.
@@ -24,7 +24,7 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
 public abstract class WorkQueueBuilder<E> extends DistributedPrimitiveBuilder<WorkQueueBuilder<E>, WorkQueue<E>, AsyncWorkQueue<E>> {
 
   public WorkQueueBuilder() {
-    super(Type.WORK_QUEUE);
+    super(PrimitiveTypes.WORK_QUEUE);
   }
 
   @Override

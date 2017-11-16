@@ -15,10 +15,10 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.cluster.NodeId;
+import io.atomix.primitive.session.SessionId;
 
-import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -32,56 +32,56 @@ public interface RaftClientProtocol {
   /**
    * Sends an open session request to the given node.
    *
-   * @param memberId  the node to which to send the request
+   * @param nodeId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request);
+  CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request);
 
   /**
    * Sends a close session request to the given node.
    *
-   * @param memberId  the node to which to send the request
+   * @param nodeId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request);
+  CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request);
 
   /**
    * Sends a keep alive request to the given node.
    *
-   * @param memberId  the node to which to send the request
+   * @param nodeId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request);
+  CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request);
 
   /**
    * Sends a query request to the given node.
    *
-   * @param memberId  the node to which to send the request
+   * @param nodeId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request);
+  CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request);
 
   /**
    * Sends a command request to the given node.
    *
-   * @param memberId  the node to which to send the request
+   * @param nodeId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request);
+  CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request);
 
   /**
    * Sends a metadata request to the given node.
    *
-   * @param memberId  the node to which to send the request
+   * @param nodeId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request);
+  CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request);
 
   /**
    * Multicasts a reset request to all nodes in the cluster.
@@ -89,7 +89,7 @@ public interface RaftClientProtocol {
    * @param members the members to which to send the request
    * @param request the reset request to multicast
    */
-  void reset(Collection<MemberId> members, ResetRequest request);
+  void reset(Set<NodeId> members, ResetRequest request);
 
   /**
    * Registers a heartbeat request callback.

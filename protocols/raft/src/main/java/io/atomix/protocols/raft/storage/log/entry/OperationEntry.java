@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.protocols.raft.operation.RaftOperation;
+import io.atomix.primitive.operation.RaftOperation;
 import io.atomix.utils.TimestampPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;

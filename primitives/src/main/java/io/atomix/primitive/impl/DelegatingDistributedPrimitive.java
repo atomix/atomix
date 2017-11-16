@@ -17,6 +17,7 @@ package io.atomix.primitive.impl;
 
 import com.google.common.base.MoreObjects;
 import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -41,7 +42,7 @@ public abstract class DelegatingDistributedPrimitive implements AsyncPrimitive {
   }
 
   @Override
-  public Type primitiveType() {
+  public PrimitiveType primitiveType() {
     return primitive.primitiveType();
   }
 

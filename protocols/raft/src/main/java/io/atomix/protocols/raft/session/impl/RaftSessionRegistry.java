@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.protocols.raft.service.ServiceId;
-import io.atomix.protocols.raft.session.RaftSessionListener;
-import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.session.SessionListener;
+import io.atomix.primitive.session.SessionId;
 
 import java.util.Collection;
 import java.util.Map;
@@ -30,15 +30,15 @@ import java.util.stream.Collectors;
  * Session manager.
  */
 public class RaftSessionRegistry {
-  private final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
-  private final Map<ServiceId, Set<RaftSessionListener>> listeners = new ConcurrentHashMap<>();
+  private final Map<Long, RaftSession> sessions = new ConcurrentHashMap<>();
+  private final Map<PrimitiveId, Set<SessionListener>> listeners = new ConcurrentHashMap<>();
 
   /**
    * Registers a session.
    */
-  public void registerSession(RaftSessionContext session) {
+  public void registerSession(RaftSession session) {
     if (sessions.putIfAbsent(session.sessionId().id(), session) == null) {
-      Set<RaftSessionListener> listeners = this.listeners.get(session.getService().serviceId());
+      Set<SessionListener> listeners = this.listeners.get(session.getService().serviceId());
       if (listeners != null) {
         listeners.forEach(l -> l.onOpen(session));
       }
@@ -49,9 +49,9 @@ public class RaftSessionRegistry {
    * Expires a session.
    */
   public void expireSession(SessionId sessionId) {
-    RaftSessionContext session = sessions.remove(sessionId.id());
+    RaftSession session = sessions.remove(sessionId.id());
     if (session != null) {
-      Set<RaftSessionListener> listeners = this.listeners.get(session.getService().serviceId());
+      Set<SessionListener> listeners = this.listeners.get(session.getService().serviceId());
       if (listeners != null) {
         listeners.forEach(l -> l.onExpire(session));
       }
@@ -63,9 +63,9 @@ public class RaftSessionRegistry {
    * Closes a session.
    */
   public void closeSession(SessionId sessionId) {
-    RaftSessionContext session = sessions.remove(sessionId.id());
+    RaftSession session = sessions.remove(sessionId.id());
     if (session != null) {
-      Set<RaftSessionListener> listeners = this.listeners.get(session.getService().serviceId());
+      Set<SessionListener> listeners = this.listeners.get(session.getService().serviceId());
       if (listeners != null) {
         listeners.forEach(l -> l.onClose(session));
       }
@@ -79,7 +79,7 @@ public class RaftSessionRegistry {
    * @param sessionId The session ID.
    * @return The session or {@code null} if the session doesn't exist.
    */
-  public RaftSessionContext getSession(SessionId sessionId) {
+  public RaftSession getSession(SessionId sessionId) {
     return getSession(sessionId.id());
   }
 
@@ -89,7 +89,7 @@ public class RaftSessionRegistry {
    * @param sessionId The session ID.
    * @return The session or {@code null} if the session doesn't exist.
    */
-  public RaftSessionContext getSession(long sessionId) {
+  public RaftSession getSession(long sessionId) {
     return sessions.get(sessionId);
   }
 
@@ -98,54 +98,54 @@ public class RaftSessionRegistry {
    *
    * @return The collection of registered sessions.
    */
-  public Collection<RaftSessionContext> getSessions() {
+  public Collection<RaftSession> getSessions() {
     return sessions.values();
   }
 
   /**
    * Returns a set of sessions associated with the given service.
    *
-   * @param serviceId the service identifier
+   * @param primitiveId the service identifier
    * @return a collection of sessions associated with the given service
    */
-  public Collection<RaftSessionContext> getSessions(ServiceId serviceId) {
+  public Collection<RaftSession> getSessions(PrimitiveId primitiveId) {
     return sessions.values().stream()
-        .filter(session -> session.getService().serviceId().equals(serviceId))
+        .filter(session -> session.getService().serviceId().equals(primitiveId))
         .collect(Collectors.toSet());
   }
 
   /**
    * Removes all sessions registered for the given service.
    *
-   * @param serviceId the service identifier
+   * @param primitiveId the service identifier
    */
-  public void removeSessions(ServiceId serviceId) {
-    sessions.entrySet().removeIf(e -> e.getValue().getService().serviceId().equals(serviceId));
+  public void removeSessions(PrimitiveId primitiveId) {
+    sessions.entrySet().removeIf(e -> e.getValue().getService().serviceId().equals(primitiveId));
   }
 
   /**
    * Adds a session listener.
    *
-   * @param serviceId the service ID for which to listen to sessions
+   * @param primitiveId the service ID for which to listen to sessions
    * @param sessionListener the session listener
    */
-  public void addListener(ServiceId serviceId, RaftSessionListener sessionListener) {
-    Set<RaftSessionListener> sessionListeners = listeners.computeIfAbsent(serviceId, k -> new CopyOnWriteArraySet<>());
+  public void addListener(PrimitiveId primitiveId, SessionListener sessionListener) {
+    Set<SessionListener> sessionListeners = listeners.computeIfAbsent(primitiveId, k -> new CopyOnWriteArraySet<>());
     sessionListeners.add(sessionListener);
   }
 
   /**
    * Removes a session listener.
    *
-   * @param serviceId the service ID with which the listener is associated
+   * @param primitiveId the service ID with which the listener is associated
    * @param sessionListener the session listener
    */
-  public void removeListener(ServiceId serviceId, RaftSessionListener sessionListener) {
-    Set<RaftSessionListener> sessionListeners = listeners.get(serviceId);
+  public void removeListener(PrimitiveId primitiveId, SessionListener sessionListener) {
+    Set<SessionListener> sessionListeners = listeners.get(primitiveId);
     if (sessionListeners != null) {
       sessionListeners.remove(sessionListener);
       if (sessionListeners.isEmpty()) {
-        listeners.remove(serviceId);
+        listeners.remove(primitiveId);
       }
     }
   }

@@ -15,7 +15,8 @@
  */
 package io.atomix.leadership;
 
-import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.SyncPrimitive;
 
 /**
@@ -25,8 +26,8 @@ import io.atomix.primitive.SyncPrimitive;
 public interface LeaderElector<T> extends SyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.LEADER_ELECTOR;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.LEADER_ELECTOR;
   }
 
   /**

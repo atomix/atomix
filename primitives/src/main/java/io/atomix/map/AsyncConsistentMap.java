@@ -17,12 +17,13 @@
 package io.atomix.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.transaction.Transactional;
 import io.atomix.map.impl.BlockingConsistentMap;
 import io.atomix.map.impl.MapUpdate;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.time.Versioned;
+import io.atomix.transaction.Transactional;
 
 import java.util.Collection;
 import java.util.Map.Entry;
@@ -61,8 +62,8 @@ import java.util.function.Predicate;
 public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<MapUpdate<K, V>> {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.CONSISTENT_MAP;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.CONSISTENT_MAP;
   }
 
   @Override

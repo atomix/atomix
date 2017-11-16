@@ -18,9 +18,10 @@ package io.atomix.multimap;
 
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.multimap.impl.BlockingConsistentMultimap;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.time.Versioned;
 
 import java.util.Collection;
@@ -40,8 +41,8 @@ import java.util.concurrent.Executor;
 public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return Type.CONSISTENT_MULTIMAP;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.CONSISTENT_MULTIMAP;
   }
 
   @Override

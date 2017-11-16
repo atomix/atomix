@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.primitive.PrimitiveService;
+import io.atomix.primitive.PrimitivesService;
 import io.atomix.rest.utils.PrimitiveCache;
 
 import javax.ws.rs.GET;
@@ -49,8 +49,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/counters")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getCounterNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getAtomicCounterNames()).build();
+  public Response getCounterNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getAtomicCounterNames()).build();
   }
 
   /**
@@ -70,8 +70,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/elections")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getElectionsNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getLeaderElectorNames()).build();
+  public Response getElectionsNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getLeaderElectorNames()).build();
   }
 
   /**
@@ -91,8 +91,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/ids")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getIdGeneratorNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getAtomicIdGeneratorNames()).build();
+  public Response getIdGeneratorNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getAtomicIdGeneratorNames()).build();
   }
 
   /**
@@ -112,8 +112,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/locks")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getLockNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getDistributedLockNames()).build();
+  public Response getLockNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getDistributedLockNames()).build();
   }
 
   /**
@@ -133,8 +133,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/maps")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getMapNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getConsistentMapNames()).build();
+  public Response getMapNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getConsistentMapNames()).build();
   }
 
   /**
@@ -154,8 +154,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/queues")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getQueueNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getWorkQueueNames()).build();
+  public Response getQueueNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getWorkQueueNames()).build();
   }
 
   /**
@@ -175,8 +175,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/sets")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getSetNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getSetNames()).build();
+  public Response getSetNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getSetNames()).build();
   }
 
   /**
@@ -196,8 +196,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/trees")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getTreeNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getDocumentTreeNames()).build();
+  public Response getTreeNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getDocumentTreeNames()).build();
   }
 
   /**
@@ -217,7 +217,7 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/values")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getValueNames(@Context PrimitiveService primitiveService) {
-    return Response.ok(primitiveService.getAtomicValueNames()).build();
+  public Response getValueNames(@Context PrimitivesService primitivesService) {
+    return Response.ok(primitivesService.getAtomicValueNames()).build();
   }
 }

@@ -18,7 +18,7 @@ package io.atomix.primitive.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 
 import java.util.Collection;
 import java.util.Set;
@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Abstract base class for primitives that interact with Raft replicated state machines via proxy.
  */
 public abstract class AbstractRaftPrimitive implements AsyncPrimitive {
-  private final Function<RaftProxy.State, Status> mapper = state -> {
+  private final Function<PrimitiveProxy.State, Status> mapper = state -> {
     switch (state) {
       case CONNECTED:
         return Status.ACTIVE;
@@ -46,10 +46,10 @@ public abstract class AbstractRaftPrimitive implements AsyncPrimitive {
     }
   };
 
-  protected final RaftProxy proxy;
+  protected final PrimitiveProxy proxy;
   private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
 
-  public AbstractRaftPrimitive(RaftProxy proxy) {
+  public AbstractRaftPrimitive(PrimitiveProxy proxy) {
     this.proxy = checkNotNull(proxy, "proxy cannot be null");
     proxy.addStateChangeListener(this::onStateChange);
   }
@@ -64,7 +64,7 @@ public abstract class AbstractRaftPrimitive implements AsyncPrimitive {
    *
    * @param state the updated Raft session state
    */
-  private void onStateChange(RaftProxy.State state) {
+  private void onStateChange(PrimitiveProxy.State state) {
     statusChangeListeners.forEach(listener -> listener.accept(mapper.apply(state)));
   }
 

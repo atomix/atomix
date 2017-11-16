@@ -15,8 +15,8 @@
  */
 package io.atomix.value;
 
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * Builder for constructing new AtomicValue instances.
@@ -27,7 +27,7 @@ public abstract class AtomicValueBuilder<V>
     extends DistributedPrimitiveBuilder<AtomicValueBuilder<V>, AtomicValue<V>, AsyncAtomicValue<V>> {
 
   public AtomicValueBuilder() {
-    super(DistributedPrimitive.Type.VALUE);
+    super(PrimitiveTypes.VALUE);
   }
 
   @Override

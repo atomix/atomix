@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.protocols.phi.PhiAccrualFailureDetector;
+import io.atomix.cluster.impl.PhiAccrualFailureDetector;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
@@ -147,11 +147,11 @@ public final class FollowerRole extends ActiveRole {
       log.debug("Polling {} for next term {}", member, raft.getTerm() + 1);
       PollRequest request = PollRequest.builder()
           .withTerm(raft.getTerm())
-          .withCandidate(raft.getCluster().getMember().memberId())
+          .withCandidate(raft.getCluster().getMember().nodeId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLastLogTerm(lastTerm)
           .build();
-      raft.getProtocol().poll(member.memberId(), request).whenCompleteAsync((response, error) -> {
+      raft.getProtocol().poll(member.nodeId(), request).whenCompleteAsync((response, error) -> {
         raft.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
@@ -164,7 +164,7 @@ public final class FollowerRole extends ActiveRole {
 
             if (!response.accepted()) {
               log.debug("Received rejected poll from {}", member);
-              if (leader != null && response.term() == raft.getTerm() && member.memberId().equals(leader.memberId())) {
+              if (leader != null && response.term() == raft.getTerm() && member.nodeId().equals(leader.nodeId())) {
                 quorum.cancel();
                 resetHeartbeatTimeout();
               } else {

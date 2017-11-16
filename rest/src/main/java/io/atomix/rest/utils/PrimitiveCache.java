@@ -19,7 +19,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveService;
+import io.atomix.primitive.PrimitivesService;
 
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -28,10 +28,10 @@ import java.util.function.Function;
  * Primitive cache.
  */
 public class PrimitiveCache {
-  private final PrimitiveService primitives;
+  private final PrimitivesService primitives;
   private final Cache<String, AsyncPrimitive> cache;
 
-  public PrimitiveCache(PrimitiveService primitives, int cacheSize) {
+  public PrimitiveCache(PrimitivesService primitives, int cacheSize) {
     this.primitives = primitives;
     this.cache = CacheBuilder.newBuilder()
         .maximumSize(cacheSize)
@@ -48,7 +48,7 @@ public class PrimitiveCache {
    * @return a future to be completed with the opened primitive
    */
   @SuppressWarnings("unchecked")
-  public <T extends AsyncPrimitive> T getPrimitive(String name, Function<PrimitiveService, T> factory) {
+  public <T extends AsyncPrimitive> T getPrimitive(String name, Function<PrimitivesService, T> factory) {
     try {
       return (T) cache.get(name, () -> factory.apply(primitives));
     } catch (ExecutionException e) {

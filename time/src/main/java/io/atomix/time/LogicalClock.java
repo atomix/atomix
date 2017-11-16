@@ -32,7 +32,7 @@ public class LogicalClock implements Clock<LogicalTimestamp> {
   }
 
   @Override
-  public LogicalTimestamp getTime() {
+  public LogicalTimestamp time() {
     return currentTimestamp;
   }
 
@@ -75,7 +75,7 @@ public class LogicalClock implements Clock<LogicalTimestamp> {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("time", getTime())
+        .add("time", time())
         .toString();
   }
 }

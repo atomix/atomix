@@ -15,9 +15,10 @@
  */
 package io.atomix.counter;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.counter.impl.BlockingAtomicCounter;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,8 +28,8 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncAtomicCounter extends AsyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.COUNTER;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.COUNTER;
   }
 
   /**

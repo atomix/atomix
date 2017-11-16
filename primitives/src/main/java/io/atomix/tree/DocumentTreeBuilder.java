@@ -16,9 +16,9 @@
 
 package io.atomix.tree;
 
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Ordering;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * Builder for {@link DocumentTree}.
@@ -29,7 +29,7 @@ public abstract class DocumentTreeBuilder<V>
   private Ordering ordering = Ordering.NATURAL;
 
   public DocumentTreeBuilder() {
-    super(DistributedPrimitive.Type.DOCUMENT_TREE);
+    super(PrimitiveTypes.DOCUMENT_TREE);
   }
 
   /**

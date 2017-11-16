@@ -15,9 +15,11 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.cluster.NodeId;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -25,8 +27,6 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyConnection;
-import io.atomix.protocols.raft.service.ServiceType;
-import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.LoggerContext;
 
@@ -56,12 +56,12 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   }
 
   @Override
-  public MemberId getLeader() {
+  public NodeId getLeader() {
     return selectorManager.leader();
   }
 
   @Override
-  public Collection<MemberId> getMembers() {
+  public Collection<NodeId> getMembers() {
     return selectorManager.members();
   }
 
@@ -87,23 +87,23 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   }
 
   @Override
-  public CompletableFuture<Set<RaftSessionMetadata>> getSessions() {
+  public CompletableFuture<Set<SessionMetadata>> getSessions() {
     return getMetadata().thenApply(MetadataResponse::sessions);
   }
 
   @Override
-  public CompletableFuture<Set<RaftSessionMetadata>> getSessions(ServiceType serviceType) {
+  public CompletableFuture<Set<SessionMetadata>> getSessions(PrimitiveType primitiveType) {
     return getMetadata().thenApply(response -> response.sessions()
         .stream()
-        .filter(s -> s.serviceType().id().equals(serviceType.id()))
+        .filter(s -> s.serviceType().id().equals(primitiveType.id()))
         .collect(Collectors.toSet()));
   }
 
   @Override
-  public CompletableFuture<Set<RaftSessionMetadata>> getSessions(ServiceType serviceType, String serviceName) {
+  public CompletableFuture<Set<SessionMetadata>> getSessions(PrimitiveType primitiveType, String serviceName) {
     return getMetadata().thenApply(response -> response.sessions()
         .stream()
-        .filter(s -> s.serviceType().id().equals(serviceType.id()) && s.serviceName().equals(serviceName))
+        .filter(s -> s.serviceType().id().equals(primitiveType.id()) && s.serviceName().equals(serviceName))
         .collect(Collectors.toSet()));
   }
 }

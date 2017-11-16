@@ -15,16 +15,16 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
+import io.atomix.cluster.NodeId;
+import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.SessionId;
+import io.atomix.primitive.session.SessionListener;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.service.ServiceId;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
-import io.atomix.protocols.raft.session.RaftSession;
-import io.atomix.protocols.raft.session.RaftSessionListener;
-import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.junit.Test;
@@ -52,8 +52,8 @@ public class RaftSessionRegistryTest {
   @Test
   public void testRegisterIdempotent() throws Exception {
     RaftSessionRegistry sessionManager = new RaftSessionRegistry();
-    RaftSessionContext session1 = createSession(1);
-    RaftSessionContext session2 = createSession(1);
+    RaftSession session1 = createSession(1);
+    RaftSession session2 = createSession(1);
     sessionManager.registerSession(session1);
     sessionManager.registerSession(session2);
     assertSame(session1, sessionManager.getSession(1));
@@ -62,10 +62,10 @@ public class RaftSessionRegistryTest {
   @Test
   public void testUnregisterSession() throws Exception {
     RaftSessionRegistry sessionManager = new RaftSessionRegistry();
-    RaftSessionContext session = createSession(1);
+    RaftSession session = createSession(1);
     sessionManager.registerSession(session);
     assertNotNull(sessionManager.getSession(1));
-    assertEquals(1, sessionManager.getSessions(ServiceId.from(1)).size());
+    assertEquals(1, sessionManager.getSessions(PrimitiveId.from(1)).size());
     sessionManager.closeSession(SessionId.from(1));
     assertNull(sessionManager.getSession(1));
   }
@@ -74,9 +74,9 @@ public class RaftSessionRegistryTest {
   public void testSessionListeners() throws Exception {
     RaftSessionRegistry sessionManager = new RaftSessionRegistry();
     TestSessionListener listener = new TestSessionListener();
-    sessionManager.addListener(ServiceId.from(1), listener);
+    sessionManager.addListener(PrimitiveId.from(1), listener);
 
-    RaftSessionContext session1 = createSession(1);
+    RaftSession session1 = createSession(1);
     sessionManager.registerSession(session1);
     assertTrue(listener.eventReceived());
     assertTrue(listener.isOpened());
@@ -84,7 +84,7 @@ public class RaftSessionRegistryTest {
     assertTrue(listener.eventReceived());
     assertTrue(listener.isClosed());
 
-    RaftSessionContext session2 = createSession(2);
+    RaftSession session2 = createSession(2);
     sessionManager.registerSession(session2);
     assertTrue(listener.eventReceived());
     assertTrue(listener.isOpened());
@@ -94,7 +94,7 @@ public class RaftSessionRegistryTest {
     sessionManager.expireSession(session2.sessionId());
     assertFalse(listener.eventReceived());
 
-    RaftSessionContext session3 = createSession(3);
+    RaftSession session3 = createSession(3);
     sessionManager.registerSession(session3);
     assertTrue(listener.eventReceived());
     assertTrue(listener.isOpened());
@@ -102,21 +102,21 @@ public class RaftSessionRegistryTest {
     assertFalse(listener.eventReceived());
   }
 
-  private RaftSessionContext createSession(long sessionId) {
+  private RaftSession createSession(long sessionId) {
     DefaultServiceContext context = mock(DefaultServiceContext.class);
-    when(context.serviceType()).thenReturn(ServiceType.from("test"));
+    when(context.serviceType()).thenReturn(PrimitiveType.from("test"));
     when(context.serviceName()).thenReturn("test");
-    when(context.serviceId()).thenReturn(ServiceId.from(1));
+    when(context.serviceId()).thenReturn(PrimitiveId.from(1));
     when(context.executor()).thenReturn(mock(ThreadContext.class));
 
     RaftContext server = mock(RaftContext.class);
     when(server.getProtocol()).thenReturn(mock(RaftServerProtocol.class));
 
-    return new RaftSessionContext(
+    return new RaftSession(
         SessionId.from(sessionId),
-        MemberId.from("1"),
+        NodeId.from("1"),
         "test",
-        ServiceType.from("test"),
+        PrimitiveType.from("test"),
         ReadConsistency.LINEARIZABLE,
         100,
         5000,
@@ -125,21 +125,21 @@ public class RaftSessionRegistryTest {
         mock(ThreadContextFactory.class));
   }
 
-  private class TestSessionListener implements RaftSessionListener {
+  private class TestSessionListener implements SessionListener {
     private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
 
     @Override
-    public void onOpen(RaftSession session) {
+    public void onOpen(Session session) {
       queue.add("open");
     }
 
     @Override
-    public void onExpire(RaftSession session) {
+    public void onExpire(Session session) {
       queue.add("expire");
     }
 
     @Override
-    public void onClose(RaftSession session) {
+    public void onClose(Session session) {
       queue.add("close");
     }
 

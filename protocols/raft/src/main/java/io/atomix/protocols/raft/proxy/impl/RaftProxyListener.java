@@ -16,11 +16,11 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.protocols.raft.event.RaftEvent;
+import io.atomix.primitive.event.RaftEvent;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
-import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -50,9 +50,9 @@ final class RaftProxyListener {
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
     this.executor = checkNotNull(executor, "executor cannot be null");
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
         .addValue(state.getSessionId())
-        .add("type", state.getServiceType())
+        .add("type", state.getPrimitiveType())
         .add("name", state.getServiceName())
         .build());
     protocol.registerPublishListener(state.getSessionId(), this::handlePublish, executor);

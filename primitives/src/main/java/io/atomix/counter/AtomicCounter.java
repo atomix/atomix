@@ -15,7 +15,8 @@
  */
 package io.atomix.counter;
 
-import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.SyncPrimitive;
 
 /**
@@ -24,8 +25,8 @@ import io.atomix.primitive.SyncPrimitive;
 public interface AtomicCounter extends SyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.COUNTER;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.COUNTER;
   }
 
   /**

@@ -16,7 +16,8 @@
 package io.atomix.value;
 
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.value.impl.BlockingAtomicValue;
 
 import java.util.concurrent.CompletableFuture;
@@ -34,8 +35,8 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncAtomicValue<V> extends AsyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.VALUE;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.VALUE;
   }
 
   /**

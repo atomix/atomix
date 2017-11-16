@@ -24,10 +24,10 @@ import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.AsyncConsistentTreeMap;
 import io.atomix.multimap.AsyncConsistentMultimap;
 import io.atomix.queue.AsyncWorkQueue;
+import io.atomix.serializer.Serializer;
 import io.atomix.set.AsyncDistributedSet;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.value.AsyncAtomicValue;
-import io.atomix.serializer.Serializer;
 
 import java.time.Duration;
 import java.util.Set;
@@ -197,5 +197,5 @@ public interface DistributedPrimitiveCreator {
    * @param primitiveType the primitive type for which to return names
    * @return a set of names of the given primitive type
    */
-  Set<String> getPrimitiveNames(DistributedPrimitive.Type primitiveType);
+  Set<String> getPrimitiveNames(PrimitiveType primitiveType);
 }

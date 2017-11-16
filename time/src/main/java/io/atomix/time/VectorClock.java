@@ -50,7 +50,7 @@ public class VectorClock<T extends Identifier> implements Clock<VectorTimestamp<
   }
 
   @Override
-  public VectorTimestamp<T> getTime() {
+  public VectorTimestamp<T> time() {
     return vector.get(localIdentifier);
   }
 
@@ -60,7 +60,7 @@ public class VectorClock<T extends Identifier> implements Clock<VectorTimestamp<
    * @return the logical timestamp for the local identifier
    */
   public LogicalTimestamp getLocalTimestamp() {
-    return getTime();
+    return time();
   }
 
   /**
@@ -108,7 +108,7 @@ public class VectorClock<T extends Identifier> implements Clock<VectorTimestamp<
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("time", getTime())
+        .add("time", time())
         .add("vector", getTimestamps())
         .toString();
   }

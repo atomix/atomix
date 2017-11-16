@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.protocol;
 
 import com.google.common.collect.Maps;
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.session.SessionId;
+import io.atomix.cluster.NodeId;
+import io.atomix.primitive.session.SessionId;
 import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 
@@ -49,13 +49,13 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
   private Function<AppendRequest, CompletableFuture<AppendResponse>> appendHandler;
   private final Map<Long, Consumer<ResetRequest>> resetListeners = Maps.newConcurrentMap();
 
-  public LocalRaftServerProtocol(MemberId memberId, Serializer serializer, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
+  public LocalRaftServerProtocol(NodeId nodeId, Serializer serializer, Map<NodeId, LocalRaftServerProtocol> servers, Map<NodeId, LocalRaftClientProtocol> clients) {
     super(serializer, servers, clients);
-    servers.put(memberId, this);
+    servers.put(nodeId, this);
   }
 
-  private CompletableFuture<LocalRaftServerProtocol> getServer(MemberId memberId) {
-    LocalRaftServerProtocol server = server(memberId);
+  private CompletableFuture<LocalRaftServerProtocol> getServer(NodeId nodeId) {
+    LocalRaftServerProtocol server = server(nodeId);
     if (server != null) {
       return Futures.completedFuture(server);
     } else {
@@ -63,8 +63,8 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
     }
   }
 
-  private CompletableFuture<LocalRaftClientProtocol> getClient(MemberId memberId) {
-    LocalRaftClientProtocol client = client(memberId);
+  private CompletableFuture<LocalRaftClientProtocol> getClient(NodeId nodeId) {
+    LocalRaftClientProtocol client = client(nodeId);
     if (client != null) {
       return Futures.completedFuture(client);
     } else {
@@ -73,88 +73,88 @@ public class LocalRaftServerProtocol extends LocalRaftProtocol implements RaftSe
   }
 
   @Override
-  public CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.openSession(encode(request))).thenApply(this::decode);
+  public CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.openSession(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.closeSession(encode(request))).thenApply(this::decode);
+  public CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.closeSession(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.keepAlive(encode(request))).thenApply(this::decode);
+  public CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.keepAlive(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.query(encode(request))).thenApply(this::decode);
+  public CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.query(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.command(encode(request))).thenApply(this::decode);
+  public CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.command(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.metadata(encode(request))).thenApply(this::decode);
+  public CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.metadata(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<JoinResponse> join(MemberId memberId, JoinRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.join(encode(request))).thenApply(this::decode);
+  public CompletableFuture<JoinResponse> join(NodeId nodeId, JoinRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.join(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<LeaveResponse> leave(MemberId memberId, LeaveRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.leave(encode(request))).thenApply(this::decode);
+  public CompletableFuture<LeaveResponse> leave(NodeId nodeId, LeaveRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.leave(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<ConfigureResponse> configure(MemberId memberId, ConfigureRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.configure(encode(request))).thenApply(this::decode);
+  public CompletableFuture<ConfigureResponse> configure(NodeId nodeId, ConfigureRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.configure(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<ReconfigureResponse> reconfigure(MemberId memberId, ReconfigureRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.reconfigure(encode(request))).thenApply(this::decode);
+  public CompletableFuture<ReconfigureResponse> reconfigure(NodeId nodeId, ReconfigureRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.reconfigure(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<InstallResponse> install(MemberId memberId, InstallRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.install(encode(request))).thenApply(this::decode);
+  public CompletableFuture<InstallResponse> install(NodeId nodeId, InstallRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.install(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<TransferResponse> transfer(MemberId memberId, TransferRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.install(encode(request))).thenApply(this::decode);
+  public CompletableFuture<TransferResponse> transfer(NodeId nodeId, TransferRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.install(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(MemberId memberId, PollRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.poll(encode(request))).thenApply(this::decode);
+  public CompletableFuture<PollResponse> poll(NodeId nodeId, PollRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.poll(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<VoteResponse> vote(MemberId memberId, VoteRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.vote(encode(request))).thenApply(this::decode);
+  public CompletableFuture<VoteResponse> vote(NodeId nodeId, VoteRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.vote(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(MemberId memberId, AppendRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.append(encode(request))).thenApply(this::decode);
+  public CompletableFuture<AppendResponse> append(NodeId nodeId, AppendRequest request) {
+    return getServer(nodeId).thenCompose(listener -> listener.append(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public void publish(MemberId memberId, PublishRequest request) {
-    getClient(memberId).thenAccept(protocol -> protocol.publish(request.session(), encode(request)));
+  public void publish(NodeId nodeId, PublishRequest request) {
+    getClient(nodeId).thenAccept(protocol -> protocol.publish(request.session(), encode(request)));
   }
 
   @Override
-  public CompletableFuture<HeartbeatResponse> heartbeat(MemberId memberId, HeartbeatRequest request) {
-    return getClient(memberId).thenCompose(protocol -> protocol.heartbeat(encode(request))).thenApply(this::decode);
+  public CompletableFuture<HeartbeatResponse> heartbeat(NodeId nodeId, HeartbeatRequest request) {
+    return getClient(nodeId).thenCompose(protocol -> protocol.heartbeat(encode(request))).thenApply(this::decode);
   }
 
   CompletableFuture<byte[]> openSession(byte[] request) {

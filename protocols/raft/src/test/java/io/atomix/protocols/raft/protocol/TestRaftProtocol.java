@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.cluster.NodeId;
 
 import java.util.Collection;
 import java.util.Map;
@@ -24,15 +24,15 @@ import java.util.Map;
  * Base class for Raft protocol.
  */
 public abstract class TestRaftProtocol {
-  private final Map<MemberId, TestRaftServerProtocol> servers;
-  private final Map<MemberId, TestRaftClientProtocol> clients;
+  private final Map<NodeId, TestRaftServerProtocol> servers;
+  private final Map<NodeId, TestRaftClientProtocol> clients;
 
-  public TestRaftProtocol(Map<MemberId, TestRaftServerProtocol> servers, Map<MemberId, TestRaftClientProtocol> clients) {
+  public TestRaftProtocol(Map<NodeId, TestRaftServerProtocol> servers, Map<NodeId, TestRaftClientProtocol> clients) {
     this.servers = servers;
     this.clients = clients;
   }
 
-  TestRaftServerProtocol server(MemberId memberId) {
+  TestRaftServerProtocol server(NodeId memberId) {
     return servers.get(memberId);
   }
 
@@ -40,7 +40,7 @@ public abstract class TestRaftProtocol {
     return servers.values();
   }
 
-  TestRaftClientProtocol client(MemberId memberId) {
+  TestRaftClientProtocol client(NodeId memberId) {
     return clients.get(memberId);
   }
 }

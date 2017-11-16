@@ -49,8 +49,8 @@ import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.service.ServiceId;
-import io.atomix.protocols.raft.session.impl.RaftSessionContext;
+import io.atomix.primitive.PrimitiveId;
+import io.atomix.protocols.raft.session.impl.RaftSession;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
@@ -378,7 +378,7 @@ public class PassiveRole extends InactiveRole {
     }
 
     // Look up the client's session.
-    RaftSessionContext session = raft.getSessions().getSession(request.session());
+    RaftSession session = raft.getSessions().getSession(request.session());
     if (session == null) {
       log.trace("State out of sync, forwarding query to leader");
       return queryForward(request);
@@ -520,7 +520,7 @@ public class PassiveRole extends InactiveRole {
       }
 
       Snapshot snapshot = raft.getSnapshotStore().newSnapshot(
-              ServiceId.from(request.serviceId()),
+              PrimitiveId.from(request.serviceId()),
               request.serviceName(),
               request.snapshotIndex(),
               WallClockTimestamp.from(request.snapshotTimestamp()));

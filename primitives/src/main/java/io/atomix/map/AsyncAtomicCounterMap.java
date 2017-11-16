@@ -15,9 +15,10 @@
  */
 package io.atomix.map;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.map.impl.BlockingAtomicCounterMap;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,8 +28,8 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
 
   @Override
-  default DistributedPrimitive.Type primitiveType() {
-    return DistributedPrimitive.Type.COUNTER_MAP;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.COUNTER_MAP;
   }
 
   /**

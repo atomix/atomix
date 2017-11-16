@@ -25,81 +25,6 @@ import java.util.function.Consumer;
 public interface DistributedPrimitive {
 
   /**
-   * Type of distributed primitive.
-   */
-  enum Type {
-    /**
-     * Map with strong consistency semantics.
-     */
-    CONSISTENT_MAP,
-
-    /**
-     * Consistent Multimap.
-     */
-    CONSISTENT_MULTIMAP,
-
-    /**
-     * Tree map.
-     */
-    CONSISTENT_TREEMAP,
-
-    /**
-     * Distributed set.
-     */
-    SET,
-
-    /**
-     * Atomic counter.
-     */
-    COUNTER,
-
-    /**
-     * Numeric ID generator.
-     */
-    ID_GENERATOR,
-
-    /**
-     * Atomic counter map.
-     */
-    COUNTER_MAP,
-
-    /**
-     * Atomic value.
-     */
-    VALUE,
-
-    /**
-     * Distributed work queue.
-     */
-    WORK_QUEUE,
-
-    /**
-     * Document tree.
-     */
-    DOCUMENT_TREE,
-
-    /**
-     * Distributed topic.
-     */
-    TOPIC,
-
-    /**
-     * Leader elector.
-     */
-    LEADER_ELECTOR,
-
-    /**
-     * Lock.
-     */
-    LOCK,
-
-    /**
-     * Transaction Context.
-     */
-    TRANSACTION_CONTEXT
-  }
-
-  /**
    * Status of distributed primitive.
    */
   enum Status {
@@ -139,7 +64,7 @@ public interface DistributedPrimitive {
    *
    * @return primitive type
    */
-  Type primitiveType();
+  PrimitiveType primitiveType();
 
   /**
    * Registers a listener to be called when the primitive's status changes.

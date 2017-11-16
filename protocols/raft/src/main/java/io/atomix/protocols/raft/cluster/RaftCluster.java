@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.cluster;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.storage.StorageLevel;
 
@@ -130,12 +131,12 @@ public interface RaftCluster {
   /**
    * Returns a member by ID.
    * <p>
-   * The returned {@link RaftMember} is referenced by the unique {@link RaftMember#memberId()}.
+   * The returned {@link RaftMember} is referenced by the unique {@link RaftMember#nodeId()}.
    *
    * @param id The member ID.
    * @return The member or {@code null} if no member with the given {@code id} exists.
    */
-  RaftMember getMember(MemberId id);
+  RaftMember getMember(NodeId id);
 
   /**
    * Returns a collection of all cluster members.
@@ -162,7 +163,7 @@ public interface RaftCluster {
    * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
    * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
    * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
-   * members may be {@link #join(MemberId...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * members may be {@link #join(NodeId...) joined} to the cluster. In the event that the bootstrapped members cannot
    * reach a quorum to elect a leader, bootstrap will continue until successful.
    * <p>
    * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
@@ -174,7 +175,7 @@ public interface RaftCluster {
    * @param cluster The bootstrap cluster configuration.
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  default CompletableFuture<Void> bootstrap(MemberId... cluster) {
+  default CompletableFuture<Void> bootstrap(NodeId... cluster) {
     return bootstrap(Arrays.asList(cluster));
   }
 
@@ -191,7 +192,7 @@ public interface RaftCluster {
    * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
    * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
    * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
-   * members may be {@link #join(MemberId...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * members may be {@link #join(NodeId...) joined} to the cluster. In the event that the bootstrapped members cannot
    * reach a quorum to elect a leader, bootstrap will continue until successful.
    * <p>
    * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
@@ -203,7 +204,7 @@ public interface RaftCluster {
    * @param cluster The bootstrap cluster configuration.
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  CompletableFuture<Void> bootstrap(Collection<MemberId> cluster);
+  CompletableFuture<Void> bootstrap(Collection<NodeId> cluster);
 
   /**
    * Joins the cluster as a listener.
@@ -235,7 +236,7 @@ public interface RaftCluster {
    * @param cluster A list of cluster member addresses to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  default CompletableFuture<Void> listen(MemberId... cluster) {
+  default CompletableFuture<Void> listen(NodeId... cluster) {
     return join(Arrays.asList(cluster));
   }
 
@@ -269,7 +270,7 @@ public interface RaftCluster {
    * @param cluster A collection of cluster member addresses to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  CompletableFuture<Void> listen(Collection<MemberId> cluster);
+  CompletableFuture<Void> listen(Collection<NodeId> cluster);
 
   /**
    * Joins the cluster.
@@ -301,7 +302,7 @@ public interface RaftCluster {
    * @param cluster A list of cluster member addresses to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  default CompletableFuture<Void> join(MemberId... cluster) {
+  default CompletableFuture<Void> join(NodeId... cluster) {
     return join(Arrays.asList(cluster));
   }
 
@@ -335,7 +336,7 @@ public interface RaftCluster {
    * @param cluster A collection of cluster member addresses to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  CompletableFuture<Void> join(Collection<MemberId> cluster);
+  CompletableFuture<Void> join(Collection<NodeId> cluster);
 
   /**
    * Leaves the cluster.

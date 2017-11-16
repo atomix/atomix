@@ -17,8 +17,10 @@
 package io.atomix.tree;
 
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.tree.impl.BlockingDocumentTree;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.time.Versioned;
+import io.atomix.tree.impl.BlockingDocumentTree;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Map;
@@ -33,8 +35,8 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncDocumentTree<V> extends AsyncPrimitive {
 
   @Override
-  default Type primitiveType() {
-    return Type.DOCUMENT_TREE;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.DOCUMENT_TREE;
   }
 
   /**

@@ -16,6 +16,8 @@
 
 package io.atomix.tree;
 
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.time.Versioned;
 
@@ -31,8 +33,8 @@ import java.util.Map;
 public interface DocumentTree<V> extends SyncPrimitive {
 
   @Override
-  default Type primitiveType() {
-    return Type.DOCUMENT_TREE;
+  default PrimitiveType primitiveType() {
+    return PrimitiveTypes.DOCUMENT_TREE;
   }
 
   /**

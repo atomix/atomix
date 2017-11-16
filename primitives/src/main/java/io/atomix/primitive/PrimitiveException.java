@@ -57,4 +57,34 @@ public class PrimitiveException extends AtomixRuntimeException {
    */
   public static class Interrupted extends PrimitiveException {
   }
+
+  /**
+   * Primitive service exception.
+   */
+  public static class ServiceException extends PrimitiveException {
+  }
+
+  /**
+   * Command failure exception.
+   */
+  public static class CommandFailure extends PrimitiveException {
+  }
+
+  /**
+   * Query failure exception.
+   */
+  public static class QueryFailure extends PrimitiveException {
+  }
+
+  /**
+   * Unknown client exception.
+   */
+  public static class UnknownClient extends PrimitiveException {
+  }
+
+  /**
+   * Unknown session exception.
+   */
+  public static class UnknownSession extends PrimitiveException {
+  }
 }

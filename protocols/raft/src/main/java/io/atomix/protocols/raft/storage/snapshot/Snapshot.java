@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.service.ServiceId;
+import io.atomix.primitive.PrimitiveId;
 import io.atomix.time.WallClockTimestamp;
 
 import java.util.Objects;
@@ -76,8 +76,8 @@ public abstract class Snapshot implements AutoCloseable {
    *
    * @return The snapshot identifier.
    */
-  public ServiceId serviceId() {
-    return ServiceId.from(descriptor.serviceId());
+  public PrimitiveId serviceId() {
+    return PrimitiveId.from(descriptor.serviceId());
   }
 
   /**

@@ -16,8 +16,8 @@
 
 package io.atomix.map;
 
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveTypes;
 
 /**
  * Builder for {@link ConsistentTreeMap}.
@@ -26,7 +26,7 @@ public abstract class ConsistentTreeMapBuilder<K, V>
     extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<K, V>, ConsistentTreeMap<K, V>, AsyncConsistentTreeMap<K, V>> {
 
   public ConsistentTreeMapBuilder() {
-    super(DistributedPrimitive.Type.CONSISTENT_TREEMAP);
+    super(PrimitiveTypes.CONSISTENT_TREEMAP);
   }
 
   @Override
