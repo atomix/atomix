@@ -22,7 +22,7 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import io.atomix.utils.Match;
 
 import java.util.ArrayList;

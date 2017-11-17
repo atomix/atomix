@@ -31,7 +31,7 @@ import io.atomix.map.impl.ConsistentTreeMapOperations.LowerKey;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.HashMap;
 import java.util.Map;

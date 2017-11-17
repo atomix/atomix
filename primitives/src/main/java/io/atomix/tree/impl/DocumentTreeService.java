@@ -34,7 +34,7 @@ import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTree;
 import io.atomix.tree.DocumentTreeEvent;

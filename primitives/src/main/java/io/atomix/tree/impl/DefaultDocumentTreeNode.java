@@ -23,7 +23,7 @@ import com.google.common.collect.Sets;
 import io.atomix.primitive.Ordering;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTreeNode;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Iterator;
 import java.util.Map;

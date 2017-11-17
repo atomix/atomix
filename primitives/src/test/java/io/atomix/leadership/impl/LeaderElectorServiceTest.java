@@ -24,7 +24,7 @@ import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.time.WallClock;
+import io.atomix.utils.time.WallClock;
 import org.junit.Test;
 
 import static io.atomix.leadership.impl.LeaderElectorOperations.RUN;

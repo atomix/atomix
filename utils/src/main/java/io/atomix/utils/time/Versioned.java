@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.time;
+package io.atomix.utils.time;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;

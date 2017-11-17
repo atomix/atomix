@@ -59,7 +59,7 @@ import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.StorageException;
 import io.atomix.storage.journal.Indexed;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -20,7 +20,7 @@ import com.google.common.collect.Multiset;
 import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.multimap.AsyncConsistentMultimap;
 import io.atomix.multimap.MultimapEventListener;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map;

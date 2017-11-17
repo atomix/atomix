@@ -109,7 +109,6 @@
     <module>server</module>
     <module>storage</module>
     <module>tests</module>
-    <module>time</module>
     <module>utils</module>
   </modules>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.time;
+package io.atomix.utils.time;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests for {@link WallClockTimestamp}.
+ * Version test.
  */
-public class WallClockTimestampTest {
+public class VersionTest {
   @Test
-  public final void testBasic() throws InterruptedException {
-    WallClockTimestamp ts1 = new WallClockTimestamp();
-    Thread.sleep(50);
-    WallClockTimestamp ts2 = new WallClockTimestamp();
-    long stamp = System.currentTimeMillis() + 10000;
-    WallClockTimestamp ts3 = new WallClockTimestamp(stamp);
+  public void testVersion() {
+    Version version1 = new Version(1);
+    Version version2 = new Version(1);
+    assertTrue(version1.equals(version2));
+    assertTrue(version1.hashCode() == version2.hashCode());
+    assertTrue(version1.value() == version2.value());
 
-
-    assertTrue(ts1.compareTo(ts1) == 0);
-    assertTrue(ts2.compareTo(ts1) > 0);
-    assertTrue(ts1.compareTo(ts2) < 0);
-    assertTrue(ts3.unixTimestamp() == stamp);
+    Version version3 = new Version(2);
+    assertFalse(version1.equals(version3));
+    assertFalse(version1.hashCode() == version3.hashCode());
+    assertFalse(version1.value() == version3.value());
   }
 }

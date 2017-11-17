@@ -16,7 +16,7 @@
 
 package io.atomix.tree;
 
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Iterator;

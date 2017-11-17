@@ -17,4 +17,4 @@
 /**
  * Atomix time utilities.
  */
-package io.atomix.time;
+package io.atomix.utils.time;

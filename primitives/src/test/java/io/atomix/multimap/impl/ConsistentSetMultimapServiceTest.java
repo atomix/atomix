@@ -19,7 +19,7 @@ import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import io.atomix.utils.Match;
 import org.junit.Test;
 

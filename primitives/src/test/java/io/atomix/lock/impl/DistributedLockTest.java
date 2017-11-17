@@ -18,7 +18,7 @@ package io.atomix.lock.impl;
 import io.atomix.primitive.impl.AbstractPrimitiveTest;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.PrimitiveService;
-import io.atomix.time.Version;
+import io.atomix.utils.time.Version;
 import org.junit.Test;
 
 import java.time.Duration;

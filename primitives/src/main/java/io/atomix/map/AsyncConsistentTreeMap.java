@@ -19,7 +19,7 @@ package io.atomix.map;
 import io.atomix.map.impl.BlockingConsistentTreeMap;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
 import java.util.NavigableMap;

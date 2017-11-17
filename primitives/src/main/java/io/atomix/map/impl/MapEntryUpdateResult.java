@@ -16,7 +16,7 @@
 package io.atomix.map.impl;
 
 import com.google.common.base.MoreObjects;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 /**
  * Result of a map entry update operation.

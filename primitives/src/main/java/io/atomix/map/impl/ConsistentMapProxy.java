@@ -42,8 +42,8 @@ import io.atomix.map.impl.ConsistentMapOperations.TransactionRollback;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
-import io.atomix.time.Version;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Version;
+import io.atomix.utils.time.Versioned;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Collection;

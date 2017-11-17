@@ -13,28 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.time;
+package io.atomix.utils.time;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Version test.
+ * Logical timestamp test.
  */
-public class VersionTest {
+public class LogicalTimestampTest {
   @Test
-  public void testVersion() {
-    Version version1 = new Version(1);
-    Version version2 = new Version(1);
-    assertTrue(version1.equals(version2));
-    assertTrue(version1.hashCode() == version2.hashCode());
-    assertTrue(version1.value() == version2.value());
-
-    Version version3 = new Version(2);
-    assertFalse(version1.equals(version3));
-    assertFalse(version1.hashCode() == version3.hashCode());
-    assertFalse(version1.value() == version3.value());
+  public void testLogicalTimestamp() throws Exception {
+    LogicalTimestamp timestamp = LogicalTimestamp.of(1);
+    assertEquals(1, timestamp.value());
+    assertTrue(timestamp.isNewerThan(LogicalTimestamp.of(0)));
+    assertFalse(timestamp.isNewerThan(LogicalTimestamp.of(2)));
+    assertTrue(timestamp.isOlderThan(LogicalTimestamp.of(2)));
+    assertFalse(timestamp.isOlderThan(LogicalTimestamp.of(0)));
   }
 }

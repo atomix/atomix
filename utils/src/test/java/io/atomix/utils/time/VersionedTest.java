@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.time;
+package io.atomix.utils.time;
 
 import com.google.common.testing.EqualsTester;
 import org.junit.Test;

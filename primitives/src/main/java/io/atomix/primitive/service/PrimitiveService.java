@@ -18,7 +18,7 @@ package io.atomix.primitive.service;
 import io.atomix.primitive.session.SessionListener;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 
 /**
  * Base class for user-provided services.

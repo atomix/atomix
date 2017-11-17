@@ -23,7 +23,7 @@ import io.atomix.multimap.AsyncConsistentMultimap;
 import io.atomix.map.ConsistentMapException;
 import io.atomix.multimap.ConsistentMultimap;
 import io.atomix.multimap.MultimapEventListener;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map;

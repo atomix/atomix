@@ -26,7 +26,7 @@ import io.atomix.tree.DocumentTreeListener;
 import io.atomix.tree.DocumentTreeNode;
 import io.atomix.tree.IllegalDocumentModificationException;
 import io.atomix.tree.NoSuchDocumentPathException;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Iterator;
 import java.util.Map;

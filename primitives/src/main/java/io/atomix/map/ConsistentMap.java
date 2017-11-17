@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map;

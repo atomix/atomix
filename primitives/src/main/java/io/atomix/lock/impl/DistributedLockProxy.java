@@ -23,7 +23,7 @@ import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
-import io.atomix.time.Version;
+import io.atomix.utils.time.Version;
 
 import java.time.Duration;
 import java.util.Map;

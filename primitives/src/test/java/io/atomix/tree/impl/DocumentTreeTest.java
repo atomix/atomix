@@ -21,7 +21,7 @@ import io.atomix.primitive.Ordering;
 import io.atomix.primitive.impl.AbstractPrimitiveTest;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.PrimitiveService;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTreeEvent;
 import io.atomix.tree.DocumentTreeListener;

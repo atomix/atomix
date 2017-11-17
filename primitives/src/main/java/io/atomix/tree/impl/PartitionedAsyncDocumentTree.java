@@ -19,7 +19,7 @@ import com.google.common.collect.Maps;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTreeListener;

@@ -34,7 +34,7 @@ import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.List;

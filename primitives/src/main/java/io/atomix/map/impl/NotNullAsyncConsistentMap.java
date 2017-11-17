@@ -16,7 +16,7 @@
 package io.atomix.map.impl;
 
 import io.atomix.map.AsyncConsistentMap;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map;

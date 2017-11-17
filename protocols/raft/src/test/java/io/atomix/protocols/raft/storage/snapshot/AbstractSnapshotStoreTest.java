@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

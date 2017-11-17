@@ -20,7 +20,7 @@ import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTree;
 import io.atomix.tree.IllegalDocumentModificationException;
 import io.atomix.tree.NoSuchDocumentPathException;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import org.junit.Assert;
 import org.junit.Test;
 

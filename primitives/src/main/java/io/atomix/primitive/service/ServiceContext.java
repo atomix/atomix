@@ -20,8 +20,8 @@ import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.session.Sessions;
-import io.atomix.time.LogicalClock;
-import io.atomix.time.WallClock;
+import io.atomix.utils.time.LogicalClock;
+import io.atomix.utils.time.WallClock;
 
 /**
  * State machine context.

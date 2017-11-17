@@ -20,7 +20,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.MapEventListener;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
 import java.util.Objects;

@@ -15,7 +15,7 @@
  */
 package io.atomix.transaction;
 
-import io.atomix.time.Version;
+import io.atomix.utils.time.Version;
 
 import java.util.concurrent.CompletableFuture;
 

@@ -13,25 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.time;
-
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+package io.atomix.utils.time;
 
 /**
- * Logical timestamp test.
+ * Epoch.
+ * <p>
+ * An epoch is a specific type of {@link LogicalTimestamp} that represents a long term section of logical time.
  */
-public class EpochTest {
-  @Test
-  public void testLogicalTimestamp() throws Exception {
-    Epoch epoch = Epoch.of(1);
-    assertEquals(1, epoch.value());
-    assertTrue(epoch.isNewerThan(Epoch.of(0)));
-    assertFalse(epoch.isNewerThan(Epoch.of(2)));
-    assertTrue(epoch.isOlderThan(Epoch.of(2)));
-    assertFalse(epoch.isOlderThan(Epoch.of(0)));
+public class Epoch extends LogicalTimestamp {
+
+  /**
+   * Returns a new logical timestamp for the given logical time.
+   *
+   * @param value the logical time for which to create a new logical timestamp
+   * @return the logical timestamp
+   */
+  public static Epoch of(long value) {
+    return new Epoch(value);
   }
+
+  /**
+   * Creates a new epoch timestamp.
+   *
+   * @param value the epoch value
+   */
+  public Epoch(long value) {
+    super(value);
+  }
+
 }

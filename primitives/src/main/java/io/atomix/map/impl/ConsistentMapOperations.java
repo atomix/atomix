@@ -21,7 +21,7 @@ import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.serializer.kryo.KryoNamespaces;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import io.atomix.utils.ArraySizeHashPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;

@@ -20,7 +20,7 @@ import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTreeEvent;
 import io.atomix.tree.DocumentTreeListener;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

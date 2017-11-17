@@ -22,7 +22,7 @@ import io.atomix.multimap.impl.BlockingConsistentMultimap;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map;

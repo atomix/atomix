@@ -21,7 +21,7 @@ import com.google.common.cache.LoadingCache;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTreeListener;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;

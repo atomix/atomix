@@ -22,7 +22,7 @@ import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.service.ServiceContext;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;

@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.time;
+package io.atomix.utils.time;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 /**
- * Wall clock test.
+ * Logical clock test.
  */
-public class WallClockTest {
+public class LogicalClockTest {
   @Test
-  public void testWallClock() throws Exception {
-    WallClock clock = new WallClock();
-    WallClockTimestamp time = clock.time();
-    assertNotNull(time);
-    Thread.sleep(5);
-    assertTrue(clock.time().unixTimestamp() > time.unixTimestamp());
+  public void testLogicalClock() throws Exception {
+    LogicalClock clock = new LogicalClock();
+    assertEquals(1, clock.increment().value());
+    assertEquals(1, clock.time().value());
+    assertEquals(2, clock.increment().value());
+    assertEquals(2, clock.time().value());
+    assertEquals(5, clock.update(LogicalTimestamp.of(5)).value());
+    assertEquals(5, clock.time().value());
+    assertEquals(5, clock.update(LogicalTimestamp.of(3)).value());
   }
 }

@@ -19,8 +19,8 @@ import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.session.Session;
-import io.atomix.time.LogicalTimestamp;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.LogicalTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 
 import java.util.function.Function;
 

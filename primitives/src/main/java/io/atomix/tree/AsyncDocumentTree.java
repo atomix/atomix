@@ -19,7 +19,7 @@ package io.atomix.tree;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 import io.atomix.tree.impl.BlockingDocumentTree;
 
 import javax.annotation.concurrent.NotThreadSafe;

@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.storage.snapshot;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

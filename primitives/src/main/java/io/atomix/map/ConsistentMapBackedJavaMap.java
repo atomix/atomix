@@ -17,7 +17,7 @@ package io.atomix.map;
 
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Iterator;

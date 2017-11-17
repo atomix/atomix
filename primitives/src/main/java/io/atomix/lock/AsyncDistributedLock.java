@@ -19,7 +19,7 @@ import io.atomix.lock.impl.BlockingDistributedLock;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
-import io.atomix.time.Version;
+import io.atomix.utils.time.Version;
 
 import java.time.Duration;
 import java.util.Optional;

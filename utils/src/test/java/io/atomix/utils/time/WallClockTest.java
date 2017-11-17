@@ -13,32 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.time;
+package io.atomix.utils.time;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Epoch.
- * <p>
- * An epoch is a specific type of {@link LogicalTimestamp} that represents a long term section of logical time.
+ * Wall clock test.
  */
-public class Epoch extends LogicalTimestamp {
-
-  /**
-   * Returns a new logical timestamp for the given logical time.
-   *
-   * @param value the logical time for which to create a new logical timestamp
-   * @return the logical timestamp
-   */
-  public static Epoch of(long value) {
-    return new Epoch(value);
+public class WallClockTest {
+  @Test
+  public void testWallClock() throws Exception {
+    WallClock clock = new WallClock();
+    WallClockTimestamp time = clock.time();
+    assertNotNull(time);
+    Thread.sleep(5);
+    assertTrue(clock.time().unixTimestamp() > time.unixTimestamp());
   }
-
-  /**
-   * Creates a new epoch timestamp.
-   *
-   * @param value the epoch value
-   */
-  public Epoch(long value) {
-    super(value);
-  }
-
 }

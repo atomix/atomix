@@ -20,7 +20,7 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.storage.buffer.HeapBytes;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.function.Consumer;

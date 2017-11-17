@@ -22,8 +22,8 @@ import io.atomix.transaction.TransactionLog;
 import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.MapEventListener;
-import io.atomix.time.Version;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Version;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map.Entry;

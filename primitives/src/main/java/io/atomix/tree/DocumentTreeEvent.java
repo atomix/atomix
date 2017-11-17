@@ -16,7 +16,7 @@
 package io.atomix.tree;
 
 import com.google.common.base.MoreObjects;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Optional;
 

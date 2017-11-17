@@ -23,7 +23,7 @@ import io.atomix.map.ConsistentMapBackedJavaMap;
 import io.atomix.map.ConsistentMapException;
 import io.atomix.map.ConsistentTreeMap;
 import io.atomix.map.MapEventListener;
-import io.atomix.time.Versioned;
+import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2015-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.time;
+package io.atomix.utils.time;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Logical timestamp test.
+ * Tests for {@link WallClockTimestamp}.
  */
-public class LogicalTimestampTest {
+public class WallClockTimestampTest {
   @Test
-  public void testLogicalTimestamp() throws Exception {
-    LogicalTimestamp timestamp = LogicalTimestamp.of(1);
-    assertEquals(1, timestamp.value());
-    assertTrue(timestamp.isNewerThan(LogicalTimestamp.of(0)));
-    assertFalse(timestamp.isNewerThan(LogicalTimestamp.of(2)));
-    assertTrue(timestamp.isOlderThan(LogicalTimestamp.of(2)));
-    assertFalse(timestamp.isOlderThan(LogicalTimestamp.of(0)));
+  public final void testBasic() throws InterruptedException {
+    WallClockTimestamp ts1 = new WallClockTimestamp();
+    Thread.sleep(50);
+    WallClockTimestamp ts2 = new WallClockTimestamp();
+    long stamp = System.currentTimeMillis() + 10000;
+    WallClockTimestamp ts3 = new WallClockTimestamp(stamp);
+
+
+    assertTrue(ts1.compareTo(ts1) == 0);
+    assertTrue(ts2.compareTo(ts1) > 0);
+    assertTrue(ts1.compareTo(ts2) < 0);
+    assertTrue(ts3.unixTimestamp() == stamp);
   }
 }

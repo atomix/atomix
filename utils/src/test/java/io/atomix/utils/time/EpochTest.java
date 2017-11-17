@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.time;
+package io.atomix.utils.time;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Wall clock.
+ * Logical timestamp test.
  */
-public class WallClock implements Clock<WallClockTimestamp> {
-  @Override
-  public WallClockTimestamp time() {
-    return new WallClockTimestamp();
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("time", time())
-        .toString();
+public class EpochTest {
+  @Test
+  public void testLogicalTimestamp() throws Exception {
+    Epoch epoch = Epoch.of(1);
+    assertEquals(1, epoch.value());
+    assertTrue(epoch.isNewerThan(Epoch.of(0)));
+    assertFalse(epoch.isNewerThan(Epoch.of(2)));
+    assertTrue(epoch.isOlderThan(Epoch.of(2)));
+    assertFalse(epoch.isOlderThan(Epoch.of(0)));
   }
 }
