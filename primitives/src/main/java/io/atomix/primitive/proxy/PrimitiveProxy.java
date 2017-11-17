@@ -18,6 +18,7 @@ package io.atomix.primitive.proxy;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.Managed;
 
@@ -117,7 +118,7 @@ public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<Primitiv
    *
    * @param operationId the operation identifier
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link io.atomix.primitive.operation.RaftOperation} submission futures that preceded it. The future will always be completed on the
+   * {@link PrimitiveOperation} submission futures that preceded it. The future will always be completed on the
    * @throws NullPointerException if {@code operation} is null
    */
   default CompletableFuture<Void> invoke(OperationId operationId) {
@@ -131,7 +132,7 @@ public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<Primitiv
    * @param decoder     the operation result decoder
    * @param <R>         the operation result type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link io.atomix.primitive.operation.RaftOperation} submission futures that preceded it.
+   * {@link PrimitiveOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <R> CompletableFuture<R> invoke(OperationId operationId, Function<byte[], R> decoder) {
@@ -145,7 +146,7 @@ public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<Primitiv
    * @param encoder     the operation encoder
    * @param <T>         the operation type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link io.atomix.primitive.operation.RaftOperation} submission futures that preceded it.
+   * {@link PrimitiveOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <T> CompletableFuture<Void> invoke(OperationId operationId, Function<T, byte[]> encoder, T operation) {
@@ -162,7 +163,7 @@ public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<Primitiv
    * @param <T>         the operation type
    * @param <R>         the operation result type
    * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link io.atomix.primitive.operation.RaftOperation} submission futures that preceded it.
+   * {@link PrimitiveOperation} submission futures that preceded it.
    * @throws NullPointerException if {@code operation} is null
    */
   default <T, R> CompletableFuture<R> invoke(OperationId operationId, Function<T, byte[]> encoder, T operation, Function<byte[], R> decoder) {

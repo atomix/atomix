@@ -16,8 +16,8 @@
 package io.atomix.primitive.proxy;
 
 import io.atomix.primitive.event.EventType;
-import io.atomix.primitive.event.RaftEvent;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.event.PrimitiveEvent;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.impl.DefaultCommit;
@@ -61,7 +61,7 @@ public class TestPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<byte[]> execute(RaftOperation operation) {
+  public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
     return CompletableFuture.completedFuture(
         executor.apply(new DefaultCommit<>(
             1,
@@ -82,12 +82,12 @@ public class TestPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
-  public void addEventListener(Consumer<RaftEvent> listener) {
+  public void addEventListener(Consumer<PrimitiveEvent> listener) {
 
   }
 
   @Override
-  public void removeEventListener(Consumer<RaftEvent> listener) {
+  public void removeEventListener(Consumer<PrimitiveEvent> listener) {
 
   }
 

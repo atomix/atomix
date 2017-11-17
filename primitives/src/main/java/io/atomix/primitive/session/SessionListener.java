@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.session;
 
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.service.PrimitiveService;
 
 /**
@@ -39,7 +39,7 @@ public interface SessionListener {
    * <p>
    * A session is registered when a new client connects to the cluster or an existing client recovers its
    * session after being partitioned from the cluster. It's important to note that when this method is called,
-   * the {@link Session} is <em>not yet open</em> and so events cannot be {@link Session#publish(RaftEvent) published}
+   * the {@link Session} is <em>not yet open</em> and so events cannot be {@link Session#publish(PrimitiveEvent) published}
    * to the registered session. This is because clients cannot reliably track messages pushed from server state machines
    * to the client until the session has been fully registered. Session event messages may still be published to
    * other already-registered sessions in reaction to a session being registered.
@@ -57,7 +57,7 @@ public interface SessionListener {
    * and notify the client before the event message is sent. Published event messages sent via this method will
    * be sent the next time an operation is applied to the state machine.
    *
-   * @param session The session that was registered. State machines <em>cannot</em> {@link Session#publish(RaftEvent)} session
+   * @param session The session that was registered. State machines <em>cannot</em> {@link Session#publish(PrimitiveEvent)} session
    *                events to this session.
    */
   void onOpen(Session session);
@@ -70,11 +70,11 @@ public interface SessionListener {
    * This method will always be called for a given session before {@link #onClose(Session)}, and {@link #onClose(Session)}
    * will always be called following this method.
    * <p>
-   * State machines are free to {@link Session#publish(RaftEvent)} session event messages to any session except
+   * State machines are free to {@link Session#publish(PrimitiveEvent)} session event messages to any session except
    * the one that expired. Session event messages sent to the session that expired will be lost since the session is closed once this
    * method call completes.
    *
-   * @param session The session that was expired. State machines <em>cannot</em> {@link Session#publish(RaftEvent)} session
+   * @param session The session that was expired. State machines <em>cannot</em> {@link Session#publish(PrimitiveEvent)} session
    *                events to this session.
    */
   void onExpire(Session session);
@@ -84,11 +84,11 @@ public interface SessionListener {
    * <p>
    * This method is called when a client explicitly closes a session.
    * <p>
-   * State machines are free to {@link Session#publish(RaftEvent)} session event messages to any session except
+   * State machines are free to {@link Session#publish(PrimitiveEvent)} session event messages to any session except
    * the one that was closed. Session event messages sent to the session that was closed will be lost since the session is closed once this
    * method call completes.
    *
-   * @param session The session that was closed. State machines <em>cannot</em> {@link Session#publish(RaftEvent)} session
+   * @param session The session that was closed. State machines <em>cannot</em> {@link Session#publish(PrimitiveEvent)} session
    *                events to this session.
    */
   void onClose(Session session);

@@ -17,7 +17,7 @@ package io.atomix.primitive.session;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.event.EventType;
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.storage.buffer.HeapBytes;
 
@@ -31,13 +31,13 @@ import java.util.function.Function;
  * losing their session. All consistency guarantees are provided within the context of a session. Once a session is
  * expired or closed, linearizability, sequential consistency, and other guarantees for events and operations are
  * effectively lost. Session implementations guarantee linearizability for session messages by coordinating between
- * the client and a single server at any given time. This means messages {@link #publish(RaftEvent) published}
+ * the client and a single server at any given time. This means messages {@link #publish(PrimitiveEvent) published}
  * via the {@link Session} are guaranteed to arrive on the other side of the connection exactly once and in the order
  * in which they are sent by replicated state machines. In the event of a server-to-client message being lost, the
  * message will be resent so long as at least one Raft server is able to communicate with the client and the client's
  * session does not expire while switching between servers.
  * <p>
- * Messages are sent to the other side of the session using the {@link #publish(RaftEvent)} method:
+ * Messages are sent to the other side of the session using the {@link #publish(PrimitiveEvent)} method:
  * <pre>
  *   {@code
  *     session.publish("myEvent", "Hello world!");
@@ -127,7 +127,7 @@ public interface Session {
    * @param eventType the event type
    */
   default void publish(EventType eventType) {
-    publish(new RaftEvent(eventType, HeapBytes.EMPTY));
+    publish(new PrimitiveEvent(eventType, HeapBytes.EMPTY));
   }
 
   /**
@@ -150,7 +150,7 @@ public interface Session {
    * @throws NullPointerException if the event is {@code null}
    */
   default void publish(EventType eventType, byte[] event) {
-    publish(new RaftEvent(eventType, event));
+    publish(new PrimitiveEvent(eventType, event));
   }
 
   /**
@@ -158,7 +158,7 @@ public interface Session {
    *
    * @param event the event to publish
    */
-  void publish(RaftEvent event);
+  void publish(PrimitiveEvent event);
 
   /**
    * Session state enums.

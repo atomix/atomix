@@ -16,8 +16,8 @@
 package io.atomix.primitive.proxy.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.primitive.event.RaftEvent;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.event.PrimitiveEvent;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.SessionId;
@@ -52,7 +52,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   private volatile PrimitiveProxy proxy;
   private volatile PrimitiveProxy.State state = PrimitiveProxy.State.SUSPENDED;
   private final Set<Consumer<PrimitiveProxy.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
-  private final Set<Consumer<RaftEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
+  private final Set<Consumer<PrimitiveEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
   private Scheduled recoverTask;
   private volatile boolean open = false;
 
@@ -182,7 +182,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<byte[]> execute(RaftOperation operation) {
+  public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
     checkOpen();
     PrimitiveProxy proxy = this.proxy;
     if (proxy != null) {
@@ -193,7 +193,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public synchronized void addEventListener(Consumer<RaftEvent> consumer) {
+  public synchronized void addEventListener(Consumer<PrimitiveEvent> consumer) {
     checkOpen();
     eventListeners.add(consumer);
     PrimitiveProxy proxy = this.proxy;
@@ -203,7 +203,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public synchronized void removeEventListener(Consumer<RaftEvent> consumer) {
+  public synchronized void removeEventListener(Consumer<PrimitiveEvent> consumer) {
     checkOpen();
     eventListeners.remove(consumer);
     PrimitiveProxy proxy = this.proxy;

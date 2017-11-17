@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.primitive.event.RaftEvent;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.event.PrimitiveEvent;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.PrimitiveType;
@@ -38,10 +38,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Handles submitting state machine {@link RaftOperation operations} to the Raft cluster.
+ * Handles submitting state machine {@link PrimitiveOperation operations} to the Raft cluster.
  * <p>
  * The client session is responsible for maintaining a client's connection to a Raft cluster and coordinating
- * the submission of {@link RaftOperation operations} to various nodes in the cluster. Client
+ * the submission of {@link PrimitiveOperation operations} to various nodes in the cluster. Client
  * sessions are single-use objects that represent the context within which a cluster can guarantee linearizable
  * semantics for state machine operations. When a session is opened, the session will register
  * itself with the cluster by attempting to contact each of the known servers. Once the session has been successfully
@@ -127,7 +127,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public CompletableFuture<byte[]> execute(RaftOperation operation) {
+  public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
     RaftProxyInvoker invoker = this.proxyInvoker;
     if (invoker == null) {
       return Futures.exceptionalFuture(new IllegalStateException("Session not open"));
@@ -136,14 +136,14 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public void addEventListener(Consumer<RaftEvent> listener) {
+  public void addEventListener(Consumer<PrimitiveEvent> listener) {
     if (proxyListener != null) {
       proxyListener.addEventListener(listener);
     }
   }
 
   @Override
-  public void removeEventListener(Consumer<RaftEvent> listener) {
+  public void removeEventListener(Consumer<PrimitiveEvent> listener) {
     if (proxyListener != null) {
       proxyListener.removeEventListener(listener);
     }

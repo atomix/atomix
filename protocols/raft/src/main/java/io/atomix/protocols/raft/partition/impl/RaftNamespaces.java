@@ -27,10 +27,10 @@ import io.atomix.map.impl.ConsistentMapOperations;
 import io.atomix.map.impl.ConsistentTreeMapOperations;
 import io.atomix.multimap.impl.ConsistentSetMultimapEvents;
 import io.atomix.multimap.impl.ConsistentSetMultimapOperations;
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.event.impl.DefaultEventType;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.primitive.session.SessionId;
@@ -151,8 +151,8 @@ public final class RaftNamespaces {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
-      .register(RaftOperation.class)
-      .register(RaftEvent.class)
+      .register(PrimitiveOperation.class)
+      .register(PrimitiveEvent.class)
       .register(DefaultEventType.class)
       .register(DefaultOperationId.class)
       .register(OperationType.class)
@@ -200,7 +200,7 @@ public final class RaftNamespaces {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
-      .register(RaftOperation.class)
+      .register(PrimitiveOperation.class)
       .register(ReadConsistency.class)
       .register(ArrayList.class)
       .register(HashSet.class)

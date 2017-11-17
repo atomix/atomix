@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.proxy.impl;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftException.ProtocolException;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.OperationRequest;
@@ -88,7 +88,7 @@ final class RaftProxyInvoker {
    * @param operation   The operation to submit.
    * @return A completable future to be completed once the command has been submitted.
    */
-  public CompletableFuture<byte[]> invoke(RaftOperation operation) {
+  public CompletableFuture<byte[]> invoke(PrimitiveOperation operation) {
     CompletableFuture<byte[]> future = new CompletableFuture<>();
     switch (operation.id().type()) {
       case COMMAND:
@@ -106,7 +106,7 @@ final class RaftProxyInvoker {
   /**
    * Submits a command to the cluster.
    */
-  private void invokeCommand(RaftOperation operation, CompletableFuture<byte[]> future) {
+  private void invokeCommand(PrimitiveOperation operation, CompletableFuture<byte[]> future) {
     CommandRequest request = CommandRequest.builder()
         .withSession(state.getSessionId().id())
         .withSequence(state.nextCommandRequest())
@@ -125,7 +125,7 @@ final class RaftProxyInvoker {
   /**
    * Submits a query to the cluster.
    */
-  private void invokeQuery(RaftOperation operation, CompletableFuture<byte[]> future) {
+  private void invokeQuery(PrimitiveOperation operation, CompletableFuture<byte[]> future) {
     QueryRequest request = QueryRequest.builder()
         .withSession(state.getSessionId().id())
         .withSequence(state.getCommandRequest())

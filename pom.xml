@@ -101,8 +101,8 @@
     <module>cluster</module>
     <module>event</module>
     <module>messaging</module>
-    <module>partition</module>
     <module>primitives</module>
+    <module>protocol</module>
     <module>protocols</module>
     <module>rest</module>
     <module>serializer</module>

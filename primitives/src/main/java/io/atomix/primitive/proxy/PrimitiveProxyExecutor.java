@@ -15,9 +15,9 @@
  */
 package io.atomix.primitive.proxy;
 
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationId;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.storage.buffer.HeapBytes;
 
 import java.util.concurrent.CompletableFuture;
@@ -50,7 +50,7 @@ public interface PrimitiveProxyExecutor {
    * @throws NullPointerException if {@code command} is null
    */
   default CompletableFuture<byte[]> execute(OperationId operationId) {
-    return execute(new RaftOperation(operationId, HeapBytes.EMPTY));
+    return execute(new PrimitiveOperation(operationId, HeapBytes.EMPTY));
   }
 
   /**
@@ -62,7 +62,7 @@ public interface PrimitiveProxyExecutor {
    * @throws NullPointerException if {@code command} is null
    */
   default CompletableFuture<byte[]> execute(OperationId operationId, byte[] operation) {
-    return execute(new RaftOperation(operationId, operation));
+    return execute(new PrimitiveOperation(operationId, operation));
   }
 
   /**
@@ -72,20 +72,20 @@ public interface PrimitiveProxyExecutor {
    * @return a future to be completed with the operation result
    * @throws NullPointerException if {@code operation} is null
    */
-  CompletableFuture<byte[]> execute(RaftOperation operation);
+  CompletableFuture<byte[]> execute(PrimitiveOperation operation);
 
   /**
    * Adds a session event listener.
    *
    * @param listener the event listener to add
    */
-  void addEventListener(Consumer<RaftEvent> listener);
+  void addEventListener(Consumer<PrimitiveEvent> listener);
 
   /**
    * Removes a session event listener.
    *
    * @param listener the event listener to remove
    */
-  void removeEventListener(Consumer<RaftEvent> listener);
+  void removeEventListener(Consumer<PrimitiveEvent> listener);
 
 }

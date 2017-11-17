@@ -16,7 +16,7 @@
 
 package io.atomix.primitive.session;
 
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 
 /**
  * Provides a set of active server sessions.
@@ -25,7 +25,7 @@ import io.atomix.primitive.event.RaftEvent;
  * state machine. Session sets are guaranteed to be deterministic. All state machines will see the same set of
  * open sessions at the same point in the log except in cases where a session has already been closed and removed.
  * If a session has already been closed on another server, the session is guaranteed to have been expired on all
- * servers and thus operations like {@link Session#publish(RaftEvent)} are effectively no-ops.
+ * servers and thus operations like {@link Session#publish(PrimitiveEvent)} are effectively no-ops.
  */
 public interface Sessions extends Iterable<Session> {
 

@@ -20,7 +20,7 @@ import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceContext;
@@ -576,7 +576,7 @@ public class DefaultServiceContext implements ServiceContext {
    * @param operation   The command to execute.
    * @return A future to be completed with the command result.
    */
-  public CompletableFuture<OperationResult> executeCommand(long index, long sequence, long timestamp, RaftSession session, RaftOperation operation) {
+  public CompletableFuture<OperationResult> executeCommand(long index, long sequence, long timestamp, RaftSession session, PrimitiveOperation operation) {
     CompletableFuture<OperationResult> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> executeCommand(index, sequence, timestamp, session, operation, future));
     return future;
@@ -585,7 +585,7 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Executes a command on the state machine thread.
    */
-  private void executeCommand(long index, long sequence, long timestamp, RaftSession session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+  private void executeCommand(long index, long sequence, long timestamp, RaftSession session, PrimitiveOperation operation, CompletableFuture<OperationResult> future) {
     // Update the session's timestamp to prevent it from being expired.
     session.setLastUpdated(timestamp);
 
@@ -634,7 +634,7 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Applies the given commit to the state machine.
    */
-  private void applyCommand(long index, long sequence, long timestamp, RaftOperation operation, RaftSession session, CompletableFuture<OperationResult> future) {
+  private void applyCommand(long index, long sequence, long timestamp, PrimitiveOperation operation, RaftSession session, CompletableFuture<OperationResult> future) {
     Commit<byte[]> commit = new DefaultCommit<>(index, operation.id(), operation.value(), session, timestamp);
 
     long eventIndex = session.getEventIndex();
@@ -672,7 +672,7 @@ public class DefaultServiceContext implements ServiceContext {
    * @param operation     The query to execute.
    * @return A future to be completed with the query result.
    */
-  public CompletableFuture<OperationResult> executeQuery(long index, long sequence, long timestamp, RaftSession session, RaftOperation operation) {
+  public CompletableFuture<OperationResult> executeQuery(long index, long sequence, long timestamp, RaftSession session, PrimitiveOperation operation) {
     CompletableFuture<OperationResult> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> executeQuery(index, sequence, timestamp, session, operation, future));
     return future;
@@ -681,7 +681,7 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Executes a query on the state machine thread.
    */
-  private void executeQuery(long index, long sequence, long timestamp, RaftSession session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+  private void executeQuery(long index, long sequence, long timestamp, RaftSession session, PrimitiveOperation operation, CompletableFuture<OperationResult> future) {
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
       log.warn("Inactive session: " + session.sessionId());
@@ -696,7 +696,7 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Sequences the given query.
    */
-  private void sequenceQuery(long index, long sequence, long timestamp, RaftSession session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+  private void sequenceQuery(long index, long sequence, long timestamp, RaftSession session, PrimitiveOperation operation, CompletableFuture<OperationResult> future) {
     // If the query's sequence number is greater than the session's current sequence number, queue the request for
     // handling once the state machine is caught up.
     long commandSequence = session.getCommandSequence();
@@ -711,7 +711,7 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Ensures the given query is applied after the appropriate index.
    */
-  private void indexQuery(long index, long timestamp, RaftSession session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+  private void indexQuery(long index, long timestamp, RaftSession session, PrimitiveOperation operation, CompletableFuture<OperationResult> future) {
     // If the query index is greater than the session's last applied index, queue the request for handling once the
     // state machine is caught up.
     if (index > currentIndex) {
@@ -725,7 +725,7 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Applies a query to the state machine.
    */
-  private void applyQuery(long timestamp, RaftSession session, RaftOperation operation, CompletableFuture<OperationResult> future) {
+  private void applyQuery(long timestamp, RaftSession session, PrimitiveOperation operation, CompletableFuture<OperationResult> future) {
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
       log.warn("Inactive session: " + session.sessionId());

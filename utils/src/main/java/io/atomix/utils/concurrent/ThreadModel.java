@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
+package io.atomix.utils.concurrent;
 
 import io.atomix.utils.concurrent.SingleThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadContextFactory;

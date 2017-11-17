@@ -16,9 +16,10 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.primitive.service.impl.PrimitiveServiceRegistry;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.ThreadModel;
+import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftClusterContext;
@@ -79,7 +80,7 @@ public class RaftContext implements AutoCloseable {
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
   protected final String name;
   protected final ThreadContext threadContext;
-  protected final RaftServiceFactoryRegistry serviceFactories;
+  protected final PrimitiveServiceRegistry serviceFactories;
   protected final RaftClusterContext cluster;
   protected final RaftServerProtocol protocol;
   protected final RaftStorage storage;
@@ -117,7 +118,7 @@ public class RaftContext implements AutoCloseable {
       NodeId localNodeId,
       RaftServerProtocol protocol,
       RaftStorage storage,
-      RaftServiceFactoryRegistry serviceFactories,
+      PrimitiveServiceRegistry serviceFactories,
       ThreadModel threadModel,
       int threadPoolSize) {
     this.name = checkNotNull(name, "name cannot be null");
@@ -624,7 +625,7 @@ public class RaftContext implements AutoCloseable {
    *
    * @return The server state machine registry.
    */
-  public RaftServiceFactoryRegistry getServiceFactories() {
+  public PrimitiveServiceRegistry getServiceFactories() {
     return serviceFactories;
   }
 

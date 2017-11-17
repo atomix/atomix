@@ -160,17 +160,6 @@ public class DefaultRaftClient implements RaftClient {
           .withMinTimeout(minTimeout)
           .withMaxTimeout(maxTimeout);
 
-      // Populate the proxy client builder.
-      proxyBuilder.withName(name)
-          .withPrimitiveType(primitiveType)
-          .withReadConsistency(readConsistency)
-          .withMaxRetries(maxRetries)
-          .withRetryDelay(retryDelay)
-          .withCommunicationStrategy(communicationStrategy)
-          .withRecoveryStrategy(recoveryStrategy)
-          .withMinTimeout(minTimeout)
-          .withMaxTimeout(maxTimeout);
-
       PrimitiveProxy proxy;
 
       // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.

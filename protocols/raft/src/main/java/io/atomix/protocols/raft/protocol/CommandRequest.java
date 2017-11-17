@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 
 import java.util.Objects;
 
@@ -46,7 +46,7 @@ public class CommandRequest extends OperationRequest {
     return new Builder();
   }
 
-  public CommandRequest(long session, long sequence, RaftOperation operation) {
+  public CommandRequest(long session, long sequence, PrimitiveOperation operation) {
     super(session, sequence, operation);
   }
 

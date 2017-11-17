@@ -22,7 +22,7 @@ import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingService;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
@@ -169,7 +169,7 @@ public class RaftFuzzTest implements Runnable {
       .register(RaftResponse.Status.class)
       .register(RaftError.class)
       .register(RaftError.Type.class)
-      .register(RaftOperation.class)
+      .register(PrimitiveOperation.class)
       .register(ReadConsistency.class)
       .register(byte[].class)
       .register(long[].class)
@@ -181,7 +181,7 @@ public class RaftFuzzTest implements Runnable {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
-      .register(RaftOperation.class)
+      .register(PrimitiveOperation.class)
       .register(DefaultOperationId.class)
       .register(OperationType.class)
       .register(ReadConsistency.class)
@@ -205,7 +205,7 @@ public class RaftFuzzTest implements Runnable {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
-      .register(RaftOperation.class)
+      .register(PrimitiveOperation.class)
       .register(DefaultOperationId.class)
       .register(OperationType.class)
       .register(ReadConsistency.class)

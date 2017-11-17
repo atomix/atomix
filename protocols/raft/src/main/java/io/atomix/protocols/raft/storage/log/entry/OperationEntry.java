@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.utils.TimestampPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -31,9 +31,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public abstract class OperationEntry extends SessionEntry {
   protected final long sequence;
-  protected final RaftOperation operation;
+  protected final PrimitiveOperation operation;
 
-  public OperationEntry(long term, long timestamp, long session, long sequence, RaftOperation operation) {
+  public OperationEntry(long term, long timestamp, long session, long sequence, PrimitiveOperation operation) {
     super(term, timestamp, session);
     this.sequence = sequence;
     this.operation = operation;
@@ -44,7 +44,7 @@ public abstract class OperationEntry extends SessionEntry {
    *
    * @return The entry operation.
    */
-  public RaftOperation operation() {
+  public PrimitiveOperation operation() {
     return operation;
   }
 

@@ -17,7 +17,7 @@ package io.atomix.primitive.proxy.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.primitive.event.EventType;
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 
 import java.util.Map;
@@ -30,11 +30,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Default Raft proxy.
  */
 public abstract class AbstractPrimitiveProxy implements PrimitiveProxy {
-  private final Map<EventType, Map<Object, Consumer<RaftEvent>>> eventTypeListeners = Maps.newConcurrentMap();
+  private final Map<EventType, Map<Object, Consumer<PrimitiveEvent>>> eventTypeListeners = Maps.newConcurrentMap();
 
   @Override
   public void addEventListener(EventType eventType, Runnable listener) {
-    Consumer<RaftEvent> wrappedListener = e -> {
+    Consumer<PrimitiveEvent> wrappedListener = e -> {
       if (e.type().equals(eventType)) {
         listener.run();
       }
@@ -45,7 +45,7 @@ public abstract class AbstractPrimitiveProxy implements PrimitiveProxy {
 
   @Override
   public void addEventListener(EventType eventType, Consumer<byte[]> listener) {
-    Consumer<RaftEvent> wrappedListener = e -> {
+    Consumer<PrimitiveEvent> wrappedListener = e -> {
       if (e.type().equals(eventType)) {
         listener.accept(e.value());
       }
@@ -56,7 +56,7 @@ public abstract class AbstractPrimitiveProxy implements PrimitiveProxy {
 
   @Override
   public <T> void addEventListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener) {
-    Consumer<RaftEvent> wrappedListener = e -> {
+    Consumer<PrimitiveEvent> wrappedListener = e -> {
       if (e.type().equals(eventType)) {
         listener.accept(decoder.apply(e.value()));
       }
@@ -67,7 +67,7 @@ public abstract class AbstractPrimitiveProxy implements PrimitiveProxy {
 
   @Override
   public void removeEventListener(EventType eventType, Runnable listener) {
-    Consumer<RaftEvent> eventListener =
+    Consumer<PrimitiveEvent> eventListener =
         eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap())
             .remove(listener);
     removeEventListener(eventListener);
@@ -75,7 +75,7 @@ public abstract class AbstractPrimitiveProxy implements PrimitiveProxy {
 
   @Override
   public void removeEventListener(EventType eventType, Consumer listener) {
-    Consumer<RaftEvent> eventListener =
+    Consumer<PrimitiveEvent> eventListener =
         eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap())
             .remove(listener);
     removeEventListener(eventListener);

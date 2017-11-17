@@ -17,7 +17,7 @@ package io.atomix.primitive.proxy.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduler;
@@ -64,7 +64,7 @@ public class RetryingPrimitiveProxy extends DelegatingPrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<byte[]> execute(RaftOperation operation) {
+  public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
     if (getState() == PrimitiveProxy.State.CLOSED) {
       return Futures.exceptionalFuture(new PrimitiveException.Unavailable());
     }
@@ -73,7 +73,7 @@ public class RetryingPrimitiveProxy extends DelegatingPrimitiveProxy {
     return future;
   }
 
-  private void execute(RaftOperation operation, int attemptIndex, CompletableFuture<byte[]> future) {
+  private void execute(PrimitiveOperation operation, int attemptIndex, CompletableFuture<byte[]> future) {
     proxy.execute(operation).whenComplete((r, e) -> {
       if (e != null) {
         if (attemptIndex < maxRetries + 1 && retryableCheck.test(Throwables.getRootCause(e))) {
@@ -88,7 +88,7 @@ public class RetryingPrimitiveProxy extends DelegatingPrimitiveProxy {
     });
   }
 
-  private void scheduleRetry(RaftOperation operation, int attemptIndex, CompletableFuture<byte[]> future) {
+  private void scheduleRetry(PrimitiveOperation operation, int attemptIndex, CompletableFuture<byte[]> future) {
     PrimitiveProxy.State retryState = proxy.getState();
     scheduler.schedule(delayBetweenRetries, () -> {
       if (retryState == PrimitiveProxy.State.CONNECTED || proxy.getState() == PrimitiveProxy.State.CONNECTED) {

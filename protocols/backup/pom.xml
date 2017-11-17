@@ -42,5 +42,10 @@
       <artifactId>atomix-time</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-primitives</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>

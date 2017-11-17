@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup;
-
-import io.atomix.event.EventListener;
+package io.atomix.protocols.backup.protocol;
 
 /**
- * Backup event listener.
+ * Metadata request.
  */
-public interface BackupEventListener<T> extends EventListener<BackupEvent<T>> {
+public class MetadataRequest extends PrimaryBackupRequest {
+  private final String primitiveType;
+
+  public MetadataRequest(String primitiveType) {
+    this.primitiveType = primitiveType;
+  }
+
+  public String primitiveType() {
+    return primitiveType;
+  }
 }

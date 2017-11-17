@@ -15,9 +15,9 @@
  */
 package io.atomix.primitive.service;
 
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationId;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.session.Session;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClockTimestamp;
@@ -32,11 +32,11 @@ public interface Commit<T> {
   /**
    * Returns the commit index.
    * <p>
-   * This is the index at which the committed {@link RaftOperation} was written in the Raft log.
-   * Raft guarantees that this index will be unique for {@link RaftOperation} commits and will be the same for all
+   * This is the index at which the committed {@link PrimitiveOperation} was written in the Raft log.
+   * Raft guarantees that this index will be unique for {@link PrimitiveOperation} commits and will be the same for all
    * instances of the given operation on all servers in the cluster.
    * <p>
-   * For {@link RaftOperation} operations, the returned {@code index} may actually be representative of the last committed
+   * For {@link PrimitiveOperation} operations, the returned {@code index} may actually be representative of the last committed
    * index in the Raft log since queries are not actually written to disk. Thus, query commits cannot be assumed
    * to have unique indexes.
    *
@@ -48,7 +48,7 @@ public interface Commit<T> {
    * Returns the session that submitted the operation.
    * <p>
    * The returned {@link Session} is representative of the session that submitted the operation
-   * that resulted in this {@link Commit}. The session can be used to {@link Session#publish(RaftEvent)}
+   * that resulted in this {@link Commit}. The session can be used to {@link Session#publish(PrimitiveEvent)}
    * event messages to the client.
    *
    * @return The session that created the commit.

@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
@@ -40,7 +40,7 @@ final class RaftProxyListener {
   private final RaftClientProtocol protocol;
   private final MemberSelector memberSelector;
   private final RaftProxyState state;
-  private final Set<Consumer<RaftEvent>> listeners = Sets.newLinkedHashSet();
+  private final Set<Consumer<PrimitiveEvent>> listeners = Sets.newLinkedHashSet();
   private final RaftProxySequencer sequencer;
   private final Executor executor;
 
@@ -63,7 +63,7 @@ final class RaftProxyListener {
    *
    * @param listener the event listener callback
    */
-  public void addEventListener(Consumer<RaftEvent> listener) {
+  public void addEventListener(Consumer<PrimitiveEvent> listener) {
     executor.execute(() -> listeners.add(listener));
   }
 
@@ -72,7 +72,7 @@ final class RaftProxyListener {
    *
    * @param listener the event listener callback
    */
-  public void removeEventListener(Consumer<RaftEvent> listener) {
+  public void removeEventListener(Consumer<PrimitiveEvent> listener) {
     executor.execute(() -> listeners.remove(listener));
   }
 
@@ -119,8 +119,8 @@ final class RaftProxyListener {
     state.setEventIndex(request.eventIndex());
 
     sequencer.sequenceEvent(request, () -> {
-      for (RaftEvent event : request.events()) {
-        for (Consumer<RaftEvent> listener : listeners) {
+      for (PrimitiveEvent event : request.events()) {
+        for (Consumer<PrimitiveEvent> listener : listeners) {
           listener.accept(event);
         }
       }

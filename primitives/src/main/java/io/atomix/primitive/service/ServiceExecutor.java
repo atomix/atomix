@@ -18,7 +18,7 @@ package io.atomix.primitive.service;
 
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -57,7 +57,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Prior to the execution of a command, any expired scheduled callbacks will be executed based on the command's
  * logged timestamp.
  * <p>
- * It's important to note that callbacks can only be scheduled during {@link RaftOperation} operations or by recursive
+ * It's important to note that callbacks can only be scheduled during {@link PrimitiveOperation} operations or by recursive
  * scheduling. If a state machine attempts to schedule a callback via the executor during the execution of a
  * query, a {@link IllegalStateException} will be thrown. This is because queries are usually only applied
  * on a single state machine within the cluster, and so scheduling callbacks in reaction to query execution would

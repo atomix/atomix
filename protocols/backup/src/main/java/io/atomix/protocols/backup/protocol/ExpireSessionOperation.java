@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup;
-
-import io.atomix.event.ListenerService;
+package io.atomix.protocols.backup.protocol;
 
 /**
- * Primary backup service.
+ * Expire session operation.
  */
-public interface BackupService<T> extends ListenerService<BackupEvent<T>, BackupEventListener<T>> {
+public class ExpireSessionOperation extends BackupOperation {
+  private final long sessionId;
 
-  /**
-   * Closes the service.
-   */
-  void close();
+  public ExpireSessionOperation(long index, long timestamp, long sessionId) {
+    super(Type.EXPIRE_SESSION, index, timestamp);
+    this.sessionId = sessionId;
+  }
 
-  /**
-   * Backup service builder.
-   *
-   * @param <T> the value type
-   */
-  interface Builder<T> extends io.atomix.utils.Builder<BackupService<T>> {
+  public long sessionId() {
+    return sessionId;
   }
 }

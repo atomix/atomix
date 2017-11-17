@@ -13,27 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup;
-
-import io.atomix.event.AbstractEvent;
+package io.atomix.protocols.backup.protocol;
 
 /**
- * Backup event.
+ * Close session operation.
  */
-public class BackupEvent<T> extends AbstractEvent<BackupEvent.Type, T> {
+public class CloseSessionOperation extends BackupOperation {
+  private final long sessionId;
 
-  /**
-   * Failure detection event type.
-   */
-  public enum Type {
-    BACKUP,
+  public CloseSessionOperation(long index, long timestamp, long sessionId) {
+    super(Type.CLOSE_SESSION, index, timestamp);
+    this.sessionId = sessionId;
   }
 
-  public BackupEvent(Type type, T subject) {
-    super(type, subject);
-  }
-
-  public BackupEvent(Type type, T subject, long time) {
-    super(type, subject, time);
+  public long sessionId() {
+    return sessionId;
   }
 }

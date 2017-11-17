@@ -18,8 +18,8 @@ package io.atomix.primitive.impl;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
-import io.atomix.primitive.event.RaftEvent;
-import io.atomix.primitive.operation.RaftOperation;
+import io.atomix.primitive.event.PrimitiveEvent;
+import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.service.PrimitiveService;
@@ -144,7 +144,7 @@ public abstract class AbstractPrimitiveTest<T extends AbstractRaftPrimitive> {
      */
     private class TestPrimitiveProxy extends AbstractPrimitiveProxy {
       private final Set<Consumer<State>> stateChangeListeners = Sets.newIdentityHashSet();
-      private final Set<Consumer<RaftEvent>> eventListeners = Sets.newIdentityHashSet();
+      private final Set<Consumer<PrimitiveEvent>> eventListeners = Sets.newIdentityHashSet();
       private final PrimitiveService service;
       private final Session session;
       private final AtomicBoolean open = new AtomicBoolean();
@@ -162,20 +162,20 @@ public abstract class AbstractPrimitiveTest<T extends AbstractRaftPrimitive> {
           EventType eventType = invocation.getArgumentAt(0, EventType.class);
           Function<Object, byte[]> encoder = invocation.getArgumentAt(1, Function.class);
           Object event = invocation.getArgumentAt(2, Object.class);
-          eventListeners.forEach(l -> l.accept(new RaftEvent(eventType, encoder.apply(event))));
+          eventListeners.forEach(l -> l.accept(new PrimitiveEvent(eventType, encoder.apply(event))));
           return null;
         }).when(session).publish(any(EventType.class), any(Function.class), any());
         doAnswer(invocation -> {
           EventType eventType = invocation.getArgumentAt(0, EventType.class);
           byte[] event = invocation.getArgumentAt(1, byte[].class);
-          eventListeners.forEach(l -> l.accept(new RaftEvent(eventType, event)));
+          eventListeners.forEach(l -> l.accept(new PrimitiveEvent(eventType, event)));
           return null;
         }).when(session).publish(any(EventType.class), any(byte[].class));
         doAnswer(invocation -> {
-          RaftEvent event = invocation.getArgumentAt(0, RaftEvent.class);
+          PrimitiveEvent event = invocation.getArgumentAt(0, PrimitiveEvent.class);
           eventListeners.forEach(l -> l.accept(event));
           return null;
-        }).when(session).publish(any(RaftEvent.class));
+        }).when(session).publish(any(PrimitiveEvent.class));
         return session;
       }
 
@@ -210,7 +210,7 @@ public abstract class AbstractPrimitiveTest<T extends AbstractRaftPrimitive> {
       }
 
       @Override
-      public CompletableFuture<byte[]> execute(RaftOperation operation) {
+      public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
         return CompletableFuture.completedFuture(service.apply(new DefaultCommit<>(
             nextIndex.incrementAndGet(),
             operation.id(),
@@ -220,12 +220,12 @@ public abstract class AbstractPrimitiveTest<T extends AbstractRaftPrimitive> {
       }
 
       @Override
-      public void addEventListener(Consumer<RaftEvent> listener) {
+      public void addEventListener(Consumer<PrimitiveEvent> listener) {
         eventListeners.add(listener);
       }
 
       @Override
-      public void removeEventListener(Consumer<RaftEvent> listener) {
+      public void removeEventListener(Consumer<PrimitiveEvent> listener) {
         eventListeners.remove(listener);
       }
 

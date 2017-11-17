@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
-import io.atomix.primitive.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.Session;
@@ -458,7 +458,7 @@ public class RaftSession implements Session {
   }
 
   @Override
-  public void publish(RaftEvent event) {
+  public void publish(PrimitiveEvent event) {
     // Store volatile state in a local variable.
     State state = this.state;
     checkState(state != State.EXPIRED, "session is expired");
@@ -607,7 +607,7 @@ public class RaftSession implements Session {
   private static class EventHolder {
     private final long eventIndex;
     private final long previousIndex;
-    private final List<RaftEvent> events = new LinkedList<>();
+    private final List<PrimitiveEvent> events = new LinkedList<>();
 
     private EventHolder(long eventIndex, long previousIndex) {
       this.eventIndex = eventIndex;

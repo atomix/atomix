@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.impl;
+package io.atomix.primitive.service.impl;
 
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 
 import java.util.Map;
@@ -27,8 +28,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * State machine registry.
  */
-public class RaftServiceFactoryRegistry {
-  private final Map<String, Supplier<PrimitiveService>> stateMachines = new ConcurrentHashMap<>();
+public class PrimitiveServiceRegistry {
+  private final Map<String, Supplier<PrimitiveService>> services = new ConcurrentHashMap<>();
 
   /**
    * Returns the number of registered state machines.
@@ -36,7 +37,7 @@ public class RaftServiceFactoryRegistry {
    * @return The number of registered state machines.
    */
   public int size() {
-    return stateMachines.size();
+    return services.size();
   }
 
   /**
@@ -46,8 +47,19 @@ public class RaftServiceFactoryRegistry {
    * @param factory The state machine factory.
    * @return The state machine registry.
    */
-  public RaftServiceFactoryRegistry register(String type, Supplier<PrimitiveService> factory) {
-    stateMachines.put(checkNotNull(type, "type cannot be null"), checkNotNull(factory, "factory cannot be null"));
+  public PrimitiveServiceRegistry register(PrimitiveType type, Supplier<PrimitiveService> factory) {
+    return register(type.id(), factory);
+  }
+
+  /**
+   * Registers a new state machine type.
+   *
+   * @param type    The state machine type to register.
+   * @param factory The state machine factory.
+   * @return The state machine registry.
+   */
+  public PrimitiveServiceRegistry register(String type, Supplier<PrimitiveService> factory) {
+    services.put(checkNotNull(type, "type cannot be null"), checkNotNull(factory, "factory cannot be null"));
     return this;
   }
 
@@ -57,8 +69,8 @@ public class RaftServiceFactoryRegistry {
    * @param type The state machine type to unregister.
    * @return The state machine registry.
    */
-  public RaftServiceFactoryRegistry unregister(String type) {
-    stateMachines.remove(type);
+  public PrimitiveServiceRegistry unregister(PrimitiveType type) {
+    services.remove(type.id());
     return this;
   }
 
@@ -69,13 +81,13 @@ public class RaftServiceFactoryRegistry {
    * @return The factory for the given state machine type or {@code null} if the type is not registered.
    */
   public Supplier<PrimitiveService> getFactory(String type) {
-    return stateMachines.get(type);
+    return services.get(type);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("stateMachines", stateMachines)
+        .add("stateMachines", services)
         .toString();
   }
 
