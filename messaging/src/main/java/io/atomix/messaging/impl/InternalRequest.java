@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.messaging.netty;
+package io.atomix.messaging.impl;
 
 import com.google.common.base.MoreObjects;
 import io.atomix.messaging.Endpoint;
