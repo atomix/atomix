@@ -17,4 +17,4 @@
 /**
  * Atomix event services.
  */
-package io.atomix.event;
+package io.atomix.utils.event;

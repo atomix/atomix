@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.cluster;
 
-import io.atomix.event.AbstractEvent;
+import io.atomix.utils.event.AbstractEvent;
 
 /**
  * Raft cluster event.

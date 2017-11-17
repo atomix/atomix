@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.event;
+package io.atomix.utils.event;
 
 /**
- * Entity capable of filtering events.
+ * Abstraction of a service capable of asynchronously notifying listeners.
  */
-public interface EventFilter<E extends Event> {
+public interface ListenerService<E extends Event, L extends EventListener<E>> {
 
   /**
-   * Indicates whether the specified event is of interest or not.
-   * Default implementation always returns true.
+   * Adds the specified listener.
    *
-   * @param event event to be inspected
-   * @return true if event is relevant; false otherwise
+   * @param listener listener to be added
    */
-  default boolean isRelevant(E event) {
-    return true;
-  }
+  void addListener(L listener);
+
+  /**
+   * Removes the specified listener.
+   *
+   * @param listener listener to be removed
+   */
+  void removeListener(L listener);
 
 }

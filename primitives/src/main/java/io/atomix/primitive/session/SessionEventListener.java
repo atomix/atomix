@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.session;
 
-import io.atomix.event.EventListener;
+import io.atomix.utils.event.EventListener;
 
 /**
  * Raft session event listener.

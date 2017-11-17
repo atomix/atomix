@@ -15,7 +15,7 @@
  */
 package io.atomix.leadership;
 
-import io.atomix.event.EventListener;
+import io.atomix.utils.event.EventListener;
 
 /**
  * Entity capable of receiving leader elector events.

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.event;
+package io.atomix.utils.event;
 
 import io.atomix.utils.TimestampPrinter;
 

@@ -13,24 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.event;
+package io.atomix.utils.event;
 
 /**
- * Abstraction of an event sink capable of processing the specified event types.
+ * Abstraction of an of a time-stamped event pertaining to an arbitrary subject.
  */
-public interface EventSink<E extends Event> {
+public interface Event<T, S> {
 
   /**
-   * Processes the specified event.
+   * Returns the timestamp of when the event occurred, given in milliseconds
+   * since the start of epoch.
    *
-   * @param event event to be processed
+   * @return timestamp in milliseconds
    */
-  void process(E event);
+  long time();
 
   /**
-   * Handles notification that event processing time limit has been exceeded.
+   * Returns the type of the event.
+   *
+   * @return event type
    */
-  default void onProcessLimit() {
-  }
+  T type();
+
+  /**
+   * Returns the subject of the event.
+   *
+   * @return subject to which this event pertains
+   */
+  S subject();
 
 }

@@ -13,33 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.event;
+package io.atomix.utils.event;
 
 /**
- * Abstraction of an of a time-stamped event pertaining to an arbitrary subject.
+ * Entity capable of receiving events.
  */
-public interface Event<T, S> {
+@FunctionalInterface
+public interface EventListener<E extends Event> extends EventFilter<E> {
 
   /**
-   * Returns the timestamp of when the event occurred, given in milliseconds
-   * since the start of epoch.
+   * Reacts to the specified event.
    *
-   * @return timestamp in milliseconds
+   * @param event event to be processed
    */
-  long time();
-
-  /**
-   * Returns the type of the event.
-   *
-   * @return event type
-   */
-  T type();
-
-  /**
-   * Returns the subject of the event.
-   *
-   * @return subject to which this event pertains
-   */
-  S subject();
+  void onEvent(E event);
 
 }

@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.event;
+package io.atomix.utils.event;
 
 /**
- * Entity capable of receiving events.
+ * Abstraction of an event sink capable of processing the specified event types.
  */
-@FunctionalInterface
-public interface EventListener<E extends Event> extends EventFilter<E> {
+public interface EventSink<E extends Event> {
 
   /**
-   * Reacts to the specified event.
+   * Processes the specified event.
    *
    * @param event event to be processed
    */
-  void onEvent(E event);
+  void process(E event);
+
+  /**
+   * Handles notification that event processing time limit has been exceeded.
+   */
+  default void onProcessLimit() {
+  }
 
 }

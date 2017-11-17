@@ -99,7 +99,6 @@
   <modules>
     <module>core</module>
     <module>cluster</module>
-    <module>event</module>
     <module>messaging</module>
     <module>primitives</module>
     <module>protocol</module>

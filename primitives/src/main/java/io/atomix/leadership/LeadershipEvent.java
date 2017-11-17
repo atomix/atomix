@@ -16,7 +16,7 @@
 package io.atomix.leadership;
 
 import com.google.common.base.MoreObjects;
-import io.atomix.event.AbstractEvent;
+import io.atomix.utils.event.AbstractEvent;
 
 import java.util.Objects;
 
