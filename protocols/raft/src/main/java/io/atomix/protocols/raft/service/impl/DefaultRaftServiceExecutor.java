@@ -126,7 +126,7 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
       try {
         return callback.apply(commit);
       } catch (Exception e) {
-        log.warn("State machine operation failed: {}", e);
+        log.warn("State machine operation failed: {}", e.getMessage());
         throw new RaftException.ApplicationException(e);
       } finally {
         runTasks();
