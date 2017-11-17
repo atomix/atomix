@@ -19,7 +19,7 @@ import io.atomix.Atomix;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
-import io.atomix.messaging.netty.NettyMessagingService;
+import io.atomix.messaging.impl.NettyMessagingService;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;

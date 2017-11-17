@@ -30,9 +30,9 @@ import io.atomix.queue.WorkQueueStats;
 import io.atomix.queue.impl.WorkQueueOperations.Add;
 import io.atomix.queue.impl.WorkQueueOperations.Complete;
 import io.atomix.queue.impl.WorkQueueOperations.Take;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
 

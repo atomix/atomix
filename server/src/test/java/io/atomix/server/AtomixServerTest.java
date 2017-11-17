@@ -16,7 +16,7 @@
 package io.atomix.server;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.messaging.netty.NettyMessagingService;
+import io.atomix.messaging.impl.NettyMessagingService;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

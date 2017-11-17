@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.serializer;
+package io.atomix.utils.serializer;
 
 /**
  * Interface for serialization of store artifacts.

@@ -42,5 +42,10 @@
       <artifactId>commons-math3</artifactId>
       <version>${commons.math3.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.esotericsoftware</groupId>
+      <artifactId>kryo</artifactId>
+      <version>${kryo.version}</version>
+    </dependency>
   </dependencies>
 </project>

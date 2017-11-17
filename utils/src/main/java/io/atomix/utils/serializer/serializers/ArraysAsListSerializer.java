@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.serializer.kryo.serializers;
+package io.atomix.utils.serializer.serializers;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;

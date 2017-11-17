@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.protocol;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 
 import java.net.ConnectException;

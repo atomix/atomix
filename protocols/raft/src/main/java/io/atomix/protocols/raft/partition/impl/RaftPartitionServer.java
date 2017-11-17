@@ -20,7 +20,7 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.storage.RaftStorage;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.Managed;
 import org.slf4j.Logger;

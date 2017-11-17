@@ -39,8 +39,8 @@ import io.atomix.protocols.backup.protocol.OpenSessionRequest;
 import io.atomix.protocols.backup.protocol.OpenSessionResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Set;

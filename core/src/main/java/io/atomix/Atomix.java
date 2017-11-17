@@ -37,7 +37,7 @@ import io.atomix.map.ConsistentMapBuilder;
 import io.atomix.map.ConsistentTreeMapBuilder;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.netty.NettyMessagingService;
+import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.multimap.ConsistentMultimapBuilder;
 import io.atomix.primitive.DistributedPrimitiveCreator;
 import io.atomix.primitive.PrimitiveType;

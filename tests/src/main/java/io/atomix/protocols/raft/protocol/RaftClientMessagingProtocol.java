@@ -19,7 +19,7 @@ import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;

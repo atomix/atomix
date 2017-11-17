@@ -27,8 +27,8 @@ import io.atomix.leadership.impl.LeaderElectorOperations.Run;
 import io.atomix.leadership.impl.LeaderElectorOperations.Withdraw;
 import io.atomix.primitive.impl.AbstractRaftPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
 
 import java.util.List;
 import java.util.Set;

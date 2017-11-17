@@ -29,9 +29,9 @@ import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 import org.slf4j.Logger;
 
 import java.util.Map;

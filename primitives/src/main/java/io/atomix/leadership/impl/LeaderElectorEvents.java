@@ -20,8 +20,8 @@ import io.atomix.leadership.Leader;
 import io.atomix.leadership.Leadership;
 import io.atomix.leadership.LeadershipEvent;
 import io.atomix.primitive.event.EventType;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 
 /**
  * Atomix leader elector events.

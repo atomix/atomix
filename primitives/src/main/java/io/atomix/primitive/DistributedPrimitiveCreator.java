@@ -24,7 +24,7 @@ import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.AsyncConsistentTreeMap;
 import io.atomix.multimap.AsyncConsistentMultimap;
 import io.atomix.queue.AsyncWorkQueue;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.set.AsyncDistributedSet;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.value.AsyncAtomicValue;

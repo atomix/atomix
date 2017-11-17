@@ -26,8 +26,8 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespaces;
 import org.junit.Test;
 
 import java.net.InetAddress;

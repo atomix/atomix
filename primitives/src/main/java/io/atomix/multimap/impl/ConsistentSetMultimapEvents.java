@@ -17,8 +17,8 @@ package io.atomix.multimap.impl;
 
 import io.atomix.multimap.MultimapEvent;
 import io.atomix.primitive.event.EventType;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 
 /**
  * Atomix consistent set multimap events.

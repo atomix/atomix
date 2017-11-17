@@ -15,7 +15,7 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;

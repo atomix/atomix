@@ -53,7 +53,7 @@ import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.queue.WorkQueueBuilder;
 import io.atomix.queue.impl.DefaultWorkQueueBuilder;
 import io.atomix.queue.impl.WorkQueueService;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.set.DistributedSetBuilder;
 import io.atomix.set.impl.DefaultDistributedSetBuilder;
 import io.atomix.tree.DocumentTreeBuilder;

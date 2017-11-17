@@ -22,9 +22,9 @@ import io.atomix.counter.impl.AtomicCounterOperations.GetAndAdd;
 import io.atomix.counter.impl.AtomicCounterOperations.Set;
 import io.atomix.primitive.impl.AbstractRaftPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 
 import java.util.concurrent.CompletableFuture;
 

@@ -31,9 +31,9 @@ import io.atomix.multimap.impl.ConsistentSetMultimapOperations.Put;
 import io.atomix.multimap.impl.ConsistentSetMultimapOperations.RemoveAll;
 import io.atomix.multimap.impl.ConsistentSetMultimapOperations.Replace;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;

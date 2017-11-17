@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.protocol;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.NodeId;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Map;
 

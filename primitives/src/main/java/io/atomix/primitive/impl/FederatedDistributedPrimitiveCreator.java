@@ -40,7 +40,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.queue.AsyncWorkQueue;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.set.AsyncDistributedSet;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;

@@ -37,7 +37,7 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.Set;

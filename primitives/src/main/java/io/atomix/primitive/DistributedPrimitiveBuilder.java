@@ -15,8 +15,8 @@
  */
 package io.atomix.primitive;
 
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.Builder;
 
 /**

@@ -20,9 +20,9 @@ import io.atomix.lock.AsyncDistributedLock;
 import io.atomix.lock.impl.DistributedLockOperations.Lock;
 import io.atomix.lock.impl.DistributedLockOperations.Unlock;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.time.Version;
 
 import java.time.Duration;

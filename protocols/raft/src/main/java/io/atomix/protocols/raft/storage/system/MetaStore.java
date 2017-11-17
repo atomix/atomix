@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.storage.system;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.storage.RaftStorage;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;

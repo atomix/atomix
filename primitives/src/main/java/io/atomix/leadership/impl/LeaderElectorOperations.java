@@ -21,8 +21,8 @@ import io.atomix.leadership.Leader;
 import io.atomix.leadership.Leadership;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.ArraySizeHashPrinter;
 
 /**

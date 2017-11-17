@@ -30,9 +30,9 @@ import io.atomix.map.impl.AtomicCounterMapOperations.Remove;
 import io.atomix.map.impl.AtomicCounterMapOperations.RemoveValue;
 import io.atomix.map.impl.AtomicCounterMapOperations.Replace;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 
 import java.util.concurrent.CompletableFuture;
 

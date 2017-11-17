@@ -27,8 +27,8 @@ import io.atomix.primitive.session.SessionEvent;
 import io.atomix.primitive.session.SessionEvent.Type;
 import io.atomix.primitive.session.SessionEventListener;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespaces;
 
 import java.util.Set;
 

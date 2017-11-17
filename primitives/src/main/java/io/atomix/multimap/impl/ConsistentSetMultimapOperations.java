@@ -20,8 +20,8 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.time.Versioned;
 import io.atomix.utils.Match;
 

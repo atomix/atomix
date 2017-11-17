@@ -16,8 +16,8 @@
 package io.atomix.lock.impl;
 
 import io.atomix.primitive.event.EventType;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
 
 /**
  * Raft value events.

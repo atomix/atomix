@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.serializer.kryo;
+package io.atomix.utils.serializer;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
@@ -21,10 +21,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.serializer.kryo.serializers.ArraysAsListSerializer;
-import io.atomix.serializer.kryo.serializers.ImmutableListSerializer;
-import io.atomix.serializer.kryo.serializers.ImmutableMapSerializer;
-import io.atomix.serializer.kryo.serializers.ImmutableSetSerializer;
+import io.atomix.utils.serializer.serializers.ArraysAsListSerializer;
+import io.atomix.utils.serializer.serializers.ImmutableListSerializer;
+import io.atomix.utils.serializer.serializers.ImmutableMapSerializer;
+import io.atomix.utils.serializer.serializers.ImmutableSetSerializer;
 
 import java.time.Duration;
 import java.util.ArrayList;

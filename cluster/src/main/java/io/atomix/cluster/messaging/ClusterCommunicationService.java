@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static io.atomix.serializer.kryo.serializers.DefaultSerializers.BASIC;
+import static io.atomix.utils.serializer.serializers.DefaultSerializers.BASIC;
 
 /**
  * Service for assisting communications between controller cluster nodes.

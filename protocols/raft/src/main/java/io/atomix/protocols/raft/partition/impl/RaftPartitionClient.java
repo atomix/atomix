@@ -47,7 +47,7 @@ import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.queue.AsyncWorkQueue;
 import io.atomix.queue.impl.TranscodingAsyncWorkQueue;
 import io.atomix.queue.impl.WorkQueueProxy;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.set.AsyncDistributedSet;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.impl.DocumentTreeProxy;

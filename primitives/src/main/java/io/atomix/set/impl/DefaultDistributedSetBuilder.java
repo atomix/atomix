@@ -18,7 +18,7 @@ package io.atomix.set.impl;
 import io.atomix.map.ConsistentMapBuilder;
 import io.atomix.set.AsyncDistributedSet;
 import io.atomix.set.DistributedSetBuilder;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.function.Supplier;
 

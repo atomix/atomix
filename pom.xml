@@ -104,7 +104,6 @@
     <module>protocol</module>
     <module>protocols</module>
     <module>rest</module>
-    <module>serializer</module>
     <module>server</module>
     <module>storage</module>
     <module>tests</module>

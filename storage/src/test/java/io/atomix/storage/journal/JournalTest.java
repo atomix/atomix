@@ -15,8 +15,8 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.storage.StorageLevel;
 import org.junit.Test;
 
