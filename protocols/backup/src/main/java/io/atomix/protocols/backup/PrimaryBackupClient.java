@@ -17,8 +17,8 @@ package io.atomix.protocols.backup;
 
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.protocols.backup.impl.DefaultPrimaryBackupClient;
 import io.atomix.utils.concurrent.ThreadModel;
 
@@ -31,7 +31,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup client.
  */
-public interface PrimaryBackupClient {
+public interface PrimaryBackupClient extends PrimitiveClient {
 
   /**
    * Returns a new primary-backup client builder.
@@ -41,21 +41,6 @@ public interface PrimaryBackupClient {
   static Builder builder() {
     return new DefaultPrimaryBackupClient.Builder();
   }
-
-  /**
-   * Returns a new primitive proxy builder for the client.
-   *
-   * @return a new primitive proxy builder
-   */
-  PrimitiveProxy.Builder proxyBuilder();
-
-  /**
-   * Gets a list of primitives of the given type.
-   *
-   * @param primitiveType the primitive type
-   * @return the primitive names
-   */
-  CompletableFuture<Set<String>> getPrimitives(PrimitiveType primitiveType);
 
   /**
    * Closes the client.

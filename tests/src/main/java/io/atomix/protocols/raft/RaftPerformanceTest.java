@@ -21,6 +21,9 @@ import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingService;
+import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveClient;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -28,6 +31,7 @@ import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -81,12 +85,12 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
-import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.ThreadModel;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 import java.io.IOException;
@@ -467,7 +471,7 @@ public class RaftPerformanceTest implements Runnable {
             .withMaxEntriesPerSegment(32768)
             .withMaxSegmentSize(1024 * 1024)
             .build())
-        .addService("test", PerformanceStateMachine::new);
+        .addPrimitiveType(TestPrimitiveType.INSTANCE);
 
     RaftServer server = builder.build();
     servers.add(server);
@@ -505,9 +509,7 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a test session.
    */
   private PrimitiveProxy createProxy(RaftClient client) {
-    return client.newProxyBuilder()
-        .withName("test")
-        .withPrimitiveType("test")
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build();
@@ -519,9 +521,31 @@ public class RaftPerformanceTest implements Runnable {
   private static final OperationId INDEX = OperationId.command("index");
 
   /**
+   * Test primitive type.
+   */
+  private static class TestPrimitiveType implements PrimitiveType {
+    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+
+    @Override
+    public String id() {
+      return "test";
+    }
+
+    @Override
+    public PrimitiveService newService() {
+      return new PerformanceService();
+    }
+
+    @Override
+    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveClient client) {
+      return null;
+    }
+  }
+
+  /**
    * Performance test state machine.
    */
-  public class PerformanceStateMachine extends AbstractPrimitiveService {
+  public static class PerformanceService extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
 
     @Override

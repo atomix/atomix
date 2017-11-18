@@ -224,8 +224,8 @@ public class DefaultRaftServer implements RaftServer {
 
     @Override
     public RaftServer build() {
-      if (serviceRegistry.size() == 0) {
-        throw new IllegalStateException("No state machines registered");
+      if (primitiveTypes.size() == 0) {
+        throw new IllegalStateException("No primitive services registered");
       }
 
       // If the server name is null, set it to the member ID.
@@ -238,7 +238,7 @@ public class DefaultRaftServer implements RaftServer {
         storage = RaftStorage.builder().build();
       }
 
-      RaftContext raft = new RaftContext(name, localNodeId, protocol, storage, serviceRegistry, threadModel, threadPoolSize);
+      RaftContext raft = new RaftContext(name, localNodeId, protocol, storage, primitiveTypes, threadModel, threadPoolSize);
       raft.setElectionTimeout(electionTimeout);
       raft.setHeartbeatInterval(heartbeatInterval);
       raft.setElectionThreshold(electionThreshold);

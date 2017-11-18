@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.lock.AsyncDistributedLock;
+import io.atomix.primitives.lock.AsyncDistributedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

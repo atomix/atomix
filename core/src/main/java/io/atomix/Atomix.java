@@ -28,37 +28,28 @@ import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
-import io.atomix.counter.AtomicCounterBuilder;
-import io.atomix.generator.AtomicIdGeneratorBuilder;
-import io.atomix.leadership.LeaderElectorBuilder;
-import io.atomix.lock.DistributedLockBuilder;
-import io.atomix.map.AtomicCounterMapBuilder;
-import io.atomix.map.ConsistentMapBuilder;
-import io.atomix.map.ConsistentTreeMapBuilder;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
-import io.atomix.multimap.ConsistentMultimapBuilder;
-import io.atomix.primitive.DistributedPrimitiveCreator;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.PrimitivesService;
-import io.atomix.primitive.impl.PartitionedPrimitivesService;
+import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.partition.ManagedPartition;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
+import io.atomix.primitives.PrimitivesService;
+import io.atomix.primitives.impl.PartitionedPrimitivesService;
 import io.atomix.protocols.raft.partition.impl.RaftPartition;
-import io.atomix.queue.WorkQueueBuilder;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.impl.VertxRestService;
-import io.atomix.set.DistributedSetBuilder;
-import io.atomix.tree.DocumentTreeBuilder;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.value.AtomicValueBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,10 +58,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -178,63 +167,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   @Override
-  public <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder() {
-    return primitives.consistentMapBuilder();
-  }
-
-  @Override
-  public <V> DocumentTreeBuilder<V> documentTreeBuilder() {
-    return primitives.documentTreeBuilder();
-  }
-
-  @Override
-  public <K, V> ConsistentTreeMapBuilder<K, V> consistentTreeMapBuilder() {
-    return primitives.consistentTreeMapBuilder();
-  }
-
-  @Override
-  public <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder() {
-    return primitives.consistentMultimapBuilder();
-  }
-
-  @Override
-  public <K> AtomicCounterMapBuilder<K> atomicCounterMapBuilder() {
-    return primitives.atomicCounterMapBuilder();
-  }
-
-  @Override
-  public <E> DistributedSetBuilder<E> setBuilder() {
-    return primitives.setBuilder();
-  }
-
-  @Override
-  public AtomicCounterBuilder atomicCounterBuilder() {
-    return primitives.atomicCounterBuilder();
-  }
-
-  @Override
-  public AtomicIdGeneratorBuilder atomicIdGeneratorBuilder() {
-    return primitives.atomicIdGeneratorBuilder();
-  }
-
-  @Override
-  public <V> AtomicValueBuilder<V> atomicValueBuilder() {
-    return primitives.atomicValueBuilder();
-  }
-
-  @Override
-  public <T> LeaderElectorBuilder<T> leaderElectorBuilder() {
-    return primitives.leaderElectorBuilder();
-  }
-
-  @Override
-  public DistributedLockBuilder lockBuilder() {
-    return primitives.lockBuilder();
-  }
-
-  @Override
-  public <E> WorkQueueBuilder<E> workQueueBuilder() {
-    return primitives.workQueueBuilder();
+  public <B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> B primitiveBuilder(
+      String name, PrimitiveType<B, S, A> primitiveType) {
+    return primitives.primitiveBuilder(name, primitiveType);
   }
 
   @Override
@@ -301,8 +236,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     private Collection<Node> bootstrapNodes;
     private int numPartitions;
     private int partitionSize;
-    private int numBuckets = DEFAULT_NUM_BUCKETS;
     private Collection<PartitionMetadata> partitions;
+    private PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     private File dataDir = new File(System.getProperty("user.dir"), "data");
 
     /**
@@ -389,19 +324,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     /**
-     * Sets the number of buckets within each partition.
-     *
-     * @param numBuckets the number of buckets within each partition
-     * @return the cluster metadata builder
-     * @throws IllegalArgumentException if the number of buckets within each partition is not positive
-     */
-    public Builder withNumBuckets(int numBuckets) {
-      checkArgument(numBuckets > 0, "numBuckets must be positive");
-      this.numBuckets = numBuckets;
-      return this;
-    }
-
-    /**
      * Sets the partitions.
      *
      * @param partitions the partitions
@@ -409,6 +331,41 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     public Builder withPartitions(Collection<PartitionMetadata> partitions) {
       this.partitions = checkNotNull(partitions, "partitions cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the primitive types.
+     *
+     * @param primitiveTypes the primitive types
+     * @return the Atomix builder
+     * @throws NullPointerException if the primitive types is {@code null}
+     */
+    public Builder withPrimitiveTypes(PrimitiveType... primitiveTypes) {
+      return withPrimitiveTypes(Arrays.asList(primitiveTypes));
+    }
+
+    /**
+     * Sets the primitive types.
+     *
+     * @param primitiveTypes the primitive types
+     * @return the Atomix builder
+     * @throws NullPointerException if the primitive types is {@code null}
+     */
+    public Builder withPrimitiveTypes(Collection<PrimitiveType> primitiveTypes) {
+      primitiveTypes.forEach(type -> this.primitiveTypes.register(type));
+      return this;
+    }
+
+    /**
+     * Adds a primitive type.
+     *
+     * @param primitiveType the primitive type to add
+     * @return the Atomix builder
+     * @throws NullPointerException if the primitive type is {@code null}
+     */
+    public Builder addPrimitiveType(PrimitiveType primitiveType) {
+      primitiveTypes.register(primitiveType);
       return this;
     }
 
@@ -484,7 +441,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     private ManagedPartitionService buildPartitionService(ClusterCommunicationService clusterCommunicator) {
       File partitionsDir = new File(this.dataDir, "partitions");
       Collection<ManagedPartition> partitions = buildPartitions().stream()
-          .map(p -> new RaftPartition(localNode.id(), p, clusterCommunicator, new File(partitionsDir, p.id().toString())))
+          .map(p -> new RaftPartition(localNode.id(), p, clusterCommunicator, primitiveTypes, new File(partitionsDir, p.id().toString())))
           .collect(Collectors.toList());
       return new DefaultPartitionService(partitions);
     }
@@ -493,9 +450,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds a primitive service.
      */
     private PrimitivesService buildPrimitiveService(PartitionService partitionService) {
-      Map<PartitionId, DistributedPrimitiveCreator> members = new HashMap<>();
-      partitionService.getPartitions().forEach(p -> members.put(p.id(), partitionService.getPrimitiveCreator(p.id())));
-      return new PartitionedPrimitivesService(members, numBuckets);
+      return new PartitionedPrimitivesService(partitionService);
     }
 
     /**

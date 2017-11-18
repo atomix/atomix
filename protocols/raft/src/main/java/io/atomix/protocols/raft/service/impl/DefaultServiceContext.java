@@ -38,14 +38,14 @@ import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.protocols.raft.utils.LoadMonitor;
 import io.atomix.storage.buffer.Bytes;
-import io.atomix.utils.time.LogicalClock;
-import io.atomix.utils.time.LogicalTimestamp;
-import io.atomix.utils.time.WallClock;
-import io.atomix.utils.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.time.LogicalClock;
+import io.atomix.utils.time.LogicalTimestamp;
+import io.atomix.utils.time.WallClock;
+import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -260,7 +260,7 @@ public class DefaultServiceContext implements ServiceContext {
       log.debug("Installing snapshot {}", snapshot.index());
       try (SnapshotReader reader = snapshot.openReader()) {
         reader.skip(Bytes.LONG); // Skip the service ID
-        PrimitiveType primitiveType = PrimitiveType.from(reader.readString());
+        PrimitiveType primitiveType = raft.getPrimitiveTypes().get(reader.readString());
         String serviceName = reader.readString();
         int sessionCount = reader.readInt();
         for (int i = 0; i < sessionCount; i++) {

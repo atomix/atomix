@@ -18,13 +18,10 @@ package io.atomix.protocols.backup;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.PrimitiveService;
-import io.atomix.primitive.service.impl.PrimitiveServiceRegistry;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.protocols.backup.impl.DefaultPrimaryBackupServer;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadModel;
-
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -51,7 +48,7 @@ public interface PrimaryBackupServer extends Managed<PrimaryBackupServer> {
     protected ClusterService clusterService;
     protected ClusterCommunicationService communicationService;
     protected ReplicaInfoProvider replicaProvider;
-    protected final PrimitiveServiceRegistry serviceRegistry = new PrimitiveServiceRegistry();
+    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
 
@@ -101,27 +98,26 @@ public interface PrimaryBackupServer extends Managed<PrimaryBackupServer> {
     }
 
     /**
-     * Adds a Raft service factory.
+     * Sets the primitive types.
      *
-     * @param type    The service type name.
-     * @param factory The Raft service factory.
-     * @return The server builder.
-     * @throws NullPointerException if the {@code factory} is {@code null}
+     * @param primitiveTypes the primitive types
+     * @return the server builder
+     * @throws NullPointerException if the {@code primitiveTypes} argument is {@code null}
      */
-    public Builder addService(PrimitiveType type, Supplier<PrimitiveService> factory) {
-      return addService(type.id(), factory);
+    public Builder withPrimitiveTypes(PrimitiveTypeRegistry primitiveTypes) {
+      this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
+      return this;
     }
 
     /**
-     * Adds a Raft service factory.
+     * Adds a primitive type to the registry.
      *
-     * @param type    The service type name.
-     * @param factory The Raft service factory.
-     * @return The server builder.
-     * @throws NullPointerException if the {@code factory} is {@code null}
+     * @param primitiveType the primitive type to add
+     * @return the server builder
+     * @throws NullPointerException if the {@code primitiveType} is {@code null}
      */
-    public Builder addService(String type, Supplier<PrimitiveService> factory) {
-      serviceRegistry.register(type, factory);
+    public Builder addPrimitiveType(PrimitiveType primitiveType) {
+      primitiveTypes.register(primitiveType);
       return this;
     }
 

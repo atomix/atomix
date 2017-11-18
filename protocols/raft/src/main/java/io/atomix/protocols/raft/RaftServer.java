@@ -17,12 +17,12 @@ package io.atomix.protocols.raft;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.impl.DefaultRaftServer;
-import io.atomix.primitive.service.impl.PrimitiveServiceRegistry;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
@@ -569,7 +569,7 @@ public interface RaftServer {
     protected int electionThreshold = DEFAULT_ELECTION_THRESHOLD;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
     protected int sessionFailureThreshold = DEFAULT_SESSION_FAILURE_THRESHOLD;
-    protected final PrimitiveServiceRegistry serviceRegistry = new PrimitiveServiceRegistry();
+    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
@@ -636,27 +636,26 @@ public interface RaftServer {
     }
 
     /**
-     * Adds a Raft service factory.
+     * Sets the primitive types.
      *
-     * @param type    The service type name.
-     * @param factory The Raft service factory.
-     * @return The server builder.
-     * @throws NullPointerException if the {@code factory} is {@code null}
+     * @param primitiveTypes the primitive types
+     * @return the Raft server builder
+     * @throws NullPointerException if the {@code primitiveTypes} argument is {@code null}
      */
-    public Builder addService(PrimitiveType type, Supplier<PrimitiveService> factory) {
-      return addService(type.id(), factory);
+    public Builder withPrimitiveTypes(PrimitiveTypeRegistry primitiveTypes) {
+      this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
+      return this;
     }
 
     /**
-     * Adds a Raft service factory.
+     * Adds a primitive type to the registry.
      *
-     * @param type    The service type name.
-     * @param factory The Raft service factory.
-     * @return The server builder.
-     * @throws NullPointerException if the {@code factory} is {@code null}
+     * @param primitiveType the primitive type to add
+     * @return the Raft server builder
+     * @throws NullPointerException if the {@code primitiveType} is {@code null}
      */
-    public Builder addService(String type, Supplier<PrimitiveService> factory) {
-      serviceRegistry.register(type, factory);
+    public Builder addPrimitiveType(PrimitiveType primitiveType) {
+      primitiveTypes.register(primitiveType);
       return this;
     }
 

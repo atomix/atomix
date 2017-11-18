@@ -52,18 +52,18 @@ import io.atomix.protocols.backup.protocol.OpenSessionResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
-import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.utils.time.LogicalClock;
-import io.atomix.utils.time.LogicalTimestamp;
-import io.atomix.utils.time.WallClock;
-import io.atomix.utils.time.WallClockTimestamp;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.time.LogicalClock;
+import io.atomix.utils.time.LogicalTimestamp;
+import io.atomix.utils.time.WallClock;
+import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -126,7 +126,6 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       PrimitiveId primitiveId,
       String serviceName,
       PrimitiveType primitiveType,
-      PrimitiveService service,
       ThreadContext threadContext,
       ClusterService clusterService,
       ClusterCommunicationService clusterCommunicator,
@@ -136,7 +135,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     this.primitiveId = checkNotNull(primitiveId);
     this.serviceName = checkNotNull(serviceName);
     this.primitiveType = checkNotNull(primitiveType);
-    this.service = checkNotNull(service);
+    this.service = primitiveType.newService();
     this.threadContext = checkNotNull(threadContext);
     this.clusterService = checkNotNull(clusterService);
     this.clusterCommunicator = checkNotNull(clusterCommunicator);

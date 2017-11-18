@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy;
 
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.protocols.raft.ReadConsistency;
 
 import java.time.Duration;
@@ -38,19 +38,8 @@ public interface RaftProxy extends PrimitiveProxy {
     protected CommunicationStrategy communicationStrategy = CommunicationStrategy.LEADER;
     protected RecoveryStrategy recoveryStrategy = RecoveryStrategy.RECOVER;
 
-    @Override
-    public Builder withName(String name) {
-      return (Builder) super.withName(name);
-    }
-
-    @Override
-    public Builder withPrimitiveType(String serviceType) {
-      return (Builder) super.withPrimitiveType(serviceType);
-    }
-
-    @Override
-    public Builder withPrimitiveType(PrimitiveType primitiveType) {
-      return (Builder) super.withPrimitiveType(primitiveType);
+    protected Builder(String name, PrimitiveType primitiveType) {
+      super(name, primitiveType);
     }
 
     @Override

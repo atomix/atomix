@@ -100,8 +100,8 @@
     <module>core</module>
     <module>cluster</module>
     <module>messaging</module>
+    <module>primitive</module>
     <module>primitives</module>
-    <module>protocol</module>
     <module>protocols</module>
     <module>rest</module>
     <module>server</module>

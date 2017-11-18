@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.set.AsyncDistributedSet;
+import io.atomix.primitives.set.AsyncDistributedSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -15,10 +15,10 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.leadership.AsyncLeaderElector;
-import io.atomix.leadership.Leadership;
-import io.atomix.leadership.LeadershipEvent;
-import io.atomix.leadership.LeadershipEventListener;
+import io.atomix.primitives.leadership.AsyncLeaderElector;
+import io.atomix.primitives.leadership.Leadership;
+import io.atomix.primitives.leadership.LeadershipEvent;
+import io.atomix.primitives.leadership.LeadershipEventListener;
 import io.atomix.rest.utils.EventLog;
 import io.atomix.rest.utils.EventManager;
 import org.slf4j.Logger;

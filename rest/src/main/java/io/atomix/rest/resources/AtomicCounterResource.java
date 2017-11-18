@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.counter.AsyncAtomicCounter;
+import io.atomix.primitives.counter.AsyncAtomicCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

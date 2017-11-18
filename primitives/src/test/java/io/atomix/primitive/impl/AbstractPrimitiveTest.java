@@ -57,7 +57,7 @@ import static org.mockito.Mockito.when;
  *
  * @param <T> the Raft primitive type being tested
  */
-public abstract class AbstractPrimitiveTest<T extends AbstractRaftPrimitive> {
+public abstract class AbstractPrimitiveTest<T extends AbstractPrimitive> {
   private Map<String, TestPrimitiveService> services = new ConcurrentHashMap<>();
   private final ThreadContext context = new SingleThreadContext("atomix-test-%d");
 

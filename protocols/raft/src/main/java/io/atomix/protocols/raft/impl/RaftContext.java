@@ -16,10 +16,9 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.primitive.service.impl.PrimitiveServiceRegistry;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftClusterContext;
@@ -46,6 +45,7 @@ import io.atomix.protocols.raft.utils.LoadMonitor;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -80,7 +80,7 @@ public class RaftContext implements AutoCloseable {
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
   protected final String name;
   protected final ThreadContext threadContext;
-  protected final PrimitiveServiceRegistry serviceFactories;
+  protected final PrimitiveTypeRegistry primitiveTypes;
   protected final RaftClusterContext cluster;
   protected final RaftServerProtocol protocol;
   protected final RaftStorage storage;
@@ -118,13 +118,13 @@ public class RaftContext implements AutoCloseable {
       NodeId localNodeId,
       RaftServerProtocol protocol,
       RaftStorage storage,
-      PrimitiveServiceRegistry serviceFactories,
+      PrimitiveTypeRegistry primitiveTypes,
       ThreadModel threadModel,
       int threadPoolSize) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
-    this.serviceFactories = checkNotNull(serviceFactories, "registry cannot be null");
+    this.primitiveTypes = checkNotNull(primitiveTypes, "registry cannot be null");
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(name)
         .build());
@@ -625,8 +625,8 @@ public class RaftContext implements AutoCloseable {
    *
    * @return The server state machine registry.
    */
-  public PrimitiveServiceRegistry getServiceFactories() {
-    return serviceFactories;
+  public PrimitiveTypeRegistry getPrimitiveTypes() {
+    return primitiveTypes;
   }
 
   /**

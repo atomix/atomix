@@ -61,31 +61,10 @@ public interface RaftMetadataClient {
   /**
    * Returns a list of open sessions of the given type.
    *
-   * @param serviceType the service type for which to return sessions
-   * @return A completable future to be completed with a list of open sessions of the given type.
-   */
-  default CompletableFuture<Set<SessionMetadata>> getSessions(String serviceType) {
-    return getSessions(PrimitiveType.from(serviceType));
-  }
-
-  /**
-   * Returns a list of open sessions of the given type.
-   *
    * @param primitiveType the service type for which to return sessions
    * @return A completable future to be completed with a list of open sessions of the given type.
    */
   CompletableFuture<Set<SessionMetadata>> getSessions(PrimitiveType primitiveType);
-
-  /**
-   * Returns a list of open sessions for the given service.
-   *
-   * @param serviceType the service type for which to return sessions
-   * @param serviceName the service for which to return sessions
-   * @return A completable future to be completed with a list of open sessions of the given type.
-   */
-  default CompletableFuture<Set<SessionMetadata>> getSessions(String serviceType, String serviceName) {
-    return getSessions(PrimitiveType.from(serviceType), serviceName);
-  }
 
   /**
    * Returns a list of open sessions for the given service.

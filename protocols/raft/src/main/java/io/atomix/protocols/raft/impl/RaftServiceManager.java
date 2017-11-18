@@ -17,12 +17,13 @@ package io.atomix.protocols.raft.impl;
 
 import com.google.common.primitives.Longs;
 import io.atomix.cluster.NodeId;
-import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.session.SessionMetadata;
+import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.RaftException;
+import io.atomix.protocols.raft.RaftException.UnknownService;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
@@ -53,7 +54,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -220,7 +220,7 @@ public class RaftServiceManager implements AutoCloseable {
    */
   private void restoreService(SnapshotReader reader) {
     PrimitiveId primitiveId = PrimitiveId.from(reader.readLong());
-    PrimitiveType primitiveType = PrimitiveType.from(reader.readString());
+    PrimitiveType primitiveType = raft.getPrimitiveTypes().get(reader.readString());
     String serviceName = reader.readString();
 
     // Get or create the service associated with the snapshot.
@@ -389,18 +389,12 @@ public class RaftServiceManager implements AutoCloseable {
    * Initializes a new service.
    */
   private DefaultServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName) {
-    Supplier<PrimitiveService> serviceFactory = raft.getServiceFactories().getFactory(primitiveType.id());
-    if (serviceFactory == null) {
-      logger.warn("Unknown service type: {}", primitiveType);
-      return null;
-    }
-
     DefaultServiceContext oldService = raft.getServices().getService(serviceName);
     DefaultServiceContext service = new DefaultServiceContext(
         primitiveId,
         serviceName,
         primitiveType,
-        serviceFactory.get(),
+        primitiveType.newService(),
         raft,
         threadContextFactory);
     raft.getServices().registerService(service);
@@ -416,10 +410,15 @@ public class RaftServiceManager implements AutoCloseable {
    * Applies an open session entry to the state machine.
    */
   private CompletableFuture<Long> applyOpenSession(Indexed<OpenSessionEntry> entry) {
+    PrimitiveType primitiveType = raft.getPrimitiveTypes().get(entry.entry().serviceType());
+    if (primitiveType == null) {
+      return Futures.exceptionalFuture(new UnknownService("Unknown service type " + entry.entry().serviceType()));
+    }
+
     // Get the state machine executor or create one if it doesn't already exist.
     DefaultServiceContext service = getOrInitializeService(
         PrimitiveId.from(entry.index()),
-        PrimitiveType.from(entry.entry().serviceType()),
+        raft.getPrimitiveTypes().get(entry.entry().serviceType()),
         entry.entry().serviceName());
     if (service == null) {
       return Futures.exceptionalFuture(new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType()));
@@ -430,7 +429,7 @@ public class RaftServiceManager implements AutoCloseable {
         sessionId,
         NodeId.from(entry.entry().memberId()),
         entry.entry().serviceName(),
-        PrimitiveType.from(entry.entry().serviceType()),
+        primitiveType,
         entry.entry().readConsistency(),
         entry.entry().minTimeout(),
         entry.entry().maxTimeout(),

@@ -18,6 +18,7 @@ package io.atomix.protocols.backup.partition.impl;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.protocols.backup.PrimaryBackupServer;
 import io.atomix.protocols.backup.ReplicaInfoProvider;
 import io.atomix.utils.Managed;
@@ -33,6 +34,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   private final ClusterService clusterService;
   private final ClusterCommunicationService communicationService;
   private final ReplicaInfoProvider replicaProvider;
+  private final PrimitiveTypeRegistry primitiveTypes;
   private PrimaryBackupServer server;
   private final AtomicBoolean open = new AtomicBoolean();
 
@@ -40,11 +42,13 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
       PrimaryBackupPartition partition,
       ClusterService clusterService,
       ClusterCommunicationService communicationService,
-      ReplicaInfoProvider replicaProvider) {
+      ReplicaInfoProvider replicaProvider,
+      PrimitiveTypeRegistry primitiveTypes) {
     this.partition = partition;
     this.clusterService = clusterService;
     this.communicationService = communicationService;
     this.replicaProvider = replicaProvider;
+    this.primitiveTypes = primitiveTypes;
   }
 
   @Override
@@ -72,8 +76,8 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
         .withServerName(partition.name())
         .withClusterService(clusterService)
         .withCommunicationService(communicationService)
-        .withReplicaProvider(replicaProvider);
-    PrimaryBackupPartition.SERVICES.forEach(builder::addService);
+        .withReplicaProvider(replicaProvider)
+        .withPrimitiveTypes(primitiveTypes);
     return builder.build();
   }
 

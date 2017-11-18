@@ -17,12 +17,13 @@ package io.atomix.protocols.raft.partition.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.storage.RaftStorage;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.Managed;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -51,15 +52,18 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   private final NodeId localNodeId;
   private final RaftPartition partition;
   private final ClusterCommunicationService clusterCommunicator;
+  private final PrimitiveTypeRegistry primitiveTypes;
   private RaftServer server;
 
   public RaftPartitionServer(
       RaftPartition partition,
       NodeId localNodeId,
-      ClusterCommunicationService clusterCommunicator) {
+      ClusterCommunicationService clusterCommunicator,
+      PrimitiveTypeRegistry primitiveTypes) {
     this.partition = partition;
     this.localNodeId = localNodeId;
     this.clusterCommunicator = clusterCommunicator;
+    this.primitiveTypes = primitiveTypes;
   }
 
   @Override
@@ -124,12 +128,13 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   }
 
   private RaftServer buildServer() {
-    RaftServer.Builder builder = RaftServer.builder(localNodeId)
+    return RaftServer.builder(localNodeId)
         .withName(partition.name())
         .withProtocol(new RaftServerCommunicator(
             partition.name(),
             Serializer.using(RaftNamespaces.RAFT_PROTOCOL),
             clusterCommunicator))
+        .withPrimitiveTypes(primitiveTypes)
         .withElectionTimeout(Duration.ofMillis(ELECTION_TIMEOUT_MILLIS))
         .withHeartbeatInterval(Duration.ofMillis(HEARTBEAT_INTERVAL_MILLIS))
         .withStorage(RaftStorage.builder()
@@ -138,9 +143,8 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .withDirectory(partition.getDataDir())
             .withMaxSegmentSize(MAX_SEGMENT_SIZE)
-            .build());
-    RaftPartition.RAFT_SERVICES.forEach(builder::addService);
-    return builder.build();
+            .build())
+        .build();
   }
 
   public CompletableFuture<Void> join(Collection<NodeId> otherMembers) {

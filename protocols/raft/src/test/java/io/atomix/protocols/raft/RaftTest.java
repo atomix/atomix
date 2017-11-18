@@ -16,6 +16,9 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveClient;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
@@ -24,8 +27,8 @@ import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.cluster.RaftClusterEvent;
@@ -42,11 +45,11 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
-import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Serializer;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.After;
 import org.junit.Before;
@@ -127,13 +130,13 @@ public class RaftTest extends ConcurrentTestCase {
     createSession(client).invoke(WRITE).join();
     assertNotNull(client.metadata().getLeader());
     assertNotNull(client.metadata().getServers());
-    Set<SessionMetadata> typeSessions = client.metadata().getSessions("test").join();
+    Set<SessionMetadata> typeSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE).join();
     assertEquals(2, typeSessions.size());
-    typeSessions = client.metadata().getSessions(PrimitiveType.from("test")).join();
+    typeSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE).join();
     assertEquals(2, typeSessions.size());
-    Set<SessionMetadata> serviceSessions = client.metadata().getSessions("test", "test").join();
+    Set<SessionMetadata> serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "test").join();
     assertEquals(2, serviceSessions.size());
-    serviceSessions = client.metadata().getSessions(PrimitiveType.from("test"), "test").join();
+    serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "test").join();
     assertEquals(2, serviceSessions.size());
   }
 
@@ -1214,7 +1217,7 @@ public class RaftTest extends ConcurrentTestCase {
             .withMaxSegmentSize(1024 * 10)
             .withMaxEntriesPerSegment(10)
             .build())
-        .addService("test", TestStateMachine::new);
+        .addPrimitiveType(TestPrimitiveType.INSTANCE);
 
     RaftServer server = builder.build();
     servers.add(server);
@@ -1247,9 +1250,7 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a test session.
    */
   private PrimitiveProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
-    return client.newProxyBuilder()
-        .withName("test")
-        .withPrimitiveType("test")
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
         .withReadConsistency(consistency)
         .build()
         .open()
@@ -1311,9 +1312,31 @@ public class RaftTest extends ConcurrentTestCase {
   private static final EventType CLOSE_EVENT = EventType.from("close");
 
   /**
+   * Test primitive type.
+   */
+  private static class TestPrimitiveType implements PrimitiveType {
+    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+
+    @Override
+    public String id() {
+      return "test";
+    }
+
+    @Override
+    public PrimitiveService newService() {
+      return new TestPrimitiveService();
+    }
+
+    @Override
+    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveClient client) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  /**
    * Test state machine.
    */
-  public static class TestStateMachine extends AbstractPrimitiveService {
+  public static class TestPrimitiveService extends AbstractPrimitiveService {
     private Commit<Void> expire;
     private Commit<Void> close;
 

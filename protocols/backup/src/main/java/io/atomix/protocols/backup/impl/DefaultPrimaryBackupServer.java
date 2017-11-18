@@ -20,8 +20,7 @@ import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.impl.PrimitiveServiceRegistry;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.protocols.backup.PrimaryBackupServer;
 import io.atomix.protocols.backup.ReplicaInfoProvider;
 import io.atomix.protocols.backup.protocol.CloseSessionRequest;
@@ -32,10 +31,10 @@ import io.atomix.protocols.backup.protocol.OpenSessionRequest;
 import io.atomix.protocols.backup.protocol.OpenSessionResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -52,7 +51,7 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
   private final ClusterService clusterService;
   private final ClusterCommunicationService communicationService;
   private final ThreadContextFactory threadContextFactory;
-  private final PrimitiveServiceRegistry primitiveServices;
+  private final PrimitiveTypeRegistry primitiveTypes;
   private final ReplicaInfoProvider replicaProvider;
   private final Map<String, PrimaryBackupServiceContext> services = Maps.newConcurrentMap();
   private final MessageSubject openSessionSubject;
@@ -65,13 +64,13 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
       ClusterService clusterService,
       ClusterCommunicationService communicationService,
       ThreadContextFactory threadContextFactory,
-      PrimitiveServiceRegistry primitiveServices,
+      PrimitiveTypeRegistry primitiveTypes,
       ReplicaInfoProvider replicaProvider) {
     this.serverName = serverName;
     this.clusterService = clusterService;
     this.communicationService = communicationService;
     this.threadContextFactory = threadContextFactory;
-    this.primitiveServices = primitiveServices;
+    this.primitiveTypes = primitiveTypes;
     this.replicaProvider = replicaProvider;
     this.openSessionSubject = new MessageSubject(String.format("%s-open", serverName));
     this.closeSessionSubject = new MessageSubject(String.format("%s-close", serverName));
@@ -86,8 +85,7 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
         serverName,
         PrimitiveId.from(request.primitiveName()),
         request.primitiveName(),
-        PrimitiveType.from(request.primitiveType()),
-        primitiveServices.getFactory(request.primitiveType()).get(),
+        primitiveTypes.get(request.primitiveType()),
         threadContextFactory.createContext(),
         clusterService,
         communicationService,
@@ -185,7 +183,7 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
           clusterService,
           communicationService,
           threadContextFactory,
-          serviceRegistry,
+          primitiveTypes,
           replicaProvider);
     }
   }

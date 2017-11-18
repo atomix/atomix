@@ -33,11 +33,11 @@ import io.atomix.protocols.backup.protocol.MetadataResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.proxy.impl.DefaultPrimaryBackupProxy;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.Set;
@@ -74,8 +74,8 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
   }
 
   @Override
-  public PrimitiveProxy.Builder proxyBuilder() {
-    return new ProxyBuilder();
+  public PrimitiveProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType) {
+    return new ProxyBuilder(primitiveName, primitiveType);
   }
 
   @Override
@@ -140,9 +140,13 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
    * Primary-backup proxy builder.
    */
   private class ProxyBuilder extends PrimitiveProxy.Builder {
+    ProxyBuilder(String name, PrimitiveType primitiveType) {
+      super(name, primitiveType);
+    }
+
     @Override
     public PrimitiveProxy build() {
-      PrimitiveProxy.Builder proxyBuilder = new PrimitiveProxy.Builder() {
+      PrimitiveProxy.Builder proxyBuilder = new PrimitiveProxy.Builder(name, primitiveType) {
         @Override
         public PrimitiveProxy build() {
           return new DefaultPrimaryBackupProxy(
@@ -157,8 +161,7 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
       };
 
       // Populate the proxy client builder.
-      proxyBuilder.withName(name)
-          .withPrimitiveType(primitiveType)
+      proxyBuilder
           .withMaxRetries(maxRetries)
           .withRetryDelay(retryDelay)
           .withMinTimeout(minTimeout)

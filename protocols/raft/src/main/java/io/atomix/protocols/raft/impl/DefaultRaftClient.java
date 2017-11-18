@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
 import io.atomix.primitive.proxy.impl.DelegatingPrimitiveProxy;
@@ -36,8 +37,10 @@ import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -109,8 +112,15 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public RaftProxy.Builder newProxyBuilder() {
-    return new ProxyBuilder();
+  public RaftProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType) {
+    return new ProxyBuilder(primitiveName, primitiveType);
+  }
+
+  @Override
+  public CompletableFuture<Set<String>> getPrimitives(PrimitiveType primitiveType) {
+    return metadata.getSessions(primitiveType).thenApply(result -> result.stream()
+        .map(m -> m.primitiveName())
+        .collect(Collectors.toSet()));
   }
 
   @Override
@@ -129,10 +139,14 @@ public class DefaultRaftClient implements RaftClient {
    * Default Raft session builder.
    */
   private class ProxyBuilder extends RaftProxy.Builder {
+    ProxyBuilder(String name, PrimitiveType primitiveType) {
+      super(name, primitiveType);
+    }
+
     @Override
     public PrimitiveProxy build() {
       // Create a proxy builder that uses the session manager to open a session.
-      RaftProxy.Builder proxyBuilder = new RaftProxy.Builder() {
+      RaftProxy.Builder proxyBuilder = new RaftProxy.Builder(name, primitiveType) {
         @Override
         public RaftProxy build() {
           return new DefaultRaftProxy(
@@ -150,8 +164,7 @@ public class DefaultRaftClient implements RaftClient {
       };
 
       // Populate the proxy client builder.
-      proxyBuilder.withName(name)
-          .withPrimitiveType(primitiveType)
+      proxyBuilder
           .withReadConsistency(readConsistency)
           .withMaxRetries(maxRetries)
           .withRetryDelay(retryDelay)

@@ -19,7 +19,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitivesService;
+import io.atomix.primitives.PrimitivesService;
 
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
