@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.primitives.PrimitivesService;
+import io.atomix.PrimitivesService;
 import io.atomix.rest.utils.PrimitiveCache;
 
 import javax.ws.rs.GET;
@@ -47,8 +47,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/counters")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getCounterNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getAtomicCounterNames()).build();
+  public Response getCounterNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getAtomicCounterNames()).build();
   }
 
   /**
@@ -57,7 +57,7 @@ public class PrimitivesResource extends AbstractRestResource {
   @Path("/elections/{name}")
   public LeaderElectorResource getElection(@PathParam("name") String electionName, @Context PrimitiveCache primitiveCache) {
     return new LeaderElectorResource(primitiveCache.getPrimitive(electionName, primitives ->
-        primitives.<String>leaderElectorBuilder(electionName).buildAsync()));
+        primitives.<String>leaderElectionBuilder(electionName).buildAsync()));
   }
 
   /**
@@ -66,8 +66,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/elections")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getElectionsNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getLeaderElectorNames()).build();
+  public Response getElectionsNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getLeaderElectorNames()).build();
   }
 
   /**
@@ -85,8 +85,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/ids")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getIdGeneratorNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getAtomicIdGeneratorNames()).build();
+  public Response getIdGeneratorNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getAtomicIdGeneratorNames()).build();
   }
 
   /**
@@ -104,8 +104,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/locks")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getLockNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getDistributedLockNames()).build();
+  public Response getLockNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getDistributedLockNames()).build();
   }
 
   /**
@@ -123,8 +123,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/maps")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getMapNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getConsistentMapNames()).build();
+  public Response getMapNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getConsistentMapNames()).build();
   }
 
   /**
@@ -142,8 +142,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/queues")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getQueueNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getWorkQueueNames()).build();
+  public Response getQueueNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getWorkQueueNames()).build();
   }
 
   /**
@@ -161,8 +161,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/sets")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getSetNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getSetNames()).build();
+  public Response getSetNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getSetNames()).build();
   }
 
   /**
@@ -180,8 +180,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/trees")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getTreeNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getDocumentTreeNames()).build();
+  public Response getTreeNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getDocumentTreeNames()).build();
   }
 
   /**
@@ -199,7 +199,7 @@ public class PrimitivesResource extends AbstractRestResource {
   @GET
   @Path("/values")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getValueNames(@Context PrimitivesService primitivesService) {
-    return Response.ok(primitivesService.getAtomicValueNames()).build();
+  public Response getValueNames(@Context PrimitivesService primitives) {
+    return Response.ok(primitives.getAtomicValueNames()).build();
   }
 }

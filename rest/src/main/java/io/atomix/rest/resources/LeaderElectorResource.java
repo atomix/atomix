@@ -15,10 +15,10 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.primitives.leadership.AsyncLeaderElector;
-import io.atomix.primitives.leadership.Leadership;
-import io.atomix.primitives.leadership.LeadershipEvent;
-import io.atomix.primitives.leadership.LeadershipEventListener;
+import io.atomix.election.AsyncLeaderElection;
+import io.atomix.election.Leadership;
+import io.atomix.election.LeadershipEvent;
+import io.atomix.election.LeadershipEventListener;
 import io.atomix.rest.utils.EventLog;
 import io.atomix.rest.utils.EventManager;
 import org.slf4j.Logger;
@@ -45,9 +45,9 @@ import java.util.UUID;
 public class LeaderElectorResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(LeaderElectorResource.class);
 
-  private final AsyncLeaderElector<String> leaderElector;
+  private final AsyncLeaderElection<String> leaderElector;
 
-  public LeaderElectorResource(AsyncLeaderElector<String> leaderElector) {
+  public LeaderElectorResource(AsyncLeaderElection<String> leaderElector) {
     this.leaderElector = leaderElector;
   }
 
@@ -63,7 +63,7 @@ public class LeaderElectorResource {
   public void run(@Context EventManager events, @Suspended AsyncResponse response) {
     String id = UUID.randomUUID().toString();
     EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog = events.getOrCreateEventLog(
-        AsyncLeaderElector.class, getEventLogName(id), l -> e -> l.addEvent(e));
+        AsyncLeaderElection.class, getEventLogName(id), l -> e -> l.addEvent(e));
 
     leaderElector.addListener(eventLog.listener()).whenComplete((listenResult, listenError) -> {
       if (listenError == null) {
@@ -99,7 +99,7 @@ public class LeaderElectorResource {
   @Path("/{id}")
   public void listen(@PathParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
     EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog = events.getEventLog(
-        AsyncLeaderElector.class, getEventLogName(id));
+        AsyncLeaderElection.class, getEventLogName(id));
     consumeNextEvent(eventLog, id, response);
   }
 
@@ -126,7 +126,7 @@ public class LeaderElectorResource {
   @Path("/{id}")
   public void withdraw(@PathParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
     EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog = events.removeEventLog(
-        AsyncLeaderElector.class, getEventLogName(id));
+        AsyncLeaderElection.class, getEventLogName(id));
     if (eventLog != null && eventLog.close()) {
       leaderElector.removeListener(eventLog.listener()).whenComplete((removeResult, removeError) -> {
         leaderElector.withdraw(id).whenComplete((withdrawResult, withdrawError) -> {

@@ -18,8 +18,8 @@ package io.atomix.protocols.raft.proxy.impl;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import io.atomix.cluster.NodeId;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftException;
@@ -91,6 +91,24 @@ public class RaftProxyManager {
             .build());
     protocol.registerHeartbeatHandler(this::handleHeartbeat);
     this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
+  }
+
+  /**
+   * Returns the current term.
+   *
+   * @return the current term
+   */
+  public long term() {
+    return 0; // TODO
+  }
+
+  /**
+   * Returns the current leader.
+   *
+   * @return the current leader
+   */
+  public NodeId leader() {
+    return selectorManager.leader();
   }
 
   /**

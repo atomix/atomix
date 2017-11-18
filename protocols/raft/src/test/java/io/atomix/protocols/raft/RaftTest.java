@@ -17,7 +17,7 @@ package io.atomix.protocols.raft;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveClient;
+import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
@@ -1250,8 +1250,9 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a test session.
    */
   private PrimitiveProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(consistency)
+        .build())
         .build()
         .open()
         .get(5, TimeUnit.SECONDS);
@@ -1328,7 +1329,7 @@ public class RaftTest extends ConcurrentTestCase {
     }
 
     @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveClient client) {
+    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
       throw new UnsupportedOperationException();
     }
   }

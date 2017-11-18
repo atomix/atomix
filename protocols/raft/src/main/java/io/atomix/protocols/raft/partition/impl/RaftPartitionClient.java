@@ -20,6 +20,8 @@ import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy.Builder;
 import io.atomix.protocols.raft.RaftClient;
+import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.utils.Managed;
 import org.slf4j.Logger;
@@ -32,7 +34,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * StoragePartition client.
  */
-public class RaftPartitionClient implements PrimitiveClient, Managed<RaftPartitionClient> {
+public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Managed<RaftPartitionClient> {
 
   private final Logger log = getLogger(getClass());
 
@@ -47,9 +49,27 @@ public class RaftPartitionClient implements PrimitiveClient, Managed<RaftPartiti
     this.protocol = protocol;
   }
 
+  /**
+   * Returns the partition term.
+   *
+   * @return the partition term
+   */
+  public long term() {
+    return client != null ? client.term() : 0;
+  }
+
+  /**
+   * Returns the partition leader.
+   *
+   * @return the partition leader
+   */
+  public NodeId leader() {
+    return client != null ? client.leader() : null;
+  }
+
   @Override
-  public Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType) {
-    return client.proxyBuilder(primitiveName, primitiveType);
+  public Builder<RaftProtocol> proxyBuilder(String primitiveName, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
+    return client.proxyBuilder(primitiveName, primitiveType, primitiveProtocol);
   }
 
   @Override

@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive.proxy;
 
+import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
@@ -215,18 +216,18 @@ public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<Primitiv
   /**
    * Raft session builder.
    */
-  abstract class Builder implements io.atomix.utils.Builder<PrimitiveProxy> {
+  abstract class Builder<P extends PrimitiveProtocol> implements io.atomix.utils.Builder<PrimitiveProxy> {
     protected final String name;
     protected final PrimitiveType primitiveType;
+    protected final P protocol;
     protected int maxRetries = 0;
     protected Duration retryDelay = Duration.ofMillis(100);
     protected Executor executor;
-    protected Duration minTimeout = Duration.ofMillis(250);
-    protected Duration maxTimeout = Duration.ofMillis(0);
 
-    public Builder(String name, PrimitiveType primitiveType) {
+    protected Builder(String name, PrimitiveType primitiveType, P primitiveProtocol) {
       this.name = checkNotNull(name, "name cannot be null");
       this.primitiveType = checkNotNull(primitiveType, "primitiveType cannot be null");
+      this.protocol = checkNotNull(primitiveProtocol, "primitiveProtocol cannot be null");
     }
 
     /**
@@ -272,81 +273,6 @@ public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<Primitiv
      */
     public Builder withRetryDelay(Duration retryDelay) {
       this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the session timeout.
-     *
-     * @param timeoutMillis The session timeout.
-     * @return The session builder.
-     * @throws IllegalArgumentException if the session timeout is not positive
-     */
-    public Builder withMinTimeout(long timeoutMillis) {
-      return withMinTimeout(Duration.ofMillis(timeoutMillis));
-    }
-
-    /**
-     * Sets the session timeout.
-     *
-     * @param timeout The session timeout.
-     * @return The session builder.
-     * @throws IllegalArgumentException if the session timeout is not positive
-     * @throws NullPointerException     if the timeout is null
-     */
-    public Builder withMinTimeout(Duration timeout) {
-      checkArgument(!checkNotNull(timeout).isNegative(), "timeout must be positive");
-      this.minTimeout = timeout;
-      return this;
-    }
-
-    /**
-     * Sets the session timeout.
-     *
-     * @param timeoutMillis The session timeout.
-     * @return The session builder.
-     * @throws IllegalArgumentException if the session timeout is not positive
-     */
-    @Deprecated
-    public Builder withTimeout(long timeoutMillis) {
-      return withMaxTimeout(Duration.ofMillis(timeoutMillis));
-    }
-
-    /**
-     * Sets the session timeout.
-     *
-     * @param timeout The session timeout.
-     * @return The session builder.
-     * @throws IllegalArgumentException if the session timeout is not positive
-     * @throws NullPointerException     if the timeout is null
-     */
-    @Deprecated
-    public Builder withTimeout(Duration timeout) {
-      return withMaxTimeout(timeout);
-    }
-
-    /**
-     * Sets the session timeout.
-     *
-     * @param timeoutMillis The session timeout.
-     * @return The session builder.
-     * @throws IllegalArgumentException if the session timeout is not positive
-     */
-    public Builder withMaxTimeout(long timeoutMillis) {
-      return withMaxTimeout(Duration.ofMillis(timeoutMillis));
-    }
-
-    /**
-     * Sets the session timeout.
-     *
-     * @param timeout The session timeout.
-     * @return The session builder.
-     * @throws IllegalArgumentException if the session timeout is not positive
-     * @throws NullPointerException     if the timeout is null
-     */
-    public Builder withMaxTimeout(Duration timeout) {
-      checkArgument(!checkNotNull(timeout).isNegative(), "timeout must be positive");
-      this.maxTimeout = timeout;
       return this;
     }
 

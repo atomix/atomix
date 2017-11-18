@@ -35,7 +35,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class DelegatingPrimitiveProxy implements PrimitiveProxy {
   private final PrimitiveProxy proxy;
-  private final Map<EventType, Map<Object, Consumer<PrimitiveEvent>>> eventTypeListeners = Maps.newConcurrentMap();
+  private final Map<String, Map<Object, Consumer<PrimitiveEvent>>> eventTypeListeners = Maps.newConcurrentMap();
 
   public DelegatingPrimitiveProxy(PrimitiveProxy proxy) {
     this.proxy = proxy;
@@ -89,40 +89,42 @@ public class DelegatingPrimitiveProxy implements PrimitiveProxy {
   @Override
   public void addEventListener(EventType eventType, Runnable listener) {
     Consumer<PrimitiveEvent> wrappedListener = e -> {
-      if (e.type().equals(eventType)) {
+      if (e.type().id().equals(eventType.id())) {
         listener.run();
       }
     };
-    eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
+    eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
     addEventListener(wrappedListener);
   }
 
   @Override
   public void addEventListener(EventType eventType, Consumer<byte[]> listener) {
     Consumer<PrimitiveEvent> wrappedListener = e -> {
-      if (e.type().equals(eventType)) {
+      if (e.type().id().equals(eventType.id())) {
         listener.accept(e.value());
       }
     };
-    eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
+    eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap())
+        .put(listener, wrappedListener);
     addEventListener(wrappedListener);
   }
 
   @Override
   public <T> void addEventListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener) {
     Consumer<PrimitiveEvent> wrappedListener = e -> {
-      if (e.type().equals(eventType)) {
+      if (e.type().id().equals(eventType.id())) {
         listener.accept(decoder.apply(e.value()));
       }
     };
-    eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
+    eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap())
+        .put(listener, wrappedListener);
     addEventListener(wrappedListener);
   }
 
   @Override
   public void removeEventListener(EventType eventType, Runnable listener) {
     Consumer<PrimitiveEvent> eventListener =
-        eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap())
+        eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap())
             .remove(listener);
     removeEventListener(eventListener);
   }
@@ -130,7 +132,7 @@ public class DelegatingPrimitiveProxy implements PrimitiveProxy {
   @Override
   public void removeEventListener(EventType eventType, Consumer listener) {
     Consumer<PrimitiveEvent> eventListener =
-        eventTypeListeners.computeIfAbsent(eventType, e -> Maps.newConcurrentMap())
+        eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap())
             .remove(listener);
     removeEventListener(eventListener);
   }

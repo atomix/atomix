@@ -17,13 +17,9 @@ package io.atomix.protocols.raft;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy.Builder;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.utils.concurrent.ThreadModel;
 
 import java.util.Arrays;
@@ -38,7 +34,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Provides an interface for submitting operations to the Raft cluster.
  */
-public interface RaftClient extends PrimitiveClient {
+public interface RaftClient extends PrimitiveClient<RaftProtocol> {
 
   /**
    * Returns a new Raft client builder.
@@ -114,14 +110,25 @@ public interface RaftClient extends PrimitiveClient {
   String clientId();
 
   /**
+   * Returns the current term.
+   *
+   * @return the current term
+   */
+  long term();
+
+  /**
+   * Returns the current leader.
+   *
+   * @return the current leader
+   */
+  NodeId leader();
+
+  /**
    * Returns the Raft metadata.
    *
    * @return The Raft metadata.
    */
   RaftMetadataClient metadata();
-
-  @Override
-  RaftProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType);
 
   /**
    * Connects the client to Raft cluster via the default server address.

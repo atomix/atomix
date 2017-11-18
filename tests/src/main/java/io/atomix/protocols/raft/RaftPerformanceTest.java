@@ -22,7 +22,7 @@ import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveClient;
+import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
@@ -509,9 +509,10 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a test session.
    */
   private PrimitiveProxy createProxy(RaftClient client) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
+        .build())
         .build();
   }
 
@@ -537,8 +538,8 @@ public class RaftPerformanceTest implements Runnable {
     }
 
     @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveClient client) {
-      return null;
+    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
+      throw new UnsupportedOperationException();
     }
   }
 

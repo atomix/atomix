@@ -16,24 +16,13 @@
 package io.atomix.protocols.raft.partition.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.primitives.counter.impl.AtomicCounterOperations;
-import io.atomix.primitives.leadership.impl.LeaderElectorEvents;
-import io.atomix.primitives.leadership.impl.LeaderElectorOperations;
-import io.atomix.primitives.lock.impl.DistributedLockEvents;
-import io.atomix.primitives.lock.impl.DistributedLockOperations;
-import io.atomix.primitives.map.impl.AtomicCounterMapOperations;
-import io.atomix.primitives.map.impl.ConsistentMapEvents;
-import io.atomix.primitives.map.impl.ConsistentMapOperations;
-import io.atomix.primitives.map.impl.ConsistentTreeMapOperations;
-import io.atomix.primitives.multimap.impl.ConsistentSetMultimapEvents;
-import io.atomix.primitives.multimap.impl.ConsistentSetMultimapOperations;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.event.impl.DefaultEventType;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -80,14 +69,8 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
-import io.atomix.primitives.queue.impl.WorkQueueEvents;
-import io.atomix.primitives.queue.impl.WorkQueueOperations;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.primitives.tree.impl.DocumentTreeEvents;
-import io.atomix.primitives.tree.impl.DocumentTreeOperations;
-import io.atomix.primitives.value.impl.AtomicValueEvents;
-import io.atomix.primitives.value.impl.AtomicValueOperations;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -167,23 +150,6 @@ public final class RaftNamespaces {
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
-      .register(AtomicCounterMapOperations.class)
-      .register(ConsistentMapEvents.class)
-      .register(ConsistentMapOperations.class)
-      .register(ConsistentSetMultimapOperations.class)
-      .register(ConsistentSetMultimapEvents.class)
-      .register(ConsistentTreeMapOperations.class)
-      .register(AtomicCounterOperations.class)
-      .register(DocumentTreeEvents.class)
-      .register(DocumentTreeOperations.class)
-      .register(LeaderElectorEvents.class)
-      .register(LeaderElectorOperations.class)
-      .register(WorkQueueEvents.class)
-      .register(WorkQueueOperations.class)
-      .register(AtomicValueEvents.class)
-      .register(AtomicValueOperations.class)
-      .register(DistributedLockEvents.class)
-      .register(DistributedLockOperations.class)
       .build("RaftProtocol");
 
   /**
@@ -201,6 +167,8 @@ public final class RaftNamespaces {
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
       .register(PrimitiveOperation.class)
+      .register(DefaultOperationId.class)
+      .register(OperationType.class)
       .register(ReadConsistency.class)
       .register(ArrayList.class)
       .register(HashSet.class)
@@ -209,16 +177,6 @@ public final class RaftNamespaces {
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
-      .register(AtomicCounterMapOperations.class)
-      .register(ConsistentMapOperations.class)
-      .register(ConsistentSetMultimapOperations.class)
-      .register(ConsistentTreeMapOperations.class)
-      .register(AtomicCounterOperations.class)
-      .register(DocumentTreeOperations.class)
-      .register(LeaderElectorOperations.class)
-      .register(WorkQueueOperations.class)
-      .register(AtomicValueOperations.class)
-      .register(DistributedLockOperations.class)
       .build("RaftStorage");
 
   private RaftNamespaces() {

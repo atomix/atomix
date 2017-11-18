@@ -15,10 +15,12 @@
  */
 package io.atomix.rest.impl;
 
+import io.atomix.Atomix;
+import io.atomix.PrimitivesService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
-import io.atomix.primitives.PrimitivesService;
+import io.atomix.messaging.Endpoint;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;
@@ -46,34 +48,17 @@ public class VertxRestService implements ManagedRestService {
   private static final Logger LOGGER = LoggerFactory.getLogger(VertxRestService.class);
   private static final int PRIMITIVE_CACHE_SIZE = 1000;
 
-  private final String host;
-  private final int port;
+  private final Atomix atomix;
+  private final Endpoint endpoint;
   private final Vertx vertx;
-  private final ClusterService clusterService;
-  private final ClusterCommunicationService communicationService;
-  private final ClusterEventService eventService;
-  private final PrimitivesService primitivesService;
-  private final PrimitiveCache primitiveCache;
-  private final EventManager eventManager = new EventManager();
   private HttpServer server;
   private VertxResteasyDeployment deployment;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public VertxRestService(
-      String host,
-      int port,
-      ClusterService clusterService,
-      ClusterCommunicationService communicationService,
-      ClusterEventService eventService,
-      PrimitivesService primitivesService) {
-    this.host = host;
-    this.port = port;
+  public VertxRestService(Atomix atomix, Endpoint endpoint) {
+    this.atomix = checkNotNull(atomix, "atomix cannot be null");
+    this.endpoint = checkNotNull(endpoint, "endpoint cannot be null");
     this.vertx = Vertx.vertx();
-    this.clusterService = checkNotNull(clusterService);
-    this.communicationService = checkNotNull(communicationService);
-    this.eventService = checkNotNull(eventService);
-    this.primitivesService = checkNotNull(primitivesService);
-    this.primitiveCache = new PrimitiveCache(primitivesService, PRIMITIVE_CACHE_SIZE);
   }
 
   @Override
@@ -82,12 +67,18 @@ public class VertxRestService implements ManagedRestService {
     deployment = new VertxResteasyDeployment();
     deployment.start();
 
-    deployment.getDispatcher().getDefaultContextObjects().put(ClusterService.class, clusterService);
-    deployment.getDispatcher().getDefaultContextObjects().put(ClusterCommunicationService.class, communicationService);
-    deployment.getDispatcher().getDefaultContextObjects().put(ClusterEventService.class, eventService);
-    deployment.getDispatcher().getDefaultContextObjects().put(PrimitivesService.class, primitivesService);
-    deployment.getDispatcher().getDefaultContextObjects().put(PrimitiveCache.class, primitiveCache);
-    deployment.getDispatcher().getDefaultContextObjects().put(EventManager.class, eventManager);
+    deployment.getDispatcher().getDefaultContextObjects()
+        .put(ClusterService.class, atomix.getClusterService());
+    deployment.getDispatcher().getDefaultContextObjects()
+        .put(ClusterCommunicationService.class, atomix.getCommunicationService());
+    deployment.getDispatcher().getDefaultContextObjects()
+        .put(ClusterEventService.class, atomix.getEventService());
+    deployment.getDispatcher().getDefaultContextObjects()
+        .put(PrimitivesService.class, atomix.getPrimitivesService());
+    deployment.getDispatcher().getDefaultContextObjects()
+        .put(PrimitiveCache.class, new PrimitiveCache(atomix.getPrimitivesService(), PRIMITIVE_CACHE_SIZE));
+    deployment.getDispatcher().getDefaultContextObjects()
+        .put(EventManager.class, new EventManager());
 
     deployment.getRegistry().addPerInstanceResource(ClusterResource.class);
     deployment.getRegistry().addPerInstanceResource(EventsResource.class);
@@ -97,7 +88,7 @@ public class VertxRestService implements ManagedRestService {
     server.requestHandler(new VertxRequestHandler(vertx, deployment));
 
     CompletableFuture<RestService> future = new CompletableFuture<>();
-    server.listen(port, host, result -> {
+    server.listen(endpoint.port(), endpoint.host().getHostAddress(), result -> {
       if (result.succeeded()) {
         open.set(true);
         LOGGER.info("Started");
@@ -132,5 +123,21 @@ public class VertxRestService implements ManagedRestService {
   @Override
   public boolean isClosed() {
     return !open.get();
+  }
+
+  /**
+   * Vert.x REST service builder.
+   */
+  public static class Builder extends RestService.Builder {
+    private static final String DEFAULT_HOST = "0.0.0.0";
+    private static final int DEFAULT_PORT = 5678;
+
+    @Override
+    public ManagedRestService build() {
+      if (endpoint == null) {
+        endpoint = Endpoint.from(DEFAULT_HOST, DEFAULT_PORT);
+      }
+      return new VertxRestService(atomix, endpoint);
+    }
   }
 }

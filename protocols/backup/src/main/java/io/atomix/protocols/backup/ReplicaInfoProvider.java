@@ -28,4 +28,6 @@ public interface ReplicaInfoProvider {
 
   void removeChangeListener(Consumer<ReplicaInfo> listener);
 
+  void close();
+
 }

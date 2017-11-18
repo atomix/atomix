@@ -18,11 +18,9 @@ package io.atomix.protocols.backup;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.protocols.backup.impl.DefaultPrimaryBackupClient;
 import io.atomix.utils.concurrent.ThreadModel;
 
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -31,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup client.
  */
-public interface PrimaryBackupClient extends PrimitiveClient {
+public interface PrimaryBackupClient extends PrimitiveClient<MultiPrimaryProtocol> {
 
   /**
    * Returns a new primary-backup client builder.

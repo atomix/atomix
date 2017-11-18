@@ -50,7 +50,7 @@ public interface PrimitiveProxyExecutor {
    * @throws NullPointerException if {@code command} is null
    */
   default CompletableFuture<byte[]> execute(OperationId operationId) {
-    return execute(new PrimitiveOperation(operationId, HeapBytes.EMPTY));
+    return execute(new PrimitiveOperation(OperationId.simplify(operationId), HeapBytes.EMPTY));
   }
 
   /**
@@ -62,7 +62,7 @@ public interface PrimitiveProxyExecutor {
    * @throws NullPointerException if {@code command} is null
    */
   default CompletableFuture<byte[]> execute(OperationId operationId, byte[] operation) {
-    return execute(new PrimitiveOperation(operationId, operation));
+    return execute(new PrimitiveOperation(OperationId.simplify(operationId), operation));
   }
 
   /**

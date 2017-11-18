@@ -15,13 +15,13 @@
  */
 package io.atomix.protocols.backup.partition.impl;
 
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy.Builder;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.backup.PrimaryBackupClient;
-import io.atomix.protocols.backup.ReplicaInfoProvider;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 import io.atomix.utils.Managed;
 
 import java.util.Set;
@@ -30,27 +30,19 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Primary-backup partition client.
  */
-public class PrimaryBackupPartitionClient implements PrimitiveClient, Managed<PrimaryBackupPartitionClient> {
+public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimaryProtocol>, Managed<PrimaryBackupPartitionClient> {
   private final PrimaryBackupPartition partition;
-  private final ClusterService clusterService;
-  private final ClusterCommunicationService clusterCommunicator;
-  private final ReplicaInfoProvider replicaProvider;
+  private final PartitionManagementService managementService;
   private PrimaryBackupClient client;
 
-  public PrimaryBackupPartitionClient(
-      PrimaryBackupPartition partition,
-      ClusterService clusterService,
-      ClusterCommunicationService clusterCommunicator,
-      ReplicaInfoProvider replicaProvider) {
+  public PrimaryBackupPartitionClient(PrimaryBackupPartition partition, PartitionManagementService managementService) {
     this.partition = partition;
-    this.clusterService = clusterService;
-    this.clusterCommunicator = clusterCommunicator;
-    this.replicaProvider = replicaProvider;
+    this.managementService = managementService;
   }
 
   @Override
-  public Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType) {
-    return client.proxyBuilder(primitiveName, primitiveType);
+  public Builder<MultiPrimaryProtocol> proxyBuilder(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
+    return client.proxyBuilder(primitiveName, primitiveType, primitiveProtocol);
   }
 
   @Override
@@ -68,9 +60,10 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient, Managed<Pr
 
   private PrimaryBackupClient newClient() {
     return PrimaryBackupClient.builder()
-        .withClusterService(clusterService)
-        .withCommunicationService(clusterCommunicator)
-        .withReplicaProvider(replicaProvider)
+        .withClusterService(managementService.getClusterService())
+        .withCommunicationService(managementService.getCommunicationService())
+        .withReplicaProvider(new PrimaryElectionReplicaProvider(
+            managementService.getElectionService().getElectionFor(partition.id())))
         .build();
   }
 

@@ -15,12 +15,10 @@
  */
 package io.atomix;
 
-import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
@@ -28,6 +26,8 @@ import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
+import io.atomix.election.impl.LeaderElectorPrimaryElectionService;
+import io.atomix.impl.CorePrimitivesService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
@@ -36,17 +36,13 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.primitive.partition.ManagedPartition;
+import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
-import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.partition.impl.DefaultPartitionManagementService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
-import io.atomix.primitives.PrimitivesService;
-import io.atomix.primitives.impl.PartitionedPrimitivesService;
-import io.atomix.protocols.raft.partition.impl.RaftPartition;
-import io.atomix.rest.ManagedRestService;
-import io.atomix.rest.impl.VertxRestService;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
+import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -57,13 +53,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -89,8 +81,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final ManagedMessagingService messagingService;
   private final ManagedClusterCommunicationService clusterCommunicator;
   private final ManagedClusterEventService clusterEventService;
+  private final ManagedPartitionGroup corePartitionGroup;
   private final ManagedPartitionService partitions;
-  private final ManagedRestService restService;
+  private final PrimitiveTypeRegistry primitiveTypes;
   private final PrimitivesService primitives;
   private final AtomicBoolean open = new AtomicBoolean();
   private final ThreadContext context = new SingleThreadContext("atomix-%d");
@@ -100,31 +93,33 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedMessagingService messagingService,
       ManagedClusterCommunicationService clusterCommunicator,
       ManagedClusterEventService clusterEventService,
+      ManagedPartitionGroup corePartitionGroup,
       ManagedPartitionService partitions,
-      ManagedRestService restService,
-      PrimitivesService primitives) {
+      PrimitiveTypeRegistry primitiveTypes) {
+    PrimitiveTypes.register(primitiveTypes);
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
     this.clusterEventService = checkNotNull(clusterEventService, "clusterEventService cannot be null");
+    this.corePartitionGroup = checkNotNull(corePartitionGroup, "corePartitionGroup cannot be null");
     this.partitions = checkNotNull(partitions, "partitions cannot be null");
-    this.restService = restService; // ManagedRestService can be null
-    this.primitives = checkNotNull(primitives, "primitives cannot be null");
+    this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
+    this.primitives = new CorePrimitivesService(cluster, clusterCommunicator, clusterEventService, partitions);
   }
 
   /**
-   * Returns the Atomix cluster.
+   * Returns the cluster service.
    *
-   * @return the Atomix cluster
+   * @return the cluster service
    */
   public ClusterService getClusterService() {
     return cluster;
   }
 
   /**
-   * Returns the cluster communicator.
+   * Returns the cluster communication service.
    *
-   * @return the cluster communicator
+   * @return the cluster communication service
    */
   public ClusterCommunicationService getCommunicationService() {
     return clusterCommunicator;
@@ -140,9 +135,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   /**
-   * Returns the cluster messenger.
+   * Returns the messaging service.
    *
-   * @return the cluster messenger
+   * @return the messaging service
    */
   public MessagingService getMessagingService() {
     return messagingService;
@@ -158,21 +153,36 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   /**
-   * Returns the primitive service.
+   * Returns the primitives service.
    *
-   * @return the primitive service
+   * @return the primitives service
    */
-  public PrimitivesService getPrimitiveService() {
+  public PrimitivesService getPrimitivesService() {
     return primitives;
   }
 
-  @Override
+  /**
+   * Returns a primitive builder of the given type.
+   *
+   * @param name the primitive name
+   * @param primitiveType the primitive type
+   * @param <B> the primitive builder type
+   * @param <S> the synchronous primitive type
+   * @param <A> the asynchronous primitive type
+   * @return the primitive builder
+   */
   public <B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> B primitiveBuilder(
       String name, PrimitiveType<B, S, A> primitiveType) {
     return primitives.primitiveBuilder(name, primitiveType);
   }
 
-  @Override
+  /**
+   * Returns a set of all primitive names of the given type.
+   *
+   * @param primitiveType the primitive type
+   * @return a set of all primitive names of the given type
+   */
+  @SuppressWarnings("unchecked")
   public Set<String> getPrimitiveNames(PrimitiveType primitiveType) {
     return primitives.getPrimitiveNames(primitiveType);
   }
@@ -183,8 +193,12 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> cluster.open(), context)
         .thenComposeAsync(v -> clusterCommunicator.open(), context)
         .thenComposeAsync(v -> clusterEventService.open(), context)
-        .thenComposeAsync(v -> partitions.open(), context)
-        .thenComposeAsync(v -> restService != null ? restService.open() : CompletableFuture.completedFuture(null), context)
+        .thenComposeAsync(v -> corePartitionGroup.open(
+            new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, null)), context)
+        .thenComposeAsync(v ->
+            new LeaderElectorPrimaryElectionService(cluster.getLocalNode().id(), corePartitionGroup).open(), context)
+        .thenComposeAsync(electionService ->
+            partitions.open(new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, electionService)), context)
         .thenApplyAsync(v -> {
           open.set(true);
           LOGGER.info("Started");
@@ -199,8 +213,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
   @Override
   public CompletableFuture<Void> close() {
-    return restService.close()
-        .thenComposeAsync(v -> partitions.close(), context)
+    return partitions.close()
         .thenComposeAsync(v -> clusterCommunicator.close(), context)
         .thenComposeAsync(v -> clusterEventService.close(), context)
         .thenComposeAsync(v -> cluster.close(), context)
@@ -229,16 +242,20 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   public static class Builder implements io.atomix.utils.Builder<Atomix> {
     private static final String DEFAULT_CLUSTER_NAME = "atomix";
-    private static final int DEFAULT_NUM_BUCKETS = 128;
+    private static final int DEFAULT_COORDINATION_PARTITION_SIZE = 3;
+    private static final int DEFAULT_DATA_PARTITIONS = 271;
+    private static final String COORDINATION_GROUP_NAME = "coordination";
+    private static final String DATA_GROUP_NAME = "data";
+
     private String name = DEFAULT_CLUSTER_NAME;
-    private int httpPort;
     private Node localNode;
     private Collection<Node> bootstrapNodes;
-    private int numPartitions;
-    private int partitionSize;
-    private Collection<PartitionMetadata> partitions;
+    private File dataDirectory = new File(System.getProperty("user.dir"), "data");
+    private int numCoordinationPartitions;
+    private int coordinationPartitionSize = DEFAULT_COORDINATION_PARTITION_SIZE;
+    private int numDataPartitions = DEFAULT_DATA_PARTITIONS;
+    private Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     private PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
-    private File dataDir = new File(System.getProperty("user.dir"), "data");
 
     /**
      * Sets the cluster name.
@@ -249,17 +266,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     public Builder withClusterName(String name) {
       this.name = checkNotNull(name, "name cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the HTTP port.
-     *
-     * @param httpPort the HTTP port
-     * @return the Atomix builder
-     */
-    public Builder withHttpPort(int httpPort) {
-      this.httpPort = httpPort;
       return this;
     }
 
@@ -298,39 +304,88 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     /**
-     * Sets the number of partitions.
+     * Sets the partition data directory.
      *
-     * @param numPartitions the number of partitions
-     * @return the cluster metadata builder
+     * @param dataDirectory the partition data directory
+     * @return the Atomix builder
+     * @throws NullPointerException if the data directory is null
+     */
+    public Builder withDataDirectory(File dataDirectory) {
+      this.dataDirectory = checkNotNull(dataDirectory, "dataDirectory cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the number of coordination (Raft) partitions.
+     *
+     * @param corePartitions the number of coordination partitions
+     * @return the Atomix builder
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
-    public Builder withNumPartitions(int numPartitions) {
-      checkArgument(numPartitions > 0, "numPartitions must be positive");
-      this.numPartitions = numPartitions;
+    public Builder withCoordinationPartitions(int corePartitions) {
+      checkArgument(corePartitions > 0, "corePartitions must be positive");
+      this.numCoordinationPartitions = corePartitions;
       return this;
     }
 
     /**
-     * Sets the partition size.
+     * Sets the coordination (Raft) partition size.
      *
-     * @param partitionSize the partition size
-     * @return the cluster metadata builder
+     * @param partitionSize the coordination partition size
+     * @return the Atomix builder
      * @throws IllegalArgumentException if the partition size is not positive
      */
-    public Builder withPartitionSize(int partitionSize) {
+    public Builder withCoordinationPartitionSize(int partitionSize) {
       checkArgument(partitionSize > 0, "partitionSize must be positive");
-      this.partitionSize = partitionSize;
+      this.coordinationPartitionSize = partitionSize;
       return this;
     }
 
     /**
-     * Sets the partitions.
+     * Sets the number of data partitions.
      *
-     * @param partitions the partitions
-     * @return the cluster metadata builder
+     * @param dataPartitions the number of data partitions
+     * @return the Atomix builder
+     * @throws IllegalArgumentException if the number of data partitions is not positive
      */
-    public Builder withPartitions(Collection<PartitionMetadata> partitions) {
-      this.partitions = checkNotNull(partitions, "partitions cannot be null");
+    public Builder withDataPartitions(int dataPartitions) {
+      checkArgument(dataPartitions > 0, "dataPartitions must be positive");
+      this.numDataPartitions = dataPartitions;
+      return this;
+    }
+
+    /**
+     * Sets the partition groups.
+     *
+     * @param partitionGroups the partition groups
+     * @return the Atomix builder
+     * @throws NullPointerException if the partition groups are null
+     */
+    public Builder withPartitionGroups(ManagedPartitionGroup... partitionGroups) {
+      return withPartitionGroups(Arrays.asList(checkNotNull(partitionGroups, "partitionGroups cannot be null")));
+    }
+
+    /**
+     * Sets the partition groups.
+     *
+     * @param partitionGroups the partition groups
+     * @return the Atomix builder
+     * @throws NullPointerException if the partition groups are null
+     */
+    public Builder withPartitionGroups(Collection<ManagedPartitionGroup> partitionGroups) {
+      this.partitionGroups = checkNotNull(partitionGroups, "partitionGroups cannot be null");
+      return this;
+    }
+
+    /**
+     * Adds a partition group.
+     *
+     * @param partitionGroup the partition group to add
+     * @return the Atomix builder
+     * @throws NullPointerException if the partition group is null
+     */
+    public Builder addPartitionGroup(ManagedPartitionGroup partitionGroup) {
+      partitionGroups.add(partitionGroup);
       return this;
     }
 
@@ -369,34 +424,25 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       return this;
     }
 
-    /**
-     * Sets the path to the data directory.
-     *
-     * @param dataDir the path to the replica's data directory
-     * @return the replica builder
-     */
-    public Builder withDataDir(File dataDir) {
-      this.dataDir = checkNotNull(dataDir, "dataDir cannot be null");
-      return this;
-    }
-
     @Override
     public Atomix build() {
       ManagedMessagingService messagingService = buildMessagingService();
       ManagedClusterService clusterService = buildClusterService(messagingService);
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
       ManagedClusterEventService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
-      ManagedPartitionService partitionService = buildPartitionService(clusterCommunicator);
-      PrimitivesService primitives = buildPrimitiveService(partitionService);
-      ManagedRestService restService = buildRestService(clusterService, clusterCommunicator, clusterEventService, primitives);
+      ManagedPartitionGroup corePartitionGroup = RaftPartitionGroup.builder("core")
+          .withNumPartitions(1)
+          .withDataDirectory(new File(dataDirectory, "core"))
+          .build();
+      ManagedPartitionService partitionService = buildPartitionService();
       return new Atomix(
           clusterService,
           messagingService,
           clusterCommunicator,
           clusterEventService,
+          corePartitionGroup,
           partitionService,
-          restService,
-          primitives);
+          primitiveTypes);
     }
 
     /**
@@ -438,60 +484,18 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds a partition service.
      */
-    private ManagedPartitionService buildPartitionService(ClusterCommunicationService clusterCommunicator) {
-      File partitionsDir = new File(this.dataDir, "partitions");
-      Collection<ManagedPartition> partitions = buildPartitions().stream()
-          .map(p -> new RaftPartition(localNode.id(), p, clusterCommunicator, primitiveTypes, new File(partitionsDir, p.id().toString())))
-          .collect(Collectors.toList());
-      return new DefaultPartitionService(partitions);
-    }
-
-    /**
-     * Builds a primitive service.
-     */
-    private PrimitivesService buildPrimitiveService(PartitionService partitionService) {
-      return new PartitionedPrimitivesService(partitionService);
-    }
-
-    /**
-     * Builds a REST service.
-     */
-    private ManagedRestService buildRestService(
-        ClusterService clusterService,
-        ClusterCommunicationService communicationService,
-        ClusterEventService eventService,
-        PrimitivesService primitivesService) {
-      return httpPort > 0 ? new VertxRestService(localNode.endpoint().host().getHostAddress(), httpPort, clusterService, communicationService, eventService, primitivesService) : null;
-    }
-
-    /**
-     * Builds the cluster partitions.
-     */
-    private Collection<PartitionMetadata> buildPartitions() {
-      if (partitions != null) {
-        return partitions;
+    private ManagedPartitionService buildPartitionService() {
+      if (partitionGroups.isEmpty()) {
+        partitionGroups.add(RaftPartitionGroup.builder(COORDINATION_GROUP_NAME)
+            .withDataDirectory(new File(dataDirectory, COORDINATION_GROUP_NAME))
+            .withNumPartitions(numCoordinationPartitions > 0 ? numCoordinationPartitions : bootstrapNodes.size())
+            .withPartitionSize(coordinationPartitionSize)
+            .build());
+        partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
+            .withNumPartitions(numDataPartitions)
+            .build());
       }
-
-      if (numPartitions == 0) {
-        numPartitions = bootstrapNodes.size();
-      }
-
-      if (partitionSize == 0) {
-        partitionSize = Math.min(bootstrapNodes.size(), 3);
-      }
-
-      List<Node> sorted = new ArrayList<>(bootstrapNodes);
-      sorted.sort(Comparator.comparing(Node::id));
-
-      Set<PartitionMetadata> partitions = Sets.newHashSet();
-      for (int i = 0; i < numPartitions; i++) {
-        Set<NodeId> set = new HashSet<>(partitionSize);
-        for (int j = 0; j < partitionSize; j++) {
-          set.add(sorted.get((i + j) % numPartitions).id());
-        }
-        partitions.add(new PartitionMetadata(PartitionId.from((i + 1)), set));
-      }
-      return partitions;
+      return new DefaultPartitionService(partitionGroups);
     }
   }
 }

@@ -49,7 +49,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
   private final List<ScheduledTask> complete = new ArrayList<>();
-  private final Map<OperationId, Function<Commit<byte[]>, byte[]>> operations = new HashMap<>();
+  private final Map<String, InternalOperation> operations = new HashMap<>();
   private OperationType operationType;
   private long timestamp;
 
@@ -104,7 +104,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
   public void handle(OperationId operationId, Function<Commit<byte[]>, byte[]> callback) {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
-    operations.put(operationId, callback);
+    operations.put(operationId.id(), new InternalOperation(operationId, callback));
     log.debug("Registered operation callback {}", operationId);
   }
 
@@ -116,15 +116,15 @@ public class DefaultServiceExecutor implements ServiceExecutor {
     this.timestamp = commit.wallClockTime().unixTimestamp();
 
     // Look up the registered callback for the operation.
-    Function<Commit<byte[]>, byte[]> callback = operations.get(commit.operation());
+    InternalOperation operation = operations.get(commit.operation().id());
 
-    if (callback == null) {
+    if (operation == null) {
       throw new IllegalStateException("Unknown state machine operation: " + commit.operation());
     } else {
       // Execute the operation. If the operation return value is a Future, await the result,
       // otherwise immediately complete the execution future.
       try {
-        return callback.apply(commit);
+        return operation.callback.apply(commit);
       } catch (Exception e) {
         log.warn("State machine operation failed: {}", e);
         throw new PrimitiveException.ServiceException();
@@ -166,6 +166,19 @@ public class DefaultServiceExecutor implements ServiceExecutor {
     checkOperation(OperationType.COMMAND, "callbacks can only be scheduled during command execution");
     log.trace("Scheduled repeating callback {} with initial delay {} and interval {}", callback, initialDelay, interval);
     return new ScheduledTask(callback, initialDelay.toMillis(), interval.toMillis()).schedule();
+  }
+
+  /**
+   * Internal operation container.
+   */
+  private static class InternalOperation {
+    private final OperationId operation;
+    private final Function<Commit<byte[]>, byte[]> callback;
+
+    public InternalOperation(OperationId operation, Function<Commit<byte[]>, byte[]> callback) {
+      this.operation = operation;
+      this.callback = callback;
+    }
   }
 
   /**

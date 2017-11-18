@@ -71,7 +71,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -97,7 +96,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private final ClusterCommunicationService clusterCommunicator;
   private final ReplicaInfoProvider replicaProvider;
   private NodeId primary;
-  private Set<NodeId> backups;
+  private List<NodeId> backups;
   private long currentTerm;
   private long currentIndex;
   private WallClockTimestamp currentTimestamp = new WallClockTimestamp();

@@ -24,6 +24,7 @@ import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
+import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RecoveryStrategy;
@@ -79,6 +80,16 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
+  public long term() {
+    return sessionManager.term();
+  }
+
+  @Override
+  public NodeId leader() {
+    return sessionManager.leader();
+  }
+
+  @Override
   public RaftMetadataClient metadata() {
     return metadata;
   }
@@ -112,8 +123,8 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public RaftProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType) {
-    return new ProxyBuilder(primitiveName, primitiveType);
+  public PrimitiveProxy.Builder<RaftProtocol> proxyBuilder(String primitiveName, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
+    return new ProxyBuilder(primitiveName, primitiveType, primitiveProtocol);
   }
 
   @Override
@@ -138,45 +149,38 @@ public class DefaultRaftClient implements RaftClient {
   /**
    * Default Raft session builder.
    */
-  private class ProxyBuilder extends RaftProxy.Builder {
-    ProxyBuilder(String name, PrimitiveType primitiveType) {
-      super(name, primitiveType);
+  private class ProxyBuilder extends PrimitiveProxy.Builder<RaftProtocol> {
+    ProxyBuilder(String name, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
+      super(name, primitiveType, primitiveProtocol);
     }
 
     @Override
     public PrimitiveProxy build() {
       // Create a proxy builder that uses the session manager to open a session.
-      RaftProxy.Builder proxyBuilder = new RaftProxy.Builder(name, primitiveType) {
+      PrimitiveProxy.Builder<RaftProtocol> proxyBuilder = new PrimitiveProxy.Builder<RaftProtocol>(name, primitiveType, protocol) {
         @Override
         public RaftProxy build() {
           return new DefaultRaftProxy(
               name,
               primitiveType,
-              protocol,
+              DefaultRaftClient.this.protocol,
               selectorManager,
               sessionManager,
-              readConsistency,
-              communicationStrategy,
+              protocol.readConsistency(),
+              protocol.communicationStrategy(),
               threadContextFactory.createContext(),
-              minTimeout,
-              maxTimeout);
+              protocol.minTimeout(),
+              protocol.maxTimeout());
         }
       };
 
       // Populate the proxy client builder.
-      proxyBuilder
-          .withReadConsistency(readConsistency)
-          .withMaxRetries(maxRetries)
-          .withRetryDelay(retryDelay)
-          .withCommunicationStrategy(communicationStrategy)
-          .withRecoveryStrategy(recoveryStrategy)
-          .withMinTimeout(minTimeout)
-          .withMaxTimeout(maxTimeout);
+      proxyBuilder.withMaxRetries(maxRetries).withRetryDelay(retryDelay);
 
       PrimitiveProxy proxy;
 
       // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
-      if (recoveryStrategy == RecoveryStrategy.RECOVER) {
+      if (protocol.recoveryStrategy() == RecoveryStrategy.RECOVER) {
         proxy = new RecoveringPrimitiveProxy(clientId, name, primitiveType, proxyBuilder, threadContextFactory.createContext());
       } else {
         proxy = proxyBuilder.build();

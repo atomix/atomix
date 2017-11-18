@@ -15,8 +15,9 @@
  */
 package io.atomix.primitive.partition;
 
+import io.atomix.primitive.PrimitiveProtocol;
+
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Partition service.
@@ -24,34 +25,55 @@ import java.util.List;
 public interface PartitionService {
 
   /**
-   * Returns a partition by ID.
+   * Returns a partition group by name.
    *
-   * @param partitionId the partition identifier
-   * @return the partition or {@code null} if no partition with the given identifier exists
-   * @throws NullPointerException if the partition identifier is {@code null}
+   * @param name the name of the partition group
+   * @return the partition group
    */
-  Partition getPartition(PartitionId partitionId);
+  PartitionGroup getPartitionGroup(String name);
 
   /**
-   * Returns the partition for the given key.
+   * Returns the first partition group that matches the given primitive type.
    *
-   * @param key the key for which to return the partition
-   * @return the partition for the given key
+   * @param type the primitive type
+   * @return the first partition group that matches the given primitive type
    */
-  Partition getPartition(String key);
+  default PartitionGroup getPartitionGroup(PrimitiveProtocol.Type type) {
+    return getPartitionGroups().stream()
+        .filter(group -> group.type().equals(type))
+        .findFirst()
+        .orElse(null);
+  }
 
   /**
-   * Returns a collection of all partitions.
+   * Returns the first partition group that matches the given primitive protocol.
    *
-   * @return a collection of all partitions
+   * @param protocol the primitive protocol
+   * @return the first partition group that matches the given primitive protocol
    */
-  Collection<Partition> getPartitions();
+  default PartitionGroup getPartitionGroup(PrimitiveProtocol protocol) {
+    if (protocol == null) {
+      return getDefaultPartitionGroup();
+    } else if (protocol.group() != null) {
+      return getPartitionGroup(protocol.group());
+    }
+    return getPartitionGroup(protocol.type());
+  }
 
   /**
-   * Returns a sorted list of partition IDs.
+   * Returns the default partition group.
    *
-   * @return a sorted list of partition IDs
+   * @return the default partition group
    */
-  List<PartitionId> getPartitionIds();
+  default PartitionGroup getDefaultPartitionGroup() {
+    return getPartitionGroups().iterator().next();
+  }
+
+  /**
+   * Returns a collection of all partition groups.
+   *
+   * @return a collection of all partition groups
+   */
+  Collection<PartitionGroup> getPartitionGroups();
 
 }

@@ -15,22 +15,19 @@
  */
 package io.atomix.primitive.partition.impl;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
-import com.google.common.hash.Hashing;
-import io.atomix.primitive.partition.ManagedPartition;
+import com.google.common.collect.Maps;
+import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
-import io.atomix.primitive.partition.Partition;
-import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.partition.PartitionGroup;
+import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -39,67 +36,41 @@ import java.util.stream.Collectors;
 public class DefaultPartitionService implements ManagedPartitionService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionService.class);
 
-  private final TreeMap<PartitionId, ManagedPartition> partitions = new TreeMap<>();
-  private final List<PartitionId> sortedPartitionIds;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final Map<String, ManagedPartitionGroup> groups = Maps.newConcurrentMap();
 
-  public DefaultPartitionService(Collection<ManagedPartition> partitions) {
-    partitions.forEach(p -> this.partitions.put(p.id(), p));
-    sortedPartitionIds = Lists.newArrayList(this.partitions.keySet());
+  public DefaultPartitionService(Collection<ManagedPartitionGroup> groups) {
+    groups.forEach(g -> this.groups.put(g.name(), g));
   }
 
   @Override
-  public Partition getPartition(String key) {
-    int hashCode = Hashing.sha256().hashString(key, Charsets.UTF_8).asInt();
-    return partitions.get(getPartitionIds().get(Math.abs(hashCode) % partitions.size()));
-  }
-
-  @Override
-  public Partition getPartition(PartitionId partitionId) {
-    return partitions.get(partitionId);
+  public PartitionGroup getPartitionGroup(String name) {
+    return groups.get(name);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Collection<Partition> getPartitions() {
-    return (Collection) partitions.values();
+  public Collection<PartitionGroup> getPartitionGroups() {
+    return (Collection) groups.values();
   }
 
   @Override
-  public List<PartitionId> getPartitionIds() {
-    return sortedPartitionIds;
-  }
-
-  @Override
-  public CompletableFuture<PartitionService> open() {
-    List<CompletableFuture<Partition>> futures = partitions.values().stream()
-        .map(ManagedPartition::open)
+  public CompletableFuture<PartitionService> open(PartitionManagementService managementService) {
+    List<CompletableFuture<ManagedPartitionGroup>> futures = groups.values().stream()
+        .map(g -> g.open(managementService))
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
-      open.set(true);
       LOGGER.info("Started");
       return this;
     });
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
-  }
-
-  @Override
   public CompletableFuture<Void> close() {
-    List<CompletableFuture<Void>> futures = partitions.values().stream()
-        .map(ManagedPartition::close)
+    List<CompletableFuture<Void>> futures = groups.values().stream()
+        .map(ManagedPartitionGroup::close)
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
-      open.set(false);
       LOGGER.info("Stopped");
     });
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 }

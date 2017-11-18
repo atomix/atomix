@@ -15,7 +15,6 @@
  */
 package io.atomix.primitive;
 
-import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.utils.Identifier;
 
@@ -43,20 +42,9 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, S, A>, S
    * Returns a new primitive builder for the given partition.
    *
    * @param name the primitive name
-   * @param client the primitive client
+   * @param managementService the primitive management service
    * @return the primitive builder
    */
-  B newPrimitiveBuilder(String name, PrimitiveClient client);
-
-  /**
-   * Returns a new primitive builder for the given partitions.
-   *
-   * @param name the primitive name
-   * @param partitions the partitions for which to return a primitive builder
-   * @return a primitive builder for the given partitions
-   */
-  default B newPrimitiveBuilder(String name, PartitionService partitions) {
-    return newPrimitiveBuilder(name, partitions.getPartition(name).getPrimitiveClient());
-  }
+  B newPrimitiveBuilder(String name, PrimitiveManagementService managementService);
 
 }

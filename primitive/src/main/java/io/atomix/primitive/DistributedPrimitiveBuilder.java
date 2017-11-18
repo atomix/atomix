@@ -19,6 +19,7 @@ import io.atomix.utils.Builder;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -29,12 +30,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <A> asynchronous primitive type
  */
 public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> implements Builder<S> {
-
   private final PrimitiveType type;
   private final String name;
   private Serializer serializer;
   private boolean readOnly = false;
   private boolean relaxedReadConsistency = false;
+  private PrimitiveProtocol protocol;
+  private Persistence persistence = defaultPersistence();
+  private Consistency consistency = defaultConsistency();
+  private Replication replication = defaultReplication();
+  private int numBackups = -1;
 
   public DistributedPrimitiveBuilder(PrimitiveType type, String name) {
     this.type = checkNotNull(type, "type cannot be null");
@@ -72,6 +77,71 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   @SuppressWarnings("unchecked")
   public B withRelaxedReadConsistency() {
     this.relaxedReadConsistency = true;
+    return (B) this;
+  }
+
+  /**
+   * Sets the primitive protocol.
+   *
+   * @param protocol the primitive protocol
+   * @return the primitive builder
+   */
+  @SuppressWarnings("unchecked")
+  public B withProtocol(PrimitiveProtocol protocol) {
+    this.protocol = checkNotNull(protocol, "protocol cannot be null");
+    return (B) this;
+  }
+
+  /**
+   * Sets the primitive consistency model.
+   *
+   * @param consistency the primitive consistency model
+   * @return the primitive builder
+   * @throws NullPointerException if the consistency model is null
+   */
+  @SuppressWarnings("unchecked")
+  public B withConsistency(Consistency consistency) {
+    this.consistency = checkNotNull(consistency, "consistency cannot be null");
+    return (B) this;
+  }
+
+  /**
+   * Sets the primitive persistence level.
+   *
+   * @param persistence the primitive persistence level
+   * @return the primitive builder
+   * @throws NullPointerException if the persistence level is null
+   */
+  @SuppressWarnings("unchecked")
+  public B withPersistence(Persistence persistence) {
+    this.persistence = checkNotNull(persistence, "persistence cannot be null");
+    return (B) this;
+  }
+
+  /**
+   * Sets the primitive replication strategy.
+   *
+   * @param replication the primitive replication strategy
+   * @return the primitive builder
+   * @throws NullPointerException if the replication strategy is null
+   */
+  @SuppressWarnings("unchecked")
+  public B withReplication(Replication replication) {
+    this.replication = checkNotNull(replication, "replication cannot be null");
+    return (B) this;
+  }
+
+  /**
+   * Sets the number of backups.
+   *
+   * @param numBackups the number of backups
+   * @return the primitive builder
+   * @throws IllegalArgumentException if the number of backups is not positive or {@code -1}
+   */
+  @SuppressWarnings("unchecked")
+  public B withBackups(int numBackups) {
+    checkArgument(numBackups > 0 || numBackups == -1, "numBackups must be positive or -1");
+    this.numBackups = numBackups;
     return (B) this;
   }
 
@@ -122,6 +192,72 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   public PrimitiveType primitiveType() {
     return type;
   }
+
+  /**
+   * Returns the primitive protocol.
+   *
+   * @return the primitive protocol
+   */
+  public PrimitiveProtocol protocol() {
+    return protocol;
+  }
+
+  /**
+   * Returns the primitive consistency model.
+   *
+   * @return the primitive consistency model
+   */
+  public Consistency consistency() {
+    return consistency;
+  }
+
+  /**
+   * Returns the default consistency model.
+   *
+   * @return the default consistency model
+   */
+  protected abstract Consistency defaultConsistency();
+
+  /**
+   * Returns the primitive persistence level.
+   *
+   * @return the primitive persistence level
+   */
+  public Persistence persistence() {
+    return persistence;
+  }
+
+  /**
+   * Returns the default persistence level.
+   *
+   * @return the default persistence level
+   */
+  protected abstract Persistence defaultPersistence();
+
+  /**
+   * Returns the replication strategy.
+   *
+   * @return the replication strategy
+   */
+  public Replication replication() {
+    return replication;
+  }
+
+  /**
+   * Returns the number of backups for the primitive.
+   *
+   * @return the number of backups for the primitive
+   */
+  public int backups() {
+    return numBackups;
+  }
+
+  /**
+   * Returns the default replication strategy.
+   *
+   * @return the default replication strategy
+   */
+  protected abstract Replication defaultReplication();
 
   /**
    * Constructs an instance of the distributed primitive.

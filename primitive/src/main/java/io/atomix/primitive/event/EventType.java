@@ -32,4 +32,14 @@ public interface EventType extends Identifier<String> {
   static EventType from(String name) {
     return new DefaultEventType(name);
   }
+
+  /**
+   * Simplifies the given event type.
+   *
+   * @param eventType the event type to simplify
+   * @return the simplified event type
+   */
+  static EventType simplify(EventType eventType) {
+    return new DefaultEventType(eventType.id());
+  }
 }

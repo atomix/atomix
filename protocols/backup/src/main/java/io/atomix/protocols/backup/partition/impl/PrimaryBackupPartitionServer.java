@@ -15,12 +15,10 @@
  */
 package io.atomix.protocols.backup.partition.impl;
 
-import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.backup.PrimaryBackupServer;
-import io.atomix.protocols.backup.ReplicaInfoProvider;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 import io.atomix.utils.Managed;
 
 import java.util.concurrent.CompletableFuture;
@@ -31,29 +29,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartitionServer> {
   private final PrimaryBackupPartition partition;
-  private final ClusterService clusterService;
-  private final ClusterCommunicationService communicationService;
-  private final ReplicaInfoProvider replicaProvider;
-  private final PrimitiveTypeRegistry primitiveTypes;
+  private final PartitionManagementService managementService;
   private PrimaryBackupServer server;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public PrimaryBackupPartitionServer(
-      PrimaryBackupPartition partition,
-      ClusterService clusterService,
-      ClusterCommunicationService communicationService,
-      ReplicaInfoProvider replicaProvider,
-      PrimitiveTypeRegistry primitiveTypes) {
+  public PrimaryBackupPartitionServer(PrimaryBackupPartition partition, PartitionManagementService managementService) {
     this.partition = partition;
-    this.clusterService = clusterService;
-    this.communicationService = communicationService;
-    this.replicaProvider = replicaProvider;
-    this.primitiveTypes = primitiveTypes;
+    this.managementService = managementService;
   }
 
   @Override
   public CompletableFuture<PrimaryBackupPartitionServer> open() {
-    if (clusterService.getLocalNode().type() == Node.Type.CORE) {
+    if (managementService.getClusterService().getLocalNode().type() == Node.Type.CORE) {
       synchronized (this) {
         server = buildServer();
       }
@@ -74,10 +61,11 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   private PrimaryBackupServer buildServer() {
     PrimaryBackupServer.Builder builder = PrimaryBackupServer.builder()
         .withServerName(partition.name())
-        .withClusterService(clusterService)
-        .withCommunicationService(communicationService)
-        .withReplicaProvider(replicaProvider)
-        .withPrimitiveTypes(primitiveTypes);
+        .withClusterService(managementService.getClusterService())
+        .withCommunicationService(managementService.getCommunicationService())
+        .withReplicaProvider(new PrimaryElectionReplicaProvider(
+            managementService.getElectionService().getElectionFor(partition.id())))
+        .withPrimitiveTypes(managementService.getPrimitiveTypes());
     return builder.build();
   }
 

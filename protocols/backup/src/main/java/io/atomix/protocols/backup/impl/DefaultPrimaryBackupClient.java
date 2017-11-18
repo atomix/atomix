@@ -26,11 +26,13 @@ import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.backup.PrimaryBackupClient;
 import io.atomix.protocols.backup.ReplicaInfoProvider;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
 import io.atomix.protocols.backup.protocol.MetadataResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
+import io.atomix.protocols.backup.proxy.PrimaryBackupProxy;
 import io.atomix.protocols.backup.proxy.impl.DefaultPrimaryBackupProxy;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -74,8 +76,8 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
   }
 
   @Override
-  public PrimitiveProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType) {
-    return new ProxyBuilder(primitiveName, primitiveType);
+  public PrimitiveProxy.Builder<MultiPrimaryProtocol> proxyBuilder(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
+    return new ProxyBuilder(primitiveName, primitiveType, primitiveProtocol);
   }
 
   @Override
@@ -139,14 +141,15 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
   /**
    * Primary-backup proxy builder.
    */
-  private class ProxyBuilder extends PrimitiveProxy.Builder {
-    ProxyBuilder(String name, PrimitiveType primitiveType) {
-      super(name, primitiveType);
+  private class ProxyBuilder extends PrimaryBackupProxy.Builder {
+    ProxyBuilder(String name, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
+      super(name, primitiveType, primitiveProtocol);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public PrimitiveProxy build() {
-      PrimitiveProxy.Builder proxyBuilder = new PrimitiveProxy.Builder(name, primitiveType) {
+      PrimitiveProxy.Builder<MultiPrimaryProtocol> proxyBuilder = new PrimitiveProxy.Builder(name, primitiveType, protocol) {
         @Override
         public PrimitiveProxy build() {
           return new DefaultPrimaryBackupProxy(
@@ -161,11 +164,7 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
       };
 
       // Populate the proxy client builder.
-      proxyBuilder
-          .withMaxRetries(maxRetries)
-          .withRetryDelay(retryDelay)
-          .withMinTimeout(minTimeout)
-          .withMaxTimeout(maxTimeout);
+      proxyBuilder.withMaxRetries(maxRetries).withRetryDelay(retryDelay);
 
       PrimitiveProxy proxy = new RecoveringPrimitiveProxy(
           clientName,

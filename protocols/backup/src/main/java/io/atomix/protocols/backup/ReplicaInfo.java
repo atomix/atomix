@@ -17,7 +17,8 @@ package io.atomix.protocols.backup;
 
 import io.atomix.cluster.NodeId;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -34,9 +35,9 @@ public class ReplicaInfo {
 
   private final long term;
   private final NodeId primary;
-  private final Set<NodeId> backups;
+  private final List<NodeId> backups;
 
-  public ReplicaInfo(long term, NodeId primary, Set<NodeId> backups) {
+  public ReplicaInfo(long term, NodeId primary, List<NodeId> backups) {
     this.term = term;
     this.primary = primary;
     this.backups = backups;
@@ -50,7 +51,7 @@ public class ReplicaInfo {
     return primary;
   }
 
-  public Set<NodeId> backups() {
+  public List<NodeId> backups() {
     return backups;
   }
 
@@ -62,6 +63,17 @@ public class ReplicaInfo {
     } else {
       return Role.NONE;
     }
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof ReplicaInfo) {
+      ReplicaInfo replicas = (ReplicaInfo) object;
+      return replicas.term == term
+          && Objects.equals(replicas.primary, primary)
+          && Objects.equals(replicas.backups, backups);
+    }
+    return false;
   }
 
   @Override

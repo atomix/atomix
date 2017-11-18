@@ -18,33 +18,56 @@ package io.atomix.primitive.partition;
 import com.google.common.base.Preconditions;
 import io.atomix.utils.AbstractIdentifier;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * {@link PartitionMetadata} identifier.
  */
 public class PartitionId extends AbstractIdentifier<Integer> implements Comparable<PartitionId> {
+  private final String group;
 
   /**
    * Creates a partition identifier from an integer.
    *
    * @param id input integer
    */
-  public PartitionId(int id) {
+  public PartitionId(String group, int id) {
     super(id);
+    this.group = checkNotNull(group, "group cannot be null");
     Preconditions.checkArgument(id >= 0, "partition id must be non-negative");
   }
 
   /**
    * Creates a partition identifier from an integer.
    *
+   * @param group the group identifier
    * @param id input integer
    * @return partition identification
    */
-  public static PartitionId from(int id) {
-    return new PartitionId(id);
+  public static PartitionId from(String group, int id) {
+    return new PartitionId(group, id);
   }
 
   @Override
   public int compareTo(PartitionId that) {
     return Integer.compare(this.identifier, that.identifier);
+  }
+
+  /**
+   * Returns the partition group name.
+   *
+   * @return the partition group name
+   */
+  public String group() {
+    return group;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("id", id())
+        .add("group", group)
+        .toString();
   }
 }

@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.primitives.map.AsyncConsistentMap;
+import io.atomix.map.AsyncConsistentMap;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

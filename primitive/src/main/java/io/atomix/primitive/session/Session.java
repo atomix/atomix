@@ -150,7 +150,7 @@ public interface Session {
    * @throws NullPointerException if the event is {@code null}
    */
   default void publish(EventType eventType, byte[] event) {
-    publish(new PrimitiveEvent(eventType, event));
+    publish(new PrimitiveEvent(EventType.simplify(eventType), event));
   }
 
   /**
