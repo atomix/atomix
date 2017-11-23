@@ -40,7 +40,7 @@ public class LeaderElectorPrimaryElection implements PrimaryElection {
   private final PartitionId partitionId;
   private final LeaderElector<NodeId> elector;
   private final LeadershipEventListener<NodeId> eventListener = event -> updateTerm(event.newLeadership());
-  private final Set<PrimaryElectionEventListener> listeners = Sets.newIdentityHashSet();
+  private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private volatile PrimaryTerm term;
 
   public LeaderElectorPrimaryElection(NodeId nodeId, PartitionId partitionId, LeaderElector<NodeId> elector) {

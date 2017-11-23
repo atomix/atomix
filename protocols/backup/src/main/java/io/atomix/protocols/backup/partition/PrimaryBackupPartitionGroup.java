@@ -24,6 +24,8 @@ import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.concurrent.ThreadPoolContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +60,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   private final String name;
   private final Map<PartitionId, PrimaryBackupPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
+  private ThreadContextFactory threadFactory;
 
   public PrimaryBackupPartitionGroup(String name, Collection<PrimaryBackupPartition> partitions) {
     this.name = name;
@@ -96,8 +99,9 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public CompletableFuture<ManagedPartitionGroup> open(PartitionManagementService managementService) {
+    threadFactory = new ThreadPoolContextFactory("atomix-primary-backup-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
-        .map(p -> p.open(managementService))
+        .map(p -> p.open(managementService, threadFactory))
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
       LOGGER.info("Started");
@@ -111,6 +115,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
         .map(PrimaryBackupPartition::close)
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
+      threadFactory.close();
       LOGGER.info("Stopped");
     });
   }

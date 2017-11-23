@@ -17,6 +17,8 @@ package io.atomix.protocols.backup.protocol;
 
 import java.util.Set;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Metadata response.
  */
@@ -30,5 +32,13 @@ public class MetadataResponse extends PrimaryBackupResponse {
 
   public Set<String> primitiveNames() {
     return primitiveNames;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("status", status())
+        .add("primitiveNames", primitiveNames)
+        .toString();
   }
 }

@@ -17,6 +17,8 @@ package io.atomix.protocols.backup.protocol;
 
 import io.atomix.cluster.NodeId;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Open session operation.
  */
@@ -30,5 +32,14 @@ public class OpenSessionOperation extends BackupOperation {
 
   public NodeId nodeId() {
     return nodeId;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("index", index())
+        .add("timestamp", timestamp())
+        .add("node", nodeId)
+        .toString();
   }
 }

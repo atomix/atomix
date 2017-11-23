@@ -19,6 +19,8 @@ import io.atomix.cluster.NodeId;
 
 import java.util.List;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Backup request.
  */
@@ -43,5 +45,14 @@ public class BackupRequest extends PrimaryBackupRequest {
 
   public List<BackupOperation> operations() {
     return operations;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("primary", primary)
+        .add("term", term)
+        .add("operations", operations)
+        .toString();
   }
 }

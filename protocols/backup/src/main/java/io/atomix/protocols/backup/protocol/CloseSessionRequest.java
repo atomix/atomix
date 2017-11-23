@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Close session request.
  */
@@ -33,5 +35,13 @@ public class CloseSessionRequest extends PrimaryBackupRequest {
 
   public long sessionId() {
     return sessionId;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("primitiveName", primitiveName)
+        .add("session", sessionId)
+        .toString();
   }
 }

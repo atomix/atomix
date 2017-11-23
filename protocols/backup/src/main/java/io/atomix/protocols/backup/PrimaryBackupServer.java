@@ -21,6 +21,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.protocols.backup.impl.DefaultPrimaryBackupServer;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -51,6 +52,7 @@ public interface PrimaryBackupServer extends Managed<PrimaryBackupServer> {
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    protected ThreadContextFactory threadContextFactory;
 
     /**
      * Sets the server name.
@@ -125,7 +127,7 @@ public interface PrimaryBackupServer extends Managed<PrimaryBackupServer> {
      * Sets the client thread model.
      *
      * @param threadModel the client thread model
-     * @return the client builder
+     * @return the server builder
      * @throws NullPointerException if the thread model is null
      */
     public Builder withThreadModel(ThreadModel threadModel) {
@@ -137,12 +139,24 @@ public interface PrimaryBackupServer extends Managed<PrimaryBackupServer> {
      * Sets the client thread pool size.
      *
      * @param threadPoolSize The client thread pool size.
-     * @return The client builder.
+     * @return The server builder.
      * @throws IllegalArgumentException if the thread pool size is not positive
      */
     public Builder withThreadPoolSize(int threadPoolSize) {
       checkArgument(threadPoolSize > 0, "threadPoolSize must be positive");
       this.threadPoolSize = threadPoolSize;
+      return this;
+    }
+
+    /**
+     * Sets the client thread context factory.
+     *
+     * @param threadContextFactory the client thread context factory
+     * @return the server builder
+     * @throws NullPointerException if the factory is null
+     */
+    public Builder withThreadContextFactory(ThreadContextFactory threadContextFactory) {
+      this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
       return this;
     }
   }

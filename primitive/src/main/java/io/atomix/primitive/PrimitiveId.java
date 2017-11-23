@@ -15,6 +15,8 @@
  */
 package io.atomix.primitive;
 
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
 import io.atomix.utils.AbstractIdentifier;
 
 /**
@@ -39,7 +41,7 @@ public class PrimitiveId extends AbstractIdentifier<Long> {
    * @return the snapshot identifier
    */
   public static PrimitiveId from(String id) {
-    return from(Long.parseLong(id));
+    return from(Hashing.sha256().hashString(id, Charsets.UTF_8).asLong());
   }
 
   public PrimitiveId(Long value) {

@@ -27,8 +27,8 @@ import io.atomix.primitive.session.SessionEvent;
 import io.atomix.primitive.session.SessionEvent.Type;
 import io.atomix.primitive.session.SessionEventListener;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.KryoNamespaces;
 
 import java.util.Set;
 
@@ -36,8 +36,8 @@ import java.util.Set;
  * Primary-backup session.
  */
 public class PrimaryBackupSession implements Session {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC); // TODO
-  private final String nodeName;
+  private static final Serializer SERIALIZER = PrimaryBackupSerializers.PROTOCOL;
+  private final String serverName;
   private final SessionId sessionId;
   private final String serviceName;
   private final PrimitiveType primitiveType;
@@ -56,7 +56,7 @@ public class PrimaryBackupSession implements Session {
       NodeId nodeId,
       ClusterService clusterService,
       ClusterCommunicationService clusterCommunicator) {
-    this.nodeName = serverName;
+    this.serverName = serverName;
     this.sessionId = sessionId;
     this.serviceName = serviceName;
     this.primitiveType = primitiveType;

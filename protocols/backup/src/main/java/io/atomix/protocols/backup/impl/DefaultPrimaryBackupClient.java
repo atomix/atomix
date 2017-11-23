@@ -34,7 +34,7 @@ import io.atomix.protocols.backup.protocol.MetadataResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.proxy.PrimaryBackupProxy;
 import io.atomix.protocols.backup.proxy.impl.DefaultPrimaryBackupProxy;
-import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
+import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -50,7 +50,7 @@ import java.util.concurrent.Executor;
  * Default primary-backup client.
  */
 public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
-  private static final Serializer SERIALIZER = Serializer.using(PrimaryBackupNamespaces.PROTOCOL);
+  private static final Serializer SERIALIZER = PrimaryBackupSerializers.PROTOCOL;
 
   private final String clientName;
   private final ClusterService clusterService;
@@ -128,7 +128,9 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
       Logger log = ContextualLoggerFactory.getLogger(DefaultPrimaryBackupClient.class, LoggerContext.builder(PrimaryBackupClient.class)
           .addValue(clientName)
           .build());
-      ThreadContextFactory threadContextFactory = threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
+      ThreadContextFactory threadContextFactory = this.threadContextFactory != null
+          ? this.threadContextFactory
+          : threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
       return new DefaultPrimaryBackupClient(
           clientName,
           clusterService,

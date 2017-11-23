@@ -39,9 +39,8 @@ import io.atomix.protocols.backup.protocol.OpenSessionRequest;
 import io.atomix.protocols.backup.protocol.OpenSessionResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
-import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -86,6 +85,7 @@ public class DefaultPrimaryBackupProxy extends AbstractPrimitiveProxy {
     this.communicationService = communicationService;
     this.replicaProvider = replicaProvider;
     this.threadContext = threadContext;
+    this.primary = replicaProvider.replicas().primary();
     openSessionSubject = new MessageSubject(String.format("%s-open", clientName));
     closeSessionSubject = new MessageSubject(String.format("%s-close", clientName));
   }
@@ -192,38 +192,45 @@ public class DefaultPrimaryBackupProxy extends AbstractPrimitiveProxy {
   @Override
   public CompletableFuture<PrimitiveProxy> open() {
     CompletableFuture<PrimitiveProxy> future = new CompletableFuture<>();
-    OpenSessionRequest request = new OpenSessionRequest(
-        clusterService.getLocalNode().id(),
-        primitiveName,
-        primitiveType.id());
-    communicationService.<OpenSessionRequest, OpenSessionResponse>sendAndReceive(
-        openSessionSubject,
-        request,
-        SERIALIZER::encode,
-        SERIALIZER::decode,
-        primary)
-        .whenCompleteAsync((response, error) -> {
-          if (error == null) {
-            if (response.status() == Status.OK) {
-              synchronized (this) {
-                sessionId = SessionId.from(response.sessionId());
-                state = State.CONNECTED;
+    threadContext.execute(() -> {
+      if (primary == null) {
+        future.completeExceptionally(new Unavailable());
+        return;
+      }
+
+      OpenSessionRequest request = new OpenSessionRequest(
+          clusterService.getLocalNode().id(),
+          primitiveName,
+          primitiveType.id());
+      communicationService.<OpenSessionRequest, OpenSessionResponse>sendAndReceive(
+          openSessionSubject,
+          request,
+          SERIALIZER::encode,
+          SERIALIZER::decode,
+          primary)
+          .whenCompleteAsync((response, error) -> {
+            if (error == null) {
+              if (response.status() == Status.OK) {
+                synchronized (this) {
+                  sessionId = SessionId.from(response.sessionId());
+                  state = State.CONNECTED;
+                }
+                executeSubject = new MessageSubject(String.format("%s-%s-execute", clientName, primitiveName));
+                eventSubject = new MessageSubject(String.format("%s-%s-%s", clientName, primitiveName, sessionId));
+                communicationService.addSubscriber(eventSubject, SERIALIZER::decode, this::handleEvent, threadContext);
+                replicaProvider.addChangeListener(replicaChangeListener);
+                clusterService.addListener(clusterEventListener);
+                this.primary = replicaProvider.replicas().primary();
+                stateChangeListeners.forEach(l -> l.accept(state));
+                future.complete(this);
+              } else {
+                future.completeExceptionally(new Unavailable());
               }
-              executeSubject = new MessageSubject(String.format("%s-%s-execute", clientName, primitiveName));
-              eventSubject = new MessageSubject(String.format("%s-%s-%s", clientName, primitiveName, sessionId));
-              communicationService.addSubscriber(eventSubject, SERIALIZER::decode, this::handleEvent, threadContext);
-              replicaProvider.addChangeListener(replicaChangeListener);
-              clusterService.addListener(clusterEventListener);
-              this.primary = replicaProvider.replicas().primary();
-              stateChangeListeners.forEach(l -> l.accept(state));
-              future.complete(this);
             } else {
-              future.completeExceptionally(new Unavailable());
+              future.completeExceptionally(error);
             }
-          } else {
-            future.completeExceptionally(error);
-          }
-        }, threadContext);
+          }, threadContext);
+    });
     return future;
   }
 

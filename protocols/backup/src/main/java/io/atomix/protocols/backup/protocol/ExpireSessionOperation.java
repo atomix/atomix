@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Expire session operation.
  */
@@ -28,5 +30,14 @@ public class ExpireSessionOperation extends BackupOperation {
 
   public long sessionId() {
     return sessionId;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("index", index())
+        .add("timestamp", timestamp())
+        .add("session", sessionId)
+        .toString();
   }
 }

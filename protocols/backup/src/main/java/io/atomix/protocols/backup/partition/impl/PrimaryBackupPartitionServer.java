@@ -20,6 +20,7 @@ import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.backup.PrimaryBackupServer;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,12 +31,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartitionServer> {
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
+  private final ThreadContextFactory threadFactory;
   private PrimaryBackupServer server;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public PrimaryBackupPartitionServer(PrimaryBackupPartition partition, PartitionManagementService managementService) {
+  public PrimaryBackupPartitionServer(
+      PrimaryBackupPartition partition,
+      PartitionManagementService managementService,
+      ThreadContextFactory threadFactory) {
     this.partition = partition;
     this.managementService = managementService;
+    this.threadFactory = threadFactory;
   }
 
   @Override
@@ -59,14 +65,15 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   }
 
   private PrimaryBackupServer buildServer() {
-    PrimaryBackupServer.Builder builder = PrimaryBackupServer.builder()
+    return PrimaryBackupServer.builder()
         .withServerName(partition.name())
         .withClusterService(managementService.getClusterService())
         .withCommunicationService(managementService.getCommunicationService())
         .withReplicaProvider(new PrimaryElectionReplicaProvider(
             managementService.getElectionService().getElectionFor(partition.id())))
-        .withPrimitiveTypes(managementService.getPrimitiveTypes());
-    return builder.build();
+        .withPrimitiveTypes(managementService.getPrimitiveTypes())
+        .withThreadContextFactory(threadFactory)
+        .build();
   }
 
   @Override

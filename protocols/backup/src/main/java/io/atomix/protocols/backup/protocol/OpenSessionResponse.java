@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Open session response.
  */
@@ -28,5 +30,13 @@ public class OpenSessionResponse extends PrimaryBackupResponse {
 
   public long sessionId() {
     return sessionId;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("status", status())
+        .add("session", sessionId)
+        .toString();
   }
 }

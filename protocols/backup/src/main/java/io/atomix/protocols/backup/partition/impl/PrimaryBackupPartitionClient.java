@@ -23,6 +23,7 @@ import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.backup.PrimaryBackupClient;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -33,11 +34,16 @@ import java.util.concurrent.CompletableFuture;
 public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimaryProtocol>, Managed<PrimaryBackupPartitionClient> {
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
+  private final ThreadContextFactory threadFactory;
   private PrimaryBackupClient client;
 
-  public PrimaryBackupPartitionClient(PrimaryBackupPartition partition, PartitionManagementService managementService) {
+  public PrimaryBackupPartitionClient(
+      PrimaryBackupPartition partition,
+      PartitionManagementService managementService,
+      ThreadContextFactory threadFactory) {
     this.partition = partition;
     this.managementService = managementService;
+    this.threadFactory = threadFactory;
   }
 
   @Override
@@ -60,10 +66,12 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
 
   private PrimaryBackupClient newClient() {
     return PrimaryBackupClient.builder()
+        .withClientName(partition.name())
         .withClusterService(managementService.getClusterService())
         .withCommunicationService(managementService.getCommunicationService())
         .withReplicaProvider(new PrimaryElectionReplicaProvider(
             managementService.getElectionService().getElectionFor(partition.id())))
+        .withThreadContextFactory(threadFactory)
         .build();
   }
 

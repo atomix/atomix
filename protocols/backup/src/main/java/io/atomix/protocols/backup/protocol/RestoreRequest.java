@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Restore request.
  */
@@ -27,5 +29,12 @@ public class RestoreRequest extends PrimaryBackupRequest {
 
   public long term() {
     return term;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("term", term)
+        .toString();
   }
 }

@@ -17,6 +17,8 @@ package io.atomix.protocols.backup.protocol;
 
 import io.atomix.primitive.operation.PrimitiveOperation;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Operation request.
  */
@@ -35,5 +37,13 @@ public class ExecuteRequest extends PrimaryBackupRequest {
 
   public PrimitiveOperation operation() {
     return operation;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("session", sessionId)
+        .add("operation", operation)
+        .toString();
   }
 }

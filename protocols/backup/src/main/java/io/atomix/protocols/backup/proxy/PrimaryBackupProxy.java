@@ -38,7 +38,7 @@ import io.atomix.protocols.backup.protocol.ExecuteResponse;
 import io.atomix.protocols.backup.protocol.OpenSessionRequest;
 import io.atomix.protocols.backup.protocol.OpenSessionResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
-import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
+import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.Serializer;
 
@@ -50,7 +50,7 @@ import java.util.function.Consumer;
  * Primary-backup proxy.
  */
 public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
-  private static final Serializer SERIALIZER = Serializer.using(PrimaryBackupNamespaces.PROTOCOL);
+  private static final Serializer SERIALIZER = PrimaryBackupSerializers.PROTOCOL;
   private final String clientName;
   private final String primitiveName;
   private final PrimitiveType primitiveType;

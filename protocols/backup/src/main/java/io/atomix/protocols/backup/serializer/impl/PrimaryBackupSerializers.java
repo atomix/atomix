@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup.protocol;
+package io.atomix.protocols.backup.serializer.impl;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import io.atomix.utils.serializer.Serializer;
 
 /**
- * Close session response.
+ * Primary-backup serializers.
  */
-public class CloseSessionResponse extends PrimaryBackupResponse {
-  public CloseSessionResponse(Status status) {
-    super(status);
-  }
+public final class PrimaryBackupSerializers {
+  public static Serializer PROTOCOL = Serializer.using(PrimaryBackupNamespaces.PROTOCOL);
 
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("status", status())
-        .toString();
+  private PrimaryBackupSerializers() {
   }
 }

@@ -243,7 +243,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   public static class Builder implements io.atomix.utils.Builder<Atomix> {
     private static final String DEFAULT_CLUSTER_NAME = "atomix";
     private static final int DEFAULT_COORDINATION_PARTITION_SIZE = 3;
-    private static final int DEFAULT_DATA_PARTITIONS = 271;
+    private static final int DEFAULT_DATA_PARTITIONS = 71;
     private static final String COORDINATION_GROUP_NAME = "coordination";
     private static final String DATA_GROUP_NAME = "data";
 

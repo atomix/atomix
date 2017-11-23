@@ -19,6 +19,7 @@ import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.protocols.backup.impl.DefaultPrimaryBackupClient;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
 
 import java.util.concurrent.CompletableFuture;
@@ -57,6 +58,7 @@ public interface PrimaryBackupClient extends PrimitiveClient<MultiPrimaryProtoco
     protected ReplicaInfoProvider replicaProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    protected ThreadContextFactory threadContextFactory;
 
     /**
      * Sets the client name.
@@ -125,6 +127,18 @@ public interface PrimaryBackupClient extends PrimitiveClient<MultiPrimaryProtoco
     public Builder withThreadPoolSize(int threadPoolSize) {
       checkArgument(threadPoolSize > 0, "threadPoolSize must be positive");
       this.threadPoolSize = threadPoolSize;
+      return this;
+    }
+
+    /**
+     * Sets the client thread context factory.
+     *
+     * @param threadContextFactory the client thread context factory
+     * @return the client builder
+     * @throws NullPointerException if the factory is null
+     */
+    public Builder withThreadContextFactory(ThreadContextFactory threadContextFactory) {
+      this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
       return this;
     }
   }

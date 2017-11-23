@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Metadata request.
  */
@@ -27,5 +29,12 @@ public class MetadataRequest extends PrimaryBackupRequest {
 
   public String primitiveType() {
     return primitiveType;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("primitiveType", primitiveType)
+        .toString();
   }
 }

@@ -17,6 +17,8 @@ package io.atomix.protocols.backup.protocol;
 
 import io.atomix.cluster.NodeId;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Open session request.
  */
@@ -41,5 +43,14 @@ public class OpenSessionRequest extends PrimaryBackupRequest {
 
   public String primitiveType() {
     return primitiveType;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("nodeId", nodeId)
+        .add("primitiveName", primitiveName)
+        .add("primitiveType", primitiveType)
+        .toString();
   }
 }

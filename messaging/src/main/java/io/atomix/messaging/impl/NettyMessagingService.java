@@ -877,7 +877,7 @@ public class NettyMessagingService implements ManagedMessagingService {
             long elapsedTime = currentTime - callback.time;
             timeoutHistory.addReplyTime(elapsedTime);
             callback.completeExceptionally(
-                new TimeoutException("Request timed out in " + elapsedTime + " milliseconds"));
+                new TimeoutException("Request type " + callback.type + " timed out in " + elapsedTime + " milliseconds"));
           }
         } catch (ExecutionException e) {
           throw new AssertionError();

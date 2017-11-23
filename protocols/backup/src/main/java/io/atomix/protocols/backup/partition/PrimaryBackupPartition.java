@@ -24,6 +24,7 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionClient;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionServer;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -69,7 +70,7 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
    * @return the partition name
    */
   public String name() {
-    return String.format("partition-%d", partitionId.id());
+    return String.format("%s-partition-%d", partitionId.group(), partitionId.id());
   }
 
   @Override
@@ -80,10 +81,12 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
   /**
    * Opens the primary-backup partition.
    */
-  public CompletableFuture<Partition> open(PartitionManagementService managementService) {
+  CompletableFuture<Partition> open(
+      PartitionManagementService managementService,
+      ThreadContextFactory threadFactory) {
     election = managementService.getElectionService().getElectionFor(partitionId);
-    server = new PrimaryBackupPartitionServer(this, managementService);
-    client = new PrimaryBackupPartitionClient(this, managementService);
+    server = new PrimaryBackupPartitionServer(this, managementService, threadFactory);
+    client = new PrimaryBackupPartitionClient(this, managementService, threadFactory);
     return server.open().thenCompose(v -> client.open()).thenApply(v -> this);
   }
 

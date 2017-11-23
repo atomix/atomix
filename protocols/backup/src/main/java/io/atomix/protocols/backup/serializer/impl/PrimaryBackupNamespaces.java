@@ -16,9 +16,12 @@
 package io.atomix.protocols.backup.serializer.impl;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.primitive.event.PrimitiveEvent;
+import io.atomix.primitive.event.impl.DefaultEventType;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
+import io.atomix.protocols.backup.protocol.BackupOperation;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.CloseSessionOperation;
 import io.atomix.protocols.backup.protocol.CloseSessionRequest;
@@ -32,6 +35,7 @@ import io.atomix.protocols.backup.protocol.MetadataResponse;
 import io.atomix.protocols.backup.protocol.OpenSessionOperation;
 import io.atomix.protocols.backup.protocol.OpenSessionRequest;
 import io.atomix.protocols.backup.protocol.OpenSessionResponse;
+import io.atomix.protocols.backup.protocol.PrimaryBackupResponse;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -49,6 +53,7 @@ public final class PrimaryBackupNamespaces {
       .register(KryoNamespaces.BASIC)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
       .register(NodeId.class)
+      .register(PrimaryBackupResponse.Status.class)
       .register(OpenSessionRequest.class)
       .register(OpenSessionResponse.class)
       .register(CloseSessionRequest.class)
@@ -60,11 +65,14 @@ public final class PrimaryBackupNamespaces {
       .register(RestoreResponse.class)
       .register(MetadataRequest.class)
       .register(MetadataResponse.class)
+      .register(BackupOperation.Type.class)
       .register(OpenSessionOperation.class)
       .register(CloseSessionOperation.class)
       .register(ExecuteOperation.class)
       .register(HeartbeatOperation.class)
       .register(PrimitiveOperation.class)
+      .register(PrimitiveEvent.class)
+      .register(DefaultEventType.class)
       .register(DefaultOperationId.class)
       .register(OperationType.class)
       .build("PrimaryBackupProtocol");

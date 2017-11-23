@@ -49,16 +49,18 @@ import io.atomix.protocols.backup.protocol.HeartbeatOperation;
 import io.atomix.protocols.backup.protocol.OpenSessionOperation;
 import io.atomix.protocols.backup.protocol.OpenSessionRequest;
 import io.atomix.protocols.backup.protocol.OpenSessionResponse;
+import io.atomix.protocols.backup.protocol.PrimaryBackupRequest;
+import io.atomix.protocols.backup.protocol.PrimaryBackupResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
+import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
-import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.LogicalTimestamp;
@@ -80,7 +82,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft server state machine executor.
  */
 public class PrimaryBackupServiceContext implements ServiceContext {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC); // TODO
+  private static final Serializer SERIALIZER = PrimaryBackupSerializers.PROTOCOL;
   private static final Duration HEARTBEAT_INTERVAL = Duration.ofSeconds(1);
 
   private final Logger log;
@@ -151,6 +153,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     registerSubscribers();
     clusterService.addListener(clusterEventListener);
     replicaProvider.addChangeListener(replicaInfoListener);
+    changeRole(replicaProvider.replicas());
   }
 
   /**
@@ -182,19 +185,25 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       Role role = replicaInfo.roleFor(clusterService.getLocalNode().id());
       switch (role) {
         case PRIMARY:
-          if (this.role.role() != Role.PRIMARY) {
+          if (this.role == null) {
+            this.role = new PrimaryRole();
+          } else if (this.role.role() != Role.PRIMARY) {
             this.role.close();
             this.role = new PrimaryRole();
           }
           break;
         case BACKUP:
-          if (this.role.role() != Role.BACKUP) {
+          if (this.role == null) {
+            this.role = new BackupRole();
+          } else if (this.role.role() != Role.BACKUP) {
             this.role.close();
             this.role = new BackupRole();
           }
           break;
         case NONE:
-          if (this.role.role() != Role.NONE) {
+          if (this.role == null) {
+            this.role = new NoneRole();
+          } else if (this.role.role() != Role.NONE) {
             this.role.close();
             this.role = new NoneRole();
           }
@@ -301,6 +310,30 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       future.complete(role.closeSession(request));
     });
     return future;
+  }
+
+  /**
+   * Logs a request.
+   */
+  protected final <R extends PrimaryBackupRequest> R logReceived(R request) {
+    log.trace("Received {}", request);
+    return request;
+  }
+
+  /**
+   * Logs an internal request.
+   */
+  protected final <R extends PrimaryBackupRequest> R logSend(R request) {
+    log.trace("Sending {}", request);
+    return request;
+  }
+
+  /**
+   * Logs a response.
+   */
+  protected final <R extends PrimaryBackupResponse> R logResponse(R response) {
+    log.trace("Sending {}", response);
+    return response;
   }
 
   /**
@@ -422,6 +455,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
 
     @Override
     OpenSessionResponse openSession(OpenSessionRequest request) {
+      logReceived(request);
       long index = incrementIndex();
       WallClockTimestamp timestamp = incrementTimestamp();
       PrimaryBackupSession session = new PrimaryBackupSession(
@@ -434,11 +468,12 @@ public class PrimaryBackupServiceContext implements ServiceContext {
           clusterCommunicator);
       sessions.openSession(session);
       backup(new OpenSessionOperation(index, timestamp.unixTimestamp(), request.nodeId()));
-      return new OpenSessionResponse(Status.OK, session.sessionId().id());
+      return logResponse(new OpenSessionResponse(Status.OK, session.sessionId().id()));
     }
 
     @Override
     CloseSessionResponse closeSession(CloseSessionRequest request) {
+      logReceived(request);
       long index = incrementIndex();
       WallClockTimestamp timestamp = incrementTimestamp();
       PrimaryBackupSession session = (PrimaryBackupSession) sessions.getSession(request.sessionId());
@@ -447,7 +482,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       }
       sessions.closeSession(session);
       backup(new CloseSessionOperation(index, timestamp.unixTimestamp(), request.sessionId()));
-      return new CloseSessionResponse(Status.OK);
+      return logResponse(new CloseSessionResponse(Status.OK));
     }
 
     @Override
@@ -464,15 +499,16 @@ public class PrimaryBackupServiceContext implements ServiceContext {
 
     @Override
     ExecuteResponse execute(ExecuteRequest request) {
+      logReceived(request);
       Session session = sessions.getSession(request.sessionId());
       if (session == null) {
         return new ExecuteResponse(Status.ERROR, null);
       }
 
       if (request.operation().id().type() == OperationType.COMMAND) {
-        return executeCommand(request, session);
+        return logResponse(executeCommand(request, session));
       } else {
-        return executeQuery(request, session);
+        return logResponse(executeQuery(request, session));
       }
     }
 
@@ -514,6 +550,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
 
     @Override
     RestoreResponse restore(RestoreRequest request) {
+      logReceived(request);
       if (request.term() != currentTerm) {
         return new RestoreResponse(Status.ERROR, 0, 0, null);
       }
@@ -522,7 +559,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       service.backup(buffer);
       buffer.flip();
       byte[] bytes = buffer.readBytes(buffer.remaining());
-      return new RestoreResponse(Status.OK, currentIndex, currentTimestamp.unixTimestamp(), bytes);
+      return logResponse(new RestoreResponse(Status.OK, currentIndex, currentTimestamp.unixTimestamp(), bytes));
     }
 
     /**
@@ -584,6 +621,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
 
     @Override
     void backup(BackupRequest request) {
+      logReceived(request);
+
       // If the term is greater than the node's current term, update the term.
       if (request.term() > currentTerm) {
         primary = request.primary();
@@ -729,8 +768,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       List<BackupOperation> batch = ImmutableList.copyOf(operations);
       operations.clear();
       BackupRequest request = new BackupRequest(localNodeId, currentTerm, batch);
-      clusterCommunicator.unicast(backupSubject, request, SERIALIZER::encode, nodeId);
-      lastSent = batch.size();
+      clusterCommunicator.unicast(backupSubject, logSend(request), SERIALIZER::encode, nodeId);
+      lastSent = System.currentTimeMillis();
     }
   }
 }

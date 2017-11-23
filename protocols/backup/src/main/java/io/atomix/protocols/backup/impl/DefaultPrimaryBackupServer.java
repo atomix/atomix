@@ -177,7 +177,9 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
       Logger log = ContextualLoggerFactory.getLogger(DefaultPrimaryBackupServer.class, LoggerContext.builder(PrimaryBackupServer.class)
           .addValue(serverName)
           .build());
-      ThreadContextFactory threadContextFactory = threadModel.factory("backup-server-" + serverName + "-%d", threadPoolSize, log);
+      ThreadContextFactory threadContextFactory = this.threadContextFactory != null
+          ? this.threadContextFactory
+          : threadModel.factory("backup-server-" + serverName + "-%d", threadPoolSize, log);
       return new DefaultPrimaryBackupServer(
           serverName,
           clusterService,

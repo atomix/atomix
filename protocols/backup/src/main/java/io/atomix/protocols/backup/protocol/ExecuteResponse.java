@@ -15,6 +15,10 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import io.atomix.utils.ArraySizeHashPrinter;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Operation response.
  */
@@ -28,5 +32,13 @@ public class ExecuteResponse extends PrimaryBackupResponse {
 
   public byte[] result() {
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("status", status())
+        .add("result", ArraySizeHashPrinter.of(result))
+        .toString();
   }
 }
