@@ -290,7 +290,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * @param request the open session request
    * @return future to be completed with the open session response
    */
-  CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
+  public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
     ComposableFuture<OpenSessionResponse> future = new ComposableFuture<>();
     threadContext.execute(() -> {
       future.complete(role.openSession(request));
@@ -304,7 +304,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * @param request the close session request
    * @return future to be completed with the close session response
    */
-  CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
+  public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
     ComposableFuture<CloseSessionResponse> future = new ComposableFuture<>();
     threadContext.execute(() -> {
       future.complete(role.closeSession(request));
