@@ -22,18 +22,17 @@ import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveException.Unavailable;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.backup.PrimaryBackupClient;
-import io.atomix.protocols.backup.ReplicaInfoProvider;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
 import io.atomix.protocols.backup.protocol.MetadataResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.proxy.PrimaryBackupProxy;
-import io.atomix.protocols.backup.proxy.impl.DefaultPrimaryBackupProxy;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -55,7 +54,7 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
   private final String clientName;
   private final ClusterService clusterService;
   private final ClusterCommunicationService communicationService;
-  private final ReplicaInfoProvider replicaProvider;
+  private final PrimaryElection primaryElection;
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext threadContext;
   private final MessageSubject metadataSubject;
@@ -64,18 +63,19 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
       String clientName,
       ClusterService clusterService,
       ClusterCommunicationService communicationService,
-      ReplicaInfoProvider replicaProvider,
+      PrimaryElection primaryElection,
       ThreadContextFactory threadContextFactory) {
     this.clientName = clientName;
     this.clusterService = clusterService;
     this.communicationService = communicationService;
-    this.replicaProvider = replicaProvider;
+    this.primaryElection = primaryElection;
     this.threadContextFactory = threadContextFactory;
     this.threadContext = threadContextFactory.createContext();
     this.metadataSubject = new MessageSubject(String.format("%s-metadata", clientName));
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public PrimitiveProxy.Builder<MultiPrimaryProtocol> proxyBuilder(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
     return new ProxyBuilder(primitiveName, primitiveType, primitiveProtocol);
   }
@@ -85,7 +85,7 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
     CompletableFuture<Set<String>> future = new CompletableFuture<>();
     MetadataRequest request = new MetadataRequest(primitiveType.id());
     threadContext.execute(() -> {
-      NodeId primary = replicaProvider.replicas().primary();
+      NodeId primary = primaryElection.getTerm().primary();
       if (primary == null) {
         future.completeExceptionally(new Unavailable());
         return;
@@ -135,7 +135,7 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
           clientName,
           clusterService,
           communicationService,
-          replicaProvider,
+          primaryElection,
           threadContextFactory);
     }
   }
@@ -154,19 +154,17 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
       PrimitiveProxy.Builder<MultiPrimaryProtocol> proxyBuilder = new PrimitiveProxy.Builder(name, primitiveType, protocol) {
         @Override
         public PrimitiveProxy build() {
-          return new DefaultPrimaryBackupProxy(
+          return new PrimaryBackupProxy(
               clientName,
               name,
               primitiveType,
               clusterService,
               communicationService,
-              replicaProvider,
+              primaryElection,
               threadContextFactory.createContext());
         }
-      };
-
-      // Populate the proxy client builder.
-      proxyBuilder.withMaxRetries(maxRetries).withRetryDelay(retryDelay);
+      }.withMaxRetries(maxRetries)
+          .withRetryDelay(retryDelay);
 
       PrimitiveProxy proxy = new RecoveringPrimitiveProxy(
           clientName,
@@ -174,7 +172,6 @@ public class DefaultPrimaryBackupClient implements PrimaryBackupClient {
           primitiveType,
           proxyBuilder,
           threadContextFactory.createContext());
-
 
       // If max retries is set, wrap the client in a retrying proxy client.
       if (maxRetries > 0) {

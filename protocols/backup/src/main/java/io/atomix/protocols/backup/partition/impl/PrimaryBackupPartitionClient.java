@@ -69,8 +69,7 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
         .withClientName(partition.name())
         .withClusterService(managementService.getClusterService())
         .withCommunicationService(managementService.getCommunicationService())
-        .withReplicaProvider(new PrimaryElectionReplicaProvider(
-            managementService.getElectionService().getElectionFor(partition.id())))
+        .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
         .withThreadContextFactory(threadFactory)
         .build();
   }

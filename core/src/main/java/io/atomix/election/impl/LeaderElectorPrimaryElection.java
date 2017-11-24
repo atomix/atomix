@@ -29,6 +29,7 @@ import io.atomix.primitive.partition.PrimaryTerm;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -36,32 +37,43 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Leader elector based primary election.
  */
 public class LeaderElectorPrimaryElection implements PrimaryElection {
-  private final NodeId nodeId;
   private final PartitionId partitionId;
   private final LeaderElector<NodeId> elector;
   private final LeadershipEventListener<NodeId> eventListener = event -> updateTerm(event.newLeadership());
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
-  private volatile PrimaryTerm term;
+  private PrimaryTerm term;
 
-  public LeaderElectorPrimaryElection(NodeId nodeId, PartitionId partitionId, LeaderElector<NodeId> elector) {
-    this.nodeId = checkNotNull(nodeId);
+  public LeaderElectorPrimaryElection(PartitionId partitionId, LeaderElector<NodeId> elector) {
     this.partitionId = checkNotNull(partitionId);
     this.elector = checkNotNull(elector);
     elector.addListener(eventListener);
-    updateTerm(elector.run(partitionId.toString(), nodeId));
+    this.term = updateTerm(elector.getLeadership(partitionId.toString()));
+  }
+
+  @Override
+  public PrimaryTerm enter(NodeId nodeId) {
+    return createTerm(elector.run(partitionId.toString(), nodeId));
   }
 
   @Override
   public PrimaryTerm getTerm() {
-    return term;
+    return createTerm(elector.getLeadership(partitionId.toString()));
   }
 
-  private void updateTerm(Leadership<NodeId> leadership) {
-    PrimaryTerm oldTerm = this.term;
-    PrimaryTerm term = new PrimaryTerm(
+  private PrimaryTerm createTerm(Leadership<NodeId> leadership) {
+    NodeId leader = leadership.leader() != null ? leadership.leader().id() : null;
+    return new PrimaryTerm(
         leadership.leader() != null ? leadership.leader().term() : 0,
-        leadership.leader() != null ? leadership.leader().id() : null,
-        leadership.candidates());
+        leader,
+        leadership.candidates()
+            .stream()
+            .filter(candidate -> !Objects.equals(candidate, leader))
+            .collect(Collectors.toList()));
+  }
+
+  private PrimaryTerm updateTerm(Leadership<NodeId> leadership) {
+    PrimaryTerm oldTerm = this.term;
+    PrimaryTerm term = createTerm(leadership);
 
     if (oldTerm != null) {
       PrimaryElectionEvent.Type type = null;
@@ -83,6 +95,7 @@ public class LeaderElectorPrimaryElection implements PrimaryElection {
     } else {
       this.term = term;
     }
+    return this.term;
   }
 
   @Override

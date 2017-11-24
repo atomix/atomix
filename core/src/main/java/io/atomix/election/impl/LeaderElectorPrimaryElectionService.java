@@ -56,7 +56,6 @@ public class LeaderElectorPrimaryElectionService implements PrimaryElectionServi
       .register(NodeId.class)
       .build());
 
-  private final NodeId nodeId;
   private final PartitionGroup partitions;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newIdentityHashSet();
   private final PrimaryElectionEventListener eventListener = event -> listeners.forEach(l -> l.onEvent(event));
@@ -64,15 +63,14 @@ public class LeaderElectorPrimaryElectionService implements PrimaryElectionServi
   private LeaderElector<NodeId> elector;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public LeaderElectorPrimaryElectionService(NodeId nodeId, PartitionGroup partitionGroup) {
-    this.nodeId = checkNotNull(nodeId);
+  public LeaderElectorPrimaryElectionService(PartitionGroup partitionGroup) {
     this.partitions = checkNotNull(partitionGroup);
   }
 
   @Override
   public PrimaryElection getElectionFor(PartitionId partitionId) {
     return elections.computeIfAbsent(partitionId, id -> {
-      PrimaryElection election = new LeaderElectorPrimaryElection(nodeId, partitionId, elector);
+      PrimaryElection election = new LeaderElectorPrimaryElection(partitionId, elector);
       election.addListener(eventListener);
       return election;
     });

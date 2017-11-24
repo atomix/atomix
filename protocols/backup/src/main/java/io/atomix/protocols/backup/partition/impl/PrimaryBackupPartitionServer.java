@@ -69,8 +69,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
         .withServerName(partition.name())
         .withClusterService(managementService.getClusterService())
         .withCommunicationService(managementService.getCommunicationService())
-        .withReplicaProvider(new PrimaryElectionReplicaProvider(
-            managementService.getElectionService().getElectionFor(partition.id())))
+        .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
         .withPrimitiveTypes(managementService.getPrimitiveTypes())
         .withThreadContextFactory(threadFactory)
         .build();

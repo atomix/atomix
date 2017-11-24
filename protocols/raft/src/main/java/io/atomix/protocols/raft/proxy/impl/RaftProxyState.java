@@ -75,7 +75,7 @@ public final class RaftProxyState {
    *
    * @return The session name.
    */
-  public String getServiceName() {
+  public String getPrimitiveName() {
     return serviceName;
   }
 

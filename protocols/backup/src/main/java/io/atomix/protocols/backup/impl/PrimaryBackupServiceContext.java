@@ -27,15 +27,15 @@ import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationType;
+import io.atomix.primitive.partition.PrimaryElection;
+import io.atomix.primitive.partition.PrimaryElectionEventListener;
+import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.Sessions;
-import io.atomix.protocols.backup.ReplicaInfo;
-import io.atomix.protocols.backup.ReplicaInfo.Role;
-import io.atomix.protocols.backup.ReplicaInfoProvider;
 import io.atomix.protocols.backup.protocol.BackupOperation;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.CloseSessionOperation;
@@ -74,7 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -96,7 +95,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private final ThreadContext threadContext;
   private final ClusterService clusterService;
   private final ClusterCommunicationService clusterCommunicator;
-  private final ReplicaInfoProvider replicaProvider;
+  private final PrimaryElection primaryElection;
   private NodeId primary;
   private List<NodeId> backups;
   private long currentTerm;
@@ -120,7 +119,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private final MessageSubject backupSubject;
   private final MessageSubject restoreSubject;
   private final ClusterEventListener clusterEventListener = this::handleClusterEvent;
-  private final Consumer<ReplicaInfo> replicaInfoListener = this::changeRole;
+  private final PrimaryElectionEventListener primaryElectionListener = event -> changeRole(event.term());
 
   public PrimaryBackupServiceContext(
       String serverName,
@@ -130,7 +129,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       ThreadContext threadContext,
       ClusterService clusterService,
       ClusterCommunicationService clusterCommunicator,
-      ReplicaInfoProvider replicaProvider) {
+      PrimaryElection primaryElection) {
     this.localNodeId = clusterService.getLocalNode().id();
     this.serverName = checkNotNull(serverName);
     this.primitiveId = checkNotNull(primitiveId);
@@ -140,9 +139,9 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     this.threadContext = checkNotNull(threadContext);
     this.clusterService = checkNotNull(clusterService);
     this.clusterCommunicator = checkNotNull(clusterCommunicator);
-    this.replicaProvider = checkNotNull(replicaProvider);
+    this.primaryElection = checkNotNull(primaryElection);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
-        .addValue(primitiveId)
+        .addValue(serverName)
         .add("type", primitiveType)
         .add("name", serviceName)
         .build());
@@ -152,8 +151,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     init();
     registerSubscribers();
     clusterService.addListener(clusterEventListener);
-    replicaProvider.addChangeListener(replicaInfoListener);
-    changeRole(replicaProvider.replicas());
+    primaryElection.addListener(primaryElectionListener);
+    changeRole(primaryElection.getTerm());
   }
 
   /**
@@ -176,38 +175,39 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   /**
    * Changes the roles.
    */
-  private void changeRole(ReplicaInfo replicaInfo) {
-    if (replicaInfo.term() > currentTerm) {
-      currentTerm = replicaInfo.term();
-      primary = replicaInfo.primary();
-      backups = replicaInfo.backups();
+  private void changeRole(PrimaryTerm term) {
+    if (term.term() > currentTerm) {
+      currentTerm = term.term();
+      primary = term.primary();
+      backups = term.backups();
 
-      Role role = replicaInfo.roleFor(clusterService.getLocalNode().id());
-      switch (role) {
-        case PRIMARY:
-          if (this.role == null) {
-            this.role = new PrimaryRole();
-          } else if (this.role.role() != Role.PRIMARY) {
-            this.role.close();
-            this.role = new PrimaryRole();
-          }
-          break;
-        case BACKUP:
-          if (this.role == null) {
-            this.role = new BackupRole();
-          } else if (this.role.role() != Role.BACKUP) {
-            this.role.close();
-            this.role = new BackupRole();
-          }
-          break;
-        case NONE:
-          if (this.role == null) {
-            this.role = new NoneRole();
-          } else if (this.role.role() != Role.NONE) {
-            this.role.close();
-            this.role = new NoneRole();
-          }
-          break;
+      if (term.primary().equals(clusterService.getLocalNode().id())) {
+        if (this.role == null) {
+          this.role = new PrimaryRole();
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
+        } else if (this.role.role() != Role.PRIMARY) {
+          this.role.close();
+          this.role = new PrimaryRole();
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
+        }
+      } else if (term.backups().contains(clusterService.getLocalNode().id())) {
+        if (this.role == null) {
+          this.role = new BackupRole();
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
+        } else if (this.role.role() != Role.BACKUP) {
+          this.role.close();
+          this.role = new BackupRole();
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
+        }
+      } else {
+        if (this.role == null) {
+          this.role = new NoneRole();
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+        } else if (this.role.role() != Role.NONE) {
+          this.role.close();
+          this.role = new NoneRole();
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+        }
       }
     }
   }
@@ -342,7 +342,16 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   void close() {
     unregisterSubscribers();
     clusterService.removeListener(clusterEventListener);
-    replicaProvider.removeChangeListener(replicaInfoListener);
+    primaryElection.removeListener(primaryElectionListener);
+  }
+
+  /**
+   * Primary-backup role.
+   */
+  enum Role {
+    PRIMARY,
+    BACKUP,
+    NONE,
   }
 
   /**
@@ -366,7 +375,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
      * @return the open session response
      */
     OpenSessionResponse openSession(OpenSessionRequest request) {
-      return new OpenSessionResponse(Status.ERROR, 0);
+      logReceived(request);
+      return logResponse(new OpenSessionResponse(Status.ERROR, 0));
     }
 
     /**
@@ -376,7 +386,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
      * @return the close session response
      */
     CloseSessionResponse closeSession(CloseSessionRequest request) {
-      return new CloseSessionResponse(Status.ERROR);
+      logReceived(request);
+      return logResponse(new CloseSessionResponse(Status.ERROR));
     }
 
     /**
@@ -386,7 +397,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
      * @return the execute response
      */
     ExecuteResponse execute(ExecuteRequest request) {
-      return new ExecuteResponse(Status.ERROR, null);
+      logReceived(request);
+      return logResponse(new ExecuteResponse(Status.ERROR, null));
     }
 
     /**
@@ -404,7 +416,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
      * @return the restore response
      */
     RestoreResponse restore(RestoreRequest request) {
-      return new RestoreResponse(Status.ERROR, 0, 0, null);
+      logReceived(request);
+      return logResponse(new RestoreResponse(Status.ERROR, 0, 0, null));
     }
 
     /**

@@ -18,6 +18,8 @@ package io.atomix.primitive.partition;
 import com.google.common.base.Preconditions;
 import io.atomix.utils.AbstractIdentifier;
 
+import java.util.Objects;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -61,6 +63,20 @@ public class PartitionId extends AbstractIdentifier<Integer> implements Comparab
    */
   public String group() {
     return group;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id(), group());
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof PartitionId) {
+      PartitionId partitionId = (PartitionId) object;
+      return partitionId.id().equals(id()) && partitionId.group().equals(group());
+    }
+    return false;
   }
 
   @Override

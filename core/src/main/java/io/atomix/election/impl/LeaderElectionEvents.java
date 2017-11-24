@@ -15,11 +15,10 @@
  */
 package io.atomix.election.impl;
 
-import io.atomix.cluster.NodeId;
-import io.atomix.primitive.event.EventType;
 import io.atomix.election.Leader;
 import io.atomix.election.Leadership;
 import io.atomix.election.LeadershipEvent;
+import io.atomix.primitive.event.EventType;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 
@@ -42,7 +41,6 @@ public enum LeaderElectionEvents implements EventType {
 
   public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
-      .register(NodeId.class)
       .register(Leadership.class)
       .register(Leader.class)
       .register(LeadershipEvent.class)

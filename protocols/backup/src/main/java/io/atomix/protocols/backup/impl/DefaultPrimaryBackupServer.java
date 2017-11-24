@@ -21,8 +21,8 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.protocols.backup.PrimaryBackupServer;
-import io.atomix.protocols.backup.ReplicaInfoProvider;
 import io.atomix.protocols.backup.protocol.CloseSessionRequest;
 import io.atomix.protocols.backup.protocol.CloseSessionResponse;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
@@ -52,7 +52,7 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
   private final ClusterCommunicationService communicationService;
   private final ThreadContextFactory threadContextFactory;
   private final PrimitiveTypeRegistry primitiveTypes;
-  private final ReplicaInfoProvider replicaProvider;
+  private final PrimaryElection primaryElection;
   private final Map<String, PrimaryBackupServiceContext> services = Maps.newConcurrentMap();
   private final MessageSubject openSessionSubject;
   private final MessageSubject closeSessionSubject;
@@ -65,13 +65,13 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
       ClusterCommunicationService communicationService,
       ThreadContextFactory threadContextFactory,
       PrimitiveTypeRegistry primitiveTypes,
-      ReplicaInfoProvider replicaProvider) {
+      PrimaryElection primaryElection) {
     this.serverName = serverName;
     this.clusterService = clusterService;
     this.communicationService = communicationService;
     this.threadContextFactory = threadContextFactory;
     this.primitiveTypes = primitiveTypes;
-    this.replicaProvider = replicaProvider;
+    this.primaryElection = primaryElection;
     this.openSessionSubject = new MessageSubject(String.format("%s-open", serverName));
     this.closeSessionSubject = new MessageSubject(String.format("%s-close", serverName));
     this.metadataSubject = new MessageSubject(String.format("%s-metadata", serverName));
@@ -89,7 +89,7 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
         threadContextFactory.createContext(),
         clusterService,
         communicationService,
-        replicaProvider))
+        primaryElection))
         .openSession(request);
   }
 
@@ -146,6 +146,7 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
 
   @Override
   public CompletableFuture<PrimaryBackupServer> open() {
+    primaryElection.enter(clusterService.getLocalNode().id());
     registerSubscribers();
     open.set(true);
     return CompletableFuture.completedFuture(this);
@@ -186,7 +187,7 @@ public class DefaultPrimaryBackupServer implements PrimaryBackupServer {
           communicationService,
           threadContextFactory,
           primitiveTypes,
-          replicaProvider);
+          primaryElection);
     }
   }
 }

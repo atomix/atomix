@@ -44,7 +44,7 @@ public abstract class LeaderElectorBuilder<T>
   private Serializer serializer;
 
   public LeaderElectorBuilder(String name) {
-    super(PrimitiveTypes.leaderElection(), name);
+    super(PrimitiveTypes.leaderElector(), name);
   }
 
   /**

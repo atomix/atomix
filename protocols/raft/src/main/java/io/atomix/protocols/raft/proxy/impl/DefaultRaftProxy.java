@@ -169,7 +169,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
               LoggerContext.builder(PrimitiveProxy.class)
                   .addValue(state.getSessionId())
                   .add("type", state.getPrimitiveType())
-                  .add("name", state.getServiceName())
+                  .add("name", state.getPrimitiveName())
                   .build());
           RaftProxyConnection sessionConnection = new RaftProxyConnection(
               protocol,
@@ -178,7 +178,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
               LoggerContext.builder(PrimitiveProxy.class)
                   .addValue(state.getSessionId())
                   .add("type", state.getPrimitiveType())
-                  .add("name", state.getServiceName())
+                  .add("name", state.getPrimitiveName())
                   .build());
 
           // Create proxy submitter/listener.

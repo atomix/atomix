@@ -99,7 +99,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public CompletableFuture<ManagedPartitionGroup> open(PartitionManagementService managementService) {
-    threadFactory = new ThreadPoolContextFactory("atomix-primary-backup-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
+    threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.open(managementService, threadFactory))
         .collect(Collectors.toList());

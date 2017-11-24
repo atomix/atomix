@@ -38,7 +38,7 @@ public class ExecuteResponse extends PrimaryBackupResponse {
   public String toString() {
     return toStringHelper(this)
         .add("status", status())
-        .add("result", ArraySizeHashPrinter.of(result))
+        .add("result", result != null ? ArraySizeHashPrinter.of(result) : null)
         .toString();
   }
 }

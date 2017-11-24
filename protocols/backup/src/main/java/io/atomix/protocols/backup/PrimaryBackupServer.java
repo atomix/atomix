@@ -19,6 +19,7 @@ import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.protocols.backup.impl.DefaultPrimaryBackupServer;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -48,7 +49,7 @@ public interface PrimaryBackupServer extends Managed<PrimaryBackupServer> {
     protected String serverName = "atomix";
     protected ClusterService clusterService;
     protected ClusterCommunicationService communicationService;
-    protected ReplicaInfoProvider replicaProvider;
+    protected PrimaryElection primaryElection;
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
@@ -89,13 +90,13 @@ public interface PrimaryBackupServer extends Managed<PrimaryBackupServer> {
     }
 
     /**
-     * Sets the replica provider.
+     * Sets the primary election.
      *
-     * @param replicaProvider the replica provider
+     * @param primaryElection the primary election
      * @return the client builder
      */
-    public Builder withReplicaProvider(ReplicaInfoProvider replicaProvider) {
-      this.replicaProvider = checkNotNull(replicaProvider, "replicaProvider cannot be null");
+    public Builder withPrimaryElection(PrimaryElection primaryElection) {
+      this.primaryElection = checkNotNull(primaryElection, "primaryElection cannot be null");
       return this;
     }
 

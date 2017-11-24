@@ -21,6 +21,7 @@ import io.atomix.election.Leadership;
 import io.atomix.election.LeadershipEvent;
 import io.atomix.election.LeadershipEventListener;
 import io.atomix.election.impl.LeaderElectorOperations.Anoint;
+import io.atomix.election.impl.LeaderElectorOperations.Evict;
 import io.atomix.election.impl.LeaderElectorOperations.GetLeadership;
 import io.atomix.election.impl.LeaderElectorOperations.Promote;
 import io.atomix.election.impl.LeaderElectorOperations.Run;
@@ -67,7 +68,7 @@ public class LeaderElectorProxy extends AbstractPrimitive implements AsyncLeader
     proxy.addEventListener(CHANGE, SERIALIZER::decode, this::handleEvent);
   }
 
-  private void handleEvent(List<LeadershipEvent> changes) {
+  private void handleEvent(List<LeadershipEvent<byte[]>> changes) {
     changes.forEach(change -> leadershipChangeListeners.forEach(l -> l.onEvent(change)));
   }
 
@@ -93,7 +94,7 @@ public class LeaderElectorProxy extends AbstractPrimitive implements AsyncLeader
 
   @Override
   public CompletableFuture<Void> evict(byte[] id) {
-    return proxy.invoke(EVICT, SERIALIZER::encode, new LeaderElectorOperations.Evict(id));
+    return proxy.invoke(EVICT, SERIALIZER::encode, new Evict(id));
   }
 
   @Override

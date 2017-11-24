@@ -195,8 +195,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> clusterEventService.open(), context)
         .thenComposeAsync(v -> corePartitionGroup.open(
             new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, null)), context)
-        .thenComposeAsync(v ->
-            new LeaderElectorPrimaryElectionService(cluster.getLocalNode().id(), corePartitionGroup).open(), context)
+        .thenComposeAsync(v -> new LeaderElectorPrimaryElectionService(corePartitionGroup).open(), context)
         .thenComposeAsync(electionService ->
             partitions.open(new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, electionService)), context)
         .thenApplyAsync(v -> {

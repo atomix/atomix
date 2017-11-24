@@ -20,6 +20,8 @@ import io.atomix.cluster.NodeId;
 import java.util.List;
 import java.util.Objects;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Partition primary term.
  */
@@ -75,5 +77,14 @@ public class PrimaryTerm {
           && Objects.equals(term.backups, backups);
     }
     return false;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("term", term)
+        .add("primary", primary)
+        .add("backups", backups)
+        .toString();
   }
 }

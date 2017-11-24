@@ -18,6 +18,7 @@ package io.atomix.protocols.backup;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveClient;
+import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.protocols.backup.impl.DefaultPrimaryBackupClient;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
@@ -55,7 +56,7 @@ public interface PrimaryBackupClient extends PrimitiveClient<MultiPrimaryProtoco
     protected String clientName = "atomix";
     protected ClusterService clusterService;
     protected ClusterCommunicationService communicationService;
-    protected ReplicaInfoProvider replicaProvider;
+    protected PrimaryElection primaryElection;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
     protected ThreadContextFactory threadContextFactory;
@@ -95,13 +96,13 @@ public interface PrimaryBackupClient extends PrimitiveClient<MultiPrimaryProtoco
     }
 
     /**
-     * Sets the replica provider.
+     * Sets the primary election.
      *
-     * @param replicaProvider the replica provider
+     * @param primaryElection the primary election
      * @return the client builder
      */
-    public Builder withReplicaProvider(ReplicaInfoProvider replicaProvider) {
-      this.replicaProvider = checkNotNull(replicaProvider, "replicaProvider cannot be null");
+    public Builder withPrimaryElection(PrimaryElection primaryElection) {
+      this.primaryElection = checkNotNull(primaryElection, "primaryElection cannot be null");
       return this;
     }
 

@@ -22,6 +22,7 @@
     </appender>
 
     <logger name="io.atomix.protocols.backup" level="TRACE" />
+    <logger name="io.atomix.protocols.raft" level="INFO" />
 
     <root level="${root.logging.level:-INFO}">
         <appender-ref ref="STDOUT" />

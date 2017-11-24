@@ -72,7 +72,7 @@ final class RaftProxySequencer {
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
         .addValue(state.getSessionId())
         .add("type", state.getPrimitiveType())
-        .add("name", state.getServiceName())
+        .add("name", state.getPrimitiveName())
         .build());
   }
 

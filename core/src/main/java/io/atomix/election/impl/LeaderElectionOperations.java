@@ -16,11 +16,10 @@
 package io.atomix.election.impl;
 
 import com.google.common.base.MoreObjects;
-import io.atomix.cluster.NodeId;
-import io.atomix.primitive.operation.OperationId;
-import io.atomix.primitive.operation.OperationType;
 import io.atomix.election.Leader;
 import io.atomix.election.Leadership;
+import io.atomix.primitive.operation.OperationId;
+import io.atomix.primitive.operation.OperationType;
 import io.atomix.utils.ArraySizeHashPrinter;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -59,7 +58,6 @@ public enum LeaderElectionOperations implements OperationId {
   public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
-      .register(NodeId.class)
       .register(Leadership.class)
       .register(Leader.class)
       .register(Run.class)

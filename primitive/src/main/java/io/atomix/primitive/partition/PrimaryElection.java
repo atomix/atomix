@@ -15,12 +15,21 @@
  */
 package io.atomix.primitive.partition;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.utils.event.ListenerService;
 
 /**
  * Partition primary election.
  */
 public interface PrimaryElection extends ListenerService<PrimaryElectionEvent, PrimaryElectionEventListener> {
+
+  /**
+   * Enters the primary election.
+   *
+   * @param nodeId the identifier of the node to enter the election
+   * @return the current term
+   */
+  PrimaryTerm enter(NodeId nodeId);
 
   /**
    * Returns the current term.

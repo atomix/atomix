@@ -76,6 +76,7 @@ public abstract class AbstractAtomixTest {
         .withDataDirectory(new File("target/test-logs/" + id))
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrapNodes)
+        .withDataPartitions(9) // Lower number of partitions for faster testing
         .build();
   }
 

@@ -26,11 +26,12 @@ import io.atomix.primitive.PrimitiveException.Unavailable;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.primitive.partition.PrimaryElection;
+import io.atomix.primitive.partition.PrimaryElectionEventListener;
+import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.protocols.backup.ReplicaInfo;
-import io.atomix.protocols.backup.ReplicaInfoProvider;
 import io.atomix.protocols.backup.protocol.CloseSessionRequest;
 import io.atomix.protocols.backup.protocol.CloseSessionResponse;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
@@ -38,9 +39,12 @@ import io.atomix.protocols.backup.protocol.ExecuteResponse;
 import io.atomix.protocols.backup.protocol.OpenSessionRequest;
 import io.atomix.protocols.backup.protocol.OpenSessionResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
-import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
+import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import io.atomix.utils.serializer.Serializer;
+import org.slf4j.Logger;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -50,17 +54,19 @@ import java.util.function.Consumer;
  * Primary-backup proxy.
  */
 public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
-  private static final Serializer SERIALIZER = PrimaryBackupSerializers.PROTOCOL;
+  private static final Serializer SERIALIZER = Serializer.using(PrimaryBackupNamespaces.PROTOCOL);
+
+  private Logger log;
   private final String clientName;
   private final String primitiveName;
   private final PrimitiveType primitiveType;
   private final ClusterService clusterService;
   private final ClusterCommunicationService communicationService;
-  private final ReplicaInfoProvider replicaProvider;
+  private final PrimaryElection primaryElection;
   private final ThreadContext threadContext;
   private final Set<Consumer<State>> stateChangeListeners = Sets.newIdentityHashSet();
   private final Set<Consumer<PrimitiveEvent>> eventListeners = Sets.newIdentityHashSet();
-  private final Consumer<ReplicaInfo> replicaChangeListener = this::handleReplicaChange;
+  private final PrimaryElectionEventListener primaryElectionListener = event -> changeReplicas(event.term());
   private final ClusterEventListener clusterEventListener = this::handleClusterEvent;
   private final MessageSubject openSessionSubject;
   private final MessageSubject closeSessionSubject;
@@ -76,15 +82,22 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
       PrimitiveType primitiveType,
       ClusterService clusterService,
       ClusterCommunicationService communicationService,
-      ReplicaInfoProvider replicaProvider,
+      PrimaryElection primaryElection,
       ThreadContext threadContext) {
     this.clientName = clientName;
     this.primitiveName = primitiveName;
     this.primitiveType = primitiveType;
     this.clusterService = clusterService;
     this.communicationService = communicationService;
-    this.replicaProvider = replicaProvider;
+    this.primaryElection = primaryElection;
     this.threadContext = threadContext;
+    primaryElection.addListener(primaryElectionListener);
+    this.primary = primaryElection.getTerm().primary();
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
+        .addValue(clientName)
+        .add("type", primitiveType.id())
+        .add("name", primitiveName)
+        .build());
     openSessionSubject = new MessageSubject(String.format("%s-open", clientName));
     closeSessionSubject = new MessageSubject(String.format("%s-close", clientName));
   }
@@ -129,6 +142,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
       }
 
       ExecuteRequest request = new ExecuteRequest(sessionId.id(), operation);
+      log.trace("Sending {} to {}", request, primary);
       communicationService.<ExecuteRequest, ExecuteResponse>sendAndReceive(
           executeSubject,
           request,
@@ -137,6 +151,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
           primary)
           .whenCompleteAsync((response, error) -> {
             if (error == null) {
+              log.trace("Received {}", response);
               if (response.status() == Status.OK) {
                 future.complete(response.result());
               } else {
@@ -163,9 +178,9 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   /**
    * Handles a replica change event.
    */
-  private void handleReplicaChange(ReplicaInfo replicaInfo) {
+  private void changeReplicas(PrimaryTerm term) {
     threadContext.execute(() -> {
-      primary = replicaInfo.primary();
+      primary = term.primary();
     });
   }
 
@@ -191,38 +206,51 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   @Override
   public CompletableFuture<PrimitiveProxy> open() {
     CompletableFuture<PrimitiveProxy> future = new CompletableFuture<>();
-    OpenSessionRequest request = new OpenSessionRequest(
-        clusterService.getLocalNode().id(),
-        primitiveName,
-        primitiveType.id());
-    communicationService.<OpenSessionRequest, OpenSessionResponse>sendAndReceive(
-        openSessionSubject,
-        request,
-        SERIALIZER::encode,
-        SERIALIZER::decode,
-        primary)
-        .whenCompleteAsync((response, error) -> {
-          if (error == null) {
-            if (response.status() == Status.OK) {
-              synchronized (this) {
-                sessionId = SessionId.from(response.sessionId());
-                state = State.CONNECTED;
+    threadContext.execute(() -> {
+      if (primary == null) {
+        future.completeExceptionally(new Unavailable());
+        return;
+      }
+
+      OpenSessionRequest request = new OpenSessionRequest(
+          clusterService.getLocalNode().id(),
+          primitiveName,
+          primitiveType.id());
+      log.trace("{} {} {}", System.identityHashCode(primaryElection), clientName, primaryElection.getTerm());
+      log.trace("Sending {} to {}", request, primary);
+      communicationService.<OpenSessionRequest, OpenSessionResponse>sendAndReceive(
+          openSessionSubject,
+          request,
+          SERIALIZER::encode,
+          SERIALIZER::decode,
+          primary)
+          .whenCompleteAsync((response, error) -> {
+            if (error == null) {
+              log.trace("Received {}", response);
+              if (response.status() == Status.OK) {
+                synchronized (this) {
+                  sessionId = SessionId.from(response.sessionId());
+                  state = State.CONNECTED;
+                }
+                executeSubject = new MessageSubject(String.format("%s-%s-execute", clientName, primitiveName));
+                eventSubject = new MessageSubject(String.format("%s-%s-%s", clientName, primitiveName, sessionId));
+                communicationService.addSubscriber(eventSubject, SERIALIZER::decode, this::handleEvent, threadContext);
+                clusterService.addListener(clusterEventListener);
+                this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
+                    .addValue(response.sessionId())
+                    .add("type", primitiveType.id())
+                    .add("name", primitiveName)
+                    .build());
+                stateChangeListeners.forEach(l -> l.accept(state));
+                future.complete(this);
+              } else {
+                future.completeExceptionally(new Unavailable());
               }
-              executeSubject = new MessageSubject(String.format("%s-%s-execute", clientName, primitiveName));
-              eventSubject = new MessageSubject(String.format("%s-%s-%s", clientName, primitiveName, sessionId));
-              communicationService.addSubscriber(eventSubject, SERIALIZER::decode, this::handleEvent, threadContext);
-              replicaProvider.addChangeListener(replicaChangeListener);
-              clusterService.addListener(clusterEventListener);
-              this.primary = replicaProvider.replicas().primary();
-              stateChangeListeners.forEach(l -> l.accept(state));
-              future.complete(this);
             } else {
-              future.completeExceptionally(new Unavailable());
+              future.completeExceptionally(error);
             }
-          } else {
-            future.completeExceptionally(error);
-          }
-        }, threadContext);
+          }, threadContext);
+    });
     return future;
   }
 
@@ -239,6 +267,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
         CloseSessionRequest request = new CloseSessionRequest(
             primitiveName,
             sessionId.id());
+        log.trace("Sending {} to {}", request, primary);
         communicationService.<CloseSessionRequest, CloseSessionResponse>sendAndReceive(
             closeSessionSubject,
             request,
@@ -247,8 +276,8 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
             primary)
             .whenCompleteAsync((response, error) -> {
               if (error == null) {
+                log.trace("Received {}", response);
                 if (response.status() == Status.OK) {
-                  replicaProvider.removeChangeListener(replicaChangeListener);
                   clusterService.removeListener(clusterEventListener);
                   if (eventSubject != null) {
                     communicationService.removeSubscriber(eventSubject);
