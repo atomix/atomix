@@ -86,9 +86,21 @@ public interface PrimaryBackupServerProtocol {
   void registerRestoreHandler(Function<RestoreRequest, CompletableFuture<RestoreResponse>> handler);
 
   /**
-   * Unregisters the backup request handler.
+   * Unregisters the restore request handler.
    */
   void unregisterRestoreHandler();
+
+  /**
+   * Registers a close request callback.
+   *
+   * @param handler the close request handler to register
+   */
+  void registerCloseHandler(Function<CloseRequest, CompletableFuture<CloseResponse>> handler);
+
+  /**
+   * Unregisters the close request handler.
+   */
+  void unregisterCloseHandler();
 
   /**
    * Registers a metadata request callback.

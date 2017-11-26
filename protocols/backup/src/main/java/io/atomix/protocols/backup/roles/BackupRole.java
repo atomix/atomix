@@ -19,10 +19,13 @@ import io.atomix.cluster.NodeId;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
+import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.BackupOperation;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.BackupResponse;
+import io.atomix.protocols.backup.protocol.CloseOperation;
 import io.atomix.protocols.backup.protocol.ExecuteOperation;
+import io.atomix.protocols.backup.protocol.ExpireOperation;
 import io.atomix.protocols.backup.protocol.HeartbeatOperation;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
@@ -81,6 +84,12 @@ public class BackupRole extends PrimaryBackupRole {
           case HEARTBEAT:
             applyHeartbeat((HeartbeatOperation) operation);
             break;
+          case EXPIRE:
+            applyExpire((ExpireOperation) operation);
+            break;
+          case CLOSE:
+            applyClose((CloseOperation) operation);
+            break;
         }
       } else {
         requestRestore(context.primary());
@@ -111,6 +120,26 @@ public class BackupRole extends PrimaryBackupRole {
    */
   private void applyHeartbeat(HeartbeatOperation operation) {
     context.service().tick(context.currentTimestamp());
+  }
+
+  /**
+   * Applies an expire operation.
+   */
+  private void applyExpire(ExpireOperation operation) {
+    PrimaryBackupSession session = context.getSession(operation.session());
+    if (session != null) {
+      context.sessions().expireSession(session);
+    }
+  }
+
+  /**
+   * Applies a close operation.
+   */
+  private void applyClose(CloseOperation operation) {
+    PrimaryBackupSession session = context.getSession(operation.session());
+    if (session != null) {
+      context.sessions().closeSession(session);
+    }
   }
 
   /**

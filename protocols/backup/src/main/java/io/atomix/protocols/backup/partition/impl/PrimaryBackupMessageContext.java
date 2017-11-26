@@ -26,13 +26,15 @@ class PrimaryBackupMessageContext {
   final MessageSubject metadataSubject;
   final MessageSubject backupSubject;
   final MessageSubject restoreSubject;
+  final MessageSubject closeSubject;
 
   PrimaryBackupMessageContext(String prefix) {
     this.prefix = prefix;
     this.executeSubject = getSubject(prefix, "execute");
     this.metadataSubject = getSubject(prefix, "metadata");
-    this.backupSubject = getSubject(prefix, "metadata");
+    this.backupSubject = getSubject(prefix, "backup");
     this.restoreSubject = getSubject(prefix, "restore");
+    this.closeSubject = getSubject(prefix, "close");
   }
 
   private static MessageSubject getSubject(String prefix, String type) {

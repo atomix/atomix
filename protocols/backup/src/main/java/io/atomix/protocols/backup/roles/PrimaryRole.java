@@ -20,9 +20,11 @@ import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
+import io.atomix.protocols.backup.protocol.CloseOperation;
 import io.atomix.protocols.backup.protocol.ExecuteOperation;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.ExecuteResponse;
+import io.atomix.protocols.backup.protocol.ExpireOperation;
 import io.atomix.protocols.backup.protocol.HeartbeatOperation;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
@@ -69,9 +71,7 @@ public class PrimaryRole extends PrimaryBackupRole {
     long index = context.nextIndex();
     WallClockTimestamp timestamp = context.nextTimestamp();
     replicator.replicate(new HeartbeatOperation(index, timestamp.unixTimestamp()))
-        .thenRun(() -> {
-          context.service().tick(timestamp);
-        });
+        .thenRun(() -> context.service().tick(timestamp));
   }
 
   @Override
@@ -141,6 +141,22 @@ public class PrimaryRole extends PrimaryBackupRole {
     byte[] bytes = buffer.readBytes(buffer.remaining());
     return CompletableFuture.completedFuture(
         logResponse(RestoreResponse.ok(context.currentIndex(), context.currentTimestamp().unixTimestamp(), bytes)));
+  }
+
+  @Override
+  public CompletableFuture<Void> expire(PrimaryBackupSession session) {
+    long index = context.nextIndex();
+    WallClockTimestamp timestamp = context.nextTimestamp();
+    return replicator.replicate(new ExpireOperation(index, timestamp.unixTimestamp(), session.sessionId().id()))
+        .thenRun(() -> context.sessions().expireSession(session));
+  }
+
+  @Override
+  public CompletableFuture<Void> close(PrimaryBackupSession session) {
+    long index = context.nextIndex();
+    WallClockTimestamp timestamp = context.nextTimestamp();
+    return replicator.replicate(new CloseOperation(index, timestamp.unixTimestamp(), session.sessionId().id()))
+        .thenRun(() -> context.sessions().closeSession(session));
   }
 
   @Override

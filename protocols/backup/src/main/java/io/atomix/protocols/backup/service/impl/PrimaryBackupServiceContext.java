@@ -30,11 +30,12 @@ import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.primitive.session.Sessions;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.BackupResponse;
+import io.atomix.protocols.backup.protocol.CloseRequest;
+import io.atomix.protocols.backup.protocol.CloseResponse;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.ExecuteResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupServerProtocol;
@@ -141,59 +142,6 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private void init() {
     sessions.addListener(service);
     service.init(this);
-  }
-
-  /**
-   * Handles a cluster event.
-   */
-  private void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
-      for (Session session : sessions) {
-        if (session.nodeId().equals(event.subject().id())) {
-          sessions.expireSession((PrimaryBackupSession) session);
-        }
-      }
-    }
-  }
-
-  /**
-   * Changes the roles.
-   */
-  private void changeRole(PrimaryTerm term) {
-    if (term.term() > currentTerm) {
-      currentTerm = term.term();
-      primary = term.primary();
-      backups = term.backups().subList(0, Math.min(descriptor.backups(), term.backups().size()));
-
-      if (term.primary().equals(clusterService.getLocalNode().id())) {
-        if (this.role == null) {
-          this.role = new PrimaryRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
-        } else if (this.role.role() != Role.PRIMARY) {
-          this.role.close();
-          this.role = new PrimaryRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
-        }
-      } else if (term.backups().contains(clusterService.getLocalNode().id())) {
-        if (this.role == null) {
-          this.role = new BackupRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
-        } else if (this.role.role() != Role.BACKUP) {
-          this.role.close();
-          this.role = new BackupRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
-        }
-      } else {
-        if (this.role == null) {
-          this.role = new NoneRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
-        } else if (this.role.role() != Role.NONE) {
-          this.role.close();
-          this.role = new NoneRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
-        }
-      }
-    }
   }
 
   @Override
@@ -368,7 +316,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   }
 
   @Override
-  public Sessions sessions() {
+  public PrimaryBackupServiceSessions sessions() {
     return sessions;
   }
 
@@ -460,12 +408,33 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   }
 
   /**
+   * Handles a close request.
+   *
+   * @param request the close request
+   * @return future to be completed with a close response
+   */
+  public CompletableFuture<CloseResponse> close(CloseRequest request) {
+    ComposableFuture<CloseResponse> future = new ComposableFuture<>();
+    threadContext.execute(() -> {
+      PrimaryBackupSession session = sessions.getSession(request.session());
+      role.close(session).whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(CloseResponse.ok());
+        } else {
+          future.complete(CloseResponse.error());
+        }
+      });
+    });
+    return future;
+  }
+
+  /**
    * Gets or creates a service session.
    *
    * @param sessionId the session to get
    * @return the service session
    */
-  public Session getSession(long sessionId) {
+  public PrimaryBackupSession getSession(long sessionId) {
     return sessions.getSession(sessionId);
   }
 
@@ -488,6 +457,59 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       sessions.openSession(session);
     }
     return session;
+  }
+
+  /**
+   * Handles a cluster event.
+   */
+  private void handleClusterEvent(ClusterEvent event) {
+    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
+      for (Session session : sessions) {
+        if (session.nodeId().equals(event.subject().id())) {
+          role.expire((PrimaryBackupSession) session);
+        }
+      }
+    }
+  }
+
+  /**
+   * Changes the roles.
+   */
+  private void changeRole(PrimaryTerm term) {
+    if (term.term() > currentTerm) {
+      currentTerm = term.term();
+      primary = term.primary();
+      backups = term.backups().subList(0, Math.min(descriptor.backups(), term.backups().size()));
+
+      if (primary.equals(clusterService.getLocalNode().id())) {
+        if (this.role == null) {
+          this.role = new PrimaryRole(this);
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
+        } else if (this.role.role() != Role.PRIMARY) {
+          this.role.close();
+          this.role = new PrimaryRole(this);
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
+        }
+      } else if (backups.contains(clusterService.getLocalNode().id())) {
+        if (this.role == null) {
+          this.role = new BackupRole(this);
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
+        } else if (this.role.role() != Role.BACKUP) {
+          this.role.close();
+          this.role = new BackupRole(this);
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
+        }
+      } else {
+        if (this.role == null) {
+          this.role = new NoneRole(this);
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+        } else if (this.role.role() != Role.NONE) {
+          this.role.close();
+          this.role = new NoneRole(this);
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+        }
+      }
+    }
   }
 
   /**

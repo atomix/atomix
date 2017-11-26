@@ -16,6 +16,7 @@
 package io.atomix.protocols.backup.roles;
 
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
+import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.BackupResponse;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
@@ -28,7 +29,6 @@ import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -118,10 +118,29 @@ public abstract class PrimaryBackupRole {
   }
 
   /**
+   * Expires the given session.
+   *
+   * @param session the session to expire
+   * @return a future to be completed once the session has been expires
+   */
+  public CompletableFuture<Void> expire(PrimaryBackupSession session) {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Closes the given session.
+   *
+   * @param session the session to close
+   * @return a future to be completed once the session has been closed
+   */
+  public CompletableFuture<Void> close(PrimaryBackupSession session) {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
    * Closes the role.
    */
   public void close() {
-
   }
 
   @Override

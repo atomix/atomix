@@ -25,9 +25,13 @@ import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.protocols.backup.protocol.BackupOperation;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.BackupResponse;
+import io.atomix.protocols.backup.protocol.CloseOperation;
+import io.atomix.protocols.backup.protocol.CloseRequest;
+import io.atomix.protocols.backup.protocol.CloseResponse;
 import io.atomix.protocols.backup.protocol.ExecuteOperation;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.ExecuteResponse;
+import io.atomix.protocols.backup.protocol.ExpireOperation;
 import io.atomix.protocols.backup.protocol.HeartbeatOperation;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
 import io.atomix.protocols.backup.protocol.MetadataResponse;
@@ -56,11 +60,15 @@ public final class PrimaryBackupNamespaces {
       .register(BackupResponse.class)
       .register(RestoreRequest.class)
       .register(RestoreResponse.class)
+      .register(CloseRequest.class)
+      .register(CloseResponse.class)
       .register(MetadataRequest.class)
       .register(MetadataResponse.class)
       .register(BackupOperation.Type.class)
       .register(ExecuteOperation.class)
       .register(HeartbeatOperation.class)
+      .register(ExpireOperation.class)
+      .register(CloseOperation.class)
       .register(PrimitiveOperation.class)
       .register(PrimitiveEvent.class)
       .register(DefaultEventType.class)

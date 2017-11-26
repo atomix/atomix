@@ -21,6 +21,8 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.protocols.backup.protocol.CloseRequest;
+import io.atomix.protocols.backup.protocol.CloseResponse;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.ExecuteResponse;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
@@ -62,6 +64,11 @@ public class PrimaryBackupClientCommunicator implements PrimaryBackupClientProto
   @Override
   public CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request) {
     return sendAndReceive(context.metadataSubject, request, nodeId);
+  }
+
+  @Override
+  public CompletableFuture<CloseResponse> close(NodeId nodeId, CloseRequest request) {
+    return sendAndReceive(context.closeSubject, request, nodeId);
   }
 
   @Override

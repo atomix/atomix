@@ -30,6 +30,7 @@ import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.protocols.backup.protocol.CloseRequest;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
@@ -209,10 +210,13 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
 
   @Override
   public CompletableFuture<Void> close() {
-    protocol.unregisterEventListener(sessionId);
-    clusterService.removeListener(clusterEventListener);
-    // TODO: Send CloseSessionRequest to ensure session close is atomic and replicated.
-    return CompletableFuture.completedFuture(null);
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    protocol.close(primary, new CloseRequest(descriptor, sessionId.id()))
+        .whenCompleteAsync((response, error) -> {
+          protocol.unregisterEventListener(sessionId);
+          clusterService.removeListener(clusterEventListener);
+        }, threadContext);
+    return future;
   }
 
   @Override

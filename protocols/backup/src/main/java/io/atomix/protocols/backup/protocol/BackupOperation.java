@@ -34,6 +34,16 @@ public class BackupOperation {
      * Heartbeat operation.
      */
     HEARTBEAT,
+
+    /**
+     * Expire operation.
+     */
+    EXPIRE,
+
+    /**
+     * Close operation.
+     */
+    CLOSE,
   }
 
   private final Type type;

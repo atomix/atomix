@@ -29,7 +29,7 @@ import java.util.Set;
 /**
  * State machine sessions.
  */
-class PrimaryBackupServiceSessions implements Sessions {
+public class PrimaryBackupServiceSessions implements Sessions {
   private final Map<Long, PrimaryBackupSession> sessions = Maps.newConcurrentMap();
   private final Set<SessionListener> listeners = Sets.newIdentityHashSet();
 
@@ -38,7 +38,7 @@ class PrimaryBackupServiceSessions implements Sessions {
    *
    * @param session The session to add.
    */
-  void openSession(PrimaryBackupSession session) {
+  public void openSession(PrimaryBackupSession session) {
     sessions.put(session.sessionId().id(), session);
     listeners.forEach(l -> l.onOpen(session));
   }
@@ -48,7 +48,7 @@ class PrimaryBackupServiceSessions implements Sessions {
    *
    * @param session The session to remove.
    */
-  void expireSession(PrimaryBackupSession session) {
+  public void expireSession(PrimaryBackupSession session) {
     if (sessions.remove(session.sessionId().id()) != null) {
       session.expire();
       listeners.forEach(l -> l.onExpire(session));
@@ -60,7 +60,7 @@ class PrimaryBackupServiceSessions implements Sessions {
    *
    * @param session The session to remove.
    */
-  void closeSession(PrimaryBackupSession session) {
+  public void closeSession(PrimaryBackupSession session) {
     if (sessions.remove(session.sessionId().id()) != null) {
       session.close();
       listeners.forEach(l -> l.onClose(session));

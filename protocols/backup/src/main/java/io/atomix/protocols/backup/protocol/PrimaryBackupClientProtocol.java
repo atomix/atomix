@@ -47,6 +47,15 @@ public interface PrimaryBackupClientProtocol {
   CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request);
 
   /**
+   * Sends a close request to the given node.
+   *
+   * @param nodeId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<CloseResponse> close(NodeId nodeId, CloseRequest request);
+
+  /**
    * Registers a publish request listener.
    *
    * @param sessionId the session for which to listen for the publish request

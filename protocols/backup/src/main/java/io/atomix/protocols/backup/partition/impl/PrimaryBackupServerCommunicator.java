@@ -23,6 +23,8 @@ import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.BackupResponse;
+import io.atomix.protocols.backup.protocol.CloseRequest;
+import io.atomix.protocols.backup.protocol.CloseResponse;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.ExecuteResponse;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
@@ -100,6 +102,16 @@ public class PrimaryBackupServerCommunicator implements PrimaryBackupServerProto
   @Override
   public void unregisterRestoreHandler() {
     clusterCommunicator.removeSubscriber(context.restoreSubject);
+  }
+
+  @Override
+  public void registerCloseHandler(Function<CloseRequest, CompletableFuture<CloseResponse>> handler) {
+    clusterCommunicator.addSubscriber(context.closeSubject, serializer::decode, handler, serializer::encode);
+  }
+
+  @Override
+  public void unregisterCloseHandler() {
+    clusterCommunicator.removeSubscriber(context.closeSubject);
   }
 
   @Override
