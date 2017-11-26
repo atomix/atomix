@@ -38,8 +38,8 @@ public class TranscodingAsyncAtomicValue<V1, V2> implements AsyncAtomicValue<V1>
 
   public TranscodingAsyncAtomicValue(AsyncAtomicValue<V2> backingValue, Function<V1, V2> valueEncoder, Function<V2, V1> valueDecoder) {
     this.backingValue = backingValue;
-    this.valueEncoder = valueEncoder;
-    this.valueDecoder = valueDecoder;
+    this.valueEncoder = v -> v != null ? valueEncoder.apply(v) : null;
+    this.valueDecoder = v -> v != null ? valueDecoder.apply(v) : null;
   }
 
   @Override

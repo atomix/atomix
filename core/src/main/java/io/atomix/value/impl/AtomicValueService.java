@@ -51,7 +51,7 @@ public class AtomicValueService extends AbstractPrimitiveService {
       .register(AtomicValueEvents.NAMESPACE)
       .build());
 
-  private byte[] value = new byte[0];
+  private byte[] value;
   private java.util.Set<Session> listeners = Sets.newHashSet();
 
   @Override
