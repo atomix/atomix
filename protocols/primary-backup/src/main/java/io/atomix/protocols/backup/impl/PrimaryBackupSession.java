@@ -26,6 +26,9 @@ import io.atomix.primitive.session.SessionEventListener;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
+import org.slf4j.Logger;
 
 import java.util.Set;
 
@@ -33,6 +36,7 @@ import java.util.Set;
  * Primary-backup session.
  */
 public class PrimaryBackupSession implements Session {
+  private final Logger log;
   private final SessionId sessionId;
   private final NodeId nodeId;
   private final PrimaryBackupServiceContext context;
@@ -43,6 +47,10 @@ public class PrimaryBackupSession implements Session {
     this.sessionId = sessionId;
     this.nodeId = nodeId;
     this.context = context;
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(getClass())
+        .addValue(context.serverName())
+        .add("session", sessionId)
+        .build());
   }
 
   @Override
@@ -93,7 +101,10 @@ public class PrimaryBackupSession implements Session {
   @Override
   public void publish(PrimitiveEvent event) {
     if (context.getRole() == Role.PRIMARY) {
-      context.protocol().event(nodeId, sessionId, event);
+      context.threadContext().execute(() -> {
+        log.trace("Sending {} to {}", event);
+        context.protocol().event(nodeId, sessionId, event);
+      });
     }
   }
 
