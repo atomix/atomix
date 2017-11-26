@@ -150,10 +150,10 @@ public class NettyMessagingService implements ManagedMessagingService {
     }
   }
 
-  private static final long DEFAULT_TIMEOUT_MILLIS = 10000;
+  private static final long DEFAULT_TIMEOUT_MILLIS = 1000;
   private static final long HISTORY_EXPIRE_MILLIS = Duration.ofMinutes(1).toMillis();
-  private static final long MIN_TIMEOUT_MILLIS = 10000;
-  private static final long MAX_TIMEOUT_MILLIS = 50000;
+  private static final long MIN_TIMEOUT_MILLIS = 100;
+  private static final long MAX_TIMEOUT_MILLIS = 5000;
   private static final long TIMEOUT_INTERVAL = 50;
   private static final int WINDOW_SIZE = 100;
   private static final double TIMEOUT_MULTIPLIER = 2.5;
@@ -794,9 +794,10 @@ public class NettyMessagingService implements ManagedMessagingService {
     public CompletableFuture<Void> sendAsync(InternalRequest message) {
       BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
+        log.trace("{} - Received message type {} from {}", localEndpoint, message.subject(), message.sender());
         handler.accept(message, localServerConnection);
       } else {
-        log.debug("No handler for message type {} from {}", message.type(), message.sender());
+        log.debug("{} - No handler for message type {} from {}", localEndpoint, message.subject(), message.sender());
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -806,9 +807,10 @@ public class NettyMessagingService implements ManagedMessagingService {
       CompletableFuture<byte[]> future = new CompletableFuture<>();
       BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
+        log.trace("{} - Received message type {} from {}", localEndpoint, message.subject(), message.sender());
         handler.accept(message, new LocalServerConnection(future));
       } else {
-        log.debug("No handler for message type {} from {}", message.type(), message.sender());
+        log.debug("{} - No handler for message type {} from {}", localEndpoint, message.subject(), message.sender());
         new LocalServerConnection(future)
             .reply(message, InternalReply.Status.ERROR_NO_HANDLER, Optional.empty());
       }
@@ -988,9 +990,10 @@ public class NettyMessagingService implements ManagedMessagingService {
 
       BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
+        log.trace("{} - Received message type {} from {}", localEndpoint, message.subject(), message.sender());
         handler.accept(message, this);
       } else {
-        log.debug("No handler for message type {} from {}", message.type(), message.sender());
+        log.debug("{} - No handler for message type {} from {}", localEndpoint, message.subject(), message.sender());
         reply(message, InternalReply.Status.ERROR_NO_HANDLER, Optional.empty());
       }
     }
