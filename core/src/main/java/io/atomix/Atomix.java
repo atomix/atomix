@@ -38,9 +38,12 @@ import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
+import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionManagementService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
+import io.atomix.primitive.session.ManagedSessionIdService;
+import io.atomix.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.utils.Managed;
@@ -194,10 +197,15 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> clusterCommunicator.open(), context)
         .thenComposeAsync(v -> clusterEventService.open(), context)
         .thenComposeAsync(v -> corePartitionGroup.open(
-            new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, null)), context)
-        .thenComposeAsync(v -> new LeaderElectorPrimaryElectionService(corePartitionGroup).open(), context)
-        .thenComposeAsync(electionService ->
-            partitions.open(new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, electionService)), context)
+            new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, null, null)), context)
+        .thenComposeAsync(v -> {
+          ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(corePartitionGroup);
+          ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(corePartitionGroup);
+          return electionService.open()
+              .thenComposeAsync(v2 -> sessionIdService.open(), context)
+              .thenApply(v2 -> new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, electionService, sessionIdService));
+        }, context)
+        .thenComposeAsync(partitionManagementService -> partitions.open(partitionManagementService), context)
         .thenApplyAsync(v -> {
           open.set(true);
           LOGGER.info("Started");

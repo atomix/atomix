@@ -13,30 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup.protocol;
+package io.atomix.primitive.session;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import io.atomix.utils.Managed;
 
 /**
- * Open session response.
+ * Managed session ID service.
  */
-public class OpenSessionResponse extends PrimaryBackupResponse {
-  private final long sessionId;
-
-  public OpenSessionResponse(Status status, long sessionId) {
-    super(status);
-    this.sessionId = sessionId;
-  }
-
-  public long sessionId() {
-    return sessionId;
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("status", status())
-        .add("session", sessionId)
-        .toString();
-  }
+public interface ManagedSessionIdService extends SessionIdService, Managed<SessionIdService> {
 }

@@ -17,8 +17,6 @@ package io.atomix.protocols.backup;
 
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveException.Unavailable;
@@ -28,9 +26,11 @@ import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
+import io.atomix.primitive.session.SessionIdService;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
-import io.atomix.protocols.backup.protocol.MetadataResponse;
+import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
+import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
 import io.atomix.protocols.backup.proxy.PrimaryBackupProxy;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -66,25 +66,26 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
 
   private final String clientName;
   private final ClusterService clusterService;
-  private final ClusterCommunicationService communicationService;
+  private final PrimaryBackupClientProtocol protocol;
   private final PrimaryElection primaryElection;
+  private final SessionIdService sessionIdService;
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext threadContext;
-  private final MessageSubject metadataSubject;
 
   public PrimaryBackupClient(
       String clientName,
       ClusterService clusterService,
-      ClusterCommunicationService communicationService,
+      PrimaryBackupClientProtocol protocol,
       PrimaryElection primaryElection,
+      SessionIdService sessionIdService,
       ThreadContextFactory threadContextFactory) {
     this.clientName = clientName;
     this.clusterService = clusterService;
-    this.communicationService = communicationService;
+    this.protocol = protocol;
     this.primaryElection = primaryElection;
+    this.sessionIdService = sessionIdService;
     this.threadContextFactory = threadContextFactory;
     this.threadContext = threadContextFactory.createContext();
-    this.metadataSubject = new MessageSubject(String.format("%s-metadata", clientName));
   }
 
   @Override
@@ -96,7 +97,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
   @Override
   public CompletableFuture<Set<String>> getPrimitives(PrimitiveType primitiveType) {
     CompletableFuture<Set<String>> future = new CompletableFuture<>();
-    MetadataRequest request = new MetadataRequest(primitiveType.id());
+    MetadataRequest request = MetadataRequest.request(primitiveType.id());
     threadContext.execute(() -> {
       NodeId primary = primaryElection.getTerm().primary();
       if (primary == null) {
@@ -104,23 +105,17 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
         return;
       }
 
-      communicationService.<MetadataRequest, MetadataResponse>sendAndReceive(
-          metadataSubject,
-          request,
-          SERIALIZER::encode,
-          SERIALIZER::decode,
-          primary)
-          .whenCompleteAsync((response, error) -> {
-            if (error == null) {
-              if (response.status() == Status.OK) {
-                future.complete(response.primitiveNames());
-              } else {
-                future.completeExceptionally(new PrimitiveException.Unavailable());
-              }
-            } else {
-              future.completeExceptionally(new PrimitiveException.Unavailable());
-            }
-          }, threadContext);
+      protocol.metadata(primary, request).whenCompleteAsync((response, error) -> {
+        if (error == null) {
+          if (response.status() == Status.OK) {
+            future.complete(response.primitiveNames());
+          } else {
+            future.completeExceptionally(new PrimitiveException.Unavailable());
+          }
+        } else {
+          future.completeExceptionally(new PrimitiveException.Unavailable());
+        }
+      }, threadContext);
     });
     return future;
   }
@@ -140,7 +135,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
   /**
    * Primary-backup proxy builder.
    */
-  private class ProxyBuilder extends PrimaryBackupProxy.Builder {
+  private class ProxyBuilder extends PrimaryBackupProxy.Builder<MultiPrimaryProtocol> {
     ProxyBuilder(String name, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
       super(name, primitiveType, primitiveProtocol);
     }
@@ -148,15 +143,16 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
     @Override
     @SuppressWarnings("unchecked")
     public PrimitiveProxy build() {
-      PrimitiveProxy.Builder<MultiPrimaryProtocol> proxyBuilder = new PrimitiveProxy.Builder(name, primitiveType, protocol) {
+      PrimitiveProxy.Builder<MultiPrimaryProtocol> proxyBuilder = new PrimitiveProxy.Builder<MultiPrimaryProtocol>(name, primitiveType, protocol) {
         @Override
         public PrimitiveProxy build() {
           return new PrimaryBackupProxy(
               clientName,
-              name,
+              sessionIdService.nextSessionId(),
               primitiveType,
+              new PrimitiveDescriptor(name, primitiveType.id(), protocol.backups(), protocol.replication()),
               clusterService,
-              communicationService,
+              PrimaryBackupClient.this.protocol,
               primaryElection,
               threadContextFactory.createContext());
         }
@@ -187,8 +183,9 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
   public static class Builder implements io.atomix.utils.Builder<PrimaryBackupClient> {
     protected String clientName = "atomix";
     protected ClusterService clusterService;
-    protected ClusterCommunicationService communicationService;
+    protected PrimaryBackupClientProtocol protocol;
     protected PrimaryElection primaryElection;
+    protected SessionIdService sessionIdService;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
     protected ThreadContextFactory threadContextFactory;
@@ -217,13 +214,13 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
     }
 
     /**
-     * Sets the cluster communication service.
+     * Sets the client protocol.
      *
-     * @param communicationService the cluster communication service
+     * @param protocol the client protocol
      * @return the client builder
      */
-    public Builder withCommunicationService(ClusterCommunicationService communicationService) {
-      this.communicationService = checkNotNull(communicationService, "communicationService cannot be null");
+    public Builder withProtocol(PrimaryBackupClientProtocol protocol) {
+      this.protocol = checkNotNull(protocol, "protocol cannot be null");
       return this;
     }
 
@@ -235,6 +232,17 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
      */
     public Builder withPrimaryElection(PrimaryElection primaryElection) {
       this.primaryElection = checkNotNull(primaryElection, "primaryElection cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the session ID provider.
+     *
+     * @param sessionIdService the session ID provider
+     * @return the client builder
+     */
+    public Builder withSessionIdProvider(SessionIdService sessionIdService) {
+      this.sessionIdService = checkNotNull(sessionIdService, "sessionIdProvider cannot be null");
       return this;
     }
 
@@ -286,8 +294,9 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
       return new PrimaryBackupClient(
           clientName,
           clusterService,
-          communicationService,
+          protocol,
           primaryElection,
+          sessionIdService,
           threadContextFactory);
     }
   }

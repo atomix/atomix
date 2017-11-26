@@ -20,10 +20,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Restore request.
  */
-public class RestoreRequest extends PrimaryBackupRequest {
+public class RestoreRequest extends PrimitiveRequest {
+
+  public static RestoreRequest request(PrimitiveDescriptor primitive, long term) {
+    return new RestoreRequest(primitive, term);
+  }
+
   private final long term;
 
-  public RestoreRequest(long term) {
+  public RestoreRequest(PrimitiveDescriptor primitive, long term) {
+    super(primitive);
     this.term = term;
   }
 
@@ -34,7 +40,8 @@ public class RestoreRequest extends PrimaryBackupRequest {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("term", term)
+        .add("primitive", primitive())
+        .add("term", term())
         .toString();
   }
 }

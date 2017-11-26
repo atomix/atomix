@@ -23,9 +23,18 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Operation response.
  */
 public class ExecuteResponse extends PrimaryBackupResponse {
+
+  public static ExecuteResponse ok(byte[] result) {
+    return new ExecuteResponse(Status.OK, result);
+  }
+
+  public static ExecuteResponse error() {
+    return new ExecuteResponse(Status.ERROR, null);
+  }
+
   private final byte[] result;
 
-  public ExecuteResponse(Status status, byte[] result) {
+  private ExecuteResponse(Status status, byte[] result) {
     super(status);
     this.result = result;
   }

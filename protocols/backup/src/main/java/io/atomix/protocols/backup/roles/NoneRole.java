@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup.protocol;
+package io.atomix.protocols.backup.roles;
+
+import io.atomix.protocols.backup.PrimaryBackupServer.Role;
+import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 
 /**
- * Close session operation.
+ * None role.
  */
-public class CloseSessionOperation extends BackupOperation {
-  private final long sessionId;
-
-  public CloseSessionOperation(long index, long timestamp, long sessionId) {
-    super(Type.CLOSE_SESSION, index, timestamp);
-    this.sessionId = sessionId;
-  }
-
-  public long sessionId() {
-    return sessionId;
+public class NoneRole extends PrimaryBackupRole {
+  public NoneRole(PrimaryBackupServiceContext service) {
+    super(Role.NONE, service);
   }
 }

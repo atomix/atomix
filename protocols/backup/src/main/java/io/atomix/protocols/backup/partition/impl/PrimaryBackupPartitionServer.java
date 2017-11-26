@@ -19,8 +19,10 @@ import io.atomix.cluster.Node;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.backup.PrimaryBackupServer;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
+import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,7 +70,9 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
     return PrimaryBackupServer.builder()
         .withServerName(partition.name())
         .withClusterService(managementService.getClusterService())
-        .withCommunicationService(managementService.getCommunicationService())
+        .withProtocol(new PrimaryBackupServerCommunicator(
+            Serializer.using(PrimaryBackupNamespaces.PROTOCOL),
+            managementService.getCommunicationService()))
         .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
         .withPrimitiveTypes(managementService.getPrimitiveTypes())
         .withThreadContextFactory(threadFactory)

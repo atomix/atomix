@@ -15,33 +15,49 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import io.atomix.primitive.Replication;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Close session request.
+ * Primitive descriptor.
  */
-public class CloseSessionRequest extends PrimaryBackupRequest {
-  private final String primitiveName;
-  private final long sessionId;
+public class PrimitiveDescriptor {
+  private final String name;
+  private final String type;
+  private final int backups;
+  private final Replication replication;
 
-  public CloseSessionRequest(String primitiveName, long sessionId) {
-    this.primitiveName = primitiveName;
-    this.sessionId = sessionId;
+  public PrimitiveDescriptor(String name, String type, int backups, Replication replication) {
+    this.name = name;
+    this.type = type;
+    this.backups = backups;
+    this.replication = replication;
   }
 
-  public String primitiveName() {
-    return primitiveName;
+  public String name() {
+    return name;
   }
 
-  public long sessionId() {
-    return sessionId;
+  public String type() {
+    return type;
+  }
+
+  public int backups() {
+    return backups;
+  }
+
+  public Replication replication() {
+    return replication;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("primitiveName", primitiveName)
-        .add("session", sessionId)
+        .add("name", name)
+        .add("type", type)
+        .add("backups", backups)
+        .add("replication", replication)
         .toString();
   }
 }

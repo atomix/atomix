@@ -15,31 +15,26 @@
  */
 package io.atomix.protocols.backup.protocol;
 
-import io.atomix.cluster.NodeId;
-
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Open session operation.
+ * Primitive service request.
  */
-public class OpenSessionOperation extends BackupOperation {
-  private final NodeId nodeId;
+public abstract class PrimitiveRequest extends PrimaryBackupRequest {
+  private final PrimitiveDescriptor primitive;
 
-  public OpenSessionOperation(long index, long timestamp, NodeId nodeId) {
-    super(Type.OPEN_SESSION, index, timestamp);
-    this.nodeId = nodeId;
+  public PrimitiveRequest(PrimitiveDescriptor primitive) {
+    this.primitive = primitive;
   }
 
-  public NodeId nodeId() {
-    return nodeId;
+  public PrimitiveDescriptor primitive() {
+    return primitive;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("index", index())
-        .add("timestamp", timestamp())
-        .add("node", nodeId)
+        .add("primitive", primitive)
         .toString();
   }
 }

@@ -22,8 +22,10 @@ import io.atomix.primitive.proxy.PrimitiveProxy.Builder;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.backup.PrimaryBackupClient;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
+import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -68,8 +70,11 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
     return PrimaryBackupClient.builder()
         .withClientName(partition.name())
         .withClusterService(managementService.getClusterService())
-        .withCommunicationService(managementService.getCommunicationService())
+        .withProtocol(new PrimaryBackupClientCommunicator(
+            Serializer.using(PrimaryBackupNamespaces.PROTOCOL),
+            managementService.getCommunicationService()))
         .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
+        .withSessionIdProvider(managementService.getSessionIdService())
         .withThreadContextFactory(threadFactory)
         .build();
   }

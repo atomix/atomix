@@ -15,42 +15,29 @@
  */
 package io.atomix.protocols.backup.protocol;
 
-import io.atomix.cluster.NodeId;
-
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Open session request.
+ * Operation response.
  */
-public class OpenSessionRequest extends PrimaryBackupRequest {
-  private final NodeId nodeId;
-  private final String primitiveName;
-  private final String primitiveType;
+public class BackupResponse extends PrimaryBackupResponse {
 
-  public OpenSessionRequest(NodeId nodeId, String primitiveName, String primitiveType) {
-    this.nodeId = nodeId;
-    this.primitiveName = primitiveName;
-    this.primitiveType = primitiveType;
+  public static BackupResponse ok() {
+    return new BackupResponse(Status.OK);
   }
 
-  public NodeId nodeId() {
-    return nodeId;
+  public static BackupResponse error() {
+    return new BackupResponse(Status.ERROR);
   }
 
-  public String primitiveName() {
-    return primitiveName;
-  }
-
-  public String primitiveType() {
-    return primitiveType;
+  private BackupResponse(Status status) {
+    super(status);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("nodeId", nodeId)
-        .add("primitiveName", primitiveName)
-        .add("primitiveType", primitiveType)
+        .add("status", status())
         .toString();
   }
 }

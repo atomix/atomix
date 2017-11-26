@@ -24,10 +24,15 @@ public class BackupOperation {
    * Backup operation type.
    */
   public enum Type {
-    OPEN_SESSION,
-    CLOSE_SESSION,
-    EXPIRE_SESSION,
+
+    /**
+     * Execute operation.
+     */
     EXECUTE,
+
+    /**
+     * Heartbeat operation.
+     */
     HEARTBEAT,
   }
 

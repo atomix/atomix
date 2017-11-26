@@ -23,11 +23,20 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Restore response.
  */
 public class RestoreResponse extends PrimaryBackupResponse {
+
+  public static RestoreResponse ok(long index, long timestamp, byte[] data) {
+    return new RestoreResponse(Status.OK, index, timestamp, data);
+  }
+
+  public static RestoreResponse error() {
+    return new RestoreResponse(Status.ERROR, 0, 0, null);
+  }
+
   private final long index;
   private final long timestamp;
   private final byte[] data;
 
-  public RestoreResponse(Status status, long index, long timestamp, byte[] data) {
+  private RestoreResponse(Status status, long index, long timestamp, byte[] data) {
     super(status);
     this.index = index;
     this.timestamp = timestamp;

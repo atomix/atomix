@@ -21,9 +21,14 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Metadata request.
  */
 public class MetadataRequest extends PrimaryBackupRequest {
+
+  public static MetadataRequest request(String primitiveType) {
+    return new MetadataRequest(primitiveType);
+  }
+
   private final String primitiveType;
 
-  public MetadataRequest(String primitiveType) {
+  private MetadataRequest(String primitiveType) {
     this.primitiveType = primitiveType;
   }
 

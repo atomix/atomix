@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup.impl;
+package io.atomix.protocols.backup.service.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionListener;
 import io.atomix.primitive.session.Sessions;
+import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -28,8 +29,8 @@ import java.util.Set;
 /**
  * State machine sessions.
  */
-class DefaultServiceSessions implements Sessions {
-  private final Map<Long, Session> sessions = Maps.newConcurrentMap();
+class PrimaryBackupServiceSessions implements Sessions {
+  private final Map<Long, PrimaryBackupSession> sessions = Maps.newConcurrentMap();
   private final Set<SessionListener> listeners = Sets.newIdentityHashSet();
 
   /**
@@ -67,7 +68,7 @@ class DefaultServiceSessions implements Sessions {
   }
 
   @Override
-  public Session getSession(long sessionId) {
+  public PrimaryBackupSession getSession(long sessionId) {
     return sessions.get(sessionId);
   }
 
@@ -84,7 +85,8 @@ class DefaultServiceSessions implements Sessions {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Iterator<Session> iterator() {
-    return sessions.values().iterator();
+    return (Iterator) sessions.values().iterator();
   }
 }

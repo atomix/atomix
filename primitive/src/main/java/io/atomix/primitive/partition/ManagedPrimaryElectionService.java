@@ -13,22 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup.protocol;
+package io.atomix.primitive.partition;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import io.atomix.utils.Managed;
 
 /**
- * Close session response.
+ * Managed primary election service.
  */
-public class CloseSessionResponse extends PrimaryBackupResponse {
-  public CloseSessionResponse(Status status) {
-    super(status);
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("status", status())
-        .toString();
-  }
+public interface ManagedPrimaryElectionService extends PrimaryElectionService, Managed<PrimaryElectionService> {
 }

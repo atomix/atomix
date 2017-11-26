@@ -21,6 +21,7 @@ import io.atomix.cluster.NodeId;
 import io.atomix.election.AsyncLeaderElector;
 import io.atomix.election.LeaderElector;
 import io.atomix.election.LeaderElectorType;
+import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
@@ -48,7 +49,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Leader elector based primary election service.
  */
-public class LeaderElectorPrimaryElectionService implements PrimaryElectionService {
+public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElectionService {
   private static final String PRIMITIVE_NAME = "atomix-primary-elector";
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)

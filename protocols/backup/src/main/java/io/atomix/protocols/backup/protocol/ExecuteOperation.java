@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.primitive.operation.PrimitiveOperation;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -24,16 +25,22 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class ExecuteOperation extends BackupOperation {
   private final long session;
+  private final NodeId node;
   private final PrimitiveOperation operation;
 
-  public ExecuteOperation(long index, long timestamp, long session, PrimitiveOperation operation) {
+  public ExecuteOperation(long index, long timestamp, long session, NodeId node, PrimitiveOperation operation) {
     super(Type.EXECUTE, index, timestamp);
     this.session = session;
+    this.node = node;
     this.operation = operation;
   }
 
   public long session() {
     return session;
+  }
+
+  public NodeId node() {
+    return node;
   }
 
   public PrimitiveOperation operation() {
@@ -46,6 +53,7 @@ public class ExecuteOperation extends BackupOperation {
         .add("index", index())
         .add("timestamp", timestamp())
         .add("session", session)
+        .add("node", node)
         .add("operation", operation)
         .toString();
   }

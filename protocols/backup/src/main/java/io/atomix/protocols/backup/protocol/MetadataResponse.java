@@ -23,9 +23,18 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Metadata response.
  */
 public class MetadataResponse extends PrimaryBackupResponse {
+
+  public static MetadataResponse ok(Set<String> primitiveNames) {
+    return new MetadataResponse(Status.OK, primitiveNames);
+  }
+
+  public static MetadataResponse error() {
+    return new MetadataResponse(Status.ERROR, null);
+  }
+
   private final Set<String> primitiveNames;
 
-  public MetadataResponse(Status status, Set<String> primitiveNames) {
+  private MetadataResponse(Status status, Set<String> primitiveNames) {
     super(status);
     this.primitiveNames = primitiveNames;
   }

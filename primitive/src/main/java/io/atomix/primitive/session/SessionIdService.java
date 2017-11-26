@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.partition;
-
-import io.atomix.utils.event.ListenerService;
+package io.atomix.primitive.session;
 
 /**
- * Primary election service.
+ * Globally unique session ID provider.
  */
-public interface PrimaryElectionService extends ListenerService<PrimaryElectionEvent, PrimaryElectionEventListener> {
+public interface SessionIdService {
 
   /**
-   * Returns the primary election for the given partition identifier.
+   * Returns the next unique session identifier.
    *
-   * @param partitionId the partition identifier for which to return the primary election
-   * @return the primary election for the given partition identifier
+   * @return the next unique session identifier
    */
-  PrimaryElection getElectionFor(PartitionId partitionId);
+  SessionId nextSessionId();
 
 }

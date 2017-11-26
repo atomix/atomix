@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.primitive.operation.PrimitiveOperation;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -22,17 +23,29 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Operation request.
  */
-public class ExecuteRequest extends PrimaryBackupRequest {
-  private final long sessionId;
+public class ExecuteRequest extends PrimitiveRequest {
+
+  public static ExecuteRequest request(PrimitiveDescriptor primitive, long session, NodeId node, PrimitiveOperation operation) {
+    return new ExecuteRequest(primitive, session, node, operation);
+  }
+
+  private final long session;
+  private final NodeId node;
   private final PrimitiveOperation operation;
 
-  public ExecuteRequest(long sessionId, PrimitiveOperation operation) {
-    this.sessionId = sessionId;
+  public ExecuteRequest(PrimitiveDescriptor primitive, long session, NodeId node, PrimitiveOperation operation) {
+    super(primitive);
+    this.session = session;
+    this.node = node;
     this.operation = operation;
   }
 
-  public long sessionId() {
-    return sessionId;
+  public long session() {
+    return session;
+  }
+
+  public NodeId node() {
+    return node;
   }
 
   public PrimitiveOperation operation() {
@@ -42,8 +55,10 @@ public class ExecuteRequest extends PrimaryBackupRequest {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("session", sessionId)
-        .add("operation", operation)
+        .add("session", session())
+        .add("node", node())
+        .add("primitive", primitive())
+        .add("operation", operation())
         .toString();
   }
 }

@@ -1,0 +1,100 @@
+/*
+ * Copyright 2017-present Open Networking Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.atomix.protocols.backup.roles;
+
+import com.google.common.collect.ImmutableList;
+import io.atomix.cluster.NodeId;
+import io.atomix.protocols.backup.protocol.BackupOperation;
+import io.atomix.protocols.backup.protocol.BackupRequest;
+import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
+import io.atomix.utils.concurrent.Scheduled;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * Asynchronous replicator.
+ */
+class AsynchronousReplicator implements Replicator {
+  private static final int MAX_BATCH_SIZE = 100;
+  private static final long MAX_BATCH_TIME = 100;
+
+  private final PrimaryBackupServiceContext context;
+  private final Map<NodeId, BackupQueue> queues = new HashMap<>();
+
+  AsynchronousReplicator(PrimaryBackupServiceContext context) {
+    this.context = context;
+  }
+
+  @Override
+  public CompletableFuture<Void> replicate(BackupOperation operation) {
+    for (NodeId backup : context.backups()) {
+      queues.computeIfAbsent(backup, BackupQueue::new).add(operation);
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public void close() {
+    queues.values().forEach(BackupQueue::close);
+  }
+
+  /**
+   * Asynchronous backup queue.
+   */
+  private final class BackupQueue {
+    private final Queue<BackupOperation> operations = new LinkedList<>();
+    private final NodeId nodeId;
+    private final Scheduled backupTimer;
+    private long lastSent;
+
+    BackupQueue(NodeId nodeId) {
+      this.nodeId = nodeId;
+      this.backupTimer = context.threadContext()
+          .schedule(Duration.ofMillis(MAX_BATCH_TIME / 2), Duration.ofMillis(MAX_BATCH_TIME / 2), this::maybeSendBatch);
+    }
+
+    void add(BackupOperation operation) {
+      operations.add(operation);
+      if (operations.size() >= MAX_BATCH_SIZE) {
+        sendBatch();
+      }
+    }
+
+    private void maybeSendBatch() {
+      if (System.currentTimeMillis() - lastSent > MAX_BATCH_TIME && !operations.isEmpty()) {
+        sendBatch();
+      }
+    }
+
+    private void sendBatch() {
+      List<BackupOperation> batch = ImmutableList.copyOf(operations);
+      operations.clear();
+      BackupRequest request = BackupRequest.request(context.descriptor(), context.nodeId(), context.currentTerm(), context.currentIndex(), batch);
+      context.protocol().backup(nodeId, request);
+      lastSent = System.currentTimeMillis();
+    }
+
+    void close() {
+      backupTimer.cancel();
+    }
+  }
+}

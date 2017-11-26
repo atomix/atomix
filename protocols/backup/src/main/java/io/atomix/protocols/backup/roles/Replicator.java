@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.partition;
+package io.atomix.protocols.backup.roles;
 
-import io.atomix.utils.event.ListenerService;
+import io.atomix.protocols.backup.protocol.BackupOperation;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Primary election service.
+ * Backup replicator.
  */
-public interface PrimaryElectionService extends ListenerService<PrimaryElectionEvent, PrimaryElectionEventListener> {
+interface Replicator {
 
   /**
-   * Returns the primary election for the given partition identifier.
+   * Backs up the given operation.
    *
-   * @param partitionId the partition identifier for which to return the primary election
-   * @return the primary election for the given partition identifier
+   * @param operation the operation to back up
+   * @return a future to be completed with the operation index
    */
-  PrimaryElection getElectionFor(PartitionId partitionId);
+  CompletableFuture<Void> replicate(BackupOperation operation);
 
+  /**
+   * Closes the replicator.
+   */
+  void close();
 }
