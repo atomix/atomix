@@ -58,7 +58,7 @@ public class DefaultClusterService implements ManagedClusterService {
 
   private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
-  private static final String HEARTBEAT_MESSAGE = "onos-cluster-heartbeat";
+  private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
 
   private int heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
 
