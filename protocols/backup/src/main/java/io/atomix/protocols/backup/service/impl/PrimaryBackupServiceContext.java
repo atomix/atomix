@@ -264,7 +264,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   /**
    * Resets the current term to the given term.
    *
-   * @param term the term to which to reset the current term
+   * @param term    the term to which to reset the current term
    * @param primary the primary for the given term
    */
   public void resetTerm(long term, NodeId primary) {
@@ -285,7 +285,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   /**
    * Increments the current index and returns true if the given index is the next index.
    *
-   * @param index the index to which to increment the current index
+   * @param index     the index to which to increment the current index
    * @param timestamp the timestamp at the next index
    * @return indicates whether the current index was successfully incremented
    */
@@ -302,7 +302,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   /**
    * Resets the current index to the given index and timestamp.
    *
-   * @param index the index to which to reset the current index
+   * @param index     the index to which to reset the current index
    * @param timestamp the timestamp to which to reset the current timestamp
    */
   public void resetIndex(long index, long timestamp) {
@@ -473,7 +473,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Gets or creates a service session.
    *
    * @param sessionId the session to create
-   * @param nodeId the owning node ID
+   * @param nodeId    the owning node ID
    * @return the service session
    */
   public PrimaryBackupSession getOrCreateSession(long sessionId, NodeId nodeId) {

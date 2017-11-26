@@ -49,6 +49,7 @@ class AsynchronousReplicator implements Replicator {
     for (NodeId backup : context.backups()) {
       queues.computeIfAbsent(backup, BackupQueue::new).add(operation);
     }
+    context.setCommitIndex(operation.index());
     return CompletableFuture.completedFuture(null);
   }
 
@@ -69,30 +70,49 @@ class AsynchronousReplicator implements Replicator {
     BackupQueue(NodeId nodeId) {
       this.nodeId = nodeId;
       this.backupTimer = context.threadContext()
-          .schedule(Duration.ofMillis(MAX_BATCH_TIME / 2), Duration.ofMillis(MAX_BATCH_TIME / 2), this::maybeSendBatch);
+          .schedule(Duration.ofMillis(MAX_BATCH_TIME / 2), Duration.ofMillis(MAX_BATCH_TIME / 2), this::maybeBackup);
     }
 
+    /**
+     * Adds an operation to the queue.
+     *
+     * @param operation the operation to add
+     */
     void add(BackupOperation operation) {
       operations.add(operation);
       if (operations.size() >= MAX_BATCH_SIZE) {
-        sendBatch();
+        backup();
       }
     }
 
-    private void maybeSendBatch() {
+    /**
+     * Sends the next batch if enough time has elapsed.
+     */
+    private void maybeBackup() {
       if (System.currentTimeMillis() - lastSent > MAX_BATCH_TIME && !operations.isEmpty()) {
-        sendBatch();
+        backup();
       }
     }
 
-    private void sendBatch() {
+    /**
+     * Sends the next batch to the backup.
+     */
+    private void backup() {
       List<BackupOperation> batch = ImmutableList.copyOf(operations);
       operations.clear();
-      BackupRequest request = BackupRequest.request(context.descriptor(), context.nodeId(), context.currentTerm(), context.currentIndex(), batch);
+      BackupRequest request = BackupRequest.request(
+          context.descriptor(),
+          context.nodeId(),
+          context.currentTerm(),
+          context.currentIndex(),
+          batch);
       context.protocol().backup(nodeId, request);
       lastSent = System.currentTimeMillis();
     }
 
+    /**
+     * Closes the queue.
+     */
     void close() {
       backupTimer.cancel();
     }

@@ -48,9 +48,9 @@ public interface PrimaryBackupServerProtocol {
   /**
    * Sends a primitive event to the given node.
    *
-   * @param nodeId the node to which to publish the event
+   * @param nodeId  the node to which to publish the event
    * @param session the session to which to publish the event
-   * @param event the primitive event to publish
+   * @param event   the primitive event to publish
    */
   void event(NodeId nodeId, SessionId session, PrimitiveEvent event);
 

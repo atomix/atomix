@@ -22,10 +22,10 @@ import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -34,8 +34,7 @@ import java.util.concurrent.CompletableFuture;
 class SynchronousReplicator implements Replicator {
   private final PrimaryBackupServiceContext context;
   private final Map<NodeId, BackupQueue> queues = new HashMap<>();
-  private final Queue<CompletableFuture<Void>> futures = new LinkedList<>();
-  private long completeIndex;
+  private final Map<Long, CompletableFuture<Void>> futures = new LinkedHashMap<>();
 
   SynchronousReplicator(PrimaryBackupServiceContext context) {
     this.context = context;
@@ -44,7 +43,7 @@ class SynchronousReplicator implements Replicator {
   @Override
   public CompletableFuture<Void> replicate(BackupOperation operation) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    futures.add(future);
+    futures.put(operation.index(), future);
     for (NodeId backup : context.backups()) {
       queues.computeIfAbsent(backup, BackupQueue::new).add(operation);
     }
@@ -59,15 +58,18 @@ class SynchronousReplicator implements Replicator {
         .map(queue -> queue.ackedIndex)
         .reduce(Math::min)
         .orElse(0L);
-    for (long i = completeIndex + 1; i <= commitIndex; i++) {
-      futures.remove().complete(null);
+    for (long i = context.getCommitIndex() + 1; i <= commitIndex; i++) {
+      CompletableFuture<Void> future = futures.remove(i);
+      if (future != null) {
+        future.complete(null);
+      }
     }
-    this.completeIndex = commitIndex;
+    context.setCommitIndex(commitIndex);
   }
 
   @Override
   public void close() {
-    futures.forEach(f -> f.completeExceptionally(new IllegalStateException("Not the primary")));
+    futures.values().forEach(f -> f.completeExceptionally(new IllegalStateException("Not the primary")));
   }
 
   /**
@@ -83,11 +85,19 @@ class SynchronousReplicator implements Replicator {
       this.nodeId = nodeId;
     }
 
+    /**
+     * Adds an operation to the queue.
+     *
+     * @param operation the operation to add
+     */
     void add(BackupOperation operation) {
       operations.add(operation);
       maybeBackup();
     }
 
+    /**
+     * Sends the next batch if operations are queued and no backup is already in progress.
+     */
     private void maybeBackup() {
       if (!inProgress && !operations.isEmpty()) {
         inProgress = true;
@@ -95,10 +105,18 @@ class SynchronousReplicator implements Replicator {
       }
     }
 
+    /**
+     * Sends the next batch of operations to the backup.
+     */
     private void backup() {
       List<BackupOperation> operations = this.operations.subList(0, Math.min(100, this.operations.size()));
       long lastIndex = operations.get(operations.size() - 1).index();
-      BackupRequest request = BackupRequest.request(context.descriptor(), context.nodeId(), context.currentTerm(), completeIndex, operations);
+      BackupRequest request = BackupRequest.request(
+          context.descriptor(),
+          context.nodeId(),
+          context.currentTerm(),
+          context.getCommitIndex(),
+          operations);
       context.protocol().backup(nodeId, request).whenCompleteAsync((response, error) -> {
         if (error == null && response.status() == Status.OK) {
           ackedIndex = lastIndex;
