@@ -38,11 +38,7 @@ class PrimaryBackupMessageContext {
   }
 
   private static MessageSubject getSubject(String prefix, String type) {
-    if (prefix == null) {
-      return new MessageSubject(type);
-    } else {
-      return new MessageSubject(String.format("%s-%s", prefix, type));
-    }
+    return new MessageSubject(String.format("%s-%s", prefix, type));
   }
 
   /**

@@ -26,6 +26,8 @@ import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.serializer.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * Primary-backup partition client.
  */
 public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimaryProtocol>, Managed<PrimaryBackupPartitionClient> {
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
   private final ThreadContextFactory threadFactory;
@@ -62,6 +65,7 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
   public CompletableFuture<PrimaryBackupPartitionClient> open() {
     synchronized (PrimaryBackupPartitionClient.this) {
       client = newClient();
+      log.info("Successfully started client for {}", partition.id());
     }
     return CompletableFuture.completedFuture(this);
   }
@@ -71,6 +75,7 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
         .withClientName(partition.name())
         .withClusterService(managementService.getClusterService())
         .withProtocol(new PrimaryBackupClientCommunicator(
+            partition.name(),
             Serializer.using(PrimaryBackupNamespaces.PROTOCOL),
             managementService.getCommunicationService()))
         .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))

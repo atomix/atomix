@@ -63,16 +63,8 @@ public abstract class PrimaryBackupRole {
   /**
    * Logs a request.
    */
-  protected final <R extends PrimaryBackupRequest> R logReceived(R request) {
+  protected final <R extends PrimaryBackupRequest> R logRequest(R request) {
     log.trace("Received {}", request);
-    return request;
-  }
-
-  /**
-   * Logs an internal request.
-   */
-  protected final <R extends PrimaryBackupRequest> R logSending(R request) {
-    log.trace("Sending {}", request);
     return request;
   }
 
@@ -91,7 +83,7 @@ public abstract class PrimaryBackupRole {
    * @return future to be completed with the execute response
    */
   public CompletableFuture<ExecuteResponse> execute(ExecuteRequest request) {
-    logReceived(request);
+    logRequest(request);
     return CompletableFuture.completedFuture(logResponse(ExecuteResponse.error()));
   }
 
@@ -102,7 +94,7 @@ public abstract class PrimaryBackupRole {
    * @return future to be completed with the backup response
    */
   public CompletableFuture<BackupResponse> backup(BackupRequest request) {
-    logReceived(request);
+    logRequest(request);
     return CompletableFuture.completedFuture(logResponse(BackupResponse.error()));
   }
 
@@ -113,7 +105,7 @@ public abstract class PrimaryBackupRole {
    * @return future to be completed with the restore response
    */
   public CompletableFuture<RestoreResponse> restore(RestoreRequest request) {
-    logReceived(request);
+    logRequest(request);
     return CompletableFuture.completedFuture(logResponse(RestoreResponse.error()));
   }
 

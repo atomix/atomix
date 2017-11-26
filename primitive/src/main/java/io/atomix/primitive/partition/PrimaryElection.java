@@ -18,6 +18,8 @@ package io.atomix.primitive.partition;
 import io.atomix.cluster.NodeId;
 import io.atomix.utils.event.ListenerService;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Partition primary election.
  */
@@ -29,14 +31,14 @@ public interface PrimaryElection extends ListenerService<PrimaryElectionEvent, P
    * @param nodeId the identifier of the node to enter the election
    * @return the current term
    */
-  PrimaryTerm enter(NodeId nodeId);
+  CompletableFuture<PrimaryTerm> enter(NodeId nodeId);
 
   /**
    * Returns the current term.
    *
    * @return the current term
    */
-  PrimaryTerm getTerm();
+  CompletableFuture<PrimaryTerm> getTerm();
 
   /**
    * Closes the primary election.

@@ -39,7 +39,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   private Persistence persistence = defaultPersistence();
   private Consistency consistency = defaultConsistency();
   private Replication replication = defaultReplication();
-  private int numBackups = -1;
+  private int numBackups = 2;
 
   public DistributedPrimitiveBuilder(PrimitiveType type, String name) {
     this.type = checkNotNull(type, "type cannot be null");
@@ -140,7 +140,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    */
   @SuppressWarnings("unchecked")
   public B withBackups(int numBackups) {
-    checkArgument(numBackups > 0 || numBackups == -1, "numBackups must be positive or -1");
+    checkArgument(numBackups >= 0, "numBackups must be positive");
     this.numBackups = numBackups;
     return (B) this;
   }

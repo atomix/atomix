@@ -47,7 +47,7 @@ public class BackupRole extends PrimaryBackupRole {
 
   @Override
   public CompletableFuture<BackupResponse> backup(BackupRequest request) {
-    logReceived(request);
+    logRequest(request);
 
     // If the term is greater than the node's current term, update the term.
     if (request.term() > context.currentTerm()) {
@@ -62,7 +62,7 @@ public class BackupRole extends PrimaryBackupRole {
     long currentCommitIndex = context.getCommitIndex();
     long nextCommitIndex = context.setCommitIndex(request.index());
     context.threadContext().execute(() -> applyOperations(currentCommitIndex, nextCommitIndex));
-    return CompletableFuture.completedFuture(BackupResponse.ok());
+    return CompletableFuture.completedFuture(logResponse(BackupResponse.ok()));
   }
 
   /**
@@ -76,7 +76,7 @@ public class BackupRole extends PrimaryBackupRole {
         break;
       }
 
-      if (context.nextIndex(operation.index(), operation.timestamp())) {
+      if (context.nextIndex(operation.index())) {
         switch (operation.type()) {
           case EXECUTE:
             applyExecute((ExecuteOperation) operation);
@@ -103,15 +103,17 @@ public class BackupRole extends PrimaryBackupRole {
    */
   private void applyExecute(ExecuteOperation operation) {
     Session session = context.getOrCreateSession(operation.session(), operation.node());
-    try {
-      context.service().apply(new DefaultCommit<>(
-          operation.index(),
-          operation.operation().id(),
-          operation.operation().value(),
-          session,
-          context.currentTimestamp().unixTimestamp()));
-    } catch (Exception e) {
-      log.warn("Failed to apply operation: {}", e);
+    if (operation.operation() != null) {
+      try {
+        context.service().apply(new DefaultCommit<>(
+            context.setIndex(operation.index()),
+            operation.operation().id(),
+            operation.operation().value(),
+            session,
+            context.setTimestamp(operation.timestamp())));
+      } catch (Exception e) {
+        log.warn("Failed to apply operation: {}", e);
+      }
     }
   }
 
@@ -119,13 +121,14 @@ public class BackupRole extends PrimaryBackupRole {
    * Applies a heartbeat operation to the service.
    */
   private void applyHeartbeat(HeartbeatOperation operation) {
-    context.service().tick(context.currentTimestamp());
+    context.setTimestamp(operation.timestamp());
   }
 
   /**
    * Applies an expire operation.
    */
   private void applyExpire(ExpireOperation operation) {
+    context.setTimestamp(operation.timestamp());
     PrimaryBackupSession session = context.getSession(operation.session());
     if (session != null) {
       context.sessions().expireSession(session);
@@ -136,6 +139,7 @@ public class BackupRole extends PrimaryBackupRole {
    * Applies a close operation.
    */
   private void applyClose(CloseOperation operation) {
+    context.setTimestamp(operation.timestamp());
     PrimaryBackupSession session = context.getSession(operation.session());
     if (session != null) {
       context.sessions().closeSession(session);
@@ -151,6 +155,7 @@ public class BackupRole extends PrimaryBackupRole {
           if (error == null) {
             context.resetIndex(response.index(), response.timestamp());
             context.service().restore(HeapBuffer.wrap(response.data()));
+            operations.clear();
           }
         }, context.threadContext());
   }

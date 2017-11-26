@@ -47,7 +47,7 @@ public class PrimaryBackupServerContext {
   private final ThreadContextFactory threadContextFactory;
   private final PrimitiveTypeRegistry primitiveTypes;
   private final PrimaryElection primaryElection;
-  private final Map<String, PrimaryBackupServiceContext> services = Maps.newConcurrentMap();
+  private final Map<String, CompletableFuture<PrimaryBackupServiceContext>> services = Maps.newConcurrentMap();
 
   public PrimaryBackupServerContext(
       String serverName,
@@ -69,42 +69,46 @@ public class PrimaryBackupServerContext {
    */
   public void open() {
     registerListeners();
+    primaryElection.enter(clusterService.getLocalNode().id());
   }
 
   /**
    * Handles an execute request.
    */
   private CompletableFuture<ExecuteResponse> execute(ExecuteRequest request) {
-    return getService(request).execute(request);
+    return getService(request).thenCompose(service -> service.execute(request));
   }
 
   /**
    * Handles a backup request.
    */
   private CompletableFuture<BackupResponse> backup(BackupRequest request) {
-    return getService(request).backup(request);
+    return getService(request).thenCompose(service -> service.backup(request));
   }
 
   /**
    * Handles a restore request.
    */
   private CompletableFuture<RestoreResponse> restore(RestoreRequest request) {
-    return getService(request).restore(request);
+    return getService(request).thenCompose(service -> service.restore(request));
   }
 
   /**
    * Returns the service context for the given request.
    */
-  private PrimaryBackupServiceContext getService(PrimitiveRequest request) {
-    return services.computeIfAbsent(request.primitive().name(), n -> new PrimaryBackupServiceContext(
-        serverName,
-        PrimitiveId.from(request.primitive().name()),
-        primitiveTypes.get(request.primitive().type()),
-        request.primitive(),
-        threadContextFactory.createContext(),
-        clusterService,
-        protocol,
-        primaryElection));
+  private CompletableFuture<PrimaryBackupServiceContext> getService(PrimitiveRequest request) {
+    return services.computeIfAbsent(request.primitive().name(), n -> {
+      PrimaryBackupServiceContext service = new PrimaryBackupServiceContext(
+          serverName,
+          PrimitiveId.from(request.primitive().name()),
+          primitiveTypes.get(request.primitive().type()),
+          request.primitive(),
+          threadContextFactory.createContext(),
+          clusterService,
+          protocol,
+          primaryElection);
+      return service.open().thenApply(v -> service);
+    });
   }
 
   /**
@@ -112,7 +116,7 @@ public class PrimaryBackupServerContext {
    */
   private CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
     return CompletableFuture.completedFuture(MetadataResponse.ok(services.entrySet().stream()
-        .filter(entry -> entry.getValue().serviceType().id().equals(request.primitiveType()))
+        .filter(entry -> entry.getValue().join().serviceType().id().equals(request.primitiveType()))
         .map(entry -> entry.getKey())
         .collect(Collectors.toSet())));
   }

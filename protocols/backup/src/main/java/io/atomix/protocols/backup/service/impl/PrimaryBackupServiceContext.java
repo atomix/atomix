@@ -87,19 +87,20 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private List<NodeId> backups;
   private long currentTerm;
   private long currentIndex;
+  private long currentTimestamp;
+  private long operationIndex;
   private long commitIndex;
-  private WallClockTimestamp currentTimestamp = new WallClockTimestamp();
   private OperationType currentOperation = OperationType.COMMAND;
   private final LogicalClock logicalClock = new LogicalClock() {
     @Override
     public LogicalTimestamp time() {
-      return new LogicalTimestamp(currentIndex);
+      return new LogicalTimestamp(operationIndex);
     }
   };
   private final WallClock wallClock = new WallClock() {
     @Override
     public WallClockTimestamp time() {
-      return currentTimestamp;
+      return WallClockTimestamp.from(currentTimestamp);
     }
   };
   private PrimaryBackupRole role;
@@ -130,18 +131,22 @@ public class PrimaryBackupServiceContext implements ServiceContext {
         .add("type", descriptor.type())
         .add("name", descriptor.name())
         .build());
-    init();
     clusterService.addListener(clusterEventListener);
     primaryElection.addListener(primaryElectionListener);
-    changeRole(primaryElection.getTerm());
   }
 
   /**
-   * Initializes the state machine.
+   * Opens the service context.
+   *
+   * @return a future to be completed once the service context has been opened
    */
-  private void init() {
-    sessions.addListener(service);
-    service.init(this);
+  public CompletableFuture<Void> open() {
+    return primaryElection.getTerm()
+        .thenAccept(this::changeRole)
+        .thenRun(() -> {
+          sessions.addListener(service);
+          service.init(this);
+        });
   }
 
   @Override
@@ -196,7 +201,19 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    *
    * @return the current wall clock timestamp
    */
-  public WallClockTimestamp currentTimestamp() {
+  public long currentTimestamp() {
+    return currentTimestamp;
+  }
+
+  /**
+   * Sets the current timestamp.
+   *
+   * @param timestamp the updated timestamp
+   * @return the current timestamp
+   */
+  public long setTimestamp(long timestamp) {
+    this.currentTimestamp = timestamp;
+    service.tick(WallClockTimestamp.from(timestamp));
     return currentTimestamp;
   }
 
@@ -227,21 +244,19 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    */
   public long nextIndex() {
     currentOperation = OperationType.COMMAND;
-    return ++currentIndex;
+    return ++operationIndex;
   }
 
   /**
    * Increments the current index and returns true if the given index is the next index.
    *
    * @param index     the index to which to increment the current index
-   * @param timestamp the timestamp at the next index
    * @return indicates whether the current index was successfully incremented
    */
-  public boolean nextIndex(long index, long timestamp) {
-    if (currentIndex + 1 == index) {
+  public boolean nextIndex(long index) {
+    if (operationIndex + 1 == index) {
       currentOperation = OperationType.COMMAND;
-      currentIndex++;
-      currentTimestamp = new WallClockTimestamp(timestamp);
+      operationIndex++;
       return true;
     }
     return false;
@@ -255,8 +270,21 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    */
   public void resetIndex(long index, long timestamp) {
     currentOperation = OperationType.COMMAND;
+    operationIndex = index;
     currentIndex = index;
-    currentTimestamp = WallClockTimestamp.from(timestamp);
+    currentTimestamp = timestamp;
+  }
+
+  /**
+   * Sets the current index.
+   *
+   * @param index the current index.
+   * @return the current index
+   */
+  public long setIndex(long index) {
+    currentOperation = OperationType.COMMAND;
+    currentIndex = index;
+    return currentIndex;
   }
 
   /**
@@ -267,17 +295,6 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public long getIndex() {
     currentOperation = OperationType.QUERY;
     return currentIndex;
-  }
-
-  /**
-   * Increments and returns the wall clock timestamp.
-   *
-   * @return the wall clock timestamp
-   */
-  public WallClockTimestamp nextTimestamp() {
-    currentTimestamp = new WallClockTimestamp();
-    service.tick(currentTimestamp);
-    return currentTimestamp;
   }
 
   /**
@@ -439,6 +456,24 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   }
 
   /**
+   * Creates a service session.
+   *
+   * @param sessionId the session to create
+   * @param nodeId    the owning node ID
+   * @return the service session
+   */
+  public PrimaryBackupSession createSession(long sessionId, NodeId nodeId) {
+    PrimaryBackupSession session = new PrimaryBackupSession(
+        SessionId.from(sessionId),
+        descriptor.name(),
+        primitiveType,
+        nodeId,
+        protocol);
+    sessions.openSession(session);
+    return session;
+  }
+
+  /**
    * Gets or creates a service session.
    *
    * @param sessionId the session to create
@@ -448,13 +483,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public PrimaryBackupSession getOrCreateSession(long sessionId, NodeId nodeId) {
     PrimaryBackupSession session = sessions.getSession(sessionId);
     if (session == null) {
-      session = new PrimaryBackupSession(
-          SessionId.from(sessionId),
-          descriptor.name(),
-          primitiveType,
-          nodeId,
-          protocol);
-      sessions.openSession(session);
+      session = createSession(sessionId, nodeId);
     }
     return session;
   }
@@ -477,6 +506,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    */
   private void changeRole(PrimaryTerm term) {
     if (term.term() > currentTerm) {
+      log.trace("Term changed: {}", term);
       currentTerm = term.term();
       primary = term.primary();
       backups = term.backups().subList(0, Math.min(descriptor.backups(), term.backups().size()));
@@ -515,8 +545,9 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   /**
    * Closes the service.
    */
-  void close() {
+  public CompletableFuture<Void> close() {
     clusterService.removeListener(clusterEventListener);
     primaryElection.removeListener(primaryElectionListener);
+    return CompletableFuture.completedFuture(null);
   }
 }

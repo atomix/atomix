@@ -21,6 +21,7 @@ import io.atomix.protocols.backup.protocol.BackupOperation;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 import io.atomix.utils.concurrent.Scheduled;
+import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -38,10 +39,12 @@ class AsynchronousReplicator implements Replicator {
   private static final long MAX_BATCH_TIME = 100;
 
   private final PrimaryBackupServiceContext context;
+  private final Logger log;
   private final Map<NodeId, BackupQueue> queues = new HashMap<>();
 
-  AsynchronousReplicator(PrimaryBackupServiceContext context) {
+  AsynchronousReplicator(PrimaryBackupServiceContext context, Logger log) {
     this.context = context;
+    this.log = log;
   }
 
   @Override
@@ -106,6 +109,7 @@ class AsynchronousReplicator implements Replicator {
           context.currentTerm(),
           context.currentIndex(),
           batch);
+      log.trace("Sending {} to {}", request, nodeId);
       context.protocol().backup(nodeId, request);
       lastSent = System.currentTimeMillis();
     }

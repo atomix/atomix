@@ -19,7 +19,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.NodeId;
 import io.atomix.election.AsyncLeaderElector;
-import io.atomix.election.LeaderElector;
 import io.atomix.election.LeaderElectorType;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.Partition;
@@ -61,7 +60,7 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
   private final Set<PrimaryElectionEventListener> listeners = Sets.newIdentityHashSet();
   private final PrimaryElectionEventListener eventListener = event -> listeners.forEach(l -> l.onEvent(event));
   private final Map<PartitionId, PrimaryElection> elections = Maps.newConcurrentMap();
-  private LeaderElector<NodeId> elector;
+  private AsyncLeaderElector<NodeId> elector;
   private final AtomicBoolean open = new AtomicBoolean();
 
   public LeaderElectorPrimaryElectionService(PartitionGroup partitionGroup) {
@@ -111,7 +110,7 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
     }
 
     Partitioner<String> partitioner = topic -> partitions.getPartition(topic).id();
-    elector = new PartitionedAsyncLeaderElector<>(PRIMITIVE_NAME, electors, partitioner).asLeaderElector();
+    elector = new PartitionedAsyncLeaderElector<>(PRIMITIVE_NAME, electors, partitioner);
     open.set(true);
     return CompletableFuture.completedFuture(this);
   }

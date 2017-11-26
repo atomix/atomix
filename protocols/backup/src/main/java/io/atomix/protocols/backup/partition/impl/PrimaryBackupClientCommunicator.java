@@ -42,10 +42,6 @@ public class PrimaryBackupClientCommunicator implements PrimaryBackupClientProto
   private final Serializer serializer;
   private final ClusterCommunicationService clusterCommunicator;
 
-  public PrimaryBackupClientCommunicator(Serializer serializer, ClusterCommunicationService clusterCommunicator) {
-    this(null, serializer, clusterCommunicator);
-  }
-
   public PrimaryBackupClientCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this.context = new PrimaryBackupMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");

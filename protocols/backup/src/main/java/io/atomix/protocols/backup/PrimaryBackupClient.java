@@ -99,7 +99,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
     CompletableFuture<Set<String>> future = new CompletableFuture<>();
     MetadataRequest request = MetadataRequest.request(primitiveType.id());
     threadContext.execute(() -> {
-      NodeId primary = primaryElection.getTerm().primary();
+      NodeId primary = primaryElection.getTerm().join().primary();
       if (primary == null) {
         future.completeExceptionally(new Unavailable());
         return;
@@ -148,7 +148,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
         public PrimitiveProxy build() {
           return new PrimaryBackupProxy(
               clientName,
-              sessionIdService.nextSessionId(),
+              sessionIdService.nextSessionId().join(),
               primitiveType,
               new PrimitiveDescriptor(name, primitiveType.id(), protocol.backups(), protocol.replication()),
               clusterService,

@@ -32,7 +32,6 @@ import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
-import io.atomix.utils.time.WallClockTimestamp;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -54,10 +53,10 @@ public class PrimaryRole extends PrimaryBackupRole {
         this::heartbeat);
     switch (context.descriptor().replication()) {
       case SYNCHRONOUS:
-        replicator = new SynchronousReplicator(context);
+        replicator = new SynchronousReplicator(context, log);
         break;
       case ASYNCHRONOUS:
-        replicator = new AsynchronousReplicator(context);
+        replicator = new AsynchronousReplicator(context, log);
         break;
       default:
         throw new AssertionError();
@@ -69,17 +68,18 @@ public class PrimaryRole extends PrimaryBackupRole {
    */
   private void heartbeat() {
     long index = context.nextIndex();
-    WallClockTimestamp timestamp = context.nextTimestamp();
-    replicator.replicate(new HeartbeatOperation(index, timestamp.unixTimestamp()))
-        .thenRun(() -> context.service().tick(timestamp));
+    long timestamp = System.currentTimeMillis();
+    replicator.replicate(new HeartbeatOperation(index, timestamp))
+        .thenRun(() -> context.setTimestamp(timestamp));
   }
 
   @Override
   public CompletableFuture<ExecuteResponse> execute(ExecuteRequest request) {
+    logRequest(request);
     if (request.operation().id().type() == OperationType.COMMAND) {
-      return executeCommand(request);
+      return executeCommand(request).thenApply(this::logResponse);
     } else if (request.operation().id().type() == OperationType.QUERY) {
-      return executeQuery(request);
+      return executeQuery(request).thenApply(this::logResponse);
     }
     return Futures.exceptionalFuture(new IllegalArgumentException("Unknown operation type"));
   }
@@ -87,21 +87,21 @@ public class PrimaryRole extends PrimaryBackupRole {
   private CompletableFuture<ExecuteResponse> executeCommand(ExecuteRequest request) {
     PrimaryBackupSession session = context.getOrCreateSession(request.session(), request.node());
     long index = context.nextIndex();
-    WallClockTimestamp timestamp = context.nextTimestamp();
+    long timestamp = System.currentTimeMillis();
     return replicator.replicate(new ExecuteOperation(
         index,
-        timestamp.unixTimestamp(),
+        timestamp,
         session.sessionId().id(),
         session.nodeId(),
         request.operation()))
         .thenApply(v -> {
           try {
             byte[] result = context.service().apply(new DefaultCommit<>(
-                index,
+                context.setIndex(index),
                 request.operation().id(),
                 request.operation().value(),
                 session,
-                timestamp.unixTimestamp()));
+                context.setTimestamp(timestamp)));
             return ExecuteResponse.ok(result);
           } catch (Exception e) {
             return ExecuteResponse.error();
@@ -110,27 +110,44 @@ public class PrimaryRole extends PrimaryBackupRole {
   }
 
   private CompletableFuture<ExecuteResponse> executeQuery(ExecuteRequest request) {
+    // If the session doesn't exist, create and replicate a new session before applying the query.
     Session session = context.getSession(request.session());
     if (session == null) {
-      return CompletableFuture.completedFuture(ExecuteResponse.error());
+      Session newSession = context.createSession(request.session(), request.node());
+      long index = context.nextIndex();
+      long timestamp = System.currentTimeMillis();
+      return replicator.replicate(new ExecuteOperation(
+          context.setIndex(index),
+          timestamp,
+          newSession.sessionId().id(),
+          newSession.nodeId(),
+          null))
+          .thenApply(v -> {
+            context.setTimestamp(timestamp);
+            return applyQuery(request, newSession);
+          });
+    } else {
+      return CompletableFuture.completedFuture(applyQuery(request, session));
     }
+  }
 
+  private ExecuteResponse applyQuery(ExecuteRequest request, Session session) {
     try {
       byte[] result = context.service().apply(new DefaultCommit<>(
           context.getIndex(),
           request.operation().id(),
           request.operation().value(),
           session,
-          context.currentTimestamp().unixTimestamp()));
-      return CompletableFuture.completedFuture(ExecuteResponse.ok(result));
+          context.currentTimestamp()));
+      return ExecuteResponse.ok(result);
     } catch (Exception e) {
-      return CompletableFuture.completedFuture(ExecuteResponse.error());
+      return ExecuteResponse.error();
     }
   }
 
   @Override
   public CompletableFuture<RestoreResponse> restore(RestoreRequest request) {
-    logReceived(request);
+    logRequest(request);
     if (request.term() != context.currentTerm()) {
       return CompletableFuture.completedFuture(logResponse(RestoreResponse.error()));
     }
@@ -140,23 +157,30 @@ public class PrimaryRole extends PrimaryBackupRole {
     buffer.flip();
     byte[] bytes = buffer.readBytes(buffer.remaining());
     return CompletableFuture.completedFuture(
-        logResponse(RestoreResponse.ok(context.currentIndex(), context.currentTimestamp().unixTimestamp(), bytes)));
+        RestoreResponse.ok(context.currentIndex(), context.currentTimestamp(), bytes))
+        .thenApply(this::logResponse);
   }
 
   @Override
   public CompletableFuture<Void> expire(PrimaryBackupSession session) {
     long index = context.nextIndex();
-    WallClockTimestamp timestamp = context.nextTimestamp();
-    return replicator.replicate(new ExpireOperation(index, timestamp.unixTimestamp(), session.sessionId().id()))
-        .thenRun(() -> context.sessions().expireSession(session));
+    long timestamp = System.currentTimeMillis();
+    return replicator.replicate(new ExpireOperation(index, timestamp, session.sessionId().id()))
+        .thenRun(() -> {
+          context.setTimestamp(timestamp);
+          context.sessions().expireSession(session);
+        });
   }
 
   @Override
   public CompletableFuture<Void> close(PrimaryBackupSession session) {
     long index = context.nextIndex();
-    WallClockTimestamp timestamp = context.nextTimestamp();
-    return replicator.replicate(new CloseOperation(index, timestamp.unixTimestamp(), session.sessionId().id()))
-        .thenRun(() -> context.sessions().closeSession(session));
+    long timestamp = System.currentTimeMillis();
+    return replicator.replicate(new CloseOperation(index, timestamp, session.sessionId().id()))
+        .thenRun(() -> {
+          context.setTimestamp(timestamp);
+          context.sessions().closeSession(session);
+        });
   }
 
   @Override

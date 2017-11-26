@@ -51,17 +51,17 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
 
   @Override
   public long term() {
-    return election.getTerm().term();
+    return election.getTerm().join().term();
   }
 
   @Override
   public NodeId primary() {
-    return election.getTerm().primary();
+    return election.getTerm().join().primary();
   }
 
   @Override
   public Collection<NodeId> backups() {
-    return election.getTerm().backups();
+    return election.getTerm().join().backups();
   }
 
   /**

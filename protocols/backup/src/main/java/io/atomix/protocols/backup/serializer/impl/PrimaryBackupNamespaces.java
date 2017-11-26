@@ -36,6 +36,7 @@ import io.atomix.protocols.backup.protocol.HeartbeatOperation;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
 import io.atomix.protocols.backup.protocol.MetadataResponse;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse;
+import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -69,6 +70,7 @@ public final class PrimaryBackupNamespaces {
       .register(HeartbeatOperation.class)
       .register(ExpireOperation.class)
       .register(CloseOperation.class)
+      .register(PrimitiveDescriptor.class)
       .register(PrimitiveOperation.class)
       .register(PrimitiveEvent.class)
       .register(DefaultEventType.class)

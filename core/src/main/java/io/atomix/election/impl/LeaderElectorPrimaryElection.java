@@ -17,7 +17,7 @@ package io.atomix.election.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.cluster.NodeId;
-import io.atomix.election.LeaderElector;
+import io.atomix.election.AsyncLeaderElector;
 import io.atomix.election.Leadership;
 import io.atomix.election.LeadershipEventListener;
 import io.atomix.primitive.partition.PartitionId;
@@ -29,6 +29,7 @@ import io.atomix.primitive.partition.PrimaryTerm;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -38,26 +39,25 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class LeaderElectorPrimaryElection implements PrimaryElection {
   private final PartitionId partitionId;
-  private final LeaderElector<NodeId> elector;
+  private final AsyncLeaderElector<NodeId> elector;
   private final LeadershipEventListener<NodeId> eventListener = event -> updateTerm(event.newLeadership());
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private PrimaryTerm term;
 
-  public LeaderElectorPrimaryElection(PartitionId partitionId, LeaderElector<NodeId> elector) {
+  public LeaderElectorPrimaryElection(PartitionId partitionId, AsyncLeaderElector<NodeId> elector) {
     this.partitionId = checkNotNull(partitionId);
     this.elector = checkNotNull(elector);
     elector.addListener(eventListener);
-    this.term = updateTerm(elector.getLeadership(partitionId.toString()));
   }
 
   @Override
-  public PrimaryTerm enter(NodeId nodeId) {
-    return createTerm(elector.run(partitionId.toString(), nodeId));
+  public CompletableFuture<PrimaryTerm> enter(NodeId nodeId) {
+    return elector.run(partitionId.toString(), nodeId).thenApply(this::createTerm);
   }
 
   @Override
-  public PrimaryTerm getTerm() {
-    return createTerm(elector.getLeadership(partitionId.toString()));
+  public CompletableFuture<PrimaryTerm> getTerm() {
+    return elector.getLeadership(partitionId.toString()).thenApply(this::createTerm);
   }
 
   private PrimaryTerm createTerm(Leadership<NodeId> leadership) {

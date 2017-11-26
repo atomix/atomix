@@ -19,7 +19,6 @@ import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveException.Unavailable;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
@@ -36,6 +35,7 @@ import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
+import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -66,7 +66,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   private final Set<Consumer<PrimitiveEvent>> eventListeners = Sets.newIdentityHashSet();
   private final PrimaryElectionEventListener primaryElectionListener = event -> changeReplicas(event.term());
   private final ClusterEventListener clusterEventListener = this::handleClusterEvent;
-  private NodeId primary;
+  private PrimaryTerm term;
   private volatile State state = State.CLOSED;
 
   public PrimaryBackupProxy(
@@ -86,7 +86,6 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
     this.primaryElection = primaryElection;
     this.threadContext = threadContext;
     primaryElection.addListener(primaryElectionListener);
-    this.primary = primaryElection.getTerm().primary();
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
         .addValue(clientName)
         .add("type", primitiveType.id())
@@ -126,22 +125,32 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
 
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
-    CompletableFuture<byte[]> future = new CompletableFuture<>();
+    ComposableFuture<byte[]> future = new ComposableFuture<>();
     threadContext.execute(() -> {
-      if (primary == null) {
-        future.completeExceptionally(new Unavailable());
+      if (term.primary() == null) {
+        PrimaryTerm term = primaryElection.getTerm().join();
+        if (term.term() <= this.term.term() || term.primary() == null) {
+          future.completeExceptionally(new Unavailable());
+        } else {
+          this.term = term;
+        }
         return;
       }
 
       ExecuteRequest request = ExecuteRequest.request(descriptor, sessionId.id(), clusterService.getLocalNode().id(), operation);
-      log.trace("Sending {} to {}", request, primary);
-      protocol.execute(primary, request).whenCompleteAsync((response, error) -> {
+      log.trace("Sending {} to {}", request, term.primary());
+      protocol.execute(term.primary(), request).whenCompleteAsync((response, error) -> {
         if (error == null) {
           log.trace("Received {}", response);
           if (response.status() == Status.OK) {
             future.complete(response.result());
           } else {
-            future.completeExceptionally(new Unavailable());
+            PrimaryTerm term = primaryElection.getTerm().join();
+            if (term.term() > this.term.term() && term.primary() != null) {
+              execute(operation).whenComplete(future);
+            } else {
+              future.completeExceptionally(new Unavailable());
+            }
           }
         } else {
           future.completeExceptionally(error);
@@ -166,7 +175,9 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
    */
   private void changeReplicas(PrimaryTerm term) {
     threadContext.execute(() -> {
-      primary = term.primary();
+      if (term.term() > this.term.term()) {
+        this.term = term;
+      }
     });
   }
 
@@ -174,7 +185,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(primary)) {
+    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(term.primary())) {
       threadContext.execute(() -> {
         state = State.SUSPENDED;
         stateChangeListeners.forEach(l -> l.accept(state));
@@ -193,9 +204,11 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   public CompletableFuture<PrimitiveProxy> open() {
     CompletableFuture<PrimitiveProxy> future = new CompletableFuture<>();
     threadContext.execute(() -> {
-      if (primary == null) {
+      PrimaryTerm term = primaryElection.getTerm().join();
+      if (term.primary() == null) {
         future.completeExceptionally(new Unavailable());
       } else {
+        this.term = term;
         protocol.registerEventListener(sessionId, this::handleEvent, threadContext);
         future.complete(this);
       }
@@ -211,11 +224,15 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   @Override
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    protocol.close(primary, new CloseRequest(descriptor, sessionId.id()))
-        .whenCompleteAsync((response, error) -> {
-          protocol.unregisterEventListener(sessionId);
-          clusterService.removeListener(clusterEventListener);
-        }, threadContext);
+    if (term.primary() != null) {
+      protocol.close(term.primary(), new CloseRequest(descriptor, sessionId.id()))
+          .whenCompleteAsync((response, error) -> {
+            protocol.unregisterEventListener(sessionId);
+            clusterService.removeListener(clusterEventListener);
+          }, threadContext);
+    } else {
+      future.complete(null);
+    }
     return future;
   }
 

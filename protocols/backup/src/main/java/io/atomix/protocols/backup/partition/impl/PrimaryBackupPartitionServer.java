@@ -23,6 +23,8 @@ import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.serializer.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Primary-backup partition server.
  */
 public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartitionServer> {
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
   private final ThreadContextFactory threadFactory;
@@ -53,6 +56,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
         server = buildServer();
       }
       return server.open().thenApply(v -> {
+        log.info("Successfully started server for {}", partition.id());
         open.set(true);
         return this;
       });
@@ -71,6 +75,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
         .withServerName(partition.name())
         .withClusterService(managementService.getClusterService())
         .withProtocol(new PrimaryBackupServerCommunicator(
+            partition.name(),
             Serializer.using(PrimaryBackupNamespaces.PROTOCOL),
             managementService.getCommunicationService()))
         .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
