@@ -53,11 +53,8 @@ public class TranscodingAsyncConsistentTreeMap<K1, V1, K2, V2> implements AsyncC
   private final Function<K2, K1> keyDecoder;
   private final Function<V2, V1> valueDecoder;
   private final Function<V1, V2> valueEncoder;
-  private final Function<Versioned<V2>, Versioned<V1>>
-      versionedValueTransform;
-  private final Map<MapEventListener<K1, V1>,
-      InternalBackingMapEventListener>
-      listeners = Maps.newIdentityHashMap();
+  private final Function<Versioned<V2>, Versioned<V1>> versionedValueTransform;
+  private final Map<MapEventListener<K1, V1>, InternalBackingMapEventListener> listeners = Maps.newIdentityHashMap();
 
   public TranscodingAsyncConsistentTreeMap(
       AsyncConsistentTreeMap<K2, V2> backingMap,
@@ -84,62 +81,51 @@ public class TranscodingAsyncConsistentTreeMap<K1, V1, K2, V2> implements AsyncC
   }
 
   @Override
-  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
-  ceilingEntry(K1 key) {
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>> ceilingEntry(K1 key) {
     return backingMap.ceilingEntry(keyEncoder.apply(key))
-        .thenApply(entry ->
-            Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+        .thenApply(entry -> entry != null ? Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
-  floorEntry(K1 key) {
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>> floorEntry(K1 key) {
     return backingMap.floorEntry(keyEncoder.apply(key))
-        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+        .thenApply(entry -> entry != null ? Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
-  higherEntry(K1 key) {
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>> higherEntry(K1 key) {
     return backingMap.higherEntry(keyEncoder.apply(key))
-        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+        .thenApply(entry -> entry != null ? Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
-  lowerEntry(K1 key) {
-    return backingMap.lowerEntry(keyEncoder.apply(key)).thenApply(
-        entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>> lowerEntry(K1 key) {
+    return backingMap.lowerEntry(keyEncoder.apply(key))
+        .thenApply(entry -> entry != null ? Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
-  firstEntry() {
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>> firstEntry() {
     return backingMap.firstEntry()
-        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+        .thenApply(entry -> entry != null ? Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
-  lastEntry() {
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>> lastEntry() {
     return backingMap.lastEntry()
-        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+        .thenApply(entry -> entry != null ? Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
-  pollFirstEntry() {
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>> pollFirstEntry() {
     return backingMap.pollFirstEntry()
-        .thenApply(entry -> Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())));
+        .thenApply(entry -> entry != null ? Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<K1, Versioned<V1>>>
-  pollLastEntry() {
+  public CompletableFuture<Map.Entry<K1, Versioned<V1>>> pollLastEntry() {
     return backingMap.pollLastEntry()
-        .thenApply(entry -> Maps.immutableEntry(
-            keyDecoder.apply(entry.getKey()),
-            versionedValueTransform.apply(entry.getValue())));
+        .thenApply(entry -> entry != null ? Maps.immutableEntry(keyDecoder.apply(entry.getKey()), versionedValueTransform.apply(entry.getValue())) : null);
   }
 
   @Override
@@ -313,17 +299,14 @@ public class TranscodingAsyncConsistentTreeMap<K1, V1, K2, V2> implements AsyncC
   }
 
   @Override
-  public CompletableFuture<Void> addListener(
-      MapEventListener<K1, V1> listener,
-      Executor executor) {
-    InternalBackingMapEventListener backingMapEventListener =
-        listeners.computeIfAbsent(listener, k -> new InternalBackingMapEventListener(listener));
+  public CompletableFuture<Void> addListener(MapEventListener<K1, V1> listener, Executor executor) {
+    InternalBackingMapEventListener backingMapEventListener = listeners.computeIfAbsent(listener,
+        k -> new InternalBackingMapEventListener(listener));
     return backingMap.addListener(backingMapEventListener, executor);
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(
-      MapEventListener<K1, V1> listener) {
+  public CompletableFuture<Void> removeListener(MapEventListener<K1, V1> listener) {
     InternalBackingMapEventListener backingMapEventListener = listeners.remove(listener);
     if (backingMapEventListener == null) {
       return CompletableFuture.completedFuture(null);
@@ -375,10 +358,8 @@ public class TranscodingAsyncConsistentTreeMap<K1, V1, K2, V2> implements AsyncC
           event.type(),
           event.name(),
           keyDecoder.apply(event.key()),
-          event.newValue() != null ?
-              event.newValue().map(valueDecoder) : null,
-          event.oldValue() != null ?
-              event.oldValue().map(valueDecoder) : null));
+          event.newValue() != null ? event.newValue().map(valueDecoder) : null,
+          event.oldValue() != null ? event.oldValue().map(valueDecoder) : null));
     }
   }
 }
