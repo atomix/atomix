@@ -229,6 +229,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
           .whenCompleteAsync((response, error) -> {
             protocol.unregisterEventListener(sessionId);
             clusterService.removeListener(clusterEventListener);
+            future.complete(null);
           }, threadContext);
     } else {
       future.complete(null);
