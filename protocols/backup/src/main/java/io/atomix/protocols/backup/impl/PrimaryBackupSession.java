@@ -24,7 +24,8 @@ import io.atomix.primitive.session.SessionEvent;
 import io.atomix.primitive.session.SessionEvent.Type;
 import io.atomix.primitive.session.SessionEventListener;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.protocols.backup.protocol.PrimaryBackupServerProtocol;
+import io.atomix.protocols.backup.PrimaryBackupServer.Role;
+import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 
 import java.util.Set;
 
@@ -33,24 +34,15 @@ import java.util.Set;
  */
 public class PrimaryBackupSession implements Session {
   private final SessionId sessionId;
-  private final String serviceName;
-  private final PrimitiveType primitiveType;
   private final NodeId nodeId;
-  private final PrimaryBackupServerProtocol protocol;
+  private final PrimaryBackupServiceContext context;
   private final Set<SessionEventListener> eventListeners = Sets.newIdentityHashSet();
   private State state = State.OPEN;
 
-  public PrimaryBackupSession(
-      SessionId sessionId,
-      String serviceName,
-      PrimitiveType primitiveType,
-      NodeId nodeId,
-      PrimaryBackupServerProtocol protocol) {
+  public PrimaryBackupSession(SessionId sessionId, NodeId nodeId, PrimaryBackupServiceContext context) {
     this.sessionId = sessionId;
-    this.serviceName = serviceName;
-    this.primitiveType = primitiveType;
     this.nodeId = nodeId;
-    this.protocol = protocol;
+    this.context = context;
   }
 
   @Override
@@ -60,12 +52,12 @@ public class PrimaryBackupSession implements Session {
 
   @Override
   public String serviceName() {
-    return serviceName;
+    return context.serviceName();
   }
 
   @Override
   public PrimitiveType serviceType() {
-    return primitiveType;
+    return context.serviceType();
   }
 
   @Override
@@ -100,7 +92,9 @@ public class PrimaryBackupSession implements Session {
 
   @Override
   public void publish(PrimitiveEvent event) {
-    protocol.event(nodeId, sessionId, event);
+    if (context.getRole() == Role.PRIMARY) {
+      context.protocol().event(nodeId, sessionId, event);
+    }
   }
 
   public void expire() {

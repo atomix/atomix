@@ -149,6 +149,15 @@ public class PrimaryBackupServiceContext implements ServiceContext {
         });
   }
 
+  /**
+   * Returns the current service role.
+   *
+   * @return the current service role
+   */
+  public Role getRole() {
+    return role.role();
+  }
+
   @Override
   public PrimitiveId serviceId() {
     return primitiveId;
@@ -463,12 +472,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * @return the service session
    */
   public PrimaryBackupSession createSession(long sessionId, NodeId nodeId) {
-    PrimaryBackupSession session = new PrimaryBackupSession(
-        SessionId.from(sessionId),
-        descriptor.name(),
-        primitiveType,
-        nodeId,
-        protocol);
+    PrimaryBackupSession session = new PrimaryBackupSession(SessionId.from(sessionId), nodeId, this);
     sessions.openSession(session);
     return session;
   }
