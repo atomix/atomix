@@ -229,7 +229,7 @@ public class ConsistentSetMultimapTest extends AbstractAtomixTest {
     //Test removeAll of entire entry
     all.forEach(key -> {
       map.removeAll(key).thenAccept(result -> {
-        assertEquals(all, result.value());
+        assertTrue(stringArrayCollectionIsEqual(all, result.value()));
       }).join();
       map.removeAll(key).thenAccept(result -> {
         assertNotEquals(all, result.value());
@@ -249,11 +249,11 @@ public class ConsistentSetMultimapTest extends AbstractAtomixTest {
     all.forEach(key -> {
       map.replaceValues(key, all)
           .thenAccept(result ->
-              assertEquals(all, result.value()))
+              assertTrue(stringArrayCollectionIsEqual(all, result.value())))
           .join();
       map.replaceValues(key, Lists.newArrayList())
           .thenAccept(result ->
-              assertEquals(all, result.value()))
+              assertTrue(stringArrayCollectionIsEqual(all, result.value())))
           .join();
       map.replaceValues(key, all)
           .thenAccept(result ->
@@ -271,7 +271,7 @@ public class ConsistentSetMultimapTest extends AbstractAtomixTest {
               assertTrue(result)).join();
       map.replaceValues(key, Lists.newArrayList())
           .thenAccept(result ->
-              assertEquals(Lists.newArrayList(two, three, four), result.value()))
+              assertTrue(stringArrayCollectionIsEqual(Lists.newArrayList(two, three, four), result.value())))
           .join();
       map.replaceValues(key, all)
           .thenAccept(result ->
@@ -302,15 +302,14 @@ public class ConsistentSetMultimapTest extends AbstractAtomixTest {
 
     all.forEach(key -> {
       map.get(key).thenAccept(result -> {
-        assertEquals(all, result.value());
+        assertTrue(stringArrayCollectionIsEqual(all, result.value()));
       }).join();
     });
 
     //Test that the key set is correct
     map.keySet()
         .thenAccept(result ->
-            assertTrue(stringArrayCollectionIsEqual(all,
-                result)))
+            assertTrue(stringArrayCollectionIsEqual(all, result)))
         .join();
     //Test that the correct set and occurrence of values are found in the
     //values result
@@ -377,34 +376,6 @@ public class ConsistentSetMultimapTest extends AbstractAtomixTest {
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }
-  }
-
-  /**
-   * Returns two arrays contain the same set of elements,
-   * regardless of order.
-   *
-   * @param o1 first collection
-   * @param o2 second collection
-   * @return true if they contain the same elements
-   */
-  private boolean byteArrayCollectionIsEqual(
-      Collection<? extends byte[]> o1, Collection<? extends byte[]> o2) {
-    if (o1 == null || o2 == null || o1.size() != o2.size()) {
-      return false;
-    }
-    for (byte[] array1 : o1) {
-      boolean matched = false;
-      for (byte[] array2 : o2) {
-        if (Arrays.equals(array1, array2)) {
-          matched = true;
-          break;
-        }
-      }
-      if (!matched) {
-        return false;
-      }
-    }
-    return true;
   }
 
   /**
