@@ -175,7 +175,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
    */
   private void changeReplicas(PrimaryTerm term) {
     threadContext.execute(() -> {
-      if (term.term() > this.term.term()) {
+      if (this.term == null || term.term() > this.term.term()) {
         this.term = term;
       }
     });

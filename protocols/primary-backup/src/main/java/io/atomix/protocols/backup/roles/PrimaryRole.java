@@ -117,12 +117,13 @@ public class PrimaryRole extends PrimaryBackupRole {
       long index = context.nextIndex();
       long timestamp = System.currentTimeMillis();
       return replicator.replicate(new ExecuteOperation(
-          context.setIndex(index),
+          index,
           timestamp,
           newSession.sessionId().id(),
           newSession.nodeId(),
           null))
           .thenApply(v -> {
+            context.setIndex(index);
             context.setTimestamp(timestamp);
             return applyQuery(request, newSession);
           });
