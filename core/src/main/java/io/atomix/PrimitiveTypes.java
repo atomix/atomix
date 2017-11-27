@@ -24,6 +24,7 @@ import io.atomix.map.AtomicCounterMapType;
 import io.atomix.map.ConsistentMapType;
 import io.atomix.map.ConsistentTreeMapType;
 import io.atomix.multimap.ConsistentMultimapType;
+import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.queue.WorkQueueType;
 import io.atomix.set.DistributedSetType;
@@ -146,6 +147,16 @@ public final class PrimitiveTypes {
   }
 
   /**
+   * Returns a new document tree type.
+   *
+   * @param <V> the tree value type
+   * @return a new document tree type
+   */
+  public static <V> DocumentTreeType<V> tree(Ordering ordering) {
+    return DocumentTreeType.ordered(ordering);
+  }
+
+  /**
    * Returns a new value type.
    *
    * @param <V> the value value type
@@ -182,6 +193,8 @@ public final class PrimitiveTypes {
     registry.register(multimap());
     registry.register(set());
     registry.register(tree());
+    registry.register(tree(Ordering.NATURAL));
+    registry.register(tree(Ordering.INSERTION));
     registry.register(value());
     registry.register(workQueue());
   }

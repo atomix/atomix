@@ -86,11 +86,12 @@ public class PartitionedAsyncDocumentTree<V> implements AsyncDocumentTree<V> {
   public CompletableFuture<Map<String, Versioned<V>>> getChildren(DocumentPath path) {
     return Futures.allOf(partitions().stream()
         .map(partition -> partition.getChildren(path).exceptionally(r -> null))
-        .collect(Collectors.toList())).thenApply(allChildren -> {
-      Map<String, Versioned<V>> children = Maps.newLinkedHashMap();
-      allChildren.stream().filter(Objects::nonNull).forEach(children::putAll);
-      return children;
-    });
+        .collect(Collectors.toList()))
+        .thenApply(allChildren -> {
+          Map<String, Versioned<V>> children = Maps.newLinkedHashMap();
+          allChildren.stream().filter(Objects::nonNull).forEach(children::putAll);
+          return children;
+        });
   }
 
   @Override

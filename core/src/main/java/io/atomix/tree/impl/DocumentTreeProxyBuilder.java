@@ -82,9 +82,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
       return partitions.getPartitionIds().get(Hashing.consistentHash(bucket, partitions.getPartitionIds().size()));
     };
 
-
     AsyncDocumentTree<V> tree = new PartitionedAsyncDocumentTree<>(name(), trees, partitioner);
-
     if (relaxedReadConsistency()) {
       tree = new CachingAsyncDocumentTree<>(tree);
     }

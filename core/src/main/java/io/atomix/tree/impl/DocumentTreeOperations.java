@@ -37,12 +37,12 @@ import java.util.Optional;
  * {@link DocumentTreeProxy} resource state machine operations.
  */
 public enum DocumentTreeOperations implements OperationId {
-  ADD_LISTENER("set", OperationType.COMMAND),
-  REMOVE_LISTENER("compareAndSet", OperationType.COMMAND),
-  GET("incrementAndGet", OperationType.QUERY),
-  GET_CHILDREN("getAndIncrement", OperationType.QUERY),
-  UPDATE("addAndGet", OperationType.COMMAND),
-  CLEAR("getAndAdd", OperationType.COMMAND),
+  ADD_LISTENER("addListener", OperationType.COMMAND),
+  REMOVE_LISTENER("removeListener", OperationType.COMMAND),
+  GET("get", OperationType.QUERY),
+  GET_CHILDREN("getChildren", OperationType.QUERY),
+  UPDATE("update", OperationType.COMMAND),
+  CLEAR("clear", OperationType.COMMAND),
   BEGIN("begin", OperationType.COMMAND),
   PREPARE("prepare", OperationType.COMMAND),
   PREPARE_AND_COMMIT("prepareAndCommit", OperationType.COMMAND),
