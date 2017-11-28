@@ -55,6 +55,16 @@ public interface OperationId extends Identifier<String> {
   }
 
   /**
+   * Simplifies the given operation identifier.
+   *
+   * @param operationId the operation identifier to simplify
+   * @return the simplified operation identifier
+   */
+  static OperationId simplify(OperationId operationId) {
+    return new DefaultOperationId(operationId.id(), operationId.type());
+  }
+
+  /**
    * Returns the operation type.
    *
    * @return the operation type

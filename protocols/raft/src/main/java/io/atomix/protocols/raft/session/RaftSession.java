@@ -158,7 +158,7 @@ public interface RaftSession {
    * @throws NullPointerException if the event is {@code null}
    */
   default void publish(EventType eventType, byte[] event) {
-    publish(new RaftEvent(eventType, event));
+    publish(new RaftEvent(EventType.simplify(eventType), event));
   }
 
   /**

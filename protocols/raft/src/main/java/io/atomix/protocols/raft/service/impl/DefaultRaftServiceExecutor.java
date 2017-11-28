@@ -48,7 +48,7 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
   private final List<ScheduledTask> complete = new ArrayList<>();
-  private final Map<OperationId, Function<Commit<byte[]>, byte[]>> operations = new HashMap<>();
+  private final Map<String, Function<Commit<byte[]>, byte[]>> operations = new HashMap<>();
   private OperationType operationType;
   private long timestamp;
 
@@ -114,7 +114,7 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
   public void handle(OperationId operationId, Function<Commit<byte[]>, byte[]> callback) {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
-    operations.put(operationId, callback);
+    operations.put(operationId.id(), callback);
     log.debug("Registered operation callback {}", operationId);
   }
 
@@ -125,7 +125,7 @@ public class DefaultRaftServiceExecutor implements RaftServiceExecutor {
     prepareOperation(commit);
 
     // Look up the registered callback for the operation.
-    Function<Commit<byte[]>, byte[]> callback = operations.get(commit.operation());
+    Function<Commit<byte[]>, byte[]> callback = operations.get(commit.operation().id());
 
     if (callback == null) {
       throw new IllegalStateException("Unknown state machine operation: " + commit.operation());

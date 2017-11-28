@@ -90,7 +90,7 @@ public class DelegatingRaftProxy implements RaftProxy {
   @Override
   public void addEventListener(EventType eventType, Runnable listener) {
     Consumer<RaftEvent> wrappedListener = e -> {
-      if (e.type().equals(eventType)) {
+      if (e.type().id().equals(eventType.id())) {
         listener.run();
       }
     };
@@ -101,7 +101,7 @@ public class DelegatingRaftProxy implements RaftProxy {
   @Override
   public void addEventListener(EventType eventType, Consumer<byte[]> listener) {
     Consumer<RaftEvent> wrappedListener = e -> {
-      if (e.type().equals(eventType)) {
+      if (e.type().id().equals(eventType.id())) {
         listener.accept(e.value());
       }
     };
@@ -112,7 +112,7 @@ public class DelegatingRaftProxy implements RaftProxy {
   @Override
   public <T> void addEventListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener) {
     Consumer<RaftEvent> wrappedListener = e -> {
-      if (e.type().equals(eventType)) {
+      if (e.type().id().equals(eventType.id())) {
         listener.accept(decoder.apply(e.value()));
       }
     };
