@@ -781,7 +781,7 @@ public class RaftTest extends ConcurrentTestCase {
     AtomicLong index = new AtomicLong();
 
     RaftClient client = createClient();
-    RaftProxy session = createSession(client);
+    RaftProxy session = createSession(client, consistency);
     session.<Long>addEventListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(counter.incrementAndGet(), 3);
       threadAssertTrue(event >= index.get());

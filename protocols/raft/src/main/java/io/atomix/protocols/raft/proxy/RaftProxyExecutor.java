@@ -80,7 +80,7 @@ public interface RaftProxyExecutor {
    * @throws NullPointerException if {@code command} is null
    */
   default CompletableFuture<byte[]> execute(OperationId operationId) {
-    return execute(new RaftOperation(operationId, HeapBytes.EMPTY));
+    return execute(new RaftOperation(OperationId.simplify(operationId), HeapBytes.EMPTY));
   }
 
   /**
@@ -92,7 +92,7 @@ public interface RaftProxyExecutor {
    * @throws NullPointerException if {@code command} is null
    */
   default CompletableFuture<byte[]> execute(OperationId operationId, byte[] operation) {
-    return execute(new RaftOperation(operationId, operation));
+    return execute(new RaftOperation(OperationId.simplify(operationId), operation));
   }
 
   /**

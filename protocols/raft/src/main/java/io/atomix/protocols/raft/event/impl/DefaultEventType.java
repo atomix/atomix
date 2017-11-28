@@ -28,4 +28,9 @@ public class DefaultEventType extends AbstractIdentifier<String> implements Even
   public DefaultEventType(String value) {
     super(value);
   }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof EventType && ((EventType) object).id().equals(id());
+  }
 }

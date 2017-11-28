@@ -19,8 +19,6 @@ import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.utils.AbstractIdentifier;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-
 /**
  * Raft operation identifier.
  */
@@ -47,9 +45,6 @@ public class DefaultOperationId extends AbstractIdentifier<String> implements Op
 
   @Override
   public String toString() {
-    return toStringHelper(this)
-        .add("id", id())
-        .add("type", type())
-        .toString();
+    return id();
   }
 }
