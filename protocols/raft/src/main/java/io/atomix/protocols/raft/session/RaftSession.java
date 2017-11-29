@@ -135,7 +135,7 @@ public interface RaftSession {
    * @param eventType the event type
    */
   default void publish(EventType eventType) {
-    publish(new RaftEvent(eventType, HeapBytes.EMPTY));
+    publish(eventType, HeapBytes.EMPTY);
   }
 
   /**
