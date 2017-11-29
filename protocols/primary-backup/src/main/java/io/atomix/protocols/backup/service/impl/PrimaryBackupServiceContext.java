@@ -46,19 +46,16 @@ import io.atomix.protocols.backup.roles.BackupRole;
 import io.atomix.protocols.backup.roles.NoneRole;
 import io.atomix.protocols.backup.roles.PrimaryBackupRole;
 import io.atomix.protocols.backup.roles.PrimaryRole;
-import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClock;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -68,9 +65,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft server state machine executor.
  */
 public class PrimaryBackupServiceContext implements ServiceContext {
-  private static final Serializer SERIALIZER = PrimaryBackupSerializers.PROTOCOL;
-  private static final Duration HEARTBEAT_INTERVAL = Duration.ofSeconds(1);
-
   private final Logger log;
   private final NodeId localNodeId;
   private final String serverName;
@@ -443,13 +437,17 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     ComposableFuture<CloseResponse> future = new ComposableFuture<>();
     threadContext.execute(() -> {
       PrimaryBackupSession session = sessions.getSession(request.session());
-      role.close(session).whenComplete((result, error) -> {
-        if (error == null) {
-          future.complete(CloseResponse.ok());
-        } else {
-          future.complete(CloseResponse.error());
-        }
-      });
+      if (session != null) {
+        role.close(session).whenComplete((result, error) -> {
+          if (error == null) {
+            future.complete(CloseResponse.ok());
+          } else {
+            future.complete(CloseResponse.error());
+          }
+        });
+      } else {
+        future.complete(CloseResponse.error());
+      }
     });
     return future;
   }
@@ -515,7 +513,18 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       primary = term.primary();
       backups = term.backups().subList(0, Math.min(descriptor.backups(), term.backups().size()));
 
-      if (primary.equals(clusterService.getLocalNode().id())) {
+      if (backups.size() < descriptor.backups()) {
+        if (this.role == null) {
+          log.warn("Not enough backups; transitioning to {}", Role.NONE);
+          this.role = new NoneRole(this);
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+        } else if (this.role.role() != Role.NONE) {
+          log.warn("Not enough backups; transitioning to {}", Role.NONE);
+          this.role.close();
+          this.role = new NoneRole(this);
+          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+        }
+      } else if (primary.equals(clusterService.getLocalNode().id())) {
         if (this.role == null) {
           this.role = new PrimaryRole(this);
           log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);

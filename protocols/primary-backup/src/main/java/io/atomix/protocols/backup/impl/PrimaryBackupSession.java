@@ -102,7 +102,7 @@ public class PrimaryBackupSession implements Session {
   public void publish(PrimitiveEvent event) {
     if (context.getRole() == Role.PRIMARY) {
       context.threadContext().execute(() -> {
-        log.trace("Sending {} to {}", event);
+        log.trace("Sending {} to {}", event, nodeId);
         context.protocol().event(nodeId, sessionId, event);
       });
     }

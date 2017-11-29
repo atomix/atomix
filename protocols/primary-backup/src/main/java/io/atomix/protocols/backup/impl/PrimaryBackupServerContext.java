@@ -20,8 +20,11 @@ import io.atomix.cluster.ClusterService;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PrimaryElection;
+import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.BackupResponse;
+import io.atomix.protocols.backup.protocol.CloseRequest;
+import io.atomix.protocols.backup.protocol.CloseResponse;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.ExecuteResponse;
 import io.atomix.protocols.backup.protocol.MetadataRequest;
@@ -34,6 +37,7 @@ import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -65,6 +69,17 @@ public class PrimaryBackupServerContext {
   }
 
   /**
+   * Returns the current server role.
+   *
+   * @return the current server role
+   */
+  public Role getRole() {
+    return Objects.equals(primaryElection.getTerm().join().primary(), clusterService.getLocalNode().id())
+        ? Role.PRIMARY
+        : Role.BACKUP;
+  }
+
+  /**
    * Opens the server context.
    */
   public void open() {
@@ -91,6 +106,13 @@ public class PrimaryBackupServerContext {
    */
   private CompletableFuture<RestoreResponse> restore(RestoreRequest request) {
     return getService(request).thenCompose(service -> service.restore(request));
+  }
+
+  /**
+   * Handles a close request.
+   */
+  private CompletableFuture<CloseResponse> close(CloseRequest request) {
+    return getService(request).thenCompose(service -> service.close(request));
   }
 
   /**
@@ -128,6 +150,7 @@ public class PrimaryBackupServerContext {
     protocol.registerExecuteHandler(this::execute);
     protocol.registerBackupHandler(this::backup);
     protocol.registerRestoreHandler(this::restore);
+    protocol.registerCloseHandler(this::close);
     protocol.registerMetadataHandler(this::metadata);
   }
 
@@ -138,6 +161,7 @@ public class PrimaryBackupServerContext {
     protocol.unregisterExecuteHandler();
     protocol.unregisterBackupHandler();
     protocol.unregisterRestoreHandler();
+    protocol.unregisterCloseHandler();
     protocol.unregisterMetadataHandler();
   }
 

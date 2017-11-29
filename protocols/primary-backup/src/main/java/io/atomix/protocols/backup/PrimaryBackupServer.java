@@ -76,6 +76,15 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     this.context = checkNotNull(context, "context cannot be null");
   }
 
+  /**
+   * Returns the current server role.
+   *
+   * @return the current server role
+   */
+  public Role getRole() {
+    return context.getRole();
+  }
+
   @Override
   public CompletableFuture<PrimaryBackupServer> open() {
     context.open();

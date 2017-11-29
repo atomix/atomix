@@ -149,13 +149,13 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the protocol builder
      */
     public Builder withBackups(int numBackups) {
-      checkArgument(numBackups > 0 || numBackups == -1, "numBackups must be positive");
+      checkArgument(numBackups >= 0, "numBackups must be positive");
       this.numBackups = numBackups;
       return this;
     }
 
     @Override
-    public PrimitiveProtocol build() {
+    public MultiPrimaryProtocol build() {
       return new MultiPrimaryProtocol(group, consistency, replication, numBackups);
     }
   }
