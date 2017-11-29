@@ -127,7 +127,7 @@ public interface Session {
    * @param eventType the event type
    */
   default void publish(EventType eventType) {
-    publish(new PrimitiveEvent(eventType, HeapBytes.EMPTY));
+    publish(eventType, HeapBytes.EMPTY);
   }
 
   /**
