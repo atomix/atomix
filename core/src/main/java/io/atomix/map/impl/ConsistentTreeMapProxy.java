@@ -104,14 +104,12 @@ public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncC
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> higherEntry(
-      String key) {
+  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> higherEntry(String key) {
     return proxy.invoke(HIGHER_ENTRY, serializer()::encode, new HigherEntry(key), serializer()::decode);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lowerEntry(
-      String key) {
+  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lowerEntry(String key) {
     return proxy.invoke(LOWER_ENTRY, serializer()::encode, new LowerEntry(key), serializer()::decode);
   }
 
@@ -162,8 +160,7 @@ public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncC
 
   @Override
   public CompletableFuture<NavigableMap<String, byte[]>> subMap(
-      String upperKey, String lowerKey, boolean inclusiveUpper,
-      boolean inclusiveLower) {
+      String upperKey, String lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 }

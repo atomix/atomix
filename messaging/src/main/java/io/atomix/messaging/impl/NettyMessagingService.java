@@ -482,7 +482,7 @@ public class NettyMessagingService implements ManagedMessagingService {
       try {
         responsePayload = handler.apply(message.sender(), message.payload());
       } catch (Exception e) {
-        log.debug("An error occurred in a message handler: {}", e);
+        log.warn("An error occurred in a message handler: {}", e);
         status = InternalReply.Status.ERROR_HANDLER_EXCEPTION;
       }
       connection.reply(message, status, Optional.ofNullable(responsePayload));
@@ -497,7 +497,7 @@ public class NettyMessagingService implements ManagedMessagingService {
         if (error == null) {
           status = InternalReply.Status.OK;
         } else {
-          log.debug("An error occurred in a message handler: {}", error);
+          log.warn("An error occurred in a message handler: {}", error);
           status = InternalReply.Status.ERROR_HANDLER_EXCEPTION;
         }
         connection.reply(message, status, Optional.ofNullable(result));

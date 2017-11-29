@@ -77,7 +77,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
     Partitioner<DocumentPath> partitioner = key -> {
       int bucket = (key == null) ? 0 :
           Math.abs(Hashing.murmur3_32()
-              .hashObject(key.pathElements(), STR_LIST_FUNNEL)
+              .hashUnencodedChars(key.pathElements().size() == 1 ? key.pathElements().get(0) : key.pathElements().get(1))
               .asInt()) % NUM_BUCKETS;
       return partitions.getPartitionIds().get(Hashing.consistentHash(bucket, partitions.getPartitionIds().size()));
     };
