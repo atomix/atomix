@@ -281,6 +281,11 @@ final class RaftProxyInvoker {
      */
     public void fail(Throwable t) {
       complete(t);
+
+      // If the session has been closed, update the client's state.
+      if (CLOSED_PREDICATE.test(t)) {
+        state.setState(RaftProxy.State.CLOSED);
+      }
     }
 
     /**
@@ -304,13 +309,11 @@ final class RaftProxyInvoker {
    * Command operation attempt.
    */
   private final class CommandAttempt extends OperationAttempt<CommandRequest, CommandResponse> {
-    private final long time = System.currentTimeMillis();
-
-    public CommandAttempt(long sequence, CommandRequest request, CompletableFuture<byte[]> future) {
+    CommandAttempt(long sequence, CommandRequest request, CompletableFuture<byte[]> future) {
       super(sequence, 1, request, future);
     }
 
-    public CommandAttempt(long sequence, int attempt, CommandRequest request, CompletableFuture<byte[]> future) {
+    CommandAttempt(long sequence, int attempt, CommandRequest request, CompletableFuture<byte[]> future) {
       super(sequence, attempt, request, future);
     }
 
@@ -367,16 +370,6 @@ final class RaftProxyInvoker {
     }
 
     @Override
-    public void fail(Throwable cause) {
-      super.fail(cause);
-
-      // If the session has been closed, update the client's state.
-      if (CLOSED_PREDICATE.test(cause)) {
-        state.setState(RaftProxy.State.CLOSED);
-      }
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     protected void complete(CommandResponse response) {
       sequence(response, () -> {
@@ -391,11 +384,11 @@ final class RaftProxyInvoker {
    * Query operation attempt.
    */
   private final class QueryAttempt extends OperationAttempt<QueryRequest, QueryResponse> {
-    public QueryAttempt(long sequence, QueryRequest request, CompletableFuture<byte[]> future) {
+    QueryAttempt(long sequence, QueryRequest request, CompletableFuture<byte[]> future) {
       super(sequence, 1, request, future);
     }
 
-    public QueryAttempt(long sequence, int attempt, QueryRequest request, CompletableFuture<byte[]> future) {
+    QueryAttempt(long sequence, int attempt, QueryRequest request, CompletableFuture<byte[]> future) {
       super(sequence, attempt, request, future);
     }
 
@@ -419,6 +412,12 @@ final class RaftProxyInvoker {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
           complete(response);
+        } else if (response.error().type() == RaftError.Type.UNKNOWN_CLIENT
+            || response.error().type() == RaftError.Type.UNKNOWN_SESSION
+            || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
+            || response.error().type() == RaftError.Type.CLOSED_SESSION) {
+          state.setState(RaftProxy.State.CLOSED);
+          complete(response.error().createException());
         } else {
           complete(response.error().createException());
         }
