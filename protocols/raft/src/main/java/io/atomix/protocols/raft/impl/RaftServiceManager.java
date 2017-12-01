@@ -449,7 +449,6 @@ public class RaftServiceManager implements AutoCloseable {
 
     // If the server session is null, the session either never existed or already expired.
     if (session == null) {
-      logger.warn("Unknown session: " + entry.entry().session());
       return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + entry.entry().session()));
     }
 
