@@ -15,7 +15,9 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import com.google.common.collect.Sets;
 import io.atomix.cluster.NodeId;
+import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
@@ -75,6 +77,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -88,6 +91,7 @@ public final class LeaderRole extends ActiveRole {
   private final LeaderAppender appender;
   private Scheduled appendTimer;
   private final Map<NodeId, Scheduled> heartbeatTimers = new HashMap<>();
+  private final Set<SessionId> expiring = Sets.newHashSet();
   private long configuring;
   private boolean transferring;
 
@@ -277,14 +281,20 @@ public final class LeaderRole extends ActiveRole {
     appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
         .whenCompleteAsync((entry, error) -> {
           if (error != null) {
+            expiring.remove(session.sessionId());
             return;
           }
 
           log.trace("Appended {}", entry);
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            if (isOpen() && commitError == null) {
-              raft.getStateMachine().<Long>apply(entry.index());
+            if (isOpen()) {
+              if (commitError == null) {
+                raft.getStateMachine().<Long>apply(entry.index())
+                    .whenComplete((r, e) -> expiring.remove(session.sessionId()));
+              } else {
+                expiring.remove(session.sessionId());
+              }
             }
           });
         }, raft.getThreadContext());
@@ -712,47 +722,47 @@ public final class LeaderRole extends ActiveRole {
    * Commits a command.
    *
    * @param request the command request
-   * @param future the command response future
+   * @param future  the command response future
    */
   private void commitCommand(CommandRequest request, CompletableFuture<CommandResponse> future) {
     final long term = raft.getTerm();
     final long timestamp = System.currentTimeMillis();
 
     appendAndCompact(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation()))
-      .whenCompleteAsync((entry, error) -> {
-        if (error != null) {
-          future.complete(CommandResponse.builder()
-              .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.COMMAND_FAILURE)
-              .build());
-          return;
-        }
-
-        log.trace("Appended {}", entry);
-
-        // Replicate the command to followers.
-        appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
-          raft.checkThread();
-          if (isOpen()) {
-            // If the command was successfully committed, apply it to the state machine.
-            if (commitError == null) {
-              raft.getStateMachine().<OperationResult>apply(entry.index()).whenComplete((r, e) -> {
-                completeOperation(r, CommandResponse.builder(), e, future);
-              });
-            } else {
-              future.complete(CommandResponse.builder()
-                  .withStatus(RaftResponse.Status.ERROR)
-                  .withError(RaftError.Type.PROTOCOL_ERROR)
-                  .build());
-            }
-          } else {
+        .whenCompleteAsync((entry, error) -> {
+          if (error != null) {
             future.complete(CommandResponse.builder()
                 .withStatus(RaftResponse.Status.ERROR)
                 .withError(RaftError.Type.COMMAND_FAILURE)
                 .build());
+            return;
           }
-        });
-      }, raft.getThreadContext());
+
+          log.trace("Appended {}", entry);
+
+          // Replicate the command to followers.
+          appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+            raft.checkThread();
+            if (isOpen()) {
+              // If the command was successfully committed, apply it to the state machine.
+              if (commitError == null) {
+                raft.getStateMachine().<OperationResult>apply(entry.index()).whenComplete((r, e) -> {
+                  completeOperation(r, CommandResponse.builder(), e, future);
+                });
+              } else {
+                future.complete(CommandResponse.builder()
+                    .withStatus(RaftResponse.Status.ERROR)
+                    .withError(RaftError.Type.PROTOCOL_ERROR)
+                    .build());
+              }
+            } else {
+              future.complete(CommandResponse.builder()
+                  .withStatus(RaftResponse.Status.ERROR)
+                  .withError(RaftError.Type.COMMAND_FAILURE)
+                  .build());
+            }
+          });
+        }, raft.getThreadContext());
   }
 
   @Override
@@ -1058,7 +1068,7 @@ public final class LeaderRole extends ActiveRole {
    * Appends an entry to the Raft log and compacts logs if necessary.
    *
    * @param entry the entry to append
-   * @param <E> the entry type
+   * @param <E>   the entry type
    * @return a completable future to be completed once the entry has been appended
    */
   private <E extends RaftLogEntry> CompletableFuture<Indexed<E>> appendAndCompact(E entry) {
@@ -1068,9 +1078,9 @@ public final class LeaderRole extends ActiveRole {
   /**
    * Appends an entry to the Raft log and compacts logs if necessary.
    *
-   * @param entry the entry to append
+   * @param entry   the entry to append
    * @param attempt the append attempt count
-   * @param <E> the entry type
+   * @param <E>     the entry type
    * @return a completable future to be completed once the entry has been appended
    */
   protected <E extends RaftLogEntry> CompletableFuture<Indexed<E>> appendAndCompact(E entry, int attempt) {
