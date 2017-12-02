@@ -187,6 +187,7 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
           cluster.configure(new Configuration(response.index(), response.term(), response.timestamp(), response.members()));
           future.complete(null);
         } else if (response.error() == null
+            || response.error().type() == RaftError.Type.UNAVAILABLE
             || response.error().type() == RaftError.Type.PROTOCOL_ERROR
             || response.error().type() == RaftError.Type.NO_LEADER) {
           cancelConfigureTimer();

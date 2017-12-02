@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.protocols.raft.RaftError;
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -41,13 +43,13 @@ import io.atomix.protocols.raft.protocol.PollResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.protocol.RaftResponse.Status;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.TransferRequest;
 import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.utils.concurrent.Futures;
 
@@ -93,72 +95,128 @@ public class InactiveRole extends AbstractRole {
 
   @Override
   public CompletableFuture<MetadataResponse> onMetadata(MetadataRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(MetadataResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<KeepAliveResponse> onKeepAlive(KeepAliveRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(KeepAliveResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<OpenSessionResponse> onOpenSession(OpenSessionRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(OpenSessionResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<CloseSessionResponse> onCloseSession(CloseSessionRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(CloseSessionResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<InstallResponse> onInstall(InstallRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(InstallResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<JoinResponse> onJoin(JoinRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(JoinResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<ReconfigureResponse> onReconfigure(ReconfigureRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(ReconfigureResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<LeaveResponse> onLeave(LeaveRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(LeaveResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<TransferResponse> onTransfer(TransferRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(TransferResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<AppendResponse> onAppend(AppendRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(AppendResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<PollResponse> onPoll(PollRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(PollResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<VoteResponse> onVote(VoteRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(VoteResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<CommandResponse> onCommand(CommandRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(CommandResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
   @Override
   public CompletableFuture<QueryResponse> onQuery(QueryRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+    logRequest(request);
+    return Futures.completedFuture(logResponse(QueryResponse.builder()
+        .withStatus(Status.ERROR)
+        .withError(RaftError.Type.UNAVAILABLE)
+        .build()));
   }
 
 }

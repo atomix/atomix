@@ -245,8 +245,8 @@ public class RaftProxyConnection {
   @SuppressWarnings("unchecked")
   protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, NodeId member, RaftResponse response, Throwable error, CompletableFuture future) {
     if (error == null) {
+      log.trace("Received {} from {}", response, member);
       if (COMPLETE_PREDICATE.test(response)) {
-        log.trace("Received {} from {}", response, member);
         future.complete(response);
         selector.reset();
       } else {
