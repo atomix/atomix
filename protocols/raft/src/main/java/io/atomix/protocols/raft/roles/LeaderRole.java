@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import com.google.common.collect.Sets;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
@@ -53,6 +54,7 @@ import io.atomix.protocols.raft.protocol.TransferRequest;
 import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
+import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
@@ -75,6 +77,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -88,6 +91,7 @@ public final class LeaderRole extends ActiveRole {
   private final LeaderAppender appender;
   private Scheduled appendTimer;
   private final Map<MemberId, Scheduled> heartbeatTimers = new HashMap<>();
+  private final Set<SessionId> expiring = Sets.newHashSet();
   private long configuring;
   private boolean transferring;
 
@@ -273,21 +277,29 @@ public final class LeaderRole extends ActiveRole {
    * Expires the given session.
    */
   private void expireSession(RaftSessionContext session) {
-    log.debug("Expiring session due to heartbeat failure: {}", session);
-    appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
-        .whenCompleteAsync((entry, error) -> {
-          if (error != null) {
-            return;
-          }
-
-          log.trace("Appended {}", entry);
-          appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
-            raft.checkThread();
-            if (isOpen() && commitError == null) {
-              raft.getStateMachine().<Long>apply(entry.index());
+    if (expiring.add(session.sessionId())) {
+      log.debug("Expiring session due to heartbeat failure: {}", session);
+      appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
+          .whenCompleteAsync((entry, error) -> {
+            if (error != null) {
+              expiring.remove(session.sessionId());
+              return;
             }
-          });
-        }, raft.getThreadContext());
+
+            log.trace("Appended {}", entry);
+            appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+              raft.checkThread();
+              if (isOpen()) {
+                if (commitError == null) {
+                  raft.getStateMachine().<Long>apply(entry.index())
+                      .whenCompleteAsync((r, e) -> expiring.remove(session.sessionId()), raft.getThreadContext());
+                } else {
+                  expiring.remove(session.sessionId());
+                }
+              }
+            });
+          }, raft.getThreadContext());
+    }
   }
 
   /**
