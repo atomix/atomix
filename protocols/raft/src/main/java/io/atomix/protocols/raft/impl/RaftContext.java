@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
+import io.atomix.protocols.raft.RaftServer.Role;
 import io.atomix.protocols.raft.ThreadModel;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -157,9 +158,6 @@ public class RaftContext implements AutoCloseable {
     this.stateMachine = new RaftServiceManager(this, threadContextFactory);
 
     this.cluster = new RaftClusterContext(localMemberId, this);
-
-    // Register protocol listeners.
-    registerHandlers(protocol);
   }
 
   /**
@@ -710,7 +708,7 @@ public class RaftContext implements AutoCloseable {
   /**
    * Registers server handlers on the configured protocol.
    */
-  private void registerHandlers(RaftServerProtocol protocol) {
+  private void registerHandlers() {
     protocol.registerOpenSessionHandler(request -> runOnContext(() -> role.onOpenSession(request)));
     protocol.registerCloseSessionHandler(request -> runOnContext(() -> role.onCloseSession(request)));
     protocol.registerKeepAliveHandler(request -> runOnContext(() -> role.onKeepAlive(request)));
@@ -745,7 +743,7 @@ public class RaftContext implements AutoCloseable {
   /**
    * Unregisters server handlers on the configured protocol.
    */
-  private void unregisterHandlers(RaftServerProtocol protocol) {
+  private void unregisterHandlers() {
     protocol.unregisterOpenSessionHandler();
     protocol.unregisterCloseSessionHandler();
     protocol.unregisterKeepAliveHandler();
@@ -851,6 +849,14 @@ public class RaftContext implements AutoCloseable {
 
     log.info("Transitioning to {}", role);
 
+    // If this is the INACTIVE role, unregister handlers to disallow communication. Otherwise,
+    // ensure handlers are registered.
+    if (role == Role.INACTIVE) {
+      unregisterHandlers();
+    } else {
+      registerHandlers();
+    }
+
     // Close the old state.
     try {
       this.role.close().get();
@@ -894,7 +900,7 @@ public class RaftContext implements AutoCloseable {
   @Override
   public void close() {
     // Unregister protocol listeners.
-    unregisterHandlers(protocol);
+    unregisterHandlers();
 
     // Close the log.
     try {
