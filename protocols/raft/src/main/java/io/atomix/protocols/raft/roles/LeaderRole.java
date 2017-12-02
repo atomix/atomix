@@ -291,7 +291,7 @@ public final class LeaderRole extends ActiveRole {
             if (isOpen()) {
               if (commitError == null) {
                 raft.getStateMachine().<Long>apply(entry.index())
-                    .whenComplete((r, e) -> expiring.remove(session.sessionId()));
+                    .whenCompleteAsync((r, e) -> expiring.remove(session.sessionId()), raft.getThreadContext());
               } else {
                 expiring.remove(session.sessionId());
               }
