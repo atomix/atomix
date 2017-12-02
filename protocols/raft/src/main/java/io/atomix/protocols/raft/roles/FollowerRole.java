@@ -67,7 +67,7 @@ public final class FollowerRole extends ActiveRole {
   private void startHeartbeatTimer() {
     log.trace("Starting heartbeat timer");
     AtomicLong lastHeartbeat = new AtomicLong();
-    heartbeatTimer = raft.getThreadContext().schedule(raft.getHeartbeatInterval(), () -> {
+    heartbeatTimer = raft.getThreadContext().schedule(raft.getHeartbeatInterval(), raft.getHeartbeatInterval(), () -> {
       if (raft.getLastHeartbeatTime() > lastHeartbeat.get()) {
         failureDetector.report(raft.getLastHeartbeatTime());
       }
@@ -84,7 +84,8 @@ public final class FollowerRole extends ActiveRole {
         .plus(Duration.ofMillis(random.nextInt((int) raft.getHeartbeatInterval().dividedBy(2).toMillis())));
     heartbeatTimeout = raft.getThreadContext().schedule(delay, () -> {
       if (isOpen()) {
-        if (System.currentTimeMillis() - raft.getLastHeartbeatTime() > raft.getElectionTimeout().toMillis() || failureDetector.phi() >= raft.getElectionThreshold()) {
+        if (System.currentTimeMillis() - raft.getLastHeartbeatTime() > raft.getElectionTimeout().toMillis()
+            || failureDetector.phi() >= raft.getElectionThreshold()) {
           log.debug("Heartbeat timed out in {}", System.currentTimeMillis() - raft.getLastHeartbeatTime());
           sendPollRequests();
         } else {
