@@ -15,14 +15,16 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -70,7 +72,7 @@ public final class MemberSelector implements Iterator<NodeId>, AutoCloseable {
     this.members = new LinkedHashSet<>(members);
     this.strategy = checkNotNull(strategy, "strategy cannot be null");
     this.selectors = checkNotNull(selectors, "selectors cannot be null");
-    this.selections = strategy.selectConnections(leader, new ArrayList<>(members));
+    this.selections = strategy.selectConnections(leader, Lists.newLinkedList(members));
   }
 
   /**
@@ -122,7 +124,7 @@ public final class MemberSelector implements Iterator<NodeId>, AutoCloseable {
    */
   public MemberSelector reset() {
     if (selectionsIterator != null) {
-      this.selections = strategy.selectConnections(leader, new ArrayList<>(members));
+      this.selections = strategy.selectConnections(leader, Lists.newLinkedList(members));
       this.selectionsIterator = null;
     }
     return this;
@@ -137,8 +139,8 @@ public final class MemberSelector implements Iterator<NodeId>, AutoCloseable {
   public MemberSelector reset(NodeId leader, Collection<NodeId> members) {
     if (changed(leader, members)) {
       this.leader = leader;
-      this.members = new LinkedHashSet<>(members);
-      this.selections = strategy.selectConnections(leader, new ArrayList<>(members));
+      this.members = Sets.newLinkedHashSet(members);
+      this.selections = strategy.selectConnections(leader, Lists.newLinkedList(members));
       this.selectionsIterator = null;
     }
     return this;
@@ -148,17 +150,14 @@ public final class MemberSelector implements Iterator<NodeId>, AutoCloseable {
    * Returns a boolean value indicating whether the selector state would be changed by the given members.
    */
   private boolean changed(NodeId leader, Collection<NodeId> servers) {
-    checkNotNull(servers, "servers");
-    checkArgument(!servers.isEmpty(), "servers cannot be empty");
-    if (this.leader != null && leader == null) {
+    checkNotNull(members, "servers");
+    checkArgument(!members.isEmpty(), "servers cannot be empty");
+    if (leader != null) {
+      checkArgument(members.contains(leader), "leader must be present in members list");
+    }
+    if (!Objects.equals(this.leader, leader)) {
       return true;
-    } else if (this.leader == null && leader != null) {
-      checkArgument(servers.contains(leader), "leader must be present in the servers list");
-      return true;
-    } else if (this.leader != null && !this.leader.equals(leader)) {
-      checkArgument(servers.contains(leader), "leader must be present in the servers list");
-      return true;
-    } else if (!matches(this.members, servers)) {
+    } else if (!matches(this.members, members)) {
       return true;
     }
     return false;

@@ -15,12 +15,12 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import com.google.common.collect.Lists;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -77,8 +77,8 @@ public final class MemberSelectorManager {
    */
   public void resetAll(NodeId leader, Collection<NodeId> members) {
     this.leader = leader;
-    this.members = new LinkedList<>(members);
-    selectors.forEach(s -> s.reset(leader, members));
+    this.members = Lists.newLinkedList(members);
+    selectors.forEach(s -> s.reset(leader, this.members));
   }
 
   /**
