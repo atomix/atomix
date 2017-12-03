@@ -276,7 +276,7 @@ public class RaftProxyConnection {
 
     if (!selector.hasNext()) {
       log.debug("Failed to connect to the cluster");
-      selector.reset();
+      selector.reset(null, selector.members());
       return null;
     } else {
       this.member = selector.next();
