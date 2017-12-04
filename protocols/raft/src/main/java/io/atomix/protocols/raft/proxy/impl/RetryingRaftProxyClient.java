@@ -49,7 +49,8 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
           || e instanceof ClosedChannelException
           || e instanceof RaftException.QueryFailure
           || e instanceof RaftException.UnknownClient
-          || e instanceof RaftException.UnknownSession;
+          || e instanceof RaftException.UnknownSession
+          || e instanceof RaftException.ClosedSession;
 
   public RetryingRaftProxyClient(RaftProxyClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
     super(delegate);
