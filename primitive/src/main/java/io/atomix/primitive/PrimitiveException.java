@@ -87,4 +87,10 @@ public class PrimitiveException extends AtomixRuntimeException {
    */
   public static class UnknownSession extends PrimitiveException {
   }
+
+  /**
+   * Closed session exception.
+   */
+  public static class ClosedSession extends PrimitiveException {
+  }
 }

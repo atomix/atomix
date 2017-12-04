@@ -48,7 +48,8 @@ public class RetryingPrimitiveProxy extends DelegatingPrimitiveProxy {
           || e instanceof ClosedChannelException
           || e instanceof PrimitiveException.QueryFailure
           || e instanceof PrimitiveException.UnknownClient
-          || e instanceof PrimitiveException.UnknownSession;
+          || e instanceof PrimitiveException.UnknownSession
+          || e instanceof PrimitiveException.ClosedSession;
 
   public RetryingPrimitiveProxy(PrimitiveProxy delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
     super(delegate);
