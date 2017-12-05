@@ -16,7 +16,7 @@
 package io.atomix.queue.impl;
 
 import com.google.common.collect.ImmutableList;
-import io.atomix.primitive.impl.AbstractPrimitive;
+import io.atomix.primitive.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.queue.AsyncWorkQueue;
 import io.atomix.queue.Task;
@@ -58,7 +58,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Distributed resource providing the {@link WorkQueue} primitive.
  */
-public class WorkQueueProxy extends AbstractPrimitive implements AsyncWorkQueue<byte[]> {
+public class WorkQueueProxy extends AbstractPrimitiveProxy implements AsyncWorkQueue<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(WorkQueueOperations.NAMESPACE)

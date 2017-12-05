@@ -16,7 +16,7 @@
 package io.atomix.election.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.primitive.impl.AbstractPrimitive;
+import io.atomix.primitive.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.election.AsyncLeaderElection;
 import io.atomix.election.Leadership;
@@ -47,7 +47,7 @@ import static io.atomix.election.impl.LeaderElectionOperations.WITHDRAW;
 /**
  * Distributed resource providing the {@link AsyncLeaderElection} primitive.
  */
-public class LeaderElectionProxy extends AbstractPrimitive implements AsyncLeaderElection<byte[]> {
+public class LeaderElectionProxy extends AbstractPrimitiveProxy implements AsyncLeaderElection<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(LeaderElectionOperations.NAMESPACE)
       .register(LeaderElectionEvents.NAMESPACE)

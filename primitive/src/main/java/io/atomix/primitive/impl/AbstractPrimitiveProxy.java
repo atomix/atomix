@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Abstract base class for primitives that interact with Raft replicated state machines via proxy.
  */
-public abstract class AbstractPrimitive implements AsyncPrimitive {
+public abstract class AbstractPrimitiveProxy implements AsyncPrimitive {
   private final Function<PrimitiveProxy.State, Status> mapper = state -> {
     switch (state) {
       case CONNECTED:
@@ -49,7 +49,7 @@ public abstract class AbstractPrimitive implements AsyncPrimitive {
   protected final PrimitiveProxy proxy;
   private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
 
-  public AbstractPrimitive(PrimitiveProxy proxy) {
+  public AbstractPrimitiveProxy(PrimitiveProxy proxy) {
     this.proxy = checkNotNull(proxy, "proxy cannot be null");
     proxy.addStateChangeListener(this::onStateChange);
   }

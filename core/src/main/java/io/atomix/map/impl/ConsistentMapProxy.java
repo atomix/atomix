@@ -36,7 +36,7 @@ import io.atomix.map.impl.ConsistentMapOperations.TransactionCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepare;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepareAndCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionRollback;
-import io.atomix.primitive.impl.AbstractPrimitive;
+import io.atomix.primitive.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
@@ -92,7 +92,7 @@ import static io.atomix.map.impl.ConsistentMapOperations.VALUES;
 /**
  * Distributed resource providing the {@link AsyncConsistentMap} primitive.
  */
-public class ConsistentMapProxy extends AbstractPrimitive implements AsyncConsistentMap<String, byte[]> {
+public class ConsistentMapProxy extends AbstractPrimitiveProxy implements AsyncConsistentMap<String, byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(ConsistentMapOperations.NAMESPACE)

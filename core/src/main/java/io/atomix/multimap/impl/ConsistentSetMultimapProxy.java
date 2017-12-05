@@ -18,7 +18,7 @@ package io.atomix.multimap.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
-import io.atomix.primitive.impl.AbstractPrimitive;
+import io.atomix.primitive.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.multimap.AsyncConsistentMultimap;
 import io.atomix.multimap.MultimapEvent;
@@ -69,7 +69,7 @@ import static io.atomix.multimap.impl.ConsistentSetMultimapOperations.VALUES;
  * Note: this implementation does not allow null entries or duplicate entries.
  */
 public class ConsistentSetMultimapProxy
-    extends AbstractPrimitive
+    extends AbstractPrimitiveProxy
     implements AsyncConsistentMultimap<String, byte[]> {
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()

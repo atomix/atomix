@@ -15,7 +15,7 @@
  */
 package io.atomix.lock.impl;
 
-import io.atomix.primitive.impl.AbstractPrimitive;
+import io.atomix.primitive.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.lock.AsyncDistributedLock;
 import io.atomix.lock.impl.DistributedLockOperations.Lock;
@@ -38,7 +38,7 @@ import static io.atomix.lock.impl.DistributedLockOperations.UNLOCK;
 /**
  * Raft lock.
  */
-public class DistributedLockProxy extends AbstractPrimitive implements AsyncDistributedLock {
+public class DistributedLockProxy extends AbstractPrimitiveProxy implements AsyncDistributedLock {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(DistributedLockOperations.NAMESPACE)

@@ -26,7 +26,7 @@ import io.atomix.election.impl.LeaderElectorOperations.GetLeadership;
 import io.atomix.election.impl.LeaderElectorOperations.Promote;
 import io.atomix.election.impl.LeaderElectorOperations.Run;
 import io.atomix.election.impl.LeaderElectorOperations.Withdraw;
-import io.atomix.primitive.impl.AbstractPrimitive;
+import io.atomix.primitive.impl.AbstractPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -50,7 +50,7 @@ import static io.atomix.election.impl.LeaderElectorOperations.WITHDRAW;
 /**
  * Distributed resource providing the {@link AsyncLeaderElector} primitive.
  */
-public class LeaderElectorProxy extends AbstractPrimitive implements AsyncLeaderElector<byte[]> {
+public class LeaderElectorProxy extends AbstractPrimitiveProxy implements AsyncLeaderElector<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(LeaderElectorOperations.NAMESPACE)
       .register(LeaderElectorEvents.NAMESPACE)
