@@ -22,7 +22,6 @@ import io.atomix.primitive.partition.Partitioner;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTreeListener;
-import io.atomix.tree.NoSuchDocumentPathException;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -106,19 +105,7 @@ public class PartitionedAsyncDocumentTree<V> implements AsyncDocumentTree<V> {
 
   @Override
   public CompletableFuture<Boolean> create(DocumentPath path, V value) {
-    if (path.parent() == null) {
-      // create value on root
-      return partition(path).createRecursive(path, value);
-    }
-    // TODO: This operation is not atomic
-    return partition(path.parent()).get(path.parent()).thenCompose(parentValue -> {
-      if (parentValue == null) {
-        return Futures.exceptionalFuture(new NoSuchDocumentPathException(String.valueOf(path.parent())));
-      } else {
-        // not atomic: parent did exist at some point, so moving forward
-        return partition(path).createRecursive(path, value);
-      }
-    });
+    return partition(path).create(path, value);
   }
 
   @Override
@@ -156,7 +143,20 @@ public class PartitionedAsyncDocumentTree<V> implements AsyncDocumentTree<V> {
   }
 
   @Override
+  public CompletableFuture<Void> destroy() {
+    return Futures.allOf(partitions()
+        .stream()
+        .map(AsyncPrimitive::destroy)
+        .collect(Collectors.toList()))
+        .thenApply(v -> null);
+  }
+
+  @Override
   public CompletableFuture<Void> close() {
-    return Futures.allOf(partitions().stream().map(AsyncPrimitive::close).collect(Collectors.toList())).thenApply(v -> null);
+    return Futures.allOf(partitions()
+        .stream()
+        .map(AsyncPrimitive::close)
+        .collect(Collectors.toList()))
+        .thenApply(v -> null);
   }
 }

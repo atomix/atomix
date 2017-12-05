@@ -16,8 +16,6 @@
 package io.atomix.tree.impl;
 
 import com.google.common.collect.Maps;
-import com.google.common.hash.Funnel;
-import com.google.common.hash.Funnels;
 import com.google.common.hash.Hashing;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
@@ -40,8 +38,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <V> type for document tree value
  */
 public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
-  private static final Funnel<Iterable<? extends CharSequence>> STR_LIST_FUNNEL =
-      Funnels.sequentialFunnel(Funnels.unencodedCharsFunnel());
   private static final int NUM_BUCKETS = 128;
 
   private final PrimitiveManagementService managementService;
@@ -53,14 +49,10 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
 
   protected AsyncDocumentTree<V> newDocumentTree(PrimitiveProxy proxy) {
     DocumentTreeProxy rawTree = new DocumentTreeProxy(proxy.open().join());
-    AsyncDocumentTree<V> documentTree = new TranscodingAsyncDocumentTree<>(
+    return new TranscodingAsyncDocumentTree<>(
         rawTree,
         serializer()::encode,
         serializer()::decode);
-    if (relaxedReadConsistency()) {
-      documentTree = new CachingAsyncDocumentTree<V>(documentTree);
-    }
-    return documentTree;
   }
 
   @Override

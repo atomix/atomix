@@ -62,12 +62,12 @@ public class TranscodingAsyncDocumentTree<V1, V2> implements AsyncDocumentTree<V
 
   @Override
   public CompletableFuture<Versioned<V1>> get(DocumentPath path) {
-    return backingTree.get(path).thenApply(v -> v.map(valueDecoder));
+    return backingTree.get(path).thenApply(v -> v != null ? v.map(valueDecoder) : null);
   }
 
   @Override
   public CompletableFuture<Versioned<V1>> set(DocumentPath path, V1 value) {
-    return backingTree.set(path, valueEncoder.apply(value)).thenApply(v -> v.map(valueDecoder));
+    return backingTree.set(path, valueEncoder.apply(value)).thenApply(v -> v != null ? v.map(valueDecoder) : null);
   }
 
   @Override
@@ -92,7 +92,7 @@ public class TranscodingAsyncDocumentTree<V1, V2> implements AsyncDocumentTree<V
 
   @Override
   public CompletableFuture<Versioned<V1>> removeNode(DocumentPath path) {
-    return backingTree.removeNode(path).thenApply(v -> v.map(valueDecoder));
+    return backingTree.removeNode(path).thenApply(v -> v != null ? v.map(valueDecoder) : null);
   }
 
   @Override
@@ -114,6 +114,11 @@ public class TranscodingAsyncDocumentTree<V1, V2> implements AsyncDocumentTree<V
         return CompletableFuture.completedFuture(null);
       }
     }
+  }
+
+  @Override
+  public CompletableFuture<Void> destroy() {
+    return backingTree.destroy();
   }
 
   @Override
