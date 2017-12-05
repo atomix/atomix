@@ -15,8 +15,6 @@
  */
 package io.atomix.map.impl;
 
-import io.atomix.primitive.impl.AbstractPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.ConsistentMapException;
 import io.atomix.map.MapEvent;
@@ -24,6 +22,7 @@ import io.atomix.map.MapEventListener;
 import io.atomix.map.impl.ConsistentMapOperations.ContainsKey;
 import io.atomix.map.impl.ConsistentMapOperations.ContainsValue;
 import io.atomix.map.impl.ConsistentMapOperations.Get;
+import io.atomix.map.impl.ConsistentMapOperations.GetAllPresent;
 import io.atomix.map.impl.ConsistentMapOperations.GetOrDefault;
 import io.atomix.map.impl.ConsistentMapOperations.Put;
 import io.atomix.map.impl.ConsistentMapOperations.Remove;
@@ -37,6 +36,8 @@ import io.atomix.map.impl.ConsistentMapOperations.TransactionCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepare;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepareAndCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionRollback;
+import io.atomix.primitive.impl.AbstractPrimitive;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.concurrent.Futures;
@@ -48,6 +49,7 @@ import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -67,6 +69,7 @@ import static io.atomix.map.impl.ConsistentMapOperations.CONTAINS_KEY;
 import static io.atomix.map.impl.ConsistentMapOperations.CONTAINS_VALUE;
 import static io.atomix.map.impl.ConsistentMapOperations.ENTRY_SET;
 import static io.atomix.map.impl.ConsistentMapOperations.GET;
+import static io.atomix.map.impl.ConsistentMapOperations.GET_ALL_PRESENT;
 import static io.atomix.map.impl.ConsistentMapOperations.GET_OR_DEFAULT;
 import static io.atomix.map.impl.ConsistentMapOperations.IS_EMPTY;
 import static io.atomix.map.impl.ConsistentMapOperations.KEY_SET;
@@ -141,6 +144,19 @@ public class ConsistentMapProxy extends AbstractPrimitive implements AsyncConsis
   @Override
   public CompletableFuture<Versioned<byte[]>> get(String key) {
     return proxy.invoke(GET, serializer()::encode, new Get(key), serializer()::decode);
+  }
+
+  @Override
+  public CompletableFuture<Map<String, Versioned<byte[]>>> getAllPresent(Iterable<String> keys) {
+    Set<String> uniqueKeys = new HashSet<>();
+    for (String key : keys) {
+      uniqueKeys.add(key);
+    }
+    return proxy.invoke(
+            GET_ALL_PRESENT,
+            serializer()::encode,
+            new GetAllPresent(uniqueKeys),
+            serializer()::decode);
   }
 
   @Override

@@ -26,6 +26,7 @@ import io.atomix.transaction.Transactional;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
@@ -112,6 +113,18 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    * this map contains no mapping for the key
    */
   CompletableFuture<Versioned<V>> get(K key);
+
+  /**
+   * Returns a map of the values associated with the {@code keys} in this map. The returned map
+   * will only contain entries which already exist in the map.
+   * <p>
+   * Note that duplicate elements in {@code keys}, as determined by {@link Object#equals}, will be
+   * ignored.
+   *
+   * @param keys the keys whose associated values are to be returned
+   * @return the unmodifiable mapping of keys to values for the specified keys found in the map
+   */
+  CompletableFuture<Map<K, Versioned<V>>> getAllPresent(Iterable<K> keys);
 
   /**
    * Returns the value (and version) to which the specified key is mapped, or the provided

@@ -158,6 +158,11 @@ public class DelegatingAsyncConsistentTreeMap<V>
   }
 
   @Override
+  public CompletableFuture<Map<String, Versioned<V>>> getAllPresent(Iterable<String> keys) {
+    return delegateMap.getAllPresent(keys);
+  }
+
+  @Override
   public CompletableFuture<Versioned<V>> getOrDefault(String key, V defaultValue) {
     return delegateMap.getOrDefault(key, defaultValue);
   }

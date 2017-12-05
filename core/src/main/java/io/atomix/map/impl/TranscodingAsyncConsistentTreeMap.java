@@ -178,6 +178,12 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
+  public CompletableFuture<Map<String, Versioned<V1>>> getAllPresent(Iterable<String> keys) {
+    return backingMap.getAllPresent(keys)
+        .thenApply(map -> Maps.transformValues(map, versionedValueTransform::apply));
+  }
+
+  @Override
   public CompletableFuture<Versioned<V1>> getOrDefault(String key, V1 defaultValue) {
     return backingMap.getOrDefault(key, valueEncoder.apply(defaultValue)).thenApply(versionedValueTransform);
   }

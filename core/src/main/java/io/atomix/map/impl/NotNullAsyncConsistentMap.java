@@ -15,6 +15,7 @@
  */
 package io.atomix.map.impl;
 
+import com.google.common.collect.ImmutableMap;
 import io.atomix.map.AsyncConsistentMap;
 import io.atomix.utils.time.Versioned;
 
@@ -45,6 +46,13 @@ public class NotNullAsyncConsistentMap<K, V> extends DelegatingAsyncConsistentMa
   @Override
   public CompletableFuture<Versioned<V>> get(K key) {
     return super.get(key).thenApply(v -> v != null && v.value() == null ? null : v);
+  }
+
+  @Override
+  public CompletableFuture<Map<K, Versioned<V>>> getAllPresent(Iterable<K> keys) {
+    return super.getAllPresent(keys).thenApply(m -> ImmutableMap.copyOf(m.entrySet()
+            .stream().filter(e -> e.getValue().value() != null)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
   }
 
   @Override

@@ -19,14 +19,11 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.service.AbstractPrimitiveService;
-import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
 import io.atomix.map.MapEvent;
 import io.atomix.map.impl.ConsistentMapOperations.ContainsKey;
 import io.atomix.map.impl.ConsistentMapOperations.ContainsValue;
 import io.atomix.map.impl.ConsistentMapOperations.Get;
+import io.atomix.map.impl.ConsistentMapOperations.GetAllPresent;
 import io.atomix.map.impl.ConsistentMapOperations.GetOrDefault;
 import io.atomix.map.impl.ConsistentMapOperations.Put;
 import io.atomix.map.impl.ConsistentMapOperations.Remove;
@@ -40,10 +37,14 @@ import io.atomix.map.impl.ConsistentMapOperations.TransactionCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepare;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepareAndCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionRollback;
-import io.atomix.transaction.TransactionId;
-import io.atomix.transaction.TransactionLog;
+import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceExecutor;
+import io.atomix.primitive.session.Session;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.transaction.TransactionId;
+import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -70,6 +71,7 @@ import static io.atomix.map.impl.ConsistentMapOperations.CONTAINS_KEY;
 import static io.atomix.map.impl.ConsistentMapOperations.CONTAINS_VALUE;
 import static io.atomix.map.impl.ConsistentMapOperations.ENTRY_SET;
 import static io.atomix.map.impl.ConsistentMapOperations.GET;
+import static io.atomix.map.impl.ConsistentMapOperations.GET_ALL_PRESENT;
 import static io.atomix.map.impl.ConsistentMapOperations.GET_OR_DEFAULT;
 import static io.atomix.map.impl.ConsistentMapOperations.IS_EMPTY;
 import static io.atomix.map.impl.ConsistentMapOperations.KEY_SET;
@@ -160,6 +162,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
     executor.register(CONTAINS_VALUE, serializer()::decode, this::containsValue, serializer()::encode);
     executor.register(ENTRY_SET, (Commit<Void> c) -> entrySet(), serializer()::encode);
     executor.register(GET, serializer()::decode, this::get, serializer()::encode);
+    executor.register(GET_ALL_PRESENT, serializer()::decode, this::getAllPresent, serializer()::encode);
     executor.register(GET_OR_DEFAULT, serializer()::decode, this::getOrDefault, serializer()::encode);
     executor.register(IS_EMPTY, (Commit<Void> c) -> isEmpty(), serializer()::encode);
     executor.register(KEY_SET, (Commit<Void> c) -> keySet(), serializer()::encode);
@@ -214,6 +217,19 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    */
   protected Versioned<byte[]> get(Commit<? extends Get> commit) {
     return toVersioned(entries().get(commit.value().key()));
+  }
+
+  /**
+   * Handles a get all present commit.
+   *
+   * @param commit get all present commit
+   * @return keys present in map
+   */
+  protected Map<String, Versioned<byte[]>> getAllPresent(Commit<? extends GetAllPresent> commit) {
+    return entries().entrySet().stream()
+        .filter(entry -> entry.getValue().type() != MapEntryValue.Type.TOMBSTONE
+            && commit.value().keys().contains(entry.getKey()))
+        .collect(Collectors.toMap(Map.Entry::getKey, o -> toVersioned(o.getValue())));
   }
 
   /**

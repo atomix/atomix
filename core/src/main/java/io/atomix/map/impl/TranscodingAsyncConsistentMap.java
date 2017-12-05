@@ -16,6 +16,7 @@
 
 package io.atomix.map.impl;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.MapEvent;
@@ -27,6 +28,7 @@ import io.atomix.utils.time.Version;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -103,6 +105,22 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   public CompletableFuture<Versioned<V1>> get(K1 key) {
     try {
       return backingMap.get(keyEncoder.apply(key)).thenApply(versionedValueTransform);
+    } catch (Exception e) {
+      return Futures.exceptionalFuture(e);
+    }
+  }
+
+  @Override
+  public CompletableFuture<Map<K1, Versioned<V1>>> getAllPresent(Iterable<K1> keys) {
+    try {
+      Set<K2> uniqueKeys = new HashSet<>();
+      for (K1 key : keys) {
+        uniqueKeys.add(keyEncoder.apply(key));
+      }
+      return backingMap.getAllPresent(uniqueKeys).thenApply(
+              entries -> ImmutableMap.copyOf(entries.entrySet().stream()
+                      .collect(Collectors.toMap(o -> keyDecoder.apply(o.getKey()),
+                              o -> versionedValueTransform.apply(o.getValue())))));
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }

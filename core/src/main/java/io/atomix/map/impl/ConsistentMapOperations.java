@@ -24,6 +24,8 @@ import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.time.Versioned;
 
+import java.util.Set;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -36,6 +38,7 @@ public enum ConsistentMapOperations implements OperationId {
   CONTAINS_KEY("containsKey", OperationType.QUERY),
   CONTAINS_VALUE("containsValue", OperationType.QUERY),
   GET("get", OperationType.QUERY),
+  GET_ALL_PRESENT("getAllPresent", OperationType.QUERY),
   GET_OR_DEFAULT("getOrDefault", OperationType.QUERY),
   KEY_SET("keySet", OperationType.QUERY),
   VALUES("values", OperationType.QUERY),
@@ -82,6 +85,7 @@ public enum ConsistentMapOperations implements OperationId {
       .register(ContainsKey.class)
       .register(ContainsValue.class)
       .register(Get.class)
+      .register(GetAllPresent.class)
       .register(GetOrDefault.class)
       .register(Put.class)
       .register(Remove.class)
@@ -531,6 +535,37 @@ public enum ConsistentMapOperations implements OperationId {
 
     public Get(String key) {
       super(key);
+    }
+  }
+
+  /**
+   * Get all present query.
+   */
+  @SuppressWarnings("serial")
+  public static class GetAllPresent extends MapOperation {
+    private Set<String> keys;
+
+    public GetAllPresent() {
+    }
+
+    public GetAllPresent(Set<String> keys) {
+      this.keys = keys;
+    }
+
+    /**
+     * Returns the keys.
+     *
+     * @return the keys
+     */
+    public Set<String> keys() {
+      return keys;
+    }
+
+    @Override
+    public String toString() {
+      return toStringHelper(this)
+              .add("keys", keys)
+              .toString();
     }
   }
 

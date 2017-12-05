@@ -16,6 +16,7 @@
 package io.atomix.map.impl;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -32,6 +33,7 @@ import io.atomix.utils.time.Version;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -97,6 +99,19 @@ public class PartitionedAsyncConsistentMap<K, V> implements AsyncConsistentMap<K
   @Override
   public CompletableFuture<Versioned<V>> get(K key) {
     return getMap(key).get(key);
+  }
+
+  @Override
+  public CompletableFuture<Map<K, Versioned<V>>> getAllPresent(Iterable<K> keys) {
+    return Futures.allOf(getMaps().stream().map(m -> m.getAllPresent(keys))
+        .collect(Collectors.toList()))
+        .thenApply(maps -> {
+          Map<K, Versioned<V>> result = new HashMap<>();
+          for (Map<K, Versioned<V>> map : maps) {
+            result.putAll(map);
+          }
+          return ImmutableMap.copyOf(result);
+        });
   }
 
   @Override

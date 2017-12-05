@@ -93,7 +93,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
   /**
    * Checks that the current operation is of the given type.
    *
-   * @param type the operation type
+   * @param type    the operation type
    * @param message the message to print if the current operation does not match the given type
    */
   private void checkOperation(OperationType type, String message) {
@@ -126,7 +126,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
       try {
         return operation.callback.apply(commit);
       } catch (Exception e) {
-        log.warn("State machine operation failed: {}", e);
+        log.warn("State machine operation failed: {}", e.getMessage());
         throw new PrimitiveException.ServiceException();
       } finally {
         runTasks();
