@@ -15,7 +15,7 @@
  */
 package io.atomix.map.impl;
 
-import io.atomix.primitive.impl.AbstractPrimitiveProxy;
+import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.map.AsyncAtomicCounterMap;
 import io.atomix.map.impl.AtomicCounterMapOperations.AddAndGet;
@@ -55,7 +55,7 @@ import static io.atomix.map.impl.AtomicCounterMapOperations.SIZE;
 /**
  * {@code AsyncAtomicCounterMap} implementation backed by Atomix.
  */
-public class AtomicCounterMapProxy extends AbstractPrimitiveProxy implements AsyncAtomicCounterMap<String> {
+public class AtomicCounterMapProxy extends AbstractAsyncPrimitive implements AsyncAtomicCounterMap<String> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicCounterMapOperations.NAMESPACE)

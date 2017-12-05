@@ -16,7 +16,7 @@
 package io.atomix.value.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.primitive.impl.AbstractPrimitiveProxy;
+import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.value.AsyncAtomicValue;
 import io.atomix.value.AtomicValueEventListener;
@@ -39,7 +39,7 @@ import static io.atomix.value.impl.AtomicValueOperations.SET;
 /**
  * Atomix counter implementation.
  */
-public class AtomicValueProxy extends AbstractPrimitiveProxy implements AsyncAtomicValue<byte[]> {
+public class AtomicValueProxy extends AbstractAsyncPrimitive implements AsyncAtomicValue<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicValueOperations.NAMESPACE)

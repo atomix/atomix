@@ -15,7 +15,7 @@
  */
 package io.atomix.counter.impl;
 
-import io.atomix.primitive.impl.AbstractPrimitiveProxy;
+import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.counter.AsyncAtomicCounter;
 import io.atomix.counter.impl.AtomicCounterOperations.AddAndGet;
@@ -39,7 +39,7 @@ import static io.atomix.counter.impl.AtomicCounterOperations.SET;
 /**
  * Atomix counter implementation.
  */
-public class AtomicCounterProxy extends AbstractPrimitiveProxy implements AsyncAtomicCounter {
+public class AtomicCounterProxy extends AbstractAsyncPrimitive implements AsyncAtomicCounter {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicCounterOperations.NAMESPACE)

@@ -17,7 +17,7 @@
 package io.atomix.tree.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.primitive.impl.AbstractPrimitiveProxy;
+import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
@@ -59,7 +59,7 @@ import static io.atomix.tree.impl.DocumentTreeResult.Status.OK;
 /**
  * Distributed resource providing the {@link AsyncDocumentTree} primitive.
  */
-public class DocumentTreeProxy extends AbstractPrimitiveProxy implements AsyncDocumentTree<byte[]> {
+public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDocumentTree<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(DocumentTreeOperations.NAMESPACE)
