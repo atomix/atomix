@@ -16,12 +16,12 @@
 
 package io.atomix.map;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -31,8 +31,8 @@ import java.time.Duration;
 /**
  * Builder for {@link ConsistentTreeMap}.
  */
-public abstract class ConsistentTreeMapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<K, V>, ConsistentTreeMap<K, V>, AsyncConsistentTreeMap<K, V>> {
+public abstract class ConsistentTreeMapBuilder<V>
+    extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>, AsyncConsistentTreeMap<V>> {
 
   public ConsistentTreeMapBuilder(String name) {
     super(PrimitiveTypes.treeMap(), name);
@@ -100,7 +100,7 @@ public abstract class ConsistentTreeMapBuilder<K, V>
   }
 
   @Override
-  public ConsistentTreeMap<K, V> build() {
+  public ConsistentTreeMap<V> build() {
     return buildAsync().asTreeMap();
   }
 }

@@ -107,11 +107,10 @@ public final class PrimitiveTypes {
   /**
    * Returns a new consistent tree map type.
    *
-   * @param <K> the key type
    * @param <V> the value type
    * @return a new consistent tree map type
    */
-  public static <K, V> ConsistentTreeMapType<K, V> treeMap() {
+  public static <V> ConsistentTreeMapType<V> treeMap() {
     return ConsistentTreeMapType.instance();
   }
 

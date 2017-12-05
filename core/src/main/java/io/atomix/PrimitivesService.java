@@ -68,7 +68,7 @@ public interface PrimitivesService {
    * @param <V> value type
    * @return builder for a async consistent tree map
    */
-  default <K, V> ConsistentTreeMapBuilder<K, V> consistentTreeMapBuilder(String name) {
+  default <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder(String name) {
     return primitiveBuilder(name, PrimitiveTypes.treeMap());
   }
 

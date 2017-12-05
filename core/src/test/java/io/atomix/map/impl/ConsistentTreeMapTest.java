@@ -59,7 +59,7 @@ public class ConsistentTreeMapTest extends AbstractAtomixTest {
     //make sure that the previous section has been cleaned up, they serve
     //the secondary purpose of testing isEmpty but that is not their
     //primary purpose.
-    AsyncConsistentTreeMap<String, String> map = createResource("basicTestMap");
+    AsyncConsistentTreeMap<String> map = createResource("basicTestMap");
     //test size
     map.size().thenAccept(result -> assertEquals(0, (int) result)).join();
     map.isEmpty().thenAccept(result -> assertTrue(result)).join();
@@ -243,7 +243,7 @@ public class ConsistentTreeMapTest extends AbstractAtomixTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncConsistentTreeMap<String, String> map = createResource("treeMapListenerTestMap");
+    AsyncConsistentTreeMap<String> map = createResource("treeMapListenerTestMap");
     TestMapEventListener listener = new TestMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event
@@ -306,7 +306,7 @@ public class ConsistentTreeMapTest extends AbstractAtomixTest {
 
   @Test
   public void treeMapFunctionsTest() {
-    AsyncConsistentTreeMap<String, String> map = createResource("treeMapFunctionTestMap");
+    AsyncConsistentTreeMap<String> map = createResource("treeMapFunctionTestMap");
     //Tests on empty map
     map.firstKey().thenAccept(result -> assertNull(result)).join();
     map.lastKey().thenAccept(result -> assertNull(result)).join();
@@ -454,9 +454,9 @@ public class ConsistentTreeMapTest extends AbstractAtomixTest {
     //map.delete().join();
   }
 
-  private AsyncConsistentTreeMap<String, String> createResource(String mapName) {
+  private AsyncConsistentTreeMap<String> createResource(String mapName) {
     try {
-      return atomix().<String, String>consistentTreeMapBuilder(mapName).buildAsync();
+      return atomix().<String>consistentTreeMapBuilder(mapName).buildAsync();
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }

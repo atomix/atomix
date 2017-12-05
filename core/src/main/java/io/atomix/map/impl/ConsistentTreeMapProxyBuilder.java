@@ -15,12 +15,11 @@
  */
 package io.atomix.map.impl;
 
-import com.google.common.io.BaseEncoding;
+import io.atomix.map.AsyncConsistentTreeMap;
+import io.atomix.map.ConsistentTreeMapBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.map.AsyncConsistentTreeMap;
-import io.atomix.map.ConsistentTreeMapBuilder;
 import io.atomix.utils.serializer.Serializer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -30,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @param <V> type for map value
  */
-public class ConsistentTreeMapProxyBuilder<K, V> extends ConsistentTreeMapBuilder<K, V> {
+public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V> {
   private final PrimitiveManagementService managementService;
 
   public ConsistentTreeMapProxyBuilder(String name, PrimitiveManagementService managementService) {
@@ -38,21 +37,19 @@ public class ConsistentTreeMapProxyBuilder<K, V> extends ConsistentTreeMapBuilde
     this.managementService = checkNotNull(managementService);
   }
 
-  protected AsyncConsistentTreeMap<K, V> newTreeMap(PrimitiveProxy proxy) {
+  protected AsyncConsistentTreeMap<V> newTreeMap(PrimitiveProxy proxy) {
     ConsistentTreeMapProxy rawMap = new ConsistentTreeMapProxy(proxy.open().join());
 
     Serializer serializer = serializer();
     return new TranscodingAsyncConsistentTreeMap<>(
         rawMap,
-        key -> BaseEncoding.base16().encode(serializer.encode(key)),
-        string -> serializer.decode(BaseEncoding.base16().decode(string)),
         value -> value == null ? null : serializer.encode(value),
         bytes -> serializer.decode(bytes));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncConsistentTreeMap<K, V> buildAsync() {
+  public AsyncConsistentTreeMap<V> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     return newTreeMap(managementService.getPartitionService()
         .getPartitionGroup(protocol)

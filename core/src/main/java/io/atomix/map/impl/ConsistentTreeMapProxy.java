@@ -16,7 +16,6 @@
 
 package io.atomix.map.impl;
 
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.map.AsyncConsistentTreeMap;
 import io.atomix.map.impl.ConsistentTreeMapOperations.CeilingEntry;
 import io.atomix.map.impl.ConsistentTreeMapOperations.CeilingKey;
@@ -26,6 +25,7 @@ import io.atomix.map.impl.ConsistentTreeMapOperations.HigherEntry;
 import io.atomix.map.impl.ConsistentTreeMapOperations.HigherKey;
 import io.atomix.map.impl.ConsistentTreeMapOperations.LowerEntry;
 import io.atomix.map.impl.ConsistentTreeMapOperations.LowerKey;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -58,7 +58,7 @@ import static io.atomix.map.impl.ConsistentTreeMapOperations.POLL_LAST_ENTRY;
 /**
  * Implementation of {@link io.atomix.map.AsyncConsistentTreeMap}.
  */
-public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncConsistentTreeMap<String, byte[]> {
+public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncConsistentTreeMap<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(ConsistentMapOperations.NAMESPACE)

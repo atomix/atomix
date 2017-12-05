@@ -16,8 +16,8 @@
 
 package io.atomix.map;
 
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
@@ -27,7 +27,7 @@ import java.util.NavigableSet;
 /**
  * Tree map interface counterpart to {@link AsyncConsistentTreeMap}.
  */
-public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
+public interface ConsistentTreeMap<V> extends ConsistentMap<String, V> {
 
   @Override
   default PrimitiveType primitiveType() {
@@ -39,14 +39,14 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    *
    * @return the key or null if none exist
    */
-  K firstKey();
+  String firstKey();
 
   /**
    * Returns the highest key in the map.
    *
    * @return the key or null if none exist
    */
-  K lastKey();
+  String lastKey();
 
   /**
    * Returns the entry associated with the least key greater than or equal to the key.
@@ -54,7 +54,7 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @param key the key
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> ceilingEntry(K key);
+  Map.Entry<String, Versioned<V>> ceilingEntry(String key);
 
   /**
    * Returns the entry associated with the greatest key less than or equal to key.
@@ -62,7 +62,7 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @param key the key
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> floorEntry(K key);
+  Map.Entry<String, Versioned<V>> floorEntry(String key);
 
   /**
    * Returns the entry associated with the lest key greater than key.
@@ -70,7 +70,7 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @param key the key
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> higherEntry(K key);
+  Map.Entry<String, Versioned<V>> higherEntry(String key);
 
   /**
    * Returns the entry associated with the largest key less than key.
@@ -78,35 +78,35 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @param key the key
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> lowerEntry(K key);
+  Map.Entry<String, Versioned<V>> lowerEntry(String key);
 
   /**
    * Returns the entry associated with the lowest key in the map.
    *
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> firstEntry();
+  Map.Entry<String, Versioned<V>> firstEntry();
 
   /**
    * Returns the entry associated with the highest key in the map.
    *
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> lastEntry();
+  Map.Entry<String, Versioned<V>> lastEntry();
 
   /**
    * Returns and removes the entry associated with the lowest key.
    *
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> pollFirstEntry();
+  Map.Entry<String, Versioned<V>> pollFirstEntry();
 
   /**
    * Returns and removes the entry associated with the highest key.
    *
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> pollLastEntry();
+  Map.Entry<String, Versioned<V>> pollLastEntry();
 
   /**
    * Returns the entry associated with the greatest key less than key.
@@ -114,7 +114,7 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @param key the key
    * @return the entry or null
    */
-  K lowerKey(K key);
+  String lowerKey(String key);
 
   /**
    * Returns the entry associated with the highest key less than or equal to key.
@@ -122,7 +122,7 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @param key the key
    * @return the entry or null
    */
-  K floorKey(K key);
+  String floorKey(String key);
 
   /**
    * Returns the lowest key greater than or equal to key.
@@ -130,7 +130,7 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @param key the key
    * @return the key or null
    */
-  K ceilingKey(K key);
+  String ceilingKey(String key);
 
   /**
    * Returns the lowest key greater than key.
@@ -138,14 +138,14 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @param key the key
    * @return the key or null
    */
-  K higherKey(K key);
+  String higherKey(String key);
 
   /**
    * Returns a navigable set of the keys in this map.
    *
    * @return a navigable key set
    */
-  NavigableSet<K> navigableKeySet();
+  NavigableSet<String> navigableKeySet();
 
   /**
    * Returns a navigable map containing the entries from the original map
@@ -161,9 +161,10 @@ public interface ConsistentTreeMap<K, V> extends ConsistentMap<K, V> {
    * @return a navigable map containing entries in the specified range (this
    * may be empty)
    */
-  NavigableMap<K, V> subMap(K upperKey,
-                            K lowerKey,
-                            boolean inclusiveUpper,
-                            boolean inclusiveLower);
+  NavigableMap<String, V> subMap(
+      String upperKey,
+      String lowerKey,
+      boolean inclusiveUpper,
+      boolean inclusiveLower);
 
 }

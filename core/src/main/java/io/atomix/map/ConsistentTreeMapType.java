@@ -15,28 +15,28 @@
  */
 package io.atomix.map;
 
+import io.atomix.map.impl.ConsistentTreeMapProxyBuilder;
+import io.atomix.map.impl.ConsistentTreeMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
-import io.atomix.map.impl.ConsistentTreeMapProxyBuilder;
-import io.atomix.map.impl.ConsistentTreeMapService;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Consistent tree map primitive type.
  */
-public class ConsistentTreeMapType<K, V> implements PrimitiveType<ConsistentTreeMapBuilder<K, V>, ConsistentTreeMap<K, V>, AsyncConsistentTreeMap<K, V>> {
+public class ConsistentTreeMapType<V>
+    implements PrimitiveType<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>, AsyncConsistentTreeMap<V>> {
   private static final String NAME = "CONSISTENT_TREEMAP";
 
   /**
    * Returns a new consistent tree map type.
    *
-   * @param <K> the key type
    * @param <V> the value type
    * @return a new consistent tree map type
    */
-  public static <K, V> ConsistentTreeMapType<K, V> instance() {
+  public static <V> ConsistentTreeMapType<V> instance() {
     return new ConsistentTreeMapType<>();
   }
 
@@ -54,7 +54,7 @@ public class ConsistentTreeMapType<K, V> implements PrimitiveType<ConsistentTree
   }
 
   @Override
-  public ConsistentTreeMapBuilder<K, V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
+  public ConsistentTreeMapBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
     return new ConsistentTreeMapProxyBuilder<>(name, managementService);
   }
 
