@@ -15,9 +15,8 @@
  */
 package io.atomix.protocols.raft.session;
 
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.proxy.impl.TestPrimitiveType;
 import org.junit.Test;
 
@@ -32,6 +31,6 @@ public class SessionMetadataTest {
     SessionMetadata metadata = new SessionMetadata(1, "foo", "test");
     assertEquals(SessionId.from(1), metadata.sessionId());
     assertEquals("foo", metadata.primitiveName());
-    assertEquals(new TestPrimitiveType(), metadata.primitiveType());
+    assertEquals(new TestPrimitiveType().id(), metadata.primitiveType());
   }
 }
