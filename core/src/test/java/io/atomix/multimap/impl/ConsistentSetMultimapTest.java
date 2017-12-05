@@ -24,7 +24,6 @@ import io.atomix.AbstractAtomixTest;
 import io.atomix.multimap.AsyncConsistentMultimap;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -404,28 +403,6 @@ public class ConsistentSetMultimapTest extends AbstractAtomixTest {
       }
     }
     return true;
-  }
-
-  /**
-   * Byte array comparator implementation.
-   */
-  private class ByteArrayComparator implements Comparator<byte[]> {
-
-    @Override
-    public int compare(byte[] o1, byte[] o2) {
-      if (Arrays.equals(o1, o2)) {
-        return 0;
-      } else {
-        for (int i = 0; i < o1.length && i < o2.length; i++) {
-          if (o1[i] < o2[i]) {
-            return -1;
-          } else if (o1[i] > o2[i]) {
-            return 1;
-          }
-        }
-        return o1.length > o2.length ? 1 : -1;
-      }
-    }
   }
 
   /**
