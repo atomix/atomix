@@ -1252,6 +1252,8 @@ public class RaftTest extends ConcurrentTestCase {
   private PrimitiveProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
     return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(consistency)
+        .withMinTimeout(Duration.ofMillis(250))
+        .withMaxTimeout(Duration.ofSeconds(5))
         .build())
         .build()
         .open()
