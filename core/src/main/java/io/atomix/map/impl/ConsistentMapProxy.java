@@ -31,10 +31,8 @@ import io.atomix.map.impl.ConsistentMapOperations.RemoveVersion;
 import io.atomix.map.impl.ConsistentMapOperations.Replace;
 import io.atomix.map.impl.ConsistentMapOperations.ReplaceValue;
 import io.atomix.map.impl.ConsistentMapOperations.ReplaceVersion;
-import io.atomix.map.impl.ConsistentMapOperations.TransactionBegin;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepare;
-import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepareAndCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionRollback;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
@@ -44,7 +42,6 @@ import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.time.Version;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
@@ -62,7 +59,6 @@ import java.util.function.Predicate;
 
 import static io.atomix.map.impl.ConsistentMapEvents.CHANGE;
 import static io.atomix.map.impl.ConsistentMapOperations.ADD_LISTENER;
-import static io.atomix.map.impl.ConsistentMapOperations.BEGIN;
 import static io.atomix.map.impl.ConsistentMapOperations.CLEAR;
 import static io.atomix.map.impl.ConsistentMapOperations.COMMIT;
 import static io.atomix.map.impl.ConsistentMapOperations.CONTAINS_KEY;
@@ -74,7 +70,6 @@ import static io.atomix.map.impl.ConsistentMapOperations.GET_OR_DEFAULT;
 import static io.atomix.map.impl.ConsistentMapOperations.IS_EMPTY;
 import static io.atomix.map.impl.ConsistentMapOperations.KEY_SET;
 import static io.atomix.map.impl.ConsistentMapOperations.PREPARE;
-import static io.atomix.map.impl.ConsistentMapOperations.PREPARE_AND_COMMIT;
 import static io.atomix.map.impl.ConsistentMapOperations.PUT;
 import static io.atomix.map.impl.ConsistentMapOperations.PUT_AND_GET;
 import static io.atomix.map.impl.ConsistentMapOperations.PUT_IF_ABSENT;
@@ -153,10 +148,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
       uniqueKeys.add(key);
     }
     return proxy.invoke(
-            GET_ALL_PRESENT,
-            serializer()::encode,
-            new GetAllPresent(uniqueKeys),
-            serializer()::decode);
+        GET_ALL_PRESENT,
+        serializer()::encode,
+        new GetAllPresent(uniqueKeys),
+        serializer()::decode);
   }
 
   @Override
@@ -394,33 +389,13 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   }
 
   @Override
-  public CompletableFuture<Version> begin(TransactionId transactionId) {
-    return proxy.<TransactionBegin, Long>invoke(
-        BEGIN,
-        serializer()::encode,
-        new TransactionBegin(transactionId),
-        serializer()::decode)
-        .thenApply(Version::new);
-  }
-
-  @Override
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
     return proxy.<TransactionPrepare, PrepareResult>invoke(
         PREPARE,
         serializer()::encode,
         new TransactionPrepare(transactionLog),
         serializer()::decode)
-        .thenApply(v -> v == PrepareResult.OK);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
-    return proxy.<TransactionPrepareAndCommit, PrepareResult>invoke(
-        PREPARE_AND_COMMIT,
-        serializer()::encode,
-        new TransactionPrepareAndCommit(transactionLog),
-        serializer()::decode)
-        .thenApply(v -> v == PrepareResult.OK);
+        .thenApply(v -> v == PrepareResult.OK || v == PrepareResult.PARTIAL_FAILURE);
   }
 
   @Override

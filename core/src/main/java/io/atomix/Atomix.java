@@ -27,6 +27,7 @@ import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.election.impl.LeaderElectorPrimaryElectionService;
+import io.atomix.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.impl.CorePrimitivesService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
@@ -43,9 +44,9 @@ import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionManagementService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
 import io.atomix.primitive.session.ManagedSessionIdService;
-import io.atomix.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
+import io.atomix.transaction.TransactionBuilder;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -86,8 +87,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final ManagedClusterEventService clusterEventService;
   private final ManagedPartitionGroup corePartitionGroup;
   private final ManagedPartitionService partitions;
+  private final ManagedPrimitivesService primitives;
   private final PrimitiveTypeRegistry primitiveTypes;
-  private final PrimitivesService primitives;
   private final AtomicBoolean open = new AtomicBoolean();
   private final ThreadContext context = new SingleThreadContext("atomix-%d");
 
@@ -164,14 +165,19 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return primitives;
   }
 
+  @Override
+  public TransactionBuilder transactionBuilder(String name) {
+    return primitives.transactionBuilder(name);
+  }
+
   /**
    * Returns a primitive builder of the given type.
    *
-   * @param name the primitive name
+   * @param name          the primitive name
    * @param primitiveType the primitive type
-   * @param <B> the primitive builder type
-   * @param <S> the synchronous primitive type
-   * @param <A> the asynchronous primitive type
+   * @param <B>           the primitive builder type
+   * @param <S>           the synchronous primitive type
+   * @param <A>           the asynchronous primitive type
    * @return the primitive builder
    */
   public <B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> B primitiveBuilder(
@@ -206,6 +212,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
               .thenApply(v2 -> new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, electionService, sessionIdService));
         }, context)
         .thenComposeAsync(partitionManagementService -> partitions.open(partitionManagementService), context)
+        .thenComposeAsync(v -> primitives.open(), context)
         .thenApplyAsync(v -> {
           open.set(true);
           LOGGER.info("Started");
@@ -220,7 +227,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
   @Override
   public CompletableFuture<Void> close() {
-    return partitions.close()
+    return primitives.close()
+        .thenComposeAsync(v -> partitions.close(), context)
         .thenComposeAsync(v -> clusterCommunicator.close(), context)
         .thenComposeAsync(v -> clusterEventService.close(), context)
         .thenComposeAsync(v -> cluster.close(), context)

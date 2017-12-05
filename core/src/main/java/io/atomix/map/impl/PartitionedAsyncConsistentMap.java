@@ -29,7 +29,6 @@ import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.Match;
 import io.atomix.utils.concurrent.Futures;
-import io.atomix.utils.time.Version;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
@@ -214,15 +213,6 @@ public class PartitionedAsyncConsistentMap<K, V> implements AsyncConsistentMap<K
   }
 
   @Override
-  public CompletableFuture<Version> begin(TransactionId transactionId) {
-    return getMaps().stream()
-        .map(p -> p.begin(transactionId))
-        // returning lowest Version
-        .reduce((f1, f2) -> f1.thenCombine(f2, (v1, v2) -> v1.value() < v2.value() ? v1 : v2))
-        .orElse(Futures.exceptionalFuture(new IllegalStateException("Empty partitions")));
-  }
-
-  @Override
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K, V>> transactionLog) {
     Map<AsyncConsistentMap<K, V>, List<MapUpdate<K, V>>> updatesGroupedByMap = Maps.newIdentityHashMap();
     transactionLog.records().forEach(update -> {
@@ -236,24 +226,6 @@ public class PartitionedAsyncConsistentMap<K, V> implements AsyncConsistentMap<K
     return Futures.allOf(transactionsByMap.entrySet()
         .stream()
         .map(e -> e.getKey().prepare(e.getValue()))
-        .collect(Collectors.toList()))
-        .thenApply(list -> list.stream().reduce(Boolean::logicalAnd).orElse(true));
-  }
-
-  @Override
-  public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<K, V>> transactionLog) {
-    Map<AsyncConsistentMap<K, V>, List<MapUpdate<K, V>>> updatesGroupedByMap = Maps.newIdentityHashMap();
-    transactionLog.records().forEach(update -> {
-      AsyncConsistentMap<K, V> map = getMap(update.key());
-      updatesGroupedByMap.computeIfAbsent(map, k -> Lists.newLinkedList()).add(update);
-    });
-    Map<AsyncConsistentMap<K, V>, TransactionLog<MapUpdate<K, V>>> transactionsByMap =
-        Maps.transformValues(updatesGroupedByMap,
-            list -> new TransactionLog<>(transactionLog.transactionId(), transactionLog.version(), list));
-
-    return Futures.allOf(transactionsByMap.entrySet()
-        .stream()
-        .map(e -> e.getKey().prepareAndCommit(e.getValue()))
         .collect(Collectors.toList()))
         .thenApply(list -> list.stream().reduce(Boolean::logicalAnd).orElse(true));
   }

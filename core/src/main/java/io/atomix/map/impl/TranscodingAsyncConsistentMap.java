@@ -24,7 +24,6 @@ import io.atomix.map.MapEventListener;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.concurrent.Futures;
-import io.atomix.utils.time.Version;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
@@ -118,9 +117,9 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
         uniqueKeys.add(keyEncoder.apply(key));
       }
       return backingMap.getAllPresent(uniqueKeys).thenApply(
-              entries -> ImmutableMap.copyOf(entries.entrySet().stream()
-                      .collect(Collectors.toMap(o -> keyDecoder.apply(o.getKey()),
-                              o -> versionedValueTransform.apply(o.getValue())))));
+          entries -> ImmutableMap.copyOf(entries.entrySet().stream()
+              .collect(Collectors.toMap(o -> keyDecoder.apply(o.getKey()),
+                  o -> versionedValueTransform.apply(o.getValue())))));
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -286,27 +285,9 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   }
 
   @Override
-  public CompletableFuture<Version> begin(TransactionId transactionId) {
-    try {
-      return backingMap.begin(transactionId);
-    } catch (Exception e) {
-      return Futures.exceptionalFuture(e);
-    }
-  }
-
-  @Override
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K1, V1>> transactionLog) {
     try {
       return backingMap.prepare(transactionLog.map(record -> record.map(keyEncoder, valueEncoder)));
-    } catch (Exception e) {
-      return Futures.exceptionalFuture(e);
-    }
-  }
-
-  @Override
-  public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<K1, V1>> transactionLog) {
-    try {
-      return backingMap.prepareAndCommit(transactionLog.map(record -> record.map(keyEncoder, valueEncoder)));
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }

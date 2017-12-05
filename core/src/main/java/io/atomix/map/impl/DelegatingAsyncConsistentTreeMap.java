@@ -21,7 +21,6 @@ import io.atomix.map.MapEventListener;
 import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
-import io.atomix.utils.time.Version;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
@@ -256,18 +255,8 @@ public class DelegatingAsyncConsistentTreeMap<V>
   }
 
   @Override
-  public CompletableFuture<Version> begin(TransactionId transactionId) {
-    return delegateMap.begin(transactionId);
-  }
-
-  @Override
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, V>> transactionLog) {
     return delegateMap.prepare(transactionLog);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<String, V>> transactionLog) {
-    return delegateMap.prepareAndCommit(transactionLog);
   }
 
   @Override

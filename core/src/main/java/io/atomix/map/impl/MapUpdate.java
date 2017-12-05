@@ -63,6 +63,11 @@ public final class MapUpdate<K, V> {
      * Removes an entry if the current version matches specified version.
      */
     REMOVE_IF_VERSION_MATCH,
+
+    /**
+     * Removes an entry if the current version matches specified version.
+     */
+    PUT_IF_ABSENT,
   }
 
   private Type type;
@@ -205,6 +210,10 @@ public final class MapUpdate<K, V> {
         case LOCK:
           checkNotNull(update.key, "key must be specified");
           checkState(update.version >= 0, "version must be specified");
+          break;
+        case PUT_IF_ABSENT:
+          checkNotNull(update.key, "key must be specified");
+          checkNotNull(update.value, "value must be specified.");
           break;
         case PUT_IF_VERSION_MATCH:
           checkNotNull(update.key, "key must be specified");

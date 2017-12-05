@@ -37,6 +37,7 @@ import io.atomix.map.impl.ConsistentMapOperations.TransactionCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepare;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionPrepareAndCommit;
 import io.atomix.map.impl.ConsistentMapOperations.TransactionRollback;
+import io.atomix.map.impl.MapUpdate.Type;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
@@ -709,7 +710,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
         // otherwise a tombstone would have been retained.
         if (existingValue == null) {
           // If the value is null, ensure the version is equal to the transaction version.
-          if (record.version() != transactionLog.version()) {
+          if (record.type() != Type.PUT_IF_ABSENT && record.version() != transactionLog.version()) {
             return PrepareResult.OPTIMISTIC_LOCK_FAILURE;
           }
         } else {

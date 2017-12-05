@@ -137,7 +137,6 @@ public interface AsyncDistributedSet<E> extends AsyncPrimitive {
    */
   CompletableFuture<Boolean> removeAll(Collection<? extends E> c);
 
-
   /**
    * Returns a new {@link DistributedSet} that is backed by this instance.
    *

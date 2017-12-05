@@ -15,22 +15,12 @@
  */
 package io.atomix.transaction;
 
-import io.atomix.utils.time.Version;
-
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface for transactional primitives.
  */
 public interface Transactional<T> {
-
-  /**
-   * Begins the transaction.
-   *
-   * @param transactionId the transaction identifier for the transaction to begin
-   * @return a completable future to be completed with the lock version
-   */
-  CompletableFuture<Version> begin(TransactionId transactionId);
 
   /**
    * Prepares a transaction for commitment.
@@ -40,15 +30,6 @@ public interface Transactional<T> {
    * {@code false} otherwise
    */
   CompletableFuture<Boolean> prepare(TransactionLog<T> transactionLog);
-
-  /**
-   * Prepares and commits a transaction.
-   *
-   * @param transactionLog transaction log
-   * @return {@code true} if prepare is successful and transaction was committed
-   * {@code false} otherwise
-   */
-  CompletableFuture<Boolean> prepareAndCommit(TransactionLog<T> transactionLog);
 
   /**
    * Commits a previously prepared transaction and unlocks the object.

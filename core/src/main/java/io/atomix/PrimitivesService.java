@@ -30,6 +30,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.queue.WorkQueueBuilder;
 import io.atomix.set.DistributedSetBuilder;
+import io.atomix.transaction.TransactionBuilder;
 import io.atomix.tree.DocumentTreeBuilder;
 import io.atomix.value.AtomicValueBuilder;
 
@@ -167,6 +168,23 @@ public interface PrimitivesService {
   default <E> WorkQueueBuilder<E> workQueueBuilder(String name) {
     return primitiveBuilder(name, PrimitiveTypes.workQueue());
   }
+
+  /**
+   * Creates a new transaction builder.
+   *
+   * @return transaction builder
+   */
+  default TransactionBuilder transactionBuilder() {
+    return transactionBuilder("transaction");
+  }
+
+  /**
+   * Creates a new transaction builder.
+   *
+   * @param name the transaction name
+   * @return the transaction builder
+   */
+  TransactionBuilder transactionBuilder(String name);
 
   /**
    * Returns a primitive builder of the given type.

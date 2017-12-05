@@ -1,0 +1,38 @@
+/*
+ * Copyright 2017-present Open Networking Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.atomix.transaction.impl;
+
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.transaction.AsyncTransactionalSet;
+import io.atomix.transaction.TransactionalMapBuilder;
+import io.atomix.transaction.TransactionalSetBuilder;
+
+/**
+ * Default transactional set builder.
+ */
+public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E> {
+  private final TransactionalMapBuilder<E, Boolean> mapBuilder;
+
+  public DefaultTransactionalSetBuilder(String name, PrimitiveManagementService managementService, DefaultTransaction transaction) {
+    super(name);
+    this.mapBuilder = new DefaultTransactionalMapBuilder<>(name, managementService, transaction);
+  }
+
+  @Override
+  public AsyncTransactionalSet<E> buildAsync() {
+    return new DefaultTransactionalSet<>(mapBuilder.buildAsync());
+  }
+}

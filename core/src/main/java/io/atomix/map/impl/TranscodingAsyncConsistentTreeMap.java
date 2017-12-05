@@ -23,7 +23,6 @@ import io.atomix.map.MapEventListener;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.concurrent.Futures;
-import io.atomix.utils.time.Version;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
@@ -299,17 +298,7 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Version> begin(TransactionId transactionId) {
-    throw new UnsupportedOperationException("This operation is not yet supported.");
-  }
-
-  @Override
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, V1>> transactionLog) {
-    throw new UnsupportedOperationException("This operation is not yet supported.");
-  }
-
-  @Override
-  public CompletableFuture<Boolean> prepareAndCommit(TransactionLog<MapUpdate<String, V1>> transactionLog) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 

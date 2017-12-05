@@ -19,33 +19,28 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import io.atomix.AbstractAtomixTest;
 import io.atomix.map.AsyncConsistentMap;
+import io.atomix.map.ConsistentMap;
 import io.atomix.map.MapEvent;
 import io.atomix.map.MapEventListener;
-import io.atomix.transaction.TransactionId;
-import io.atomix.transaction.TransactionLog;
-import io.atomix.utils.time.Version;
+import io.atomix.transaction.CommitStatus;
+import io.atomix.transaction.Isolation;
+import io.atomix.transaction.Transaction;
+import io.atomix.transaction.TransactionalMap;
 import io.atomix.utils.time.Versioned;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Unit tests for {@link io.atomix.map.ConsistentMap}.
@@ -326,223 +321,51 @@ public class ConsistentMapTest extends AbstractAtomixTest {
   }
 
   @Test
-  @Ignore // Until transactions are supported
-  public void testTransactionPrepare() throws Throwable {
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testPrepareTestsMap").buildAsync();
+  public void testTransaction() throws Throwable {
+    Transaction transaction1 = atomix().transactionBuilder()
+        .withIsolation(Isolation.READ_COMMITTED)
+        .build();
+    transaction1.begin();
+    TransactionalMap<String, String> map1 = transaction1.<String, String>mapBuilder("test-transactional-map").build();
 
-    TransactionId transactionId1 = TransactionId.from("tx1");
-    TransactionId transactionId2 = TransactionId.from("tx2");
-    TransactionId transactionId3 = TransactionId.from("tx3");
-    TransactionId transactionId4 = TransactionId.from("tx4");
+    Transaction transaction2 = atomix().transactionBuilder()
+        .withIsolation(Isolation.REPEATABLE_READS)
+        .build();
+    transaction2.begin();
+    TransactionalMap<String, String> map2 = transaction2.<String, String>mapBuilder("test-transactional-map").build();
 
-    Version lock1 = map.begin(transactionId1).join();
+    assertNull(map1.get("foo"));
+    assertFalse(map1.containsKey("foo"));
+    assertNull(map2.get("foo"));
+    assertFalse(map2.containsKey("foo"));
 
-    MapUpdate<String, String> update1 =
-        MapUpdate.<String, String>builder()
-            .withType(MapUpdate.Type.LOCK)
-            .withKey("foo")
-            .withVersion(lock1.value())
-            .build();
-    MapUpdate<String, String> update2 =
-        MapUpdate.<String, String>builder()
-            .withType(MapUpdate.Type.LOCK)
-            .withKey("bar")
-            .withVersion(lock1.value())
-            .build();
+    map1.put("foo", "bar");
+    map1.put("bar", "baz");
+    assertEquals(map1.get("foo"), "bar");
+    assertEquals(transaction1.commit(), CommitStatus.SUCCESS);
 
-    map.prepare(new TransactionLog<>(transactionId1, lock1.value(), Arrays.asList(update1, update2)))
-        .thenAccept(result -> {
-          assertTrue(result);
-        }).join();
+    assertNull(map2.get("foo"));
+    assertEquals(map2.get("bar"), "baz");
+    map2.put("foo", "bar");
+    assertEquals(map2.get("foo"), "bar");
+    map2.remove("foo");
+    assertFalse(map2.containsKey("foo"));
+    map2.put("foo", "baz");
+    assertEquals(transaction2.commit(), CommitStatus.FAILURE);
 
-    Version lock2 = map.begin(transactionId2).join();
+    Transaction transaction3 = atomix().transactionBuilder()
+        .withIsolation(Isolation.REPEATABLE_READS)
+        .build();
+    transaction3.begin();
+    TransactionalMap<String, String> map3 = transaction3.<String, String>mapBuilder("test-transactional-map").build();
+    assertEquals(map3.get("foo"), "bar");
+    map3.put("foo", "baz");
+    assertEquals(map3.get("foo"), "baz");
+    assertEquals(transaction3.commit(), CommitStatus.SUCCESS);
 
-    MapUpdate<String, String> update3 =
-        MapUpdate.<String, String>builder()
-            .withType(MapUpdate.Type.LOCK)
-            .withKey("foo")
-            .withVersion(lock2.value())
-            .build();
-
-    map.prepare(new TransactionLog<>(transactionId2, lock2.value(), Arrays.asList(update3)))
-        .thenAccept(result -> {
-          assertFalse(result);
-        }).join();
-    map.rollback(transactionId2).join();
-
-    Version lock3 = map.begin(transactionId3).join();
-
-    MapUpdate<String, String> update4 =
-        MapUpdate.<String, String>builder()
-            .withType(MapUpdate.Type.LOCK)
-            .withKey("baz")
-            .withVersion(0)
-            .build();
-
-    map.prepare(new TransactionLog<>(transactionId3, lock3.value(), Arrays.asList(update4)))
-        .thenAccept(result -> {
-          assertFalse(result);
-        }).join();
-    map.rollback(transactionId3).join();
-
-    Version lock4 = map.begin(transactionId4).join();
-
-    MapUpdate<String, String> update5 =
-        MapUpdate.<String, String>builder()
-            .withType(MapUpdate.Type.LOCK)
-            .withKey("baz")
-            .withVersion(lock4.value())
-            .build();
-
-    map.prepare(new TransactionLog<>(transactionId4, lock4.value(), Arrays.asList(update5)))
-        .thenAccept(result -> {
-          assertTrue(result);
-        }).join();
-  }
-
-  @Test
-  @Ignore // Until transactions are supported
-  public void testTransactionCommit() throws Throwable {
-    final String value1 = "value1";
-    final String value2 = "value2";
-
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testCommitTestsMap").buildAsync();
-    TestMapEventListener listener = new TestMapEventListener();
-
-    map.addListener(listener).join();
-
-    TransactionId transactionId = TransactionId.from("tx1");
-
-    // Begin the transaction.
-    Version lock = map.begin(transactionId).join();
-
-    // PUT_IF_VERSION_MATCH
-    MapUpdate<String, String> update1 =
-        MapUpdate.<String, String>builder().withType(MapUpdate.Type.PUT_IF_VERSION_MATCH)
-            .withKey("foo")
-            .withValue(value1)
-            .withVersion(lock.value())
-            .build();
-
-    map.prepare(new TransactionLog<>(transactionId, lock.value(), Arrays.asList(update1))).thenAccept(result -> {
-      assertEquals(true, result);
-    }).join();
-    // verify changes in Tx is not visible yet until commit
-    assertFalse(listener.eventReceived());
-
-    map.size().thenAccept(result -> {
-      assertTrue(result == 0);
-    }).join();
-
-    map.get("foo").thenAccept(result -> {
-      assertNull(result);
-    }).join();
-
-    try {
-      map.put("foo", value2).join();
-      fail("update to map entry in open tx should fail with Exception");
-    } catch (CompletionException e) {
-      assertEquals(ConcurrentModificationException.class, e.getCause().getClass());
-    }
-
-    assertFalse(listener.eventReceived());
-
-    map.commit(transactionId).join();
-    MapEvent<String, String> event = listener.event();
-    assertNotNull(event);
-    assertEquals(MapEvent.Type.INSERT, event.type());
-    assertEquals(value1, event.newValue().value());
-
-    // map should be update-able after commit
-    map.put("foo", value2).thenAccept(result -> {
-      assertEquals(Versioned.valueOrElse(result, null), value1);
-    }).join();
-    event = listener.event();
-    assertNotNull(event);
-    assertEquals(MapEvent.Type.UPDATE, event.type());
-    assertEquals(value2, event.newValue().value());
-
-    // REMOVE_IF_VERSION_MATCH
-    String currFoo = map.get("foo").get().value();
-    long currFooVersion = map.get("foo").get().version();
-    MapUpdate<String, String> remove1 =
-        MapUpdate.<String, String>builder().withType(MapUpdate.Type.REMOVE_IF_VERSION_MATCH)
-            .withKey("foo")
-            .withVersion(currFooVersion)
-            .build();
-
-    transactionId = TransactionId.from("tx2");
-
-    // Begin the transaction.
-    map.begin(transactionId).join();
-
-    map.prepare(new TransactionLog<>(transactionId, lock.value(), Arrays.asList(remove1))).thenAccept(result -> {
-      assertTrue("prepare should succeed", result);
-    }).join();
-    // verify changes in Tx is not visible yet until commit
-    assertFalse(listener.eventReceived());
-
-    map.size().thenAccept(size -> {
-      assertThat(size, is(1));
-    }).join();
-
-    map.get("foo").thenAccept(result -> {
-      assertThat(result.value(), is(currFoo));
-    }).join();
-
-    map.commit(transactionId).join();
-    event = listener.event();
-    assertNotNull(event);
-    assertEquals(MapEvent.Type.REMOVE, event.type());
-    assertEquals(currFoo, event.oldValue().value());
-
-    map.size().thenAccept(size -> {
-      assertThat(size, is(0));
-    }).join();
-
-  }
-
-  @Test
-  @Ignore // Until transactions are supported
-  public void testTransactionRollback() throws Throwable {
-    final String value1 = "value1";
-    final String value2 = "value2";
-
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testTransactionRollbackTestsMap").buildAsync();
-    TestMapEventListener listener = new TestMapEventListener();
-
-    map.addListener(listener).join();
-
-    TransactionId transactionId = TransactionId.from("tx1");
-
-    Version lock = map.begin(transactionId).join();
-
-    MapUpdate<String, String> update1 =
-        MapUpdate.<String, String>builder().withType(MapUpdate.Type.PUT_IF_VERSION_MATCH)
-            .withKey("foo")
-            .withValue(value1)
-            .withVersion(lock.value())
-            .build();
-
-    map.prepare(new TransactionLog<>(transactionId, lock.value(), Arrays.asList(update1))).thenAccept(result -> {
-      assertEquals(true, result);
-    }).join();
-    assertFalse(listener.eventReceived());
-
-    map.rollback(transactionId).join();
-    assertFalse(listener.eventReceived());
-
-    map.get("foo").thenAccept(result -> {
-      assertNull(result);
-    }).join();
-
-    map.put("foo", value2).thenAccept(result -> {
-      assertNull(result);
-    }).join();
-    MapEvent<String, String> event = listener.event();
-    assertNotNull(event);
-    assertEquals(MapEvent.Type.INSERT, event.type());
-    assertEquals(value2, event.newValue().value());
+    ConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("test-transactional-map").build();
+    assertEquals(map.get("foo").value(), "baz");
+    assertEquals(map.get("bar").value(), "baz");
   }
 
   private static class TestMapEventListener implements MapEventListener<String, String> {

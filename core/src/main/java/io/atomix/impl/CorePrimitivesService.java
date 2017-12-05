@@ -17,6 +17,7 @@ package io.atomix.impl;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import io.atomix.ManagedPrimitivesService;
 import io.atomix.PrimitivesService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
@@ -27,17 +28,24 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.partition.PartitionService;
+import io.atomix.transaction.ManagedTransactionService;
+import io.atomix.transaction.TransactionBuilder;
+import io.atomix.transaction.impl.DefaultTransactionBuilder;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
  * Default primitives service.
  */
-public class CorePrimitivesService implements PrimitivesService {
+public class CorePrimitivesService implements ManagedPrimitivesService {
   private final PrimitiveManagementService managementService;
+  private final ManagedTransactionService transactionService;
+  private final AtomicBoolean open = new AtomicBoolean();
 
   public CorePrimitivesService(
       ClusterService clusterService,
@@ -49,6 +57,12 @@ public class CorePrimitivesService implements PrimitivesService {
         communicationService,
         eventService,
         partitionService);
+    this.transactionService = new CoreTransactionService(managementService);
+  }
+
+  @Override
+  public TransactionBuilder transactionBuilder(String name) {
+    return new DefaultTransactionBuilder(name, managementService, transactionService);
   }
 
   @Override
@@ -69,5 +83,28 @@ public class CorePrimitivesService implements PrimitivesService {
             .orElse(ImmutableSet.of()))
         .reduce(Sets::union)
         .orElse(ImmutableSet.of());
+  }
+
+  @Override
+  public CompletableFuture<PrimitivesService> open() {
+    return transactionService.open()
+        .thenRun(() -> open.set(true))
+        .thenApply(v -> this);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return open.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return transactionService.close()
+        .whenComplete((r, e) -> open.set(false));
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open.get();
   }
 }
