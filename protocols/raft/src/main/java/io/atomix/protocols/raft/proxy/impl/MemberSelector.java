@@ -149,9 +149,9 @@ public final class MemberSelector implements Iterator<NodeId>, AutoCloseable {
   /**
    * Returns a boolean value indicating whether the selector state would be changed by the given members.
    */
-  private boolean changed(NodeId leader, Collection<NodeId> servers) {
-    checkNotNull(members, "servers");
-    checkArgument(!members.isEmpty(), "servers cannot be empty");
+  private boolean changed(NodeId leader, Collection<NodeId> members) {
+    checkNotNull(members, "members");
+    checkArgument(!members.isEmpty(), "members cannot be empty");
     if (leader != null) {
       checkArgument(members.contains(leader), "leader must be present in members list");
     }
