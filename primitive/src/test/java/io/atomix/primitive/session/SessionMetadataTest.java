@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session;
+package io.atomix.primitive.session;
 
-import io.atomix.primitive.session.SessionId;
+import io.atomix.primitive.TestPrimitiveType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * Session identifier test.
+ * Raft session metadata test.
  */
-public class SessionIdTest {
+public class SessionMetadataTest {
   @Test
-  public void testSessionId() throws Exception {
-    SessionId sessionId = SessionId.from(1);
-    assertEquals(Long.valueOf(1), sessionId.id());
+  public void testRaftSessionMetadata() throws Exception {
+    SessionMetadata metadata = new SessionMetadata(1, "foo", "test");
+    assertEquals(SessionId.from(1), metadata.sessionId());
+    assertEquals("foo", metadata.primitiveName());
+    assertEquals(new TestPrimitiveType().id(), metadata.primitiveType());
   }
 }

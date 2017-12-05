@@ -13,26 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session;
+package io.atomix.primitive.session;
 
-import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.SessionEvent;
+import io.atomix.primitive.session.SessionId;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 
 /**
- * Raft session event test.
+ * Session identifier test.
  */
-public class SessionEventTest {
+public class SessionIdTest {
   @Test
-  public void testRaftSessionEvent() throws Exception {
-    Session session = mock(Session.class);
-    long timestamp = System.currentTimeMillis();
-    SessionEvent event = new SessionEvent(SessionEvent.Type.OPEN, session, timestamp);
-    assertEquals(SessionEvent.Type.OPEN, event.type());
-    assertEquals(session, event.subject());
-    assertEquals(timestamp, event.time());
+  public void testSessionId() throws Exception {
+    SessionId sessionId = SessionId.from(1);
+    assertEquals(Long.valueOf(1), sessionId.id());
   }
 }
