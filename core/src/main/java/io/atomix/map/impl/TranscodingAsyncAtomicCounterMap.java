@@ -16,8 +16,10 @@
 package io.atomix.map.impl;
 
 import io.atomix.map.AsyncAtomicCounterMap;
+import io.atomix.map.AtomicCounterMap;
 import io.atomix.utils.concurrent.Futures;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -174,6 +176,11 @@ public class TranscodingAsyncAtomicCounterMap<K1, K2> implements AsyncAtomicCoun
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
+  }
+
+  @Override
+  public AtomicCounterMap<K1> sync(Duration operationTimeout) {
+    return new BlockingAtomicCounterMap<>(this, operationTimeout.toMillis());
   }
 
   @Override

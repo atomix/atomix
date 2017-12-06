@@ -15,11 +15,12 @@
  */
 package io.atomix.map;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
-import io.atomix.map.impl.BlockingAtomicCounterMap;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -166,22 +167,11 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    */
   CompletableFuture<Void> clear();
 
-  /**
-   * Returns a new {@link AtomicCounterMap} that is backed by this instance.
-   *
-   * @return new {@code AtomicCounterMap} instance
-   */
-  default AtomicCounterMap<K> asAtomicCounterMap() {
-    return asAtomicCounterMap(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  @Override
+  default AtomicCounterMap<K> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link AtomicCounterMap} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned ConsistentMap operations
-   * @return new {@code AtomicCounterMap} instance
-   */
-  default AtomicCounterMap<K> asAtomicCounterMap(long timeoutMillis) {
-    return new BlockingAtomicCounterMap<>(this, timeoutMillis);
-  }
+  @Override
+  AtomicCounterMap<K> sync(Duration operationTimeout);
 }

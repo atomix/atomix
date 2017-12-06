@@ -16,9 +16,10 @@
 package io.atomix.transaction;
 
 import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.transaction.impl.BlockingTransaction;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -93,22 +94,11 @@ public interface AsyncTransaction extends AsyncPrimitive {
    */
   <E> TransactionalSetBuilder<E> setBuilder(String name);
 
-  /**
-   * Returns a new {@link Transaction} that is backed by this instance.
-   *
-   * @return new {@code Transaction} instance
-   */
-  default Transaction asTransaction() {
-    return asTransaction(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  @Override
+  default Transaction sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link Transaction} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned Transaction operations
-   * @return new {@code Transaction} instance
-   */
-  default Transaction asTransaction(long timeoutMillis) {
-    return new BlockingTransaction(this, timeoutMillis);
-  }
+  @Override
+  Transaction sync(Duration operationTimeout);
 }

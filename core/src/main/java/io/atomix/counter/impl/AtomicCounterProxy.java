@@ -15,17 +15,19 @@
  */
 package io.atomix.counter.impl;
 
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.counter.AsyncAtomicCounter;
+import io.atomix.counter.AtomicCounter;
 import io.atomix.counter.impl.AtomicCounterOperations.AddAndGet;
 import io.atomix.counter.impl.AtomicCounterOperations.CompareAndSet;
 import io.atomix.counter.impl.AtomicCounterOperations.GetAndAdd;
 import io.atomix.counter.impl.AtomicCounterOperations.Set;
+import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import static io.atomix.counter.impl.AtomicCounterOperations.ADD_AND_GET;
@@ -87,5 +89,10 @@ public class AtomicCounterProxy extends AbstractAsyncPrimitive implements AsyncA
   @Override
   public CompletableFuture<Long> getAndIncrement() {
     return proxy.invoke(GET_AND_INCREMENT, SERIALIZER::decode);
+  }
+
+  @Override
+  public AtomicCounter sync(Duration operationTimeout) {
+    return new BlockingAtomicCounter(this, operationTimeout.toMillis());
   }
 }

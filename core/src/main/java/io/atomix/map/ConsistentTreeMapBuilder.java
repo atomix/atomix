@@ -32,7 +32,7 @@ import java.time.Duration;
  * Builder for {@link ConsistentTreeMap}.
  */
 public abstract class ConsistentTreeMapBuilder<V>
-    extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>, AsyncConsistentTreeMap<V>> {
+    extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>> {
 
   public ConsistentTreeMapBuilder(String name) {
     super(PrimitiveTypes.treeMap(), name);
@@ -97,10 +97,5 @@ public abstract class ConsistentTreeMapBuilder<V>
         .withReplication(replication)
         .withBackups(backups())
         .build();
-  }
-
-  @Override
-  public ConsistentTreeMap<V> build() {
-    return buildAsync().asTreeMap();
   }
 }

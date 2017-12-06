@@ -18,14 +18,16 @@ package io.atomix.value.impl;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.value.AsyncAtomicValue;
-import io.atomix.value.AtomicValueEventListener;
-import io.atomix.value.impl.AtomicValueOperations.CompareAndSet;
-import io.atomix.value.impl.AtomicValueOperations.GetAndSet;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
+import io.atomix.value.AsyncAtomicValue;
+import io.atomix.value.AtomicValue;
+import io.atomix.value.AtomicValueEventListener;
+import io.atomix.value.impl.AtomicValueOperations.CompareAndSet;
+import io.atomix.value.impl.AtomicValueOperations.GetAndSet;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -89,5 +91,10 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive implements AsyncAto
       return proxy.invoke(REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public AtomicValue<byte[]> sync(Duration operationTimeout) {
+    return new BlockingAtomicValue<>(this, operationTimeout.toMillis());
   }
 }

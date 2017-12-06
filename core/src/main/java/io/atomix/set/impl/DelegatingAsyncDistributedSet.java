@@ -18,15 +18,17 @@ package io.atomix.set.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.MapEvent;
 import io.atomix.map.MapEventListener;
+import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.set.AsyncDistributedSet;
+import io.atomix.set.DistributedSet;
 import io.atomix.set.SetEvent;
 import io.atomix.set.SetEventListener;
 import io.atomix.utils.concurrent.Futures;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -130,5 +132,10 @@ public class DelegatingAsyncDistributedSet<E> extends DelegatingDistributedPrimi
       return backingMap.removeListener(mapEventListener);
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public DistributedSet<E> sync(Duration operationTimeout) {
+    return new BlockingDistributedSet<E>(this, operationTimeout.toMillis());
   }
 }

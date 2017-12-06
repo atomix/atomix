@@ -15,10 +15,10 @@
  */
 package io.atomix.lock.impl;
 
-import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.Synchronous;
 import io.atomix.lock.AsyncDistributedLock;
 import io.atomix.lock.DistributedLock;
+import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Version;
 
 import java.time.Duration;
@@ -60,6 +60,11 @@ public class BlockingDistributedLock extends Synchronous<AsyncDistributedLock> i
   @Override
   public void unlock() {
     complete(asyncLock.unlock());
+  }
+
+  @Override
+  public AsyncDistributedLock async() {
+    return asyncLock;
   }
 
   private <T> T complete(CompletableFuture<T> future) {

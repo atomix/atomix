@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Transaction builder.
  */
-public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<TransactionBuilder, Transaction, AsyncTransaction> {
+public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<TransactionBuilder, Transaction> {
   private Isolation isolation = Isolation.READ_COMMITTED;
 
   protected TransactionBuilder(String name) {
@@ -65,10 +65,5 @@ public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<Tra
    */
   public Isolation isolation() {
     return isolation;
-  }
-
-  @Override
-  public Transaction build() {
-    return buildAsync().asTransaction();
   }
 }

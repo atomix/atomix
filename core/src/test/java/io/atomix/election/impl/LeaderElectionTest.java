@@ -42,7 +42,7 @@ public class LeaderElectionTest extends AbstractAtomixTest {
 
   @Test
   public void testRun() throws Throwable {
-    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-run").buildAsync();
+    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-run").build().async();
     election1.run(node1).thenAccept(result -> {
       assertEquals(node1, result.leader().id());
       assertEquals(1, result.leader().term());
@@ -50,7 +50,7 @@ public class LeaderElectionTest extends AbstractAtomixTest {
       assertEquals(node1, result.candidates().get(0));
     }).join();
 
-    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-run").buildAsync();
+    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-run").build().async();
     election2.run(node2).thenAccept(result -> {
       assertEquals(node1, result.leader().id());
       assertEquals(1, result.leader().term());
@@ -62,9 +62,9 @@ public class LeaderElectionTest extends AbstractAtomixTest {
 
   @Test
   public void testWithdraw() throws Throwable {
-    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-withdraw").buildAsync();
+    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-withdraw").build().async();
     election1.run(node1).join();
-    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-withdraw").buildAsync();
+    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-withdraw").build().async();
     election2.run(node2).join();
 
     LeaderEventListener listener1 = new LeaderEventListener();
@@ -100,9 +100,9 @@ public class LeaderElectionTest extends AbstractAtomixTest {
 
   @Test
   public void testAnoint() throws Throwable {
-    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-anoint").buildAsync();
-    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-anoint").buildAsync();
-    AsyncLeaderElection<NodeId> election3 = atomix().<NodeId>leaderElectionBuilder("test-election-anoint").buildAsync();
+    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-anoint").build().async();
+    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-anoint").build().async();
+    AsyncLeaderElection<NodeId> election3 = atomix().<NodeId>leaderElectionBuilder("test-election-anoint").build().async();
     election1.run(node1).join();
     election2.run(node2).join();
 
@@ -146,9 +146,9 @@ public class LeaderElectionTest extends AbstractAtomixTest {
 
   @Test
   public void testPromote() throws Throwable {
-    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-promote").buildAsync();
-    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-promote").buildAsync();
-    AsyncLeaderElection<NodeId> election3 = atomix().<NodeId>leaderElectionBuilder("test-election-promote").buildAsync();
+    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-promote").build().async();
+    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-promote").build().async();
+    AsyncLeaderElection<NodeId> election3 = atomix().<NodeId>leaderElectionBuilder("test-election-promote").build().async();
     election1.run(node1).join();
     election2.run(node2).join();
 
@@ -196,9 +196,9 @@ public class LeaderElectionTest extends AbstractAtomixTest {
 
   @Test
   public void testLeaderSessionClose() throws Throwable {
-    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-leader-session-close").buildAsync();
+    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-leader-session-close").build().async();
     election1.run(node1).join();
-    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-leader-session-close").buildAsync();
+    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-leader-session-close").build().async();
     LeaderEventListener listener = new LeaderEventListener();
     election2.run(node2).join();
     election2.addListener(listener).join();
@@ -212,9 +212,9 @@ public class LeaderElectionTest extends AbstractAtomixTest {
 
   @Test
   public void testNonLeaderSessionClose() throws Throwable {
-    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-non-leader-session-close").buildAsync();
+    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-non-leader-session-close").build().async();
     election1.run(node1).join();
-    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-non-leader-session-close").buildAsync();
+    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-non-leader-session-close").build().async();
     LeaderEventListener listener = new LeaderEventListener();
     election2.run(node2).join();
     election1.addListener(listener).join();
@@ -228,8 +228,8 @@ public class LeaderElectionTest extends AbstractAtomixTest {
 
   @Test
   public void testQueries() throws Throwable {
-    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-query").buildAsync();
-    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-query").buildAsync();
+    AsyncLeaderElection<NodeId> election1 = atomix().<NodeId>leaderElectionBuilder("test-election-query").build().async();
+    AsyncLeaderElection<NodeId> election2 = atomix().<NodeId>leaderElectionBuilder("test-election-query").build().async();
     election1.run(node1).join();
     election2.run(node2).join();
     election2.run(node2).join();

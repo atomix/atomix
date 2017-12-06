@@ -15,18 +15,18 @@
  */
 package io.atomix.map;
 
+import io.atomix.map.impl.ConsistentMapProxyBuilder;
+import io.atomix.map.impl.ConsistentMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
-import io.atomix.map.impl.ConsistentMapService;
-import io.atomix.map.impl.ConsistentMapProxyBuilder;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Consistent map primitive type.
  */
-public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>, AsyncConsistentMap<K, V>> {
+public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>> {
   private static final String NAME = "CONSISTENT_MAP";
 
   /**

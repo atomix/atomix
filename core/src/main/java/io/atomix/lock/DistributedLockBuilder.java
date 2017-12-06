@@ -15,13 +15,13 @@
  */
 package io.atomix.lock;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 
@@ -34,7 +34,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Builder for AtomicIdGenerator.
  */
 public abstract class DistributedLockBuilder
-    extends DistributedPrimitiveBuilder<DistributedLockBuilder, DistributedLock, AsyncDistributedLock> {
+    extends DistributedPrimitiveBuilder<DistributedLockBuilder, DistributedLock> {
 
   private Duration lockTimeout = Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
 
@@ -113,10 +113,5 @@ public abstract class DistributedLockBuilder
         .withMaxTimeout(Duration.ofSeconds(5))
         .withReadConsistency(readConsistency == Consistency.LINEARIZABLE ? ReadConsistency.LINEARIZABLE : ReadConsistency.SEQUENTIAL)
         .build();
-  }
-
-  @Override
-  public DistributedLock build() {
-    return buildAsync().asDistributedLock();
   }
 }

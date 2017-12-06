@@ -18,9 +18,9 @@ package io.atomix.multimap;
 
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
@@ -155,8 +155,7 @@ public interface ConsistentMultimap<K, V> extends SyncPrimitive {
    * @param values the values to be associated with the key
    * @return the collection of removed values, which may be empty
    */
-  Versioned<Collection<? extends V>> replaceValues(K key,
-                                                   Collection<V> values);
+  Versioned<Collection<? extends V>> replaceValues(K key, Collection<V> values);
 
   /**
    * Removes all key-value pairs, after which it will be empty.
@@ -241,4 +240,7 @@ public interface ConsistentMultimap<K, V> extends SyncPrimitive {
    * @param listener listener to unregister
    */
   void removeListener(MultimapEventListener<K, V> listener);
+
+  @Override
+  AsyncConsistentMultimap<K, V> async();
 }

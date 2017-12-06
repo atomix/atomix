@@ -33,8 +33,8 @@ public class IdGeneratorTest extends AbstractAtomixTest {
    */
   @Test
   public void testNextId() throws Throwable {
-    AsyncAtomicIdGenerator idGenerator1 = atomix().atomicIdGeneratorBuilder("testNextId").buildAsync();
-    AsyncAtomicIdGenerator idGenerator2 = atomix().atomicIdGeneratorBuilder("testNextId").buildAsync();
+    AsyncAtomicIdGenerator idGenerator1 = atomix().atomicIdGeneratorBuilder("testNextId").build().async();
+    AsyncAtomicIdGenerator idGenerator2 = atomix().atomicIdGeneratorBuilder("testNextId").build().async();
 
     CompletableFuture<Long> future11 = idGenerator1.nextId();
     CompletableFuture<Long> future12 = idGenerator1.nextId();
@@ -64,9 +64,9 @@ public class IdGeneratorTest extends AbstractAtomixTest {
   @Test
   public void testNextIdBatchRollover() throws Throwable {
     DelegatingIdGenerator idGenerator1 = new DelegatingIdGenerator(
-        atomix().atomicCounterBuilder("testNextIdBatchRollover").buildAsync(), 2);
+        atomix().atomicCounterBuilder("testNextIdBatchRollover").build().async(), 2);
     DelegatingIdGenerator idGenerator2 = new DelegatingIdGenerator(
-        atomix().atomicCounterBuilder("testNextIdBatchRollover").buildAsync(), 2);
+        atomix().atomicCounterBuilder("testNextIdBatchRollover").build().async(), 2);
 
     CompletableFuture<Long> future11 = idGenerator1.nextId();
     CompletableFuture<Long> future12 = idGenerator1.nextId();

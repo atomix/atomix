@@ -62,6 +62,11 @@ public class BlockingTransactionalSet<E> implements TransactionalSet<E> {
     complete(asyncSet.close());
   }
 
+  @Override
+  public AsyncTransactionalSet<E> async() {
+    return asyncSet;
+  }
+
   private <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);

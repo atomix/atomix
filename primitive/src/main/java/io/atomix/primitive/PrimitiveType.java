@@ -21,7 +21,7 @@ import io.atomix.utils.Identifier;
 /**
  * Raft service type.
  */
-public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> extends Identifier<String> {
+public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> extends Identifier<String> {
 
   /**
    * Returns the primitive type name.

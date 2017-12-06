@@ -17,10 +17,11 @@
 package io.atomix.map;
 
 import io.atomix.PrimitiveTypes;
-import io.atomix.map.impl.BlockingConsistentTreeMap;
+import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -171,12 +172,11 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
       boolean inclusiveUpper,
       boolean inclusiveLower);
 
-  default ConsistentTreeMap<V> asTreeMap() {
-    return asTreeMap(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  @Override
+  default ConsistentTreeMap<V> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  default ConsistentTreeMap<V> asTreeMap(long timeoutMillis) {
-    return new BlockingConsistentTreeMap<>(this, timeoutMillis);
-  }
-
+  @Override
+  ConsistentTreeMap<V> sync(Duration operationTimeout);
 }

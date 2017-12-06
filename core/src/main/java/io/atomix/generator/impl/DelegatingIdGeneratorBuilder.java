@@ -15,13 +15,13 @@
  */
 package io.atomix.generator.impl;
 
-import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.counter.impl.AtomicCounterProxy;
-import io.atomix.generator.AsyncAtomicIdGenerator;
 import io.atomix.generator.AtomicIdGenerator;
 import io.atomix.generator.AtomicIdGeneratorBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveProtocol;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -36,24 +36,17 @@ public class DelegatingIdGeneratorBuilder extends AtomicIdGeneratorBuilder {
     this.managementService = checkNotNull(managementService);
   }
 
-  private AsyncAtomicIdGenerator newIdGenerator(PrimitiveProxy proxy) {
-    return new DelegatingIdGenerator(new AtomicCounterProxy(proxy.open().join()));
-  }
-
-  @Override
-  public AtomicIdGenerator build() {
-    return buildAsync().asAtomicIdGenerator();
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncAtomicIdGenerator buildAsync() {
+  public CompletableFuture<AtomicIdGenerator> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newIdGenerator(managementService.getPartitionService()
+    return managementService.getPartitionService()
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
         .proxyBuilder(name(), primitiveType(), protocol)
-        .build());
+        .build()
+        .open()
+        .thenApply(proxy -> new DelegatingIdGenerator(new AtomicCounterProxy(proxy)).sync());
   }
 }

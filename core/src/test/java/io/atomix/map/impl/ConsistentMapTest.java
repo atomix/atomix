@@ -58,7 +58,7 @@ public class ConsistentMapTest extends AbstractAtomixTest {
     AsyncConsistentMap<String, String> map = atomix()
         .<String, String>consistentMapBuilder("testNullValues")
         .withNullValues()
-        .buildAsync();
+        .build().async();
 
     map.get("foo")
         .thenAccept(v -> assertNull(v)).join();
@@ -93,7 +93,7 @@ public class ConsistentMapTest extends AbstractAtomixTest {
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
 
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testBasicMapOperationMap").buildAsync();
+    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testBasicMapOperationMap").build().async();
 
     map.isEmpty().thenAccept(result -> {
       assertTrue(result);
@@ -229,7 +229,7 @@ public class ConsistentMapTest extends AbstractAtomixTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapComputeOperationsMap").buildAsync();
+    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapComputeOperationsMap").build().async();
 
     map.computeIfAbsent("foo", k -> value1).thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), value1);
@@ -266,7 +266,7 @@ public class ConsistentMapTest extends AbstractAtomixTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapListenerMap").buildAsync();
+    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapListenerMap").build().async();
     TestMapEventListener listener = new TestMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event is received.

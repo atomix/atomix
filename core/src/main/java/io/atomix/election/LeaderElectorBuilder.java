@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Builder for constructing new {@link AsyncLeaderElector} instances.
  */
 public abstract class LeaderElectorBuilder<T>
-    extends DistributedPrimitiveBuilder<LeaderElectorBuilder<T>, LeaderElector<T>, AsyncLeaderElector<T>> {
+    extends DistributedPrimitiveBuilder<LeaderElectorBuilder<T>, LeaderElector<T>> {
 
   private Duration electionTimeout = Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
   private Serializer serializer;
@@ -135,10 +135,5 @@ public abstract class LeaderElectorBuilder<T>
         .withMaxTimeout(Duration.ofSeconds(5))
         .withReadConsistency(readConsistency == Consistency.LINEARIZABLE ? ReadConsistency.LINEARIZABLE : ReadConsistency.SEQUENTIAL)
         .build();
-  }
-
-  @Override
-  public LeaderElector<T> build() {
-    return buildAsync().asLeaderElector();
   }
 }

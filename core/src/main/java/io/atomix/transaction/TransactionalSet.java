@@ -75,4 +75,6 @@ public interface TransactionalSet<E> extends SyncPrimitive {
    */
   boolean contains(E e);
 
+  @Override
+  AsyncTransactionalSet<E> async();
 }

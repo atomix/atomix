@@ -16,12 +16,12 @@
 
 package io.atomix.multimap;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -32,7 +32,7 @@ import java.time.Duration;
  * A builder class for {@code AsyncConsistentMultimap}.
  */
 public abstract class ConsistentMultimapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>, ConsistentMultimap<K, V>, AsyncConsistentMultimap<K, V>> {
+    extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>, ConsistentMultimap<K, V>> {
 
   public ConsistentMultimapBuilder(String name) {
     super(PrimitiveTypes.multimap(), name);
@@ -97,10 +97,5 @@ public abstract class ConsistentMultimapBuilder<K, V>
         .withReplication(replication)
         .withBackups(backups())
         .build();
-  }
-
-  @Override
-  public ConsistentMultimap<K, V> build() {
-    return buildAsync().asMultimap();
   }
 }

@@ -19,6 +19,8 @@ import io.atomix.utils.Builder;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
+import java.util.concurrent.CompletableFuture;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -26,10 +28,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Abstract builder for distributed primitives.
  *
  * @param <B> builder type
- * @param <S> synchronous primitive type
- * @param <A> asynchronous primitive type
+ * @param <P> primitive type
  */
-public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> implements Builder<S> {
+public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> implements Builder<P> {
   private final PrimitiveType type;
   private final String name;
   private Serializer serializer;
@@ -265,12 +266,14 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @return distributed primitive
    */
   @Override
-  public abstract S build();
+  public P build() {
+    return buildAsync().join();
+  }
 
   /**
    * Constructs an instance of the asynchronous primitive.
    *
    * @return asynchronous distributed primitive
    */
-  public abstract A buildAsync();
+  public abstract CompletableFuture<P> buildAsync();
 }

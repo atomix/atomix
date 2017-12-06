@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.map.AsyncConsistentMap;
+import io.atomix.map.ConsistentMap;
 import io.atomix.map.MapEventListener;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.partition.PartitionId;
@@ -31,6 +32,7 @@ import io.atomix.utils.Match;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -257,6 +259,11 @@ public class PartitionedAsyncConsistentMap<K, V> implements AsyncConsistentMap<K
   @Override
   public Collection<Consumer<Status>> statusChangeListeners() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ConsistentMap<K, V> sync(Duration operationTimeout) {
+    return new BlockingConsistentMap<>(this, operationTimeout.toMillis());
   }
 
   @Override

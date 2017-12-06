@@ -16,9 +16,9 @@
 
 package io.atomix.tree;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 import io.atomix.utils.time.Versioned;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -148,4 +148,7 @@ public interface DocumentTree<V> extends SyncPrimitive {
   default void addListener(DocumentTreeListener<V> listener) {
     addListener(root(), listener);
   }
+
+  @Override
+  AsyncDocumentTree<V> async();
 }

@@ -15,12 +15,12 @@
  */
 package io.atomix.map;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -31,7 +31,7 @@ import java.time.Duration;
  * Builder for AtomicCounterMap.
  */
 public abstract class AtomicCounterMapBuilder<K>
-    extends DistributedPrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMap<K>, AsyncAtomicCounterMap<K>> {
+    extends DistributedPrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMap<K>> {
   public AtomicCounterMapBuilder(String name) {
     super(PrimitiveTypes.counterMap(), name);
   }
@@ -95,10 +95,5 @@ public abstract class AtomicCounterMapBuilder<K>
         .withReplication(replication)
         .withBackups(backups())
         .build();
-  }
-
-  @Override
-  public AtomicCounterMap<K> build() {
-    return buildAsync().asAtomicCounterMap();
   }
 }

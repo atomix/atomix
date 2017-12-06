@@ -167,4 +167,6 @@ public interface ConsistentTreeMap<V> extends ConsistentMap<String, V> {
       boolean inclusiveUpper,
       boolean inclusiveLower);
 
+  @Override
+  AsyncConsistentTreeMap<V> async();
 }

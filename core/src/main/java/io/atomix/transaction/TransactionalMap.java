@@ -97,4 +97,7 @@ public interface TransactionalMap<K, V> extends SyncPrimitive {
    * @return true if the value was replaced
    */
   boolean replace(K key, V oldValue, V newValue);
+
+  @Override
+  AsyncTransactionalMap<K, V> async();
 }

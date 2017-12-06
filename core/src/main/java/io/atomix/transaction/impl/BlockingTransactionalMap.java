@@ -82,6 +82,11 @@ public class BlockingTransactionalMap<K, V> implements TransactionalMap<K, V> {
     complete(asyncMap.close());
   }
 
+  @Override
+  public AsyncTransactionalMap<K, V> async() {
+    return asyncMap;
+  }
+
   private <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);

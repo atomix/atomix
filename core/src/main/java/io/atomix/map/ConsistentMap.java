@@ -17,9 +17,9 @@
 package io.atomix.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
@@ -110,8 +110,8 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    * or null if the computed value is null. Method throws {@code ConsistentMapException.ConcurrentModification}
    * if a concurrent modification of map is detected
    */
-  Versioned<V> computeIfAbsent(K key,
-                               Function<? super K, ? extends V> mappingFunction);
+  Versioned<V> computeIfAbsent(
+      K key, Function<? super K, ? extends V> mappingFunction);
 
   /**
    * Attempts to compute a mapping for the specified key and its current mapped value (or
@@ -124,8 +124,8 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    * This method throws {@code ConsistentMapException.ConcurrentModification}
    * if a concurrent modification of map is detected
    */
-  Versioned<V> compute(K key,
-                       BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+  Versioned<V> compute(
+      K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
   /**
    * If the value for the specified key is present and non-null, attempts to compute a new
@@ -138,8 +138,8 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    * This method throws {@code ConsistentMapException.ConcurrentModification}
    * if a concurrent modification of map is detected
    */
-  Versioned<V> computeIfPresent(K key,
-                                BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+  Versioned<V> computeIfPresent(
+      K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
   /**
    * If the value for the specified key satisfies a condition, attempts to compute a new
@@ -153,9 +153,8 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    * This method throws {@code ConsistentMapException.ConcurrentModification} if a concurrent
    * modification of map is detected
    */
-  Versioned<V> computeIf(K key,
-                         Predicate<? super V> condition,
-                         BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+  Versioned<V> computeIf(
+      K key, Predicate<? super V> condition, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
   /**
    * Associates the specified value with the specified key in this map (optional operation).
@@ -322,4 +321,7 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    * @return java.util.Map
    */
   Map<K, V> asJavaMap();
+
+  @Override
+  AsyncConsistentMap<K, V> async();
 }

@@ -15,9 +15,9 @@
  */
 package io.atomix.election;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 
 /**
  * {@code LeaderElector} provides the same functionality as {@link AsyncLeaderElection} with
@@ -96,4 +96,7 @@ public interface LeaderElection<T> extends SyncPrimitive {
    * @param listener listener to remove
    */
   void removeListener(LeadershipEventListener<T> listener);
+
+  @Override
+  AsyncLeaderElection<T> async();
 }

@@ -74,6 +74,11 @@ public class BlockingWorkQueue<E> extends Synchronous<AsyncWorkQueue<E>> impleme
     return complete(asyncQueue.stats());
   }
 
+  @Override
+  public AsyncWorkQueue<E> async() {
+    return asyncQueue;
+  }
+
   private <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);

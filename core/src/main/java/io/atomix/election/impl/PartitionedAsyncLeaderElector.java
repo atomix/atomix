@@ -17,6 +17,7 @@ package io.atomix.election.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.election.AsyncLeaderElector;
+import io.atomix.election.LeaderElector;
 import io.atomix.election.Leadership;
 import io.atomix.election.LeadershipEventListener;
 import io.atomix.primitive.AsyncPrimitive;
@@ -24,6 +25,7 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.utils.concurrent.Futures;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
@@ -145,6 +147,11 @@ public class PartitionedAsyncLeaderElector<T> implements AsyncLeaderElector<T> {
   @Override
   public Collection<Consumer<Status>> statusChangeListeners() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public LeaderElector<T> sync(Duration operationTimeout) {
+    return new BlockingLeaderElector<>(this, operationTimeout.toMillis());
   }
 
   @Override

@@ -17,9 +17,10 @@ package io.atomix.value.impl;
 
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.value.AsyncAtomicValue;
+import io.atomix.value.AtomicValue;
 import io.atomix.value.AtomicValueBuilder;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -36,23 +37,24 @@ public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
     this.managementService = checkNotNull(managementService);
   }
 
-  protected AsyncAtomicValue<V> newValue(PrimitiveProxy proxy) {
-    AtomicValueProxy value = new AtomicValueProxy(proxy.open().join());
-    return new TranscodingAsyncAtomicValue<>(
-        value,
-        serializer()::encode,
-        serializer()::decode);
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncAtomicValue<V> buildAsync() {
+  public CompletableFuture<AtomicValue<V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newValue(managementService.getPartitionService()
+    return managementService.getPartitionService()
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
         .proxyBuilder(name(), primitiveType(), protocol)
-        .build());
+        .build()
+        .open()
+        .thenApply(proxy -> {
+          AtomicValueProxy value = new AtomicValueProxy(proxy);
+          return new TranscodingAsyncAtomicValue<V, byte[]>(
+              value,
+              serializer()::encode,
+              serializer()::decode)
+              .sync();
+        });
   }
 }

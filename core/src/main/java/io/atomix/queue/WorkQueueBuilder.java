@@ -15,12 +15,12 @@
  */
 package io.atomix.queue;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -30,7 +30,7 @@ import java.time.Duration;
 /**
  * Work queue builder.
  */
-public abstract class WorkQueueBuilder<E> extends DistributedPrimitiveBuilder<WorkQueueBuilder<E>, WorkQueue<E>, AsyncWorkQueue<E>> {
+public abstract class WorkQueueBuilder<E> extends DistributedPrimitiveBuilder<WorkQueueBuilder<E>, WorkQueue<E>> {
 
   public WorkQueueBuilder(String name) {
     super(PrimitiveTypes.workQueue(), name);
@@ -95,10 +95,5 @@ public abstract class WorkQueueBuilder<E> extends DistributedPrimitiveBuilder<Wo
         .withReplication(replication)
         .withBackups(backups())
         .build();
-  }
-
-  @Override
-  public WorkQueue<E> build() {
-    return buildAsync().asWorkQueue();
   }
 }

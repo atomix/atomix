@@ -19,9 +19,11 @@ import com.google.common.base.MoreObjects;
 import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
+import io.atomix.tree.DocumentTree;
 import io.atomix.tree.DocumentTreeListener;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -89,6 +91,11 @@ public class DelegatingAsyncDocumentTree<V> extends DelegatingDistributedPrimiti
   @Override
   public CompletableFuture<Void> removeListener(DocumentTreeListener<V> listener) {
     return delegateTree.removeListener(listener);
+  }
+
+  @Override
+  public DocumentTree<V> sync(Duration operationTimeout) {
+    return new BlockingDocumentTree<>(this, operationTimeout.toMillis());
   }
 
   @Override

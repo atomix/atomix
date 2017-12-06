@@ -15,9 +15,9 @@
  */
 package io.atomix.value;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 
 /**
  * Distributed version of java.util.concurrent.atomic.AtomicReference.
@@ -78,4 +78,7 @@ public interface AtomicValue<V> extends SyncPrimitive {
    * @param listener listener to unregister
    */
   void removeListener(AtomicValueEventListener<V> listener);
+
+  @Override
+  AsyncAtomicValue<V> async();
 }

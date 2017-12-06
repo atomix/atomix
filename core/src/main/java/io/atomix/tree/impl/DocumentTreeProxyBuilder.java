@@ -15,6 +15,7 @@
  */
 package io.atomix.tree.impl;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.hash.Hashing;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -23,12 +24,14 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
+import io.atomix.tree.DocumentTree;
 import io.atomix.tree.DocumentTreeBuilder;
+import io.atomix.utils.concurrent.Futures;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -47,23 +50,25 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
     this.managementService = checkNotNull(managementService);
   }
 
-  protected AsyncDocumentTree<V> newDocumentTree(PrimitiveProxy proxy) {
-    DocumentTreeProxy rawTree = new DocumentTreeProxy(proxy.open().join());
-    return new TranscodingAsyncDocumentTree<>(
-        rawTree,
-        serializer()::encode,
-        serializer()::decode);
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncDocumentTree<V> buildAsync() {
+  public CompletableFuture<DocumentTree<V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
-    Map<PartitionId, AsyncDocumentTree<V>> trees = Maps.newConcurrentMap();
+    Map<PartitionId, CompletableFuture<AsyncDocumentTree<V>>> trees = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {
-      trees.put(partition.id(), newDocumentTree(partition.getPrimitiveClient().proxyBuilder(name(), primitiveType(), protocol).build()));
+      trees.put(partition.id(), partition.getPrimitiveClient()
+          .proxyBuilder(name(), primitiveType(), protocol)
+          .build()
+          .open()
+          .thenApply(proxy -> {
+            DocumentTreeProxy rawTree = new DocumentTreeProxy(proxy);
+            return new TranscodingAsyncDocumentTree<>(
+                rawTree,
+                serializer()::encode,
+                serializer()::decode);
+          }));
     }
 
     Partitioner<DocumentPath> partitioner = key -> {
@@ -74,10 +79,13 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
       return partitions.getPartitionIds().get(Hashing.consistentHash(bucket, partitions.getPartitionIds().size()));
     };
 
-    AsyncDocumentTree<V> tree = new PartitionedAsyncDocumentTree<>(name(), trees, partitioner);
-    if (relaxedReadConsistency()) {
-      tree = new CachingAsyncDocumentTree<>(tree);
-    }
-    return tree;
+    return Futures.allOf(Lists.newArrayList(trees.values()))
+        .thenApply(t -> {
+          AsyncDocumentTree<V> tree = new PartitionedAsyncDocumentTree<>(name(), Maps.transformValues(trees, v -> v.getNow(null)), partitioner);
+          if (relaxedReadConsistency()) {
+            tree = new CachingAsyncDocumentTree<>(tree);
+          }
+          return tree.sync();
+        });
   }
 }

@@ -32,6 +32,7 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Timer;
@@ -152,6 +153,11 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive implements AsyncWorkQ
 
   private CompletableFuture<Void> unregister() {
     return proxy.invoke(UNREGISTER).thenRun(() -> isRegistered.set(false));
+  }
+
+  @Override
+  public WorkQueue<byte[]> sync(Duration operationTimeout) {
+    return new BlockingWorkQueue<>(this, operationTimeout.toMillis());
   }
 
   // TaskId accumulator for paced triggering of task completion calls.

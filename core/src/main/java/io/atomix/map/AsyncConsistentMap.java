@@ -17,14 +17,15 @@
 package io.atomix.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
-import io.atomix.map.impl.BlockingConsistentMap;
 import io.atomix.map.impl.MapUpdate;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.transaction.Transactional;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -149,8 +150,8 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    * @return the current (existing or computed) value associated with the specified key,
    * or null if the computed value is null
    */
-  default CompletableFuture<Versioned<V>> computeIfAbsent(K key,
-                                                          Function<? super K, ? extends V> mappingFunction) {
+  default CompletableFuture<Versioned<V>> computeIfAbsent(
+      K key, Function<? super K, ? extends V> mappingFunction) {
     return computeIf(key, Objects::isNull, (k, v) -> mappingFunction.apply(k));
   }
 
@@ -165,8 +166,8 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    * @param remappingFunction the function to compute a value
    * @return the new value associated with the specified key, or null if computed value is null
    */
-  default CompletableFuture<Versioned<V>> computeIfPresent(K key,
-                                                           BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+  default CompletableFuture<Versioned<V>> computeIfPresent(
+      K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return computeIf(key, Objects::nonNull, remappingFunction);
   }
 
@@ -181,8 +182,8 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    * @param remappingFunction the function to compute a value
    * @return the new value associated with the specified key, or null if computed value is null
    */
-  default CompletableFuture<Versioned<V>> compute(K key,
-                                                  BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+  default CompletableFuture<Versioned<V>> compute(
+      K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return computeIf(key, v -> true, remappingFunction);
   }
 
@@ -198,9 +199,8 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    * @param remappingFunction the function to compute a value
    * @return the new value associated with the specified key, or the old value if condition evaluates to false
    */
-  CompletableFuture<Versioned<V>> computeIf(K key,
-                                            Predicate<? super V> condition,
-                                            BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+  CompletableFuture<Versioned<V>> computeIf(
+      K key, Predicate<? super V> condition, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
   /**
    * Associates the specified value with the specified key in this map (optional operation).
@@ -367,22 +367,11 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    */
   CompletableFuture<Void> removeListener(MapEventListener<K, V> listener);
 
-  /**
-   * Returns a new {@link ConsistentMap} that is backed by this instance.
-   *
-   * @return new {@code ConsistentMap} instance
-   */
-  default ConsistentMap<K, V> asConsistentMap() {
-    return asConsistentMap(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  @Override
+  default ConsistentMap<K, V> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link ConsistentMap} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned ConsistentMap operations
-   * @return new {@code ConsistentMap} instance
-   */
-  default ConsistentMap<K, V> asConsistentMap(long timeoutMillis) {
-    return new BlockingConsistentMap<>(this, timeoutMillis);
-  }
+  @Override
+  ConsistentMap<K, V> sync(Duration operationTimeout);
 }

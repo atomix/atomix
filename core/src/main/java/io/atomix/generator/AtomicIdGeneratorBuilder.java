@@ -15,12 +15,12 @@
  */
 package io.atomix.generator;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -31,7 +31,7 @@ import java.time.Duration;
  * Builder for AtomicIdGenerator.
  */
 public abstract class AtomicIdGeneratorBuilder
-    extends DistributedPrimitiveBuilder<AtomicIdGeneratorBuilder, AtomicIdGenerator, AsyncAtomicIdGenerator> {
+    extends DistributedPrimitiveBuilder<AtomicIdGeneratorBuilder, AtomicIdGenerator> {
   protected AtomicIdGeneratorBuilder(String name) {
     super(PrimitiveTypes.idGenerator(), name);
   }

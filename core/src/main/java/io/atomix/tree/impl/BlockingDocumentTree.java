@@ -41,86 +41,91 @@ import java.util.concurrent.TimeoutException;
  */
 public class BlockingDocumentTree<V> extends Synchronous<AsyncDocumentTree<V>> implements DocumentTree<V> {
 
-    private final AsyncDocumentTree<V> backingTree;
-    private final long operationTimeoutMillis;
+  private final AsyncDocumentTree<V> backingTree;
+  private final long operationTimeoutMillis;
 
-    public BlockingDocumentTree(AsyncDocumentTree<V> backingTree, long operationTimeoutMillis) {
-        super(backingTree);
-        this.backingTree = backingTree;
-        this.operationTimeoutMillis = operationTimeoutMillis;
-    }
+  public BlockingDocumentTree(AsyncDocumentTree<V> backingTree, long operationTimeoutMillis) {
+    super(backingTree);
+    this.backingTree = backingTree;
+    this.operationTimeoutMillis = operationTimeoutMillis;
+  }
 
-    @Override
-    public DocumentPath root() {
-        return backingTree.root();
-    }
+  @Override
+  public DocumentPath root() {
+    return backingTree.root();
+  }
 
-    @Override
-    public Map<String, Versioned<V>> getChildren(DocumentPath path) {
-        return complete(backingTree.getChildren(path));
-    }
+  @Override
+  public Map<String, Versioned<V>> getChildren(DocumentPath path) {
+    return complete(backingTree.getChildren(path));
+  }
 
-    @Override
-    public Versioned<V> get(DocumentPath path) {
-        return complete(backingTree.get(path));
-    }
+  @Override
+  public Versioned<V> get(DocumentPath path) {
+    return complete(backingTree.get(path));
+  }
 
-    @Override
-    public Versioned<V> set(DocumentPath path, V value) {
-        return complete(backingTree.set(path, value));
-    }
+  @Override
+  public Versioned<V> set(DocumentPath path, V value) {
+    return complete(backingTree.set(path, value));
+  }
 
-    @Override
-    public boolean create(DocumentPath path, V value) {
-        return complete(backingTree.create(path, value));
-    }
+  @Override
+  public boolean create(DocumentPath path, V value) {
+    return complete(backingTree.create(path, value));
+  }
 
-    @Override
-    public boolean createRecursive(DocumentPath path, V value) {
-        return complete(backingTree.createRecursive(path, value));
-    }
+  @Override
+  public boolean createRecursive(DocumentPath path, V value) {
+    return complete(backingTree.createRecursive(path, value));
+  }
 
-    @Override
-    public boolean replace(DocumentPath path, V newValue, long version) {
-        return complete(backingTree.replace(path, newValue, version));
-    }
+  @Override
+  public boolean replace(DocumentPath path, V newValue, long version) {
+    return complete(backingTree.replace(path, newValue, version));
+  }
 
-    @Override
-    public boolean replace(DocumentPath path, V newValue, V currentValue) {
-        return complete(backingTree.replace(path, newValue, currentValue));
-    }
+  @Override
+  public boolean replace(DocumentPath path, V newValue, V currentValue) {
+    return complete(backingTree.replace(path, newValue, currentValue));
+  }
 
-    @Override
-    public Versioned<V> removeNode(DocumentPath path) {
-        return complete(backingTree.removeNode(path));
-    }
+  @Override
+  public Versioned<V> removeNode(DocumentPath path) {
+    return complete(backingTree.removeNode(path));
+  }
 
-    @Override
-    public void addListener(DocumentPath path, DocumentTreeListener<V> listener) {
-        complete(backingTree.addListener(path, listener));
-    }
+  @Override
+  public void addListener(DocumentPath path, DocumentTreeListener<V> listener) {
+    complete(backingTree.addListener(path, listener));
+  }
 
-    @Override
-    public void removeListener(DocumentTreeListener<V> listener) {
-        complete(backingTree.removeListener(listener));
-    }
+  @Override
+  public void removeListener(DocumentTreeListener<V> listener) {
+    complete(backingTree.removeListener(listener));
+  }
 
-    @Override
-    public void addListener(DocumentTreeListener<V> listener) {
-        complete(backingTree.addListener(listener));
-    }
+  @Override
+  public void addListener(DocumentTreeListener<V> listener) {
+    complete(backingTree.addListener(listener));
+  }
 
-    private <T> T complete(CompletableFuture<T> future) {
-        try {
-            return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new DocumentException.Interrupted();
-        } catch (TimeoutException e) {
-            throw new DocumentException.Timeout(name());
-        } catch (ExecutionException e) {
-            Throwables.propagateIfPossible(e.getCause());
-            throw new PrimitiveException(e.getCause());
-        }
+  @Override
+  public AsyncDocumentTree<V> async() {
+    return backingTree;
+  }
+
+  private <T> T complete(CompletableFuture<T> future) {
+    try {
+      return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new DocumentException.Interrupted();
+    } catch (TimeoutException e) {
+      throw new DocumentException.Timeout(name());
+    } catch (ExecutionException e) {
+      Throwables.propagateIfPossible(e.getCause());
+      throw new PrimitiveException(e.getCause());
     }
+  }
 }

@@ -15,9 +15,9 @@
  */
 package io.atomix.lock;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 import io.atomix.utils.time.Version;
 
 import java.time.Duration;
@@ -59,5 +59,8 @@ public interface DistributedLock extends SyncPrimitive {
    * Unlocks the lock.
    */
   void unlock();
+
+  @Override
+  AsyncDistributedLock async();
 
 }

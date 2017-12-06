@@ -97,12 +97,15 @@ public class CoreTransactionService implements ManagedTransactionService {
 
   @Override
   public CompletableFuture<TransactionService> open() {
-    this.transactions = ConsistentMapType.<TransactionId, TransactionState>instance()
+    return ConsistentMapType.<TransactionId, TransactionState>instance()
         .newPrimitiveBuilder("atomix-transactions", managementService)
         .withSerializer(SERIALIZER)
-        .buildAsync();
-    open.set(true);
-    return CompletableFuture.completedFuture(this);
+        .buildAsync()
+        .thenApply(transactions -> {
+          this.transactions = transactions.async();
+          open.set(true);
+          return this;
+        });
   }
 
   @Override

@@ -15,12 +15,12 @@
  */
 package io.atomix.value;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -33,7 +33,7 @@ import java.time.Duration;
  * @param <V> atomic value type
  */
 public abstract class AtomicValueBuilder<V>
-    extends DistributedPrimitiveBuilder<AtomicValueBuilder<V>, AtomicValue<V>, AsyncAtomicValue<V>> {
+    extends DistributedPrimitiveBuilder<AtomicValueBuilder<V>, AtomicValue<V>> {
 
   public AtomicValueBuilder(String name) {
     super(PrimitiveTypes.value(), name);
@@ -98,10 +98,5 @@ public abstract class AtomicValueBuilder<V>
         .withReplication(replication)
         .withBackups(backups())
         .build();
-  }
-
-  @Override
-  public AtomicValue<V> build() {
-    return buildAsync().asAtomicValue();
   }
 }

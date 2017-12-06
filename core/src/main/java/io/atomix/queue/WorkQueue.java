@@ -16,6 +16,7 @@
 package io.atomix.queue;
 
 import com.google.common.collect.ImmutableList;
+import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.PrimitiveTypes;
@@ -132,4 +133,7 @@ public interface WorkQueue<E> extends SyncPrimitive {
     Collection<Task<E>> tasks = take(1);
     return tasks.isEmpty() ? null : tasks.iterator().next();
   }
+
+  @Override
+  AsyncWorkQueue<E> async();
 }

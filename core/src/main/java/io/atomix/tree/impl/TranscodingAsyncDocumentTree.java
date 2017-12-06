@@ -18,10 +18,12 @@ package io.atomix.tree.impl;
 import com.google.common.collect.Maps;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
+import io.atomix.tree.DocumentTree;
 import io.atomix.tree.DocumentTreeEvent;
 import io.atomix.tree.DocumentTreeListener;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -124,6 +126,11 @@ public class TranscodingAsyncDocumentTree<V1, V2> implements AsyncDocumentTree<V
   @Override
   public CompletableFuture<Void> close() {
     return backingTree.close();
+  }
+
+  @Override
+  public DocumentTree<V1> sync(Duration operationTimeout) {
+    return new BlockingDocumentTree<>(this, operationTimeout.toMillis());
   }
 
   @Override

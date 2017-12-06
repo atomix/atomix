@@ -17,9 +17,11 @@ package io.atomix.value.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.value.AsyncAtomicValue;
+import io.atomix.value.AtomicValue;
 import io.atomix.value.AtomicValueEvent;
 import io.atomix.value.AtomicValueEventListener;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -86,6 +88,11 @@ public class TranscodingAsyncAtomicValue<V1, V2> implements AsyncAtomicValue<V1>
         return CompletableFuture.completedFuture(null);
       }
     }
+  }
+
+  @Override
+  public AtomicValue<V1> sync(Duration operationTimeout) {
+    return new BlockingAtomicValue<>(this, operationTimeout.toMillis());
   }
 
   @Override

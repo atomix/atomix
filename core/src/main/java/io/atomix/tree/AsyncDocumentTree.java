@@ -16,13 +16,14 @@
 
 package io.atomix.tree;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
-import io.atomix.tree.impl.BlockingDocumentTree;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -159,24 +160,11 @@ public interface AsyncDocumentTree<V> extends AsyncPrimitive {
     return addListener(root(), listener);
   }
 
-  /**
-   * Returns a synchronous {@link DocumentTree} instance that wraps this instance.
-   *
-   * @return a synchronous {@link DocumentTree}. Changes to the returned tree will be reflected in this tree
-   * and vice versa
-   */
-  default DocumentTree<V> asDocumentTree() {
-    return asDocumentTree(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  @Override
+  default DocumentTree<V> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a synchronous {@link DocumentTree} instance that wraps this instance.
-   *
-   * @param timeoutMillis number of milliseconds to block before timing out queue operations
-   * @return a synchronous {@link DocumentTree}. Changes to the returned tree will be reflected in this tree
-   * and vice versa
-   */
-  default DocumentTree<V> asDocumentTree(long timeoutMillis) {
-    return new BlockingDocumentTree<>(this, timeoutMillis);
-  }
+  @Override
+  DocumentTree<V> sync(Duration operationTimeout);
 }

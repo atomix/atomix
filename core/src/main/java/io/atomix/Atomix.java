@@ -32,11 +32,10 @@ import io.atomix.impl.CorePrimitivesService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
-import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
@@ -176,12 +175,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * @param name          the primitive name
    * @param primitiveType the primitive type
    * @param <B>           the primitive builder type
-   * @param <S>           the synchronous primitive type
-   * @param <A>           the asynchronous primitive type
+   * @param <P>           the primitive type
    * @return the primitive builder
    */
-  public <B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> B primitiveBuilder(
-      String name, PrimitiveType<B, S, A> primitiveType) {
+  public <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(
+      String name, PrimitiveType<B, P> primitiveType) {
     return primitives.primitiveBuilder(name, primitiveType);
   }
 

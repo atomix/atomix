@@ -17,8 +17,10 @@ package io.atomix.queue.impl;
 
 import io.atomix.queue.AsyncWorkQueue;
 import io.atomix.queue.Task;
+import io.atomix.queue.WorkQueue;
 import io.atomix.queue.WorkQueueStats;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -88,6 +90,11 @@ public class TranscodingAsyncWorkQueue<V1, V2> implements AsyncWorkQueue<V1> {
   @Override
   public CompletableFuture<Void> close() {
     return backingQueue.close();
+  }
+
+  @Override
+  public WorkQueue<V1> sync(Duration operationTimeout) {
+    return new BlockingWorkQueue<>(this, operationTimeout.toMillis());
   }
 
   @Override

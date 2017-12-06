@@ -15,11 +15,12 @@
  */
 package io.atomix.lock.impl;
 
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.lock.AsyncDistributedLock;
+import io.atomix.lock.DistributedLock;
 import io.atomix.lock.impl.DistributedLockOperations.Lock;
 import io.atomix.lock.impl.DistributedLockOperations.Unlock;
+import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -121,5 +122,10 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
       return proxy.invoke(UNLOCK, SERIALIZER::encode, new Unlock(lock));
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public DistributedLock sync(Duration operationTimeout) {
+    return new BlockingDistributedLock(this, operationTimeout.toMillis());
   }
 }

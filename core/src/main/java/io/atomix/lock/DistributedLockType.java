@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Distributed lock primitive type.
  */
-public class DistributedLockType implements PrimitiveType<DistributedLockBuilder, DistributedLock, AsyncDistributedLock> {
+public class DistributedLockType implements PrimitiveType<DistributedLockBuilder, DistributedLock> {
   private static final String NAME = "LOCK";
 
   /**

@@ -35,4 +35,11 @@ public interface SyncPrimitive extends DistributedPrimitive {
    */
   void close();
 
+  /**
+   * Returns the underlying asynchronous primitive.
+   *
+   * @return the underlying asynchronous primitive
+   */
+  AsyncPrimitive async();
+
 }

@@ -15,9 +15,9 @@
  */
 package io.atomix.set;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 
 import java.util.Set;
 
@@ -46,4 +46,7 @@ public interface DistributedSet<E> extends Set<E>, SyncPrimitive {
    * @param listener listener to unregister.
    */
   void removeListener(SetEventListener<E> listener);
+
+  @Override
+  AsyncDistributedSet<E> async();
 }

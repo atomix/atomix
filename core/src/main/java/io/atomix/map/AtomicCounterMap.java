@@ -15,9 +15,9 @@
  */
 package io.atomix.map;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 
 /**
  * Distributed version of com.google.common.util.concurrent.AtomicLongMap.
@@ -159,4 +159,7 @@ public interface AtomicCounterMap<K> extends SyncPrimitive {
    * Clears all entries from the map.
    */
   void clear();
+
+  @Override
+  AsyncAtomicCounterMap<K> async();
 }

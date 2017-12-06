@@ -15,12 +15,12 @@
  */
 package io.atomix.map;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -34,7 +34,7 @@ import java.time.Duration;
  * @param <V> type for map value
  */
 public abstract class ConsistentMapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>, AsyncConsistentMap<K, V>> {
+    extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>> {
 
   private boolean nullValues = false;
 
@@ -120,10 +120,5 @@ public abstract class ConsistentMapBuilder<K, V>
         .withReplication(replication)
         .withBackups(backups())
         .build();
-  }
-
-  @Override
-  public ConsistentMap<K, V> build() {
-    return buildAsync().asConsistentMap();
   }
 }

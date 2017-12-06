@@ -17,7 +17,9 @@ package io.atomix.transaction.impl;
 
 import io.atomix.transaction.AsyncTransactionalMap;
 import io.atomix.transaction.AsyncTransactionalSet;
+import io.atomix.transaction.TransactionalSet;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -53,5 +55,10 @@ public class DefaultTransactionalSet<E> implements AsyncTransactionalSet<E> {
   @Override
   public CompletableFuture<Void> close() {
     return transactionalMap.close();
+  }
+
+  @Override
+  public TransactionalSet<E> sync(Duration operationTimeout) {
+    return new BlockingTransactionalSet<E>(this, operationTimeout.toMillis());
   }
 }

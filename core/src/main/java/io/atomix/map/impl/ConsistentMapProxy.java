@@ -16,6 +16,7 @@
 package io.atomix.map.impl;
 
 import io.atomix.map.AsyncConsistentMap;
+import io.atomix.map.ConsistentMap;
 import io.atomix.map.ConsistentMapException;
 import io.atomix.map.MapEvent;
 import io.atomix.map.MapEventListener;
@@ -44,6 +45,7 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
@@ -420,5 +422,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
 
   private boolean isListening() {
     return !mapEventListeners.isEmpty();
+  }
+
+  @Override
+  public ConsistentMap<String, byte[]> sync(Duration operationTimeout) {
+    return new BlockingConsistentMap<>(this, operationTimeout.toMillis());
   }
 }

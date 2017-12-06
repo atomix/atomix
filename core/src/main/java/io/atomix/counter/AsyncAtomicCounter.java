@@ -15,11 +15,12 @@
  */
 package io.atomix.counter;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
-import io.atomix.counter.impl.BlockingAtomicCounter;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -88,22 +89,11 @@ public interface AsyncAtomicCounter extends AsyncPrimitive {
    */
   CompletableFuture<Boolean> compareAndSet(long expectedValue, long updateValue);
 
-  /**
-   * Returns a new {@link AtomicCounter} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned ConsistentMap operations
-   * @return new {@code ConsistentMap} instance
-   */
-  default AtomicCounter asAtomicCounter(long timeoutMillis) {
-    return new BlockingAtomicCounter(this, timeoutMillis);
+  @Override
+  default AtomicCounter sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link AtomicCounter} that is backed by this instance and with a default operation timeout.
-   *
-   * @return new {@code ConsistentMap} instance
-   */
-  default AtomicCounter asAtomicCounter() {
-    return new BlockingAtomicCounter(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
-  }
+  @Override
+  AtomicCounter sync(Duration operationTimeout);
 }

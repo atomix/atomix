@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 public class AtomicCounterTest extends AbstractAtomixTest {
   @Test
   public void testBasicOperations() throws Throwable {
-    AsyncAtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations").buildAsync();
+    AsyncAtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations").build().async();
     assertEquals(0, along.get().join().longValue());
     assertEquals(1, along.incrementAndGet().join().longValue());
     along.set(100).join();

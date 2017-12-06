@@ -15,11 +15,13 @@
  */
 package io.atomix.set;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.set.impl.BlockingDistributedSet;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -163,4 +165,12 @@ public interface AsyncDistributedSet<E> extends AsyncPrimitive {
    * @return immutable set copy
    */
   CompletableFuture<? extends Set<E>> getAsImmutableSet();
+
+  @Override
+  default DistributedSet<E> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
+  }
+
+  @Override
+  DistributedSet<E> sync(Duration operationTimeout);
 }

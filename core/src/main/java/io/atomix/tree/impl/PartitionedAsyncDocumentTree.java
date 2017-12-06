@@ -21,10 +21,12 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
+import io.atomix.tree.DocumentTree;
 import io.atomix.tree.DocumentTreeListener;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -158,5 +160,10 @@ public class PartitionedAsyncDocumentTree<V> implements AsyncDocumentTree<V> {
         .map(AsyncPrimitive::close)
         .collect(Collectors.toList()))
         .thenApply(v -> null);
+  }
+
+  @Override
+  public DocumentTree<V> sync(Duration operationTimeout) {
+    return new BlockingDocumentTree<>(this, operationTimeout.toMillis());
   }
 }

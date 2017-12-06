@@ -19,6 +19,7 @@ package io.atomix.map.impl;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import io.atomix.map.AsyncConsistentMap;
+import io.atomix.map.ConsistentMap;
 import io.atomix.map.MapEvent;
 import io.atomix.map.MapEventListener;
 import io.atomix.transaction.TransactionId;
@@ -26,6 +27,7 @@ import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -324,6 +326,11 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   @Override
   public Collection<Consumer<Status>> statusChangeListeners() {
     return backingMap.statusChangeListeners();
+  }
+
+  @Override
+  public ConsistentMap<K1, V1> sync(Duration operationTimeout) {
+    return new BlockingConsistentMap<>(this, operationTimeout.toMillis());
   }
 
   @Override

@@ -16,10 +16,10 @@
 package io.atomix.map.impl;
 
 import com.google.common.base.Throwables;
-import io.atomix.primitive.Synchronous;
 import io.atomix.map.AsyncAtomicCounterMap;
 import io.atomix.map.AtomicCounterMap;
 import io.atomix.map.ConsistentMapException;
+import io.atomix.primitive.Synchronous;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -115,6 +115,11 @@ public class BlockingAtomicCounterMap<K> extends Synchronous<AsyncAtomicCounterM
   @Override
   public void clear() {
     complete(asyncCounterMap.clear());
+  }
+
+  @Override
+  public AsyncAtomicCounterMap<K> async() {
+    return asyncCounterMap;
   }
 
   private <T> T complete(CompletableFuture<T> future) {

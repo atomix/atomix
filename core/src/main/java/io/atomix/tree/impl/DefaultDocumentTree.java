@@ -20,6 +20,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.Ordering;
+import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
 import io.atomix.tree.DocumentTree;
 import io.atomix.tree.DocumentTreeListener;
@@ -187,6 +188,11 @@ public class DefaultDocumentTree<V> implements DocumentTree<V> {
   @Override
   public void close() {
 
+  }
+
+  @Override
+  public AsyncDocumentTree<V> async() {
+    throw new UnsupportedOperationException();
   }
 
   private DefaultDocumentTreeNode<V> getNode(DocumentPath path) {

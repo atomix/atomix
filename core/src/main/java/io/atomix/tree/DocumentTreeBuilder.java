@@ -16,6 +16,7 @@
 
 package io.atomix.tree;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Ordering;
@@ -23,7 +24,6 @@ import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Replication;
-import io.atomix.PrimitiveTypes;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -34,7 +34,7 @@ import java.time.Duration;
  * Builder for {@link DocumentTree}.
  */
 public abstract class DocumentTreeBuilder<V>
-    extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTree<V>, AsyncDocumentTree<V>> {
+    extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTree<V>> {
 
   private Ordering ordering;
 
@@ -136,10 +136,5 @@ public abstract class DocumentTreeBuilder<V>
         .withReplication(replication)
         .withBackups(backups())
         .build();
-  }
-
-  @Override
-  public DocumentTree<V> build() {
-    return buildAsync().asDocumentTree();
   }
 }

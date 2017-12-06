@@ -20,10 +20,12 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
+import io.atomix.tree.DocumentTree;
 import io.atomix.tree.DocumentTreeListener;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -128,5 +130,10 @@ public class CachingAsyncDocumentTree<V> extends DelegatingAsyncDocumentTree<V> 
   public CompletableFuture<Versioned<V>> removeNode(DocumentPath path) {
     return super.removeNode(path)
         .whenComplete((r, e) -> cache.invalidate(path));
+  }
+
+  @Override
+  public DocumentTree<V> sync(Duration operationTimeout) {
+    return new BlockingDocumentTree<>(this, operationTimeout.toMillis());
   }
 }

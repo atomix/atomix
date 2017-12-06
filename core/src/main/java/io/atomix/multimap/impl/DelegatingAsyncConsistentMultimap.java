@@ -17,11 +17,13 @@
 package io.atomix.multimap.impl;
 
 import com.google.common.collect.Multiset;
+import io.atomix.multimap.ConsistentMultimap;
 import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.multimap.AsyncConsistentMultimap;
 import io.atomix.multimap.MultimapEventListener;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -153,5 +155,10 @@ public class DelegatingAsyncConsistentMultimap<K, V>
   @Override
   public CompletableFuture<Map<K, Collection<V>>> asMap() {
     return delegateMap.asMap();
+  }
+
+  @Override
+  public ConsistentMultimap<K, V> sync(Duration operationTimeout) {
+    return new BlockingConsistentMultimap<>(this, operationTimeout.toMillis());
   }
 }

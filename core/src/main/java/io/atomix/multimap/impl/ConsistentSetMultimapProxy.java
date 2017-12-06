@@ -18,6 +18,7 @@ package io.atomix.multimap.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
+import io.atomix.multimap.ConsistentMultimap;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.multimap.AsyncConsistentMultimap;
@@ -36,6 +37,7 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -221,5 +223,10 @@ public class ConsistentSetMultimapProxy
 
   private boolean isListening() {
     return !mapEventListeners.isEmpty();
+  }
+
+  @Override
+  public ConsistentMultimap<String, byte[]> sync(Duration operationTimeout) {
+    return new BlockingConsistentMultimap<>(this, operationTimeout.toMillis());
   }
 }

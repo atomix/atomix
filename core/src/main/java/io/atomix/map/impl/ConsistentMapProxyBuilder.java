@@ -15,21 +15,24 @@
  */
 package io.atomix.map.impl;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import io.atomix.map.AsyncConsistentMap;
+import io.atomix.map.ConsistentMap;
+import io.atomix.map.ConsistentMapBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.map.AsyncConsistentMap;
-import io.atomix.map.ConsistentMapBuilder;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -49,24 +52,24 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
     this.managementService = checkNotNull(managementService);
   }
 
-  protected AsyncConsistentMap<String, byte[]> newRawMap(PrimitiveProxy proxy) {
-    return new ConsistentMapProxy(proxy.open().join());
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncConsistentMap<K, V> buildAsync() {
+  public CompletableFuture<ConsistentMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
-    Map<PartitionId, AsyncConsistentMap<byte[], byte[]>> maps = Maps.newConcurrentMap();
+    Map<PartitionId, CompletableFuture<AsyncConsistentMap<byte[], byte[]>>> maps = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {
-      maps.put(partition.id(), new TranscodingAsyncConsistentMap<>(
-          newRawMap(partition.getPrimitiveClient().proxyBuilder(name(), primitiveType(), protocol).build()),
-          BaseEncoding.base16()::encode,
-          BaseEncoding.base16()::decode,
-          Function.identity(),
-          Function.identity()));
+      maps.put(partition.id(), partition.getPrimitiveClient()
+          .proxyBuilder(name(), primitiveType(), protocol)
+          .build()
+          .open()
+          .thenApply(proxy -> new TranscodingAsyncConsistentMap<>(
+              new ConsistentMapProxy(proxy),
+              BaseEncoding.base16()::encode,
+              BaseEncoding.base16()::decode,
+              Function.identity(),
+              Function.identity())));
     }
 
     Partitioner<byte[]> partitioner = key -> {
@@ -74,26 +77,29 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
       return partitions.getPartitionIds().get(Hashing.consistentHash(bucket, partitions.getPartitionIds().size()));
     };
 
-    AsyncConsistentMap<byte[], byte[]> partitionedMap = new PartitionedAsyncConsistentMap<>(name(), maps, partitioner);
+    return Futures.allOf(Lists.newArrayList(maps.values()))
+        .thenApply(m -> {
+          AsyncConsistentMap<byte[], byte[]> partitionedMap = new PartitionedAsyncConsistentMap<>(name(), Maps.transformValues(maps, v -> v.getNow(null)), partitioner);
 
-    Serializer serializer = serializer();
-    AsyncConsistentMap<K, V> map = new TranscodingAsyncConsistentMap<>(partitionedMap,
-        key -> serializer.encode(key),
-        bytes -> serializer.decode(bytes),
-        value -> value == null ? null : serializer.encode(value),
-        bytes -> serializer.decode(bytes));
+          Serializer serializer = serializer();
+          AsyncConsistentMap<K, V> map = new TranscodingAsyncConsistentMap<>(partitionedMap,
+              key -> serializer.encode(key),
+              bytes -> serializer.decode(bytes),
+              value -> value == null ? null : serializer.encode(value),
+              bytes -> serializer.decode(bytes));
 
-    if (!nullValues()) {
-      map = new NotNullAsyncConsistentMap<>(map);
-    }
+          if (!nullValues()) {
+            map = new NotNullAsyncConsistentMap<>(map);
+          }
 
-    if (relaxedReadConsistency()) {
-      map = new CachingAsyncConsistentMap<>(map);
-    }
+          if (relaxedReadConsistency()) {
+            map = new CachingAsyncConsistentMap<>(map);
+          }
 
-    if (readOnly()) {
-      map = new UnmodifiableAsyncConsistentMap<>(map);
-    }
-    return map;
+          if (readOnly()) {
+            map = new UnmodifiableAsyncConsistentMap<>(map);
+          }
+          return map.sync();
+        });
   }
 }

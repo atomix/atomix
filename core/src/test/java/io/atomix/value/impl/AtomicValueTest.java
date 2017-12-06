@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 public class AtomicValueTest extends AbstractAtomixTest {
   @Test
   public void testValue() throws Exception {
-    AsyncAtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value").buildAsync();
+    AsyncAtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value").build().async();
     assertNull(value.get().join());
     value.set("a").join();
     assertEquals("a", value.get().join());

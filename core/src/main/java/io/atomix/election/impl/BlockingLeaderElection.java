@@ -98,6 +98,11 @@ public class BlockingLeaderElection<T> extends Synchronous<AsyncLeaderElection<T
     return asyncElector.statusChangeListeners();
   }
 
+  @Override
+  public AsyncLeaderElection<T> async() {
+    return asyncElector;
+  }
+
   private <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);

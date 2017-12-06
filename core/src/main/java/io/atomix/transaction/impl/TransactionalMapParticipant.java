@@ -20,7 +20,9 @@ import io.atomix.map.impl.MapUpdate;
 import io.atomix.transaction.AsyncTransactionalMap;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionParticipant;
+import io.atomix.transaction.TransactionalMap;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -61,6 +63,11 @@ public abstract class TransactionalMapParticipant<K, V> implements AsyncTransact
   @Override
   public CompletableFuture<Void> close() {
     return consistentMap.close();
+  }
+
+  @Override
+  public TransactionalMap<K, V> sync(Duration operationTimeout) {
+    return new BlockingTransactionalMap<>(this, operationTimeout.toMillis());
   }
 
   @Override

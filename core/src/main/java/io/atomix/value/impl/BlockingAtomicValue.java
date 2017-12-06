@@ -72,6 +72,11 @@ public class BlockingAtomicValue<V> extends Synchronous<AsyncAtomicValue<V>> imp
     complete(asyncValue.removeListener(listener));
   }
 
+  @Override
+  public AsyncAtomicValue<V> async() {
+    return asyncValue;
+  }
+
   private <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);

@@ -30,7 +30,7 @@ import java.time.Duration;
  * Builder for AtomicCounter.
  */
 public abstract class AtomicCounterBuilder
-    extends DistributedPrimitiveBuilder<AtomicCounterBuilder, AtomicCounter, AsyncAtomicCounter> {
+    extends DistributedPrimitiveBuilder<AtomicCounterBuilder, AtomicCounter> {
 
   public AtomicCounterBuilder(String name) {
     super(AtomicCounterType.instance(), name);
@@ -95,10 +95,5 @@ public abstract class AtomicCounterBuilder
         .withReplication(replication)
         .withBackups(backups())
         .build();
-  }
-
-  @Override
-  public AtomicCounter build() {
-    return buildAsync().asAtomicCounter();
   }
 }

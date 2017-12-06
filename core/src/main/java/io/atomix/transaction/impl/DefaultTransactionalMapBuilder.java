@@ -18,8 +18,10 @@ package io.atomix.transaction.impl;
 import io.atomix.map.ConsistentMapBuilder;
 import io.atomix.map.ConsistentMapType;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.transaction.AsyncTransactionalMap;
+import io.atomix.transaction.TransactionalMap;
 import io.atomix.transaction.TransactionalMapBuilder;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Transactional map builder.
@@ -35,19 +37,22 @@ public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilde
   }
 
   @Override
-  public AsyncTransactionalMap<K, V> buildAsync() {
-    TransactionalMapParticipant<K, V> transactionalMap;
-    switch (transaction.isolation()) {
-      case READ_COMMITTED:
-        transactionalMap = new ReadCommittedTransactionalMap<>(transaction.transactionId(), mapBuilder.buildAsync());
-        break;
-      case REPEATABLE_READS:
-        transactionalMap = new RepeatableReadsTransactionalMap<>(transaction.transactionId(), mapBuilder.buildAsync());
-        break;
-      default:
-        throw new AssertionError();
-    }
-    transaction.addParticipants(transactionalMap);
-    return transactionalMap;
+  public CompletableFuture<TransactionalMap<K, V>> buildAsync() {
+    return mapBuilder.buildAsync()
+        .thenApply(map -> {
+          TransactionalMapParticipant<K, V> transactionalMap;
+          switch (transaction.isolation()) {
+            case READ_COMMITTED:
+              transactionalMap = new ReadCommittedTransactionalMap<>(transaction.transactionId(), map.async());
+              break;
+            case REPEATABLE_READS:
+              transactionalMap = new RepeatableReadsTransactionalMap<>(transaction.transactionId(), map.async());
+              break;
+            default:
+              throw new AssertionError();
+          }
+          transaction.addParticipants(transactionalMap);
+          return transactionalMap.sync();
+        });
   }
 }

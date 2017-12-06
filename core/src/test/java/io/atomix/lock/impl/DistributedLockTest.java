@@ -35,7 +35,7 @@ public class DistributedLockTest extends AbstractAtomixTest {
    */
   @Test
   public void testLockUnlock() throws Throwable {
-    AsyncDistributedLock lock = atomix().lockBuilder("test-lock-unlock").buildAsync();
+    AsyncDistributedLock lock = atomix().lockBuilder("test-lock-unlock").build().async();
     lock.lock().join();
     lock.unlock().join();
   }
@@ -45,8 +45,8 @@ public class DistributedLockTest extends AbstractAtomixTest {
    */
   @Test
   public void testReleaseOnClose() throws Throwable {
-    AsyncDistributedLock lock1 = atomix().lockBuilder("test-lock-on-close").buildAsync();
-    AsyncDistributedLock lock2 = atomix().lockBuilder("test-lock-on-close").buildAsync();
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-lock-on-close").build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-lock-on-close").build().async();
     lock1.lock().join();
     CompletableFuture<Version> future = lock2.lock();
     lock1.close();
@@ -58,8 +58,8 @@ public class DistributedLockTest extends AbstractAtomixTest {
    */
   @Test
   public void testTryLockFail() throws Throwable {
-    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail").buildAsync();
-    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail").buildAsync();
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail").build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail").build().async();
 
     lock1.lock().join();
 
@@ -71,8 +71,8 @@ public class DistributedLockTest extends AbstractAtomixTest {
    */
   @Test
   public void testBlockingUnlock() throws Throwable {
-    AsyncDistributedLock lock1 = atomix().lockBuilder("test-blocking-unlock").buildAsync();
-    AsyncDistributedLock lock2 = atomix().lockBuilder("test-blocking-unlock").buildAsync();
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-blocking-unlock").build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-blocking-unlock").build().async();
 
     lock1.lock().thenRun(() -> {
       lock1.unlock().join();

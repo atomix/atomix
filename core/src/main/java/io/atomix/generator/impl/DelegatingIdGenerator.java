@@ -17,7 +17,9 @@ package io.atomix.generator.impl;
 
 import io.atomix.counter.AsyncAtomicCounter;
 import io.atomix.generator.AsyncAtomicIdGenerator;
+import io.atomix.generator.AtomicIdGenerator;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -63,6 +65,11 @@ public class DelegatingIdGenerator implements AsyncAtomicIdGenerator {
   @Override
   public CompletableFuture<Void> close() {
     return counter.close();
+  }
+
+  @Override
+  public AtomicIdGenerator sync(Duration operationTimeout) {
+    return new BlockingAtomicIdGenerator(this, operationTimeout.toMillis());
   }
 
   private CompletableFuture<Long> reserve() {

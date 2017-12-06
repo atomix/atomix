@@ -27,7 +27,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Distributed set primitive type.
  */
-public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSet<E>, AsyncDistributedSet<E>> {
+public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSet<E>> {
   private static final String NAME = "SET";
 
   /**

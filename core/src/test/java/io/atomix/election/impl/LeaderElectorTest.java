@@ -42,7 +42,7 @@ public class LeaderElectorTest extends AbstractAtomixTest {
 
   @Test
   public void testRun() throws Throwable {
-    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-run").buildAsync();
+    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-run").build().async();
     elector1.run("foo", node1).thenAccept(result -> {
       assertEquals(node1, result.leader().id());
       assertEquals(1, result.leader().term());
@@ -57,7 +57,7 @@ public class LeaderElectorTest extends AbstractAtomixTest {
       assertEquals(node1, result.candidates().get(0));
     }).join();
 
-    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-run").buildAsync();
+    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-run").build().async();
     elector2.run("bar", node2).thenAccept(result -> {
       assertEquals(node1, result.leader().id());
       assertEquals(1, result.leader().term());
@@ -69,9 +69,9 @@ public class LeaderElectorTest extends AbstractAtomixTest {
 
   @Test
   public void testWithdraw() throws Throwable {
-    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-withdraw").buildAsync();
+    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-withdraw").build().async();
     elector1.run("foo", node1).join();
-    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-withdraw").buildAsync();
+    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-withdraw").build().async();
     elector2.run("foo", node2).join();
 
     LeaderEventListener listener1 = new LeaderEventListener();
@@ -107,9 +107,9 @@ public class LeaderElectorTest extends AbstractAtomixTest {
 
   @Test
   public void testAnoint() throws Throwable {
-    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-anoint").buildAsync();
-    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-anoint").buildAsync();
-    AsyncLeaderElector<NodeId> elector3 = atomix().<NodeId>leaderElectorBuilder("test-elector-anoint").buildAsync();
+    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-anoint").build().async();
+    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-anoint").build().async();
+    AsyncLeaderElector<NodeId> elector3 = atomix().<NodeId>leaderElectorBuilder("test-elector-anoint").build().async();
     elector1.run("foo", node1).join();
     elector2.run("foo", node2).join();
 
@@ -153,9 +153,9 @@ public class LeaderElectorTest extends AbstractAtomixTest {
 
   @Test
   public void testPromote() throws Throwable {
-    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-promote").buildAsync();
-    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-promote").buildAsync();
-    AsyncLeaderElector<NodeId> elector3 = atomix().<NodeId>leaderElectorBuilder("test-elector-promote").buildAsync();
+    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-promote").build().async();
+    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-promote").build().async();
+    AsyncLeaderElector<NodeId> elector3 = atomix().<NodeId>leaderElectorBuilder("test-elector-promote").build().async();
     elector1.run("foo", node1).join();
     elector2.run("foo", node2).join();
 
@@ -203,9 +203,9 @@ public class LeaderElectorTest extends AbstractAtomixTest {
 
   @Test
   public void testLeaderSessionClose() throws Throwable {
-    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-session-close").buildAsync();
+    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-session-close").build().async();
     elector1.run("foo", node1).join();
-    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-session-close").buildAsync();
+    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-session-close").build().async();
     LeaderEventListener listener = new LeaderEventListener();
     elector2.run("foo", node2).join();
     elector2.addListener(listener).join();
@@ -219,9 +219,9 @@ public class LeaderElectorTest extends AbstractAtomixTest {
 
   @Test
   public void testNonLeaderSessionClose() throws Throwable {
-    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-non-leader-session-close").buildAsync();
+    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-non-leader-session-close").build().async();
     elector1.run("foo", node1).join();
-    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-non-leader-session-close").buildAsync();
+    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-non-leader-session-close").build().async();
     LeaderEventListener listener = new LeaderEventListener();
     elector2.run("foo", node2).join();
     elector1.addListener(listener).join();
@@ -235,17 +235,17 @@ public class LeaderElectorTest extends AbstractAtomixTest {
 
   @Test
   public void testLeaderBalance() throws Throwable {
-    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-balance").buildAsync();
+    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-balance").build().async();
     elector1.run("foo", node1).join();
     elector1.run("bar", node1).join();
     elector1.run("baz", node1).join();
 
-    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-balance").buildAsync();
+    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-balance").build().async();
     elector2.run("foo", node2).join();
     elector2.run("bar", node2).join();
     elector2.run("baz", node2).join();
 
-    AsyncLeaderElector<NodeId> elector3 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-balance").buildAsync();
+    AsyncLeaderElector<NodeId> elector3 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-balance").build().async();
     elector3.run("foo", node3).join();
     elector3.run("bar", node3).join();
     elector3.run("baz", node3).join();
@@ -263,24 +263,24 @@ public class LeaderElectorTest extends AbstractAtomixTest {
     }).join();
 
     listener.nextEvent().thenAccept(result -> {
-      assertEquals(node3, result.newLeadership().leader().id());
-      assertEquals(2, result.newLeadership().candidates().size());
-      assertEquals(node3, result.newLeadership().candidates().get(0));
-      assertEquals(node2, result.newLeadership().candidates().get(1));
-    });
-
-    listener.nextEvent().thenAccept(result -> {
       assertEquals(node2, result.newLeadership().leader().id());
       assertEquals(2, result.newLeadership().candidates().size());
       assertEquals(node2, result.newLeadership().candidates().get(0));
       assertEquals(node3, result.newLeadership().candidates().get(1));
+    });
+
+    listener.nextEvent().thenAccept(result -> {
+      assertEquals(node3, result.newLeadership().leader().id());
+      assertEquals(2, result.newLeadership().candidates().size());
+      assertEquals(node3, result.newLeadership().candidates().get(0));
+      assertEquals(node2, result.newLeadership().candidates().get(1));
     }).join();
   }
 
   @Test
   public void testQueries() throws Throwable {
-    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-query").buildAsync();
-    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-query").buildAsync();
+    AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-query").build().async();
+    AsyncLeaderElector<NodeId> elector2 = atomix().<NodeId>leaderElectorBuilder("test-elector-query").build().async();
     elector1.run("foo", node1).join();
     elector2.run("foo", node2).join();
     elector2.run("bar", node2).join();

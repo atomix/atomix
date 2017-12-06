@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Atomic counter primitive type.
  */
-public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, AtomicCounter, AsyncAtomicCounter> {
+public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, AtomicCounter> {
   private static final String NAME = "COUNTER";
 
   /**

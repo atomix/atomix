@@ -15,11 +15,12 @@
  */
 package io.atomix.lock.impl;
 
+import io.atomix.lock.DistributedLock;
+import io.atomix.lock.DistributedLockBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.lock.AsyncDistributedLock;
-import io.atomix.lock.DistributedLockBuilder;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -34,19 +35,17 @@ public class DistributedLockProxyBuilder extends DistributedLockBuilder {
     this.managementService = checkNotNull(managementService);
   }
 
-  private AsyncDistributedLock newLock(PrimitiveProxy proxy) {
-    return new DistributedLockProxy(proxy.open().join());
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncDistributedLock buildAsync() {
+  public CompletableFuture<DistributedLock> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newLock(managementService.getPartitionService()
+    return managementService.getPartitionService()
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
         .proxyBuilder(name(), primitiveType(), protocol)
-        .build());
+        .build()
+        .open()
+        .thenApply(proxy -> new DistributedLockProxy(proxy).sync());
   }
 }

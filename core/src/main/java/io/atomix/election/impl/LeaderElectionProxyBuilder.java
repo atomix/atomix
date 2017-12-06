@@ -15,11 +15,12 @@
  */
 package io.atomix.election.impl;
 
+import io.atomix.election.LeaderElection;
+import io.atomix.election.LeaderElectionBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.election.AsyncLeaderElection;
-import io.atomix.election.LeaderElectionBuilder;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -34,20 +35,17 @@ public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
     this.managementService = checkNotNull(managementService);
   }
 
-  private AsyncLeaderElection<T> newLeaderElector(PrimitiveProxy proxy) {
-    AsyncLeaderElection<byte[]> leaderElector = new LeaderElectionProxy(proxy.open().join());
-    return new TranscodingAsyncLeaderElection<>(leaderElector, serializer()::encode, serializer()::decode);
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncLeaderElection<T> buildAsync() {
+  public CompletableFuture<LeaderElection<T>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newLeaderElector(managementService.getPartitionService()
+    return managementService.getPartitionService()
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
         .proxyBuilder(name(), primitiveType(), protocol)
-        .build());
+        .build()
+        .open()
+        .thenApply(proxy -> new TranscodingAsyncLeaderElection<T, byte[]>(new LeaderElectionProxy(proxy), serializer()::encode, serializer()::decode).sync());
   }
 }

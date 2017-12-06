@@ -86,4 +86,6 @@ public interface Transaction extends SyncPrimitive {
    */
   <E> TransactionalSetBuilder<E> setBuilder(String name);
 
+  @Override
+  AsyncTransaction async();
 }

@@ -20,11 +20,13 @@ import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import io.atomix.multimap.AsyncConsistentMultimap;
+import io.atomix.multimap.ConsistentMultimap;
 import io.atomix.multimap.MultimapEvent;
 import io.atomix.multimap.MultimapEventListener;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Map;
@@ -286,6 +288,11 @@ public class TranscodingAsyncConsistentMultimap<K1, V1, K2, V2> implements Async
   @Override
   public CompletableFuture<Void> close() {
     return backingMap.close();
+  }
+
+  @Override
+  public ConsistentMultimap<K1, V1> sync(Duration operationTimeout) {
+    return new BlockingConsistentMultimap<>(this, operationTimeout.toMillis());
   }
 
   private class MultisetCollector<T> implements Collector<T,

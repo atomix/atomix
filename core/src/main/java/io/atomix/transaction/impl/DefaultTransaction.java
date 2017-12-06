@@ -20,6 +20,7 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.transaction.AsyncTransaction;
 import io.atomix.transaction.CommitStatus;
 import io.atomix.transaction.Isolation;
+import io.atomix.transaction.Transaction;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionParticipant;
 import io.atomix.transaction.TransactionService;
@@ -27,6 +28,7 @@ import io.atomix.transaction.TransactionalMapBuilder;
 import io.atomix.transaction.TransactionalSetBuilder;
 import io.atomix.utils.concurrent.Futures;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
@@ -148,5 +150,10 @@ public class DefaultTransaction implements AsyncTransaction {
   @Override
   public CompletableFuture<Void> close() {
     return abort();
+  }
+
+  @Override
+  public Transaction sync(Duration operationTimeout) {
+    return new BlockingTransaction(this, operationTimeout.toMillis());
   }
 }

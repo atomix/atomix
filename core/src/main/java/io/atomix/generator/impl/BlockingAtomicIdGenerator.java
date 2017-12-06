@@ -15,10 +15,10 @@
  */
 package io.atomix.generator.impl;
 
-import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.Synchronous;
 import io.atomix.generator.AsyncAtomicIdGenerator;
 import io.atomix.generator.AtomicIdGenerator;
+import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.Synchronous;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +42,11 @@ public class BlockingAtomicIdGenerator extends Synchronous<AsyncAtomicIdGenerato
   @Override
   public long nextId() {
     return complete(asyncIdGenerator.nextId());
+  }
+
+  @Override
+  public AsyncAtomicIdGenerator async() {
+    return asyncIdGenerator;
   }
 
   private <T> T complete(CompletableFuture<T> future) {

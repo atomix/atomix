@@ -15,9 +15,9 @@
  */
 package io.atomix.counter;
 
+import io.atomix.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.PrimitiveTypes;
 
 /**
  * Distributed version of java.util.concurrent.atomic.AtomicLong.
@@ -82,4 +82,7 @@ public interface AtomicCounter extends SyncPrimitive {
    * @return current value
    */
   long get();
+
+  @Override
+  AsyncAtomicCounter async();
 }

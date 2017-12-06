@@ -25,7 +25,7 @@ import io.atomix.primitive.Replication;
  * Transactional map builder.
  */
 public abstract class TransactionalMapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<TransactionalMapBuilder<K, V>, TransactionalMap<K, V>, AsyncTransactionalMap<K, V>> {
+    extends DistributedPrimitiveBuilder<TransactionalMapBuilder<K, V>, TransactionalMap<K, V>> {
   protected TransactionalMapBuilder(String name) {
     super(ConsistentMapType.instance(), name);
   }
@@ -43,10 +43,5 @@ public abstract class TransactionalMapBuilder<K, V>
   @Override
   protected Replication defaultReplication() {
     return Replication.SYNCHRONOUS;
-  }
-
-  @Override
-  public TransactionalMap<K, V> build() {
-    return buildAsync().asTransactionalMap();
   }
 }

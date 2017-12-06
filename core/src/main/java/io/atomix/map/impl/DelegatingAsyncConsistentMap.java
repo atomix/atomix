@@ -18,12 +18,14 @@ package io.atomix.map.impl;
 
 import com.google.common.base.MoreObjects;
 import io.atomix.map.AsyncConsistentMap;
+import io.atomix.map.ConsistentMap;
 import io.atomix.map.MapEventListener;
 import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -191,6 +193,11 @@ public class DelegatingAsyncConsistentMap<K, V>
   @Override
   public Collection<Consumer<Status>> statusChangeListeners() {
     return delegateMap.statusChangeListeners();
+  }
+
+  @Override
+  public ConsistentMap<K, V> sync(Duration operationTimeout) {
+    return new BlockingConsistentMap<>(this, operationTimeout.toMillis());
   }
 
   @Override

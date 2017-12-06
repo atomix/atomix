@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Leader elector primitive type.
  */
-public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<T>, LeaderElector<T>, AsyncLeaderElector<T>> {
+public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<T>, LeaderElector<T>> {
   private static final String NAME = "LEADER_ELECTOR";
 
   /**

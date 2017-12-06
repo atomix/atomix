@@ -16,9 +16,10 @@
 package io.atomix.transaction;
 
 import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.set.DistributedSetType;
-import io.atomix.transaction.impl.BlockingTransactionalSet;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -78,23 +79,11 @@ public interface AsyncTransactionalSet<E> extends AsyncPrimitive {
    */
   CompletableFuture<Boolean> contains(E e);
 
-  /**
-   * Returns a new {@link TransactionalSet} that is backed by this instance.
-   *
-   * @return new {@code Transaction} instance
-   */
-  default TransactionalSet<E> asTransactionalSet() {
-    return asTransactionalSet(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  @Override
+  default TransactionalSet<E> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link TransactionalSet} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned Transaction operations
-   * @return new {@code Transaction} instance
-   */
-  default TransactionalSet<E> asTransactionalSet(long timeoutMillis) {
-    return new BlockingTransactionalSet<>(this, timeoutMillis);
-  }
-
+  @Override
+  TransactionalSet<E> sync(Duration operationTimeout);
 }

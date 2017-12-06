@@ -18,11 +18,11 @@ package io.atomix.multimap.impl;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Multiset;
-import io.atomix.primitive.Synchronous;
 import io.atomix.map.ConsistentMapException;
 import io.atomix.multimap.AsyncConsistentMultimap;
 import io.atomix.multimap.ConsistentMultimap;
 import io.atomix.multimap.MultimapEventListener;
+import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
@@ -154,6 +154,11 @@ public class BlockingConsistentMultimap<K, V>
   @Override
   public void removeListener(MultimapEventListener<K, V> listener) {
     complete(asyncMultimap.removeListener(listener));
+  }
+
+  @Override
+  public AsyncConsistentMultimap<K, V> async() {
+    return asyncMultimap;
   }
 
   private <T> T complete(CompletableFuture<T> future) {

@@ -15,10 +15,10 @@
  */
 package io.atomix.lock;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
-import io.atomix.lock.impl.BlockingDistributedLock;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Version;
 
 import java.time.Duration;
@@ -64,22 +64,11 @@ public interface AsyncDistributedLock extends AsyncPrimitive {
    */
   CompletableFuture<Void> unlock();
 
-  /**
-   * Returns a new {@link DistributedLock} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned DistributedLock operations
-   * @return new {@code DistributedLock} instance
-   */
-  default DistributedLock asDistributedLock(long timeoutMillis) {
-    return new BlockingDistributedLock(this, timeoutMillis);
+  @Override
+  default DistributedLock sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link DistributedLock} that is backed by this instance and with a default operation timeout.
-   *
-   * @return new {@code DistributedLock} instance
-   */
-  default DistributedLock asDistributedLock() {
-    return new BlockingDistributedLock(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
-  }
+  @Override
+  DistributedLock sync(Duration operationTimeout);
 }

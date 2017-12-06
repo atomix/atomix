@@ -15,9 +15,8 @@
  */
 package io.atomix.map.impl;
 
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.map.AsyncAtomicCounterMap;
+import io.atomix.map.AtomicCounterMap;
 import io.atomix.map.impl.AtomicCounterMapOperations.AddAndGet;
 import io.atomix.map.impl.AtomicCounterMapOperations.DecrementAndGet;
 import io.atomix.map.impl.AtomicCounterMapOperations.Get;
@@ -30,10 +29,13 @@ import io.atomix.map.impl.AtomicCounterMapOperations.PutIfAbsent;
 import io.atomix.map.impl.AtomicCounterMapOperations.Remove;
 import io.atomix.map.impl.AtomicCounterMapOperations.RemoveValue;
 import io.atomix.map.impl.AtomicCounterMapOperations.Replace;
+import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import static io.atomix.map.impl.AtomicCounterMapOperations.ADD_AND_GET;
@@ -142,5 +144,10 @@ public class AtomicCounterMapProxy extends AbstractAsyncPrimitive implements Asy
   @Override
   public CompletableFuture<Void> clear() {
     return proxy.invoke(CLEAR);
+  }
+
+  @Override
+  public AtomicCounterMap<String> sync(Duration operationTimeout) {
+    return new BlockingAtomicCounterMap<>(this, operationTimeout.toMillis());
   }
 }

@@ -16,11 +16,13 @@
 package io.atomix.map.impl;
 
 import io.atomix.map.AsyncConsistentTreeMap;
+import io.atomix.map.ConsistentTreeMap;
 import io.atomix.map.ConsistentTreeMapBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.Serializer;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -37,25 +39,25 @@ public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V
     this.managementService = checkNotNull(managementService);
   }
 
-  protected AsyncConsistentTreeMap<V> newTreeMap(PrimitiveProxy proxy) {
-    ConsistentTreeMapProxy rawMap = new ConsistentTreeMapProxy(proxy.open().join());
-
-    Serializer serializer = serializer();
-    return new TranscodingAsyncConsistentTreeMap<>(
-        rawMap,
-        value -> value == null ? null : serializer.encode(value),
-        bytes -> serializer.decode(bytes));
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncConsistentTreeMap<V> buildAsync() {
+  public CompletableFuture<ConsistentTreeMap<V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newTreeMap(managementService.getPartitionService()
+    return managementService.getPartitionService()
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
         .proxyBuilder(name(), primitiveType(), protocol)
-        .build());
+        .build()
+        .open()
+        .thenApply(proxy -> {
+          ConsistentTreeMapProxy rawMap = new ConsistentTreeMapProxy(proxy);
+          Serializer serializer = serializer();
+          return new TranscodingAsyncConsistentTreeMap<V, byte[]>(
+              rawMap,
+              value -> value == null ? null : serializer.encode(value),
+              bytes -> serializer.decode(bytes))
+              .sync();
+        });
   }
 }

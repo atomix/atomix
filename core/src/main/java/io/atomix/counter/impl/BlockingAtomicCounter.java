@@ -15,10 +15,10 @@
  */
 package io.atomix.counter.impl;
 
-import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.Synchronous;
 import io.atomix.counter.AsyncAtomicCounter;
 import io.atomix.counter.AtomicCounter;
+import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.Synchronous;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -72,6 +72,11 @@ public class BlockingAtomicCounter extends Synchronous<AsyncAtomicCounter> imple
   @Override
   public long get() {
     return complete(asyncCounter.get());
+  }
+
+  @Override
+  public AsyncAtomicCounter async() {
+    return asyncCounter;
   }
 
   private <T> T complete(CompletableFuture<T> future) {

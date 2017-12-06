@@ -16,11 +16,11 @@
 package io.atomix.election;
 
 import io.atomix.PrimitiveTypes;
-import io.atomix.election.impl.BlockingLeaderElector;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -125,22 +125,11 @@ public interface AsyncLeaderElector<T> extends AsyncPrimitive {
    */
   CompletableFuture<Void> removeListener(LeadershipEventListener<T> listener);
 
-  /**
-   * Returns a new {@link LeaderElector} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned LeaderElector operations
-   * @return new {@code LeaderElector} instance
-   */
-  default LeaderElector<T> asLeaderElector(long timeoutMillis) {
-    return new BlockingLeaderElector<>(this, timeoutMillis);
+  @Override
+  default LeaderElector<T> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link LeaderElector} that is backed by this instance and with a default operation timeout.
-   *
-   * @return new {@code LeaderElector} instance
-   */
-  default LeaderElector<T> asLeaderElector() {
-    return asLeaderElector(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
-  }
+  @Override
+  LeaderElector<T> sync(Duration operationTimeout);
 }

@@ -24,10 +24,9 @@ import io.atomix.map.AtomicCounterMapBuilder;
 import io.atomix.map.ConsistentMapBuilder;
 import io.atomix.map.ConsistentTreeMapBuilder;
 import io.atomix.multimap.ConsistentMultimapBuilder;
-import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.SyncPrimitive;
 import io.atomix.queue.WorkQueueBuilder;
 import io.atomix.set.DistributedSetBuilder;
 import io.atomix.transaction.TransactionBuilder;
@@ -192,12 +191,11 @@ public interface PrimitivesService {
    * @param name the primitive name
    * @param primitiveType the primitive type
    * @param <B> the primitive builder type
-   * @param <S> the synchronous primitive type
-   * @param <A> the asynchronous primitive type
+   * @param <P> the primitive type
    * @return the primitive builder
    */
-  <B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> B primitiveBuilder(
-      String name, PrimitiveType<B, S, A> primitiveType);
+  <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(
+      String name, PrimitiveType<B, P> primitiveType);
 
   /**
    * Returns a list of map names.

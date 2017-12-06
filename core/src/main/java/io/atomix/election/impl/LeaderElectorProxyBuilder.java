@@ -17,6 +17,7 @@ package io.atomix.election.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.election.AsyncLeaderElector;
+import io.atomix.election.LeaderElector;
 import io.atomix.election.LeaderElectorBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
@@ -25,8 +26,11 @@ import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.utils.concurrent.Futures;
 
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -41,24 +45,26 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
     this.managementService = checkNotNull(managementService);
   }
 
-  private AsyncLeaderElector<T> newLeaderElector(PrimitiveProxy proxy) {
-    AsyncLeaderElector<byte[]> leaderElector = new LeaderElectorProxy(proxy.open().join());
-    return new TranscodingAsyncLeaderElector<>(leaderElector, serializer()::encode, serializer()::decode);
+  private CompletableFuture<AsyncLeaderElector<T>> newLeaderElector(PrimitiveProxy proxy) {
+    return proxy.open()
+        .thenApply(p -> new TranscodingAsyncLeaderElector<T, byte[]>(
+            new LeaderElectorProxy(proxy), serializer()::encode, serializer()::decode));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncLeaderElector<T> buildAsync() {
+  public CompletableFuture<LeaderElector<T>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
-    Map<PartitionId, AsyncLeaderElector<T>> electors = Maps.newConcurrentMap();
+    Map<PartitionId, CompletableFuture<AsyncLeaderElector<T>>> electors = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {
       electors.put(partition.id(),
           newLeaderElector(partition.getPrimitiveClient().proxyBuilder(name(), primitiveType(), protocol).build()));
     }
 
     Partitioner<String> partitioner = topic -> partitions.getPartition(topic).id();
-    return new PartitionedAsyncLeaderElector(name(), electors, partitioner);
+    return Futures.allOf(new ArrayList<>(electors.values()))
+        .thenApply(e -> new PartitionedAsyncLeaderElector<T>(name(), Maps.transformValues(electors, v -> v.getNow(null)), partitioner).sync());
   }
 }

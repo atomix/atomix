@@ -15,11 +15,12 @@
  */
 package io.atomix.counter.impl;
 
+import io.atomix.counter.AtomicCounter;
+import io.atomix.counter.AtomicCounterBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.counter.AsyncAtomicCounter;
-import io.atomix.counter.AtomicCounterBuilder;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -34,19 +35,17 @@ public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
     this.managementService = checkNotNull(managementService);
   }
 
-  protected AsyncAtomicCounter newCounter(PrimitiveProxy proxy) {
-    return new AtomicCounterProxy(proxy.open().join());
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncAtomicCounter buildAsync() {
+  public CompletableFuture<AtomicCounter> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newCounter(managementService.getPartitionService()
+    return managementService.getPartitionService()
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
         .proxyBuilder(name(), primitiveType(), protocol)
-        .build());
+        .build()
+        .open()
+        .thenApply(proxy -> new AtomicCounterProxy(proxy).sync());
   }
 }

@@ -27,7 +27,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Consistent tree map primitive type.
  */
 public class ConsistentTreeMapType<V>
-    implements PrimitiveType<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>, AsyncConsistentTreeMap<V>> {
+    implements PrimitiveType<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>> {
   private static final String NAME = "CONSISTENT_TREEMAP";
 
   /**

@@ -21,6 +21,7 @@ import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.tree.AsyncDocumentTree;
 import io.atomix.tree.DocumentPath;
+import io.atomix.tree.DocumentTree;
 import io.atomix.tree.DocumentTreeEvent;
 import io.atomix.tree.DocumentTreeListener;
 import io.atomix.tree.IllegalDocumentModificationException;
@@ -37,6 +38,7 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -224,6 +226,11 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
           .thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public DocumentTree<byte[]> sync(Duration operationTimeout) {
+    return new BlockingDocumentTree<>(this, operationTimeout.toMillis());
   }
 
   private CompletableFuture<DocumentTreeResult.Status> createInternal(DocumentPath path, byte[] value) {

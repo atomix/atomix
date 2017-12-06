@@ -371,7 +371,7 @@ public class ConsistentSetMultimapTest extends AbstractAtomixTest {
 
   private AsyncConsistentMultimap<String, String> createResource(String mapName) {
     try {
-      return atomix().<String, String>consistentMultimapBuilder(mapName).buildAsync();
+      return atomix().<String, String>consistentMultimapBuilder(mapName).build().async();
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }

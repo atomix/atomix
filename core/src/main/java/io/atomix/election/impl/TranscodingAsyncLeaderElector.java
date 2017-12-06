@@ -17,10 +17,12 @@ package io.atomix.election.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.election.AsyncLeaderElector;
+import io.atomix.election.LeaderElector;
 import io.atomix.election.Leadership;
 import io.atomix.election.LeadershipEvent;
 import io.atomix.election.LeadershipEventListener;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -110,6 +112,11 @@ public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector
   @Override
   public CompletableFuture<Void> close() {
     return backingElector.close();
+  }
+
+  @Override
+  public LeaderElector<V1> sync(Duration operationTimeout) {
+    return new BlockingLeaderElector<>(this, operationTimeout.toMillis());
   }
 
   @Override

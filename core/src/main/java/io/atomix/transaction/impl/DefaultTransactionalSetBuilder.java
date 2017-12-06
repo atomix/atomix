@@ -16,9 +16,11 @@
 package io.atomix.transaction.impl;
 
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.transaction.AsyncTransactionalSet;
 import io.atomix.transaction.TransactionalMapBuilder;
+import io.atomix.transaction.TransactionalSet;
 import io.atomix.transaction.TransactionalSetBuilder;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Default transactional set builder.
@@ -32,7 +34,7 @@ public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E
   }
 
   @Override
-  public AsyncTransactionalSet<E> buildAsync() {
-    return new DefaultTransactionalSet<>(mapBuilder.buildAsync());
+  public CompletableFuture<TransactionalSet<E>> buildAsync() {
+    return mapBuilder.buildAsync().thenApply(map -> new DefaultTransactionalSet<>(map.async()).sync());
   }
 }

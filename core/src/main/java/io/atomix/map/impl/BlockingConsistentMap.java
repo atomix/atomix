@@ -16,12 +16,12 @@
 package io.atomix.map.impl;
 
 import com.google.common.base.Throwables;
-import io.atomix.primitive.Synchronous;
 import io.atomix.map.AsyncConsistentMap;
 import io.atomix.map.ConsistentMap;
 import io.atomix.map.ConsistentMapBackedJavaMap;
 import io.atomix.map.ConsistentMapException;
 import io.atomix.map.MapEventListener;
+import io.atomix.primitive.Synchronous;
 import io.atomix.utils.concurrent.Retries;
 import io.atomix.utils.time.Versioned;
 
@@ -219,6 +219,11 @@ public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<
   @Override
   public String toString() {
     return asJavaMap().toString();
+  }
+
+  @Override
+  public AsyncConsistentMap<K, V> async() {
+    return asyncMap;
   }
 
   private <T> T complete(CompletableFuture<T> future) {

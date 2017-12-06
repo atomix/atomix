@@ -17,8 +17,9 @@ package io.atomix.transaction;
 
 import io.atomix.map.ConsistentMapType;
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.transaction.impl.BlockingTransactionalMap;
+import io.atomix.primitive.DistributedPrimitive;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -101,22 +102,11 @@ public interface AsyncTransactionalMap<K, V> extends AsyncPrimitive {
    */
   CompletableFuture<Boolean> replace(K key, V oldValue, V newValue);
 
-  /**
-   * Returns a new {@link Transaction} that is backed by this instance.
-   *
-   * @return new {@code Transaction} instance
-   */
-  default TransactionalMap<K, V> asTransactionalMap() {
-    return asTransactionalMap(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  @Override
+  default TransactionalMap<K, V> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link Transaction} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned Transaction operations
-   * @return new {@code Transaction} instance
-   */
-  default TransactionalMap<K, V> asTransactionalMap(long timeoutMillis) {
-    return new BlockingTransactionalMap<>(this, timeoutMillis);
-  }
+  @Override
+  TransactionalMap<K, V> sync(Duration operationTimeout);
 }

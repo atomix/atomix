@@ -44,11 +44,11 @@ public class WorkQueueTest extends AbstractAtomixTest {
   @Test
   public void testAdd() throws Throwable {
     String queueName = UUID.randomUUID().toString();
-    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item = DEFAULT_PAYLOAD;
     queue1.addOne(item).join();
 
-    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).build().async();
     String task2 = DEFAULT_PAYLOAD;
     queue2.addOne(task2).join();
 
@@ -61,7 +61,7 @@ public class WorkQueueTest extends AbstractAtomixTest {
   @Test
   public void testAddMultiple() throws Throwable {
     String queueName = UUID.randomUUID().toString();
-    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item1 = DEFAULT_PAYLOAD;
     String item2 = DEFAULT_PAYLOAD;
     queue1.addMultiple(Arrays.asList(item1, item2)).join();
@@ -75,11 +75,11 @@ public class WorkQueueTest extends AbstractAtomixTest {
   @Test
   public void testTakeAndComplete() throws Throwable {
     String queueName = UUID.randomUUID().toString();
-    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item1 = DEFAULT_PAYLOAD;
     queue1.addOne(item1).join();
 
-    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).build().async();
     Task<String> removedTask = queue2.take().join();
 
     WorkQueueStats stats = queue2.stats().join();
@@ -102,11 +102,11 @@ public class WorkQueueTest extends AbstractAtomixTest {
   @Test
   public void testUnexpectedClientClose() throws Throwable {
     String queueName = UUID.randomUUID().toString();
-    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item1 = DEFAULT_PAYLOAD;
     queue1.addOne(item1).join();
 
-    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).build().async();
     queue2.take().join();
 
     WorkQueueStats stats = queue1.stats().join();
@@ -125,13 +125,13 @@ public class WorkQueueTest extends AbstractAtomixTest {
   @Test
   public void testAutomaticTaskProcessing() throws Throwable {
     String queueName = UUID.randomUUID().toString();
-    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     Executor executor = Executors.newSingleThreadExecutor();
 
     CountDownLatch latch1 = new CountDownLatch(1);
     queue1.registerTaskProcessor(s -> latch1.countDown(), 2, executor);
 
-    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item1 = DEFAULT_PAYLOAD;
     queue2.addOne(item1).join();
 
@@ -159,11 +159,11 @@ public class WorkQueueTest extends AbstractAtomixTest {
   @Test
   public void testDestroy() {
     String queueName = UUID.randomUUID().toString();
-    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item = DEFAULT_PAYLOAD;
     queue1.addOne(item).join();
 
-    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).build().async();
     String task2 = DEFAULT_PAYLOAD;
     queue2.addOne(task2).join();
 
@@ -183,7 +183,7 @@ public class WorkQueueTest extends AbstractAtomixTest {
   @Test
   public void testCompleteAttemptWithIncorrectSession() {
     String queueName = UUID.randomUUID().toString();
-    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item = DEFAULT_PAYLOAD;
     queue1.addOne(item).join();
 
@@ -191,7 +191,7 @@ public class WorkQueueTest extends AbstractAtomixTest {
     String taskId = task.taskId();
 
     // Create another client and get a handle to the same queue.
-    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).buildAsync();
+    AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName).build().async();
 
     // Attempt completing the task with new client and verify task is not completed
     queue2.complete(taskId).join();

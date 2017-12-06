@@ -25,7 +25,7 @@ import io.atomix.set.DistributedSetType;
  * Transactional set builder.
  */
 public abstract class TransactionalSetBuilder<E>
-    extends DistributedPrimitiveBuilder<TransactionalSetBuilder<E>, TransactionalSet<E>, AsyncTransactionalSet<E>> {
+    extends DistributedPrimitiveBuilder<TransactionalSetBuilder<E>, TransactionalSet<E>> {
   protected TransactionalSetBuilder(String name) {
     super(DistributedSetType.instance(), name);
   }
@@ -43,10 +43,5 @@ public abstract class TransactionalSetBuilder<E>
   @Override
   protected Replication defaultReplication() {
     return Replication.SYNCHRONOUS;
-  }
-
-  @Override
-  public TransactionalSet<E> build() {
-    return buildAsync().asTransactionalSet();
   }
 }

@@ -17,12 +17,14 @@
 package io.atomix.multimap.impl;
 
 import com.google.common.io.BaseEncoding;
+import io.atomix.multimap.AsyncConsistentMultimap;
+import io.atomix.multimap.ConsistentMultimap;
+import io.atomix.multimap.ConsistentMultimapBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.multimap.AsyncConsistentMultimap;
-import io.atomix.multimap.ConsistentMultimapBuilder;
 import io.atomix.utils.serializer.Serializer;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -37,27 +39,27 @@ public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuil
     this.managementService = checkNotNull(managementService);
   }
 
-  protected AsyncConsistentMultimap<K, V> newMultimap(PrimitiveProxy proxy) {
-    AsyncConsistentMultimap<String, byte[]> rawMap = new ConsistentSetMultimapProxy(proxy.open().join());
-
-    Serializer serializer = serializer();
-    return new TranscodingAsyncConsistentMultimap<>(
-        rawMap,
-        key -> BaseEncoding.base16().encode(serializer.encode(key)),
-        string -> serializer.decode(BaseEncoding.base16().decode(string)),
-        value -> serializer.encode(value),
-        bytes -> serializer.decode(bytes));
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncConsistentMultimap<K, V> buildAsync() {
+  public CompletableFuture<ConsistentMultimap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newMultimap(managementService.getPartitionService()
+    return managementService.getPartitionService()
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
         .proxyBuilder(name(), primitiveType(), protocol)
-        .build());
+        .build()
+        .open()
+        .thenApply(proxy -> {
+          AsyncConsistentMultimap<String, byte[]> rawMap = new ConsistentSetMultimapProxy(proxy);
+          Serializer serializer = serializer();
+          return new TranscodingAsyncConsistentMultimap<K, V, String, byte[]>(
+              rawMap,
+              key -> BaseEncoding.base16().encode(serializer.encode(key)),
+              string -> serializer.decode(BaseEncoding.base16().decode(string)),
+              value -> serializer.encode(value),
+              bytes -> serializer.decode(bytes))
+              .sync();
+        });
   }
 }

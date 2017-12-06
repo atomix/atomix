@@ -18,12 +18,13 @@ package io.atomix.multimap;
 
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
-import io.atomix.multimap.impl.BlockingConsistentMultimap;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -160,8 +161,7 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    * @return a future whose value will be true if any change in the map
    * results from this call, false otherwise
    */
-  CompletableFuture<Boolean> putAll(K key,
-                                    Collection<? extends V> values);
+  CompletableFuture<Boolean> putAll(K key, Collection<? extends V> values);
 
   /**
    * Stores all the values in values associated with the key specified,
@@ -173,8 +173,7 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    * @return a future whose value will be the collection of removed values,
    * which may be empty
    */
-  CompletableFuture<Versioned<Collection<? extends V>>> replaceValues(
-      K key, Collection<V> values);
+  CompletableFuture<Versioned<Collection<? extends V>>> replaceValues(K key, Collection<V> values);
 
   /**
    * Removes all key-value pairs, after which it will be empty.
@@ -269,31 +268,11 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    */
   CompletableFuture<Map<K, Collection<V>>> asMap();
 
-  /**
-   * Returns a {@code ConsistentMultimap} instance that wraps this map. All
-   * calls will have the same behavior as this map but will be blocking
-   * instead of asynchronous. If a call does not complete within the
-   * default timeout an exception will be produced.
-   *
-   * @return a {@code ConsistentMultimap} which wraps this map, providing
-   * synchronous access to this map
-   */
-  default ConsistentMultimap<K, V> asMultimap() {
-    return asMultimap(DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  @Override
+  default ConsistentMultimap<K, V> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a {@code ConsistentMultimap} instance that wraps this map. All
-   * calls will have the same behavior as this map but will be blocking
-   * instead of asynchronous. If a call does not complete within the
-   * specified timeout an exception will be produced.
-   *
-   * @param timeoutMillis the number of millis to block while waiting for a
-   *                      call to return
-   * @return a {@code ConsistentMultimap} which wraps this map, providing
-   * synchronous access to this map
-   */
-  default ConsistentMultimap<K, V> asMultimap(long timeoutMillis) {
-    return new BlockingConsistentMultimap<>(this, timeoutMillis);
-  }
+  @Override
+  ConsistentMultimap<K, V> sync(Duration operationTimeout);
 }

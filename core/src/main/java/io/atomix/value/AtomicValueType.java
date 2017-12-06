@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Atomic value primitive type.
  */
-public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, AtomicValue<V>, AsyncAtomicValue<V>> {
+public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, AtomicValue<V>> {
   private static final String NAME = "VALUE";
 
   /**

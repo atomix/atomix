@@ -17,9 +17,10 @@ package io.atomix.queue.impl;
 
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.queue.AsyncWorkQueue;
+import io.atomix.queue.WorkQueue;
 import io.atomix.queue.WorkQueueBuilder;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -34,20 +35,17 @@ public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
     this.managementService = checkNotNull(managementService);
   }
 
-  protected AsyncWorkQueue<E> newWorkQueue(PrimitiveProxy proxy) {
-    WorkQueueProxy workQueue = new WorkQueueProxy(proxy.open().join());
-    return new TranscodingAsyncWorkQueue<>(workQueue, serializer()::encode, serializer()::decode);
-  }
-
   @Override
   @SuppressWarnings("unchecked")
-  public AsyncWorkQueue<E> buildAsync() {
+  public CompletableFuture<WorkQueue<E>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newWorkQueue(managementService.getPartitionService()
+    return managementService.getPartitionService()
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
         .proxyBuilder(name(), primitiveType(), protocol)
-        .build());
+        .build()
+        .open()
+        .thenApply(proxy -> new TranscodingAsyncWorkQueue<E, byte[]>(new WorkQueueProxy(proxy), serializer()::encode, serializer()::decode).sync());
   }
 }

@@ -134,6 +134,11 @@ public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E
     complete(asyncSet.removeListener(listener));
   }
 
+  @Override
+  public AsyncDistributedSet<E> async() {
+    return asyncSet;
+  }
+
   private <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);

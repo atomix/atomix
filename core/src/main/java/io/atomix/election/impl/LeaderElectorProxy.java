@@ -17,6 +17,7 @@ package io.atomix.election.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.election.AsyncLeaderElector;
+import io.atomix.election.LeaderElector;
 import io.atomix.election.Leadership;
 import io.atomix.election.LeadershipEvent;
 import io.atomix.election.LeadershipEventListener;
@@ -31,6 +32,7 @@ import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -127,5 +129,10 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive implements AsyncL
 
   private boolean isListening() {
     return !leadershipChangeListeners.isEmpty();
+  }
+
+  @Override
+  public LeaderElector<byte[]> sync(Duration operationTimeout) {
+    return new BlockingLeaderElector<>(this, operationTimeout.toMillis());
   }
 }

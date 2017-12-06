@@ -32,7 +32,7 @@ public class AtomicCounterMapTest extends AbstractAtomixTest {
    */
   @Test
   public void testBasicCounterMapOperations() throws Throwable {
-    AsyncAtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap").buildAsync();
+    AsyncAtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap").build().async();
 
     map.isEmpty().thenAccept(isEmpty -> {
       assertTrue(isEmpty);

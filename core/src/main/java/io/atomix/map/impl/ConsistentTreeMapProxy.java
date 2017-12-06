@@ -17,6 +17,7 @@
 package io.atomix.map.impl;
 
 import io.atomix.map.AsyncConsistentTreeMap;
+import io.atomix.map.ConsistentTreeMap;
 import io.atomix.map.impl.ConsistentTreeMapOperations.CeilingEntry;
 import io.atomix.map.impl.ConsistentTreeMapOperations.CeilingKey;
 import io.atomix.map.impl.ConsistentTreeMapOperations.FloorEntry;
@@ -33,6 +34,7 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -162,5 +164,10 @@ public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncC
   public CompletableFuture<NavigableMap<String, byte[]>> subMap(
       String upperKey, String lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
+  }
+
+  @Override
+  public ConsistentTreeMap<byte[]> sync(Duration operationTimeout) {
+    return new BlockingConsistentTreeMap<>(this, operationTimeout.toMillis());
   }
 }

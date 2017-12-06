@@ -17,12 +17,14 @@
 package io.atomix.map.impl;
 
 import io.atomix.map.AsyncConsistentTreeMap;
+import io.atomix.map.ConsistentTreeMap;
 import io.atomix.map.MapEventListener;
 import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
 import io.atomix.transaction.TransactionId;
 import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -267,5 +269,10 @@ public class DelegatingAsyncConsistentTreeMap<V>
   @Override
   public CompletableFuture<Void> rollback(TransactionId transactionId) {
     return delegateMap.rollback(transactionId);
+  }
+
+  @Override
+  public ConsistentTreeMap<V> sync(Duration operationTimeout) {
+    return new BlockingConsistentTreeMap<>(this, operationTimeout.toMillis());
   }
 }

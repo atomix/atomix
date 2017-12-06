@@ -18,6 +18,7 @@ package io.atomix.map.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.map.AsyncConsistentTreeMap;
+import io.atomix.map.ConsistentTreeMap;
 import io.atomix.map.MapEvent;
 import io.atomix.map.MapEventListener;
 import io.atomix.transaction.TransactionId;
@@ -25,6 +26,7 @@ import io.atomix.transaction.TransactionLog;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -315,6 +317,11 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   @Override
   public CompletableFuture<Void> close() {
     return backingMap.close();
+  }
+
+  @Override
+  public ConsistentTreeMap<V1> sync(Duration operationTimeout) {
+    return new BlockingConsistentTreeMap<>(this, operationTimeout.toMillis());
   }
 
   private class InternalBackingMapEventListener implements MapEventListener<String, V2> {

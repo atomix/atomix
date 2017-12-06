@@ -111,4 +111,6 @@ public interface LeaderElector<T> extends SyncPrimitive {
    */
   void removeListener(LeadershipEventListener<T> listener);
 
+  @Override
+  AsyncLeaderElector<T> async();
 }

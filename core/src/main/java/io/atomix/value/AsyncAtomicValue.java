@@ -15,11 +15,12 @@
  */
 package io.atomix.value;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
-import io.atomix.value.impl.BlockingAtomicValue;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -92,22 +93,11 @@ public interface AsyncAtomicValue<V> extends AsyncPrimitive {
    */
   CompletableFuture<Void> removeListener(AtomicValueEventListener<V> listener);
 
-  /**
-   * Returns a new {@link AtomicValue} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned ConsistentMap operations
-   * @return new {@code AtomicValue} instance
-   */
-  default AtomicValue<V> asAtomicValue(long timeoutMillis) {
-    return new BlockingAtomicValue<>(this, timeoutMillis);
+  @Override
+  default AtomicValue<V> sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link AtomicValue} that is backed by this instance and with a default operation timeout.
-   *
-   * @return new {@code AtomicValue} instance
-   */
-  default AtomicValue<V> asAtomicValue() {
-    return new BlockingAtomicValue<>(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
-  }
+  @Override
+  AtomicValue<V> sync(Duration operationTimeout);
 }

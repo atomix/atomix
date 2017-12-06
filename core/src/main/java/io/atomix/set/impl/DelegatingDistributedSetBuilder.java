@@ -15,14 +15,16 @@
  */
 package io.atomix.set.impl;
 
+import io.atomix.map.ConsistentMapBuilder;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
-import io.atomix.map.ConsistentMapBuilder;
-import io.atomix.set.AsyncDistributedSet;
+import io.atomix.set.DistributedSet;
 import io.atomix.set.DistributedSetBuilder;
 import io.atomix.utils.serializer.Serializer;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Default distributed set builder.
@@ -131,7 +133,8 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   }
 
   @Override
-  public AsyncDistributedSet<E> buildAsync() {
-    return new DelegatingAsyncDistributedSet<>(mapBuilder.buildAsync());
+  public CompletableFuture<DistributedSet<E>> buildAsync() {
+    return mapBuilder.buildAsync()
+        .thenApply(map -> new DelegatingAsyncDistributedSet<>(map.async()).sync());
   }
 }

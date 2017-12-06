@@ -93,6 +93,11 @@ public class BlockingTransaction implements Transaction {
     complete(asyncTransaction.close());
   }
 
+  @Override
+  public AsyncTransaction async() {
+    return asyncTransaction;
+  }
+
   private <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);

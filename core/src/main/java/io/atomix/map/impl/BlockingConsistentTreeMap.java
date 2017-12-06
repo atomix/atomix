@@ -286,4 +286,9 @@ public class BlockingConsistentTreeMap<V>
     return complete(treeMap.subMap(upperKey, lowerKey,
         inclusiveUpper, inclusiveLower));
   }
+
+  @Override
+  public AsyncConsistentTreeMap<V> async() {
+    return treeMap;
+  }
 }

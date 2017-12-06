@@ -22,11 +22,10 @@ import io.atomix.PrimitivesService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
-import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.transaction.ManagedTransactionService;
 import io.atomix.transaction.TransactionBuilder;
@@ -66,7 +65,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <B extends DistributedPrimitiveBuilder<B, S, A>, S extends SyncPrimitive, A extends AsyncPrimitive> B primitiveBuilder(String name, PrimitiveType<B, S, A> primitiveType) {
+  public <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(String name, PrimitiveType<B, P> primitiveType) {
     return primitiveType.newPrimitiveBuilder(name, managementService);
   }
 

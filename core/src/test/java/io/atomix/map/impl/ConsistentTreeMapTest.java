@@ -456,7 +456,7 @@ public class ConsistentTreeMapTest extends AbstractAtomixTest {
 
   private AsyncConsistentTreeMap<String> createResource(String mapName) {
     try {
-      return atomix().<String>consistentTreeMapBuilder(mapName).buildAsync();
+      return atomix().<String>consistentTreeMapBuilder(mapName).build().async();
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }

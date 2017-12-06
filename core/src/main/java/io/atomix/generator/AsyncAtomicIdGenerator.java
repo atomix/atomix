@@ -15,11 +15,12 @@
  */
 package io.atomix.generator;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.PrimitiveTypes;
-import io.atomix.generator.impl.BlockingAtomicIdGenerator;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -39,22 +40,11 @@ public interface AsyncAtomicIdGenerator extends AsyncPrimitive {
    */
   CompletableFuture<Long> nextId();
 
-  /**
-   * Returns a new {@link AtomicIdGenerator} that is backed by this instance.
-   *
-   * @param timeoutMillis timeout duration for the returned ConsistentMap operations
-   * @return new {@code AtomicIdGenerator} instance
-   */
-  default AtomicIdGenerator asAtomicIdGenerator(long timeoutMillis) {
-    return new BlockingAtomicIdGenerator(this, timeoutMillis);
+  @Override
+  default AtomicIdGenerator sync() {
+    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
-  /**
-   * Returns a new {@link AtomicIdGenerator} that is backed by this instance and with a default operation timeout.
-   *
-   * @return new {@code AtomicIdGenerator} instance
-   */
-  default AtomicIdGenerator asAtomicIdGenerator() {
-    return new BlockingAtomicIdGenerator(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
-  }
+  @Override
+  AtomicIdGenerator sync(Duration operationTimeout);
 }
