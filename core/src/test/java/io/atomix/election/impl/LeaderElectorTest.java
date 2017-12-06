@@ -21,6 +21,7 @@ import io.atomix.election.AsyncLeaderElector;
 import io.atomix.election.Leadership;
 import io.atomix.election.LeadershipEvent;
 import io.atomix.election.LeadershipEventListener;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.LinkedList;
@@ -234,6 +235,7 @@ public class LeaderElectorTest extends AbstractAtomixTest {
   }
 
   @Test
+  @Ignore // Leader balancing is currently not deterministic in this test
   public void testLeaderBalance() throws Throwable {
     AsyncLeaderElector<NodeId> elector1 = atomix().<NodeId>leaderElectorBuilder("test-elector-leader-balance").build().async();
     elector1.run("foo", node1).join();
