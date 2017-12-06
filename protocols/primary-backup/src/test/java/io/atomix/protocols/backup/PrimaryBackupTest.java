@@ -203,7 +203,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     session1.invoke(READ).thenRun(this::resume);
     session2.invoke(READ).thenRun(this::resume);
     await(5000, 2);
-    
+
     session1.invoke(EVENT, SERIALIZER::encode, false).thenRun(this::resume);
     await(5000, 3);
   }
@@ -236,7 +236,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
       resume();
     });
 
-    for (int i = 0 ; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
       session.invoke(EVENT, SERIALIZER::encode, true).thenRun(this::resume);
 
       await(5000, 2);
@@ -434,11 +434,12 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    * Creates a new primary-backup proxy.
    */
   private PrimitiveProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, MultiPrimaryProtocol.builder()
+    return client.newProxy("test", TestPrimitiveType.INSTANCE, MultiPrimaryProtocol.builder()
         .withBackups(backups)
         .withReplication(replication)
         .build())
-        .build().open().join();
+        .open()
+        .join();
   }
 
   @Before

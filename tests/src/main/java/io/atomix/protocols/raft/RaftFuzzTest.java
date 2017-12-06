@@ -616,11 +616,10 @@ public class RaftFuzzTest implements Runnable {
    * Creates a test session.
    */
   private PrimitiveProxy createProxy(RaftClient client, ReadConsistency consistency) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
+    return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build())
-        .build()
         .open()
         .join();
   }

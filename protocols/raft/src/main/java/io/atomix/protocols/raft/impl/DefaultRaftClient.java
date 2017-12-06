@@ -26,7 +26,6 @@ import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RecoveryStrategy;
 import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxy;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
@@ -41,6 +40,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -123,8 +123,51 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public PrimitiveProxy.Builder<RaftProtocol> proxyBuilder(String primitiveName, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
-    return new ProxyBuilder(primitiveName, primitiveType, primitiveProtocol);
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
+    // Create a proxy builder that uses the session manager to open a session.
+    Supplier<PrimitiveProxy> proxyFactory = () -> new DefaultRaftProxy(
+        primitiveName,
+        primitiveType,
+        DefaultRaftClient.this.protocol,
+        selectorManager,
+        sessionManager,
+        primitiveProtocol.readConsistency(),
+        primitiveProtocol.communicationStrategy(),
+        threadContextFactory.createContext(),
+        primitiveProtocol.minTimeout(),
+        primitiveProtocol.maxTimeout());
+
+    PrimitiveProxy proxy;
+
+    // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
+    if (primitiveProtocol.recoveryStrategy() == RecoveryStrategy.RECOVER) {
+      proxy = new RecoveringPrimitiveProxy(
+          clientId,
+          primitiveName,
+          primitiveType,
+          proxyFactory,
+          threadContextFactory.createContext());
+    } else {
+      proxy = proxyFactory.get();
+    }
+
+    // If max retries is set, wrap the client in a retrying proxy client.
+    if (primitiveProtocol.maxRetries() > 0) {
+      proxy = new RetryingPrimitiveProxy(
+          proxy,
+          threadContextFactory.createContext(),
+          primitiveProtocol.maxRetries(),
+          primitiveProtocol.retryDelay());
+    }
+
+    // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
+    Executor executor = primitiveProtocol.executor() != null
+        ? primitiveProtocol.executor()
+        : threadContextFactory.createContext();
+    proxy = new BlockingAwarePrimitiveProxy(proxy, executor);
+
+    // Create the proxy.
+    return new DelegatingPrimitiveProxy(proxy);
   }
 
   @Override
@@ -144,60 +187,6 @@ public class DefaultRaftClient implements RaftClient {
     return toStringHelper(this)
         .add("id", clientId)
         .toString();
-  }
-
-  /**
-   * Default Raft session builder.
-   */
-  private class ProxyBuilder extends PrimitiveProxy.Builder<RaftProtocol> {
-    ProxyBuilder(String name, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
-      super(name, primitiveType, primitiveProtocol);
-    }
-
-    @Override
-    public PrimitiveProxy build() {
-      // Create a proxy builder that uses the session manager to open a session.
-      PrimitiveProxy.Builder<RaftProtocol> proxyBuilder = new PrimitiveProxy.Builder<RaftProtocol>(name, primitiveType, protocol) {
-        @Override
-        public RaftProxy build() {
-          return new DefaultRaftProxy(
-              name,
-              primitiveType,
-              DefaultRaftClient.this.protocol,
-              selectorManager,
-              sessionManager,
-              protocol.readConsistency(),
-              protocol.communicationStrategy(),
-              threadContextFactory.createContext(),
-              protocol.minTimeout(),
-              protocol.maxTimeout());
-        }
-      };
-
-      // Populate the proxy client builder.
-      proxyBuilder.withMaxRetries(maxRetries).withRetryDelay(retryDelay);
-
-      PrimitiveProxy proxy;
-
-      // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
-      if (protocol.recoveryStrategy() == RecoveryStrategy.RECOVER) {
-        proxy = new RecoveringPrimitiveProxy(clientId, name, primitiveType, proxyBuilder, threadContextFactory.createContext());
-      } else {
-        proxy = proxyBuilder.build();
-      }
-
-      // If max retries is set, wrap the client in a retrying proxy client.
-      if (maxRetries > 0) {
-        proxy = new RetryingPrimitiveProxy(proxy, threadContextFactory.createContext(), maxRetries, retryDelay);
-      }
-
-      // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
-      Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-      proxy = new BlockingAwarePrimitiveProxy(proxy, executor);
-
-      // Create the proxy.
-      return new DelegatingPrimitiveProxy(proxy);
-    }
   }
 
   /**

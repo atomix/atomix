@@ -58,15 +58,14 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
   public CompletableFuture<SessionIdService> open() {
     PrimitiveProxy proxy = partitions.getPartition(PRIMITIVE_NAME)
         .getPrimitiveClient()
-        .proxyBuilder(PRIMITIVE_NAME, AtomicIdGeneratorType.instance(), RaftProtocol.builder()
+        .newProxy(PRIMITIVE_NAME, AtomicIdGeneratorType.instance(), RaftProtocol.builder()
             .withMinTimeout(Duration.ofMillis(250))
             .withMaxTimeout(Duration.ofSeconds(5))
             .withReadConsistency(ReadConsistency.LINEARIZABLE)
             .withCommunicationStrategy(CommunicationStrategy.LEADER)
             .withRecoveryStrategy(RecoveryStrategy.RECOVER)
-            .build())
-        .withMaxRetries(5)
-        .build();
+            .withMaxRetries(5)
+            .build());
     return proxy.open()
         .thenApply(v -> {
           idGenerator = new DelegatingIdGenerator(new AtomicCounterProxy(proxy));

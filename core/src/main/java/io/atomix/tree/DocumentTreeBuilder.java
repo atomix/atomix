@@ -127,6 +127,8 @@ public abstract class DocumentTreeBuilder<V>
         .withMinTimeout(Duration.ofSeconds(5))
         .withMaxTimeout(Duration.ofSeconds(30))
         .withReadConsistency(readConsistency == Consistency.LINEARIZABLE ? ReadConsistency.LINEARIZABLE : ReadConsistency.SEQUENTIAL)
+        .withMaxRetries(maxRetries())
+        .withRetryDelay(retryDelay())
         .build();
   }
 
@@ -135,6 +137,8 @@ public abstract class DocumentTreeBuilder<V>
         .withConsistency(consistency)
         .withReplication(replication)
         .withBackups(backups())
+        .withMaxRetries(maxRetries())
+        .withRetryDelay(retryDelay())
         .build();
   }
 }

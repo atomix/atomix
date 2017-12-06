@@ -872,7 +872,7 @@ public class RaftTest extends ConcurrentTestCase {
       resume();
     });
 
-    for (int i = 0 ; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
       session.invoke(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
@@ -955,7 +955,7 @@ public class RaftTest extends ConcurrentTestCase {
       resume();
     });
 
-    for (int i = 0 ; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
       session.invoke(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
@@ -968,7 +968,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     await(30000, 2);
 
-    for (int i = 0 ; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
       session.invoke(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
@@ -997,7 +997,7 @@ public class RaftTest extends ConcurrentTestCase {
       resume();
     });
 
-    for (int i = 0 ; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
       session.invoke(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
@@ -1010,7 +1010,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     await(30000);
 
-    for (int i = 0 ; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
       session.invoke(EVENT, clientSerializer::encode, true).thenRun(this::resume);
 
       await(30000, 2);
@@ -1242,7 +1242,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Creates a test session.
    */
-  private PrimitiveProxy createSession(RaftClient client)throws Exception  {
+  private PrimitiveProxy createSession(RaftClient client) throws Exception {
     return createSession(client, ReadConsistency.LINEARIZABLE);
   }
 
@@ -1250,12 +1250,11 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a test session.
    */
   private PrimitiveProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
+    return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(consistency)
         .withMinTimeout(Duration.ofMillis(250))
         .withMaxTimeout(Duration.ofSeconds(5))
         .build())
-        .build()
         .open()
         .get(5, TimeUnit.SECONDS);
   }

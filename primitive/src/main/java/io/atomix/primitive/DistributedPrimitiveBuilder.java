@@ -19,6 +19,7 @@ import io.atomix.utils.Builder;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -41,6 +42,8 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   private Consistency consistency = defaultConsistency();
   private Replication replication = defaultReplication();
   private int numBackups = 2;
+  private int maxRetries;
+  private Duration retryDelay;
 
   public DistributedPrimitiveBuilder(PrimitiveType type, String name) {
     this.type = checkNotNull(type, "type cannot be null");
@@ -143,6 +146,31 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   public B withBackups(int numBackups) {
     checkArgument(numBackups >= 0, "numBackups must be positive");
     this.numBackups = numBackups;
+    return (B) this;
+  }
+
+  /**
+   * Sets the maximum number of operation retries.
+   *
+   * @param maxRetries the maximum number of allowed operation retries
+   * @return this builder
+   */
+  @SuppressWarnings("unchecked")
+  public B withMaxRetries(int maxRetries) {
+    checkArgument(maxRetries >= 0, "maxRetries must be positive");
+    this.maxRetries = maxRetries;
+    return (B) this;
+  }
+
+  /**
+   * Sets the retry delay.
+   *
+   * @param retryDelay the retry delay
+   * @return this builder
+   */
+  @SuppressWarnings("unchecked")
+  public B withRetryDelay(Duration retryDelay) {
+    this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
     return (B) this;
   }
 
@@ -251,6 +279,24 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    */
   public int backups() {
     return numBackups;
+  }
+
+  /**
+   * Returns the maximum number of allowed retries.
+   *
+   * @return the maximum number of allowed retries
+   */
+  public int maxRetries() {
+    return maxRetries;
+  }
+
+  /**
+   * Returns the retry delay.
+   *
+   * @return the retry delay
+   */
+  public Duration retryDelay() {
+    return retryDelay;
   }
 
   /**

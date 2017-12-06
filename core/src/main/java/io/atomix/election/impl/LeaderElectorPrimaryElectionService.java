@@ -89,15 +89,14 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
   @SuppressWarnings("unchecked")
   private AsyncLeaderElector<NodeId> newLeaderElector(Partition partition) {
     PrimitiveProxy proxy = partition.getPrimitiveClient()
-        .proxyBuilder(PRIMITIVE_NAME, LeaderElectorType.instance(), RaftProtocol.builder()
+        .newProxy(PRIMITIVE_NAME, LeaderElectorType.instance(), RaftProtocol.builder()
             .withMinTimeout(Duration.ofMillis(250))
             .withMaxTimeout(Duration.ofSeconds(5))
             .withReadConsistency(ReadConsistency.LINEARIZABLE)
             .withCommunicationStrategy(CommunicationStrategy.LEADER)
             .withRecoveryStrategy(RecoveryStrategy.RECOVER)
-            .build())
-        .withMaxRetries(5)
-        .build();
+            .withMaxRetries(5)
+            .build());
     AsyncLeaderElector<byte[]> leaderElector = new LeaderElectorProxy(proxy.open().join());
     return new TranscodingAsyncLeaderElector<>(leaderElector, SERIALIZER::encode, SERIALIZER::decode);
   }

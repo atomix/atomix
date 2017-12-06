@@ -60,7 +60,7 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
     Map<PartitionId, CompletableFuture<AsyncLeaderElector<T>>> electors = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {
       electors.put(partition.id(),
-          newLeaderElector(partition.getPrimitiveClient().proxyBuilder(name(), primitiveType(), protocol).build()));
+          newLeaderElector(partition.getPrimitiveClient().newProxy(name(), primitiveType(), protocol)));
     }
 
     Partitioner<String> partitioner = topic -> partitions.getPartition(topic).id();

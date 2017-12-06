@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.partition.impl;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.proxy.PrimitiveProxy.Builder;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.partition.RaftPartition;
@@ -68,8 +68,8 @@ public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Manag
   }
 
   @Override
-  public Builder<RaftProtocol> proxyBuilder(String primitiveName, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
-    return client.proxyBuilder(primitiveName, primitiveType, primitiveProtocol);
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, RaftProtocol primitiveProtocol) {
+    return client.newProxy(primitiveName, primitiveType, primitiveProtocol);
   }
 
   @Override

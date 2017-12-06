@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -90,8 +91,42 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
 
   @Override
   @SuppressWarnings("unchecked")
-  public PrimitiveProxy.Builder<MultiPrimaryProtocol> proxyBuilder(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
-    return new ProxyBuilder(primitiveName, primitiveType, primitiveProtocol);
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
+    Supplier<PrimitiveProxy> proxyBuilder = () -> new PrimaryBackupProxy(
+        clientName,
+        sessionIdService.nextSessionId().join(),
+        primitiveType,
+        new PrimitiveDescriptor(
+            primitiveName,
+            primitiveType.id(),
+            primitiveProtocol.backups(),
+            primitiveProtocol.replication()),
+        clusterService,
+        PrimaryBackupClient.this.protocol,
+        primaryElection,
+        threadContextFactory.createContext());
+
+    PrimitiveProxy proxy = new RecoveringPrimitiveProxy(
+        clientName,
+        primitiveName,
+        primitiveType,
+        proxyBuilder,
+        threadContextFactory.createContext());
+
+    // If max retries is set, wrap the client in a retrying proxy client.
+    if (primitiveProtocol.maxRetries() > 0) {
+      proxy = new RetryingPrimitiveProxy(
+          proxy,
+          threadContextFactory.createContext(),
+          primitiveProtocol.maxRetries(),
+          primitiveProtocol.retryDelay());
+    }
+
+    // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
+    Executor executor = primitiveProtocol.executor() != null
+        ? primitiveProtocol.executor()
+        : threadContextFactory.createContext();
+    return new BlockingAwarePrimitiveProxy(proxy, executor);
   }
 
   @Override
@@ -130,51 +165,6 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
     threadContext.close();
     threadContextFactory.close();
     return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Primary-backup proxy builder.
-   */
-  private class ProxyBuilder extends PrimaryBackupProxy.Builder<MultiPrimaryProtocol> {
-    ProxyBuilder(String name, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
-      super(name, primitiveType, primitiveProtocol);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public PrimitiveProxy build() {
-      PrimitiveProxy.Builder<MultiPrimaryProtocol> proxyBuilder = new PrimitiveProxy.Builder<MultiPrimaryProtocol>(name, primitiveType, protocol) {
-        @Override
-        public PrimitiveProxy build() {
-          return new PrimaryBackupProxy(
-              clientName,
-              sessionIdService.nextSessionId().join(),
-              primitiveType,
-              new PrimitiveDescriptor(name, primitiveType.id(), protocol.backups(), protocol.replication()),
-              clusterService,
-              PrimaryBackupClient.this.protocol,
-              primaryElection,
-              threadContextFactory.createContext());
-        }
-      }.withMaxRetries(maxRetries)
-          .withRetryDelay(retryDelay);
-
-      PrimitiveProxy proxy = new RecoveringPrimitiveProxy(
-          clientName,
-          name,
-          primitiveType,
-          proxyBuilder,
-          threadContextFactory.createContext());
-
-      // If max retries is set, wrap the client in a retrying proxy client.
-      if (maxRetries > 0) {
-        proxy = new RetryingPrimitiveProxy(proxy, threadContextFactory.createContext(), maxRetries, retryDelay);
-      }
-
-      // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
-      Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-      return new BlockingAwarePrimitiveProxy(proxy, executor);
-    }
   }
 
   /**

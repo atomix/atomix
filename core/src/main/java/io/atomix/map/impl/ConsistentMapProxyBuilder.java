@@ -61,8 +61,7 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
     Map<PartitionId, CompletableFuture<AsyncConsistentMap<byte[], byte[]>>> maps = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {
       maps.put(partition.id(), partition.getPrimitiveClient()
-          .proxyBuilder(name(), primitiveType(), protocol)
-          .build()
+          .newProxy(name(), primitiveType(), protocol)
           .open()
           .thenApply(proxy -> new TranscodingAsyncConsistentMap<>(
               new ConsistentMapProxy(proxy),

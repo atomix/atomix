@@ -47,8 +47,7 @@ public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuil
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
-        .proxyBuilder(name(), primitiveType(), protocol)
-        .build()
+        .newProxy(name(), primitiveType(), protocol)
         .open()
         .thenApply(proxy -> {
           AsyncConsistentMultimap<String, byte[]> rawMap = new ConsistentSetMultimapProxy(proxy);

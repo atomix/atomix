@@ -43,8 +43,7 @@ public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
-        .proxyBuilder(name(), primitiveType(), protocol)
-        .build()
+        .newProxy(name(), primitiveType(), protocol)
         .open()
         .thenApply(proxy -> new TranscodingAsyncLeaderElection<T, byte[]>(new LeaderElectionProxy(proxy), serializer()::encode, serializer()::decode).sync());
   }

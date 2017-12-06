@@ -47,8 +47,7 @@ public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
-        .proxyBuilder(name(), primitiveType(), protocol)
-        .build()
+        .newProxy(name(), primitiveType(), protocol)
         .open()
         .thenApply(proxy -> {
           ConsistentTreeMapProxy rawMap = new ConsistentTreeMapProxy(proxy);

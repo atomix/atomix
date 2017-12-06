@@ -15,7 +15,6 @@
  */
 package io.atomix.primitive.proxy;
 
-import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
@@ -23,15 +22,9 @@ import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.Managed;
 
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Raft client proxy.
@@ -212,88 +205,4 @@ public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<Primitiv
    * @param listener  the event listener to remove
    */
   void removeEventListener(EventType eventType, Consumer listener);
-
-  /**
-   * Raft session builder.
-   */
-  abstract class Builder<P extends PrimitiveProtocol> implements io.atomix.utils.Builder<PrimitiveProxy> {
-    protected final String name;
-    protected final PrimitiveType primitiveType;
-    protected final P protocol;
-    protected int maxRetries = 0;
-    protected Duration retryDelay = Duration.ofMillis(100);
-    protected Executor executor;
-
-    protected Builder(String name, PrimitiveType primitiveType, P primitiveProtocol) {
-      this.name = checkNotNull(name, "name cannot be null");
-      this.primitiveType = checkNotNull(primitiveType, "primitiveType cannot be null");
-      this.protocol = checkNotNull(primitiveProtocol, "primitiveProtocol cannot be null");
-    }
-
-    /**
-     * Sets the maximum number of retries before an operation can be failed.
-     *
-     * @param maxRetries the maximum number of retries before an operation can be failed
-     * @return the proxy builder
-     */
-    public Builder withMaxRetries(int maxRetries) {
-      checkArgument(maxRetries >= 0, "maxRetries must be positive");
-      this.maxRetries = maxRetries;
-      return this;
-    }
-
-    /**
-     * Sets the operation retry delay.
-     *
-     * @param retryDelayMillis the delay between operation retries in milliseconds
-     * @return the proxy builder
-     */
-    public Builder withRetryDelayMillis(long retryDelayMillis) {
-      return withRetryDelay(Duration.ofMillis(retryDelayMillis));
-    }
-
-    /**
-     * Sets the operation retry delay.
-     *
-     * @param retryDelay the delay between operation retries
-     * @param timeUnit the delay time unit
-     * @return the proxy builder
-     * @throws NullPointerException if the time unit is null
-     */
-    public Builder withRetryDelay(long retryDelay, TimeUnit timeUnit) {
-      return withRetryDelay(Duration.ofMillis(timeUnit.toMillis(retryDelay)));
-    }
-
-    /**
-     * Sets the operation retry delay.
-     *
-     * @param retryDelay the delay between operation retries
-     * @return the proxy builder
-     * @throws NullPointerException if the delay is null
-     */
-    public Builder withRetryDelay(Duration retryDelay) {
-      this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the executor with which to complete proxy futures.
-     *
-     * @param executor The executor with which to complete proxy futures.
-     * @return The proxy builder.
-     * @throws NullPointerException if the executor is null
-     */
-    public Builder withExecutor(Executor executor) {
-      this.executor = checkNotNull(executor, "executor cannot be null");
-      return this;
-    }
-
-    /**
-     * Builds a new primitive proxy instance.
-     *
-     * @return a new primitive proxy instance
-     */
-    @Override
-    public abstract PrimitiveProxy build();
-  }
 }

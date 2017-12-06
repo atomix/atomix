@@ -24,6 +24,7 @@ import io.atomix.set.DistributedSet;
 import io.atomix.set.DistributedSetBuilder;
 import io.atomix.utils.serializer.Serializer;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -88,6 +89,18 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   }
 
   @Override
+  public DistributedSetBuilder<E> withMaxRetries(int maxRetries) {
+    mapBuilder.withMaxRetries(maxRetries);
+    return this;
+  }
+
+  @Override
+  public DistributedSetBuilder<E> withRetryDelay(Duration retryDelay) {
+    mapBuilder.withRetryDelay(retryDelay);
+    return this;
+  }
+
+  @Override
   public boolean readOnly() {
     return mapBuilder.readOnly();
   }
@@ -130,6 +143,16 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   @Override
   public int backups() {
     return mapBuilder.backups();
+  }
+
+  @Override
+  public int maxRetries() {
+    return mapBuilder.maxRetries();
+  }
+
+  @Override
+  public Duration retryDelay() {
+    return mapBuilder.retryDelay();
   }
 
   @Override

@@ -134,6 +134,8 @@ public abstract class LeaderElectionBuilder<T>
         .withMinTimeout(electionTimeout)
         .withMaxTimeout(Duration.ofSeconds(5))
         .withReadConsistency(readConsistency == Consistency.LINEARIZABLE ? ReadConsistency.LINEARIZABLE : ReadConsistency.SEQUENTIAL)
+        .withMaxRetries(maxRetries())
+        .withRetryDelay(retryDelay())
         .build();
   }
 }

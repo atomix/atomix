@@ -19,6 +19,10 @@ import io.atomix.primitive.Consistency;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
 
+import java.time.Duration;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -52,12 +56,25 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
   private final Consistency consistency;
   private final Replication replication;
   private final int backups;
+  private final int maxRetries;
+  private final Duration retryDelay;
+  private final Executor executor;
 
-  protected MultiPrimaryProtocol(String group, Consistency consistency, Replication replication, int backups) {
+  protected MultiPrimaryProtocol(
+      String group,
+      Consistency consistency,
+      Replication replication,
+      int backups,
+      int maxRetries,
+      Duration retryDelay,
+      Executor executor) {
     this.group = group;
     this.consistency = consistency;
     this.replication = replication;
     this.backups = backups;
+    this.maxRetries = maxRetries;
+    this.retryDelay = retryDelay;
+    this.executor = executor;
   }
 
   @Override
@@ -97,6 +114,33 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     return backups;
   }
 
+  /**
+   * Returns the maximum number of allowed retries.
+   *
+   * @return the maximum number of allowed retries
+   */
+  public int maxRetries() {
+    return maxRetries;
+  }
+
+  /**
+   * Returns the retry delay.
+   *
+   * @return the retry delay
+   */
+  public Duration retryDelay() {
+    return retryDelay;
+  }
+
+  /**
+   * Returns the proxy executor.
+   *
+   * @return the proxy executor
+   */
+  public Executor executor() {
+    return executor;
+  }
+
   @Override
   public String toString() {
     return toStringHelper(this)
@@ -105,6 +149,8 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
         .add("consistency", consistency())
         .add("replication", replication())
         .add("backups", backups())
+        .add("maxRetries", maxRetries)
+        .add("retryDelay", retryDelay)
         .toString();
   }
 
@@ -115,6 +161,9 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     private Consistency consistency = Consistency.SEQUENTIAL;
     private Replication replication = Replication.SYNCHRONOUS;
     private int numBackups;
+    private int maxRetries = 0;
+    private Duration retryDelay = Duration.ofMillis(100);
+    private Executor executor;
 
     protected Builder(String group) {
       super(group);
@@ -154,9 +203,67 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
       return this;
     }
 
+    /**
+     * Sets the maximum number of retries before an operation can be failed.
+     *
+     * @param maxRetries the maximum number of retries before an operation can be failed
+     * @return the proxy builder
+     */
+    public Builder withMaxRetries(int maxRetries) {
+      checkArgument(maxRetries >= 0, "maxRetries must be positive");
+      this.maxRetries = maxRetries;
+      return this;
+    }
+
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelayMillis the delay between operation retries in milliseconds
+     * @return the proxy builder
+     */
+    public Builder withRetryDelayMillis(long retryDelayMillis) {
+      return withRetryDelay(Duration.ofMillis(retryDelayMillis));
+    }
+
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelay the delay between operation retries
+     * @param timeUnit the delay time unit
+     * @return the proxy builder
+     * @throws NullPointerException if the time unit is null
+     */
+    public Builder withRetryDelay(long retryDelay, TimeUnit timeUnit) {
+      return withRetryDelay(Duration.ofMillis(timeUnit.toMillis(retryDelay)));
+    }
+
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelay the delay between operation retries
+     * @return the proxy builder
+     * @throws NullPointerException if the delay is null
+     */
+    public Builder withRetryDelay(Duration retryDelay) {
+      this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the executor with which to complete proxy futures.
+     *
+     * @param executor The executor with which to complete proxy futures.
+     * @return The proxy builder.
+     * @throws NullPointerException if the executor is null
+     */
+    public Builder withExecutor(Executor executor) {
+      this.executor = checkNotNull(executor, "executor cannot be null");
+      return this;
+    }
+
     @Override
     public MultiPrimaryProtocol build() {
-      return new MultiPrimaryProtocol(group, consistency, replication, numBackups);
+      return new MultiPrimaryProtocol(group, consistency, replication, numBackups, maxRetries, retryDelay, executor);
     }
   }
 }

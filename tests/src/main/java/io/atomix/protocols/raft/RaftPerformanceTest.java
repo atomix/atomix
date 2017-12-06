@@ -305,11 +305,11 @@ public class RaftPerformanceTest implements Runnable {
     long endTime = System.currentTimeMillis();
     long runTime = endTime - startTime;
     System.out.println(String.format("readCount: %d/%d, writeCount: %d/%d, runTime: %dms",
-      readCount.get(),
-      TOTAL_OPERATIONS,
-      writeCount.get(),
-      TOTAL_OPERATIONS,
-      runTime));
+        readCount.get(),
+        TOTAL_OPERATIONS,
+        writeCount.get(),
+        TOTAL_OPERATIONS,
+        runTime));
     return runTime;
   }
 
@@ -509,11 +509,10 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a test session.
    */
   private PrimitiveProxy createProxy(RaftClient client) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
+    return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
-        .build())
-        .build();
+        .build());
   }
 
   private static final OperationId PUT = OperationId.command("put");

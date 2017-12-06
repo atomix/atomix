@@ -197,6 +197,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
    * Handles a primitive event.
    */
   private void handleEvent(PrimitiveEvent event) {
+    log.trace("Received {}", event);
     eventListeners.forEach(l -> l.accept(event));
   }
 
@@ -229,6 +230,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
           .whenCompleteAsync((response, error) -> {
             protocol.unregisterEventListener(sessionId);
             clusterService.removeListener(clusterEventListener);
+            primaryElection.removeListener(primaryElectionListener);
             future.complete(null);
           }, threadContext);
     } else {

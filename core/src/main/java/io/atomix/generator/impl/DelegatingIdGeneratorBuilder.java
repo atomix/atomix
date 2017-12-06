@@ -44,8 +44,7 @@ public class DelegatingIdGeneratorBuilder extends AtomicIdGeneratorBuilder {
         .getPartitionGroup(protocol)
         .getPartition(name())
         .getPrimitiveClient()
-        .proxyBuilder(name(), primitiveType(), protocol)
-        .build()
+        .newProxy(name(), primitiveType(), protocol)
         .open()
         .thenApply(proxy -> new DelegatingIdGenerator(new AtomicCounterProxy(proxy)).sync());
   }

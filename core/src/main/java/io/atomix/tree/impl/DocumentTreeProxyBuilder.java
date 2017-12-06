@@ -59,8 +59,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
     Map<PartitionId, CompletableFuture<AsyncDocumentTree<V>>> trees = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {
       trees.put(partition.id(), partition.getPrimitiveClient()
-          .proxyBuilder(name(), primitiveType(), protocol)
-          .build()
+          .newProxy(name(), primitiveType(), protocol)
           .open()
           .thenApply(proxy -> {
             DocumentTreeProxy rawTree = new DocumentTreeProxy(proxy);

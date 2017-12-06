@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -45,7 +46,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   private static final SessionId DEFAULT_SESSION_ID = SessionId.from(0);
   private final String name;
   private final PrimitiveType primitiveType;
-  private final PrimitiveProxy.Builder proxyBuilder;
+  private final Supplier<PrimitiveProxy> proxyFactory;
   private final Scheduler scheduler;
   private Logger log;
   private volatile OrderedFuture<PrimitiveProxy> clientFuture;
@@ -56,10 +57,10 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   private Scheduled recoverTask;
   private volatile boolean open = false;
 
-  public RecoveringPrimitiveProxy(String clientId, String name, PrimitiveType primitiveType, PrimitiveProxy.Builder proxyBuilder, Scheduler scheduler) {
+  public RecoveringPrimitiveProxy(String clientId, String name, PrimitiveType primitiveType, Supplier<PrimitiveProxy> proxyFactory, Scheduler scheduler) {
     this.name = checkNotNull(name);
     this.primitiveType = checkNotNull(primitiveType);
-    this.proxyBuilder = checkNotNull(proxyBuilder);
+    this.proxyFactory = checkNotNull(proxyFactory);
     this.scheduler = checkNotNull(scheduler);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
         .addValue(clientId)
@@ -172,7 +173,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
    * @param future the future to be completed once the client is opened
    */
   private void openProxy(CompletableFuture<PrimitiveProxy> future) {
-    proxyBuilder.build().open().whenComplete((proxy, error) -> {
+    proxyFactory.get().open().whenComplete((proxy, error) -> {
       if (error == null) {
         future.complete(proxy);
       } else {
