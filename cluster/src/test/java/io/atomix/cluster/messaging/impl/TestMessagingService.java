@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -91,8 +92,12 @@ public class TestMessagingService implements ManagedMessagingService {
     checkNotNull(type);
     checkNotNull(handler);
     handlers.put(type, (e, p) -> {
-      executor.execute(() -> handler.accept(e, p));
-      return CompletableFuture.completedFuture(new byte[0]);
+      try {
+        executor.execute(() -> handler.accept(e, p));
+        return CompletableFuture.completedFuture(new byte[0]);
+      } catch (RejectedExecutionException e2) {
+        return Futures.exceptionalFuture(e2);
+      }
     });
   }
 
@@ -102,7 +107,11 @@ public class TestMessagingService implements ManagedMessagingService {
     checkNotNull(handler);
     handlers.put(type, (e, p) -> {
       CompletableFuture<byte[]> future = new CompletableFuture<>();
-      executor.execute(() -> future.complete(handler.apply(e, p)));
+      try {
+        executor.execute(() -> future.complete(handler.apply(e, p)));
+      } catch (RejectedExecutionException e2) {
+        future.completeExceptionally(e2);
+      }
       return future;
     });
   }
