@@ -23,6 +23,7 @@ import org.junit.BeforeClass;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +32,9 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,11 +45,13 @@ import java.util.stream.Stream;
 public abstract class AbstractAtomixTest {
   private static final int BASE_PORT = 5000;
   private static List<Atomix> instances;
+  private static Map<Integer, Endpoint> endpoints;
   private static int id = 10;
 
   @BeforeClass
   public static void setupAtomix() throws Exception {
     deleteData();
+    endpoints = new HashMap<>();
     instances = new ArrayList<>();
     instances.add(createAtomix(1, 1, 2, 3));
     instances.add(createAtomix(2, 1, 2, 3));
@@ -61,13 +66,13 @@ public abstract class AbstractAtomixTest {
   private static Atomix createAtomix(int id, Integer... ids) {
     Node localNode = Node.builder()
         .withId(NodeId.from(String.valueOf(id)))
-        .withEndpoint(Endpoint.from("localhost", BASE_PORT + id))
+        .withEndpoint(endpoints.computeIfAbsent(id, i -> Endpoint.from("localhost", findAvailablePort(5000))))
         .build();
 
     Collection<Node> bootstrapNodes = Stream.of(ids)
         .map(nodeId -> Node.builder()
             .withId(NodeId.from(String.valueOf(nodeId)))
-            .withEndpoint(Endpoint.from("localhost", BASE_PORT + nodeId))
+            .withEndpoint(endpoints.computeIfAbsent(nodeId, i -> Endpoint.from("localhost", findAvailablePort(5000))))
             .build())
         .collect(Collectors.toList());
 
@@ -116,6 +121,18 @@ public abstract class AbstractAtomixTest {
           return FileVisitResult.CONTINUE;
         }
       });
+    }
+  }
+
+  private static int findAvailablePort(int defaultPort) {
+    try {
+      ServerSocket socket = new ServerSocket(0);
+      socket.setReuseAddress(true);
+      int port = socket.getLocalPort();
+      socket.close();
+      return port;
+    } catch (IOException ex) {
+      return defaultPort;
     }
   }
 }

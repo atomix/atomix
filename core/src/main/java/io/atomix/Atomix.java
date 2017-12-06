@@ -229,6 +229,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   public CompletableFuture<Void> close() {
     return primitives.close()
         .thenComposeAsync(v -> partitions.close(), context)
+        .thenComposeAsync(v -> corePartitionGroup.close(), context)
         .thenComposeAsync(v -> clusterCommunicator.close(), context)
         .thenComposeAsync(v -> clusterEventService.close(), context)
         .thenComposeAsync(v -> cluster.close(), context)

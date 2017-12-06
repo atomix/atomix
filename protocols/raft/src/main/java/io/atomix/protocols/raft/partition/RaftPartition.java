@@ -129,10 +129,19 @@ public class RaftPartition implements Partition<RaftProtocol> {
    * Closes the partition.
    */
   CompletableFuture<Void> close() {
-    // We do not explicitly close the server and instead let the cluster
-    // deal with this as an unclean exit.
+    return closeClient().thenCompose(v -> closeServer());
+  }
+
+  private CompletableFuture<Void> closeClient() {
     if (client != null) {
       return client.close();
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  private CompletableFuture<Void> closeServer() {
+    if (server != null) {
+      return server.close();
     }
     return CompletableFuture.completedFuture(null);
   }
