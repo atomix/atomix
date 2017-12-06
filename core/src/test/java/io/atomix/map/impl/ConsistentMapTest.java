@@ -341,7 +341,7 @@ public class ConsistentMapTest extends AbstractAtomixTest {
 
     map1.put("foo", "bar");
     map1.put("bar", "baz");
-    assertEquals(map1.get("foo"), "bar");
+    assertNull(map1.get("foo"));
     assertEquals(transaction1.commit(), CommitStatus.SUCCESS);
 
     assertNull(map2.get("foo"));
