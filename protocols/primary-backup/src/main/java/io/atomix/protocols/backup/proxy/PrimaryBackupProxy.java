@@ -34,12 +34,10 @@ import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
-import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
-import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.Set;
@@ -52,8 +50,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Primary-backup proxy.
  */
 public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
-  private static final Serializer SERIALIZER = Serializer.using(PrimaryBackupNamespaces.PROTOCOL);
-
   private Logger log;
   private final PrimitiveType primitiveType;
   private final PrimitiveDescriptor descriptor;

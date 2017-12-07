@@ -46,6 +46,8 @@ public class RetryingPrimitiveProxy extends DelegatingPrimitiveProxy {
       e instanceof ConnectException
           || e instanceof TimeoutException
           || e instanceof ClosedChannelException
+          || e instanceof PrimitiveException.Unavailable
+          || e instanceof PrimitiveException.Timeout
           || e instanceof PrimitiveException.QueryFailure
           || e instanceof PrimitiveException.UnknownClient
           || e instanceof PrimitiveException.UnknownSession

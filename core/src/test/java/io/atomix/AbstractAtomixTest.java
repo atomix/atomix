@@ -43,7 +43,6 @@ import java.util.stream.Stream;
  * Base Atomix test.
  */
 public abstract class AbstractAtomixTest {
-  private static final int BASE_PORT = 5000;
   private static List<Atomix> instances;
   private static Map<Integer, Endpoint> endpoints;
   private static int id = 10;
@@ -81,7 +80,7 @@ public abstract class AbstractAtomixTest {
         .withDataDirectory(new File("target/test-logs/" + id))
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrapNodes)
-        .withDataPartitions(9) // Lower number of partitions for faster testing
+        .withDataPartitions(3) // Lower number of partitions for faster testing
         .build();
   }
 
