@@ -20,7 +20,6 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
-import io.atomix.primitive.proxy.impl.DelegatingPrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxy;
 import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
 import io.atomix.protocols.raft.RaftClient;
@@ -164,10 +163,7 @@ public class DefaultRaftClient implements RaftClient {
     Executor executor = primitiveProtocol.executor() != null
         ? primitiveProtocol.executor()
         : threadContextFactory.createContext();
-    proxy = new BlockingAwarePrimitiveProxy(proxy, executor);
-
-    // Create the proxy.
-    return new DelegatingPrimitiveProxy(proxy);
+    return new BlockingAwarePrimitiveProxy(proxy, executor);
   }
 
   @Override
