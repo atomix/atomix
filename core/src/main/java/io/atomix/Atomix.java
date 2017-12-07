@@ -78,7 +78,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return new Builder();
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
+  protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
 
   private final ManagedClusterService cluster;
   private final ManagedMessagingService messagingService;
@@ -255,21 +255,21 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Atomix builder.
    */
   public static class Builder implements io.atomix.utils.Builder<Atomix> {
-    private static final String DEFAULT_CLUSTER_NAME = "atomix";
-    private static final int DEFAULT_COORDINATION_PARTITION_SIZE = 3;
-    private static final int DEFAULT_DATA_PARTITIONS = 71;
-    private static final String COORDINATION_GROUP_NAME = "coordination";
-    private static final String DATA_GROUP_NAME = "data";
+    protected static final String DEFAULT_CLUSTER_NAME = "atomix";
+    protected static final int DEFAULT_COORDINATION_PARTITION_SIZE = 3;
+    protected static final int DEFAULT_DATA_PARTITIONS = 71;
+    protected static final String COORDINATION_GROUP_NAME = "coordination";
+    protected static final String DATA_GROUP_NAME = "data";
 
-    private String name = DEFAULT_CLUSTER_NAME;
-    private Node localNode;
-    private Collection<Node> bootstrapNodes;
-    private File dataDirectory = new File(System.getProperty("user.dir"), "data");
-    private int numCoordinationPartitions;
-    private int coordinationPartitionSize = DEFAULT_COORDINATION_PARTITION_SIZE;
-    private int numDataPartitions = DEFAULT_DATA_PARTITIONS;
-    private Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
-    private PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
+    protected String name = DEFAULT_CLUSTER_NAME;
+    protected Node localNode;
+    protected Collection<Node> bootstrapNodes;
+    protected File dataDirectory = new File(System.getProperty("user.dir"), "data");
+    protected int numCoordinationPartitions;
+    protected int coordinationPartitionSize = DEFAULT_COORDINATION_PARTITION_SIZE;
+    protected int numDataPartitions = DEFAULT_DATA_PARTITIONS;
+    protected Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
+    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
 
     /**
      * Sets the cluster name.
@@ -444,10 +444,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterService clusterService = buildClusterService(messagingService);
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
       ManagedClusterEventService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
-      ManagedPartitionGroup corePartitionGroup = RaftPartitionGroup.builder("core")
-          .withNumPartitions(1)
-          .withDataDirectory(new File(dataDirectory, "core"))
-          .build();
+      ManagedPartitionGroup corePartitionGroup = buildCorePartitionGroup();
       ManagedPartitionService partitionService = buildPartitionService();
       return new Atomix(
           clusterService,
@@ -462,7 +459,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds a default messaging service.
      */
-    private ManagedMessagingService buildMessagingService() {
+    protected ManagedMessagingService buildMessagingService() {
       return NettyMessagingService.builder()
           .withName(name)
           .withEndpoint(localNode.endpoint())
@@ -472,7 +469,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds a cluster service.
      */
-    private ManagedClusterService buildClusterService(MessagingService messagingService) {
+    protected ManagedClusterService buildClusterService(MessagingService messagingService) {
       return new DefaultClusterService(ClusterMetadata.builder()
           .withLocalNode(localNode)
           .withBootstrapNodes(bootstrapNodes)
@@ -482,7 +479,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds a cluster communication service.
      */
-    private ManagedClusterCommunicationService buildClusterCommunicationService(
+    protected ManagedClusterCommunicationService buildClusterCommunicationService(
         ClusterService clusterService, MessagingService messagingService) {
       return new DefaultClusterCommunicationService(clusterService, messagingService);
     }
@@ -490,15 +487,25 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds a cluster event service.
      */
-    private ManagedClusterEventService buildClusterEventService(
+    protected ManagedClusterEventService buildClusterEventService(
         ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
       return new DefaultClusterEventService(clusterService, clusterCommunicator);
     }
 
     /**
+     * Builds the core partition group.
+     */
+    protected ManagedPartitionGroup buildCorePartitionGroup() {
+      return RaftPartitionGroup.builder("core")
+          .withNumPartitions(1)
+          .withDataDirectory(new File(dataDirectory, "core"))
+          .build();
+    }
+
+    /**
      * Builds a partition service.
      */
-    private ManagedPartitionService buildPartitionService() {
+    protected ManagedPartitionService buildPartitionService() {
       if (partitionGroups.isEmpty()) {
         partitionGroups.add(RaftPartitionGroup.builder(COORDINATION_GROUP_NAME)
             .withDataDirectory(new File(dataDirectory, COORDINATION_GROUP_NAME))

@@ -26,6 +26,7 @@ import io.atomix.protocols.raft.partition.impl.RaftClientCommunicator;
 import io.atomix.protocols.raft.partition.impl.RaftNamespaces;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionClient;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionServer;
+import io.atomix.storage.StorageLevel;
 import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
@@ -41,14 +42,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class RaftPartition implements Partition<RaftProtocol> {
   private final PartitionId partitionId;
-  private final File dataDir;
+  private final StorageLevel storageLevel;
+  private final File dataDirectory;
   private PartitionMetadata partition;
   private RaftPartitionClient client;
   private RaftPartitionServer server;
 
-  public RaftPartition(PartitionId partitionId, File dataDir) {
+  public RaftPartition(PartitionId partitionId, StorageLevel storageLevel, File dataDirectory) {
     this.partitionId = partitionId;
-    this.dataDir = dataDir;
+    this.storageLevel = storageLevel;
+    this.dataDirectory = dataDirectory;
   }
 
   @Override
@@ -96,12 +99,21 @@ public class RaftPartition implements Partition<RaftProtocol> {
   }
 
   /**
+   * Returns the Raft partition storage level.
+   *
+   * @return the Raft partition storage level
+   */
+  public StorageLevel storageLevel() {
+    return storageLevel;
+  }
+
+  /**
    * Returns the partition data directory.
    *
    * @return the partition data directory
    */
-  public File getDataDir() {
-    return dataDir;
+  public File dataDirectory() {
+    return dataDirectory;
   }
 
   @Override

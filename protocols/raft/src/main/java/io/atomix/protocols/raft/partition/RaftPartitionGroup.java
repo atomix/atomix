@@ -29,6 +29,7 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.storage.StorageLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,6 +172,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   public static class Builder extends PartitionGroup.Builder {
     private int numPartitions;
     private int partitionSize;
+    private StorageLevel storageLevel = StorageLevel.MAPPED;
     private File dataDirectory = new File(System.getProperty("user.dir"), "data");
 
     protected Builder(String name) {
@@ -204,6 +206,17 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     }
 
     /**
+     * Sets the storage level.
+     *
+     * @param storageLevel the storage level
+     * @return the Raft partition group builder
+     */
+    public Builder withStorageLevel(StorageLevel storageLevel) {
+      this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
+      return this;
+    }
+
+    /**
      * Sets the path to the data directory.
      *
      * @param dataDir the path to the replica's data directory
@@ -219,7 +232,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
       File partitionsDir = new File(dataDirectory, "partitions");
       List<RaftPartition> partitions = new ArrayList<>(numPartitions);
       for (int i = 0; i < numPartitions; i++) {
-        partitions.add(new RaftPartition(PartitionId.from(name, i + 1), new File(partitionsDir, String.valueOf(i + 1))));
+        partitions.add(new RaftPartition(PartitionId.from(name, i + 1), storageLevel, new File(partitionsDir, String.valueOf(i + 1))));
       }
       return new RaftPartitionGroup(name, partitions, partitionSize);
     }

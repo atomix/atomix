@@ -22,7 +22,6 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.storage.RaftStorage;
-import io.atomix.storage.StorageLevel;
 import io.atomix.utils.Managed;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
@@ -110,7 +109,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
    */
   public void delete() {
     try {
-      Files.walkFileTree(partition.getDataDir().toPath(), new SimpleFileVisitor<Path>() {
+      Files.walkFileTree(partition.dataDirectory().toPath(), new SimpleFileVisitor<Path>() {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
           Files.delete(file);
@@ -140,9 +139,9 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         .withHeartbeatInterval(Duration.ofMillis(HEARTBEAT_INTERVAL_MILLIS))
         .withStorage(RaftStorage.builder()
             .withPrefix(String.format("partition-%s", partition.id()))
-            .withStorageLevel(StorageLevel.MAPPED)
+            .withStorageLevel(partition.storageLevel())
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
-            .withDirectory(partition.getDataDir())
+            .withDirectory(partition.dataDirectory())
             .withMaxSegmentSize(MAX_SEGMENT_SIZE)
             .build())
         .build();

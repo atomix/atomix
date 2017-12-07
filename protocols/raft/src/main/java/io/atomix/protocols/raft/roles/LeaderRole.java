@@ -138,7 +138,7 @@ public final class LeaderRole extends ActiveRole {
 
     return appendAndCompact(new InitializeEntry(term, appender.getTime()))
         .whenComplete((entry, error) -> {
-          if (error != null) {
+          if (error == null) {
             log.trace("Appended {}", entry);
           }
         }).thenApply(index -> null);
