@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.storage.log;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -28,8 +28,8 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
 import org.junit.After;
@@ -76,7 +76,7 @@ public abstract class AbstractLogTest {
       .register(ArrayList.class)
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
-      .register(MemberId.class)
+      .register(NodeId.class)
       .register(RaftMember.Type.class)
       .register(ReadConsistency.class)
       .register(Instant.class)

@@ -19,7 +19,9 @@ import io.atomix.Atomix;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
-import io.atomix.messaging.netty.NettyMessagingService;
+import io.atomix.messaging.impl.NettyMessagingService;
+import io.atomix.rest.ManagedRestService;
+import io.atomix.rest.RestService;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -115,11 +117,19 @@ public class AtomixServer {
     Atomix atomix = Atomix.builder()
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrap)
-        .withDataDir(dataDir)
-        .withHttpPort(httpPort)
+        .withDataDirectory(dataDir)
         .build();
 
     atomix.open().join();
+
+    LOGGER.info("Atomix listening at {}:{}", localNode.endpoint().host().getHostAddress(), localNode.endpoint().port());
+
+    ManagedRestService rest = RestService.builder()
+        .withAtomix(atomix)
+        .withEndpoint(Endpoint.from(localNode.endpoint().host().getHostAddress(), httpPort))
+        .build();
+
+    rest.open().join();
 
     LOGGER.info("Server listening at {}:{}", localNode.endpoint().host().getHostAddress(), httpPort);
 

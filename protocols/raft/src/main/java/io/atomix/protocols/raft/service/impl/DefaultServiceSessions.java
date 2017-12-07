@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.service.impl;
 
-import io.atomix.protocols.raft.service.ServiceId;
-import io.atomix.protocols.raft.session.RaftSession;
-import io.atomix.protocols.raft.session.RaftSessionListener;
-import io.atomix.protocols.raft.session.RaftSessions;
-import io.atomix.protocols.raft.session.impl.RaftSessionContext;
+import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.SessionListener;
+import io.atomix.primitive.session.Sessions;
+import io.atomix.protocols.raft.session.impl.RaftSession;
 import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
 
 import java.util.Collection;
@@ -28,12 +28,12 @@ import java.util.Iterator;
 /**
  * State machine sessions.
  */
-class DefaultServiceSessions implements RaftSessions {
-  private final ServiceId serviceId;
+class DefaultServiceSessions implements Sessions {
+  private final PrimitiveId primitiveId;
   private final RaftSessionRegistry sessionManager;
 
-  public DefaultServiceSessions(ServiceId serviceId, RaftSessionRegistry sessionManager) {
-    this.serviceId = serviceId;
+  public DefaultServiceSessions(PrimitiveId primitiveId, RaftSessionRegistry sessionManager) {
+    this.primitiveId = primitiveId;
     this.sessionManager = sessionManager;
   }
 
@@ -42,7 +42,7 @@ class DefaultServiceSessions implements RaftSessions {
    *
    * @param session The session to add.
    */
-  void openSession(RaftSessionContext session) {
+  void openSession(RaftSession session) {
     sessionManager.registerSession(session);
   }
 
@@ -51,7 +51,7 @@ class DefaultServiceSessions implements RaftSessions {
    *
    * @param session The session to remove.
    */
-  void expireSession(RaftSessionContext session) {
+  void expireSession(RaftSession session) {
     sessionManager.expireSession(session.sessionId());
   }
 
@@ -60,7 +60,7 @@ class DefaultServiceSessions implements RaftSessions {
    *
    * @param session The session to remove.
    */
-  void closeSession(RaftSessionContext session) {
+  void closeSession(RaftSession session) {
     sessionManager.closeSession(session.sessionId());
   }
 
@@ -69,30 +69,30 @@ class DefaultServiceSessions implements RaftSessions {
    *
    * @return The session contexts.
    */
-  Collection<RaftSessionContext> getSessions() {
-    return sessionManager.getSessions(serviceId);
+  Collection<RaftSession> getSessions() {
+    return sessionManager.getSessions(primitiveId);
   }
 
   @Override
-  public RaftSession getSession(long sessionId) {
+  public Session getSession(long sessionId) {
     return sessionManager.getSession(sessionId);
   }
 
   @Override
-  public RaftSessions addListener(RaftSessionListener listener) {
-    sessionManager.addListener(serviceId, listener);
+  public Sessions addListener(SessionListener listener) {
+    sessionManager.addListener(primitiveId, listener);
     return this;
   }
 
   @Override
-  public RaftSessions removeListener(RaftSessionListener listener) {
-    sessionManager.removeListener(serviceId, listener);
+  public Sessions removeListener(SessionListener listener) {
+    sessionManager.removeListener(primitiveId, listener);
     return this;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Iterator<RaftSession> iterator() {
+  public Iterator<Session> iterator() {
     return (Iterator) getSessions().iterator();
   }
 }

@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.RaftError;
-import io.atomix.protocols.raft.session.RaftSessionMetadata;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,9 +40,9 @@ public class MetadataResponse extends AbstractRaftResponse {
     return new Builder();
   }
 
-  private final Set<RaftSessionMetadata> sessions;
+  private final Set<SessionMetadata> sessions;
 
-  public MetadataResponse(Status status, RaftError error, Set<RaftSessionMetadata> sessions) {
+  public MetadataResponse(Status status, RaftError error, Set<SessionMetadata> sessions) {
     super(status, error);
     this.sessions = sessions;
   }
@@ -52,7 +52,7 @@ public class MetadataResponse extends AbstractRaftResponse {
    *
    * @return Session metadata.
    */
-  public Set<RaftSessionMetadata> sessions() {
+  public Set<SessionMetadata> sessions() {
     return sessions;
   }
 
@@ -75,7 +75,7 @@ public class MetadataResponse extends AbstractRaftResponse {
    * Metadata response builder.
    */
   public static class Builder extends AbstractRaftResponse.Builder<Builder, MetadataResponse> {
-    private Set<RaftSessionMetadata> sessions;
+    private Set<SessionMetadata> sessions;
 
     /**
      * Sets the session metadata.
@@ -83,7 +83,7 @@ public class MetadataResponse extends AbstractRaftResponse {
      * @param sessions The client metadata.
      * @return The metadata response builder.
      */
-    public Builder withSessions(RaftSessionMetadata... sessions) {
+    public Builder withSessions(SessionMetadata... sessions) {
       return withSessions(Arrays.asList(checkNotNull(sessions, "sessions cannot be null")));
     }
 
@@ -93,7 +93,7 @@ public class MetadataResponse extends AbstractRaftResponse {
      * @param sessions The client metadata.
      * @return The metadata response builder.
      */
-    public Builder withSessions(Collection<RaftSessionMetadata> sessions) {
+    public Builder withSessions(Collection<SessionMetadata> sessions) {
       this.sessions = new HashSet<>(checkNotNull(sessions, "sessions cannot be null"));
       return this;
     }

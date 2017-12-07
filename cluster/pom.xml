@@ -29,22 +29,7 @@
   <dependencies>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix-event</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
       <artifactId>atomix-messaging</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-failure-detection</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-kryo</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

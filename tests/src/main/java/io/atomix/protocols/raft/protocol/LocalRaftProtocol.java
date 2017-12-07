@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.serializer.Serializer;
+import io.atomix.cluster.NodeId;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Map;
 
@@ -25,10 +25,10 @@ import java.util.Map;
  */
 public abstract class LocalRaftProtocol {
   private final Serializer serializer;
-  private final Map<MemberId, LocalRaftServerProtocol> servers;
-  private final Map<MemberId, LocalRaftClientProtocol> clients;
+  private final Map<NodeId, LocalRaftServerProtocol> servers;
+  private final Map<NodeId, LocalRaftClientProtocol> clients;
 
-  public LocalRaftProtocol(Serializer serializer, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
+  public LocalRaftProtocol(Serializer serializer, Map<NodeId, LocalRaftServerProtocol> servers, Map<NodeId, LocalRaftClientProtocol> clients) {
     this.serializer = serializer;
     this.servers = servers;
     this.clients = clients;
@@ -46,11 +46,11 @@ public abstract class LocalRaftProtocol {
     return serializer.decode(bytes);
   }
 
-  LocalRaftServerProtocol server(MemberId memberId) {
-    return servers.get(memberId);
+  LocalRaftServerProtocol server(NodeId nodeId) {
+    return servers.get(nodeId);
   }
 
-  LocalRaftClientProtocol client(MemberId memberId) {
-    return clients.get(memberId);
+  LocalRaftClientProtocol client(NodeId nodeId) {
+    return clients.get(nodeId);
   }
 }

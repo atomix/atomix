@@ -87,7 +87,7 @@ public final class CandidateRole extends ActiveRole {
     // When the election timer is reset, increment the current term and
     // restart the election.
     raft.setTerm(raft.getTerm() + 1);
-    raft.setLastVotedFor(raft.getCluster().getMember().memberId());
+    raft.setLastVotedFor(raft.getCluster().getMember().nodeId());
 
     Duration delay = raft.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) raft.getElectionTimeout().toMillis())));
     currentTimer = raft.getThreadContext().schedule(delay, () -> {
@@ -107,7 +107,7 @@ public final class CandidateRole extends ActiveRole {
 
     // If there are no other members in the cluster, immediately transition to leader.
     if (votingMembers.isEmpty()) {
-      log.debug("Single member cluster. Transitioning directly to leader.", raft.getCluster().getMember().memberId());
+      log.debug("Single member cluster. Transitioning directly to leader.", raft.getCluster().getMember().nodeId());
       raft.transition(RaftServer.Role.LEADER);
       return;
     }
@@ -144,12 +144,12 @@ public final class CandidateRole extends ActiveRole {
       log.debug("Requesting vote from {} for term {}", member, raft.getTerm());
       VoteRequest request = VoteRequest.builder()
           .withTerm(raft.getTerm())
-          .withCandidate(raft.getCluster().getMember().memberId())
+          .withCandidate(raft.getCluster().getMember().nodeId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLastLogTerm(lastTerm)
           .build();
 
-      raft.getProtocol().vote(member.memberId(), request).whenCompleteAsync((response, error) -> {
+      raft.getProtocol().vote(member.nodeId(), request).whenCompleteAsync((response, error) -> {
         raft.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
@@ -204,7 +204,7 @@ public final class CandidateRole extends ActiveRole {
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (request.candidate() == raft.getCluster().getMember().memberId()) {
+    if (request.candidate() == raft.getCluster().getMember().nodeId()) {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())

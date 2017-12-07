@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.primitives.generator.AsyncAtomicIdGenerator;
+import io.atomix.generator.AsyncAtomicIdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

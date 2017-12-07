@@ -15,8 +15,7 @@
  */
 package io.atomix.protocols.raft.cluster;
 
-import io.atomix.event.EventListener;
-import io.atomix.protocols.raft.cluster.RaftClusterEvent;
+import io.atomix.utils.event.EventListener;
 
 /**
  * Raft cluster event listener.

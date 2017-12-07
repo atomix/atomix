@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.event.ListenerService;
+import io.atomix.utils.event.ListenerService;
 
 import java.util.Set;
 

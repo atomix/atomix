@@ -17,8 +17,8 @@ package io.atomix.cluster.messaging.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.MessageSubject;
-import io.atomix.time.LogicalTimestamp;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.LogicalTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 
 /**
  * Represents a single instance of a subscription.

@@ -99,17 +99,13 @@
   <modules>
     <module>core</module>
     <module>cluster</module>
-    <module>event</module>
     <module>messaging</module>
-    <module>partition</module>
-    <module>primitives</module>
+    <module>primitive</module>
     <module>protocols</module>
     <module>rest</module>
-    <module>serializer</module>
     <module>server</module>
     <module>storage</module>
     <module>tests</module>
-    <module>time</module>
     <module>utils</module>
   </modules>
 

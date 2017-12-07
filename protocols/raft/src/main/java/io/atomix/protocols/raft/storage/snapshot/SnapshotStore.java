@@ -16,12 +16,12 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import com.google.common.collect.Sets;
-import io.atomix.protocols.raft.service.ServiceId;
+import io.atomix.primitive.PrimitiveId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +55,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   Snapshot snapshot = snapshots.snapshot(1);
  *   }
  * </pre>
- * To create a new {@link Snapshot}, use the {@link #newSnapshot(ServiceId, String, long, WallClockTimestamp)} method. Each snapshot must
+ * To create a new {@link Snapshot}, use the {@link #newSnapshot(PrimitiveId, String, long, WallClockTimestamp)} method. Each snapshot must
  * be created with a unique {@code index} which represents the index of the server state machine at
  * the point at which the snapshot was taken. Snapshot indices are used to sort snapshots loaded from
  * disk and apply them at the correct point in the state machine.
@@ -77,7 +77,7 @@ public class SnapshotStore implements AutoCloseable {
   private final Logger log = LoggerFactory.getLogger(getClass());
   final RaftStorage storage;
   private final Map<Long, Set<Snapshot>> indexSnapshots = new ConcurrentHashMap<>();
-  private final Map<ServiceId, Snapshot> serviceSnapshots = new ConcurrentHashMap<>();
+  private final Map<PrimitiveId, Snapshot> serviceSnapshots = new ConcurrentHashMap<>();
 
   public SnapshotStore(RaftStorage storage) {
     this.storage = checkNotNull(storage, "storage cannot be null");
@@ -112,7 +112,7 @@ public class SnapshotStore implements AutoCloseable {
    * @param id The state machine identifier for which to return the snapshot.
    * @return The latest snapshot for the given state machine.
    */
-  public Snapshot getSnapshotById(ServiceId id) {
+  public Snapshot getSnapshotById(PrimitiveId id) {
     return serviceSnapshots.get(id);
   }
 
@@ -170,15 +170,15 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a temporary in-memory snapshot.
    *
-   * @param serviceId The snapshot identifier.
+   * @param primitiveId The snapshot identifier.
    * @param serviceName The snapshot service name.
    * @param index The snapshot index.
    * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newTemporarySnapshot(ServiceId serviceId, String serviceName, long index, WallClockTimestamp timestamp) {
+  public Snapshot newTemporarySnapshot(PrimitiveId primitiveId, String serviceName, long index, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
-        .withServiceId(serviceId.id())
+        .withServiceId(primitiveId.id())
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())
         .build();
@@ -188,15 +188,15 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a new snapshot.
    *
-   * @param serviceId The snapshot identifier.
+   * @param primitiveId The snapshot identifier.
    * @param serviceName The snapshot service name.
    * @param index The snapshot index.
    * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newSnapshot(ServiceId serviceId, String serviceName, long index, WallClockTimestamp timestamp) {
+  public Snapshot newSnapshot(PrimitiveId primitiveId, String serviceName, long index, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
-        .withServiceId(serviceId.id())
+        .withServiceId(primitiveId.id())
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())
         .build();

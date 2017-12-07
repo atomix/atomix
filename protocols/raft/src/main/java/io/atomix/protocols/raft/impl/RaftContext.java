@@ -15,10 +15,10 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.cluster.NodeId;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.ThreadModel;
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftClusterContext;
@@ -45,6 +45,7 @@ import io.atomix.protocols.raft.utils.LoadMonitor;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -79,7 +80,7 @@ public class RaftContext implements AutoCloseable {
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
   protected final String name;
   protected final ThreadContext threadContext;
-  protected final RaftServiceFactoryRegistry serviceFactories;
+  protected final PrimitiveTypeRegistry primitiveTypes;
   protected final RaftClusterContext cluster;
   protected final RaftServerProtocol protocol;
   protected final RaftStorage storage;
@@ -103,9 +104,9 @@ public class RaftContext implements AutoCloseable {
   private int electionThreshold = 3;
   private Duration sessionTimeout = Duration.ofMillis(5000);
   private int sessionFailureThreshold = 5;
-  private volatile MemberId leader;
+  private volatile NodeId leader;
   private volatile long term;
-  private MemberId lastVotedFor;
+  private NodeId lastVotedFor;
   private long lastHeartbeatTime;
   private long commitIndex;
   private volatile long firstCommitIndex;
@@ -114,16 +115,16 @@ public class RaftContext implements AutoCloseable {
   @SuppressWarnings("unchecked")
   public RaftContext(
       String name,
-      MemberId localMemberId,
+      NodeId localNodeId,
       RaftServerProtocol protocol,
       RaftStorage storage,
-      RaftServiceFactoryRegistry serviceFactories,
+      PrimitiveTypeRegistry primitiveTypes,
       ThreadModel threadModel,
       int threadPoolSize) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
-    this.serviceFactories = checkNotNull(serviceFactories, "registry cannot be null");
+    this.primitiveTypes = checkNotNull(primitiveTypes, "registry cannot be null");
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(name)
         .build());
@@ -156,7 +157,7 @@ public class RaftContext implements AutoCloseable {
     // Create a new internal server state machine.
     this.stateMachine = new RaftServiceManager(this, threadContextFactory);
 
-    this.cluster = new RaftClusterContext(localMemberId, this);
+    this.cluster = new RaftClusterContext(localNodeId, this);
 
     // Register protocol listeners.
     registerHandlers(protocol);
@@ -376,7 +377,7 @@ public class RaftContext implements AutoCloseable {
    *
    * @param leader The state leader.
    */
-  public void setLeader(MemberId leader) {
+  public void setLeader(NodeId leader) {
     if (!Objects.equals(this.leader, leader)) {
       if (leader == null) {
         this.leader = null;
@@ -388,7 +389,7 @@ public class RaftContext implements AutoCloseable {
         DefaultRaftMember member = cluster.getMember(leader);
         if (member != null) {
           this.leader = leader;
-          log.info("Found leader {}", member.memberId());
+          log.info("Found leader {}", member.nodeId());
           electionListeners.forEach(l -> l.accept(member));
         }
       }
@@ -414,7 +415,7 @@ public class RaftContext implements AutoCloseable {
    */
   public DefaultRaftMember getLeader() {
     // Store in a local variable to prevent race conditions and/or multiple volatile lookups.
-    MemberId leader = this.leader;
+    NodeId leader = this.leader;
     return leader != null ? cluster.getMember(leader) : null;
   }
 
@@ -424,8 +425,8 @@ public class RaftContext implements AutoCloseable {
    * @return Indicates whether this server is the leader.
    */
   public boolean isLeader() {
-    MemberId leader = this.leader;
-    return leader != null && leader.equals(cluster.getMember().memberId());
+    NodeId leader = this.leader;
+    return leader != null && leader.equals(cluster.getMember().nodeId());
   }
 
   /**
@@ -458,7 +459,7 @@ public class RaftContext implements AutoCloseable {
    *
    * @param candidate The candidate that was voted for.
    */
-  public void setLastVotedFor(MemberId candidate) {
+  public void setLastVotedFor(NodeId candidate) {
     // If we've already voted for another candidate in this term then the last voted for candidate cannot be overridden.
     checkState(!(lastVotedFor != null && candidate != null), "Already voted for another candidate");
     DefaultRaftMember member = cluster.getMember(candidate);
@@ -467,7 +468,7 @@ public class RaftContext implements AutoCloseable {
     meta.storeVote(this.lastVotedFor);
 
     if (candidate != null) {
-      log.debug("Voted for {}", member.memberId());
+      log.debug("Voted for {}", member.nodeId());
     } else {
       log.trace("Reset last voted for");
     }
@@ -503,7 +504,7 @@ public class RaftContext implements AutoCloseable {
    *
    * @return The state last voted for candidate.
    */
-  public MemberId getLastVotedFor() {
+  public NodeId getLastVotedFor() {
     return lastVotedFor;
   }
 
@@ -624,8 +625,8 @@ public class RaftContext implements AutoCloseable {
    *
    * @return The server state machine registry.
    */
-  public RaftServiceFactoryRegistry getServiceFactories() {
-    return serviceFactories;
+  public PrimitiveTypeRegistry getPrimitiveTypes() {
+    return primitiveTypes;
   }
 
   /**
@@ -778,7 +779,7 @@ public class RaftContext implements AutoCloseable {
       Consumer<RaftMember> electionListener = new Consumer<RaftMember>() {
         @Override
         public void accept(RaftMember member) {
-          if (member.memberId().equals(cluster.getMember().memberId())) {
+          if (member.nodeId().equals(cluster.getMember().nodeId())) {
             future.complete(null);
           } else {
             future.completeExceptionally(new RaftException.ProtocolException("Failed to transfer leadership"));
@@ -793,8 +794,8 @@ public class RaftContext implements AutoCloseable {
       RaftMember member = getCluster().getMember();
       RaftMember leader = getLeader();
       if (leader != null) {
-        protocol.transfer(leader.memberId(), TransferRequest.builder()
-            .withMember(member.memberId())
+        protocol.transfer(leader.nodeId(), TransferRequest.builder()
+            .withMember(member.nodeId())
             .build()).whenCompleteAsync((response, error) -> {
           if (error != null) {
             future.completeExceptionally(error);

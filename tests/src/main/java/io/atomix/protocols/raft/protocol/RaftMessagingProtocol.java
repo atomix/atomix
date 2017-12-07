@@ -15,10 +15,10 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 
 import java.net.ConnectException;
@@ -31,20 +31,20 @@ import java.util.function.Function;
 public abstract class RaftMessagingProtocol {
   protected final MessagingService messagingService;
   protected final Serializer serializer;
-  private final Function<MemberId, Endpoint> endpointProvider;
+  private final Function<NodeId, Endpoint> endpointProvider;
 
-  public RaftMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<MemberId, Endpoint> endpointProvider) {
+  public RaftMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<NodeId, Endpoint> endpointProvider) {
     this.messagingService = messagingService;
     this.serializer = serializer;
     this.endpointProvider = endpointProvider;
   }
 
-  protected Endpoint endpoint(MemberId memberId) {
-    return endpointProvider.apply(memberId);
+  protected Endpoint endpoint(NodeId nodeId) {
+    return endpointProvider.apply(nodeId);
   }
 
-  protected <T, U> CompletableFuture<U> sendAndReceive(MemberId memberId, String type, T request) {
-    Endpoint endpoint = endpoint(memberId);
+  protected <T, U> CompletableFuture<U> sendAndReceive(NodeId nodeId, String type, T request) {
+    Endpoint endpoint = endpoint(nodeId);
     if (endpoint == null) {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -52,10 +52,10 @@ public abstract class RaftMessagingProtocol {
         .thenApply(serializer::decode);
   }
 
-  protected CompletableFuture<Void> sendAsync(MemberId memberId, String type, Object request) {
-    Endpoint endpoint = endpoint(memberId);
+  protected CompletableFuture<Void> sendAsync(NodeId nodeId, String type, Object request) {
+    Endpoint endpoint = endpoint(nodeId);
     if (endpoint != null) {
-      return messagingService.sendAsync(endpoint(memberId), type, serializer.encode(request));
+      return messagingService.sendAsync(endpoint(nodeId), type, serializer.encode(request));
     }
     return CompletableFuture.completedFuture(null);
   }

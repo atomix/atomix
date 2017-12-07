@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.event.RaftEvent;
+import io.atomix.primitive.event.PrimitiveEvent;
 
 import java.util.Arrays;
 import java.util.List;
@@ -48,9 +48,9 @@ public class PublishRequest extends SessionRequest {
 
   private final long eventIndex;
   private final long previousIndex;
-  private final List<RaftEvent> events;
+  private final List<PrimitiveEvent> events;
 
-  public PublishRequest(long session, long eventIndex, long previousIndex, List<RaftEvent> events) {
+  public PublishRequest(long session, long eventIndex, long previousIndex, List<PrimitiveEvent> events) {
     super(session);
     this.eventIndex = eventIndex;
     this.previousIndex = previousIndex;
@@ -80,7 +80,7 @@ public class PublishRequest extends SessionRequest {
    *
    * @return The request events.
    */
-  public List<RaftEvent> events() {
+  public List<PrimitiveEvent> events() {
     return events;
   }
 
@@ -117,7 +117,7 @@ public class PublishRequest extends SessionRequest {
   public static class Builder extends SessionRequest.Builder<Builder, PublishRequest> {
     private long eventIndex;
     private long previousIndex;
-    private List<RaftEvent> events;
+    private List<PrimitiveEvent> events;
 
     /**
      * Sets the event index.
@@ -151,7 +151,7 @@ public class PublishRequest extends SessionRequest {
      * @param events The request events.
      * @return The publish request builder.
      */
-    public Builder withEvents(RaftEvent... events) {
+    public Builder withEvents(PrimitiveEvent... events) {
       return withEvents(Arrays.asList(checkNotNull(events, "events cannot be null")));
     }
 
@@ -161,7 +161,7 @@ public class PublishRequest extends SessionRequest {
      * @param events The request events.
      * @return The publish request builder.
      */
-    public Builder withEvents(List<RaftEvent> events) {
+    public Builder withEvents(List<PrimitiveEvent> events) {
       this.events = checkNotNull(events, "events cannot be null");
       return this;
     }

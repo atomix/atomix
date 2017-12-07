@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.storage.system;
 
-import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.storage.RaftStorage;
-import io.atomix.serializer.Serializer;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
@@ -88,7 +88,7 @@ public class MetaStore implements AutoCloseable {
    *
    * @param vote The server vote.
    */
-  public synchronized void storeVote(MemberId vote) {
+  public synchronized void storeVote(NodeId vote) {
     log.trace("Store vote {}", vote);
     metadataBuffer.writeString(8, vote != null ? vote.id() : null).flush();
   }
@@ -98,9 +98,9 @@ public class MetaStore implements AutoCloseable {
    *
    * @return The last vote for the server.
    */
-  public synchronized MemberId loadVote() {
+  public synchronized NodeId loadVote() {
     String id = metadataBuffer.readString(8);
-    return id != null ? MemberId.from(id) : null;
+    return id != null ? NodeId.from(id) : null;
   }
 
   /**

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.protocols.raft.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 
 /**
  * Represents a state machine query.
@@ -26,7 +26,7 @@ import io.atomix.protocols.raft.operation.RaftOperation;
  * are used to sequence queries as they're applied to the user state machine.
  */
 public class QueryEntry extends OperationEntry {
-  public QueryEntry(long term, long timestamp, long session, long sequence, RaftOperation operation) {
+  public QueryEntry(long term, long timestamp, long session, long sequence, PrimitiveOperation operation) {
     super(term, timestamp, session, sequence, operation);
   }
 }

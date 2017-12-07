@@ -18,17 +18,19 @@
 
   <parent>
     <groupId>io.atomix</groupId>
-    <artifactId>atomix-parent</artifactId>
+    <artifactId>atomix-storage-parent</artifactId>
     <version>2.1.0-SNAPSHOT</version>
   </parent>
 
-  <packaging>pom</packaging>
-  <artifactId>atomix-storage-parent</artifactId>
-  <name>Atomix Storage Parent</name>
+  <packaging>bundle</packaging>
+  <artifactId>atomix-storage</artifactId>
+  <name>Atomix Storage</name>
 
-  <modules>
-    <module>api</module>
-    <module>buffer</module>
-    <module>journal</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>

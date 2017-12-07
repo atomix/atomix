@@ -16,16 +16,26 @@
 package io.atomix.protocols.raft;
 
 import com.google.common.collect.Maps;
+import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.netty.NettyMessagingService;
-import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.operation.OperationId;
+import io.atomix.primitive.operation.OperationType;
+import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.primitive.operation.impl.DefaultOperationId;
+import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.ServiceExecutor;
+import io.atomix.primitive.session.SessionId;
+import io.atomix.protocols.raft.RaftPerformanceTest.PerformanceService;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
-import io.atomix.protocols.raft.operation.OperationId;
-import io.atomix.protocols.raft.operation.OperationType;
-import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -63,11 +73,6 @@ import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RaftProxy;
-import io.atomix.protocols.raft.service.AbstractRaftService;
-import io.atomix.protocols.raft.service.Commit;
-import io.atomix.protocols.raft.service.RaftServiceExecutor;
-import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
@@ -77,16 +82,16 @@ import io.atomix.protocols.raft.storage.log.entry.KeepAliveEntry;
 import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
-import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
-import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.protocols.raft.storage.system.Configuration;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.storage.StorageLevel;
+import io.atomix.storage.buffer.BufferInput;
+import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 import java.io.IOException;
@@ -169,7 +174,7 @@ public class RaftFuzzTest implements Runnable {
       .register(RaftResponse.Status.class)
       .register(RaftError.class)
       .register(RaftError.Type.class)
-      .register(RaftOperation.class)
+      .register(PrimitiveOperation.class)
       .register(ReadConsistency.class)
       .register(byte[].class)
       .register(long[].class)
@@ -181,7 +186,7 @@ public class RaftFuzzTest implements Runnable {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
-      .register(RaftOperation.class)
+      .register(PrimitiveOperation.class)
       .register(DefaultOperationId.class)
       .register(OperationType.class)
       .register(ReadConsistency.class)
@@ -189,7 +194,7 @@ public class RaftFuzzTest implements Runnable {
       .register(Collections.emptyList().getClass())
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
-      .register(MemberId.class)
+      .register(NodeId.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
@@ -205,14 +210,14 @@ public class RaftFuzzTest implements Runnable {
       .register(MetadataEntry.class)
       .register(OpenSessionEntry.class)
       .register(QueryEntry.class)
-      .register(RaftOperation.class)
+      .register(PrimitiveOperation.class)
       .register(DefaultOperationId.class)
       .register(OperationType.class)
       .register(ReadConsistency.class)
       .register(ArrayList.class)
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
-      .register(MemberId.class)
+      .register(NodeId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -234,7 +239,7 @@ public class RaftFuzzTest implements Runnable {
   private Map<Integer, Scheduled> restartTimers = new ConcurrentHashMap<>();
   private LocalRaftProtocolFactory protocolFactory;
   private List<MessagingService> messagingServices = new ArrayList<>();
-  private Map<MemberId, Endpoint> endpointMap = new ConcurrentHashMap<>();
+  private Map<NodeId, Endpoint> endpointMap = new ConcurrentHashMap<>();
   private static final String[] KEYS = new String[1024];
   private final Random random = new Random();
 
@@ -314,7 +319,7 @@ public class RaftFuzzTest implements Runnable {
     for (int i = 0; i < clients; i++) {
       ReadConsistency consistency = randomConsistency();
       RaftClient client = createClient();
-      RaftProxy proxy = createProxy(client, consistency);
+      PrimitiveProxy proxy = createProxy(client, consistency);
       Scheduler scheduler = new SingleThreadContext("fuzz-test-" + i);
 
       final int clientId = i;
@@ -425,10 +430,10 @@ public class RaftFuzzTest implements Runnable {
       RaftServer server = servers.get(serverIndex);
       CompletableFuture<Void> leaveFuture;
       if (remove) {
-        System.out.println("Removing server: " + server.cluster().getMember().memberId());
+        System.out.println("Removing server: " + server.cluster().getMember().nodeId());
         leaveFuture = server.leave();
       } else {
-        System.out.println("Shutting down server: " + server.cluster().getMember().memberId());
+        System.out.println("Shutting down server: " + server.cluster().getMember().nodeId());
         leaveFuture = server.shutdown();
       }
       leaveFuture.whenComplete((result, error) -> {
@@ -438,11 +443,11 @@ public class RaftFuzzTest implements Runnable {
           servers.set(serverIndex, newServer);
           CompletableFuture<RaftServer> joinFuture;
           if (remove) {
-            System.out.println("Adding server: " + newServer.cluster().getMember().memberId());
-            joinFuture = newServer.join(members.get(members.size() - 1).memberId());
+            System.out.println("Adding server: " + newServer.cluster().getMember().nodeId());
+            joinFuture = newServer.join(members.get(members.size() - 1).nodeId());
           } else {
-            System.out.println("Bootstrapping server: " + newServer.cluster().getMember().memberId());
-            joinFuture = newServer.bootstrap(members.stream().map(RaftMember::memberId).collect(Collectors.toList()));
+            System.out.println("Bootstrapping server: " + newServer.cluster().getMember().nodeId());
+            joinFuture = newServer.bootstrap(members.stream().map(RaftMember::nodeId).collect(Collectors.toList()));
           }
           joinFuture.whenComplete((result2, error2) -> {
             scheduleRestarts(context);
@@ -511,8 +516,8 @@ public class RaftFuzzTest implements Runnable {
    *
    * @return The next unique member identifier.
    */
-  private MemberId nextMemberId() {
-    return MemberId.from(String.valueOf(++nextId));
+  private NodeId nextNodeId() {
+    return NodeId.from(String.valueOf(++nextId));
   }
 
   /**
@@ -522,7 +527,7 @@ public class RaftFuzzTest implements Runnable {
    * @return The next server address.
    */
   private RaftMember nextMember(RaftMember.Type type) {
-    return new TestMember(nextMemberId(), type);
+    return new TestMember(nextNodeId(), type);
   }
 
   /**
@@ -538,7 +543,7 @@ public class RaftFuzzTest implements Runnable {
     CountDownLatch latch = new CountDownLatch(nodes);
     for (int i = 0; i < nodes; i++) {
       RaftServer server = createServer(members.get(i));
-      server.bootstrap(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(latch::countDown);
+      server.bootstrap(members.stream().map(RaftMember::nodeId).collect(Collectors.toList())).thenRun(latch::countDown);
       servers.add(server);
     }
 
@@ -557,24 +562,24 @@ public class RaftFuzzTest implements Runnable {
         Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
         MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
         messagingServices.add(messagingManager);
-        endpointMap.put(member.memberId(), endpoint);
+        endpointMap.put(member.nodeId(), endpoint);
         protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
       } catch (UnknownHostException e) {
         throw new RuntimeException(e);
       }
     } else {
-      protocol = protocolFactory.newServerProtocol(member.memberId());
+      protocol = protocolFactory.newServerProtocol(member.nodeId());
     }
 
-    RaftServer.Builder builder = RaftServer.builder(member.memberId())
+    RaftServer.Builder builder = RaftServer.builder(member.nodeId())
         .withProtocol(protocol)
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
-            .withDirectory(new File(String.format("target/fuzz-logs/%s", member.memberId())))
+            .withDirectory(new File(String.format("target/fuzz-logs/%s", member.nodeId())))
             .withSerializer(storageSerializer)
             .withMaxSegmentSize(1024 * 1024)
             .build())
-        .addService("test", FuzzStateMachine::new);
+        .addPrimitiveType(TestPrimitiveType.INSTANCE);
 
     RaftServer server = builder.build();
     servers.add(server);
@@ -585,24 +590,24 @@ public class RaftFuzzTest implements Runnable {
    * Creates a Raft client.
    */
   private RaftClient createClient() throws Exception {
-    MemberId memberId = nextMemberId();
+    NodeId nodeId = nextNodeId();
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
       MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
-      endpointMap.put(memberId, endpoint);
+      endpointMap.put(nodeId, endpoint);
       protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
     } else {
-      protocol = protocolFactory.newClientProtocol(memberId);
+      protocol = protocolFactory.newClientProtocol(nodeId);
     }
 
     RaftClient client = RaftClient.builder()
-        .withMemberId(memberId)
+        .withNodeId(nodeId)
         .withProtocol(protocol)
         .build();
 
-    client.connect(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).join();
+    client.connect(members.stream().map(RaftMember::nodeId).collect(Collectors.toList())).join();
     clients.add(client);
     return client;
   }
@@ -610,13 +615,11 @@ public class RaftFuzzTest implements Runnable {
   /**
    * Creates a test session.
    */
-  private RaftProxy createProxy(RaftClient client, ReadConsistency consistency) {
-    return client.newProxyBuilder()
-        .withName("test")
-        .withServiceType("test")
+  private PrimitiveProxy createProxy(RaftClient client, ReadConsistency consistency) {
+    return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
-        .build()
+        .build())
         .open()
         .join();
   }
@@ -627,13 +630,35 @@ public class RaftFuzzTest implements Runnable {
   private static final OperationId INDEX = OperationId.command("index");
 
   /**
+   * Test primitive type.
+   */
+  private static class TestPrimitiveType implements PrimitiveType {
+    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+
+    @Override
+    public String id() {
+      return "test";
+    }
+
+    @Override
+    public PrimitiveService newService() {
+      return new PerformanceService();
+    }
+
+    @Override
+    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  /**
    * Fuzz test state machine.
    */
-  public class FuzzStateMachine extends AbstractRaftService {
+  public class FuzzStateMachine extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
 
     @Override
-    protected void configure(RaftServiceExecutor executor) {
+    protected void configure(ServiceExecutor executor) {
       executor.register(PUT, clientSerializer::decode, this::put, clientSerializer::encode);
       executor.register(GET, clientSerializer::decode, this::get, clientSerializer::encode);
       executor.register(REMOVE, clientSerializer::decode, this::remove, clientSerializer::encode);
@@ -641,7 +666,7 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public void snapshot(SnapshotWriter writer) {
+    public void backup(BufferOutput<?> writer) {
       writer.writeInt(map.size());
       for (Map.Entry<String, String> entry : map.entrySet()) {
         writer.writeString(entry.getKey());
@@ -650,7 +675,7 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public void install(SnapshotReader reader) {
+    public void restore(BufferInput<?> reader) {
       map = new HashMap<>();
       int size = reader.readInt();
       for (int i = 0; i < size; i++) {
@@ -683,22 +708,22 @@ public class RaftFuzzTest implements Runnable {
    * Test member.
    */
   public static class TestMember implements RaftMember {
-    private final MemberId memberId;
+    private final NodeId nodeId;
     private final Type type;
 
-    public TestMember(MemberId memberId, Type type) {
-      this.memberId = memberId;
+    public TestMember(NodeId nodeId, Type type) {
+      this.nodeId = nodeId;
       this.type = type;
     }
 
     @Override
-    public MemberId memberId() {
-      return memberId;
+    public NodeId nodeId() {
+      return nodeId;
     }
 
     @Override
     public int hash() {
-      return memberId.hashCode();
+      return nodeId.hashCode();
     }
 
     @Override

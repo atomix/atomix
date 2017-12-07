@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.cluster.NodeId;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.service.ServiceType;
 
 import java.util.Objects;
 
@@ -39,15 +39,15 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     return new Builder();
   }
 
-  private final String member;
+  private final String node;
   private final String name;
   private final String typeName;
   private final ReadConsistency readConsistency;
   private final long minTimeout;
   private final long maxTimeout;
 
-  public OpenSessionRequest(String member, String name, String typeName, ReadConsistency readConsistency, long minTimeout, long maxTimeout) {
-    this.member = member;
+  public OpenSessionRequest(String node, String name, String typeName, ReadConsistency readConsistency, long minTimeout, long maxTimeout) {
+    this.node = node;
     this.name = name;
     this.typeName = typeName;
     this.readConsistency = readConsistency;
@@ -60,8 +60,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    *
    * @return The client node identifier.
    */
-  public String member() {
-    return member;
+  public String node() {
+    return node;
   }
 
   /**
@@ -118,7 +118,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
   public boolean equals(Object object) {
     if (object instanceof OpenSessionRequest) {
       OpenSessionRequest request = (OpenSessionRequest) object;
-      return request.member.equals(member)
+      return request.node.equals(node)
           && request.name.equals(name)
           && request.typeName.equals(typeName)
           && request.readConsistency == readConsistency
@@ -131,7 +131,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("node", member)
+        .add("node", node)
         .add("serviceName", name)
         .add("serviceType", typeName)
         .add("readConsistency", readConsistency)
@@ -144,7 +144,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    * Open session request builder.
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, OpenSessionRequest> {
-    private String memberId;
+    private String nodeId;
     private String serviceName;
     private String serviceType;
     private ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
@@ -154,12 +154,12 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     /**
      * Sets the client node identifier.
      *
-     * @param member The client node identifier.
+     * @param node The client node identifier.
      * @return The open session request builder.
      * @throws NullPointerException if {@code node} is {@code null}
      */
-    public Builder withMemberId(MemberId member) {
-      this.memberId = checkNotNull(member, "node cannot be null").id();
+    public Builder withNodeId(NodeId node) {
+      this.nodeId = checkNotNull(node, "node cannot be null").id();
       return this;
     }
 
@@ -178,12 +178,12 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     /**
      * Sets the service type name.
      *
-     * @param serviceType The service type name.
+     * @param primitiveType The service type name.
      * @return The open session request builder.
      * @throws NullPointerException if {@code serviceType} is {@code null}
      */
-    public Builder withServiceType(ServiceType serviceType) {
-      this.serviceType = checkNotNull(serviceType, "serviceType cannot be null").id();
+    public Builder withServiceType(PrimitiveType primitiveType) {
+      this.serviceType = checkNotNull(primitiveType, "serviceType cannot be null").id();
       return this;
     }
 
@@ -228,7 +228,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     protected void validate() {
       super.validate();
-      checkNotNull(memberId, "client cannot be null");
+      checkNotNull(nodeId, "client cannot be null");
       checkNotNull(serviceName, "name cannot be null");
       checkNotNull(serviceType, "typeName cannot be null");
       checkArgument(minTimeout >= 0, "minTimeout must be positive");
@@ -241,7 +241,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     public OpenSessionRequest build() {
       validate();
-      return new OpenSessionRequest(memberId, serviceName, serviceType, readConsistency, minTimeout, maxTimeout);
+      return new OpenSessionRequest(nodeId, serviceName, serviceType, readConsistency, minTimeout, maxTimeout);
     }
   }
 }

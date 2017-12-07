@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.session.SessionId;
-import io.atomix.serializer.Serializer;
+import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -30,93 +30,93 @@ import java.util.function.Function;
  * Raft server messaging protocol.
  */
 public class RaftServerMessagingProtocol extends RaftMessagingProtocol implements RaftServerProtocol {
-  public RaftServerMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<MemberId, Endpoint> endpointProvider) {
+  public RaftServerMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<NodeId, Endpoint> endpointProvider) {
     super(messagingService, serializer, endpointProvider);
   }
 
   @Override
-  public CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request) {
-    return sendAndReceive(memberId, "open-session", request);
+  public CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request) {
+    return sendAndReceive(nodeId, "open-session", request);
   }
 
   @Override
-  public CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request) {
-    return sendAndReceive(memberId, "close-session", request);
+  public CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request) {
+    return sendAndReceive(nodeId, "close-session", request);
   }
 
   @Override
-  public CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request) {
-    return sendAndReceive(memberId, "keep-alive", request);
+  public CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request) {
+    return sendAndReceive(nodeId, "keep-alive", request);
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request) {
-    return sendAndReceive(memberId, "query", request);
+  public CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request) {
+    return sendAndReceive(nodeId, "query", request);
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request) {
-    return sendAndReceive(memberId, "command", request);
+  public CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request) {
+    return sendAndReceive(nodeId, "command", request);
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
-    return sendAndReceive(memberId, "metadata", request);
+  public CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request) {
+    return sendAndReceive(nodeId, "metadata", request);
   }
 
   @Override
-  public CompletableFuture<JoinResponse> join(MemberId memberId, JoinRequest request) {
-    return sendAndReceive(memberId, "join", request);
+  public CompletableFuture<JoinResponse> join(NodeId nodeId, JoinRequest request) {
+    return sendAndReceive(nodeId, "join", request);
   }
 
   @Override
-  public CompletableFuture<LeaveResponse> leave(MemberId memberId, LeaveRequest request) {
-    return sendAndReceive(memberId, "leave", request);
+  public CompletableFuture<LeaveResponse> leave(NodeId nodeId, LeaveRequest request) {
+    return sendAndReceive(nodeId, "leave", request);
   }
 
   @Override
-  public CompletableFuture<ConfigureResponse> configure(MemberId memberId, ConfigureRequest request) {
-    return sendAndReceive(memberId, "configure", request);
+  public CompletableFuture<ConfigureResponse> configure(NodeId nodeId, ConfigureRequest request) {
+    return sendAndReceive(nodeId, "configure", request);
   }
 
   @Override
-  public CompletableFuture<ReconfigureResponse> reconfigure(MemberId memberId, ReconfigureRequest request) {
-    return sendAndReceive(memberId, "reconfigure", request);
+  public CompletableFuture<ReconfigureResponse> reconfigure(NodeId nodeId, ReconfigureRequest request) {
+    return sendAndReceive(nodeId, "reconfigure", request);
   }
 
   @Override
-  public CompletableFuture<InstallResponse> install(MemberId memberId, InstallRequest request) {
-    return sendAndReceive(memberId, "install", request);
+  public CompletableFuture<InstallResponse> install(NodeId nodeId, InstallRequest request) {
+    return sendAndReceive(nodeId, "install", request);
   }
 
   @Override
-  public CompletableFuture<TransferResponse> transfer(MemberId memberId, TransferRequest request) {
-    return sendAndReceive(memberId, "transfer", request);
+  public CompletableFuture<TransferResponse> transfer(NodeId nodeId, TransferRequest request) {
+    return sendAndReceive(nodeId, "transfer", request);
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(MemberId memberId, PollRequest request) {
-    return sendAndReceive(memberId, "poll", request);
+  public CompletableFuture<PollResponse> poll(NodeId nodeId, PollRequest request) {
+    return sendAndReceive(nodeId, "poll", request);
   }
 
   @Override
-  public CompletableFuture<VoteResponse> vote(MemberId memberId, VoteRequest request) {
-    return sendAndReceive(memberId, "vote", request);
+  public CompletableFuture<VoteResponse> vote(NodeId nodeId, VoteRequest request) {
+    return sendAndReceive(nodeId, "vote", request);
   }
 
   @Override
-  public CompletableFuture<AppendResponse> append(MemberId memberId, AppendRequest request) {
-    return sendAndReceive(memberId, "append", request);
+  public CompletableFuture<AppendResponse> append(NodeId nodeId, AppendRequest request) {
+    return sendAndReceive(nodeId, "append", request);
   }
 
   @Override
-  public void publish(MemberId memberId, PublishRequest request) {
-    sendAsync(memberId, String.format("publish-%d", request.session()), request);
+  public void publish(NodeId nodeId, PublishRequest request) {
+    sendAsync(nodeId, String.format("publish-%d", request.session()), request);
   }
 
   @Override
-  public CompletableFuture<HeartbeatResponse> heartbeat(MemberId memberId, HeartbeatRequest request) {
-    return sendAndReceive(memberId, "heartbeat", request);
+  public CompletableFuture<HeartbeatResponse> heartbeat(NodeId nodeId, HeartbeatRequest request) {
+    return sendAndReceive(nodeId, "heartbeat", request);
   }
 
   @Override

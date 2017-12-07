@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.event.EventListener;
+import io.atomix.utils.event.EventListener;
 
 /**
  * Entity capable of receiving device cluster-related events.

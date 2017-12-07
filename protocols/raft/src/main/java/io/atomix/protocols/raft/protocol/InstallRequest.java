@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.cluster.NodeId;
 import io.atomix.utils.ArraySizeHashPrinter;
 
 import java.util.Arrays;
@@ -47,7 +47,7 @@ public class InstallRequest extends AbstractRaftRequest {
   }
 
   private final long term;
-  private final MemberId leader;
+  private final NodeId leader;
   private final long serviceId;
   private final String serviceName;
   private final long index;
@@ -56,7 +56,7 @@ public class InstallRequest extends AbstractRaftRequest {
   private final byte[] data;
   private final boolean complete;
 
-  public InstallRequest(long term, MemberId leader, long serviceId, String serviceName, long index, long timestamp, int offset, byte[] data, boolean complete) {
+  public InstallRequest(long term, NodeId leader, long serviceId, String serviceName, long index, long timestamp, int offset, byte[] data, boolean complete) {
     this.term = term;
     this.leader = leader;
     this.serviceId = serviceId;
@@ -82,7 +82,7 @@ public class InstallRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public MemberId leader() {
+  public NodeId leader() {
     return leader;
   }
 
@@ -189,7 +189,7 @@ public class InstallRequest extends AbstractRaftRequest {
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, InstallRequest> {
     private long term;
-    private MemberId leader;
+    private NodeId leader;
     private long serviceId;
     private String serviceName;
     private long index;
@@ -218,7 +218,7 @@ public class InstallRequest extends AbstractRaftRequest {
      * @return The append request builder.
      * @throws IllegalArgumentException if the {@code leader} is not positive
      */
-    public Builder withLeader(MemberId leader) {
+    public Builder withLeader(NodeId leader) {
       this.leader = checkNotNull(leader, "leader cannot be null");
       return this;
     }

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,9 +31,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class OperationRequest extends SessionRequest {
   protected final long sequence;
-  protected final RaftOperation operation;
+  protected final PrimitiveOperation operation;
 
-  protected OperationRequest(long session, long sequence, RaftOperation operation) {
+  protected OperationRequest(long session, long sequence, PrimitiveOperation operation) {
     super(session);
     this.sequence = sequence;
     this.operation = operation;
@@ -53,7 +53,7 @@ public abstract class OperationRequest extends SessionRequest {
    *
    * @return The operation.
    */
-  public RaftOperation operation() {
+  public PrimitiveOperation operation() {
     return operation;
   }
 
@@ -62,7 +62,7 @@ public abstract class OperationRequest extends SessionRequest {
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends OperationRequest> extends SessionRequest.Builder<T, U> {
     protected long sequence;
-    protected RaftOperation operation;
+    protected PrimitiveOperation operation;
 
     /**
      * Sets the request sequence number.
@@ -86,7 +86,7 @@ public abstract class OperationRequest extends SessionRequest {
      * @throws NullPointerException if the request {@code operation} is {@code null}
      */
     @SuppressWarnings("unchecked")
-    public T withOperation(RaftOperation operation) {
+    public T withOperation(PrimitiveOperation operation) {
       this.operation = checkNotNull(operation, "operation cannot be null");
       return (T) this;
     }

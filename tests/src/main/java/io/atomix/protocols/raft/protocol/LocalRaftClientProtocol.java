@@ -16,14 +16,14 @@
 package io.atomix.protocols.raft.protocol;
 
 import com.google.common.collect.Maps;
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.session.SessionId;
-import io.atomix.serializer.Serializer;
+import io.atomix.cluster.NodeId;
+import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 
 import java.net.ConnectException;
-import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -36,13 +36,13 @@ public class LocalRaftClientProtocol extends LocalRaftProtocol implements RaftCl
   private Function<HeartbeatRequest, CompletableFuture<HeartbeatResponse>> heartbeatHandler;
   private final Map<Long, Consumer<PublishRequest>> publishListeners = Maps.newConcurrentMap();
 
-  public LocalRaftClientProtocol(MemberId memberId, Serializer serializer, Map<MemberId, LocalRaftServerProtocol> servers, Map<MemberId, LocalRaftClientProtocol> clients) {
+  public LocalRaftClientProtocol(NodeId nodeId, Serializer serializer, Map<NodeId, LocalRaftServerProtocol> servers, Map<NodeId, LocalRaftClientProtocol> clients) {
     super(serializer, servers, clients);
-    clients.put(memberId, this);
+    clients.put(nodeId, this);
   }
 
-  private CompletableFuture<LocalRaftServerProtocol> getServer(MemberId memberId) {
-    LocalRaftServerProtocol server = server(memberId);
+  private CompletableFuture<LocalRaftServerProtocol> getServer(NodeId nodeId) {
+    LocalRaftServerProtocol server = server(nodeId);
     if (server != null) {
       return Futures.completedFuture(server);
     } else {
@@ -51,33 +51,33 @@ public class LocalRaftClientProtocol extends LocalRaftProtocol implements RaftCl
   }
 
   @Override
-  public CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.openSession(encode(request))).thenApply(this::decode);
+  public CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request) {
+    return getServer(nodeId).thenCompose(protocol -> protocol.openSession(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.closeSession(encode(request))).thenApply(this::decode);
+  public CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request) {
+    return getServer(nodeId).thenCompose(protocol -> protocol.closeSession(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.keepAlive(encode(request))).thenApply(this::decode);
+  public CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request) {
+    return getServer(nodeId).thenCompose(protocol -> protocol.keepAlive(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.query(encode(request))).thenApply(this::decode);
+  public CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request) {
+    return getServer(nodeId).thenCompose(protocol -> protocol.query(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.command(encode(request))).thenApply(this::decode);
+  public CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request) {
+    return getServer(nodeId).thenCompose(protocol -> protocol.command(encode(request))).thenApply(this::decode);
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.metadata(encode(request))).thenApply(this::decode);
+  public CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request) {
+    return getServer(nodeId).thenCompose(protocol -> protocol.metadata(encode(request))).thenApply(this::decode);
   }
 
   CompletableFuture<byte[]> heartbeat(byte[] request) {
@@ -99,9 +99,9 @@ public class LocalRaftClientProtocol extends LocalRaftProtocol implements RaftCl
   }
 
   @Override
-  public void reset(Collection<MemberId> members, ResetRequest request) {
-    members.forEach(memberId -> {
-      LocalRaftServerProtocol server = server(memberId);
+  public void reset(Set<NodeId> members, ResetRequest request) {
+    members.forEach(nodeId -> {
+      LocalRaftServerProtocol server = server(nodeId);
       if (server != null) {
         server.reset(request.session(), encode(request));
       }

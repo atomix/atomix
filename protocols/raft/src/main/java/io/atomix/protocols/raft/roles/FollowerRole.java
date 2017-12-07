@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.protocols.phi.PhiAccrualFailureDetector;
+import io.atomix.cluster.impl.PhiAccrualFailureDetector;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
@@ -29,7 +29,6 @@ import io.atomix.storage.journal.Indexed;
 import io.atomix.utils.concurrent.Scheduled;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -67,7 +66,7 @@ public final class FollowerRole extends ActiveRole {
   private void startHeartbeatTimer() {
     log.trace("Starting heartbeat timer");
     AtomicLong lastHeartbeat = new AtomicLong();
-    heartbeatTimer = raft.getThreadContext().schedule(raft.getHeartbeatInterval(), () -> {
+    heartbeatTimer = raft.getThreadContext().schedule(raft.getHeartbeatInterval(), raft.getHeartbeatInterval(), () -> {
       if (raft.getLastHeartbeatTime() > lastHeartbeat.get()) {
         failureDetector.report(raft.getLastHeartbeatTime());
       }
@@ -80,11 +79,21 @@ public final class FollowerRole extends ActiveRole {
    * Resets the heartbeat timer.
    */
   private void resetHeartbeatTimeout() {
+    // Ensure any existing timers are cancelled.
+    if (heartbeatTimeout != null) {
+      heartbeatTimeout.cancel();
+    }
+
+    // Compute a semi-random delay between the 1 * and 2 * the heartbeat frequency.
     Duration delay = raft.getHeartbeatInterval().dividedBy(2)
         .plus(Duration.ofMillis(random.nextInt((int) raft.getHeartbeatInterval().dividedBy(2).toMillis())));
+
+    // Schedule a delay after which to check whether the election has timed out.
     heartbeatTimeout = raft.getThreadContext().schedule(delay, () -> {
+      heartbeatTimeout = null;
       if (isOpen()) {
-        if (System.currentTimeMillis() - raft.getLastHeartbeatTime() > raft.getElectionTimeout().toMillis() || failureDetector.phi() >= raft.getElectionThreshold()) {
+        if (System.currentTimeMillis() - raft.getLastHeartbeatTime() > raft.getElectionTimeout().toMillis()
+            || failureDetector.phi() >= raft.getElectionThreshold()) {
           log.debug("Heartbeat timed out in {}", System.currentTimeMillis() - raft.getLastHeartbeatTime());
           sendPollRequests();
         } else {
@@ -98,15 +107,21 @@ public final class FollowerRole extends ActiveRole {
    * Polls all members of the cluster to determine whether this member should transition to the CANDIDATE state.
    */
   private void sendPollRequests() {
+    final AtomicBoolean complete = new AtomicBoolean();
+
     // Set a new timer within which other nodes must respond in order for this node to transition to candidate.
     heartbeatTimeout = raft.getThreadContext().schedule(raft.getElectionTimeout(), () -> {
       log.debug("Failed to poll a majority of the cluster in {}", raft.getElectionTimeout());
+      complete.set(true);
       resetHeartbeatTimeout();
     });
 
     // Create a quorum that will track the number of nodes that have responded to the poll request.
-    final AtomicBoolean complete = new AtomicBoolean();
-    final Set<DefaultRaftMember> votingMembers = new HashSet<>(raft.getCluster().getActiveMemberStates().stream().map(RaftMemberContext::getMember).collect(Collectors.toList()));
+    final Set<DefaultRaftMember> votingMembers = raft.getCluster()
+        .getActiveMemberStates()
+        .stream()
+        .map(RaftMemberContext::getMember)
+        .collect(Collectors.toSet());
 
     // If there are no other members in the cluster, immediately transition to leader.
     if (votingMembers.isEmpty()) {
@@ -147,11 +162,11 @@ public final class FollowerRole extends ActiveRole {
       log.debug("Polling {} for next term {}", member, raft.getTerm() + 1);
       PollRequest request = PollRequest.builder()
           .withTerm(raft.getTerm())
-          .withCandidate(raft.getCluster().getMember().memberId())
+          .withCandidate(raft.getCluster().getMember().nodeId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLastLogTerm(lastTerm)
           .build();
-      raft.getProtocol().poll(member.memberId(), request).whenCompleteAsync((response, error) -> {
+      raft.getProtocol().poll(member.nodeId(), request).whenCompleteAsync((response, error) -> {
         raft.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
@@ -164,7 +179,7 @@ public final class FollowerRole extends ActiveRole {
 
             if (!response.accepted()) {
               log.debug("Received rejected poll from {}", member);
-              if (leader != null && response.term() == raft.getTerm() && member.memberId().equals(leader.memberId())) {
+              if (leader != null && response.term() == raft.getTerm() && member.nodeId().equals(leader.nodeId())) {
                 quorum.cancel();
                 resetHeartbeatTimeout();
               } else {

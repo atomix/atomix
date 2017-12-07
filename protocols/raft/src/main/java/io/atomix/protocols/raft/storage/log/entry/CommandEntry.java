@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.protocols.raft.operation.RaftOperation;
+import io.atomix.primitive.operation.PrimitiveOperation;
 
 /**
  * Stores a state machine command.
@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.operation.RaftOperation;
  * client along with information relevant to sequencing the command in the server state machine.
  */
 public class CommandEntry extends OperationEntry {
-  public CommandEntry(long term, long timestamp, long session, long sequence, RaftOperation operation) {
+  public CommandEntry(long term, long timestamp, long session, long sequence, PrimitiveOperation operation) {
     super(term, timestamp, session, sequence, operation);
   }
 }

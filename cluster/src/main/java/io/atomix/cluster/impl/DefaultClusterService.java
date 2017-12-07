@@ -29,10 +29,9 @@ import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
-import io.atomix.protocols.phi.PhiAccrualFailureDetector;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
-import io.atomix.serializer.kryo.KryoNamespaces;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -59,7 +58,7 @@ public class DefaultClusterService implements ManagedClusterService {
 
   private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
-  private static final String HEARTBEAT_MESSAGE = "onos-cluster-heartbeat";
+  private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
 
   private int heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
 
@@ -226,6 +225,8 @@ public class DefaultClusterService implements ManagedClusterService {
   @Override
   public CompletableFuture<Void> close() {
     if (open.compareAndSet(true, false)) {
+      heartbeatScheduler.shutdownNow();
+      heartbeatExecutor.shutdownNow();
       localNode.setState(State.INACTIVE);
       heartbeatFuture.cancel(true);
     }

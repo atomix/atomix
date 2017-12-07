@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import com.google.common.base.Function;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;
@@ -34,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * or disk based on the configured {@link StorageLevel}.
  * <p>
  * In addition to standard {@link BufferOutput} methods, snapshot readers support writing serializable objects
- * to the snapshot via the {@link #writeObject(Object, Function)} method. Serializable types must be registered on the
+ * to the snapshot via the {@link #writeObject(Object, java.util.function.Function)} method. Serializable types must be registered on the
  * {@link RaftServer} serializer to be supported in snapshots.
  */
 public class SnapshotWriter implements BufferOutput<SnapshotWriter> {
@@ -53,19 +52,6 @@ public class SnapshotWriter implements BufferOutput<SnapshotWriter> {
    */
   public Snapshot snapshot() {
     return snapshot;
-  }
-
-  /**
-   * Writes an object to the snapshot.
-   *
-   * @param object the object to write
-   * @param encoder the object encoder
-   * @return The snapshot writer.
-   */
-  public <T> SnapshotWriter writeObject(T object, Function<T, byte[]> encoder) {
-    byte[] bytes = encoder.apply(object);
-    buffer.writeInt(bytes.length).write(bytes);
-    return this;
   }
 
   @Override

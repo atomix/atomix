@@ -15,13 +15,13 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
-import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.session.SessionId;
-import io.atomix.serializer.Serializer;
+import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.serializer.Serializer;
 
-import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -31,38 +31,38 @@ import java.util.function.Function;
  * Raft client messaging service protocol.
  */
 public class RaftClientMessagingProtocol extends RaftMessagingProtocol implements RaftClientProtocol {
-  public RaftClientMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<MemberId, Endpoint> endpointProvider) {
+  public RaftClientMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<NodeId, Endpoint> endpointProvider) {
     super(messagingService, serializer, endpointProvider);
   }
 
   @Override
-  public CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request) {
-    return sendAndReceive(memberId, "open-session", request);
+  public CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request) {
+    return sendAndReceive(nodeId, "open-session", request);
   }
 
   @Override
-  public CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request) {
-    return sendAndReceive(memberId, "close-session", request);
+  public CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request) {
+    return sendAndReceive(nodeId, "close-session", request);
   }
 
   @Override
-  public CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request) {
-    return sendAndReceive(memberId, "keep-alive", request);
+  public CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request) {
+    return sendAndReceive(nodeId, "keep-alive", request);
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request) {
-    return sendAndReceive(memberId, "query", request);
+  public CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request) {
+    return sendAndReceive(nodeId, "query", request);
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request) {
-    return sendAndReceive(memberId, "command", request);
+  public CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request) {
+    return sendAndReceive(nodeId, "command", request);
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
-    return sendAndReceive(memberId, "metadata", request);
+  public CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request) {
+    return sendAndReceive(nodeId, "metadata", request);
   }
 
   @Override
@@ -76,9 +76,9 @@ public class RaftClientMessagingProtocol extends RaftMessagingProtocol implement
   }
 
   @Override
-  public void reset(Collection<MemberId> members, ResetRequest request) {
-    for (MemberId memberId : members) {
-      sendAsync(memberId, String.format("reset-%d", request.session()), request);
+  public void reset(Set<NodeId> members, ResetRequest request) {
+    for (NodeId nodeId : members) {
+      sendAsync(nodeId, String.format("reset-%d", request.session()), request);
     }
   }
 
