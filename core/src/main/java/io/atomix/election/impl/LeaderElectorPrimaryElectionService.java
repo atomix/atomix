@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import io.atomix.cluster.NodeId;
 import io.atomix.election.AsyncLeaderElector;
 import io.atomix.election.LeaderElectorType;
+import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
@@ -32,7 +33,6 @@ import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RecoveryStrategy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -94,7 +94,7 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
             .withMaxTimeout(Duration.ofSeconds(5))
             .withReadConsistency(ReadConsistency.LINEARIZABLE)
             .withCommunicationStrategy(CommunicationStrategy.LEADER)
-            .withRecoveryStrategy(RecoveryStrategy.RECOVER)
+            .withRecoveryStrategy(Recovery.RECOVER)
             .withMaxRetries(5)
             .build());
     AsyncLeaderElector<byte[]> leaderElector = new LeaderElectorProxy(proxy.open().join());

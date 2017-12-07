@@ -51,7 +51,11 @@ public class DocumentTreeTest extends AbstractAtomixTest {
   }
 
   protected AsyncDocumentTree<String> newTree(String name, Ordering ordering) {
-    return atomix().<String>documentTreeBuilder(name).withOrdering(ordering).build().async();
+    return atomix().<String>documentTreeBuilder(name)
+        .withOrdering(ordering)
+        .withMaxRetries(5)
+        .build()
+        .async();
   }
 
   /**

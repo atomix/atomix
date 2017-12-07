@@ -17,6 +17,7 @@ package io.atomix.protocols.backup;
 
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
 
 import java.time.Duration;
@@ -55,6 +56,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
   private final String group;
   private final Consistency consistency;
   private final Replication replication;
+  private final Recovery recovery;
   private final int backups;
   private final int maxRetries;
   private final Duration retryDelay;
@@ -64,6 +66,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
       String group,
       Consistency consistency,
       Replication replication,
+      Recovery recovery,
       int backups,
       int maxRetries,
       Duration retryDelay,
@@ -71,6 +74,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     this.group = group;
     this.consistency = consistency;
     this.replication = replication;
+    this.recovery = recovery;
     this.backups = backups;
     this.maxRetries = maxRetries;
     this.retryDelay = retryDelay;
@@ -103,6 +107,15 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    */
   public Replication replication() {
     return replication;
+  }
+
+  /**
+   * Returns the protocol recovery strategy.
+   *
+   * @return the protocol recovery strategy
+   */
+  public Recovery recovery() {
+    return recovery;
   }
 
   /**
@@ -160,6 +173,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
   public static class Builder extends PrimitiveProtocol.Builder {
     private Consistency consistency = Consistency.SEQUENTIAL;
     private Replication replication = Replication.SYNCHRONOUS;
+    private Recovery recovery = Recovery.RECOVER;
     private int numBackups;
     private int maxRetries = 0;
     private Duration retryDelay = Duration.ofMillis(100);
@@ -188,6 +202,17 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      */
     public Builder withReplication(Replication replication) {
       this.replication = checkNotNull(replication, "replication cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the protocol recovery strategy.
+     *
+     * @param recovery the protocol recovery strategy
+     * @return the protocol builder
+     */
+    public Builder withRecovery(Recovery recovery) {
+      this.recovery = checkNotNull(recovery, "recovery cannot be null");
       return this;
     }
 
@@ -263,7 +288,15 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
 
     @Override
     public MultiPrimaryProtocol build() {
-      return new MultiPrimaryProtocol(group, consistency, replication, numBackups, maxRetries, retryDelay, executor);
+      return new MultiPrimaryProtocol(
+          group,
+          consistency,
+          replication,
+          recovery,
+          numBackups,
+          maxRetries,
+          retryDelay,
+          executor);
     }
   }
 }

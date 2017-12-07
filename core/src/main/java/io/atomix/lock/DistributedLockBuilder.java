@@ -24,6 +24,7 @@ import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +57,7 @@ public abstract class DistributedLockBuilder
    * Sets the lock timeout.
    *
    * @param lockTimeout the lock timeout
-   * @param timeUnit        the timeout time unit
+   * @param timeUnit    the timeout time unit
    * @return leader elector builder
    */
   public DistributedLockBuilder withLockTimeout(long lockTimeout, TimeUnit timeUnit) {
@@ -111,7 +112,11 @@ public abstract class DistributedLockBuilder
     return RaftProtocol.builder()
         .withMinTimeout(lockTimeout)
         .withMaxTimeout(Duration.ofSeconds(5))
-        .withReadConsistency(readConsistency == Consistency.LINEARIZABLE ? ReadConsistency.LINEARIZABLE : ReadConsistency.SEQUENTIAL)
+        .withReadConsistency(readConsistency == Consistency.LINEARIZABLE
+            ? ReadConsistency.LINEARIZABLE
+            : ReadConsistency.SEQUENTIAL)
+        .withCommunicationStrategy(CommunicationStrategy.LEADER)
+        .withRecoveryStrategy(recovery())
         .withMaxRetries(maxRetries())
         .withRetryDelay(retryDelay())
         .build();

@@ -25,6 +25,7 @@ import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.Replication;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -133,7 +134,11 @@ public abstract class LeaderElectorBuilder<T>
     return RaftProtocol.builder()
         .withMinTimeout(electionTimeout)
         .withMaxTimeout(Duration.ofSeconds(5))
-        .withReadConsistency(readConsistency == Consistency.LINEARIZABLE ? ReadConsistency.LINEARIZABLE : ReadConsistency.SEQUENTIAL)
+        .withReadConsistency(readConsistency == Consistency.LINEARIZABLE
+            ? ReadConsistency.LINEARIZABLE
+            : ReadConsistency.SEQUENTIAL)
+        .withCommunicationStrategy(CommunicationStrategy.LEADER)
+        .withRecoveryStrategy(recovery())
         .withMaxRetries(maxRetries())
         .withRetryDelay(retryDelay())
         .build();

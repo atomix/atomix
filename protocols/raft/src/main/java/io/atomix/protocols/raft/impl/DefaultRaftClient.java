@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.Recovery;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
 import io.atomix.primitive.proxy.impl.DelegatingPrimitiveProxy;
@@ -26,7 +27,6 @@ import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.RecoveryStrategy;
 import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxy;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
@@ -140,7 +140,7 @@ public class DefaultRaftClient implements RaftClient {
     PrimitiveProxy proxy;
 
     // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
-    if (primitiveProtocol.recoveryStrategy() == RecoveryStrategy.RECOVER) {
+    if (primitiveProtocol.recoveryStrategy() == Recovery.RECOVER) {
       proxy = new RecoveringPrimitiveProxy(
           clientId,
           primitiveName,

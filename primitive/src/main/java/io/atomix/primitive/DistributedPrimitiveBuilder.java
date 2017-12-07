@@ -41,9 +41,10 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   private Persistence persistence = defaultPersistence();
   private Consistency consistency = defaultConsistency();
   private Replication replication = defaultReplication();
+  private Recovery recovery = defaultRecovery();
   private int numBackups = 2;
   private int maxRetries;
-  private Duration retryDelay;
+  private Duration retryDelay = Duration.ofMillis(100);
 
   public DistributedPrimitiveBuilder(PrimitiveType type, String name) {
     this.type = checkNotNull(type, "type cannot be null");
@@ -132,6 +133,19 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   @SuppressWarnings("unchecked")
   public B withReplication(Replication replication) {
     this.replication = checkNotNull(replication, "replication cannot be null");
+    return (B) this;
+  }
+
+  /**
+   * Sets the primitive recovery strategy.
+   *
+   * @param recovery the primitive recovery strategy
+   * @return the primitive builder
+   * @throws NullPointerException if the recovery strategy is null
+   */
+  @SuppressWarnings("unchecked")
+  public B withRecovery(Recovery recovery) {
+    this.recovery = checkNotNull(recovery, "recovery cannot be null");
     return (B) this;
   }
 
@@ -270,6 +284,24 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    */
   public Replication replication() {
     return replication;
+  }
+
+  /**
+   * Returns the recovery strategy.
+   *
+   * @return the recovery strategy
+   */
+  public Recovery recovery() {
+    return recovery;
+  }
+
+  /**
+   * Returns the default recovery strategy.
+   *
+   * @return the default recovery strategy
+   */
+  protected Recovery defaultRecovery() {
+    return Recovery.RECOVER;
   }
 
   /**

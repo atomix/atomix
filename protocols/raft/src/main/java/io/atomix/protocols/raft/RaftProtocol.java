@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.Recovery;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RecoveryStrategy;
 
 import java.time.Duration;
 import java.util.concurrent.Executor;
@@ -57,7 +57,7 @@ public class RaftProtocol implements PrimitiveProtocol {
   private final Duration maxTimeout;
   private final ReadConsistency readConsistency;
   private final CommunicationStrategy communicationStrategy;
-  private final RecoveryStrategy recoveryStrategy;
+  private final Recovery recoveryStrategy;
   private final int maxRetries;
   private final Duration retryDelay;
   private final Executor executor;
@@ -68,7 +68,7 @@ public class RaftProtocol implements PrimitiveProtocol {
       Duration maxTimeout,
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
-      RecoveryStrategy recoveryStrategy,
+      Recovery recoveryStrategy,
       int maxRetries,
       Duration retryDelay,
       Executor executor) {
@@ -134,7 +134,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    *
    * @return the recovery strategy
    */
-  public RecoveryStrategy recoveryStrategy() {
+  public Recovery recoveryStrategy() {
     return recoveryStrategy;
   }
 
@@ -173,7 +173,7 @@ public class RaftProtocol implements PrimitiveProtocol {
     private Duration maxTimeout = Duration.ofSeconds(30);
     private ReadConsistency readConsistency = ReadConsistency.SEQUENTIAL;
     private CommunicationStrategy communicationStrategy = CommunicationStrategy.LEADER;
-    private RecoveryStrategy recoveryStrategy = RecoveryStrategy.RECOVER;
+    private Recovery recoveryStrategy = Recovery.RECOVER;
     private int maxRetries = 0;
     private Duration retryDelay = Duration.ofMillis(100);
     private Executor executor;
@@ -232,7 +232,7 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @param recoveryStrategy the recovery strategy
      * @return the Raft protocol builder
      */
-    public Builder withRecoveryStrategy(RecoveryStrategy recoveryStrategy) {
+    public Builder withRecoveryStrategy(Recovery recoveryStrategy) {
       this.recoveryStrategy = checkNotNull(recoveryStrategy, "recoveryStrategy cannot be null");
       return this;
     }

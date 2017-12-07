@@ -18,6 +18,7 @@ package io.atomix.generator.impl;
 import io.atomix.counter.impl.AtomicCounterProxy;
 import io.atomix.generator.AsyncAtomicIdGenerator;
 import io.atomix.generator.AtomicIdGeneratorType;
+import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.session.ManagedSessionIdService;
@@ -26,7 +27,6 @@ import io.atomix.primitive.session.SessionIdService;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RecoveryStrategy;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -63,7 +63,7 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
             .withMaxTimeout(Duration.ofSeconds(5))
             .withReadConsistency(ReadConsistency.LINEARIZABLE)
             .withCommunicationStrategy(CommunicationStrategy.LEADER)
-            .withRecoveryStrategy(RecoveryStrategy.RECOVER)
+            .withRecoveryStrategy(Recovery.RECOVER)
             .withMaxRetries(5)
             .build());
     return proxy.open()

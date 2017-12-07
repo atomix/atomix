@@ -23,6 +23,7 @@ import io.atomix.primitive.Replication;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
 
@@ -85,7 +86,13 @@ public abstract class AtomicCounterBuilder
     return RaftProtocol.builder()
         .withMinTimeout(Duration.ofSeconds(5))
         .withMaxTimeout(Duration.ofSeconds(30))
-        .withReadConsistency(readConsistency == Consistency.LINEARIZABLE ? ReadConsistency.LINEARIZABLE : ReadConsistency.SEQUENTIAL)
+        .withReadConsistency(readConsistency == Consistency.LINEARIZABLE
+            ? ReadConsistency.LINEARIZABLE
+            : ReadConsistency.SEQUENTIAL)
+        .withCommunicationStrategy(readConsistency == Consistency.SEQUENTIAL
+            ? CommunicationStrategy.FOLLOWERS
+            : CommunicationStrategy.LEADER)
+        .withRecoveryStrategy(recovery())
         .withMaxRetries(maxRetries())
         .withRetryDelay(retryDelay())
         .build();
@@ -95,6 +102,7 @@ public abstract class AtomicCounterBuilder
     return MultiPrimaryProtocol.builder()
         .withConsistency(consistency)
         .withReplication(replication)
+        .withRecovery(recovery())
         .withBackups(backups())
         .withMaxRetries(maxRetries())
         .withRetryDelay(retryDelay())
