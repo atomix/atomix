@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.session.SessionId;
 
 import java.util.Set;
@@ -35,7 +35,6 @@ public final class RaftProxyState {
   private final PrimitiveType primitiveType;
   private final long timeout;
   private volatile PrimitiveProxy.State state = PrimitiveProxy.State.CONNECTED;
-  private volatile Long suspendedTime;
   private volatile long commandRequest;
   private volatile long commandResponse;
   private volatile long responseIndex;
@@ -114,18 +113,7 @@ public final class RaftProxyState {
   public void setState(PrimitiveProxy.State state) {
     if (this.state != state) {
       this.state = state;
-      if (state == PrimitiveProxy.State.SUSPENDED) {
-        if (suspendedTime == null) {
-          suspendedTime = System.currentTimeMillis();
-        }
-      } else {
-        suspendedTime = null;
-      }
       changeListeners.forEach(l -> l.accept(state));
-    } else if (this.state == PrimitiveProxy.State.SUSPENDED) {
-      if (System.currentTimeMillis() - suspendedTime > timeout) {
-        setState(PrimitiveProxy.State.CLOSED);
-      }
     }
   }
 
