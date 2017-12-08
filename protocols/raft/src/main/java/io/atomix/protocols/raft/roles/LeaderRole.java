@@ -193,6 +193,7 @@ public final class LeaderRole extends ActiveRole {
    * Starts checking for session heartbeat timeouts.
    */
   private void startHeartbeatTimer() {
+    raft.setLastHeartbeatTime();
     raft.getSessions().getSessions().forEach(s -> s.resetHeartbeats());
     log.trace("Starting heartbeat timers");
     raft.getSessions().getSessions().stream()
