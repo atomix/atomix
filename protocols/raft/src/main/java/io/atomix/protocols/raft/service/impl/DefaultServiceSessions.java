@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.service.impl;
 
+import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionListener;
@@ -24,12 +25,14 @@ import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * State machine sessions.
  */
 class DefaultServiceSessions implements Sessions {
   private final PrimitiveId primitiveId;
+  private final Set<SessionListener> listeners = Sets.newIdentityHashSet();
   private final RaftSessionRegistry sessionManager;
 
   public DefaultServiceSessions(PrimitiveId primitiveId, RaftSessionRegistry sessionManager) {
@@ -43,7 +46,9 @@ class DefaultServiceSessions implements Sessions {
    * @param session The session to add.
    */
   void openSession(RaftSession session) {
-    sessionManager.registerSession(session);
+    session.open();
+    sessionManager.addSession(session);
+    listeners.forEach(l -> l.onOpen(session));
   }
 
   /**
@@ -52,7 +57,9 @@ class DefaultServiceSessions implements Sessions {
    * @param session The session to remove.
    */
   void expireSession(RaftSession session) {
-    sessionManager.expireSession(session.sessionId());
+    session.expire();
+    sessionManager.removeSession(session.sessionId());
+    listeners.forEach(l -> l.onExpire(session));
   }
 
   /**
@@ -61,7 +68,9 @@ class DefaultServiceSessions implements Sessions {
    * @param session The session to remove.
    */
   void closeSession(RaftSession session) {
-    sessionManager.closeSession(session.sessionId());
+    session.close();
+    sessionManager.removeSession(session.sessionId());
+    listeners.forEach(l -> l.onClose(session));
   }
 
   /**
@@ -75,18 +84,19 @@ class DefaultServiceSessions implements Sessions {
 
   @Override
   public Session getSession(long sessionId) {
-    return sessionManager.getSession(sessionId);
+    RaftSession session = sessionManager.getSession(sessionId);
+    return session != null && session.getState().active() ? session : null;
   }
 
   @Override
   public Sessions addListener(SessionListener listener) {
-    sessionManager.addListener(primitiveId, listener);
+    listeners.add(listener);
     return this;
   }
 
   @Override
   public Sessions removeListener(SessionListener listener) {
-    sessionManager.removeListener(primitiveId, listener);
+    listeners.remove(listener);
     return this;
   }
 

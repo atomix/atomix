@@ -213,7 +213,7 @@ public class DefaultServiceContext implements ServiceContext {
     for (RaftSession session : sessions.getSessions()) {
       if (session.isTimedOut(timestamp)) {
         log.debug("Session expired in {} milliseconds: {}", timestamp - session.getLastUpdated(), session);
-        log.debug("Closing session {}", session.sessionId());
+        session.expire();
         sessions.expireSession(session);
       }
     }
@@ -392,8 +392,8 @@ public class DefaultServiceContext implements ServiceContext {
     serviceExecutor.execute(() -> {
       log.debug("Opening session {}", session.sessionId());
 
-      // Open the session at the current timestamp.
-      session.open(timestamp);
+      // Update the state machine index/timestamp.
+      tick(index, timestamp);
 
       // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
       maybeInstallSnapshot(index);

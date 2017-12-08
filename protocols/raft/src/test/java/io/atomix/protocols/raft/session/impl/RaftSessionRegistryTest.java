@@ -17,10 +17,7 @@ package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.primitive.session.SessionListener;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
@@ -30,15 +27,9 @@ import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.junit.Test;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,60 +38,17 @@ import static org.mockito.Mockito.when;
  */
 public class RaftSessionRegistryTest {
 
-  /**
-   * Tests that the same session can be registered twice without replacing the original session.
-   */
   @Test
-  public void testRegisterIdempotent() throws Exception {
-    RaftSessionRegistry sessionManager = new RaftSessionRegistry();
-    RaftSession session1 = createSession(1);
-    RaftSession session2 = createSession(1);
-    sessionManager.registerSession(session1);
-    sessionManager.registerSession(session2);
-    assertSame(session1, sessionManager.getSession(1));
-  }
-
-  @Test
-  public void testUnregisterSession() throws Exception {
+  public void testAddRemoveSession() throws Exception {
     RaftSessionRegistry sessionManager = new RaftSessionRegistry();
     RaftSession session = createSession(1);
-    sessionManager.registerSession(session);
+    sessionManager.addSession(session);
     assertNotNull(sessionManager.getSession(1));
+    assertEquals(0, sessionManager.getSessions(PrimitiveId.from(1)).size());
+    session.open();
     assertEquals(1, sessionManager.getSessions(PrimitiveId.from(1)).size());
-    sessionManager.closeSession(SessionId.from(1));
+    sessionManager.removeSession(SessionId.from(1));
     assertNull(sessionManager.getSession(1));
-  }
-
-  @Test
-  public void testSessionListeners() throws Exception {
-    RaftSessionRegistry sessionManager = new RaftSessionRegistry();
-    TestSessionListener listener = new TestSessionListener();
-    sessionManager.addListener(PrimitiveId.from(1), listener);
-
-    RaftSession session1 = createSession(1);
-    sessionManager.registerSession(session1);
-    assertTrue(listener.eventReceived());
-    assertTrue(listener.isOpened());
-    sessionManager.closeSession(session1.sessionId());
-    assertTrue(listener.eventReceived());
-    assertTrue(listener.isClosed());
-
-    RaftSession session2 = createSession(2);
-    sessionManager.registerSession(session2);
-    assertTrue(listener.eventReceived());
-    assertTrue(listener.isOpened());
-    sessionManager.expireSession(session2.sessionId());
-    assertTrue(listener.eventReceived());
-    assertTrue(listener.isExpired());
-    sessionManager.expireSession(session2.sessionId());
-    assertFalse(listener.eventReceived());
-
-    RaftSession session3 = createSession(3);
-    sessionManager.registerSession(session3);
-    assertTrue(listener.eventReceived());
-    assertTrue(listener.isOpened());
-    sessionManager.registerSession(session3);
-    assertFalse(listener.eventReceived());
   }
 
   private RaftSession createSession(long sessionId) {
@@ -124,44 +72,5 @@ public class RaftSessionRegistryTest {
         context,
         server,
         mock(ThreadContextFactory.class));
-  }
-
-  private class TestSessionListener implements SessionListener {
-    private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
-
-    @Override
-    public void onOpen(Session session) {
-      queue.add("open");
-    }
-
-    @Override
-    public void onExpire(Session session) {
-      queue.add("expire");
-    }
-
-    @Override
-    public void onClose(Session session) {
-      queue.add("close");
-    }
-
-    public boolean eventReceived() {
-      return !queue.isEmpty();
-    }
-
-    public String event() throws InterruptedException {
-      return queue.take();
-    }
-
-    public boolean isOpened() throws InterruptedException {
-      return event().equals("open");
-    }
-
-    public boolean isClosed() throws InterruptedException {
-      return event().equals("close");
-    }
-
-    public boolean isExpired() throws InterruptedException {
-      return event().equals("expire");
-    }
   }
 }

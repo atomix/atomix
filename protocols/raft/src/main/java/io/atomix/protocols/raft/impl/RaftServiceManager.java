@@ -236,7 +236,7 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Restores the sessions associated with the given snapshot and service.
    *
-   * @param reader the snapshot reader
+   * @param reader  the snapshot reader
    * @param service the restored service
    */
   private void restoreSessions(SnapshotReader reader, DefaultServiceContext service) {
@@ -250,7 +250,7 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Restores the next session in the given snapshot for the given service.
    *
-   * @param reader the snapshot reader
+   * @param reader  the snapshot reader
    * @param service the restored service
    */
   private void restoreSession(SnapshotReader reader, DefaultServiceContext service) {
@@ -278,7 +278,7 @@ public class RaftServiceManager implements AutoCloseable {
     session.setEventIndex(reader.readLong());
     session.setLastCompleted(reader.readLong());
     session.setLastApplied(reader.snapshot().index());
-    raft.getSessions().registerSession(session);
+    raft.getSessions().addSession(session);
   }
 
   /**
@@ -436,7 +436,8 @@ public class RaftServiceManager implements AutoCloseable {
         service,
         raft,
         threadContextFactory);
-    raft.getSessions().registerSession(session);
+    session.setLastUpdated(entry.entry().timestamp());
+    raft.getSessions().addSession(session);
     return service.openSession(entry.index(), entry.entry().timestamp(), session);
   }
 
