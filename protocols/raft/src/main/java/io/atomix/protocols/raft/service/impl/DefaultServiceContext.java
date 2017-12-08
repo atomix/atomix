@@ -213,7 +213,6 @@ public class DefaultServiceContext implements ServiceContext {
     for (RaftSession session : sessions.getSessions()) {
       if (session.isTimedOut(timestamp)) {
         log.debug("Session expired in {} milliseconds: {}", timestamp - session.getLastUpdated(), session);
-        session.expire();
         sessions.expireSession(session);
       }
     }
@@ -278,10 +277,10 @@ public class DefaultServiceContext implements ServiceContext {
               readConsistency,
               minTimeout,
               maxTimeout,
+              sessionTimestamp,
               this,
               raft,
               threadContextFactory);
-          session.setLastUpdated(sessionTimestamp);
           session.setRequestSequence(reader.readLong());
           session.setCommandSequence(reader.readLong());
           session.setEventIndex(reader.readLong());

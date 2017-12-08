@@ -69,6 +69,7 @@ public class RaftSessionRegistryTest {
         ReadConsistency.LINEARIZABLE,
         100,
         5000,
+        System.currentTimeMillis(),
         context,
         server,
         mock(ThreadContextFactory.class));
