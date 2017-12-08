@@ -564,9 +564,8 @@ public class RaftSessionContext implements RaftSession {
   /**
    * Opens the session.
    */
-  public void open(long timestamp) {
+  public void open() {
     setState(State.OPEN);
-    setLastUpdated(timestamp);
     protocol.registerResetListener(sessionId, request -> resendEvents(request.index()), context.executor());
   }
 
