@@ -28,7 +28,7 @@ import java.util.List;
  * loses its connection or cluster membership changes, the client will request a list of servers to
  * which the client can connect. The address list should be prioritized.
  */
-public enum  CommunicationStrategy {
+public enum CommunicationStrategy {
 
   /**
    * The {@code ANY} selection strategy allows the client to connect to any server in the cluster. Clients
@@ -56,10 +56,15 @@ public enum  CommunicationStrategy {
   LEADER {
     @Override
     public List<MemberId> selectConnections(MemberId leader, List<MemberId> members) {
-      if (leader != null) {
-        return Collections.singletonList(leader);
-      }
       Collections.shuffle(members);
+      if (leader != null) {
+        List<MemberId> sortedMembers = new ArrayList<>(members.size());
+        sortedMembers.add(leader);
+        members.stream()
+            .filter(member -> !member.equals(leader))
+            .forEach(member -> sortedMembers.add(member));
+        return members;
+      }
       return members;
     }
   },
@@ -75,14 +80,13 @@ public enum  CommunicationStrategy {
     @Override
     public List<MemberId> selectConnections(MemberId leader, List<MemberId> members) {
       Collections.shuffle(members);
-      if (leader != null && members.size() > 1) {
-        List<MemberId> results = new ArrayList<>(members.size());
-        for (MemberId memberId : members) {
-          if (!memberId.equals(leader)) {
-            results.add(memberId);
-          }
-        }
-        return results;
+      if (leader != null) {
+        List<MemberId> sortedMembers = new ArrayList<>(members.size());
+        members.stream()
+            .filter(member -> !member.equals(leader))
+            .forEach(member -> sortedMembers.add(member));
+        sortedMembers.add(leader);
+        return members;
       }
       return members;
     }
