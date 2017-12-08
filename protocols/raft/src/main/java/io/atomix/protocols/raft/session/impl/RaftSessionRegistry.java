@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.primitive.session.SessionListener;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.primitive.session.SessionListener;
 
 import java.util.Collection;
 import java.util.Map;
@@ -111,6 +111,7 @@ public class RaftSessionRegistry {
   public Collection<RaftSession> getSessions(PrimitiveId primitiveId) {
     return sessions.values().stream()
         .filter(session -> session.getService().serviceId().equals(primitiveId))
+        .filter(session -> session.getState().active())
         .collect(Collectors.toSet());
   }
 
@@ -126,7 +127,7 @@ public class RaftSessionRegistry {
   /**
    * Adds a session listener.
    *
-   * @param primitiveId the service ID for which to listen to sessions
+   * @param primitiveId     the service ID for which to listen to sessions
    * @param sessionListener the session listener
    */
   public void addListener(PrimitiveId primitiveId, SessionListener sessionListener) {
@@ -137,7 +138,7 @@ public class RaftSessionRegistry {
   /**
    * Removes a session listener.
    *
-   * @param primitiveId the service ID with which the listener is associated
+   * @param primitiveId     the service ID with which the listener is associated
    * @param sessionListener the session listener
    */
   public void removeListener(PrimitiveId primitiveId, SessionListener sessionListener) {
