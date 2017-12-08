@@ -90,6 +90,7 @@ public class RaftSessionContext implements RaftSession {
       ReadConsistency readConsistency,
       long minTimeout,
       long maxTimeout,
+      long lastUpdated,
       DefaultServiceContext context,
       RaftContext server,
       ThreadContextFactory threadContextFactory) {
@@ -100,6 +101,7 @@ public class RaftSessionContext implements RaftSession {
     this.readConsistency = readConsistency;
     this.minTimeout = minTimeout;
     this.maxTimeout = maxTimeout;
+    this.lastUpdated = lastUpdated;
     this.eventIndex = sessionId.id();
     this.completeIndex = sessionId.id();
     this.lastApplied = sessionId.id();

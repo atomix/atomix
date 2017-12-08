@@ -269,10 +269,10 @@ public class RaftServiceManager implements AutoCloseable {
         readConsistency,
         minTimeout,
         maxTimeout,
+        sessionTimestamp,
         service,
         raft,
         threadContextFactory);
-    session.setLastUpdated(sessionTimestamp);
     session.setRequestSequence(reader.readLong());
     session.setCommandSequence(reader.readLong());
     session.setEventIndex(reader.readLong());
@@ -434,10 +434,10 @@ public class RaftServiceManager implements AutoCloseable {
         entry.entry().readConsistency(),
         entry.entry().minTimeout(),
         entry.entry().maxTimeout(),
+        entry.entry().timestamp(),
         service,
         raft,
         threadContextFactory);
-    session.setLastUpdated(entry.entry().timestamp());
     raft.getSessions().addSession(session);
     return service.openSession(entry.index(), entry.entry().timestamp(), session);
   }
