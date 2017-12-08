@@ -16,14 +16,11 @@
 package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.protocols.raft.service.ServiceId;
-import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 /**
@@ -31,46 +28,19 @@ import java.util.stream.Collectors;
  */
 public class RaftSessionRegistry {
   private final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
-  private final Map<ServiceId, Set<RaftSessionListener>> listeners = new ConcurrentHashMap<>();
 
   /**
-   * Registers a session.
+   * Adds a session.
    */
-  public void registerSession(RaftSessionContext session) {
-    if (sessions.putIfAbsent(session.sessionId().id(), session) == null) {
-      Set<RaftSessionListener> listeners = this.listeners.get(session.getService().serviceId());
-      if (listeners != null) {
-        listeners.forEach(l -> l.onOpen(session));
-      }
-    }
+  public void addSession(RaftSessionContext session) {
+    sessions.put(session.sessionId().id(), session);
   }
 
   /**
-   * Expires a session.
+   * Removes a session.
    */
-  public void expireSession(SessionId sessionId) {
-    RaftSessionContext session = sessions.remove(sessionId.id());
-    if (session != null) {
-      Set<RaftSessionListener> listeners = this.listeners.get(session.getService().serviceId());
-      if (listeners != null) {
-        listeners.forEach(l -> l.onExpire(session));
-      }
-      session.expire();
-    }
-  }
-
-  /**
-   * Closes a session.
-   */
-  public void closeSession(SessionId sessionId) {
-    RaftSessionContext session = sessions.remove(sessionId.id());
-    if (session != null) {
-      Set<RaftSessionListener> listeners = this.listeners.get(session.getService().serviceId());
-      if (listeners != null) {
-        listeners.forEach(l -> l.onClose(session));
-      }
-      session.close();
-    }
+  public void removeSession(SessionId sessionId) {
+    sessions.remove(sessionId.id());
   }
 
   /**
@@ -111,6 +81,7 @@ public class RaftSessionRegistry {
   public Collection<RaftSessionContext> getSessions(ServiceId serviceId) {
     return sessions.values().stream()
         .filter(session -> session.getService().serviceId().equals(serviceId))
+        .filter(session -> session.getState().active())
         .collect(Collectors.toSet());
   }
 
@@ -121,32 +92,5 @@ public class RaftSessionRegistry {
    */
   public void removeSessions(ServiceId serviceId) {
     sessions.entrySet().removeIf(e -> e.getValue().getService().serviceId().equals(serviceId));
-  }
-
-  /**
-   * Adds a session listener.
-   *
-   * @param serviceId the service ID for which to listen to sessions
-   * @param sessionListener the session listener
-   */
-  public void addListener(ServiceId serviceId, RaftSessionListener sessionListener) {
-    Set<RaftSessionListener> sessionListeners = listeners.computeIfAbsent(serviceId, k -> new CopyOnWriteArraySet<>());
-    sessionListeners.add(sessionListener);
-  }
-
-  /**
-   * Removes a session listener.
-   *
-   * @param serviceId the service ID with which the listener is associated
-   * @param sessionListener the session listener
-   */
-  public void removeListener(ServiceId serviceId, RaftSessionListener sessionListener) {
-    Set<RaftSessionListener> sessionListeners = listeners.get(serviceId);
-    if (sessionListeners != null) {
-      sessionListeners.remove(sessionListener);
-      if (sessionListeners.isEmpty()) {
-        listeners.remove(serviceId);
-      }
-    }
   }
 }

@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.service.impl;
 
+import com.google.common.collect.Sets;
 import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
@@ -24,12 +25,14 @@ import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * State machine sessions.
  */
 class DefaultServiceSessions implements RaftSessions {
   private final ServiceId serviceId;
+  private final Set<RaftSessionListener> listeners = Sets.newIdentityHashSet();
   private final RaftSessionRegistry sessionManager;
 
   public DefaultServiceSessions(ServiceId serviceId, RaftSessionRegistry sessionManager) {
@@ -43,7 +46,9 @@ class DefaultServiceSessions implements RaftSessions {
    * @param session The session to add.
    */
   void openSession(RaftSessionContext session) {
-    sessionManager.registerSession(session);
+    session.open();
+    sessionManager.addSession(session);
+    listeners.forEach(l -> l.onOpen(session));
   }
 
   /**
@@ -52,7 +57,9 @@ class DefaultServiceSessions implements RaftSessions {
    * @param session The session to remove.
    */
   void expireSession(RaftSessionContext session) {
-    sessionManager.expireSession(session.sessionId());
+    session.expire();
+    sessionManager.removeSession(session.sessionId());
+    listeners.forEach(l -> l.onExpire(session));
   }
 
   /**
@@ -61,7 +68,9 @@ class DefaultServiceSessions implements RaftSessions {
    * @param session The session to remove.
    */
   void closeSession(RaftSessionContext session) {
-    sessionManager.closeSession(session.sessionId());
+    session.close();
+    sessionManager.removeSession(session.sessionId());
+    listeners.forEach(l -> l.onClose(session));
   }
 
   /**
@@ -75,18 +84,19 @@ class DefaultServiceSessions implements RaftSessions {
 
   @Override
   public RaftSession getSession(long sessionId) {
-    return sessionManager.getSession(sessionId);
+    RaftSession session = sessionManager.getSession(sessionId);
+    return session != null && session.getState().active() ? session : null;
   }
 
   @Override
   public RaftSessions addListener(RaftSessionListener listener) {
-    sessionManager.addListener(serviceId, listener);
+    listeners.add(listener);
     return this;
   }
 
   @Override
   public RaftSessions removeListener(RaftSessionListener listener) {
-    sessionManager.removeListener(serviceId, listener);
+    listeners.remove(listener);
     return this;
   }
 
