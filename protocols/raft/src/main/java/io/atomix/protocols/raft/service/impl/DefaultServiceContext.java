@@ -389,8 +389,8 @@ public class DefaultServiceContext implements ServiceContext {
     serviceExecutor.execute(() -> {
       log.debug("Opening session {}", session.sessionId());
 
-      // Update the session's timestamp to prevent it from being expired.
-      session.setLastUpdated(timestamp);
+      // Open the session at the current timestamp.
+      session.open(timestamp);
 
       // Update the state machine index/timestamp.
       tick(index, timestamp);
@@ -473,7 +473,7 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Completes a keep-alive.
    *
-   * @param index the keep-alive index
+   * @param index     the keep-alive index
    * @param timestamp the keep-alive timestamp
    * @return future to be completed once the keep alive is completed
    */
@@ -500,7 +500,7 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Keeps all sessions alive using the given timestamp.
    *
-   * @param index the index of the timestamp
+   * @param index     the index of the timestamp
    * @param timestamp the timestamp with which to reset session timeouts
    * @return future to be completed once all sessions have been preserved
    */
@@ -570,7 +570,7 @@ public class DefaultServiceContext implements ServiceContext {
    * @param timestamp The timestamp of the command.
    * @param sequence  The command sequence number.
    * @param session   The session that submitted the command.
-   * @param operation   The command to execute.
+   * @param operation The command to execute.
    * @return A future to be completed with the command result.
    */
   public CompletableFuture<OperationResult> executeCommand(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {
@@ -594,6 +594,7 @@ public class DefaultServiceContext implements ServiceContext {
 
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
+      log.warn("Session not open: {}", session);
       future.completeExceptionally(new RaftException.UnknownSession("Unknown session: " + session.sessionId()));
       return;
     }
@@ -602,6 +603,7 @@ public class DefaultServiceContext implements ServiceContext {
     // we've received a command that was previously applied to the state machine. Ensure linearizability by
     // returning the cached response instead of applying it to the user defined state machine.
     if (sequence > 0 && sequence < session.nextCommandSequence()) {
+      log.trace("Returning cached result for command with sequence number {} < {}", sequence, session.nextCommandSequence());
       sequenceCommand(index, sequence, session, future);
     }
     // If we've made it this far, the command must have been applied in the proper order as sequenced by the
@@ -666,7 +668,7 @@ public class DefaultServiceContext implements ServiceContext {
    * @param sequence  The query sequence number.
    * @param timestamp The timestamp of the query.
    * @param session   The session that submitted the query.
-   * @param operation     The query to execute.
+   * @param operation The query to execute.
    * @return A future to be completed with the query result.
    */
   public CompletableFuture<OperationResult> executeQuery(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation) {

@@ -65,7 +65,7 @@ public class RaftSessionContext implements RaftSession {
   private final DefaultServiceContext context;
   private final RaftContext server;
   private final ThreadContext eventExecutor;
-  private volatile State state = State.OPEN;
+  private volatile State state = State.CLOSED;
   private volatile long lastUpdated;
   private long lastHeartbeat;
   private PhiAccrualFailureDetector failureDetector = new PhiAccrualFailureDetector();
@@ -112,7 +112,6 @@ public class RaftSessionContext implements RaftSession {
         .add("type", context.serviceType())
         .add("name", context.serviceName())
         .build());
-    protocol.registerResetListener(sessionId, request -> resendEvents(request.index()), context.executor());
   }
 
   @Override
@@ -560,6 +559,15 @@ public class RaftSessionContext implements RaftSession {
         protocol.publish(member, request);
       });
     }
+  }
+
+  /**
+   * Opens the session.
+   */
+  public void open(long timestamp) {
+    setState(State.OPEN);
+    setLastUpdated(timestamp);
+    protocol.registerResetListener(sessionId, request -> resendEvents(request.index()), context.executor());
   }
 
   /**

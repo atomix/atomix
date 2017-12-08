@@ -111,6 +111,7 @@ public class RaftSessionRegistry {
   public Collection<RaftSessionContext> getSessions(ServiceId serviceId) {
     return sessions.values().stream()
         .filter(session -> session.getService().serviceId().equals(serviceId))
+        .filter(session -> session.getState().active())
         .collect(Collectors.toSet());
   }
 
@@ -126,7 +127,7 @@ public class RaftSessionRegistry {
   /**
    * Adds a session listener.
    *
-   * @param serviceId the service ID for which to listen to sessions
+   * @param serviceId       the service ID for which to listen to sessions
    * @param sessionListener the session listener
    */
   public void addListener(ServiceId serviceId, RaftSessionListener sessionListener) {
@@ -137,7 +138,7 @@ public class RaftSessionRegistry {
   /**
    * Removes a session listener.
    *
-   * @param serviceId the service ID with which the listener is associated
+   * @param serviceId       the service ID with which the listener is associated
    * @param sessionListener the session listener
    */
   public void removeListener(ServiceId serviceId, RaftSessionListener sessionListener) {
