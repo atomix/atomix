@@ -33,7 +33,7 @@ public class RaftSessionRegistry {
    * Adds a session.
    */
   public void addSession(RaftSession session) {
-    sessions.put(session.sessionId().id(), session);
+    sessions.putIfAbsent(session.sessionId().id(), session);
   }
 
   /**
