@@ -54,6 +54,8 @@ import java.util.Queue;
  * of inactivity in the session can still be completed upon reception since the event is guaranteed not to have
  * occurred concurrently with any other operation. If requests for the session are outstanding, the event is placed
  * in a queue and the algorithm for checking sequenced responses is run again.
+ *
+ * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 final class RaftProxySequencer {
   private final Logger log;
@@ -176,46 +178,30 @@ final class RaftProxySequencer {
     // If the response is null, that indicates an exception occurred. The best we can do is complete
     // the response in sequential order.
     if (response == null) {
-      log.trace("Completing failed request");
+      log.trace("{} - Completing failed request", state.getSessionId());
       callback.run();
       return true;
     }
 
     // If the response's event index is greater than the current event index, that indicates that events that were
     // published prior to the response have not yet been completed. Attempt to complete pending events.
-    long responseEventIndex = response.eventIndex();
-    if (responseEventIndex > eventIndex) {
+    if (response.eventIndex() > eventIndex) {
       // For each pending event with an eventIndex less than or equal to the response eventIndex, complete the event.
       // This is safe since we know that sequenced responses should see sequential order of events.
       EventCallback eventCallback = eventCallbacks.peek();
-      while (eventCallback != null && eventCallback.request.eventIndex() <= responseEventIndex) {
+      while (eventCallback != null && eventCallback.request.eventIndex() <= response.eventIndex()) {
         eventCallbacks.remove();
-        log.trace("Completing {}", eventCallback.request);
+        log.trace("{} - Completing event {}", state.getSessionId(), eventCallback.request);
         eventCallback.run();
         eventIndex = eventCallback.request.eventIndex();
         eventCallback = eventCallbacks.peek();
-      }
-
-      // If the response event index is still greater than the last sequenced event index, check
-      // enqueued events to determine whether any events can be skipped. This is necessary to
-      // ensure that a response with a missing event can still trigger prior events.
-      if (responseEventIndex > eventIndex) {
-        for (EventCallback event : eventCallbacks) {
-          // If the event's previous index is consistent with the current event index and the event
-          // index is greater than the response event index, set the response event index to the
-          // event's previous index.
-          if (event.request.previousIndex() <= eventIndex && event.request.eventIndex() >= response.eventIndex()) {
-            responseEventIndex = event.request.previousIndex();
-            break;
-          }
-        }
       }
     }
 
     // If after completing pending events the eventIndex is greater than or equal to the response's eventIndex, complete the response.
     // Note that the event protocol initializes the eventIndex to the session ID.
-    if (responseEventIndex <= eventIndex || (eventIndex == 0 && responseEventIndex == state.getSessionId().id())) {
-      log.trace("Completing {}", response);
+    if (response.eventIndex() <= eventIndex || (eventIndex == 0 && response.eventIndex() == state.getSessionId().id())) {
+      log.trace("{} - Completing response {}", state.getSessionId(), response);
       callback.run();
       return true;
     } else {
