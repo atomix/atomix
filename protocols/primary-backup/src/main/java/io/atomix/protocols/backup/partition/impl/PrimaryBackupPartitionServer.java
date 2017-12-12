@@ -51,7 +51,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
 
   @Override
   public CompletableFuture<PrimaryBackupPartitionServer> open() {
-    if (managementService.getClusterService().getLocalNode().type() == Node.Type.CORE) {
+    if (managementService.getClusterService().getLocalNode().type() == Node.Type.DATA) {
       synchronized (this) {
         server = buildServer();
       }

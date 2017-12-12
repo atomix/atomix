@@ -128,7 +128,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     }
 
     List<NodeId> sorted = new ArrayList<>(clusterService.getNodes().stream()
-        .filter(node -> node.type() == Node.Type.CORE)
+        .filter(node -> node.type() == Node.Type.DATA)
         .map(Node::id)
         .collect(Collectors.toSet()));
     Collections.sort(sorted);

@@ -48,9 +48,9 @@ public class ClusterMetadata {
       Node localNode,
       Collection<Node> bootstrapNodes) {
     this.name = checkNotNull(name, "name cannot be null");
-    this.localNode = ((DefaultNode) localNode).setType(bootstrapNodes.contains(localNode) ? Type.CORE : Type.CLIENT);
+    this.localNode = ((DefaultNode) localNode).setType(bootstrapNodes.contains(localNode) ? Type.DATA : Type.CLIENT);
     this.bootstrapNodes = bootstrapNodes.stream()
-        .map(node -> ((DefaultNode) node).setType(Type.CORE))
+        .map(node -> ((DefaultNode) node).setType(Type.DATA))
         .collect(Collectors.toList());
   }
 

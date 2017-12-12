@@ -43,9 +43,9 @@ public abstract class Node {
   public enum Type {
 
     /**
-     * Represents a core node.
+     * Represents a data node.
      */
-    CORE,
+    DATA,
 
     /**
      * Represents a client node.

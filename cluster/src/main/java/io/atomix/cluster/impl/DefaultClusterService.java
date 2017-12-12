@@ -88,12 +88,12 @@ public class DefaultClusterService implements ManagedClusterService {
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.localNode = (DefaultNode) clusterMetadata.localNode();
     if (clusterMetadata.bootstrapNodes().contains(localNode)) {
-      localNode.setType(Node.Type.CORE);
+      localNode.setType(Node.Type.DATA);
     } else {
       localNode.setType(Node.Type.CLIENT);
     }
     nodes.put(localNode.id(), localNode);
-    clusterMetadata.bootstrapNodes().forEach(n -> nodes.putIfAbsent(n.id(), ((DefaultNode) n).setType(Node.Type.CORE)));
+    clusterMetadata.bootstrapNodes().forEach(n -> nodes.putIfAbsent(n.id(), ((DefaultNode) n).setType(Node.Type.DATA)));
     messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
   }
 
@@ -184,7 +184,7 @@ public class DefaultClusterService implements ManagedClusterService {
     if (existingNode != null && existingNode.state() == State.ACTIVE) {
       existingNode.setState(State.INACTIVE);
       switch (existingNode.type()) {
-        case CORE:
+        case DATA:
           eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_DEACTIVATED, existingNode)));
           break;
         case CLIENT:
