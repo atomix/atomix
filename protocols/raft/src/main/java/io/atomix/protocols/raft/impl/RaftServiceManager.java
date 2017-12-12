@@ -26,8 +26,8 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftException.UnknownService;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
-import io.atomix.protocols.raft.session.impl.RaftSession;
+import io.atomix.protocols.raft.service.RaftServiceContext;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -225,7 +225,7 @@ public class RaftServiceManager implements AutoCloseable {
 
     // Get or create the service associated with the snapshot.
     logger.debug("Restoring service {} {}", primitiveId, serviceName);
-    DefaultServiceContext service = initializeService(primitiveId, primitiveType, serviceName);
+    RaftServiceContext service = initializeService(primitiveId, primitiveType, serviceName);
     if (service == null) {
       return;
     }
@@ -239,7 +239,7 @@ public class RaftServiceManager implements AutoCloseable {
    * @param reader  the snapshot reader
    * @param service the restored service
    */
-  private void restoreSessions(SnapshotReader reader, DefaultServiceContext service) {
+  private void restoreSessions(SnapshotReader reader, RaftServiceContext service) {
     // Read and create sessions from the snapshot.
     int sessionCount = reader.readInt();
     for (int i = 0; i < sessionCount; i++) {
@@ -253,7 +253,7 @@ public class RaftServiceManager implements AutoCloseable {
    * @param reader  the snapshot reader
    * @param service the restored service
    */
-  private void restoreSession(SnapshotReader reader, DefaultServiceContext service) {
+  private void restoreSession(SnapshotReader reader, RaftServiceContext service) {
     SessionId sessionId = SessionId.from(reader.readLong());
     logger.trace("Restoring session {} for {}", sessionId, service.serviceName());
     NodeId node = NodeId.from(reader.readString());
@@ -288,7 +288,7 @@ public class RaftServiceManager implements AutoCloseable {
    * prior terms, therefore no logic needs to take place.
    */
   private CompletableFuture<Void> applyInitialize(Indexed<InitializeEntry> entry) {
-    for (DefaultServiceContext service : raft.getServices()) {
+    for (RaftServiceContext service : raft.getServices()) {
       service.keepAliveSessions(entry.index(), entry.entry().timestamp());
     }
     return CompletableFuture.completedFuture(null);
@@ -302,7 +302,7 @@ public class RaftServiceManager implements AutoCloseable {
    * entry since it was overwritten by a more recent committed configuration entry.
    */
   private CompletableFuture<Void> applyConfiguration(Indexed<ConfigurationEntry> entry) {
-    for (DefaultServiceContext service : raft.getServices()) {
+    for (RaftServiceContext service : raft.getServices()) {
       service.keepAliveSessions(entry.index(), entry.entry().timestamp());
     }
     return CompletableFuture.completedFuture(null);
@@ -361,7 +361,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Iterate through services and complete keep-alives, causing sessions to be expired if necessary.
-    for (DefaultServiceContext service : raft.getServices()) {
+    for (RaftServiceContext service : raft.getServices()) {
       service.completeKeepAlive(entry.index(), entry.entry().timestamp());
     }
 
@@ -376,9 +376,9 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Gets or initializes a service context.
    */
-  private DefaultServiceContext getOrInitializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName) {
+  private RaftServiceContext getOrInitializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName) {
     // Get the state machine executor or create one if it doesn't already exist.
-    DefaultServiceContext service = raft.getServices().getService(serviceName);
+    RaftServiceContext service = raft.getServices().getService(serviceName);
     if (service == null) {
       service = initializeService(primitiveId, primitiveType, serviceName);
     }
@@ -388,9 +388,9 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Initializes a new service.
    */
-  private DefaultServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName) {
-    DefaultServiceContext oldService = raft.getServices().getService(serviceName);
-    DefaultServiceContext service = new DefaultServiceContext(
+  private RaftServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName) {
+    RaftServiceContext oldService = raft.getServices().getService(serviceName);
+    RaftServiceContext service = new RaftServiceContext(
         primitiveId,
         serviceName,
         primitiveType,
@@ -416,7 +416,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Get the state machine executor or create one if it doesn't already exist.
-    DefaultServiceContext service = getOrInitializeService(
+    RaftServiceContext service = getOrInitializeService(
         PrimitiveId.from(entry.index()),
         raft.getPrimitiveTypes().get(entry.entry().serviceType()),
         entry.entry().serviceName());
@@ -453,7 +453,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     // Get the state machine executor associated with the session and unregister the session.
-    DefaultServiceContext service = session.getService();
+    RaftServiceContext service = session.getService();
     return service.closeSession(entry.index(), entry.entry().timestamp(), session, entry.entry().expired());
   }
 

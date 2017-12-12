@@ -50,7 +50,7 @@ import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.protocols.raft.session.impl.RaftSession;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;

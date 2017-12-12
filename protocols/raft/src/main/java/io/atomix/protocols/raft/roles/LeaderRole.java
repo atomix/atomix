@@ -55,7 +55,7 @@ import io.atomix.protocols.raft.protocol.TransferRequest;
 import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.session.impl.RaftSession;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
 import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;

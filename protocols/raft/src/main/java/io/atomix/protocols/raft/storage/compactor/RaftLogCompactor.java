@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.storage.compactor;
 
 import io.atomix.protocols.raft.impl.RaftContext;
-import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
+import io.atomix.protocols.raft.service.RaftServiceContext;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.OrderedFuture;
@@ -126,7 +126,7 @@ public class RaftLogCompactor {
       // Copy the set of services. We don't need to account for new services that are created during the
       // snapshot/compaction process since we're only deleting segments prior to the creation of all
       // services that existed at the start of compaction.
-      List<DefaultServiceContext> services = new ArrayList<>(raft.getServices().copyValues());
+      List<RaftServiceContext> services = new ArrayList<>(raft.getServices().copyValues());
 
       // We need to ensure that callbacks added to the compaction future are completed in the order in which they
       // were added in order to preserve the order of retries when appending to the log.
@@ -166,7 +166,7 @@ public class RaftLogCompactor {
    * @param force whether to force snapshotting all services to free disk space
    * @return future to be completed once all snapshots have been completed
    */
-  private CompletableFuture<Void> snapshotServices(List<DefaultServiceContext> services, long index, boolean force) {
+  private CompletableFuture<Void> snapshotServices(List<RaftServiceContext> services, long index, boolean force) {
     return snapshotServices(services, index, force, 0, new ArrayList<>());
   }
 
@@ -184,7 +184,7 @@ public class RaftLogCompactor {
    * @return future to be completed once all snapshots have been completed
    */
   private CompletableFuture<Void> snapshotServices(
-      List<DefaultServiceContext> services,
+      List<RaftServiceContext> services,
       long index,
       boolean force,
       int attempt,
@@ -195,7 +195,7 @@ public class RaftLogCompactor {
     }
 
     // Select any service that can be snapshotted.
-    DefaultServiceContext nextService = selectService(services, force);
+    RaftServiceContext nextService = selectService(services, force);
 
     if (nextService != null) {
       // Take a snapshot and then persist the snapshot after some interval. This is done to avoid persisting snapshots
@@ -232,7 +232,7 @@ public class RaftLogCompactor {
    * @return future to be completed once all snapshots have been completed
    */
   private CompletableFuture<Void> rescheduleSnapshots(
-      List<DefaultServiceContext> services,
+      List<RaftServiceContext> services,
       long index,
       boolean force,
       int attempt,
@@ -254,10 +254,10 @@ public class RaftLogCompactor {
    * @param force whether to force snapshotting all services to free disk space
    * @return the service to snapshot or {@code null} if no service can be snapshotted
    */
-  private DefaultServiceContext selectService(List<DefaultServiceContext> services, boolean force) {
-    Iterator<DefaultServiceContext> iterator = services.iterator();
+  private RaftServiceContext selectService(List<RaftServiceContext> services, boolean force) {
+    Iterator<RaftServiceContext> iterator = services.iterator();
     while (iterator.hasNext()) {
-      DefaultServiceContext serviceContext = iterator.next();
+      RaftServiceContext serviceContext = iterator.next();
       if (force || !raft.getStorage().dynamicCompaction() || !serviceContext.isUnderHighLoad()) {
         iterator.remove();
         return serviceContext;
@@ -274,7 +274,7 @@ public class RaftLogCompactor {
    * @param snapshotIndex the index of the snapshot
    * @return future to be completed once the snapshot has been completed
    */
-  private CompletableFuture<Void> scheduleCompletion(DefaultServiceContext serviceContext, long snapshotIndex) {
+  private CompletableFuture<Void> scheduleCompletion(RaftServiceContext serviceContext, long snapshotIndex) {
     ComposableFuture<Void> future = new ComposableFuture<>();
     Duration delay = SNAPSHOT_INTERVAL.plusMillis(random.nextInt((int) SNAPSHOT_INTERVAL.toMillis()));
     threadContext.schedule(delay, () -> serviceContext.completeSnapshot(snapshotIndex).whenComplete(future));

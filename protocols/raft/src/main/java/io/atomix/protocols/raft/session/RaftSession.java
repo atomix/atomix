@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.session;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
@@ -29,7 +29,7 @@ import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
+import io.atomix.protocols.raft.service.RaftServiceContext;
 import io.atomix.utils.TimestampPrinter;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -62,7 +62,7 @@ public class RaftSession implements Session {
   private final long minTimeout;
   private final long maxTimeout;
   private final RaftServerProtocol protocol;
-  private final DefaultServiceContext context;
+  private final RaftServiceContext context;
   private final RaftContext server;
   private final ThreadContext eventExecutor;
   private volatile State state = State.CLOSED;
@@ -91,7 +91,7 @@ public class RaftSession implements Session {
       long minTimeout,
       long maxTimeout,
       long lastUpdated,
-      DefaultServiceContext context,
+      RaftServiceContext context,
       RaftContext server,
       ThreadContextFactory threadContextFactory) {
     this.sessionId = sessionId;
@@ -160,7 +160,7 @@ public class RaftSession implements Session {
    *
    * @return The state machine context associated with the session.
    */
-  public DefaultServiceContext getService() {
+  public RaftServiceContext getService() {
     return context;
   }
 

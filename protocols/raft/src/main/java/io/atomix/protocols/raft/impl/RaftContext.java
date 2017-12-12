@@ -33,7 +33,7 @@ import io.atomix.protocols.raft.roles.LeaderRole;
 import io.atomix.protocols.raft.roles.PassiveRole;
 import io.atomix.protocols.raft.roles.PromotableRole;
 import io.atomix.protocols.raft.roles.RaftRole;
-import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
+import io.atomix.protocols.raft.session.RaftSessionRegistry;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.compactor.RaftLogCompactor;
 import io.atomix.protocols.raft.storage.log.RaftLog;

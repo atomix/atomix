@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.protocols.raft.service.impl;
+package io.atomix.protocols.raft.service;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveId;
@@ -32,7 +32,7 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftContext;
-import io.atomix.protocols.raft.session.impl.RaftSession;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
@@ -58,7 +58,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft server state machine executor.
  */
-public class DefaultServiceContext implements ServiceContext {
+public class RaftServiceContext implements ServiceContext {
 
   private static final int LOAD_WINDOW_SIZE = 5;
   private static final int HIGH_LOAD_THRESHOLD = 50;
@@ -69,7 +69,7 @@ public class DefaultServiceContext implements ServiceContext {
   private final PrimitiveType primitiveType;
   private final PrimitiveService service;
   private final RaftContext raft;
-  private final DefaultServiceSessions sessions;
+  private final RaftSessions sessions;
   private final ThreadContext serviceExecutor;
   private final ThreadContext snapshotExecutor;
   private final ThreadContextFactory threadContextFactory;
@@ -92,7 +92,7 @@ public class DefaultServiceContext implements ServiceContext {
     }
   };
 
-  public DefaultServiceContext(
+  public RaftServiceContext(
       PrimitiveId primitiveId,
       String serviceName,
       PrimitiveType primitiveType,
@@ -104,7 +104,7 @@ public class DefaultServiceContext implements ServiceContext {
     this.primitiveType = checkNotNull(primitiveType);
     this.service = checkNotNull(service);
     this.raft = checkNotNull(raft);
-    this.sessions = new DefaultServiceSessions(primitiveId, raft.getSessions());
+    this.sessions = new RaftSessions(primitiveId, raft.getSessions());
     this.serviceExecutor = threadContextFactory.createContext();
     this.snapshotExecutor = threadContextFactory.createContext();
     this.loadMonitor = new LoadMonitor(LOAD_WINDOW_SIZE, HIGH_LOAD_THRESHOLD, serviceExecutor);

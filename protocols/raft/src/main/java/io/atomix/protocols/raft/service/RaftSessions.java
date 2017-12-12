@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.service.impl;
+package io.atomix.protocols.raft.service;
 
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionListener;
 import io.atomix.primitive.session.Sessions;
-import io.atomix.protocols.raft.session.impl.RaftSession;
-import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
+import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.session.RaftSessionRegistry;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -30,12 +30,12 @@ import java.util.Set;
 /**
  * State machine sessions.
  */
-class DefaultServiceSessions implements Sessions {
+class RaftSessions implements Sessions {
   private final PrimitiveId primitiveId;
   private final Set<SessionListener> listeners = Sets.newIdentityHashSet();
   private final RaftSessionRegistry sessionManager;
 
-  public DefaultServiceSessions(PrimitiveId primitiveId, RaftSessionRegistry sessionManager) {
+  public RaftSessions(PrimitiveId primitiveId, RaftSessionRegistry sessionManager) {
     this.primitiveId = primitiveId;
     this.sessionManager = sessionManager;
   }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.service.impl;
+package io.atomix.protocols.raft.service;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveId;
@@ -25,8 +25,8 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.proxy.impl.TestPrimitiveType;
-import io.atomix.protocols.raft.session.impl.RaftSession;
-import io.atomix.protocols.raft.session.impl.RaftSessionRegistry;
+import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.session.RaftSessionRegistry;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.junit.Test;
@@ -44,11 +44,11 @@ import static org.mockito.Mockito.when;
 /**
  * Default service sessions test.
  */
-public class DefaultServiceSessionsTest {
+public class RaftSessionsTest {
   @Test
   public void testSessions() throws Exception {
     RaftSessionRegistry sessionManager = new RaftSessionRegistry();
-    DefaultServiceSessions sessions = new DefaultServiceSessions(PrimitiveId.from(1), sessionManager);
+    RaftSessions sessions = new RaftSessions(PrimitiveId.from(1), sessionManager);
     TestSessionListener listener = new TestSessionListener();
     sessions.addListener(listener);
 
@@ -77,7 +77,7 @@ public class DefaultServiceSessionsTest {
   }
 
   private RaftSession createSession(long sessionId) {
-    DefaultServiceContext context = mock(DefaultServiceContext.class);
+    RaftServiceContext context = mock(RaftServiceContext.class);
     when(context.serviceType()).thenReturn(new TestPrimitiveType());
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));

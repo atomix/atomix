@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.session;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveId;
@@ -22,7 +22,7 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.proxy.impl.TestPrimitiveType;
-import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
+import io.atomix.protocols.raft.service.RaftServiceContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.junit.Test;
@@ -52,7 +52,7 @@ public class RaftSessionRegistryTest {
   }
 
   private RaftSession createSession(long sessionId) {
-    DefaultServiceContext context = mock(DefaultServiceContext.class);
+    RaftServiceContext context = mock(RaftServiceContext.class);
     when(context.serviceType()).thenReturn(new TestPrimitiveType());
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));

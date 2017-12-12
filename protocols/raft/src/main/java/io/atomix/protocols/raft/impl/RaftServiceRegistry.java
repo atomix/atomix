@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
+import io.atomix.protocols.raft.service.RaftServiceContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,15 +26,15 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Raft service registry.
  */
-public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
-  private final Map<String, DefaultServiceContext> services = new ConcurrentHashMap<>();
+public class RaftServiceRegistry implements Iterable<RaftServiceContext> {
+  private final Map<String, RaftServiceContext> services = new ConcurrentHashMap<>();
 
   /**
    * Registers a new service.
    *
    * @param service the service to register
    */
-  public void registerService(DefaultServiceContext service) {
+  public void registerService(RaftServiceContext service) {
     services.put(service.serviceName(), service);
   }
 
@@ -44,12 +44,12 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
    * @param name the service name
    * @return the registered service
    */
-  public DefaultServiceContext getService(String name) {
+  public RaftServiceContext getService(String name) {
     return services.get(name);
   }
 
   @Override
-  public Iterator<DefaultServiceContext> iterator() {
+  public Iterator<RaftServiceContext> iterator() {
     return services.values().iterator();
   }
 
@@ -58,7 +58,7 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
    *
    * @return a copy of the registered services
    */
-  public Collection<DefaultServiceContext> copyValues() {
+  public Collection<RaftServiceContext> copyValues() {
     return new ArrayList<>(services.values());
   }
 }
