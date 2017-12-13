@@ -19,31 +19,14 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 /**
  * Default cluster node.
  */
-public class DefaultNode extends Node {
-  private Type type = Type.CLIENT;
+public class StatefulNode extends Node {
   private State state = State.INACTIVE;
 
-  public DefaultNode(NodeId id, Endpoint endpoint) {
-    super(id, endpoint);
-  }
-
-  /**
-   * Updates the node type.
-   */
-  public DefaultNode setType(Type type) {
-    this.type = type;
-    return this;
-  }
-
-  @Override
-  public Type type() {
-    return type;
+  public StatefulNode(NodeId id, Type type, Endpoint endpoint) {
+    super(id, type, endpoint);
   }
 
   /**
@@ -58,24 +41,5 @@ public class DefaultNode extends Node {
   @Override
   public State state() {
     return state;
-  }
-
-  /**
-   * Default cluster node builder.
-   */
-  public static class Builder extends Node.Builder {
-    protected static final int DEFAULT_PORT = 5679;
-
-    @Override
-    public Node build() {
-      if (endpoint == null) {
-        try {
-          endpoint = new Endpoint(InetAddress.getByName("127.0.0.1"), DEFAULT_PORT);
-        } catch (UnknownHostException e) {
-          throw new IllegalStateException("Failed to instantiate address", e);
-        }
-      }
-      return new DefaultNode(id, endpoint);
-    }
   }
 }

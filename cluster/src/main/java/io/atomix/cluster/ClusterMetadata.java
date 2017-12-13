@@ -16,7 +16,6 @@
 package io.atomix.cluster;
 
 import io.atomix.cluster.Node.Type;
-import io.atomix.cluster.impl.DefaultNode;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,37 +38,12 @@ public class ClusterMetadata {
     return new Builder();
   }
 
-  private final String name;
-  private final Node localNode;
   private final Collection<Node> bootstrapNodes;
 
-  protected ClusterMetadata(
-      String name,
-      Node localNode,
-      Collection<Node> bootstrapNodes) {
-    this.name = checkNotNull(name, "name cannot be null");
-    this.localNode = ((DefaultNode) localNode).setType(bootstrapNodes.contains(localNode) ? Type.DATA : Type.CLIENT);
+  public ClusterMetadata(Collection<Node> bootstrapNodes) {
     this.bootstrapNodes = bootstrapNodes.stream()
-        .map(node -> ((DefaultNode) node).setType(Type.DATA))
-        .collect(Collectors.toList());
-  }
-
-  /**
-   * Returns the cluster name.
-   *
-   * @return the cluster name
-   */
-  public String name() {
-    return name;
-  }
-
-  /**
-   * Returns the local node.
-   *
-   * @return the local node
-   */
-  public Node localNode() {
-    return localNode;
+        .filter(node -> node.type() == Type.DATA)
+        .collect(Collectors.toSet());
   }
 
   /**
@@ -84,8 +58,7 @@ public class ClusterMetadata {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("name", name)
-        .add("localNode", localNode)
+        .add("bootstrapNodes", bootstrapNodes)
         .toString();
   }
 
@@ -93,33 +66,7 @@ public class ClusterMetadata {
    * Cluster metadata builder.
    */
   public static class Builder implements io.atomix.utils.Builder<ClusterMetadata> {
-    private static final String DEFAULT_CLUSTER_NAME = "atomix";
-    protected String name = DEFAULT_CLUSTER_NAME;
-    protected Node localNode;
     protected Collection<Node> bootstrapNodes;
-
-    /**
-     * Sets the cluster name.
-     *
-     * @param name the cluster name
-     * @return the cluster metadata builder
-     * @throws NullPointerException if the name is null
-     */
-    public Builder withClusterName(String name) {
-      this.name = checkNotNull(name, "name cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the local node metadata.
-     *
-     * @param localNode the local node metadata
-     * @return the cluster metadata builder
-     */
-    public Builder withLocalNode(Node localNode) {
-      this.localNode = checkNotNull(localNode, "localNode cannot be null");
-      return this;
-    }
 
     /**
      * Sets the bootstrap nodes.
@@ -146,10 +93,7 @@ public class ClusterMetadata {
 
     @Override
     public ClusterMetadata build() {
-      return new ClusterMetadata(
-          name,
-          localNode,
-          bootstrapNodes);
+      return new ClusterMetadata(bootstrapNodes);
     }
   }
 }

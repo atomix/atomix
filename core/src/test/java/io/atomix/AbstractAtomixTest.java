@@ -15,9 +15,9 @@
  */
 package io.atomix;
 
+import io.atomix.cluster.ManagedClusterMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.messaging.Endpoint;
@@ -79,14 +79,14 @@ public abstract class AbstractAtomixTest {
    * Creates an Atomix instance.
    */
   private static Atomix createAtomix(int id, Integer... ids) {
-    Node localNode = Node.builder()
-        .withId(NodeId.from(String.valueOf(id)))
+    Node localNode = Node.builder(String.valueOf(id))
+        .withType(Node.Type.DATA)
         .withEndpoint(endpoints.computeIfAbsent(id, i -> Endpoint.from("localhost", BASE_PORT + id)))
         .build();
 
     Collection<Node> bootstrapNodes = Stream.of(ids)
-        .map(nodeId -> Node.builder()
-            .withId(NodeId.from(String.valueOf(nodeId)))
+        .map(nodeId -> Node.builder(String.valueOf(nodeId))
+            .withType(Node.Type.DATA)
             .withEndpoint(endpoints.computeIfAbsent(nodeId, i -> Endpoint.from("localhost", BASE_PORT + nodeId)))
             .build())
         .collect(Collectors.toList());
@@ -110,8 +110,8 @@ public abstract class AbstractAtomixTest {
    * Atomix implementation used for testing.
    */
   static class TestAtomix extends Atomix {
-    TestAtomix(ManagedClusterService cluster, ManagedMessagingService messagingService, ManagedClusterCommunicationService clusterCommunicator, ManagedClusterEventService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
-      super(cluster, messagingService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes);
+    TestAtomix(ManagedMessagingService messagingService, ManagedClusterMetadataService metadataService, ManagedClusterService clusterService, ManagedClusterCommunicationService clusterCommunicator, ManagedClusterEventService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
+      super(messagingService, metadataService, clusterService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes);
     }
 
     static class Builder extends Atomix.Builder {

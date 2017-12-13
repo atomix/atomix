@@ -23,6 +23,7 @@ import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -48,8 +49,8 @@ public class AtomixServer {
       @Override
       public Node convert(ArgumentParser argumentParser, Argument argument, String value) throws ArgumentParserException {
         String[] address = parseAddress(value);
-        return Node.builder()
-            .withId(parseNodeId(address))
+        return Node.builder(parseNodeId(address))
+            .withType(Node.Type.DATA)
             .withEndpoint(parseEndpoint(address))
             .build();
       }
@@ -69,11 +70,14 @@ public class AtomixServer {
         .type(nodeType)
         .nargs("?")
         .metavar("NAME:HOST:PORT")
-        .setDefault(Node.builder()
-            .withId(NodeId.from("local"))
+        .setDefault(Node.builder("local")
+            .withType(Node.Type.DATA)
             .withEndpoint(new Endpoint(InetAddress.getByName("127.0.0.1"), NettyMessagingService.DEFAULT_PORT))
             .build())
         .help("The local node info");
+    parser.addArgument("--client", "-c")
+        .action(new StoreTrueArgumentAction())
+        .help("Indicates this is a client node");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
         .type(nodeType)
@@ -102,6 +106,13 @@ public class AtomixServer {
     }
 
     Node localNode = namespace.get("node");
+    if (namespace.getBoolean("client")) {
+      localNode = Node.builder(localNode.id())
+          .withType(Node.Type.CLIENT)
+          .withEndpoint(localNode.endpoint())
+          .build();
+    }
+
     List<Node> bootstrap = namespace.getList("bootstrap");
     if (bootstrap == null) {
       bootstrap = Collections.singletonList(localNode);

@@ -26,6 +26,13 @@ import java.util.function.BiFunction;
 public interface MessagingService {
 
   /**
+   * Returns the local messaging service endpoint.
+   *
+   * @return the local endpoint
+   */
+  Endpoint endpoint();
+
+  /**
    * Sends a message asynchronously to the specified communication end point.
    * The message is specified using the type and payload.
    *

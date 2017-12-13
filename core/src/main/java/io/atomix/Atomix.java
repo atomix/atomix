@@ -16,9 +16,12 @@
 package io.atomix;
 
 import io.atomix.cluster.ClusterMetadata;
+import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ManagedClusterMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.impl.DefaultClusterMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
@@ -80,8 +83,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
 
-  private final ManagedClusterService cluster;
   private final ManagedMessagingService messagingService;
+  private final ManagedClusterMetadataService metadataService;
+  private final ManagedClusterService clusterService;
   private final ManagedClusterCommunicationService clusterCommunicator;
   private final ManagedClusterEventService clusterEventService;
   private final ManagedPartitionGroup corePartitionGroup;
@@ -92,16 +96,18 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final ThreadContext context = new SingleThreadContext("atomix-%d");
 
   protected Atomix(
-      ManagedClusterService cluster,
       ManagedMessagingService messagingService,
+      ManagedClusterMetadataService metadataService,
+      ManagedClusterService cluster,
       ManagedClusterCommunicationService clusterCommunicator,
       ManagedClusterEventService clusterEventService,
       ManagedPartitionGroup corePartitionGroup,
       ManagedPartitionService partitions,
       PrimitiveTypeRegistry primitiveTypes) {
     PrimitiveTypes.register(primitiveTypes);
-    this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
+    this.metadataService = checkNotNull(metadataService, "metadataService cannot be null");
+    this.clusterService = checkNotNull(cluster, "cluster cannot be null");
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
     this.clusterEventService = checkNotNull(clusterEventService, "clusterEventService cannot be null");
     this.corePartitionGroup = checkNotNull(corePartitionGroup, "corePartitionGroup cannot be null");
@@ -111,12 +117,30 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   /**
+   * Returns the messaging service.
+   *
+   * @return the messaging service
+   */
+  public MessagingService getMessagingService() {
+    return messagingService;
+  }
+
+  /**
+   * Returns the cluster metadata service.
+   *
+   * @return the cluster metadata service
+   */
+  public ClusterMetadataService getMetadataService() {
+    return metadataService;
+  }
+
+  /**
    * Returns the cluster service.
    *
    * @return the cluster service
    */
   public ClusterService getClusterService() {
-    return cluster;
+    return clusterService;
   }
 
   /**
@@ -135,15 +159,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   public ClusterEventService getEventService() {
     return clusterEventService;
-  }
-
-  /**
-   * Returns the messaging service.
-   *
-   * @return the messaging service
-   */
-  public MessagingService getMessagingService() {
-    return messagingService;
   }
 
   /**
@@ -197,17 +212,18 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   @Override
   public CompletableFuture<Atomix> open() {
     return messagingService.open()
-        .thenComposeAsync(v -> cluster.open(), context)
+        .thenComposeAsync(v -> metadataService.open(), context)
+        .thenComposeAsync(v -> clusterService.open(), context)
         .thenComposeAsync(v -> clusterCommunicator.open(), context)
         .thenComposeAsync(v -> clusterEventService.open(), context)
         .thenComposeAsync(v -> corePartitionGroup.open(
-            new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, null, null)), context)
+            new DefaultPartitionManagementService(clusterService, clusterCommunicator, primitiveTypes, null, null)), context)
         .thenComposeAsync(v -> {
           ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(corePartitionGroup);
           ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(corePartitionGroup);
           return electionService.open()
               .thenComposeAsync(v2 -> sessionIdService.open(), context)
-              .thenApply(v2 -> new DefaultPartitionManagementService(cluster, clusterCommunicator, primitiveTypes, electionService, sessionIdService));
+              .thenApply(v2 -> new DefaultPartitionManagementService(clusterService, clusterCommunicator, primitiveTypes, electionService, sessionIdService));
         }, context)
         .thenComposeAsync(partitionManagementService -> partitions.open(partitionManagementService), context)
         .thenComposeAsync(v -> primitives.open(), context)
@@ -230,7 +246,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> corePartitionGroup.close(), context)
         .thenComposeAsync(v -> clusterCommunicator.close(), context)
         .thenComposeAsync(v -> clusterEventService.close(), context)
-        .thenComposeAsync(v -> cluster.close(), context)
+        .thenComposeAsync(v -> clusterService.close(), context)
+        .thenComposeAsync(v -> metadataService.close(), context)
         .thenComposeAsync(v -> messagingService.close(), context)
         .thenRunAsync(() -> {
           context.close();
@@ -441,14 +458,16 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     @Override
     public Atomix build() {
       ManagedMessagingService messagingService = buildMessagingService();
-      ManagedClusterService clusterService = buildClusterService(messagingService);
+      ManagedClusterMetadataService metadataService = buildClusterMetadataService(messagingService);
+      ManagedClusterService clusterService = buildClusterService(metadataService, messagingService);
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
       ManagedClusterEventService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
       ManagedPartitionGroup corePartitionGroup = buildCorePartitionGroup();
       ManagedPartitionService partitionService = buildPartitionService();
       return new Atomix(
-          clusterService,
           messagingService,
+          metadataService,
+          clusterService,
           clusterCommunicator,
           clusterEventService,
           corePartitionGroup,
@@ -467,13 +486,17 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     /**
+     * Builds a cluster metadata service.
+     */
+    protected ManagedClusterMetadataService buildClusterMetadataService(MessagingService messagingService) {
+      return new DefaultClusterMetadataService(ClusterMetadata.builder().withBootstrapNodes(bootstrapNodes).build(), messagingService);
+    }
+
+    /**
      * Builds a cluster service.
      */
-    protected ManagedClusterService buildClusterService(MessagingService messagingService) {
-      return new DefaultClusterService(ClusterMetadata.builder()
-          .withLocalNode(localNode)
-          .withBootstrapNodes(bootstrapNodes)
-          .build(), messagingService);
+    protected ManagedClusterService buildClusterService(ClusterMetadataService metadataService, MessagingService messagingService) {
+      return new DefaultClusterService(localNode, metadataService, messagingService);
     }
 
     /**

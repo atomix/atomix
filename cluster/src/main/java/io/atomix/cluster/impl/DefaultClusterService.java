@@ -19,9 +19,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEvent.Type;
 import io.atomix.cluster.ClusterEventListener;
-import io.atomix.cluster.ClusterMetadata;
+import io.atomix.cluster.ClusterMetadataEvent;
+import io.atomix.cluster.ClusterMetadataEventListener;
+import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
@@ -29,6 +30,7 @@ import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
+import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -52,7 +54,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Default cluster implementation.
  */
-public class DefaultClusterService implements ManagedClusterService {
+public class DefaultClusterService
+    extends AbstractListenerManager<ClusterEvent, ClusterEventListener>
+    implements ManagedClusterService {
 
   private static final Logger LOGGER = getLogger(DefaultClusterService.class);
 
@@ -69,14 +73,17 @@ public class DefaultClusterService implements ManagedClusterService {
           .register(KryoNamespaces.BASIC)
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
           .register(NodeId.class)
-          .build("ClusterStore"));
+          .register(Node.Type.class)
+          .register(ClusterHeartbeat.class)
+          .build("ClusterService"));
 
   private final MessagingService messagingService;
+  private final ClusterMetadataService metadataService;
   private final AtomicBoolean open = new AtomicBoolean();
-  private final DefaultNode localNode;
-  private final Map<NodeId, DefaultNode> nodes = Maps.newConcurrentMap();
+  private final StatefulNode localNode;
+  private final Map<NodeId, StatefulNode> nodes = Maps.newConcurrentMap();
   private final Map<NodeId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
-  private final Set<ClusterEventListener> eventListeners = Sets.newCopyOnWriteArraySet();
+  private final ClusterMetadataEventListener metadataEventListener = this::handleMetadataEvent;
 
   private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
@@ -84,17 +91,10 @@ public class DefaultClusterService implements ManagedClusterService {
       namedThreads("atomix-cluster-heartbeat-receiver", LOGGER));
   private ScheduledFuture<?> heartbeatFuture;
 
-  public DefaultClusterService(ClusterMetadata clusterMetadata, MessagingService messagingService) {
+  public DefaultClusterService(Node localNode, ClusterMetadataService metadataService, MessagingService messagingService) {
+    this.metadataService = checkNotNull(metadataService, "metadataService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
-    this.localNode = (DefaultNode) clusterMetadata.localNode();
-    if (clusterMetadata.bootstrapNodes().contains(localNode)) {
-      localNode.setType(Node.Type.DATA);
-    } else {
-      localNode.setType(Node.Type.CLIENT);
-    }
-    nodes.put(localNode.id(), localNode);
-    clusterMetadata.bootstrapNodes().forEach(n -> nodes.putIfAbsent(n.id(), ((DefaultNode) n).setType(Node.Type.DATA)));
-    messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
+    this.localNode = new StatefulNode(localNode.id(), localNode.type(), localNode.endpoint());
   }
 
   @Override
@@ -117,11 +117,11 @@ public class DefaultClusterService implements ManagedClusterService {
    */
   private void sendHeartbeats() {
     try {
-      Set<DefaultNode> peers = nodes.values()
+      Set<StatefulNode> peers = nodes.values()
           .stream()
           .filter(node -> !node.id().equals(getLocalNode().id()))
           .collect(Collectors.toSet());
-      byte[] payload = SERIALIZER.encode(localNode.id());
+      byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(localNode.id(), localNode.type()));
       peers.forEach((node) -> {
         sendHeartbeat(node.endpoint(), payload);
         double phi = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector()).phi();
@@ -155,41 +155,41 @@ public class DefaultClusterService implements ManagedClusterService {
    * Handles a heartbeat message.
    */
   private void handleHeartbeat(Endpoint endpoint, byte[] message) {
-    NodeId nodeId = SERIALIZER.decode(message);
-    failureDetectors.computeIfAbsent(nodeId, n -> new PhiAccrualFailureDetector()).report();
-    activateNode(new DefaultNode(nodeId, endpoint));
+    ClusterHeartbeat heartbeat = SERIALIZER.decode(message);
+    failureDetectors.computeIfAbsent(heartbeat.nodeId(), n -> new PhiAccrualFailureDetector()).report();
+    activateNode(new StatefulNode(heartbeat.nodeId(), heartbeat.nodeType(), endpoint));
   }
 
   /**
    * Activates the given node.
    */
-  private void activateNode(DefaultNode node) {
-    DefaultNode existingNode = nodes.get(node.id());
+  private void activateNode(StatefulNode node) {
+    StatefulNode existingNode = nodes.get(node.id());
     if (existingNode == null) {
       node.setState(State.ACTIVE);
       nodes.put(node.id(), node);
-      eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_ADDED, node)));
-      sendHeartbeat(node.endpoint(), SERIALIZER.encode(localNode.id()));
+      post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
+      sendHeartbeat(node.endpoint(), SERIALIZER.encode(new ClusterHeartbeat(localNode.id(), localNode.type())));
     } else if (existingNode.state() == State.INACTIVE) {
       existingNode.setState(State.ACTIVE);
-      eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_ACTIVATED, existingNode)));
+      post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, existingNode));
     }
   }
 
   /**
    * Deactivates the given node.
    */
-  private void deactivateNode(DefaultNode node) {
-    DefaultNode existingNode = nodes.get(node.id());
+  private void deactivateNode(StatefulNode node) {
+    StatefulNode existingNode = nodes.get(node.id());
     if (existingNode != null && existingNode.state() == State.ACTIVE) {
       existingNode.setState(State.INACTIVE);
       switch (existingNode.type()) {
         case DATA:
-          eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_DEACTIVATED, existingNode)));
+          post(new ClusterEvent(ClusterEvent.Type.NODE_DEACTIVATED, existingNode));
           break;
         case CLIENT:
           nodes.remove(node.id());
-          eventListeners.forEach(l -> l.onEvent(new ClusterEvent(Type.NODE_REMOVED, existingNode)));
+          post(new ClusterEvent(ClusterEvent.Type.NODE_REMOVED, existingNode));
           break;
         default:
           throw new AssertionError();
@@ -197,23 +197,53 @@ public class DefaultClusterService implements ManagedClusterService {
     }
   }
 
-  @Override
-  public void addListener(ClusterEventListener listener) {
-    eventListeners.add(listener);
-  }
+  /**
+   * Handles a cluster metadata change event.
+   */
+  private void handleMetadataEvent(ClusterMetadataEvent event) {
+    // Iterate through all bootstrap nodes and add any missing data nodes, triggering NODE_ADDED events.
+    // Collect the bootstrap node IDs into a set.
+    Set<NodeId> bootstrapNodes = event.subject().bootstrapNodes().stream()
+        .map(node -> {
+          StatefulNode existingNode = nodes.get(node.id());
+          if (existingNode == null) {
+            StatefulNode newNode = new StatefulNode(node.id(), node.type(), node.endpoint());
+            nodes.put(newNode.id(), newNode);
+            post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, newNode));
+          }
+          return node.id();
+        }).collect(Collectors.toSet());
 
-  @Override
-  public void removeListener(ClusterEventListener listener) {
-    eventListeners.remove(listener);
+    // Filter the set of data node IDs from the local node information.
+    Set<NodeId> dataNodes = nodes.entrySet().stream()
+        .filter(entry -> entry.getValue().type() == Node.Type.DATA)
+        .map(entry -> entry.getKey())
+        .collect(Collectors.toSet());
+
+    // Compute the set of local data nodes missing in the set of bootstrap nodes.
+    Set<NodeId> missingNodes = Sets.difference(dataNodes, bootstrapNodes);
+
+    // For each missing data node, remove the node and trigger a NODE_REMOVED event.
+    for (NodeId nodeId : missingNodes) {
+      StatefulNode existingNode = nodes.remove(nodeId);
+      if (existingNode != null) {
+        post(new ClusterEvent(ClusterEvent.Type.NODE_REMOVED, existingNode));
+      }
+    }
   }
 
   @Override
   public CompletableFuture<ClusterService> open() {
     if (open.compareAndSet(false, true)) {
+      metadataService.addListener(metadataEventListener);
       localNode.setState(State.ACTIVE);
+      nodes.put(localNode.id(), localNode);
+      metadataService.getMetadata().bootstrapNodes()
+          .forEach(node -> nodes.putIfAbsent(node.id(), new StatefulNode(node.id(), node.type(), node.endpoint())));
+      messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(this::sendHeartbeats, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
+      LOGGER.info("Started");
     }
-    LOGGER.info("Started");
     return CompletableFuture.completedFuture(this);
   }
 
@@ -228,9 +258,12 @@ public class DefaultClusterService implements ManagedClusterService {
       heartbeatScheduler.shutdownNow();
       heartbeatExecutor.shutdownNow();
       localNode.setState(State.INACTIVE);
+      nodes.clear();
       heartbeatFuture.cancel(true);
+      messagingService.unregisterHandler(HEARTBEAT_MESSAGE);
+      metadataService.removeListener(metadataEventListener);
+      LOGGER.info("Stopped");
     }
-    LOGGER.info("Stopped");
     return CompletableFuture.completedFuture(null);
   }
 
