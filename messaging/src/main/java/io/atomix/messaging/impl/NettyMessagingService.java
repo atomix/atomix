@@ -537,7 +537,8 @@ public class NettyMessagingService implements ManagedMessagingService {
     b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
         new WriteBufferWaterMark(8 * 1024, 32 * 1024));
     b.option(ChannelOption.SO_RCVBUF, 1048576);
-    b.option(ChannelOption.TCP_NODELAY, true);
+    b.childOption(ChannelOption.SO_KEEPALIVE, true);
+    b.childOption(ChannelOption.TCP_NODELAY, true);
     b.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     b.group(serverGroup, clientGroup);
     b.channel(serverChannelClass);
@@ -547,7 +548,6 @@ public class NettyMessagingService implements ManagedMessagingService {
       b.childHandler(new BasicChannelInitializer());
     }
     b.option(ChannelOption.SO_BACKLOG, 128);
-    b.childOption(ChannelOption.SO_KEEPALIVE, true);
 
     // Bind and start to accept incoming connections.
     b.bind(localEndpoint.port()).addListener(f -> {
