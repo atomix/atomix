@@ -15,6 +15,9 @@
  */
 package io.atomix.cluster.impl;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -71,9 +74,10 @@ public class DefaultClusterMetadataService
       KryoNamespace.builder()
           .register(KryoNamespaces.BASIC)
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
-          .register(Node.class)
+          .register(ReplicatedNode.class)
           .register(NodeId.class)
           .register(Node.Type.class)
+          .register(new EndpointSerializer(), Endpoint.class)
           .register(LogicalTimestamp.class)
           .register(NodeUpdate.class)
           .register(ClusterMetadataAdvertisement.class)
@@ -93,7 +97,8 @@ public class DefaultClusterMetadataService
   private ScheduledFuture<?> metadataFuture;
 
   public DefaultClusterMetadataService(ClusterMetadata metadata, MessagingService messagingService) {
-    metadata.bootstrapNodes().forEach(node -> nodes.put(node.id(), (ReplicatedNode) node));
+    metadata.bootstrapNodes().forEach(node -> nodes.put(node.id(),
+        new ReplicatedNode(node.id(), node.type(), node.endpoint(), new LogicalTimestamp(0), false)));
     this.messagingService = messagingService;
   }
 
@@ -101,15 +106,18 @@ public class DefaultClusterMetadataService
   @SuppressWarnings("unchecked")
   public ClusterMetadata getMetadata() {
     return new ClusterMetadata(ImmutableList.copyOf(nodes.values().stream()
-        .filter(node -> node.tombstone())
+        .filter(node -> !node.tombstone())
         .collect(Collectors.toList())));
   }
 
   @Override
   public void addNode(Node node) {
-    ReplicatedNode replicatedNode = new ReplicatedNode(node.id(), node.type(), node.endpoint(), clock.increment(), false);
-    if (nodes.putIfAbsent(node.id(), replicatedNode) == null) {
-      broadcastUpdate(replicatedNode);
+    ReplicatedNode replicatedNode = nodes.get(node.id());
+    if (replicatedNode == null) {
+      LogicalTimestamp timestamp = clock.increment();
+      replicatedNode = new ReplicatedNode(node.id(), node.type(), node.endpoint(), timestamp, false);
+      nodes.put(replicatedNode.id(), replicatedNode);
+      broadcastUpdate(new NodeUpdate(replicatedNode, timestamp));
       post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
     }
   }
@@ -118,9 +126,10 @@ public class DefaultClusterMetadataService
   public void removeNode(Node node) {
     ReplicatedNode replicatedNode = nodes.get(node.id());
     if (replicatedNode != null) {
-      replicatedNode = new ReplicatedNode(node.id(), node.type(), node.endpoint(), clock.increment(), true);
-      nodes.put(node.id(), replicatedNode);
-      broadcastUpdate(replicatedNode);
+      LogicalTimestamp timestamp = clock.increment();
+      replicatedNode = new ReplicatedNode(node.id(), node.type(), node.endpoint(), timestamp, true);
+      nodes.put(replicatedNode.id(), replicatedNode);
+      broadcastUpdate(new NodeUpdate(replicatedNode, timestamp));
       post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
     }
   }
@@ -183,7 +192,7 @@ public class DefaultClusterMetadataService
   /**
    * Broadcasts the given update to all peers.
    */
-  private void broadcastUpdate(ReplicatedNode update) {
+  private void broadcastUpdate(NodeUpdate update) {
     nodes.values().stream()
         .map(Node::endpoint)
         .forEach(endpoint -> sendUpdate(endpoint, update));
@@ -192,7 +201,7 @@ public class DefaultClusterMetadataService
   /**
    * Sends the given update to the given node.
    */
-  private void sendUpdate(Endpoint endpoint, ReplicatedNode update) {
+  private void sendUpdate(Endpoint endpoint, NodeUpdate update) {
     messagingService.sendAsync(endpoint, UPDATE_MESSAGE, SERIALIZER.encode(update));
   }
 
@@ -200,10 +209,11 @@ public class DefaultClusterMetadataService
    * Handles an update from another node.
    */
   private void handleUpdate(Endpoint endpoint, byte[] payload) {
-    ReplicatedNode update = SERIALIZER.decode(payload);
-    ReplicatedNode node = nodes.get(update.id());
+    NodeUpdate update = SERIALIZER.decode(payload);
+    clock.incrementAndUpdate(update.timestamp());
+    ReplicatedNode node = nodes.get(update.node().id());
     if (node == null || node.timestamp().isOlderThan(update.timestamp())) {
-      nodes.put(update.id(), update);
+      nodes.put(update.node().id(), update.node());
       post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
     }
   }
@@ -219,16 +229,17 @@ public class DefaultClusterMetadataService
    * Sends an anti-entropy advertisement to the given node.
    */
   private void sendAdvertisement(Endpoint endpoint) {
+    clock.increment();
     ClusterMetadataAdvertisement advertisement = new ClusterMetadataAdvertisement(
-        Maps.transformValues(nodes, node -> new NodeDigest(node.timestamp(), node.tombstone())));
+        Maps.newHashMap(Maps.transformValues(nodes, node -> new NodeDigest(node.timestamp(), node.tombstone()))));
     messagingService.sendAndReceive(endpoint, ADVERTISEMENT_MESSAGE, SERIALIZER.encode(advertisement))
         .whenComplete((response, error) -> {
           if (error == null) {
-            List<NodeId> nodes = SERIALIZER.decode(response);
+            Set<NodeId> nodes = SERIALIZER.decode(response);
             for (NodeId nodeId : nodes) {
               ReplicatedNode node = this.nodes.get(nodeId);
               if (node != null) {
-                sendUpdate(endpoint, node);
+                sendUpdate(endpoint, new NodeUpdate(node, clock.increment()));
               }
             }
           } else {
@@ -254,11 +265,12 @@ public class DefaultClusterMetadataService
    * Handles an anti-entropy advertisement.
    */
   private byte[] handleAdvertisement(Endpoint endpoint, byte[] payload) {
+    LogicalTimestamp timestamp = clock.increment();
     ClusterMetadataAdvertisement advertisement = SERIALIZER.decode(payload);
     Set<NodeId> staleNodes = nodes.values().stream().map(node -> {
       NodeDigest digest = advertisement.digest(node.id());
       if (digest == null || node.isNewerThan(digest.timestamp())) {
-        sendUpdate(endpoint, node);
+        sendUpdate(endpoint, new NodeUpdate(node, timestamp));
       } else if (digest.isNewerThan(node.timestamp())) {
         if (digest.tombstone()) {
           if (!node.tombstone()) {
@@ -271,14 +283,14 @@ public class DefaultClusterMetadataService
       }
       return null;
     }).filter(Objects::nonNull).collect(Collectors.toSet());
-    return SERIALIZER.encode(Sets.union(Sets.difference(advertisement.digests(), nodes.keySet()), staleNodes));
+    return SERIALIZER.encode(Sets.newHashSet(Sets.union(Sets.difference(advertisement.digests(), nodes.keySet()), staleNodes)));
   }
 
   @Override
   public CompletableFuture<ClusterMetadataService> open() {
     if (open.compareAndSet(false, true)) {
+      registerMessageHandlers();
       return bootstrap().whenComplete((result, error) -> {
-        registerMessageHandlers();
         metadataFuture = messageScheduler.scheduleWithFixedDelay(this::sendAdvertisement, 0, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
         log.info("Started");
       }).thenApply(v -> this);
@@ -324,5 +336,23 @@ public class DefaultClusterMetadataService
   @Override
   public boolean isClosed() {
     return !open.get();
+  }
+
+  /**
+   * Endpoint serializer.
+   */
+  private static class EndpointSerializer extends com.esotericsoftware.kryo.Serializer<Endpoint> {
+    @Override
+    public void write(Kryo kryo, Output output, Endpoint endpoint) {
+      output.writeString(endpoint.host().getHostAddress());
+      output.writeInt(endpoint.port());
+    }
+
+    @Override
+    public Endpoint read(Kryo kryo, Input input, Class<Endpoint> type) {
+      String host = input.readString();
+      int port = input.readInt();
+      return Endpoint.from(host, port);
+    }
   }
 }

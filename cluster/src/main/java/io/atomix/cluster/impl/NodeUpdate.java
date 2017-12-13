@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.utils.time.Timestamp;
+import io.atomix.utils.time.LogicalTimestamp;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -23,10 +23,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Cluster metadata update.
  */
 final class NodeUpdate {
-  private final Timestamp timestamp;
+  private final LogicalTimestamp timestamp;
   private final ReplicatedNode node;
 
-  NodeUpdate(ReplicatedNode node, Timestamp timestamp) {
+  NodeUpdate(ReplicatedNode node, LogicalTimestamp timestamp) {
     this.node = node;
     this.timestamp = timestamp;
   }
@@ -45,7 +45,7 @@ final class NodeUpdate {
    *
    * @return the update timestamp
    */
-  public Timestamp timestamp() {
+  public LogicalTimestamp timestamp() {
     return timestamp;
   }
 

@@ -15,6 +15,7 @@
  */
 package io.atomix.cluster.impl;
 
+import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.Timestamp;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -23,10 +24,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Cluster node digest.
  */
 final class NodeDigest {
-  private final Timestamp timestamp;
+  private final LogicalTimestamp timestamp;
   private final boolean tombstone;
 
-  NodeDigest(Timestamp timestamp, boolean tombstone) {
+  NodeDigest(LogicalTimestamp timestamp, boolean tombstone) {
     this.timestamp = timestamp;
     this.tombstone = tombstone;
   }
@@ -36,7 +37,7 @@ final class NodeDigest {
    *
    * @return the node's updated timestamp
    */
-  public Timestamp timestamp() {
+  public LogicalTimestamp timestamp() {
     return timestamp;
   }
 

@@ -138,7 +138,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         .withElectionTimeout(Duration.ofMillis(ELECTION_TIMEOUT_MILLIS))
         .withHeartbeatInterval(Duration.ofMillis(HEARTBEAT_INTERVAL_MILLIS))
         .withStorage(RaftStorage.builder()
-            .withPrefix(String.format("partition-%s", partition.id()))
+            .withPrefix(partition.name())
             .withStorageLevel(partition.storageLevel())
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .withDirectory(partition.dataDirectory())

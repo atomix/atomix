@@ -18,6 +18,7 @@ package io.atomix.cluster.impl;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.Endpoint;
+import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.Timestamp;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -26,10 +27,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Default cluster node.
  */
 public class ReplicatedNode extends Node {
-  private final Timestamp timestamp;
+  private final LogicalTimestamp timestamp;
   private final boolean tombstone;
 
-  public ReplicatedNode(NodeId id, Type type, Endpoint endpoint, Timestamp timestamp, boolean tombstone) {
+  public ReplicatedNode(NodeId id, Type type, Endpoint endpoint, LogicalTimestamp timestamp, boolean tombstone) {
     super(id, type, endpoint);
     this.timestamp = checkNotNull(timestamp, "timestamp cannot be null");
     this.tombstone = tombstone;
@@ -40,7 +41,7 @@ public class ReplicatedNode extends Node {
    *
    * @return the timestamp at which the node was updated
    */
-  public Timestamp timestamp() {
+  public LogicalTimestamp timestamp() {
     return timestamp;
   }
 
