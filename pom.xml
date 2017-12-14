@@ -97,13 +97,13 @@
   </issueManagement>
 
   <modules>
-    <module>core</module>
+    <module>agent</module>
     <module>cluster</module>
+    <module>core</module>
     <module>messaging</module>
     <module>primitive</module>
     <module>protocols</module>
     <module>rest</module>
-    <module>server</module>
     <module>storage</module>
     <module>tests</module>
     <module>utils</module>

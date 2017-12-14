@@ -9,9 +9,9 @@ case "$command" in
     shift
     python ${ATOMIX_ROOT}/cli/main.py "$@"
     ;;
-"server")
+"agent")
     shift
-    java -jar ${ATOMIX_ROOT}/server/target/atomix-server.jar "$@"
+    java -jar ${ATOMIX_ROOT}/agent/target/atomix-agent.jar "$@"
     ;;
 *)
     python ${ATOMIX_ROOT}/cli/main.py "$@"

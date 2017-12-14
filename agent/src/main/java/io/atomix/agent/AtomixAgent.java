@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.server;
+package io.atomix.agent;
 
 import io.atomix.Atomix;
 import io.atomix.cluster.Node;
@@ -39,10 +39,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Atomix server.
+ * Atomix agent runner.
  */
-public class AtomixServer {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AtomixServer.class);
+public class AtomixAgent {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
     ArgumentType<Node> nodeType = new ArgumentType<Node>() {
@@ -78,6 +78,9 @@ public class AtomixServer {
     parser.addArgument("--client", "-c")
         .action(new StoreTrueArgumentAction())
         .help("Indicates this is a client node");
+    parser.addArgument("--server", "-s")
+        .action(new StoreTrueArgumentAction())
+        .help("Indicates that this is a server node");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
         .type(nodeType)
@@ -168,11 +171,11 @@ public class AtomixServer {
       } catch (UnknownHostException e) {
         return NodeId.from(address[0]);
       }
-      return NodeId.from(parseEndpoint(address).toString());
+      return NodeId.from(parseEndpoint(address).host().getHostName());
     } else {
       try {
         InetAddress.getByName(address[0]);
-        return NodeId.from(parseEndpoint(address).toString());
+        return NodeId.from(parseEndpoint(address).host().getHostName());
       } catch (UnknownHostException e) {
         return NodeId.from(address[0]);
       }
@@ -198,7 +201,7 @@ public class AtomixServer {
         InetAddress.getByName(address[0]);
         host = address[0];
       } catch (UnknownHostException e) {
-        host = "127.0.0.1";
+        host = "0.0.0.0";
       }
       port = NettyMessagingService.DEFAULT_PORT;
     }
