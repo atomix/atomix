@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
+import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
@@ -24,6 +25,13 @@ import io.atomix.primitive.session.SessionIdService;
  * Partition management service.
  */
 public interface PartitionManagementService {
+
+  /**
+   * Returns the cluster metadata service.
+   *
+   * @return the cluster metadata service
+   */
+  ClusterMetadataService getMetadataService();
 
   /**
    * Returns the cluster service.

@@ -217,17 +217,18 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> clusterCommunicator.open(), context)
         .thenComposeAsync(v -> clusterEventService.open(), context)
         .thenComposeAsync(v -> corePartitionGroup.open(
-            new DefaultPartitionManagementService(clusterService, clusterCommunicator, primitiveTypes, null, null)), context)
+            new DefaultPartitionManagementService(metadataService, clusterService, clusterCommunicator, primitiveTypes, null, null)), context)
         .thenComposeAsync(v -> {
           ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(corePartitionGroup);
           ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(corePartitionGroup);
           return electionService.open()
               .thenComposeAsync(v2 -> sessionIdService.open(), context)
-              .thenApply(v2 -> new DefaultPartitionManagementService(clusterService, clusterCommunicator, primitiveTypes, electionService, sessionIdService));
+              .thenApply(v2 -> new DefaultPartitionManagementService(metadataService, clusterService, clusterCommunicator, primitiveTypes, electionService, sessionIdService));
         }, context)
         .thenComposeAsync(partitionManagementService -> partitions.open(partitionManagementService), context)
         .thenComposeAsync(v -> primitives.open(), context)
         .thenApplyAsync(v -> {
+          metadataService.addNode(clusterService.getLocalNode());
           open.set(true);
           LOGGER.info("Started");
           return this;
@@ -241,6 +242,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
   @Override
   public CompletableFuture<Void> close() {
+    metadataService.removeNode(clusterService.getLocalNode());
     return primitives.close()
         .thenComposeAsync(v -> partitions.close(), context)
         .thenComposeAsync(v -> corePartitionGroup.close(), context)
