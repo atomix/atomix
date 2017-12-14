@@ -195,6 +195,7 @@ public class DefaultClusterMetadataService
   private void broadcastUpdate(NodeUpdate update) {
     nodes.values().stream()
         .map(Node::endpoint)
+        .filter(endpoint -> !endpoint.equals(messagingService.endpoint()))
         .forEach(endpoint -> sendUpdate(endpoint, update));
   }
 
