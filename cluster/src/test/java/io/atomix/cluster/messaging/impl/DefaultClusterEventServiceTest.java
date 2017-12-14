@@ -33,11 +33,14 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Cluster event service test.
@@ -136,27 +139,23 @@ public class DefaultClusterEventServiceTest {
     assertNull(value1.get());
     value2.set(null);
 
+    Set<String> values = new HashSet<>();
     eventService1.<String, String>addSubscriber(new MessageSubject("test2"), SERIALIZER::decode, message -> {
-      value1.set(message);
+      values.add(message);
       return message;
     }, SERIALIZER::encode, MoreExecutors.directExecutor());
     eventService2.<String, String>addSubscriber(new MessageSubject("test2"), SERIALIZER::decode, message -> {
-      value2.set(message);
+      values.add(message);
       return message;
     }, SERIALIZER::encode, MoreExecutors.directExecutor());
 
-    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
-    assertEquals("Hello world!", value2.get());
-    assertNull(value1.get());
-    value2.set(null);
+    assertEquals("foo", eventService3.sendAndReceive(new MessageSubject("test2"), "foo").join());
+    assertTrue(values.contains("foo"));
 
-    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
-    assertEquals("Hello world!", value1.get());
-    assertNull(value2.get());
-    value1.set(null);
+    assertEquals("bar", eventService3.sendAndReceive(new MessageSubject("test2"), "bar").join());
+    assertTrue(values.contains("bar"));
 
-    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
-    assertEquals("Hello world!", value2.get());
-    assertNull(value1.get());
+    assertEquals("baz", eventService3.sendAndReceive(new MessageSubject("test2"), "baz").join());
+    assertTrue(values.contains("baz"));
   }
 }
