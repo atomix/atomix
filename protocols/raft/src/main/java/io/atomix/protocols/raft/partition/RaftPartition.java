@@ -141,7 +141,7 @@ public class RaftPartition implements Partition<RaftProtocol> {
    * Updates the partition with the given metadata.
    */
   CompletableFuture<Void> update(PartitionMetadata metadata, PartitionManagementService managementService) {
-    if (metadata.members().contains(managementService.getClusterService().getLocalNode().id())) {
+    if (server == null && metadata.members().contains(managementService.getClusterService().getLocalNode().id())) {
       server = createServer(managementService);
       return server.join(metadata.members());
     } else if (server != null && server.isOpen()) {
