@@ -16,30 +16,20 @@
 
 from __future__ import unicode_literals
 from __future__ import print_function
-import click
 from cli import Cli
 import os
+import sys
 
-
-# Disable Warning: Click detected the use of the unicode_literals
-# __future__ import.
-click.disable_unicode_literals_warning = True
-
-
-@click.command()
-def cli():
-    """Creates and calls Saws.
-    Args:
-        * None.
-    Returns:
-        None.
-    """
+def cli(*args):
+    cli = Cli(os.environ.get('ATOMIX_HOST', 'localhost'), int(os.environ.get('ATOMIX_PORT', 5678)))
     try:
-        cli = Cli(os.environ.get('ATOMIX_HOST', 'localhost'), int(os.environ.get('ATOMIX_PORT', 5678)))
-        cli.run()
+        if len(args) > 0:
+            cli._process_command(*args)
+        else:
+            cli.run()
     except (EOFError, KeyboardInterrupt):
         cli.set_return_value(None)
 
 
 if __name__ == "__main__":
-    cli()
+    cli(*sys.argv[1:])
