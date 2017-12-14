@@ -18,6 +18,8 @@ package io.atomix.protocols.raft.partition;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.cluster.ClusterEvent;
+import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
@@ -30,6 +32,7 @@ import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +72,10 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   private final int partitionSize;
   private final Map<PartitionId, RaftPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
+  private final ClusterEventListener clusterEventListener = this::handleClusterEvent;
+  private PartitionManagementService managementService;
+  private Collection<PartitionMetadata> metadata;
+  private CompletableFuture<Void> metadataChangeFuture = CompletableFuture.completedFuture(null);
 
   public RaftPartitionGroup(String name, Collection<RaftPartition> partitions, int partitionSize) {
     this.name = name;
@@ -108,8 +115,10 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public CompletableFuture<ManagedPartitionGroup> open(PartitionManagementService managementService) {
-    List<CompletableFuture<Partition>> futures = buildPartitions(managementService.getClusterService())
-        .stream()
+    this.managementService = managementService;
+    managementService.getClusterService().addListener(clusterEventListener);
+    this.metadata = buildPartitions(managementService.getClusterService());
+    List<CompletableFuture<Partition>> futures = metadata.stream()
         .map(metadata -> {
           RaftPartition partition = partitions.get(metadata.id());
           return partition.open(metadata, managementService);
@@ -121,6 +130,22 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     });
   }
 
+  private synchronized void handleClusterEvent(ClusterEvent event) {
+    if (event.type() == ClusterEvent.Type.NODE_ADDED && event.subject().type() == Node.Type.DATA) {
+      metadataChangeFuture = metadataChangeFuture.thenCompose(v -> {
+        Collection<PartitionMetadata> partitions = buildPartitions(managementService.getClusterService());
+        if (!this.metadata.equals(partitions)) {
+          this.metadata = partitions;
+          return Futures.allOf(partitions.stream().map(partitionMetadata -> {
+            RaftPartition partition = this.partitions.get(partitionMetadata.id());
+            return partition.update(partitionMetadata, managementService);
+          }).collect(Collectors.toList())).thenApply(l -> null);
+        }
+        return CompletableFuture.completedFuture(null);
+      });
+    }
+  }
+
   private Collection<PartitionMetadata> buildPartitions(ClusterService clusterService) {
     int partitionSize = this.partitionSize;
     if (partitionSize == 0) {
@@ -128,7 +153,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     }
 
     List<NodeId> sorted = new ArrayList<>(clusterService.getNodes().stream()
-        .filter(node -> node.type() == Node.Type.CORE)
+        .filter(node -> node.type() == Node.Type.DATA)
         .map(Node::id)
         .collect(Collectors.toSet()));
     Collections.sort(sorted);

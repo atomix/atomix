@@ -71,6 +71,11 @@ public class TestMessagingService implements ManagedMessagingService {
   }
 
   @Override
+  public Endpoint endpoint() {
+    return endpoint;
+  }
+
+  @Override
   public CompletableFuture<Void> sendAsync(Endpoint ep, String type, byte[] payload) {
     return getHandler(ep, type).apply(endpoint, payload).thenApply(v -> null);
   }

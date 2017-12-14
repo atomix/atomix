@@ -203,6 +203,11 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   @Override
+  public Endpoint endpoint() {
+    return localEndpoint;
+  }
+
+  @Override
   public CompletableFuture<MessagingService> open() {
     getTlsParameters();
     if (started.get()) {

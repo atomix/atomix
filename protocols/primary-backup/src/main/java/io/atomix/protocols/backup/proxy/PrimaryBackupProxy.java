@@ -19,7 +19,7 @@ import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
-import io.atomix.primitive.PrimitiveException.Unavailable;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -124,36 +124,55 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
     ComposableFuture<byte[]> future = new ComposableFuture<>();
     threadContext.execute(() -> {
       if (term.primary() == null) {
-        PrimaryTerm term = primaryElection.getTerm().join();
-        if (term.term() <= this.term.term() || term.primary() == null) {
-          future.completeExceptionally(new Unavailable());
-        } else {
-          this.term = term;
-        }
-        return;
-      }
-
-      ExecuteRequest request = ExecuteRequest.request(descriptor, sessionId.id(), clusterService.getLocalNode().id(), operation);
-      log.trace("Sending {} to {}", request, term.primary());
-      protocol.execute(term.primary(), request).whenCompleteAsync((response, error) -> {
-        if (error == null) {
-          log.trace("Received {}", response);
-          if (response.status() == Status.OK) {
-            future.complete(response.result());
-          } else {
-            PrimaryTerm term = primaryElection.getTerm().join();
-            if (term.term() > this.term.term() && term.primary() != null) {
-              execute(operation).whenComplete(future);
+        primaryElection.getTerm().whenCompleteAsync((term, error) -> {
+          if (error == null) {
+            if (term.term() <= this.term.term() || term.primary() == null) {
+              future.completeExceptionally(new PrimitiveException.Unavailable());
             } else {
-              future.completeExceptionally(new Unavailable());
+              this.term = term;
+              execute(operation, future);
             }
+          } else {
+            future.completeExceptionally(new PrimitiveException.Unavailable());
           }
-        } else {
-          future.completeExceptionally(error);
-        }
-      }, threadContext);
+        }, threadContext);
+      } else {
+        execute(operation, future);
+      }
     });
     return future;
+  }
+
+  private void execute(PrimitiveOperation operation, ComposableFuture<byte[]> future) {
+    ExecuteRequest request = ExecuteRequest.request(descriptor, sessionId.id(), clusterService.getLocalNode().id(), operation);
+    log.trace("Sending {} to {}", request, term.primary());
+    PrimaryTerm term = this.term;
+    protocol.execute(term.primary(), request).whenCompleteAsync((response, error) -> {
+      if (error == null) {
+        log.trace("Received {}", response);
+        if (response.status() == Status.OK) {
+          future.complete(response.result());
+        } else {
+          if (this.term.term() > term.term()) {
+            execute(operation).whenComplete(future);
+          } else {
+            primaryElection.getTerm().whenComplete((newTerm, termError) -> {
+              if (termError == null) {
+                if (newTerm.term() > term.term() && newTerm.primary() != null) {
+                  execute(operation).whenComplete(future);
+                } else {
+                  future.completeExceptionally(new PrimitiveException.Unavailable());
+                }
+              } else {
+                future.completeExceptionally(new PrimitiveException.Unavailable());
+              }
+            });
+          }
+        }
+      } else {
+        future.completeExceptionally(error);
+      }
+    }, threadContext);
   }
 
   @Override
@@ -201,14 +220,19 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   public CompletableFuture<PrimitiveProxy> open() {
     CompletableFuture<PrimitiveProxy> future = new CompletableFuture<>();
     threadContext.execute(() -> {
-      PrimaryTerm term = primaryElection.getTerm().join();
-      if (term.primary() == null) {
-        future.completeExceptionally(new Unavailable());
-      } else {
-        this.term = term;
-        protocol.registerEventListener(sessionId, this::handleEvent, threadContext);
-        future.complete(this);
-      }
+      primaryElection.getTerm().whenCompleteAsync((term, error) -> {
+        if (error == null) {
+          if (term.primary() == null) {
+            future.completeExceptionally(new PrimitiveException.Unavailable());
+          } else {
+            this.term = term;
+            protocol.registerEventListener(sessionId, this::handleEvent, threadContext);
+            future.complete(this);
+          }
+        } else {
+          future.completeExceptionally(new PrimitiveException.Unavailable());
+        }
+      }, threadContext);
     });
     return future;
   }

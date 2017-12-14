@@ -15,9 +15,9 @@
  */
 package io.atomix;
 
+import io.atomix.cluster.ManagedClusterMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.messaging.Endpoint;
@@ -33,6 +33,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,19 +65,20 @@ public abstract class AbstractAtomixTest {
    * @return a new Atomix instance.
    */
   protected Atomix atomix() {
-    Atomix instance = createAtomix(id++, 1, 2, 3).open().join();
+    Atomix instance = createAtomix(Node.Type.CLIENT, id++, 1, 2, 3).open().join();
     instances.add(instance);
     return instance;
   }
 
   @BeforeClass
   public static void setupAtomix() throws Exception {
+    deleteData();
     messagingServiceFactory = new TestMessagingServiceFactory();
     endpoints = new HashMap<>();
     instances = new ArrayList<>();
-    instances.add(createAtomix(1, 1, 2, 3));
-    instances.add(createAtomix(2, 1, 2, 3));
-    instances.add(createAtomix(3, 1, 2, 3));
+    instances.add(createAtomix(Node.Type.DATA, 1, 1, 2, 3));
+    instances.add(createAtomix(Node.Type.DATA, 2, 1, 2, 3));
+    instances.add(createAtomix(Node.Type.DATA, 3, 1, 2, 3));
     List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::open).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
   }
@@ -78,15 +86,15 @@ public abstract class AbstractAtomixTest {
   /**
    * Creates an Atomix instance.
    */
-  private static Atomix createAtomix(int id, Integer... ids) {
-    Node localNode = Node.builder()
-        .withId(NodeId.from(String.valueOf(id)))
+  private static Atomix createAtomix(Node.Type type, int id, Integer... ids) {
+    Node localNode = Node.builder(String.valueOf(id))
+        .withType(type)
         .withEndpoint(endpoints.computeIfAbsent(id, i -> Endpoint.from("localhost", BASE_PORT + id)))
         .build();
 
     Collection<Node> bootstrapNodes = Stream.of(ids)
-        .map(nodeId -> Node.builder()
-            .withId(NodeId.from(String.valueOf(nodeId)))
+        .map(nodeId -> Node.builder(String.valueOf(nodeId))
+            .withType(Node.Type.DATA)
             .withEndpoint(endpoints.computeIfAbsent(nodeId, i -> Endpoint.from("localhost", BASE_PORT + nodeId)))
             .build())
         .collect(Collectors.toList());
@@ -104,14 +112,37 @@ public abstract class AbstractAtomixTest {
   public static void teardownAtomix() throws Exception {
     List<CompletableFuture<Void>> futures = instances.stream().map(Atomix::close).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+    deleteData();
+  }
+
+  /**
+   * Deletes data from the test data directory.
+   */
+  private static void deleteData() throws Exception {
+    Path directory = Paths.get("target/test-logs/");
+    if (Files.exists(directory)) {
+      Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          Files.delete(file);
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+          Files.delete(dir);
+          return FileVisitResult.CONTINUE;
+        }
+      });
+    }
   }
 
   /**
    * Atomix implementation used for testing.
    */
   static class TestAtomix extends Atomix {
-    TestAtomix(ManagedClusterService cluster, ManagedMessagingService messagingService, ManagedClusterCommunicationService clusterCommunicator, ManagedClusterEventService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
-      super(cluster, messagingService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes);
+    TestAtomix(ManagedMessagingService messagingService, ManagedClusterMetadataService metadataService, ManagedClusterService clusterService, ManagedClusterCommunicationService clusterCommunicator, ManagedClusterEventService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
+      super(messagingService, metadataService, clusterService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes);
     }
 
     static class Builder extends Atomix.Builder {
@@ -124,6 +155,7 @@ public abstract class AbstractAtomixTest {
       protected ManagedPartitionGroup buildCorePartitionGroup() {
         return RaftPartitionGroup.builder("core")
             .withStorageLevel(StorageLevel.MEMORY)
+            .withDataDirectory(new File(dataDirectory, "core"))
             .withNumPartitions(1)
             .build();
       }
@@ -133,6 +165,7 @@ public abstract class AbstractAtomixTest {
         if (partitionGroups.isEmpty()) {
           partitionGroups.add(RaftPartitionGroup.builder(COORDINATION_GROUP_NAME)
               .withStorageLevel(StorageLevel.MEMORY)
+              .withDataDirectory(new File(dataDirectory, "coordination"))
               .withNumPartitions(numCoordinationPartitions > 0 ? numCoordinationPartitions : bootstrapNodes.size())
               .withPartitionSize(coordinationPartitionSize)
               .build());
