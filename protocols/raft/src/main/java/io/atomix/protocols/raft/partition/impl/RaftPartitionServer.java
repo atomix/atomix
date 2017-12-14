@@ -100,7 +100,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
    *
    * @return future that is completed when the operation is complete
    */
-  public CompletableFuture<Void> closeAndExit() {
+  public CompletableFuture<Void> leave() {
     return server.leave();
   }
 
