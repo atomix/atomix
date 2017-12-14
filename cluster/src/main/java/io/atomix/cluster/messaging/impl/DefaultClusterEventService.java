@@ -25,12 +25,12 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.messaging.MessagingException;
-import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClockTimestamp;
-import io.atomix.utils.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,7 +202,6 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
 
   @Override
   public <M, R> CompletableFuture<Void> addSubscriber(MessageSubject subject, Function<byte[], M> decoder, Function<M, CompletableFuture<R>> handler, Function<R, byte[]> encoder) {
-    registerSubscriber(subject);
     return clusterCommunicator.addSubscriber(subject, decoder, handler, encoder)
         .thenCompose(v -> registerSubscriber(subject));
   }
