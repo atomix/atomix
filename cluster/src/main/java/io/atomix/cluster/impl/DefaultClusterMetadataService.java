@@ -290,10 +290,11 @@ public class DefaultClusterMetadataService
   public CompletableFuture<ClusterMetadataService> open() {
     if (open.compareAndSet(false, true)) {
       registerMessageHandlers();
-      return bootstrap().whenComplete((result, error) -> {
+      return bootstrap().handle((result, error) -> {
         metadataFuture = messageScheduler.scheduleWithFixedDelay(this::sendAdvertisement, 0, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
         log.info("Started");
-      }).thenApply(v -> this);
+        return this;
+      });
     }
     return CompletableFuture.completedFuture(this);
   }
