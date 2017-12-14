@@ -89,17 +89,31 @@ public class DefaultClusterMetadataServiceTest {
     TestClusterMetadataEventListener localEventListener = new TestClusterMetadataEventListener();
     metadataService4.addListener(localEventListener);
 
-    TestClusterMetadataEventListener remoteEventListener = new TestClusterMetadataEventListener();
-    metadataService1.addListener(remoteEventListener);
+    TestClusterMetadataEventListener remoteEventListener1 = new TestClusterMetadataEventListener();
+    metadataService1.addListener(remoteEventListener1);
+    TestClusterMetadataEventListener remoteEventListener2 = new TestClusterMetadataEventListener();
+    metadataService2.addListener(remoteEventListener2);
+    TestClusterMetadataEventListener remoteEventListener3 = new TestClusterMetadataEventListener();
+    metadataService3.addListener(remoteEventListener3);
 
     metadataService4.addNode(localNode4);
     assertEquals(4, metadataService4.getMetadata().bootstrapNodes().size());
     assertEquals(4, localEventListener.event().subject().bootstrapNodes().size());
 
-    assertEquals(4, remoteEventListener.event().subject().bootstrapNodes().size());
+    assertEquals(4, remoteEventListener1.event().subject().bootstrapNodes().size());
     assertEquals(4, metadataService1.getMetadata().bootstrapNodes().size());
+
+    assertEquals(4, remoteEventListener2.event().subject().bootstrapNodes().size());
     assertEquals(4, metadataService2.getMetadata().bootstrapNodes().size());
+
+    assertEquals(4, remoteEventListener3.event().subject().bootstrapNodes().size());
     assertEquals(4, metadataService3.getMetadata().bootstrapNodes().size());
+
+    Node localNode5 = buildNode(5, Node.Type.DATA);
+    ManagedClusterMetadataService metadataService5 = new DefaultClusterMetadataService(
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode5.endpoint()).open().join());
+    metadataService5.open().join();
+    assertEquals(4, metadataService5.getMetadata().bootstrapNodes().size());
   }
 
   private Node buildNode(int nodeId, Node.Type type) {
