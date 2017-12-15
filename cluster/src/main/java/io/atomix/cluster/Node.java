@@ -28,6 +28,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Node {
 
   /**
+   * Returns a new node builder with no ID.
+   *
+   * @return the node builder
+   */
+  public static Builder builder() {
+    return new Builder(null);
+  }
+
+  /**
    * Returns a new node builder.
    *
    * @param nodeId the node identifier
@@ -223,6 +232,9 @@ public class Node {
 
     @Override
     public Node build() {
+      if (id == null) {
+        id = NodeId.from(endpoint.host().getHostName());
+      }
       return new Node(id, type, endpoint);
     }
   }
