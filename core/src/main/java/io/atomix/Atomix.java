@@ -97,6 +97,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final PrimitiveTypeRegistry primitiveTypes;
   private final AtomicBoolean open = new AtomicBoolean();
   private final ThreadContext context = new SingleThreadContext("atomix-%d");
+  private volatile CompletableFuture<Atomix> openFuture;
+  private volatile CompletableFuture<Void> closeFuture;
 
   protected Atomix(
       ManagedMessagingService messagingService,
@@ -213,8 +215,12 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   @Override
-  public CompletableFuture<Atomix> open() {
-    return messagingService.open()
+  public synchronized CompletableFuture<Atomix> open() {
+    if (openFuture != null) {
+      return openFuture;
+    }
+
+    openFuture = messagingService.open()
         .thenComposeAsync(v -> metadataService.open(), context)
         .thenComposeAsync(v -> clusterService.open(), context)
         .thenComposeAsync(v -> clusterCommunicator.open(), context)
@@ -236,6 +242,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
           LOGGER.info("Started");
           return this;
         }, context);
+    return openFuture;
   }
 
   @Override
@@ -244,9 +251,13 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
+    if (closeFuture != null) {
+      return closeFuture;
+    }
+
     metadataService.removeNode(clusterService.getLocalNode());
-    return primitives.close()
+    closeFuture = primitives.close()
         .thenComposeAsync(v -> partitions.close(), context)
         .thenComposeAsync(v -> corePartitionGroup.close(), context)
         .thenComposeAsync(v -> clusterCommunicator.close(), context)
@@ -259,6 +270,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
           open.set(false);
           LOGGER.info("Stopped");
         });
+    return closeFuture;
   }
 
   @Override
@@ -460,8 +472,31 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       return this;
     }
 
+    /**
+     * Builds a new Atomix instance.
+     *
+     * @return a new Atomix instance
+     */
     @Override
     public Atomix build() {
+      return buildInstance().open().join();
+    }
+
+    /**
+     * Asynchronously builds and starts a new Atomix instance.
+     *
+     * @return a future to be completed with a new Atomix instance
+     */
+    public CompletableFuture<Atomix> buildAsync() {
+      return buildInstance().open();
+    }
+
+    /**
+     * Builds a new Atomix instance.
+     *
+     * @return a new Atomix instance
+     */
+    private Atomix buildInstance() {
       // If the local node has not be configured, create a default node.
       if (localNode == null) {
         try {
