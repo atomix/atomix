@@ -32,6 +32,7 @@ import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.election.impl.LeaderElectorPrimaryElectionService;
 import io.atomix.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.impl.CorePrimitivesService;
+import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
@@ -56,6 +57,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -459,6 +462,19 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
     @Override
     public Atomix build() {
+      // If the local node has not be configured, create a default node.
+      if (localNode == null) {
+        try {
+          InetAddress address = InetAddress.getByName("0.0.0.0");
+          localNode = Node.builder(address.getHostName())
+              .withType(Node.Type.DATA)
+              .withEndpoint(new Endpoint(address, NettyMessagingService.DEFAULT_PORT))
+              .build();
+        } catch (UnknownHostException e) {
+          throw new IllegalArgumentException("Cannot configure local node", e);
+        }
+      }
+
       ManagedMessagingService messagingService = buildMessagingService();
       ManagedClusterMetadataService metadataService = buildClusterMetadataService(messagingService);
       ManagedClusterService clusterService = buildClusterService(metadataService, messagingService);

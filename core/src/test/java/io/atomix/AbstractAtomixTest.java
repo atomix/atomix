@@ -111,7 +111,11 @@ public abstract class AbstractAtomixTest {
   @AfterClass
   public static void teardownAtomix() throws Exception {
     List<CompletableFuture<Void>> futures = instances.stream().map(Atomix::close).collect(Collectors.toList());
-    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+    } catch (Exception e) {
+      // Do nothing
+    }
     deleteData();
   }
 
