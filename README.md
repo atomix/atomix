@@ -136,7 +136,7 @@ Set<Node> nodes = atomix.getClusterService().getNodes();
 ### Failure detection
 
 The `Node` objects provided by the `ClusterService` provide a `Node.State` that can indicates the
-liveliness of the given node. The cluster service uses a phi accrual failure detection algorith
+liveliness of the given node. The cluster service uses a phi accrual failure detection algorithm
 internally to detect failures, and nodes' states are updated as failures are detected:
 
 ```java
@@ -332,8 +332,9 @@ asyncElector.run("foo", atomix.getClusterService().getLocalNode().id()).thenAcce
 });
 ```
 
-The topic passed as the first argument to the `run` method is an identifier for the leader election
-to run into. The leader elector will balance the leaders for all topics.
+The topic passed as the first argument to the `run` method is an identifier for a named election in
+which to participate. Multiple elections can be managed by a single leader elector, and leaders'
+locations will be automatically balanced among all elections.
 
 To get the current leader for a topic, use `getLeadership`:
 
