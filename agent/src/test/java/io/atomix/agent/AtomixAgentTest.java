@@ -17,6 +17,7 @@ package io.atomix.agent;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.impl.NettyMessagingService;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -39,6 +40,7 @@ public class AtomixAgentTest {
   }
 
   @Test
+  @Ignore
   public void testParseNodeId() throws Exception {
     assertEquals(NodeId.from("localhost"), AtomixAgent.parseNodeId(new String[]{"127.0.0.1"}));
     assertEquals(NodeId.from("foo"), AtomixAgent.parseNodeId(new String[]{"foo"}));
@@ -48,6 +50,7 @@ public class AtomixAgentTest {
   }
 
   @Test
+  @Ignore
   public void testParseEndpoint() throws Exception {
     assertEquals(String.format("0.0.0.0:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseEndpoint(new String[]{"foo"}).toString());
     assertEquals(String.format("127.0.0.1:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseEndpoint(new String[]{"127.0.0.1"}).toString());
