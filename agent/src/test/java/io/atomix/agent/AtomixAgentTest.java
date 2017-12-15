@@ -17,8 +17,9 @@ package io.atomix.agent;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.impl.NettyMessagingService;
-import org.junit.Ignore;
 import org.junit.Test;
+
+import java.net.InetAddress;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -40,17 +41,15 @@ public class AtomixAgentTest {
   }
 
   @Test
-  @Ignore
   public void testParseNodeId() throws Exception {
-    assertEquals(NodeId.from("localhost"), AtomixAgent.parseNodeId(new String[]{"127.0.0.1"}));
+    assertEquals(NodeId.from(InetAddress.getByName("127.0.0.1").getHostName()), AtomixAgent.parseNodeId(new String[]{"127.0.0.1"}));
     assertEquals(NodeId.from("foo"), AtomixAgent.parseNodeId(new String[]{"foo"}));
-    assertEquals(NodeId.from("localhost"), AtomixAgent.parseNodeId(new String[]{"127.0.0.1", "1234"}));
+    assertEquals(NodeId.from(InetAddress.getByName("127.0.0.1").getHostName()), AtomixAgent.parseNodeId(new String[]{"127.0.0.1", "1234"}));
     assertEquals(NodeId.from("foo"), AtomixAgent.parseNodeId(new String[]{"foo", "127.0.0.1", "1234"}));
     assertEquals(NodeId.from("foo"), AtomixAgent.parseNodeId(new String[]{"foo", "127.0.0.1"}));
   }
 
   @Test
-  @Ignore
   public void testParseEndpoint() throws Exception {
     assertEquals(String.format("0.0.0.0:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseEndpoint(new String[]{"foo"}).toString());
     assertEquals(String.format("127.0.0.1:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseEndpoint(new String[]{"127.0.0.1"}).toString());
