@@ -357,18 +357,18 @@ class Cli(object):
         while True:
             try:
                 document = self.cli.run(reset_current_buffer=True)
-                self._process_command(document.text)
+                args = shlex.split(document.text)
+                if len(args) > 0:
+                    self._process_command(*args)
             except (KeyboardInterrupt, EOFError):
-                break;
+                break
             else:
                 self.cli.request_redraw()
 
-    def _process_command(self, text):
+    def _process_command(self, *args):
         """Processes the input command."""
         try:
-            args = shlex.split(text)
-            if len(args) == 0:
-                return
+            args = list(args)
             command_name = args.pop(0)
             command = self.commands.command(command_name)
             command.execute_action(*args)
