@@ -50,6 +50,7 @@ import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.transaction.TransactionBuilder;
+import io.atomix.utils.AtomixRuntimeException;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -64,6 +65,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -479,7 +481,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     @Override
     public Atomix build() {
-      return buildInstance().open().join();
+      try {
+        return buildInstance().open().join();
+      } catch (CompletionException e) {
+        throw new AtomixRuntimeException(e.getCause());
+      }
     }
 
     /**
