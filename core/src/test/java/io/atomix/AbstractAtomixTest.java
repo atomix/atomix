@@ -65,7 +65,7 @@ public abstract class AbstractAtomixTest {
    * @return a new Atomix instance.
    */
   protected Atomix atomix() {
-    Atomix instance = createAtomix(Node.Type.CLIENT, id++, 1, 2, 3).open().join();
+    Atomix instance = createAtomix(Node.Type.CLIENT, id++, 1, 2, 3).join();
     instances.add(instance);
     return instance;
   }
@@ -76,17 +76,26 @@ public abstract class AbstractAtomixTest {
     messagingServiceFactory = new TestMessagingServiceFactory();
     endpoints = new HashMap<>();
     instances = new ArrayList<>();
-    instances.add(createAtomix(Node.Type.DATA, 1, 1, 2, 3));
-    instances.add(createAtomix(Node.Type.DATA, 2, 1, 2, 3));
-    instances.add(createAtomix(Node.Type.DATA, 3, 1, 2, 3));
-    List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::open).collect(Collectors.toList());
+    List<CompletableFuture<Atomix>> futures = new ArrayList<>();
+    futures.add(createAtomix(Node.Type.DATA, 1, 1, 2, 3).thenApply(instance -> {
+      instances.add(instance);
+      return instance;
+    }));
+    futures.add(createAtomix(Node.Type.DATA, 2, 1, 2, 3).thenApply(instance -> {
+      instances.add(instance);
+      return instance;
+    }));
+    futures.add(createAtomix(Node.Type.DATA, 3, 1, 2, 3).thenApply(instance -> {
+      instances.add(instance);
+      return instance;
+    }));
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
   }
 
   /**
    * Creates an Atomix instance.
    */
-  private static Atomix createAtomix(Node.Type type, int id, Integer... ids) {
+  private static CompletableFuture<Atomix> createAtomix(Node.Type type, int id, Integer... ids) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
         .withEndpoint(endpoints.computeIfAbsent(id, i -> Endpoint.from("localhost", BASE_PORT + id)))
@@ -105,7 +114,7 @@ public abstract class AbstractAtomixTest {
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrapNodes)
         .withDataPartitions(3) // Lower number of partitions for faster testing
-        .build();
+        .buildAsync();
   }
 
   @AfterClass
