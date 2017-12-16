@@ -112,13 +112,15 @@ public class DefaultClusterMetadataService
 
   @Override
   public void addNode(Node node) {
-    ReplicatedNode replicatedNode = nodes.get(node.id());
-    if (replicatedNode == null) {
-      LogicalTimestamp timestamp = clock.increment();
-      replicatedNode = new ReplicatedNode(node.id(), node.type(), node.endpoint(), timestamp, false);
-      nodes.put(replicatedNode.id(), replicatedNode);
-      broadcastUpdate(new NodeUpdate(replicatedNode, timestamp));
-      post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
+    if (node.type() != Node.Type.CLIENT) {
+      ReplicatedNode replicatedNode = nodes.get(node.id());
+      if (replicatedNode == null) {
+        LogicalTimestamp timestamp = clock.increment();
+        replicatedNode = new ReplicatedNode(node.id(), node.type(), node.endpoint(), timestamp, false);
+        nodes.put(replicatedNode.id(), replicatedNode);
+        broadcastUpdate(new NodeUpdate(replicatedNode, timestamp));
+        post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
+      }
     }
   }
 

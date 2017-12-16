@@ -51,7 +51,7 @@ The builder should be configured with the local node configuration:
 builder.withLocalNode(Node.builder()
   .withId("foo")
   .withType(Node.Type.DATA)
-  .withEndpoint(Endpoint.endpoint("localhost", 5000))
+  .withEndpoint(Endpoint.from("localhost", 5000))
   .build());
 ```
 
@@ -62,15 +62,15 @@ Each instance should provide the same set of bootstrap nodes:
 builder.withBootstrapNodes(
   Node.builder("foo")
     .withType(Node.Type.DATA)
-    .withEndpoint(Endpoint.endpoint("localhost", 5000)
+    .withEndpoint(Endpoint.from("localhost", 5000)
     .build(),
   Node.builder("bar")
     .withType(Node.Type.DATA)
-    .withEndpoint(Endpoint.endpoint("localhost", 5001)
+    .withEndpoint(Endpoint.from("localhost", 5001)
     .build(),
   Node.builder("baz")
     .withType(Node.Type.DATA)
-    .withEndpoint(Endpoint.endpoint("localhost", 5002)
+    .withEndpoint(Endpoint.from("localhost", 5002)
     .build());
 ```
 
@@ -82,13 +82,7 @@ been configured, build the instance by calling `build()`:
 Atomix atomix = builder.build();
 ```
 
-Finally, connect the instance by calling `open()`:
-
-```java
-atomix.open().join();
-```
-
-Note that in order to form a cluster, a majority of instance must be `open()`ed simultaneously
+Note that in order to form a cluster, a majority of instance must be created simultaneously
 to allow Raft partitions to form a quorum.
 
 ### Connecting a client node
@@ -101,24 +95,22 @@ node builder that the node is a `CLIENT`:
 Atomix atomix = Atomix.builder()
   .withLocalNode(Node.builder("client")
     .withType(Node.Type.CLIENT)
-    .withEndpoint(Endpoint.endpoint("localhost", 5003))
+    .withEndpoint(Endpoint.from("localhost", 5003))
     .build())
   .withBootstrapNodes(
       Node.builder("foo")
         .withType(Node.Type.DATA)
-        .withEndpoint(Endpoint.endpoint("localhost", 5000)
+        .withEndpoint(Endpoint.from("localhost", 5000)
         .build(),
       Node.builder("bar")
         .withType(Node.Type.DATA)
-        .withEndpoint(Endpoint.endpoint("localhost", 5001)
+        .withEndpoint(Endpoint.from("localhost", 5001)
         .build(),
       Node.builder("baz")
         .withType(Node.Type.DATA)
-        .withEndpoint(Endpoint.endpoint("localhost", 5002)
+        .withEndpoint(Endpoint.from("localhost", 5002)
         .build())
   .build();
-
-atomix.open().join();
 ```
 
 ## Cluster management
