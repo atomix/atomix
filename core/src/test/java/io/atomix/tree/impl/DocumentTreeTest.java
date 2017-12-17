@@ -46,11 +46,11 @@ import static org.junit.Assert.fail;
  */
 public class DocumentTreeTest extends AbstractAtomixTest {
 
-  protected AsyncDocumentTree<String> newTree(String name) {
+  protected AsyncDocumentTree<String> newTree(String name) throws Exception {
     return newTree(name, null);
   }
 
-  protected AsyncDocumentTree<String> newTree(String name, Ordering ordering) {
+  protected AsyncDocumentTree<String> newTree(String name, Ordering ordering) throws Exception {
     return atomix().<String>documentTreeBuilder(name)
         .withOrdering(ordering)
         .withMaxRetries(5)
@@ -325,7 +325,7 @@ public class DocumentTreeTest extends AbstractAtomixTest {
    * Tests destroy.
    */
   @Test
-  public void testClear() {
+  public void testClear() throws Exception {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
     tree.create(path("root.a"), "a").join();
     tree.create(path("root.a.b"), "ab").join();

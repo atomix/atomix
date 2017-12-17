@@ -157,7 +157,7 @@ public class WorkQueueTest extends AbstractAtomixTest {
   }
 
   @Test
-  public void testDestroy() {
+  public void testDestroy() throws Exception {
     String queueName = UUID.randomUUID().toString();
     AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item = DEFAULT_PAYLOAD;
@@ -181,7 +181,7 @@ public class WorkQueueTest extends AbstractAtomixTest {
   }
 
   @Test
-  public void testCompleteAttemptWithIncorrectSession() {
+  public void testCompleteAttemptWithIncorrectSession() throws Exception {
     String queueName = UUID.randomUUID().toString();
     AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName).build().async();
     String item = DEFAULT_PAYLOAD;
