@@ -62,7 +62,7 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
   }
 
   @Override
-  public CompletableFuture<PrimaryBackupPartitionClient> open() {
+  public CompletableFuture<PrimaryBackupPartitionClient> start() {
     synchronized (PrimaryBackupPartitionClient.this) {
       client = newClient();
       log.info("Successfully started client for {}", partition.id());
@@ -85,17 +85,12 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
   }
 
   @Override
-  public boolean isOpen() {
+  public boolean isRunning() {
     return client != null;
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     return client != null ? client.close() : CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return client == null;
   }
 }

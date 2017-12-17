@@ -82,7 +82,7 @@ public class DefaultClusterEventsService implements ManagedClusterEventsService 
   private final Map<NodeId, Long> updateTimes = Maps.newConcurrentMap();
   private final Map<MessageSubject, Map<NodeId, Subscription>> subjectSubscriptions = Maps.newConcurrentMap();
   private final Map<MessageSubject, SubscriberIterator> subjectIterators = Maps.newConcurrentMap();
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public DefaultClusterEventsService(ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
     this.clusterService = clusterService;
@@ -315,44 +315,43 @@ public class DefaultClusterEventsService implements ManagedClusterEventsService 
   }
 
   @Override
-  public CompletableFuture<ClusterEventsService> open() {
-    gossipExecutor = Executors.newSingleThreadScheduledExecutor(
-        namedThreads("atomix-cluster-event-executor-%d", LOGGER));
-    gossipExecutor.scheduleAtFixedRate(
-        this::gossip,
-        GOSSIP_INTERVAL_MILLIS,
-        GOSSIP_INTERVAL_MILLIS,
-        TimeUnit.MILLISECONDS);
-    gossipExecutor.scheduleAtFixedRate(
-        this::purgeTombstones,
-        TOMBSTONE_EXPIRATION_MILLIS,
-        TOMBSTONE_EXPIRATION_MILLIS,
-        TimeUnit.MILLISECONDS);
-    clusterCommunicator.<Collection<Subscription>, Void>addSubscriber(GOSSIP_MESSAGE_SUBJECT, SERIALIZER::decode, subscriptions -> {
-      update(subscriptions);
-      return null;
-    }, SERIALIZER::encode, gossipExecutor);
-    LOGGER.info("Started");
+  public CompletableFuture<ClusterEventsService> start() {
+    if (started.compareAndSet(false, true)) {
+      gossipExecutor = Executors.newSingleThreadScheduledExecutor(
+          namedThreads("atomix-cluster-event-executor-%d", LOGGER));
+      gossipExecutor.scheduleAtFixedRate(
+          this::gossip,
+          GOSSIP_INTERVAL_MILLIS,
+          GOSSIP_INTERVAL_MILLIS,
+          TimeUnit.MILLISECONDS);
+      gossipExecutor.scheduleAtFixedRate(
+          this::purgeTombstones,
+          TOMBSTONE_EXPIRATION_MILLIS,
+          TOMBSTONE_EXPIRATION_MILLIS,
+          TimeUnit.MILLISECONDS);
+      clusterCommunicator.<Collection<Subscription>, Void>addSubscriber(GOSSIP_MESSAGE_SUBJECT, SERIALIZER::decode, subscriptions -> {
+        update(subscriptions);
+        return null;
+      }, SERIALIZER::encode, gossipExecutor);
+      LOGGER.info("Started");
+    }
     return CompletableFuture.completedFuture(this);
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    if (gossipExecutor != null) {
-      gossipExecutor.shutdown();
+  public CompletableFuture<Void> stop() {
+    if (started.compareAndSet(true, false)) {
+      if (gossipExecutor != null) {
+        gossipExecutor.shutdown();
+      }
+      LOGGER.info("Stopped");
     }
-    LOGGER.info("Stopped");
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 
   /**

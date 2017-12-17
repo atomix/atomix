@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 public class CorePrimitivesService implements ManagedPrimitivesService {
   private final PrimitiveManagementService managementService;
   private final ManagedTransactionService transactionService;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public CorePrimitivesService(
       ClusterService clusterService,
@@ -85,25 +85,20 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public CompletableFuture<PrimitivesService> open() {
-    return transactionService.open()
-        .thenRun(() -> open.set(true))
+  public CompletableFuture<PrimitivesService> start() {
+    return transactionService.start()
+        .thenRun(() -> started.set(true))
         .thenApply(v -> this);
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    return transactionService.close()
-        .whenComplete((r, e) -> open.set(false));
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
+  public CompletableFuture<Void> stop() {
+    return transactionService.stop()
+        .whenComplete((r, e) -> started.set(false));
   }
 }

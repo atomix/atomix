@@ -88,7 +88,7 @@ public class DefaultClusterMetadataService
   private final Map<NodeId, ReplicatedNode> nodes = Maps.newConcurrentMap();
   private final MessagingService messagingService;
   private final LogicalClock clock = new LogicalClock();
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   private final ScheduledExecutorService messageScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-metadata-sender", log));
@@ -290,8 +290,8 @@ public class DefaultClusterMetadataService
   }
 
   @Override
-  public CompletableFuture<ClusterMetadataService> open() {
-    if (open.compareAndSet(false, true)) {
+  public CompletableFuture<ClusterMetadataService> start() {
+    if (started.compareAndSet(false, true)) {
       registerMessageHandlers();
       return bootstrap().handle((result, error) -> {
         metadataFuture = messageScheduler.scheduleWithFixedDelay(this::sendAdvertisement, 0, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
@@ -303,8 +303,8 @@ public class DefaultClusterMetadataService
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   /**
@@ -326,8 +326,8 @@ public class DefaultClusterMetadataService
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    if (open.compareAndSet(true, false)) {
+  public CompletableFuture<Void> stop() {
+    if (started.compareAndSet(true, false)) {
       messageScheduler.shutdownNow();
       messageExecutor.shutdownNow();
       metadataFuture.cancel(true);
@@ -335,11 +335,6 @@ public class DefaultClusterMetadataService
     }
     log.info("Stopped");
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 
   /**

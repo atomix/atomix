@@ -61,7 +61,7 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
   private final PrimaryElectionEventListener eventListener = event -> listeners.forEach(l -> l.onEvent(event));
   private final Map<PartitionId, PrimaryElection> elections = Maps.newConcurrentMap();
   private AsyncLeaderElector<NodeId> elector;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public LeaderElectorPrimaryElectionService(PartitionGroup partitionGroup) {
     this.partitions = checkNotNull(partitionGroup);
@@ -97,12 +97,12 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
             .withRecoveryStrategy(Recovery.RECOVER)
             .withMaxRetries(5)
             .build());
-    AsyncLeaderElector<byte[]> leaderElector = new LeaderElectorProxy(proxy.open().join());
+    AsyncLeaderElector<byte[]> leaderElector = new LeaderElectorProxy(proxy.start().join());
     return new TranscodingAsyncLeaderElector<>(leaderElector, SERIALIZER::encode, SERIALIZER::decode);
   }
 
   @Override
-  public CompletableFuture<PrimaryElectionService> open() {
+  public CompletableFuture<PrimaryElectionService> start() {
     Map<PartitionId, AsyncLeaderElector<NodeId>> electors = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {
       electors.put(partition.id(), newLeaderElector(partition));
@@ -110,24 +110,19 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
 
     Partitioner<String> partitioner = topic -> partitions.getPartition(topic).id();
     elector = new PartitionedAsyncLeaderElector<>(PRIMITIVE_NAME, electors, partitioner);
-    open.set(true);
+    started.set(true);
     return CompletableFuture.completedFuture(this);
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     elector.close();
-    open.set(false);
+    started.set(false);
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 }

@@ -62,7 +62,7 @@ public class VertxRestService implements ManagedRestService {
   }
 
   @Override
-  public CompletableFuture<RestService> open() {
+  public CompletableFuture<RestService> start() {
     server = vertx.createHttpServer();
     deployment = new VertxResteasyDeployment();
     deployment.start();
@@ -101,12 +101,12 @@ public class VertxRestService implements ManagedRestService {
   }
 
   @Override
-  public boolean isOpen() {
+  public boolean isRunning() {
     return open.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     if (server != null) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       server.close(result -> {
@@ -118,11 +118,6 @@ public class VertxRestService implements ManagedRestService {
     }
     open.set(false);
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 
   /**

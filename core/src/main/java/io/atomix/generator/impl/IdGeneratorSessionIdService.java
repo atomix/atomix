@@ -42,7 +42,7 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
 
   private final PartitionGroup partitions;
   private AsyncAtomicIdGenerator idGenerator;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public IdGeneratorSessionIdService(PartitionGroup partitionGroup) {
     this.partitions = checkNotNull(partitionGroup);
@@ -55,7 +55,7 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<SessionIdService> open() {
+  public CompletableFuture<SessionIdService> start() {
     PrimitiveProxy proxy = partitions.getPartition(PRIMITIVE_NAME)
         .getPrimitiveClient()
         .newProxy(PRIMITIVE_NAME, AtomicIdGeneratorType.instance(), RaftProtocol.builder()
@@ -66,28 +66,23 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
             .withRecoveryStrategy(Recovery.RECOVER)
             .withMaxRetries(5)
             .build());
-    return proxy.open()
+    return proxy.start()
         .thenApply(v -> {
           idGenerator = new DelegatingIdGenerator(new AtomicCounterProxy(proxy));
-          open.set(true);
+          started.set(true);
           return this;
         });
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     idGenerator.close();
-    open.set(false);
+    started.set(false);
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 }

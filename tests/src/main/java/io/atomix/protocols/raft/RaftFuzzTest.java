@@ -560,7 +560,7 @@ public class RaftFuzzTest implements Runnable {
     if (USE_NETTY) {
       try {
         Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-        MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
+        MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().start().join();
         messagingServices.add(messagingManager);
         endpointMap.put(member.nodeId(), endpoint);
         protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
@@ -595,7 +595,7 @@ public class RaftFuzzTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
+      MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().start().join();
       endpointMap.put(nodeId, endpoint);
       protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
     } else {
@@ -620,7 +620,7 @@ public class RaftFuzzTest implements Runnable {
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build())
-        .open()
+        .start()
         .join();
   }
 

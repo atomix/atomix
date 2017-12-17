@@ -72,14 +72,14 @@ public abstract class AbstractRole implements RaftRole {
   }
 
   @Override
-  public CompletableFuture<RaftRole> open() {
+  public CompletableFuture<RaftRole> start() {
     raft.checkThread();
     open = true;
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public boolean isOpen() {
+  public boolean isRunning() {
     return open;
   }
 
@@ -126,15 +126,10 @@ public abstract class AbstractRole implements RaftRole {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     raft.checkThread();
     open = false;
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open;
   }
 
   @Override
@@ -143,5 +138,4 @@ public abstract class AbstractRole implements RaftRole {
         .add("context", raft)
         .toString();
   }
-
 }

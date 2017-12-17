@@ -55,9 +55,9 @@ public final class FollowerRole extends ActiveRole {
   }
 
   @Override
-  public synchronized CompletableFuture<RaftRole> open() {
+  public synchronized CompletableFuture<RaftRole> start() {
     raft.setLastHeartbeatTime();
-    return super.open().thenRun(this::startHeartbeatTimer).thenApply(v -> this);
+    return super.start().thenRun(this::startHeartbeatTimer).thenApply(v -> this);
   }
 
   /**
@@ -91,7 +91,7 @@ public final class FollowerRole extends ActiveRole {
     // Schedule a delay after which to check whether the election has timed out.
     heartbeatTimeout = raft.getThreadContext().schedule(delay, () -> {
       heartbeatTimeout = null;
-      if (isOpen()) {
+      if (isRunning()) {
         if (System.currentTimeMillis() - raft.getLastHeartbeatTime() > raft.getElectionTimeout().toMillis()
             || failureDetector.phi() >= raft.getElectionThreshold()) {
           log.debug("Heartbeat timed out in {}", System.currentTimeMillis() - raft.getLastHeartbeatTime());
@@ -168,7 +168,7 @@ public final class FollowerRole extends ActiveRole {
           .build();
       raft.getProtocol().poll(member.nodeId(), request).whenCompleteAsync((response, error) -> {
         raft.checkThread();
-        if (isOpen() && !complete.get()) {
+        if (isRunning() && !complete.get()) {
           if (error != null) {
             log.warn("{}", error.getMessage());
             quorum.fail();
@@ -222,8 +222,8 @@ public final class FollowerRole extends ActiveRole {
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
-    return super.close().thenRun(this::cancelHeartbeatTimers);
+  public synchronized CompletableFuture<Void> stop() {
+    return super.stop().thenRun(this::cancelHeartbeatTimers);
   }
 
 }

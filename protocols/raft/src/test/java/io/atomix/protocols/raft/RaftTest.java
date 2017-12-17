@@ -1131,7 +1131,7 @@ public class RaftTest extends ConcurrentTestCase {
     session1.invoke(CLOSE).thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 1);
     session1.addEventListener(CLOSE_EVENT, this::resume);
-    createSession(client2).close().thenRun(this::resume);
+    createSession(client2).stop().thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 2);
   }
 
@@ -1255,7 +1255,7 @@ public class RaftTest extends ConcurrentTestCase {
         .withMinTimeout(Duration.ofMillis(250))
         .withMaxTimeout(Duration.ofSeconds(5))
         .build())
-        .open()
+        .start()
         .get(5, TimeUnit.SECONDS);
   }
 

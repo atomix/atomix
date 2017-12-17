@@ -44,7 +44,7 @@ public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
         .getPartition(name())
         .getPrimitiveClient()
         .newProxy(name(), primitiveType(), protocol)
-        .open()
+        .start()
         .thenApply(proxy -> new AtomicCounterProxy(proxy).sync());
   }
 }

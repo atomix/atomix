@@ -98,7 +98,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final ManagedPartitionService partitions;
   private final ManagedPrimitivesService primitives;
   private final PrimitiveTypeRegistry primitiveTypes;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
   private final ThreadContext context = new SingleThreadContext("atomix-%d");
   private volatile CompletableFuture<Atomix> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
@@ -218,30 +218,30 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   @Override
-  public synchronized CompletableFuture<Atomix> open() {
+  public synchronized CompletableFuture<Atomix> start() {
     if (openFuture != null) {
       return openFuture;
     }
 
-    openFuture = messagingService.open()
-        .thenComposeAsync(v -> metadataService.open(), context)
-        .thenComposeAsync(v -> clusterService.open(), context)
-        .thenComposeAsync(v -> clusterCommunicator.open(), context)
-        .thenComposeAsync(v -> clusterEventService.open(), context)
+    openFuture = messagingService.start()
+        .thenComposeAsync(v -> metadataService.start(), context)
+        .thenComposeAsync(v -> clusterService.start(), context)
+        .thenComposeAsync(v -> clusterCommunicator.start(), context)
+        .thenComposeAsync(v -> clusterEventService.start(), context)
         .thenComposeAsync(v -> corePartitionGroup.open(
             new DefaultPartitionManagementService(metadataService, clusterService, clusterCommunicator, primitiveTypes, null, null)), context)
         .thenComposeAsync(v -> {
           ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(corePartitionGroup);
           ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(corePartitionGroup);
-          return electionService.open()
-              .thenComposeAsync(v2 -> sessionIdService.open(), context)
+          return electionService.start()
+              .thenComposeAsync(v2 -> sessionIdService.start(), context)
               .thenApply(v2 -> new DefaultPartitionManagementService(metadataService, clusterService, clusterCommunicator, primitiveTypes, electionService, sessionIdService));
         }, context)
         .thenComposeAsync(partitionManagementService -> partitions.open(partitionManagementService), context)
-        .thenComposeAsync(v -> primitives.open(), context)
+        .thenComposeAsync(v -> primitives.start(), context)
         .thenApplyAsync(v -> {
           metadataService.addNode(clusterService.getLocalNode());
-          open.set(true);
+          started.set(true);
           LOGGER.info("Started");
           return this;
         }, context);
@@ -249,36 +249,31 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> stop() {
     if (closeFuture != null) {
       return closeFuture;
     }
 
     metadataService.removeNode(clusterService.getLocalNode());
-    closeFuture = primitives.close()
+    closeFuture = primitives.stop()
         .thenComposeAsync(v -> partitions.close(), context)
         .thenComposeAsync(v -> corePartitionGroup.close(), context)
-        .thenComposeAsync(v -> clusterCommunicator.close(), context)
-        .thenComposeAsync(v -> clusterEventService.close(), context)
-        .thenComposeAsync(v -> clusterService.close(), context)
-        .thenComposeAsync(v -> metadataService.close(), context)
-        .thenComposeAsync(v -> messagingService.close(), context)
+        .thenComposeAsync(v -> clusterCommunicator.stop(), context)
+        .thenComposeAsync(v -> clusterEventService.stop(), context)
+        .thenComposeAsync(v -> clusterService.stop(), context)
+        .thenComposeAsync(v -> metadataService.stop(), context)
+        .thenComposeAsync(v -> messagingService.stop(), context)
         .thenRunAsync(() -> {
           context.close();
-          open.set(false);
+          started.set(false);
           LOGGER.info("Stopped");
         });
     return closeFuture;
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 
   @Override
@@ -483,7 +478,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     @Override
     public Atomix build() {
       try {
-        return buildInstance().open().join();
+        return buildInstance().start().join();
       } catch (CompletionException e) {
         throw new AtomixRuntimeException(e.getCause());
       }
@@ -495,7 +490,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * @return a future to be completed with a new Atomix instance
      */
     public CompletableFuture<Atomix> buildAsync() {
-      return buildInstance().open();
+      return buildInstance().start();
     }
 
     /**

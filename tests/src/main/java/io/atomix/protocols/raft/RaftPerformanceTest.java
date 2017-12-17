@@ -293,7 +293,7 @@ public class RaftPerformanceTest implements Runnable {
     for (int i = 0; i < NUM_CLIENTS; i++) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       clients[i] = createClient();
-      proxies[i] = createProxy(clients[i]).open().join();
+      proxies[i] = createProxy(clients[i]).start().join();
       futures[i] = future;
     }
 
@@ -378,7 +378,7 @@ public class RaftPerformanceTest implements Runnable {
 
     messagingServices.forEach(m -> {
       try {
-        m.close();
+        m.stop();
       } catch (Exception e) {
       }
     });
@@ -453,7 +453,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftServerProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      ManagedMessagingService messagingService = (ManagedMessagingService) NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
+      ManagedMessagingService messagingService = (ManagedMessagingService) NettyMessagingService.builder().withEndpoint(endpoint).build().start().join();
       messagingServices.add(messagingService);
       endpointMap.put(nodeId, endpoint);
       protocol = new RaftServerMessagingProtocol(messagingService, protocolSerializer, endpointMap::get);
@@ -487,7 +487,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      MessagingService messagingService = NettyMessagingService.builder().withEndpoint(endpoint).build().open().join();
+      MessagingService messagingService = NettyMessagingService.builder().withEndpoint(endpoint).build().start().join();
       endpointMap.put(nodeId, endpoint);
       protocol = new RaftClientMessagingProtocol(messagingService, protocolSerializer, endpointMap::get);
     } else {

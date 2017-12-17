@@ -208,7 +208,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<MessagingService> open() {
+  public CompletableFuture<MessagingService> start() {
     getTlsParameters();
     if (started.get()) {
       log.warn("Already running at local endpoint: {}", localEndpoint);
@@ -236,13 +236,8 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public boolean isOpen() {
+  public boolean isRunning() {
     return started.get();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !isOpen();
   }
 
   private boolean loadKeyStores() {
@@ -586,7 +581,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     if (started.get()) {
       serverGroup.shutdownGracefully();
       clientGroup.shutdownGracefully();

@@ -44,7 +44,7 @@ public class DistributedLockProxyBuilder extends DistributedLockBuilder {
         .getPartition(name())
         .getPrimitiveClient()
         .newProxy(name(), primitiveType(), protocol)
-        .open()
+        .start()
         .thenApply(proxy -> new DistributedLockProxy(proxy).sync());
   }
 }

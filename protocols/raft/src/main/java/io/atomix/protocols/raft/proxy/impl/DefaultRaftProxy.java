@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxy;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -150,7 +150,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> open() {
+  public CompletableFuture<PrimitiveProxy> start() {
     return sessionManager.openSession(
         serviceName,
         primitiveType,
@@ -202,22 +202,18 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public boolean isOpen() {
-    return state.getState() != PrimitiveProxy.State.CLOSED;
+  public boolean isRunning() {
+    RaftProxyState state = this.state;
+    return state != null && state.getState() != PrimitiveProxy.State.CLOSED;
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     if (state != null) {
       return sessionManager.closeSession(state.getSessionId())
           .whenComplete((result, error) -> state.setState(PrimitiveProxy.State.CLOSED));
     }
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return state == null || state.getState() == PrimitiveProxy.State.CLOSED;
   }
 
   @Override

@@ -66,14 +66,14 @@ public class NettyMessagingServiceTest {
     netty1 = (ManagedMessagingService) NettyMessagingService.builder()
         .withEndpoint(ep1)
         .build()
-        .open()
+        .start()
         .join();
 
     ep2 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5003));
     netty2 = (ManagedMessagingService) NettyMessagingService.builder()
         .withEndpoint(ep2)
         .build()
-        .open()
+        .start()
         .join();
 
     invalidEndPoint = new Endpoint(InetAddress.getByName(IP_STRING), 5003);
@@ -90,11 +90,11 @@ public class NettyMessagingServiceTest {
   @After
   public void tearDown() throws Exception {
     if (netty1 != null) {
-      netty1.close();
+      netty1.stop();
     }
 
     if (netty2 != null) {
-      netty2.close();
+      netty2.stop();
     }
   }
 

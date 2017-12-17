@@ -79,22 +79,22 @@ public class DefaultClusterEventsServiceTest {
     ClusterMetadata clusterMetadata = buildClusterMetadata(1, 1, 2, 3);
 
     Node localNode1 = buildNode(1, Node.Type.DATA);
-    MessagingService messagingService1 = factory.newMessagingService(localNode1.endpoint()).open().join();
-    ClusterService clusterService1 = new DefaultClusterService(localNode1, new TestClusterMetadataService(clusterMetadata), messagingService1).open().join();
-    ClusterCommunicationService clusterCommunicator1 = new DefaultClusterCommunicationService(clusterService1, messagingService1).open().join();
-    ClusterEventsService eventService1 = new DefaultClusterEventsService(clusterService1, clusterCommunicator1).open().join();
+    MessagingService messagingService1 = factory.newMessagingService(localNode1.endpoint()).start().join();
+    ClusterService clusterService1 = new DefaultClusterService(localNode1, new TestClusterMetadataService(clusterMetadata), messagingService1).start().join();
+    ClusterCommunicationService clusterCommunicator1 = new DefaultClusterCommunicationService(clusterService1, messagingService1).start().join();
+    ClusterEventsService eventService1 = new DefaultClusterEventsService(clusterService1, clusterCommunicator1).start().join();
 
     Node localNode2 = buildNode(2, Node.Type.DATA);
-    MessagingService messagingService2 = factory.newMessagingService(localNode2.endpoint()).open().join();
-    ClusterService clusterService2 = new DefaultClusterService(localNode2, new TestClusterMetadataService(clusterMetadata), messagingService2).open().join();
-    ClusterCommunicationService clusterCommunicator2 = new DefaultClusterCommunicationService(clusterService2, messagingService2).open().join();
-    ClusterEventsService eventService2 = new DefaultClusterEventsService(clusterService2, clusterCommunicator2).open().join();
+    MessagingService messagingService2 = factory.newMessagingService(localNode2.endpoint()).start().join();
+    ClusterService clusterService2 = new DefaultClusterService(localNode2, new TestClusterMetadataService(clusterMetadata), messagingService2).start().join();
+    ClusterCommunicationService clusterCommunicator2 = new DefaultClusterCommunicationService(clusterService2, messagingService2).start().join();
+    ClusterEventsService eventService2 = new DefaultClusterEventsService(clusterService2, clusterCommunicator2).start().join();
 
     Node localNode3 = buildNode(3, Node.Type.DATA);
-    MessagingService messagingService3 = factory.newMessagingService(localNode3.endpoint()).open().join();
-    ClusterService clusterService3 = new DefaultClusterService(localNode3, new TestClusterMetadataService(clusterMetadata), messagingService3).open().join();
-    ClusterCommunicationService clusterCommunicator3 = new DefaultClusterCommunicationService(clusterService3, messagingService3).open().join();
-    ClusterEventsService eventService3 = new DefaultClusterEventsService(clusterService3, clusterCommunicator3).open().join();
+    MessagingService messagingService3 = factory.newMessagingService(localNode3.endpoint()).start().join();
+    ClusterService clusterService3 = new DefaultClusterService(localNode3, new TestClusterMetadataService(clusterMetadata), messagingService3).start().join();
+    ClusterCommunicationService clusterCommunicator3 = new DefaultClusterCommunicationService(clusterService3, messagingService3).start().join();
+    ClusterEventsService eventService3 = new DefaultClusterEventsService(clusterService3, clusterCommunicator3).start().join();
 
     Thread.sleep(100);
 

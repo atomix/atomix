@@ -84,8 +84,8 @@ public class PassiveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<RaftRole> open() {
-    return super.open()
+  public CompletableFuture<RaftRole> start() {
+    return super.start()
         .thenRun(this::truncateUncommittedEntries)
         .thenApply(v -> this);
   }
@@ -738,11 +738,11 @@ public class PassiveRole extends InactiveRole {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     for (PendingSnapshot pendingSnapshot : pendingSnapshots.values()) {
       pendingSnapshot.rollback();
     }
-    return super.close();
+    return super.stop();
   }
 
   /**

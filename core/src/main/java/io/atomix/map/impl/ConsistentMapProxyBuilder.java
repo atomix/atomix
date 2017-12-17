@@ -62,7 +62,7 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
     for (Partition partition : partitions.getPartitions()) {
       maps.put(partition.id(), partition.getPrimitiveClient()
           .newProxy(name(), primitiveType(), protocol)
-          .open()
+          .start()
           .thenApply(proxy -> new TranscodingAsyncConsistentMap<>(
               new ConsistentMapProxy(proxy),
               BaseEncoding.base16()::encode,

@@ -86,27 +86,22 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
   }
 
   @Override
-  public CompletableFuture<PrimaryBackupServer> open() {
+  public CompletableFuture<PrimaryBackupServer> start() {
     context.open();
     open.set(true);
     return CompletableFuture.completedFuture(this);
   }
 
   @Override
-  public boolean isOpen() {
+  public boolean isRunning() {
     return open.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     open.set(false);
     context.close();
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 
   /**

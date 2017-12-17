@@ -126,7 +126,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
    * Verifies that the client is open.
    */
   private void checkOpen() {
-    checkState(isOpen(), "client not open");
+    checkState(isRunning(), "client not open");
   }
 
   /**
@@ -173,7 +173,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
    * @param future the future to be completed once the client is opened
    */
   private void openProxy(CompletableFuture<PrimitiveProxy> future) {
-    proxyFactory.get().open().whenComplete((proxy, error) -> {
+    proxyFactory.get().start().whenComplete((proxy, error) -> {
       if (error == null) {
         future.complete(proxy);
       } else {
@@ -214,7 +214,7 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public synchronized CompletableFuture<PrimitiveProxy> open() {
+  public synchronized CompletableFuture<PrimitiveProxy> start() {
     if (!open) {
       open = true;
       return openProxy().thenApply(c -> this);
@@ -223,12 +223,12 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public boolean isOpen() {
+  public boolean isRunning() {
     return open;
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> stop() {
     if (open) {
       open = false;
       if (recoverTask != null) {
@@ -237,17 +237,12 @@ public class RecoveringPrimitiveProxy extends AbstractPrimitiveProxy {
 
       PrimitiveProxy proxy = this.proxy;
       if (proxy != null) {
-        return proxy.close();
+        return proxy.stop();
       } else {
-        return clientFuture.thenCompose(c -> c.close());
+        return clientFuture.thenCompose(c -> c.stop());
       }
     }
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open;
   }
 
   @Override

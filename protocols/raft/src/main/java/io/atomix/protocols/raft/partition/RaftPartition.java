@@ -129,11 +129,11 @@ public class RaftPartition implements Partition<RaftProtocol> {
     this.client = createClient(managementService);
     if (partition.members().contains(managementService.getClusterService().getLocalNode().id())) {
       server = createServer(managementService);
-      return server.open()
-          .thenCompose(v -> client.open())
+      return server.start()
+          .thenCompose(v -> client.start())
           .thenApply(v -> null);
     }
-    return client.open()
+    return client.start()
         .thenApply(v -> this);
   }
 
@@ -144,7 +144,7 @@ public class RaftPartition implements Partition<RaftProtocol> {
     if (server == null && metadata.members().contains(managementService.getClusterService().getLocalNode().id())) {
       server = createServer(managementService);
       return server.join(metadata.members());
-    } else if (server != null && server.isOpen()) {
+    } else if (server != null && server.isRunning()) {
       return server.leave().thenRun(() -> server = null);
     }
     return CompletableFuture.completedFuture(null);
@@ -159,14 +159,14 @@ public class RaftPartition implements Partition<RaftProtocol> {
 
   private CompletableFuture<Void> closeClient() {
     if (client != null) {
-      return client.close();
+      return client.stop();
     }
     return CompletableFuture.completedFuture(null);
   }
 
   private CompletableFuture<Void> closeServer() {
     if (server != null) {
-      return server.close();
+      return server.stop();
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -201,7 +201,7 @@ public class RaftPartition implements Partition<RaftProtocol> {
    * @return future to be completed once the partition has been deleted
    */
   public CompletableFuture<Void> delete() {
-    return server.close().thenCompose(v -> client.close()).thenRun(() -> {
+    return server.stop().thenCompose(v -> client.stop()).thenRun(() -> {
       if (server != null) {
         server.delete();
       }
