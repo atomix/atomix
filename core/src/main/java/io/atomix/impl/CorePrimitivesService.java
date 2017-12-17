@@ -21,7 +21,7 @@ import io.atomix.ManagedPrimitivesService;
 import io.atomix.PrimitivesService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ClusterEventsService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -49,7 +49,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   public CorePrimitivesService(
       ClusterService clusterService,
       ClusterCommunicationService communicationService,
-      ClusterEventService eventService,
+      ClusterEventsService eventService,
       PartitionService partitionService) {
     this.managementService = new CorePrimitiveManagementService(
         clusterService,

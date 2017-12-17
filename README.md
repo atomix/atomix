@@ -122,7 +122,7 @@ about all nodes in the cluster, including the local node, data nodes, and client
 To get the set of nodes in the cluster, use the `ClusterService`:
 
 ```java
-Set<Node> nodes = atomix.getClusterService().getNodes();
+Set<Node> nodes = atomix.cluster().getNodes();
 ```
 
 ### Failure detection
@@ -132,14 +132,14 @@ liveliness of the given node. The cluster service uses a phi accrual failure det
 internally to detect failures, and nodes' states are updated as failures are detected:
 
 ```java
-Node.State state = atomix.getClusterService().getNode(NodeId.from("foo")).state();
+Node.State state = atomix.cluster().getNode(NodeId.from("foo")).state();
 ```
 
 Additionally, listeners can be added to the `ClusterService` to react to changes to both the set
 of nodes in the cluster and the states of individual nodes:
 
 ```java
-atomix.getClusterService().addListener(event -> {
+atomix.cluster().addListener(event -> {
   if (event.type() == ClusterEvent.Type.NODE_ACTIVATED) {
     // A node's state was changed to ACTIVE
   } else if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
@@ -178,7 +178,7 @@ private static final MessageSubject TEST_SUBJECT = new MessageSubject("test");
 To register a message subscriber, use the `addSubscriber` methods:
 
 ```java
-atomix.getCommunicationService().addSubscriber(TEST_SUBJECT, message -> {
+atomix.communicator().addSubscriber(TEST_SUBJECT, message -> {
   return CompletableFuture.completedFuture(message);
 });
 ```
@@ -198,7 +198,7 @@ As noted above, messages can be sent using a variety of different communication 
 
 ```java
 // Send a request-reply message to node "foo"
-atomix.getCommunicationService().sendAndReceive(TEST_SUBJECT, "Hello world!", NodeId.from("foo")).thenAccept(response -> {
+atomix.communicator().sendAndReceive(TEST_SUBJECT, "Hello world!", NodeId.from("foo")).thenAccept(response -> {
   System.out.println("Received " + response);
 });
 ```
@@ -216,8 +216,8 @@ Serializer serializer = Serializer.using(KryoNamespace.builder()
   .register(ClusterHeartbeat.class)
   .build());
 
-ClusterHeartbeat heartbeat = new ClusterHeartbeat(atomix.getClusterService().getLocalNode().id());
-atomix.getCommunicationService().sendAndReceive(TEST_SUBJECT, heartbeat, serializer::encode, serializer::decode, someNodeId).thenAccept(response -> {
+ClusterHeartbeat heartbeat = new ClusterHeartbeat(atomix.cluster().getLocalNode().id());
+atomix.communicator().sendAndReceive(TEST_SUBJECT, heartbeat, serializer::encode, serializer::decode, someNodeId).thenAccept(response -> {
   ...
 });
 ```
@@ -234,17 +234,17 @@ senders.
 
 ```java
 // Add an event service subscriber
-atomix.getEventService().addSubscriber(TEST_SUBJECT, message -> {
+atomix.event().addSubscriber(TEST_SUBJECT, message -> {
   return CompletableFuture.completedFuture(message);
 });
 
 // Send a request-reply message via the event service
-atomix.getEventService().sendAndReceive(TEST_SUBJECT, "Hello world!").thenAccept(response -> {
+atomix.event().sendAndReceive(TEST_SUBJECT, "Hello world!").thenAccept(response -> {
   System.out.println("Received " + response);
 });
 
 // Broadcast a message to all event subscribers
-atomix.getEventService().broadcast(TEST_SUBJECT, "Hello world!");
+atomix.event().broadcast(TEST_SUBJECT, "Hello world!");
 ```
 
 ## Coordination primitives
@@ -317,8 +317,8 @@ AsyncLeaderElector<NodeId> asyncElector = elector.async();
 To enter into an election, use the `run` method:
 
 ```java
-asyncElector.run("foo", atomix.getClusterService().getLocalNode().id()).thenAccept(leadership -> {
-  if (leadership.leader().id().equals(atomix.getClusterService().getLocalNode().id())) {
+asyncElector.run("foo", atomix.cluster().getLocalNode().id()).thenAccept(leadership -> {
+  if (leadership.leader().id().equals(atomix.cluster().getLocalNode().id())) {
     // Local node elected leader!
   }
 });

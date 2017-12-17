@@ -24,11 +24,11 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultClusterMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ClusterEventsService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
-import io.atomix.cluster.messaging.ManagedClusterEventService;
+import io.atomix.cluster.messaging.ManagedClusterEventsService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
-import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
+import io.atomix.cluster.messaging.impl.DefaultClusterEventsService;
 import io.atomix.election.impl.LeaderElectorPrimaryElectionService;
 import io.atomix.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.impl.CorePrimitivesService;
@@ -92,7 +92,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final ManagedClusterMetadataService metadataService;
   private final ManagedClusterService clusterService;
   private final ManagedClusterCommunicationService clusterCommunicator;
-  private final ManagedClusterEventService clusterEventService;
+  private final ManagedClusterEventsService clusterEventService;
   private final ManagedPartitionGroup corePartitionGroup;
   private final ManagedPartitionService partitions;
   private final ManagedPrimitivesService primitives;
@@ -107,7 +107,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterMetadataService metadataService,
       ManagedClusterService cluster,
       ManagedClusterCommunicationService clusterCommunicator,
-      ManagedClusterEventService clusterEventService,
+      ManagedClusterEventsService clusterEventService,
       ManagedPartitionGroup corePartitionGroup,
       ManagedPartitionService partitions,
       PrimitiveTypeRegistry primitiveTypes) {
@@ -128,7 +128,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the messaging service
    */
-  public MessagingService getMessagingService() {
+  public MessagingService messaging() {
     return messagingService;
   }
 
@@ -137,7 +137,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the cluster metadata service
    */
-  public ClusterMetadataService getMetadataService() {
+  public ClusterMetadataService metadata() {
     return metadataService;
   }
 
@@ -146,7 +146,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the cluster service
    */
-  public ClusterService getClusterService() {
+  public ClusterService cluster() {
     return clusterService;
   }
 
@@ -155,7 +155,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the cluster communication service
    */
-  public ClusterCommunicationService getCommunicationService() {
+  public ClusterCommunicationService communicator() {
     return clusterCommunicator;
   }
 
@@ -164,7 +164,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the cluster event service
    */
-  public ClusterEventService getEventService() {
+  public ClusterEventsService events() {
     return clusterEventService;
   }
 
@@ -173,7 +173,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the partition service
    */
-  public PartitionService getPartitionService() {
+  public PartitionService partitions() {
     return partitions;
   }
 
@@ -182,7 +182,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the primitives service
    */
-  public PrimitivesService getPrimitivesService() {
+  public PrimitivesService primitives() {
     return primitives;
   }
 
@@ -283,7 +283,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("partitions", getPartitionService())
+        .add("partitions", partitions())
         .toString();
   }
 
@@ -520,7 +520,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterMetadataService metadataService = buildClusterMetadataService(messagingService);
       ManagedClusterService clusterService = buildClusterService(metadataService, messagingService);
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
-      ManagedClusterEventService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
+      ManagedClusterEventsService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
       ManagedPartitionGroup corePartitionGroup = buildCorePartitionGroup();
       ManagedPartitionService partitionService = buildPartitionService();
       return new Atomix(
@@ -569,9 +569,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds a cluster event service.
      */
-    protected ManagedClusterEventService buildClusterEventService(
+    protected ManagedClusterEventsService buildClusterEventService(
         ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
-      return new DefaultClusterEventService(clusterService, clusterCommunicator);
+      return new DefaultClusterEventsService(clusterService, clusterCommunicator);
     }
 
     /**

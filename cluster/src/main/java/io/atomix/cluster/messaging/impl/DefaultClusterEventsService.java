@@ -21,8 +21,8 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventService;
-import io.atomix.cluster.messaging.ManagedClusterEventService;
+import io.atomix.cluster.messaging.ClusterEventsService;
+import io.atomix.cluster.messaging.ManagedClusterEventsService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.messaging.MessagingException;
 import io.atomix.utils.concurrent.Futures;
@@ -57,8 +57,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Cluster event service.
  */
-public class DefaultClusterEventService implements ManagedClusterEventService {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClusterEventService.class);
+public class DefaultClusterEventsService implements ManagedClusterEventsService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClusterEventsService.class);
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
@@ -84,7 +84,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
   private final Map<MessageSubject, SubscriberIterator> subjectIterators = Maps.newConcurrentMap();
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public DefaultClusterEventService(ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
+  public DefaultClusterEventsService(ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
     this.clusterService = clusterService;
     this.clusterCommunicator = clusterCommunicator;
     this.localNodeId = clusterService.getLocalNode().id();
@@ -315,7 +315,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
   }
 
   @Override
-  public CompletableFuture<ClusterEventService> open() {
+  public CompletableFuture<ClusterEventsService> open() {
     gossipExecutor = Executors.newSingleThreadScheduledExecutor(
         namedThreads("atomix-cluster-event-executor-%d", LOGGER));
     gossipExecutor.scheduleAtFixedRate(

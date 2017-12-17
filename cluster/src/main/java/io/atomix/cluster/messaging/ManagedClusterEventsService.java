@@ -20,5 +20,5 @@ import io.atomix.utils.Managed;
 /**
  * Managed cluster event service.
  */
-public interface ManagedClusterEventService extends ClusterEventService, Managed<ClusterEventService> {
+public interface ManagedClusterEventsService extends ClusterEventsService, Managed<ClusterEventsService> {
 }

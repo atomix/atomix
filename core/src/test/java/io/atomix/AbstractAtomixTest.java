@@ -19,7 +19,7 @@ import io.atomix.cluster.ManagedClusterMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
-import io.atomix.cluster.messaging.ManagedClusterEventService;
+import io.atomix.cluster.messaging.ManagedClusterEventsService;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
@@ -154,7 +154,7 @@ public abstract class AbstractAtomixTest {
    * Atomix implementation used for testing.
    */
   static class TestAtomix extends Atomix {
-    TestAtomix(ManagedMessagingService messagingService, ManagedClusterMetadataService metadataService, ManagedClusterService clusterService, ManagedClusterCommunicationService clusterCommunicator, ManagedClusterEventService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
+    TestAtomix(ManagedMessagingService messagingService, ManagedClusterMetadataService metadataService, ManagedClusterService clusterService, ManagedClusterCommunicationService clusterCommunicator, ManagedClusterEventsService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
       super(messagingService, metadataService, clusterService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes);
     }
 

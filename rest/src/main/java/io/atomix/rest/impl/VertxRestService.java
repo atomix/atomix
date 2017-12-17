@@ -19,7 +19,7 @@ import io.atomix.Atomix;
 import io.atomix.PrimitivesService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ClusterEventsService;
 import io.atomix.messaging.Endpoint;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
@@ -68,15 +68,15 @@ public class VertxRestService implements ManagedRestService {
     deployment.start();
 
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterService.class, atomix.getClusterService());
+        .put(ClusterService.class, atomix.cluster());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterCommunicationService.class, atomix.getCommunicationService());
+        .put(ClusterCommunicationService.class, atomix.communicator());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterEventService.class, atomix.getEventService());
+        .put(ClusterEventsService.class, atomix.events());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(PrimitivesService.class, atomix.getPrimitivesService());
+        .put(PrimitivesService.class, atomix.primitives());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(PrimitiveCache.class, new PrimitiveCache(atomix.getPrimitivesService(), PRIMITIVE_CACHE_SIZE));
+        .put(PrimitiveCache.class, new PrimitiveCache(atomix.primitives(), PRIMITIVE_CACHE_SIZE));
     deployment.getDispatcher().getDefaultContextObjects()
         .put(EventManager.class, new EventManager());
 

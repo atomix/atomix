@@ -25,7 +25,7 @@ import static io.atomix.utils.serializer.serializers.DefaultSerializers.BASIC;
 /**
  * Cluster event service.
  */
-public interface ClusterEventService {
+public interface ClusterEventsService {
 
   /**
    * Broadcasts a message to all controller nodes.
