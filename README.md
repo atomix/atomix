@@ -22,6 +22,15 @@ a series of high-level primitives for building distributed systems. These primit
 * [REST API](#rest-api)
 * [Interactive CLI](#interactive-cli)
 
+## Background
+
+Atomix was originally conceived in 2014 along with its sister project [Copycat](http://github.com/atomix/copycat)
+(deprecated) as a hobby project. Over time, Copycat grew into a mature implementation of the Raft consensus
+protocol, and both Copycat and Atomix were put into use in various projects. In 2017, development of a new version
+was begun, and Copycat and Atomix were combined in Atomix 2.x. Additionally, significant extensions to the projects
+originally developed for use in [ONOS](http://onosproject.org) were migrated into Atomix 2.x. Atomix is now
+maintained as a core component of ONOS by the [Open Networking Foundation](http://opennetworking.org).
+
 ## Architecture
 
 At its core, Atomix is built on a series of replicated state machines backed by consensus and primary-backup
