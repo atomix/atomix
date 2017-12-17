@@ -63,6 +63,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -512,7 +513,16 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
               .withEndpoint(new Endpoint(address, NettyMessagingService.DEFAULT_PORT))
               .build();
         } catch (UnknownHostException e) {
-          throw new IllegalArgumentException("Cannot configure local node", e);
+          throw new ConfigurationException("Cannot configure local node", e);
+        }
+      }
+
+      // If the bootstrap nodes have not been configured, default to the local node if possible.
+      if (bootstrapNodes == null) {
+        if (localNode.type() == Node.Type.DATA) {
+          bootstrapNodes = Collections.singleton(localNode);
+        } else {
+          throw new ConfigurationException("No bootstrap nodes configured");
         }
       }
 
