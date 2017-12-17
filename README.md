@@ -32,6 +32,18 @@ protocol uses the core Raft cluster to elect and balance primaries and backups f
 Primitives can be configured for consistency, persistence, and replication, modifying the underlying
 protocol according to desired semantics.
 
+### The Atomix cluster
+
+Atomix clusters consist of two types of nodes:
+* `DATA` nodes store persistent and ephemeral primitive state
+* `CLIENT` nodes do not store any state but must connect to `DATA` nodes to store state remotely
+
+Primitive partitions (both Raft and primary-backup) are evenly distributed among the `DATA` nodes
+in a cluster. Initially, an Atomix cluster is formed by bootstrapping a set of `DATA` nodes. Thereafter,
+additional `DATA` or `CLIENT` nodes may join and leave the cluster at will by simply starting and
+stopping `Atomix` instances. Atomix provides a `ClusterService` that can be used to learn about new
+`CLIENT` and `DATA` nodes joining and leaving the cluster.
+
 ## Java API
 
 ### Bootstrapping an Atomix cluster
@@ -48,27 +60,27 @@ Atomix.Builder builder = Atomix.builder();
 The builder should be configured with the local node configuration:
 
 ```java
-builder.withLocalNode(Node.builder()
-  .withId("foo")
+builder.withLocalNode(Node.builder("server1")
   .withType(Node.Type.DATA)
   .withEndpoint(Endpoint.from("localhost", 5000))
   .build());
 ```
 
-To initialize an Atomix cluster, at least one instance must be configured as a _bootstrap_ node.
-Each instance should provide the same set of bootstrap nodes:
+In addition to configuring the local node information, each instance must be configured with a
+set of _bootstrap nodes_ from which to form a cluster. When first starting a cluster, all instances
+should provide the same set of bootstrap nodes. Bootstrap nodes _must_ be `DATA` nodes:
 
 ```java
 builder.withBootstrapNodes(
-  Node.builder("foo")
+  Node.builder("server1")
     .withType(Node.Type.DATA)
     .withEndpoint(Endpoint.from("localhost", 5000)
     .build(),
-  Node.builder("bar")
+  Node.builder("server2")
     .withType(Node.Type.DATA)
     .withEndpoint(Endpoint.from("localhost", 5001)
     .build(),
-  Node.builder("baz")
+  Node.builder("server3")
     .withType(Node.Type.DATA)
     .withEndpoint(Endpoint.from("localhost", 5002)
     .build());
@@ -82,8 +94,16 @@ been configured, build the instance by calling `build()`:
 Atomix atomix = builder.build();
 ```
 
-Note that in order to form a cluster, a majority of instance must be created simultaneously
-to allow Raft partitions to form a quorum.
+Finally, call `start()` on the instance to start the node:
+
+```java
+atomix.start().join();
+```
+
+**Note that in order to form a cluster, a majority of instances must be started concurrently
+to allow Raft partitions to form a quorum.** The future returned by the `start()` method will
+not be completed until all partitions are able to form. If your `Atomix` instance is blocking
+indefinitely at startup, ensure you enable `DEBUG` logging to debug the issue.
 
 ### Connecting a client node
 
@@ -98,20 +118,26 @@ Atomix atomix = Atomix.builder()
     .withEndpoint(Endpoint.from("localhost", 5003))
     .build())
   .withBootstrapNodes(
-      Node.builder("foo")
+      Node.builder("server1")
         .withType(Node.Type.DATA)
         .withEndpoint(Endpoint.from("localhost", 5000)
         .build(),
-      Node.builder("bar")
+      Node.builder("server2")
         .withType(Node.Type.DATA)
         .withEndpoint(Endpoint.from("localhost", 5001)
         .build(),
-      Node.builder("baz")
+      Node.builder("server3")
         .withType(Node.Type.DATA)
         .withEndpoint(Endpoint.from("localhost", 5002)
         .build())
   .build();
+
+atomix.start().join();
 ```
+
+This example connects a client node aptly named `client` to a set of data nodes. Once the instance
+is started, the client node will be visible to all data nodes and vice versa, and primitives created
+by the client node will be managed by the data nodes.
 
 ## Cluster management
 
