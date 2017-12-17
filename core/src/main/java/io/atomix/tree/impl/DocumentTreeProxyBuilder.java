@@ -60,7 +60,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
     for (Partition partition : partitions.getPartitions()) {
       trees.put(partition.id(), partition.getPrimitiveClient()
           .newProxy(name(), primitiveType(), protocol)
-          .start()
+          .connect()
           .thenApply(proxy -> {
             DocumentTreeProxy rawTree = new DocumentTreeProxy(proxy);
             return new TranscodingAsyncDocumentTree<>(

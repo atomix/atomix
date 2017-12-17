@@ -48,7 +48,7 @@ public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuil
         .getPartition(name())
         .getPrimitiveClient()
         .newProxy(name(), primitiveType(), protocol)
-        .start()
+        .connect()
         .thenApply(proxy -> {
           AsyncConsistentMultimap<String, byte[]> rawMap = new ConsistentSetMultimapProxy(proxy);
           Serializer serializer = serializer();

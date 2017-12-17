@@ -18,7 +18,7 @@ package io.atomix.utils;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Interface for types that can be asynchronously opened and closed.
+ * Interface for types that can be asynchronously started and stopped.
  *
  * @param <T> managed type
  */

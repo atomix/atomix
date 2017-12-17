@@ -46,7 +46,7 @@ public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> 
         .getPartition(name())
         .getPrimitiveClient()
         .newProxy(name(), primitiveType(), protocol)
-        .start()
+        .connect()
         .thenApply(proxy -> {
           AtomicCounterMapProxy rawMap = new AtomicCounterMapProxy(proxy);
           Serializer serializer = serializer();

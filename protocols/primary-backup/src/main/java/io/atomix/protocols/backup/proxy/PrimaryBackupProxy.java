@@ -217,7 +217,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> start() {
+  public CompletableFuture<PrimitiveProxy> connect() {
     CompletableFuture<PrimitiveProxy> future = new CompletableFuture<>();
     threadContext.execute(() -> {
       primaryElection.getTerm().whenCompleteAsync((term, error) -> {
@@ -238,12 +238,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public boolean isRunning() {
-    return state != State.CLOSED;
-  }
-
-  @Override
-  public CompletableFuture<Void> stop() {
+  public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     if (term.primary() != null) {
       protocol.close(term.primary(), new CloseRequest(descriptor, sessionId.id()))

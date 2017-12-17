@@ -138,18 +138,13 @@ public class DelegatingPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> start() {
-    return proxy.start().thenApply(c -> this);
+  public CompletableFuture<PrimitiveProxy> connect() {
+    return proxy.connect().thenApply(c -> this);
   }
 
   @Override
-  public boolean isRunning() {
-    return proxy.isRunning();
-  }
-
-  @Override
-  public CompletableFuture<Void> stop() {
-    return proxy.stop();
+  public CompletableFuture<Void> close() {
+    return proxy.close();
   }
 
   @Override

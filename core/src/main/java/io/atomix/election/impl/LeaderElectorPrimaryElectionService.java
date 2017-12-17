@@ -97,7 +97,7 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
             .withRecoveryStrategy(Recovery.RECOVER)
             .withMaxRetries(5)
             .build());
-    AsyncLeaderElector<byte[]> leaderElector = new LeaderElectorProxy(proxy.start().join());
+    AsyncLeaderElector<byte[]> leaderElector = new LeaderElectorProxy(proxy.connect().join());
     return new TranscodingAsyncLeaderElector<>(leaderElector, SERIALIZER::encode, SERIALIZER::decode);
   }
 

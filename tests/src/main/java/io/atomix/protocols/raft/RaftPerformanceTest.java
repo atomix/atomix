@@ -293,7 +293,7 @@ public class RaftPerformanceTest implements Runnable {
     for (int i = 0; i < NUM_CLIENTS; i++) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       clients[i] = createClient();
-      proxies[i] = createProxy(clients[i]).start().join();
+      proxies[i] = createProxy(clients[i]).connect().join();
       futures[i] = future;
     }
 

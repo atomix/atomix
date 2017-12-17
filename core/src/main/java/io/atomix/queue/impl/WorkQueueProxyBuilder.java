@@ -44,7 +44,7 @@ public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
         .getPartition(name())
         .getPrimitiveClient()
         .newProxy(name(), primitiveType(), protocol)
-        .start()
+        .connect()
         .thenApply(proxy -> new TranscodingAsyncWorkQueue<E, byte[]>(new WorkQueueProxy(proxy), serializer()::encode, serializer()::decode).sync());
   }
 }

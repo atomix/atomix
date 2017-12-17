@@ -150,7 +150,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> start() {
+  public CompletableFuture<PrimitiveProxy> connect() {
     return sessionManager.openSession(
         serviceName,
         primitiveType,
@@ -202,13 +202,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public boolean isRunning() {
-    RaftProxyState state = this.state;
-    return state != null && state.getState() != PrimitiveProxy.State.CLOSED;
-  }
-
-  @Override
-  public CompletableFuture<Void> stop() {
+  public CompletableFuture<Void> close() {
     if (state != null) {
       return sessionManager.closeSession(state.getSessionId())
           .whenComplete((result, error) -> state.setState(PrimitiveProxy.State.CLOSED));

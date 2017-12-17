@@ -361,7 +361,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     PrimitiveProxy session2 = createProxy(client2, 2, replication);
     session2.invoke(READ).thenRun(this::resume);
     await(5000);
-    session2.stop().thenRun(this::resume);
+    session2.close().thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 2);
   }
 
@@ -438,7 +438,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
         .withBackups(backups)
         .withReplication(replication)
         .build())
-        .start()
+        .connect()
         .join();
   }
 

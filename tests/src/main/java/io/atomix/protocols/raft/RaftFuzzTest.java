@@ -620,7 +620,7 @@ public class RaftFuzzTest implements Runnable {
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build())
-        .start()
+        .connect()
         .join();
   }
 

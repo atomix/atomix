@@ -20,7 +20,6 @@ import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.utils.Managed;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -29,7 +28,7 @@ import java.util.function.Function;
 /**
  * Raft client proxy.
  */
-public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<PrimitiveProxy> {
+public interface PrimitiveProxy extends PrimitiveProxyExecutor {
 
   /**
    * Indicates the state of the client's communication with the Raft cluster.
@@ -205,4 +204,18 @@ public interface PrimitiveProxy extends PrimitiveProxyExecutor, Managed<Primitiv
    * @param listener  the event listener to remove
    */
   void removeEventListener(EventType eventType, Consumer listener);
+
+  /**
+   * Connects the primitive proxy.
+   *
+   * @return a future to be completed once the proxy has been connected
+   */
+  CompletableFuture<PrimitiveProxy> connect();
+
+  /**
+   * Closes the primitive proxy.
+   *
+   * @return a future to be completed once the proxy has been closed
+   */
+  CompletableFuture<Void> close();
 }

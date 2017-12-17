@@ -85,7 +85,7 @@ public abstract class AbstractAsyncPrimitive implements AsyncPrimitive {
 
   @Override
   public CompletableFuture<Void> close() {
-    return proxy.stop();
+    return proxy.close();
   }
 
   @Override

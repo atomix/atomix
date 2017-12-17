@@ -66,7 +66,7 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
             .withRecoveryStrategy(Recovery.RECOVER)
             .withMaxRetries(5)
             .build());
-    return proxy.start()
+    return proxy.connect()
         .thenApply(v -> {
           idGenerator = new DelegatingIdGenerator(new AtomicCounterProxy(proxy));
           started.set(true);
