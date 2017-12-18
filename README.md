@@ -5,11 +5,57 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
 
-**An advanced framework for building fault-tolerant distributed systems on the JVM**
-
-## Atomix 2.1
+**A framework for building fault-tolerant distributed systems for the JVM**
 
 *Atomix 2.1 documentation is currently under development. Check the website for updates!*
+
+1. [Overview](#overview)
+1. [Background](#background)
+1. [Architecture](#architecture)
+   * [The Atomix cluster](#the-atomix-cluster)
+1. [Java API](#java-api)
+   * [Cluster setup](#bootstrapping-the-cluster)
+      * [Bootstrapping the cluster](#bootstrapping-the-cluster)
+      * [Connecting a client node](#connecting-a-client-node)
+   * [Cluster management](#cluster-management)
+      * [Failure detection](#failure-detection)
+   * [Cluster communication](#cluster-communication)
+      * [Message subjects](#message-subjects)
+      * [Direct messaging](#direct-messaging)
+         * [Registering message subscribers](#registering-message-subscribers)
+         * [Sending messages](#sending-messages)
+         * [Message serialization](#message-serialization)
+      * [Publish-subscribe messaging](#publish-subscribe-messaging)
+   * [Coordination primitives](#coordination-primitives)
+      * [`DistributedLock`](#distributedlock)
+      * `LeaderElection`
+      * [`LeaderElector`](#leaderelector)
+      * `WorkQueue`
+   * [Data primitives](#data-primitives)
+      * `AtomicCounter`
+      * `AtomicCounterMap`
+      * `AtomicValue`
+      * [`ConsistentMap`](#consistentmap)
+      * `ConsistentTreeMap`
+      * `ConsistentMultimap`
+      * `DistributedSet`
+      * `DocumentTree`
+   * [Transactions](#transactions)
+      * [`TransactionalMap`](#transactionalmap)
+      * [`TransactionalSet`](#transactionalset)
+   * [Serialization](#serialization)
+1. [REST API](#rest-api)
+   * [Running a standalone Atomix agent](#running-a-standalone-atomix-agent)
+   * [Bootstrapping a standalone cluster](#bootstrapping-a-standalone-cluster)
+   * [Starting a client node](#starting-a-client-node)
+   * [REST API examples](#rest-api-examples)
+1. [Docker container](#docker)
+1. [Interactive CLI](#interactive-cli)
+   * [Starting the CLI](#starting-the-cli)
+   * [Print help](#print-help)
+   * [Running a command](#running-a-command)
+
+## Overview
 
 Atomix 2.1 is a fully featured framework for building fault-tolerant distributed systems.
 Combining ZooKeeper's consistency with Hazelcast's usability and performance, Atomix uses a set of
@@ -55,7 +101,7 @@ stopping `Atomix` instances. Atomix provides a `ClusterService` that can be used
 
 ## Java API
 
-### Bootstrapping an Atomix cluster
+### Bootstrapping the cluster
 
 Atomix relies heavily upon builder APIs to build high-level objects used to communicate and coordinate
 distributed systems.
@@ -194,19 +240,20 @@ producers from consumers
 The default implementation of communication abstractions uses [Netty](https://netty.io/) for all
 inter-node communication.
 
-### Direct messaging
-
-Atomix provides the `ClusterCommunicationService` for point-to-point messaging between Atomix
-nodes. It provides support for unicast, multicast, broadcast, and request-reply messaging patterns.
-
 #### Message subjects
 
-Messages are identified by a `MessageSubject` object, which is used to correlate a sent message
-with the appropriate handler on the receiver. Typically a constant or enum defines a `MessageSubject`.
+Messages sent via communication APIs are identified by a `MessageSubject` object, which is used
+to correlate a sent message with the appropriate handler on the receiver. Typically a constant
+or enum defines a `MessageSubject`.
 
 ```java
 private static final MessageSubject TEST_SUBJECT = new MessageSubject("test");
 ```
+
+### Direct messaging
+
+Atomix provides the `ClusterCommunicationService` for point-to-point messaging between Atomix
+nodes. It provides support for unicast, multicast, broadcast, and request-reply messaging patterns.
 
 #### Registering message subscribers
 
@@ -238,7 +285,7 @@ atomix.communicator().sendAndReceive(TEST_SUBJECT, "Hello world!", NodeId.from("
 });
 ```
 
-#### Message codecs
+#### Message serialization
 
 The `ClusterCommunicationService` uses a default serializer to serialize a variety of core data
 structures, but often custom objects need to be communicated across the wire. The `ClusterCommunicationService`
@@ -440,7 +487,91 @@ map.addListener(event -> {
 });
 ```
 
-### Custom serialization
+## Transactions
+
+Atomix supports transactional operations over multiple primitives. Transactions are committed
+using a two-phase commit protocol. To create a transaction, use the `TransactionBuilder`:
+
+```java
+Transaction transaction = atomix.transactionBuilder()
+  .withIsolation(Isolation.REPEATABLE_READS)
+  .build();
+```
+
+To begin the transaction, call `begin`:
+
+```java
+transaction.begin();
+```
+
+Once a transaction has been started, primitives can be created via the `Transaction` primitive
+builders. Once all operations have been performed, call `commit()` to commit the transaction:
+
+```java
+CommitStatus status = transaction.commit();
+```
+
+The `CommitStatus` returned by the `commit()` call indicates whether the transaction was committed
+successfully. Transactions may not commit successfully if a concurrent transaction is already modifying
+the referenced resources.
+
+To abort a transaction, call `abort()`:
+
+```java
+transaction.abort();
+```
+
+### TransactionalMap
+
+To create a transactional map, use the `mapBuilder()` method:
+
+```java
+Transaction transaction = atomix.transactionBuilder()
+  .withIsolation(Isolation.REPEATABLE_READS)
+  .build();
+
+transaction.begin();
+
+TransactionalMap<String, String> transactionalMap = transaction.mapBuilder("my-map")
+  .withSerializer(Serializers.using(KryoNamespaces.BASIC))
+  .build();
+transactionalMap.put("foo", "bar");
+transactionalMap.put("bar", "baz");
+
+if (transaction.commit() == CommitStatus.SUCCESS) {
+  ...
+}
+```
+
+The map will inherit the isolation level configured for the transaction. Changes to the named
+map will be reflected in non-transactional maps of the same name upon commit.
+
+### TransactionalSet
+
+To create a transactional set, use the `setBuilder()` method:
+
+```java
+Transaction transaction = atomix.transactionBuilder()
+  .withIsolation(Isolation.REPEATABLE_READS)
+  .build();
+
+transaction.begin();
+
+TransactionalSet<String> transactionalSet = transaction.setBuilder("my-set")
+  .withSerializer(Serializers.using(KryoNamespaces.BASIC))
+  .build();
+transactionalSet.add("foo");
+transactionalSet.add("bar");
+
+if (transaction.commit() == CommitStatus.SUCCESS) {
+  ...
+}
+```
+
+The set will inherit the isolation level configured for the transaction. Changes to the named
+set will be reflected in non-transactional set of the same name upon commit.
+
+### Serialization
 
 All data primitives support custom serialization via a `Serializer` provided to the builder:
 
@@ -494,7 +625,7 @@ mvn clean package
 bin/atomix agent
 ```
 
-### Starting a cluster
+### Bootstrapping a standalone cluster
 
 To start a cluster, the `atomix agent` command must be provided with a local node name, host, and port and
 a set of nodes with which to bootstrap the cluster.
@@ -530,7 +661,7 @@ use more efficient binary communication when transporting requests across the ne
 bin/atomix agent --client --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002
 ```
 
-### Primitive examples
+### REST API examples
 
 This section provides a series of example usages of primitives via the HTTP API:
 
@@ -577,6 +708,8 @@ Atomix provides an interactive command line interface through which the Atomix c
 primitives can be managed. This tool can be useful for inspecting the state of the cluster or
 for demos.
 
+#### Starting the CLI
+
 To run the interactive CLI, set the `ATOMIX_HOST` and `ATOMIX_PORT` environment variables and
 run the `atomix` script with no arguments:
 
@@ -586,7 +719,7 @@ ATOMIX_HOST=127.0.0.1 ATOMIX_PORT=5678 bin/atomix
 
 To view a list of commands supported by the CLI, type `help`
 
-#### Print command help
+#### Print help
 ```
 atomix> election foo leader
 {
@@ -598,7 +731,7 @@ atomix> election foo leader
 }
 ```
 
-#### Run a command
+#### Running a command
 ```
 election foo leader
 ```
