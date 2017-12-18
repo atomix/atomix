@@ -134,7 +134,7 @@ public class AtomixAgent {
         .withDataDirectory(dataDir)
         .build();
 
-    atomix.open().join();
+    atomix.start().join();
 
     LOGGER.info("Atomix listening at {}:{}", localNode.endpoint().host().getHostAddress(), localNode.endpoint().port());
 
@@ -143,12 +143,12 @@ public class AtomixAgent {
         .withEndpoint(Endpoint.from(localNode.endpoint().host().getHostAddress(), httpPort))
         .build();
 
-    rest.open().join();
+    rest.start().join();
 
     LOGGER.info("Server listening at {}:{}", localNode.endpoint().host().getHostAddress(), httpPort);
 
     synchronized (Atomix.class) {
-      while (atomix.isOpen()) {
+      while (atomix.isRunning()) {
         Atomix.class.wait();
       }
     }

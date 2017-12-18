@@ -17,7 +17,7 @@ package io.atomix.impl;
 
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ClusterEventsService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.partition.PartitionService;
 
@@ -27,13 +27,13 @@ import io.atomix.primitive.partition.PartitionService;
 public class CorePrimitiveManagementService implements PrimitiveManagementService {
   private final ClusterService clusterService;
   private final ClusterCommunicationService communicationService;
-  private final ClusterEventService eventService;
+  private final ClusterEventsService eventService;
   private final PartitionService partitionService;
 
   public CorePrimitiveManagementService(
       ClusterService clusterService,
       ClusterCommunicationService communicationService,
-      ClusterEventService eventService,
+      ClusterEventsService eventService,
       PartitionService partitionService) {
     this.clusterService = clusterService;
     this.communicationService = communicationService;
@@ -52,7 +52,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   }
 
   @Override
-  public ClusterEventService getEventService() {
+  public ClusterEventsService getEventService() {
     return eventService;
   }
 

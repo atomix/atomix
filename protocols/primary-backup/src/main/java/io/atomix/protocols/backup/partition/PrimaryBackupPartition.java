@@ -87,7 +87,7 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
     election = managementService.getElectionService().getElectionFor(partitionId);
     server = new PrimaryBackupPartitionServer(this, managementService, threadFactory);
     client = new PrimaryBackupPartitionClient(this, managementService, threadFactory);
-    return server.open().thenCompose(v -> client.open()).thenApply(v -> this);
+    return server.start().thenCompose(v -> client.start()).thenApply(v -> this);
   }
 
   /**
@@ -99,8 +99,8 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
     }
 
     CompletableFuture<Void> future = new CompletableFuture<>();
-    client.close().whenComplete((clientResult, clientError) -> {
-      server.close().whenComplete((serverResult, serverError) -> {
+    client.stop().whenComplete((clientResult, clientError) -> {
+      server.stop().whenComplete((serverResult, serverError) -> {
         future.complete(null);
       });
     });

@@ -275,7 +275,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     }
 
     PrimaryBackupServer leader = servers.stream().filter(s -> s.getRole() == Role.PRIMARY).findFirst().get();
-    leader.close().get(10, TimeUnit.SECONDS);
+    leader.stop().get(10, TimeUnit.SECONDS);
 
     for (int i = 0; i < 10; i++) {
       session.invoke(EVENT, SERIALIZER::encode, true).thenRun(this::resume);
@@ -390,7 +390,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     for (int i = 0; i < count; i++) {
       nodes.add(nextNodeId());
       PrimaryBackupServer server = createServer(nodes.get(i));
-      server.open().thenRun(this::resume);
+      server.start().thenRun(this::resume);
       servers.add(server);
     }
 
@@ -438,7 +438,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
         .withBackups(backups)
         .withReplication(replication)
         .build())
-        .open()
+        .connect()
         .join();
   }
 

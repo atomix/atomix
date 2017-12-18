@@ -19,7 +19,7 @@ import io.atomix.cluster.ManagedClusterMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
-import io.atomix.cluster.messaging.ManagedClusterEventService;
+import io.atomix.cluster.messaging.ManagedClusterEventsService;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,8 +65,8 @@ public abstract class AbstractAtomixTest {
    *
    * @return a new Atomix instance.
    */
-  protected Atomix atomix() {
-    Atomix instance = createAtomix(Node.Type.CLIENT, id++, 1, 2, 3).join();
+  protected Atomix atomix() throws Exception {
+    Atomix instance = createAtomix(Node.Type.CLIENT, id++, 1, 2, 3).start().get(10, TimeUnit.SECONDS);
     instances.add(instance);
     return instance;
   }
@@ -76,26 +77,17 @@ public abstract class AbstractAtomixTest {
     messagingServiceFactory = new TestMessagingServiceFactory();
     endpoints = new HashMap<>();
     instances = new ArrayList<>();
-    List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(createAtomix(Node.Type.DATA, 1, 1, 2, 3).thenApply(instance -> {
-      instances.add(instance);
-      return instance;
-    }));
-    futures.add(createAtomix(Node.Type.DATA, 2, 1, 2, 3).thenApply(instance -> {
-      instances.add(instance);
-      return instance;
-    }));
-    futures.add(createAtomix(Node.Type.DATA, 3, 1, 2, 3).thenApply(instance -> {
-      instances.add(instance);
-      return instance;
-    }));
-    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+    instances.add(createAtomix(Node.Type.DATA, 1, 1, 2, 3));
+    instances.add(createAtomix(Node.Type.DATA, 2, 1, 2, 3));
+    instances.add(createAtomix(Node.Type.DATA, 3, 1, 2, 3));
+    List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::start).collect(Collectors.toList());
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }
 
   /**
    * Creates an Atomix instance.
    */
-  private static CompletableFuture<Atomix> createAtomix(Node.Type type, int id, Integer... ids) {
+  private static Atomix createAtomix(Node.Type type, int id, Integer... ids) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
         .withEndpoint(endpoints.computeIfAbsent(id, i -> Endpoint.from("localhost", BASE_PORT + id)))
@@ -114,12 +106,12 @@ public abstract class AbstractAtomixTest {
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrapNodes)
         .withDataPartitions(3) // Lower number of partitions for faster testing
-        .buildAsync();
+        .build();
   }
 
   @AfterClass
   public static void teardownAtomix() throws Exception {
-    List<CompletableFuture<Void>> futures = instances.stream().map(Atomix::close).collect(Collectors.toList());
+    List<CompletableFuture<Void>> futures = instances.stream().map(Atomix::stop).collect(Collectors.toList());
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
     } catch (Exception e) {
@@ -154,7 +146,7 @@ public abstract class AbstractAtomixTest {
    * Atomix implementation used for testing.
    */
   static class TestAtomix extends Atomix {
-    TestAtomix(ManagedMessagingService messagingService, ManagedClusterMetadataService metadataService, ManagedClusterService clusterService, ManagedClusterCommunicationService clusterCommunicator, ManagedClusterEventService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
+    TestAtomix(ManagedMessagingService messagingService, ManagedClusterMetadataService metadataService, ManagedClusterService clusterService, ManagedClusterCommunicationService clusterCommunicator, ManagedClusterEventsService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
       super(messagingService, metadataService, clusterService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes);
     }
 

@@ -5,11 +5,57 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
 
-**An advanced framework for building fault-tolerant distributed systems on the JVM**
-
-## Atomix 2.1
+**A framework for building fault-tolerant distributed systems for the JVM**
 
 *Atomix 2.1 documentation is currently under development. Check the website for updates!*
+
+1. [Overview](#overview)
+1. [Background](#background)
+1. [Architecture](#architecture)
+   * [The Atomix cluster](#the-atomix-cluster)
+1. [Java API](#java-api)
+   * [Cluster setup](#bootstrapping-the-cluster)
+      * [Bootstrapping the cluster](#bootstrapping-the-cluster)
+      * [Connecting a client node](#connecting-a-client-node)
+   * [Cluster management](#cluster-management)
+      * [Failure detection](#failure-detection)
+   * [Cluster communication](#cluster-communication)
+      * [Message subjects](#message-subjects)
+      * [Direct messaging](#direct-messaging)
+         * [Registering message subscribers](#registering-message-subscribers)
+         * [Sending messages](#sending-messages)
+         * [Message serialization](#message-serialization)
+      * [Publish-subscribe messaging](#publish-subscribe-messaging)
+   * [Coordination primitives](#coordination-primitives)
+      * [`DistributedLock`](#distributedlock)
+      * `LeaderElection`
+      * [`LeaderElector`](#leaderelector)
+      * `WorkQueue`
+   * [Data primitives](#data-primitives)
+      * `AtomicCounter`
+      * `AtomicCounterMap`
+      * `AtomicValue`
+      * [`ConsistentMap`](#consistentmap)
+      * `ConsistentTreeMap`
+      * `ConsistentMultimap`
+      * `DistributedSet`
+      * `DocumentTree`
+   * [Transactions](#transactions)
+      * [`TransactionalMap`](#transactionalmap)
+      * [`TransactionalSet`](#transactionalset)
+   * [Serialization](#serialization)
+1. [REST API](#rest-api)
+   * [Running a standalone Atomix agent](#running-a-standalone-atomix-agent)
+   * [Bootstrapping a standalone cluster](#bootstrapping-a-standalone-cluster)
+   * [Starting a client node](#starting-a-client-node)
+   * [REST API examples](#rest-api-examples)
+1. [Docker container](#docker)
+1. [Interactive CLI](#interactive-cli)
+   * [Starting the CLI](#starting-the-cli)
+   * [Print help](#print-help)
+   * [Running a command](#running-a-command)
+
+## Overview
 
 Atomix 2.1 is a fully featured framework for building fault-tolerant distributed systems.
 Combining ZooKeeper's consistency with Hazelcast's usability and performance, Atomix uses a set of
@@ -22,6 +68,15 @@ a series of high-level primitives for building distributed systems. These primit
 * [REST API](#rest-api)
 * [Interactive CLI](#interactive-cli)
 
+## Background
+
+Atomix was originally conceived in 2014 along with its sister project [Copycat](http://github.com/atomix/copycat)
+(deprecated) as a hobby project. Over time, Copycat grew into a mature implementation of the Raft consensus
+protocol, and both Copycat and Atomix were put into use in various projects. In 2017, development of a new version
+was begun, and Copycat and Atomix were combined in Atomix 2.x. Additionally, significant extensions to the projects
+originally developed for use in [ONOS](http://onosproject.org) were migrated into Atomix 2.x. Atomix is now
+maintained as a core component of ONOS by the [Open Networking Foundation](http://opennetworking.org).
+
 ## Architecture
 
 At its core, Atomix is built on a series of replicated state machines backed by consensus and primary-backup
@@ -32,9 +87,21 @@ protocol uses the core Raft cluster to elect and balance primaries and backups f
 Primitives can be configured for consistency, persistence, and replication, modifying the underlying
 protocol according to desired semantics.
 
+### The Atomix cluster
+
+Atomix clusters consist of two types of nodes:
+* `DATA` nodes store persistent and ephemeral primitive state
+* `CLIENT` nodes do not store any state but must connect to `DATA` nodes to store state remotely
+
+Primitive partitions (both Raft and primary-backup) are evenly distributed among the `DATA` nodes
+in a cluster. Initially, an Atomix cluster is formed by bootstrapping a set of `DATA` nodes. Thereafter,
+additional `DATA` or `CLIENT` nodes may join and leave the cluster at will by simply starting and
+stopping `Atomix` instances. Atomix provides a `ClusterService` that can be used to learn about new
+`CLIENT` and `DATA` nodes joining and leaving the cluster.
+
 ## Java API
 
-### Bootstrapping an Atomix cluster
+### Bootstrapping the cluster
 
 Atomix relies heavily upon builder APIs to build high-level objects used to communicate and coordinate
 distributed systems.
@@ -48,27 +115,27 @@ Atomix.Builder builder = Atomix.builder();
 The builder should be configured with the local node configuration:
 
 ```java
-builder.withLocalNode(Node.builder()
-  .withId("foo")
+builder.withLocalNode(Node.builder("server1")
   .withType(Node.Type.DATA)
   .withEndpoint(Endpoint.from("localhost", 5000))
   .build());
 ```
 
-To initialize an Atomix cluster, at least one instance must be configured as a _bootstrap_ node.
-Each instance should provide the same set of bootstrap nodes:
+In addition to configuring the local node information, each instance must be configured with a
+set of _bootstrap nodes_ from which to form a cluster. When first starting a cluster, all instances
+should provide the same set of bootstrap nodes. Bootstrap nodes _must_ be `DATA` nodes:
 
 ```java
 builder.withBootstrapNodes(
-  Node.builder("foo")
+  Node.builder("server1")
     .withType(Node.Type.DATA)
     .withEndpoint(Endpoint.from("localhost", 5000)
     .build(),
-  Node.builder("bar")
+  Node.builder("server2")
     .withType(Node.Type.DATA)
     .withEndpoint(Endpoint.from("localhost", 5001)
     .build(),
-  Node.builder("baz")
+  Node.builder("server3")
     .withType(Node.Type.DATA)
     .withEndpoint(Endpoint.from("localhost", 5002)
     .build());
@@ -82,8 +149,16 @@ been configured, build the instance by calling `build()`:
 Atomix atomix = builder.build();
 ```
 
-Note that in order to form a cluster, a majority of instance must be created simultaneously
-to allow Raft partitions to form a quorum.
+Finally, call `start()` on the instance to start the node:
+
+```java
+atomix.start().join();
+```
+
+**Note that in order to form a cluster, a majority of instances must be started concurrently
+to allow Raft partitions to form a quorum.** The future returned by the `start()` method will
+not be completed until all partitions are able to form. If your `Atomix` instance is blocking
+indefinitely at startup, ensure you enable `DEBUG` logging to debug the issue.
 
 ### Connecting a client node
 
@@ -98,20 +173,26 @@ Atomix atomix = Atomix.builder()
     .withEndpoint(Endpoint.from("localhost", 5003))
     .build())
   .withBootstrapNodes(
-      Node.builder("foo")
+      Node.builder("server1")
         .withType(Node.Type.DATA)
         .withEndpoint(Endpoint.from("localhost", 5000)
         .build(),
-      Node.builder("bar")
+      Node.builder("server2")
         .withType(Node.Type.DATA)
         .withEndpoint(Endpoint.from("localhost", 5001)
         .build(),
-      Node.builder("baz")
+      Node.builder("server3")
         .withType(Node.Type.DATA)
         .withEndpoint(Endpoint.from("localhost", 5002)
         .build())
   .build();
+
+atomix.start().join();
 ```
+
+This example connects a client node aptly named `client` to a set of data nodes. Once the instance
+is started, the client node will be visible to all data nodes and vice versa, and primitives created
+by the client node will be managed by the data nodes.
 
 ## Cluster management
 
@@ -122,7 +203,7 @@ about all nodes in the cluster, including the local node, data nodes, and client
 To get the set of nodes in the cluster, use the `ClusterService`:
 
 ```java
-Set<Node> nodes = atomix.getClusterService().getNodes();
+Set<Node> nodes = atomix.cluster().getNodes();
 ```
 
 ### Failure detection
@@ -132,14 +213,14 @@ liveliness of the given node. The cluster service uses a phi accrual failure det
 internally to detect failures, and nodes' states are updated as failures are detected:
 
 ```java
-Node.State state = atomix.getClusterService().getNode(NodeId.from("foo")).state();
+Node.State state = atomix.cluster().getNode(NodeId.from("foo")).state();
 ```
 
 Additionally, listeners can be added to the `ClusterService` to react to changes to both the set
 of nodes in the cluster and the states of individual nodes:
 
 ```java
-atomix.getClusterService().addListener(event -> {
+atomix.cluster().addListener(event -> {
   if (event.type() == ClusterEvent.Type.NODE_ACTIVATED) {
     // A node's state was changed to ACTIVE
   } else if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
@@ -159,26 +240,27 @@ producers from consumers
 The default implementation of communication abstractions uses [Netty](https://netty.io/) for all
 inter-node communication.
 
-### Direct messaging
-
-Atomix provides the `ClusterCommunicationService` for point-to-point messaging between Atomix
-nodes. It provides support for unicast, multicast, broadcast, and request-reply messaging patterns.
-
 #### Message subjects
 
-Messages are identified by a `MessageSubject` object, which is used to correlate a sent message
-with the appropriate handler on the receiver. Typically a constant or enum defines a `MessageSubject`.
+Messages sent via communication APIs are identified by a `MessageSubject` object, which is used
+to correlate a sent message with the appropriate handler on the receiver. Typically a constant
+or enum defines a `MessageSubject`.
 
 ```java
 private static final MessageSubject TEST_SUBJECT = new MessageSubject("test");
 ```
+
+### Direct messaging
+
+Atomix provides the `ClusterCommunicationService` for point-to-point messaging between Atomix
+nodes. It provides support for unicast, multicast, broadcast, and request-reply messaging patterns.
 
 #### Registering message subscribers
 
 To register a message subscriber, use the `addSubscriber` methods:
 
 ```java
-atomix.getCommunicationService().addSubscriber(TEST_SUBJECT, message -> {
+atomix.communicator().addSubscriber(TEST_SUBJECT, message -> {
   return CompletableFuture.completedFuture(message);
 });
 ```
@@ -198,12 +280,12 @@ As noted above, messages can be sent using a variety of different communication 
 
 ```java
 // Send a request-reply message to node "foo"
-atomix.getCommunicationService().sendAndReceive(TEST_SUBJECT, "Hello world!", NodeId.from("foo")).thenAccept(response -> {
+atomix.communicator().sendAndReceive(TEST_SUBJECT, "Hello world!", NodeId.from("foo")).thenAccept(response -> {
   System.out.println("Received " + response);
 });
 ```
 
-#### Message codecs
+#### Message serialization
 
 The `ClusterCommunicationService` uses a default serializer to serialize a variety of core data
 structures, but often custom objects need to be communicated across the wire. The `ClusterCommunicationService`
@@ -216,8 +298,8 @@ Serializer serializer = Serializer.using(KryoNamespace.builder()
   .register(ClusterHeartbeat.class)
   .build());
 
-ClusterHeartbeat heartbeat = new ClusterHeartbeat(atomix.getClusterService().getLocalNode().id());
-atomix.getCommunicationService().sendAndReceive(TEST_SUBJECT, heartbeat, serializer::encode, serializer::decode, someNodeId).thenAccept(response -> {
+ClusterHeartbeat heartbeat = new ClusterHeartbeat(atomix.cluster().getLocalNode().id());
+atomix.communicator().sendAndReceive(TEST_SUBJECT, heartbeat, serializer::encode, serializer::decode, someNodeId).thenAccept(response -> {
   ...
 });
 ```
@@ -234,17 +316,17 @@ senders.
 
 ```java
 // Add an event service subscriber
-atomix.getEventService().addSubscriber(TEST_SUBJECT, message -> {
+atomix.event().addSubscriber(TEST_SUBJECT, message -> {
   return CompletableFuture.completedFuture(message);
 });
 
 // Send a request-reply message via the event service
-atomix.getEventService().sendAndReceive(TEST_SUBJECT, "Hello world!").thenAccept(response -> {
+atomix.event().sendAndReceive(TEST_SUBJECT, "Hello world!").thenAccept(response -> {
   System.out.println("Received " + response);
 });
 
 // Broadcast a message to all event subscribers
-atomix.getEventService().broadcast(TEST_SUBJECT, "Hello world!");
+atomix.event().broadcast(TEST_SUBJECT, "Hello world!");
 ```
 
 ## Coordination primitives
@@ -317,8 +399,8 @@ AsyncLeaderElector<NodeId> asyncElector = elector.async();
 To enter into an election, use the `run` method:
 
 ```java
-asyncElector.run("foo", atomix.getClusterService().getLocalNode().id()).thenAccept(leadership -> {
-  if (leadership.leader().id().equals(atomix.getClusterService().getLocalNode().id())) {
+asyncElector.run("foo", atomix.cluster().getLocalNode().id()).thenAccept(leadership -> {
+  if (leadership.leader().id().equals(atomix.cluster().getLocalNode().id())) {
     // Local node elected leader!
   }
 });
@@ -405,7 +487,91 @@ map.addListener(event -> {
 });
 ```
 
-### Custom serialization
+## Transactions
+
+Atomix supports transactional operations over multiple primitives. Transactions are committed
+using a two-phase commit protocol. To create a transaction, use the `TransactionBuilder`:
+
+```java
+Transaction transaction = atomix.transactionBuilder()
+  .withIsolation(Isolation.REPEATABLE_READS)
+  .build();
+```
+
+To begin the transaction, call `begin`:
+
+```java
+transaction.begin();
+```
+
+Once a transaction has been started, primitives can be created via the `Transaction` primitive
+builders. Once all operations have been performed, call `commit()` to commit the transaction:
+
+```java
+CommitStatus status = transaction.commit();
+```
+
+The `CommitStatus` returned by the `commit()` call indicates whether the transaction was committed
+successfully. Transactions may not commit successfully if a concurrent transaction is already modifying
+the referenced resources.
+
+To abort a transaction, call `abort()`:
+
+```java
+transaction.abort();
+```
+
+### TransactionalMap
+
+To create a transactional map, use the `mapBuilder()` method:
+
+```java
+Transaction transaction = atomix.transactionBuilder()
+  .withIsolation(Isolation.REPEATABLE_READS)
+  .build();
+
+transaction.begin();
+
+TransactionalMap<String, String> transactionalMap = transaction.mapBuilder("my-map")
+  .withSerializer(Serializers.using(KryoNamespaces.BASIC))
+  .build();
+transactionalMap.put("foo", "bar");
+transactionalMap.put("bar", "baz");
+
+if (transaction.commit() == CommitStatus.SUCCESS) {
+  ...
+}
+```
+
+The map will inherit the isolation level configured for the transaction. Changes to the named
+map will be reflected in non-transactional maps of the same name upon commit.
+
+### TransactionalSet
+
+To create a transactional set, use the `setBuilder()` method:
+
+```java
+Transaction transaction = atomix.transactionBuilder()
+  .withIsolation(Isolation.REPEATABLE_READS)
+  .build();
+
+transaction.begin();
+
+TransactionalSet<String> transactionalSet = transaction.setBuilder("my-set")
+  .withSerializer(Serializers.using(KryoNamespaces.BASIC))
+  .build();
+transactionalSet.add("foo");
+transactionalSet.add("bar");
+
+if (transaction.commit() == CommitStatus.SUCCESS) {
+  ...
+}
+```
+
+The set will inherit the isolation level configured for the transaction. Changes to the named
+set will be reflected in non-transactional set of the same name upon commit.
+
+### Serialization
 
 All data primitives support custom serialization via a `Serializer` provided to the builder:
 
@@ -459,7 +625,7 @@ mvn clean package
 bin/atomix agent
 ```
 
-### Starting a cluster
+### Bootstrapping a standalone cluster
 
 To start a cluster, the `atomix agent` command must be provided with a local node name, host, and port and
 a set of nodes with which to bootstrap the cluster.
@@ -495,7 +661,7 @@ use more efficient binary communication when transporting requests across the ne
 bin/atomix agent --client --bootstrap a:localhost:5000 b:localhost:5001 c:localhost:5002
 ```
 
-### Primitive examples
+### REST API examples
 
 This section provides a series of example usages of primitives via the HTTP API:
 
@@ -542,6 +708,8 @@ Atomix provides an interactive command line interface through which the Atomix c
 primitives can be managed. This tool can be useful for inspecting the state of the cluster or
 for demos.
 
+#### Starting the CLI
+
 To run the interactive CLI, set the `ATOMIX_HOST` and `ATOMIX_PORT` environment variables and
 run the `atomix` script with no arguments:
 
@@ -551,7 +719,7 @@ ATOMIX_HOST=127.0.0.1 ATOMIX_PORT=5678 bin/atomix
 
 To view a list of commands supported by the CLI, type `help`
 
-#### Print command help
+#### Print help
 ```
 atomix> election foo leader
 {
@@ -563,7 +731,7 @@ atomix> election foo leader
 }
 ```
 
-#### Run a command
+#### Running a command
 ```
 election foo leader
 ```

@@ -46,7 +46,7 @@ public class CoreTransactionService implements ManagedTransactionService {
       .build());
   private final PrimitiveManagementService managementService;
   private AsyncConsistentMap<TransactionId, TransactionState> transactions;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public CoreTransactionService(PrimitiveManagementService managementService) {
     this.managementService = checkNotNull(managementService);
@@ -54,73 +54,68 @@ public class CoreTransactionService implements ManagedTransactionService {
 
   @Override
   public Set<TransactionId> getActiveTransactions() {
-    checkState(isOpen());
+    checkState(isRunning());
     return transactions.keySet().join();
   }
 
   @Override
   public TransactionState getTransactionState(TransactionId transactionId) {
-    checkState(isOpen());
+    checkState(isRunning());
     return Versioned.valueOrNull(transactions.get(transactionId).join());
   }
 
   @Override
   public CompletableFuture<TransactionId> begin() {
-    checkState(isOpen());
+    checkState(isRunning());
     TransactionId transactionId = TransactionId.from(UUID.randomUUID().toString());
     return transactions.put(transactionId, TransactionState.ACTIVE).thenApply(v -> transactionId);
   }
 
   @Override
   public CompletableFuture<Void> preparing(TransactionId transactionId) {
-    checkState(isOpen());
+    checkState(isRunning());
     return transactions.put(transactionId, TransactionState.PREPARED).thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<Void> committing(TransactionId transactionId) {
-    checkState(isOpen());
+    checkState(isRunning());
     return transactions.put(transactionId, TransactionState.COMMITTING).thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<Void> aborting(TransactionId transactionId) {
-    checkState(isOpen());
+    checkState(isRunning());
     return transactions.put(transactionId, TransactionState.ROLLING_BACK).thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<Void> complete(TransactionId transactionId) {
-    checkState(isOpen());
+    checkState(isRunning());
     return transactions.remove(transactionId).thenApply(v -> null);
   }
 
   @Override
-  public CompletableFuture<TransactionService> open() {
+  public CompletableFuture<TransactionService> start() {
     return ConsistentMapType.<TransactionId, TransactionState>instance()
         .newPrimitiveBuilder("atomix-transactions", managementService)
         .withSerializer(SERIALIZER)
         .buildAsync()
         .thenApply(transactions -> {
           this.transactions = transactions.async();
-          open.set(true);
+          started.set(true);
           return this;
         });
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    open.set(false);
+  public CompletableFuture<Void> stop() {
+    started.set(false);
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 }

@@ -67,7 +67,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   }
 
   @Override
-  public CompletableFuture<RaftPartitionServer> open() {
+  public CompletableFuture<RaftPartitionServer> start() {
     log.info("Starting server for partition {}", partition.id());
     CompletableFuture<RaftServer> serverOpenFuture;
     if (partition.members().contains(localNodeId)) {
@@ -91,7 +91,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     return server.shutdown();
   }
 
@@ -160,12 +160,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   }
 
   @Override
-  public boolean isOpen() {
+  public boolean isRunning() {
     return server.isRunning();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !isOpen();
   }
 }

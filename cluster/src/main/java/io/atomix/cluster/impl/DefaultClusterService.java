@@ -79,7 +79,7 @@ public class DefaultClusterService
 
   private final MessagingService messagingService;
   private final ClusterMetadataService metadataService;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulNode localNode;
   private final Map<NodeId, StatefulNode> nodes = Maps.newConcurrentMap();
   private final Map<NodeId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
@@ -233,8 +233,8 @@ public class DefaultClusterService
   }
 
   @Override
-  public CompletableFuture<ClusterService> open() {
-    if (open.compareAndSet(false, true)) {
+  public CompletableFuture<ClusterService> start() {
+    if (started.compareAndSet(false, true)) {
       metadataService.addListener(metadataEventListener);
       localNode.setState(State.ACTIVE);
       nodes.put(localNode.id(), localNode);
@@ -248,13 +248,13 @@ public class DefaultClusterService
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    if (open.compareAndSet(true, false)) {
+  public CompletableFuture<Void> stop() {
+    if (started.compareAndSet(true, false)) {
       heartbeatScheduler.shutdownNow();
       heartbeatExecutor.shutdownNow();
       localNode.setState(State.INACTIVE);
@@ -265,10 +265,5 @@ public class DefaultClusterService
       LOGGER.info("Stopped");
     }
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 }

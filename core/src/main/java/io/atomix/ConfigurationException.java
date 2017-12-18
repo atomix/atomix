@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster.messaging;
+package io.atomix;
 
-import io.atomix.utils.Managed;
+import io.atomix.utils.AtomixRuntimeException;
 
 /**
- * Managed cluster event service.
+ * Atomix configuration exception.
  */
-public interface ManagedClusterEventService extends ClusterEventService, Managed<ClusterEventService> {
+public class ConfigurationException extends AtomixRuntimeException {
+  public ConfigurationException(String message) {
+    super(message);
+  }
+
+  public ConfigurationException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

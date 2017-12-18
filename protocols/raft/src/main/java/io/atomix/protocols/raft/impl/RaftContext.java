@@ -854,7 +854,7 @@ public class RaftContext implements AutoCloseable {
 
     // Close the old state.
     try {
-      this.role.close().get();
+      this.role.stop().get();
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException("failed to close Raft state", e);
     }
@@ -862,7 +862,7 @@ public class RaftContext implements AutoCloseable {
     // Force state transitions to occur synchronously in order to prevent race conditions.
     try {
       this.role = createRole(role);
-      this.role.open().get();
+      this.role.start().get();
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException("failed to initialize Raft state", e);
     }

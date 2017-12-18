@@ -76,28 +76,28 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clusterService1 = new DefaultClusterService(
         localNode1,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(localNode1.endpoint()).open().join());
+        messagingServiceFactory.newMessagingService(localNode1.endpoint()).start().join());
 
     Node localNode2 = buildNode(2, Node.Type.DATA);
     ManagedClusterService clusterService2 = new DefaultClusterService(
         localNode2,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(localNode2.endpoint()).open().join());
+        messagingServiceFactory.newMessagingService(localNode2.endpoint()).start().join());
 
     Node localNode3 = buildNode(3, Node.Type.DATA);
     ManagedClusterService clusterService3 = new DefaultClusterService(
         localNode3,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(localNode3.endpoint()).open().join());
+        messagingServiceFactory.newMessagingService(localNode3.endpoint()).start().join());
 
     assertNull(clusterService1.getNode(NodeId.from("1")));
     assertNull(clusterService1.getNode(NodeId.from("2")));
     assertNull(clusterService1.getNode(NodeId.from("3")));
 
     CompletableFuture<ClusterService>[] futures = new CompletableFuture[3];
-    futures[0] = clusterService1.open();
-    futures[1] = clusterService2.open();
-    futures[2] = clusterService3.open();
+    futures[0] = clusterService1.start();
+    futures[1] = clusterService2.start();
+    futures[2] = clusterService3.start();
 
     CompletableFuture.allOf(futures).join();
 
@@ -122,7 +122,7 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clientClusterService = new DefaultClusterService(
         clientNode,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(clientNode.endpoint()).open().join());
+        messagingServiceFactory.newMessagingService(clientNode.endpoint()).start().join());
 
     assertEquals(State.INACTIVE, clientClusterService.getLocalNode().state());
 
@@ -131,7 +131,7 @@ public class DefaultClusterServiceTest {
     assertNull(clientClusterService.getNode(NodeId.from("3")));
     assertNull(clientClusterService.getNode(NodeId.from("4")));
 
-    clientClusterService.open().join();
+    clientClusterService.start().join();
 
     Thread.sleep(100);
 
@@ -156,7 +156,7 @@ public class DefaultClusterServiceTest {
 
     Thread.sleep(2500);
 
-    clusterService1.close().join();
+    clusterService1.stop().join();
 
     Thread.sleep(2500);
 
@@ -173,7 +173,7 @@ public class DefaultClusterServiceTest {
     assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("3")).state());
     assertEquals(State.ACTIVE, clientClusterService.getNode(NodeId.from("4")).state());
 
-    clientClusterService.close().join();
+    clientClusterService.stop().join();
 
     Thread.sleep(2500);
 

@@ -1255,7 +1255,7 @@ public class RaftTest extends ConcurrentTestCase {
         .withMinTimeout(Duration.ofMillis(250))
         .withMaxTimeout(Duration.ofSeconds(5))
         .build())
-        .open()
+        .connect()
         .get(5, TimeUnit.SECONDS);
   }
 

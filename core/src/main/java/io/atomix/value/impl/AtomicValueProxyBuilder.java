@@ -46,7 +46,7 @@ public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
         .getPartition(name())
         .getPrimitiveClient()
         .newProxy(name(), primitiveType(), protocol)
-        .open()
+        .connect()
         .thenApply(proxy -> {
           AtomicValueProxy value = new AtomicValueProxy(proxy);
           return new TranscodingAsyncAtomicValue<V, byte[]>(

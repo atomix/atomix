@@ -40,7 +40,7 @@ public class TestMessagingService implements ManagedMessagingService {
   private final Endpoint endpoint;
   private final Map<Endpoint, TestMessagingService> services;
   private final Map<String, BiFunction<Endpoint, byte[], CompletableFuture<byte[]>>> handlers = new ConcurrentHashMap<>();
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public TestMessagingService(Endpoint endpoint, Map<Endpoint, TestMessagingService> services) {
     this.endpoint = endpoint;
@@ -134,26 +134,21 @@ public class TestMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<MessagingService> open() {
+  public CompletableFuture<MessagingService> start() {
     services.put(endpoint, this);
-    open.set(true);
+    started.set(true);
     return CompletableFuture.completedFuture(this);
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     services.remove(endpoint);
-    open.set(false);
+    started.set(false);
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 }

@@ -38,7 +38,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   private final PartitionManagementService managementService;
   private final ThreadContextFactory threadFactory;
   private PrimaryBackupServer server;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public PrimaryBackupPartitionServer(
       PrimaryBackupPartition partition,
@@ -50,24 +50,24 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   }
 
   @Override
-  public CompletableFuture<PrimaryBackupPartitionServer> open() {
+  public CompletableFuture<PrimaryBackupPartitionServer> start() {
     if (managementService.getClusterService().getLocalNode().type() == Node.Type.DATA) {
       synchronized (this) {
         server = buildServer();
       }
-      return server.open().thenApply(v -> {
+      return server.start().thenApply(v -> {
         log.info("Successfully started server for {}", partition.id());
-        open.set(true);
+        started.set(true);
         return this;
       });
     }
-    open.set(true);
+    started.set(true);
     return CompletableFuture.completedFuture(this);
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   private PrimaryBackupServer buildServer() {
@@ -85,17 +85,12 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     PrimaryBackupServer server = this.server;
     if (server != null) {
-      return server.close().thenRun(() -> open.set(false));
+      return server.stop().thenRun(() -> started.set(false));
     }
-    open.set(false);
+    started.set(false);
     return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !open.get();
   }
 }

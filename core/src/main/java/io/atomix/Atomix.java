@@ -24,11 +24,11 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultClusterMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ClusterEventsService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
-import io.atomix.cluster.messaging.ManagedClusterEventService;
+import io.atomix.cluster.messaging.ManagedClusterEventsService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
-import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
+import io.atomix.cluster.messaging.impl.DefaultClusterEventsService;
 import io.atomix.election.impl.LeaderElectorPrimaryElectionService;
 import io.atomix.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.impl.CorePrimitivesService;
@@ -50,7 +50,6 @@ import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.transaction.TransactionBuilder;
-import io.atomix.utils.AtomixRuntimeException;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -63,9 +62,9 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -92,12 +91,12 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final ManagedClusterMetadataService metadataService;
   private final ManagedClusterService clusterService;
   private final ManagedClusterCommunicationService clusterCommunicator;
-  private final ManagedClusterEventService clusterEventService;
+  private final ManagedClusterEventsService clusterEventService;
   private final ManagedPartitionGroup corePartitionGroup;
   private final ManagedPartitionService partitions;
   private final ManagedPrimitivesService primitives;
   private final PrimitiveTypeRegistry primitiveTypes;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
   private final ThreadContext context = new SingleThreadContext("atomix-%d");
   private volatile CompletableFuture<Atomix> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
@@ -107,7 +106,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterMetadataService metadataService,
       ManagedClusterService cluster,
       ManagedClusterCommunicationService clusterCommunicator,
-      ManagedClusterEventService clusterEventService,
+      ManagedClusterEventsService clusterEventService,
       ManagedPartitionGroup corePartitionGroup,
       ManagedPartitionService partitions,
       PrimitiveTypeRegistry primitiveTypes) {
@@ -128,7 +127,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the messaging service
    */
-  public MessagingService getMessagingService() {
+  public MessagingService messaging() {
     return messagingService;
   }
 
@@ -137,7 +136,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the cluster metadata service
    */
-  public ClusterMetadataService getMetadataService() {
+  public ClusterMetadataService metadata() {
     return metadataService;
   }
 
@@ -146,7 +145,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the cluster service
    */
-  public ClusterService getClusterService() {
+  public ClusterService cluster() {
     return clusterService;
   }
 
@@ -155,7 +154,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the cluster communication service
    */
-  public ClusterCommunicationService getCommunicationService() {
+  public ClusterCommunicationService communicator() {
     return clusterCommunicator;
   }
 
@@ -164,7 +163,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the cluster event service
    */
-  public ClusterEventService getEventService() {
+  public ClusterEventsService events() {
     return clusterEventService;
   }
 
@@ -173,7 +172,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the partition service
    */
-  public PartitionService getPartitionService() {
+  public PartitionService partitions() {
     return partitions;
   }
 
@@ -182,7 +181,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    *
    * @return the primitives service
    */
-  public PrimitivesService getPrimitivesService() {
+  public PrimitivesService primitives() {
     return primitives;
   }
 
@@ -216,31 +215,40 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return primitives.getPrimitiveNames(primitiveType);
   }
 
+  /**
+   * Starts the Atomix instance.
+   * <p>
+   * The returned future will be completed once this instance completes startup. Note that in order to complete startup,
+   * all partitions must be able to form. For Raft partitions, that requires that a majority of the nodes in each
+   * partition be started concurrently.
+   *
+   * @return a future to be completed once the instance has completed startup
+   */
   @Override
-  public synchronized CompletableFuture<Atomix> open() {
+  public synchronized CompletableFuture<Atomix> start() {
     if (openFuture != null) {
       return openFuture;
     }
 
-    openFuture = messagingService.open()
-        .thenComposeAsync(v -> metadataService.open(), context)
-        .thenComposeAsync(v -> clusterService.open(), context)
-        .thenComposeAsync(v -> clusterCommunicator.open(), context)
-        .thenComposeAsync(v -> clusterEventService.open(), context)
+    openFuture = messagingService.start()
+        .thenComposeAsync(v -> metadataService.start(), context)
+        .thenComposeAsync(v -> clusterService.start(), context)
+        .thenComposeAsync(v -> clusterCommunicator.start(), context)
+        .thenComposeAsync(v -> clusterEventService.start(), context)
         .thenComposeAsync(v -> corePartitionGroup.open(
             new DefaultPartitionManagementService(metadataService, clusterService, clusterCommunicator, primitiveTypes, null, null)), context)
         .thenComposeAsync(v -> {
           ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(corePartitionGroup);
           ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(corePartitionGroup);
-          return electionService.open()
-              .thenComposeAsync(v2 -> sessionIdService.open(), context)
+          return electionService.start()
+              .thenComposeAsync(v2 -> sessionIdService.start(), context)
               .thenApply(v2 -> new DefaultPartitionManagementService(metadataService, clusterService, clusterCommunicator, primitiveTypes, electionService, sessionIdService));
         }, context)
         .thenComposeAsync(partitionManagementService -> partitions.open(partitionManagementService), context)
-        .thenComposeAsync(v -> primitives.open(), context)
+        .thenComposeAsync(v -> primitives.start(), context)
         .thenApplyAsync(v -> {
           metadataService.addNode(clusterService.getLocalNode());
-          open.set(true);
+          started.set(true);
           LOGGER.info("Started");
           return this;
         }, context);
@@ -248,42 +256,37 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   @Override
-  public boolean isOpen() {
-    return open.get();
+  public boolean isRunning() {
+    return started.get();
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> stop() {
     if (closeFuture != null) {
       return closeFuture;
     }
 
     metadataService.removeNode(clusterService.getLocalNode());
-    closeFuture = primitives.close()
+    closeFuture = primitives.stop()
         .thenComposeAsync(v -> partitions.close(), context)
         .thenComposeAsync(v -> corePartitionGroup.close(), context)
-        .thenComposeAsync(v -> clusterCommunicator.close(), context)
-        .thenComposeAsync(v -> clusterEventService.close(), context)
-        .thenComposeAsync(v -> clusterService.close(), context)
-        .thenComposeAsync(v -> metadataService.close(), context)
-        .thenComposeAsync(v -> messagingService.close(), context)
+        .thenComposeAsync(v -> clusterCommunicator.stop(), context)
+        .thenComposeAsync(v -> clusterEventService.stop(), context)
+        .thenComposeAsync(v -> clusterService.stop(), context)
+        .thenComposeAsync(v -> metadataService.stop(), context)
+        .thenComposeAsync(v -> messagingService.stop(), context)
         .thenRunAsync(() -> {
           context.close();
-          open.set(false);
+          started.set(false);
           LOGGER.info("Stopped");
         });
     return closeFuture;
   }
 
   @Override
-  public boolean isClosed() {
-    return !open.get();
-  }
-
-  @Override
   public String toString() {
     return toStringHelper(this)
-        .add("partitions", getPartitionService())
+        .add("partitions", partitions())
         .toString();
   }
 
@@ -481,28 +484,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     @Override
     public Atomix build() {
-      try {
-        return buildInstance().open().join();
-      } catch (CompletionException e) {
-        throw new AtomixRuntimeException(e.getCause());
-      }
-    }
-
-    /**
-     * Asynchronously builds and starts a new Atomix instance.
-     *
-     * @return a future to be completed with a new Atomix instance
-     */
-    public CompletableFuture<Atomix> buildAsync() {
-      return buildInstance().open();
-    }
-
-    /**
-     * Builds a new Atomix instance.
-     *
-     * @return a new Atomix instance
-     */
-    private Atomix buildInstance() {
       // If the local node has not be configured, create a default node.
       if (localNode == null) {
         try {
@@ -512,7 +493,16 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
               .withEndpoint(new Endpoint(address, NettyMessagingService.DEFAULT_PORT))
               .build();
         } catch (UnknownHostException e) {
-          throw new IllegalArgumentException("Cannot configure local node", e);
+          throw new ConfigurationException("Cannot configure local node", e);
+        }
+      }
+
+      // If the bootstrap nodes have not been configured, default to the local node if possible.
+      if (bootstrapNodes == null) {
+        if (localNode.type() == Node.Type.DATA) {
+          bootstrapNodes = Collections.singleton(localNode);
+        } else {
+          throw new ConfigurationException("No bootstrap nodes configured");
         }
       }
 
@@ -520,7 +510,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterMetadataService metadataService = buildClusterMetadataService(messagingService);
       ManagedClusterService clusterService = buildClusterService(metadataService, messagingService);
       ManagedClusterCommunicationService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
-      ManagedClusterEventService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
+      ManagedClusterEventsService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
       ManagedPartitionGroup corePartitionGroup = buildCorePartitionGroup();
       ManagedPartitionService partitionService = buildPartitionService();
       return new Atomix(
@@ -569,9 +559,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds a cluster event service.
      */
-    protected ManagedClusterEventService buildClusterEventService(
+    protected ManagedClusterEventsService buildClusterEventService(
         ClusterService clusterService, ClusterCommunicationService clusterCommunicator) {
-      return new DefaultClusterEventService(clusterService, clusterCommunicator);
+      return new DefaultClusterEventsService(clusterService, clusterCommunicator);
     }
 
     /**

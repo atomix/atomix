@@ -46,7 +46,7 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
   }
 
   private CompletableFuture<AsyncLeaderElector<T>> newLeaderElector(PrimitiveProxy proxy) {
-    return proxy.open()
+    return proxy.connect()
         .thenApply(p -> new TranscodingAsyncLeaderElector<T, byte[]>(
             new LeaderElectorProxy(proxy), serializer()::encode, serializer()::decode));
   }

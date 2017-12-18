@@ -16,7 +16,7 @@
 package io.atomix.rest.resources;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ClusterEventsService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.rest.utils.EventLog;
 import io.atomix.rest.utils.EventManager;
@@ -59,7 +59,7 @@ public class EventsResource {
   @POST
   @Path("/{subject}")
   @Consumes(MediaType.TEXT_PLAIN)
-  public Response publish(@PathParam("subject") String subject, @Context ClusterEventService eventService, String body) {
+  public Response publish(@PathParam("subject") String subject, @Context ClusterEventsService eventService, String body) {
     eventService.broadcast(new MessageSubject(subject), body);
     return Response.ok().build();
   }
@@ -67,9 +67,9 @@ public class EventsResource {
   @GET
   @Path("/{subject}")
   @Produces(MediaType.TEXT_PLAIN)
-  public void next(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
+  public void next(@PathParam("subject") String subject, @Context ClusterEventsService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
     EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
-        ClusterEventService.class, subject, l -> e -> l.addEvent(e));
+        ClusterEventsService.class, subject, l -> e -> l.addEvent(e));
     CompletableFuture<Void> openFuture;
     if (eventLog.open()) {
       openFuture = eventService.addSubscriber(new MessageSubject(subject), eventLog.listener(), MoreExecutors.directExecutor());
@@ -95,8 +95,8 @@ public class EventsResource {
 
   @DELETE
   @Path("/{subject}")
-  public Response delete(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events) {
-    EventLog<Consumer<String>, String> eventLog = events.removeEventLog(ClusterEventService.class, subject);
+  public Response delete(@PathParam("subject") String subject, @Context ClusterEventsService eventService, @Context EventManager events) {
+    EventLog<Consumer<String>, String> eventLog = events.removeEventLog(ClusterEventsService.class, subject);
     if (eventLog != null && eventLog.close()) {
       eventService.removeSubscriber(new MessageSubject(subject));
     }
@@ -107,7 +107,7 @@ public class EventsResource {
   @Path("/{subject}/subscribers")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getSubscribers(@PathParam("subject") String subject, @Context EventManager events) {
-    return Response.ok(events.getEventLogNames(ClusterEventService.class)
+    return Response.ok(events.getEventLogNames(ClusterEventsService.class)
         .stream()
         .filter(name -> name.length() == subject.length() + 1 + UUID_STRING_LENGTH && name.substring(0, name.length() - UUID_STRING_LENGTH - 1).equals(subject))
         .map(name -> name.substring(subject.length() + 1))
@@ -117,10 +117,10 @@ public class EventsResource {
   @POST
   @Path("/{subject}/subscribers")
   @Produces(MediaType.TEXT_PLAIN)
-  public void subscribe(@PathParam("subject") String subject, @Context ClusterEventService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
+  public void subscribe(@PathParam("subject") String subject, @Context ClusterEventsService eventService, @Context EventManager events, @Suspended AsyncResponse response) {
     String id = UUID.randomUUID().toString();
     EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
-        ClusterEventService.class, getEventLogName(subject, id), l -> e -> l.addEvent(e));
+        ClusterEventsService.class, getEventLogName(subject, id), l -> e -> l.addEvent(e));
     eventService.addSubscriber(new MessageSubject(subject), eventLog.listener(), MoreExecutors.directExecutor())
         .whenComplete((result, error) -> {
           if (error == null) {
@@ -136,7 +136,7 @@ public class EventsResource {
   @Path("/{subject}/subscribers/{id}")
   @Produces(MediaType.TEXT_PLAIN)
   public void nextSession(@PathParam("subject") String subject, @PathParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterEventService.class, getEventLogName(subject, id));
+    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterEventsService.class, getEventLogName(subject, id));
     if (eventLog == null) {
       LOGGER.warn("Unknown subscriber {}", id);
       response.resume(Response.status(Status.NOT_FOUND).build());
@@ -155,8 +155,8 @@ public class EventsResource {
 
   @DELETE
   @Path("/{subject}/subscribers/{id}")
-  public Response unsubscribe(@PathParam("subject") String subject, @PathParam("id") String id, @Context ClusterEventService eventService, @Context EventManager events) {
-    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterEventService.class, getEventLogName(subject, id));
+  public Response unsubscribe(@PathParam("subject") String subject, @PathParam("id") String id, @Context ClusterEventsService eventService, @Context EventManager events) {
+    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterEventsService.class, getEventLogName(subject, id));
     if (eventLog != null && eventLog.close()) {
       eventService.removeSubscriber(new MessageSubject(subject));
     }

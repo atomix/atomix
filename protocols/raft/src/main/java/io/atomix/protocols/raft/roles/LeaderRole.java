@@ -106,7 +106,7 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public synchronized CompletableFuture<RaftRole> open() {
+  public synchronized CompletableFuture<RaftRole> start() {
     // Reset state for the leader.
     takeLeadership();
 
@@ -116,7 +116,7 @@ public final class LeaderRole extends ActiveRole {
     // Commit the initial leader entries.
     commitInitialEntries();
 
-    return super.open()
+    return super.start()
         .thenRun(this::startAppendTimer)
         .thenRun(this::startHeartbeatTimer)
         .thenApply(v -> this);
@@ -155,7 +155,7 @@ public final class LeaderRole extends ActiveRole {
     CompletableFuture<Void> future = new CompletableFuture<>();
     appender.appendEntries(appender.getIndex()).whenComplete((resultIndex, error) -> {
       raft.checkThread();
-      if (isOpen()) {
+      if (isRunning()) {
         if (error == null) {
           raft.getStateMachine().apply(resultIndex);
           future.complete(null);
@@ -184,7 +184,7 @@ public final class LeaderRole extends ActiveRole {
    */
   private void appendMembers() {
     raft.checkThread();
-    if (isOpen()) {
+    if (isRunning()) {
       appender.appendEntries();
     }
   }
@@ -289,7 +289,7 @@ public final class LeaderRole extends ActiveRole {
           log.trace("Appended {}", entry);
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            if (isOpen()) {
+            if (isRunning()) {
               if (commitError == null) {
                 raft.getStateMachine().<Long>apply(entry.index())
                     .whenCompleteAsync((r, e) -> expiring.remove(session.sessionId()), raft.getThreadContext());
@@ -535,7 +535,7 @@ public final class LeaderRole extends ActiveRole {
 
     CompletableFuture<TransferResponse> future = new CompletableFuture<>();
     appender.appendEntries(raft.getLogWriter().getLastIndex()).whenComplete((result, error) -> {
-      if (isOpen()) {
+      if (isRunning()) {
         if (error == null) {
           log.debug("Transferring leadership to {}", request.member());
           raft.transition(RaftServer.Role.FOLLOWER);
@@ -744,7 +744,7 @@ public final class LeaderRole extends ActiveRole {
           // Replicate the command to followers.
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            if (isOpen()) {
+            if (isRunning()) {
               // If the command was successfully committed, apply it to the state machine.
               if (commitError == null) {
                 raft.getStateMachine().<OperationResult>apply(entry.index()).whenComplete((r, e) -> {
@@ -877,7 +877,7 @@ public final class LeaderRole extends ActiveRole {
 
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            if (isOpen()) {
+            if (isRunning()) {
               if (commitError == null) {
                 raft.getStateMachine().<Long>apply(entry.index()).whenComplete((sessionId, sessionError) -> {
                   if (sessionError == null) {
@@ -946,7 +946,7 @@ public final class LeaderRole extends ActiveRole {
 
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            if (isOpen()) {
+            if (isRunning()) {
               if (commitError == null) {
                 raft.getStateMachine().<long[]>apply(entry.index()).whenCompleteAsync((sessionResult, sessionError) -> {
                   if (sessionError == null) {
@@ -1023,7 +1023,7 @@ public final class LeaderRole extends ActiveRole {
 
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            if (isOpen()) {
+            if (isRunning()) {
               if (commitError == null) {
                 raft.getStateMachine().<Long>apply(entry.index()).whenComplete((closeResult, closeError) -> {
                   if (closeError == null) {
@@ -1124,8 +1124,8 @@ public final class LeaderRole extends ActiveRole {
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
-    return super.close()
+  public synchronized CompletableFuture<Void> stop() {
+    return super.stop()
         .thenRun(appender::close)
         .thenRun(this::cancelAppendTimer)
         .thenRun(this::cancelHeartbeatTimers)

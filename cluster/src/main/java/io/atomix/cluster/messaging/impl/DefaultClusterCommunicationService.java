@@ -51,38 +51,12 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   protected final ClusterService cluster;
   protected final MessagingService messagingService;
   private final NodeId localNodeId;
-  private final AtomicBoolean open = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public DefaultClusterCommunicationService(ClusterService cluster, MessagingService messagingService) {
     this.cluster = checkNotNull(cluster, "clusterService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.localNodeId = cluster.getLocalNode().id();
-  }
-
-  @Override
-  public CompletableFuture<ClusterCommunicationService> open() {
-    if (open.compareAndSet(false, true)) {
-      log.info("Started");
-    }
-    return CompletableFuture.completedFuture(this);
-  }
-
-  @Override
-  public boolean isOpen() {
-    return open.get();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !isOpen();
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    if (open.compareAndSet(true, false)) {
-      log.info("Stopped");
-    }
-    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -214,6 +188,27 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
     messagingService.registerHandler(subject.toString(),
         new InternalMessageConsumer<>(decoder, handler),
         executor);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<ClusterCommunicationService> start() {
+    if (started.compareAndSet(false, true)) {
+      log.info("Started");
+    }
+    return CompletableFuture.completedFuture(this);
+  }
+
+  @Override
+  public boolean isRunning() {
+    return started.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> stop() {
+    if (started.compareAndSet(true, false)) {
+      log.info("Stopped");
+    }
     return CompletableFuture.completedFuture(null);
   }
 

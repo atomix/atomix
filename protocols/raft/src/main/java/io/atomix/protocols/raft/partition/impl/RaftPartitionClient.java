@@ -78,7 +78,7 @@ public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Manag
   }
 
   @Override
-  public CompletableFuture<RaftPartitionClient> open() {
+  public CompletableFuture<RaftPartitionClient> start() {
     synchronized (RaftPartitionClient.this) {
       client = newRaftClient(protocol);
     }
@@ -92,18 +92,13 @@ public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Manag
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public CompletableFuture<Void> stop() {
     return client != null ? client.close() : CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public boolean isOpen() {
+  public boolean isRunning() {
     return client != null;
-  }
-
-  @Override
-  public boolean isClosed() {
-    return client == null;
   }
 
   private RaftClient newRaftClient(RaftClientProtocol protocol) {
