@@ -20,7 +20,6 @@
    * [Cluster management](#cluster-management)
       * [Failure detection](#failure-detection)
    * [Cluster communication](#cluster-communication)
-      * [Message subjects](#message-subjects)
       * [Direct messaging](#direct-messaging)
          * [Registering message subscribers](#registering-message-subscribers)
          * [Sending messages](#sending-messages)
@@ -203,7 +202,7 @@ about all nodes in the cluster, including the local node, data nodes, and client
 To get the set of nodes in the cluster, use the `ClusterService`:
 
 ```java
-Set<Node> nodes = atomix.cluster().getNodes();
+Set<Node> nodes = atomix.clusterService().getNodes();
 ```
 
 ### Failure detection
@@ -213,14 +212,14 @@ liveliness of the given node. The cluster service uses a phi accrual failure det
 internally to detect failures, and nodes' states are updated as failures are detected:
 
 ```java
-Node.State state = atomix.cluster().getNode(NodeId.from("foo")).state();
+Node.State state = atomix.clusterService().getNode(NodeId.from("foo")).state();
 ```
 
 Additionally, listeners can be added to the `ClusterService` to react to changes to both the set
 of nodes in the cluster and the states of individual nodes:
 
 ```java
-atomix.cluster().addListener(event -> {
+atomix.clusterService().addListener(event -> {
   if (event.type() == ClusterEvent.Type.NODE_ACTIVATED) {
     // A node's state was changed to ACTIVE
   } else if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
@@ -240,16 +239,6 @@ producers from consumers
 The default implementation of communication abstractions uses [Netty](https://netty.io/) for all
 inter-node communication.
 
-#### Message subjects
-
-Messages sent via communication APIs are identified by a `MessageSubject` object, which is used
-to correlate a sent message with the appropriate handler on the receiver. Typically a constant
-or enum defines a `MessageSubject`.
-
-```java
-private static final MessageSubject TEST_SUBJECT = new MessageSubject("test");
-```
-
 ### Direct messaging
 
 Atomix provides the `ClusterCommunicationService` for point-to-point messaging between Atomix
@@ -257,10 +246,10 @@ nodes. It provides support for unicast, multicast, broadcast, and request-reply 
 
 #### Registering message subscribers
 
-To register a message subscriber, use the `addSubscriber` methods:
+To register a message subscriber, use the `subscribe` methods:
 
 ```java
-atomix.communicator().addSubscriber(TEST_SUBJECT, message -> {
+atomix.messagingService().subscribe("test", message -> {
   return CompletableFuture.completedFuture(message);
 });
 ```
@@ -280,7 +269,7 @@ As noted above, messages can be sent using a variety of different communication 
 
 ```java
 // Send a request-reply message to node "foo"
-atomix.communicator().sendAndReceive(TEST_SUBJECT, "Hello world!", NodeId.from("foo")).thenAccept(response -> {
+atomix.messagingService().send("test", "Hello world!", NodeId.from("foo")).thenAccept(response -> {
   System.out.println("Received " + response);
 });
 ```
@@ -298,10 +287,8 @@ Serializer serializer = Serializer.using(KryoNamespace.builder()
   .register(ClusterHeartbeat.class)
   .build());
 
-ClusterHeartbeat heartbeat = new ClusterHeartbeat(atomix.cluster().getLocalNode().id());
-atomix.communicator().sendAndReceive(TEST_SUBJECT, heartbeat, serializer::encode, serializer::decode, someNodeId).thenAccept(response -> {
-  ...
-});
+ClusterHeartbeat heartbeat = new ClusterHeartbeat(atomix.clusterService().getLocalNode().id());
+atomix.messagingService().broadcast("test", heartbeat, serializer::encode);
 ```
 
 ### Publish-subscribe messaging
@@ -316,17 +303,17 @@ senders.
 
 ```java
 // Add an event service subscriber
-atomix.event().addSubscriber(TEST_SUBJECT, message -> {
+atomix.eventingService().subscribe("test", message -> {
   return CompletableFuture.completedFuture(message);
 });
 
 // Send a request-reply message via the event service
-atomix.event().sendAndReceive(TEST_SUBJECT, "Hello world!").thenAccept(response -> {
+atomix.eventingService().send("test", "Hello world!").thenAccept(response -> {
   System.out.println("Received " + response);
 });
 
 // Broadcast a message to all event subscribers
-atomix.event().broadcast(TEST_SUBJECT, "Hello world!");
+atomix.eventingService().broadcast("test", "Hello world!");
 ```
 
 ## Coordination primitives
@@ -399,8 +386,8 @@ AsyncLeaderElector<NodeId> asyncElector = elector.async();
 To enter into an election, use the `run` method:
 
 ```java
-asyncElector.run("foo", atomix.cluster().getLocalNode().id()).thenAccept(leadership -> {
-  if (leadership.leader().id().equals(atomix.cluster().getLocalNode().id())) {
+asyncElector.run("foo", atomix.clusterService().getLocalNode().id()).thenAccept(leadership -> {
+  if (leadership.leader().id().equals(atomix.clusterService().getLocalNode().id())) {
     // Local node elected leader!
   }
 });

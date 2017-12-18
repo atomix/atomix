@@ -15,18 +15,16 @@
  */
 package io.atomix.protocols.backup.partition.impl;
 
-import io.atomix.cluster.messaging.MessageSubject;
-
 /**
  * Protocol message context.
  */
 class PrimaryBackupMessageContext {
   private final String prefix;
-  final MessageSubject executeSubject;
-  final MessageSubject metadataSubject;
-  final MessageSubject backupSubject;
-  final MessageSubject restoreSubject;
-  final MessageSubject closeSubject;
+  final String executeSubject;
+  final String metadataSubject;
+  final String backupSubject;
+  final String restoreSubject;
+  final String closeSubject;
 
   PrimaryBackupMessageContext(String prefix) {
     this.prefix = prefix;
@@ -37,8 +35,8 @@ class PrimaryBackupMessageContext {
     this.closeSubject = getSubject(prefix, "close");
   }
 
-  private static MessageSubject getSubject(String prefix, String type) {
-    return new MessageSubject(String.format("%s-%s", prefix, type));
+  private static String getSubject(String prefix, String type) {
+    return String.format("%s-%s", prefix, type);
   }
 
   /**
@@ -47,11 +45,11 @@ class PrimaryBackupMessageContext {
    * @param sessionId the session for which to return the event subject
    * @return the event subject for the given session
    */
-  MessageSubject eventSubject(long sessionId) {
+  String eventSubject(long sessionId) {
     if (prefix == null) {
-      return new MessageSubject(String.format("event-%d", sessionId));
+      return String.format("event-%d", sessionId);
     } else {
-      return new MessageSubject(String.format("%s-event-%d", prefix, sessionId));
+      return String.format("%s-event-%d", prefix, sessionId);
     }
   }
 }

@@ -17,8 +17,7 @@ package io.atomix.protocols.raft.partition.impl;
 
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.MessageSubject;
+import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.CloseSessionResponse;
@@ -39,7 +38,6 @@ import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.utils.serializer.Serializer;
 
-import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -52,20 +50,20 @@ import java.util.function.Function;
 public class RaftClientCommunicator implements RaftClientProtocol {
   private final RaftMessageContext context;
   private final Serializer serializer;
-  private final ClusterCommunicationService clusterCommunicator;
+  private final ClusterMessagingService clusterCommunicator;
 
-  public RaftClientCommunicator(Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+  public RaftClientCommunicator(Serializer serializer, ClusterMessagingService clusterCommunicator) {
     this(null, serializer, clusterCommunicator);
   }
 
-  public RaftClientCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+  public RaftClientCommunicator(String prefix, Serializer serializer, ClusterMessagingService clusterCommunicator) {
     this.context = new RaftMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private <T, U> CompletableFuture<U> sendAndReceive(MessageSubject subject, T request, NodeId nodeId) {
-    return clusterCommunicator.sendAndReceive(subject, request, serializer::encode, serializer::decode, nodeId);
+  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, NodeId nodeId) {
+    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, nodeId);
   }
 
   @Override
@@ -100,12 +98,12 @@ public class RaftClientCommunicator implements RaftClientProtocol {
 
   @Override
   public void registerHeartbeatHandler(Function<HeartbeatRequest, CompletableFuture<HeartbeatResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.heartbeatSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.heartbeatSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterHeartbeatHandler() {
-    clusterCommunicator.removeSubscriber(context.heartbeatSubject);
+    clusterCommunicator.unsubscribe(context.heartbeatSubject);
   }
 
   @Override
@@ -115,11 +113,11 @@ public class RaftClientCommunicator implements RaftClientProtocol {
 
   @Override
   public void registerPublishListener(SessionId sessionId, Consumer<PublishRequest> listener, Executor executor) {
-    clusterCommunicator.addSubscriber(context.publishSubject(sessionId.id()), serializer::decode, listener, executor);
+    clusterCommunicator.subscribe(context.publishSubject(sessionId.id()), serializer::decode, listener, executor);
   }
 
   @Override
   public void unregisterPublishListener(SessionId sessionId) {
-    clusterCommunicator.removeSubscriber(context.publishSubject(sessionId.id()));
+    clusterCommunicator.unsubscribe(context.publishSubject(sessionId.id()));
   }
 }

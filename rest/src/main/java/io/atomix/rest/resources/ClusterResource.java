@@ -232,7 +232,7 @@ public class ClusterResource extends AbstractRestResource {
     }
 
     public Node.State getStatus() {
-      return node.state();
+      return node.getState();
     }
   }
 

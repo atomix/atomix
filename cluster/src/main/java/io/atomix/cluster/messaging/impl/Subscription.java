@@ -16,7 +16,6 @@
 package io.atomix.cluster.messaging.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClockTimestamp;
 
@@ -24,78 +23,78 @@ import io.atomix.utils.time.WallClockTimestamp;
  * Represents a single instance of a subscription.
  */
 public class Subscription {
-    private final NodeId nodeId;
-    private final MessageSubject subject;
-    private final LogicalTimestamp logicalTimestamp;
-    private final boolean tombstone;
-    private final WallClockTimestamp timestamp = new WallClockTimestamp();
+  private final NodeId nodeId;
+  private final String subject;
+  private final LogicalTimestamp logicalTimestamp;
+  private final boolean tombstone;
+  private final WallClockTimestamp timestamp = new WallClockTimestamp();
 
-    Subscription(NodeId nodeId, MessageSubject subject, LogicalTimestamp logicalTimestamp) {
-        this(nodeId, subject, logicalTimestamp, false);
-    }
+  Subscription(NodeId nodeId, String subject, LogicalTimestamp logicalTimestamp) {
+    this(nodeId, subject, logicalTimestamp, false);
+  }
 
-    private Subscription(
-            NodeId nodeId,
-            MessageSubject subject,
-            LogicalTimestamp logicalTimestamp,
-            boolean tombstone) {
-        this.nodeId = nodeId;
-        this.subject = subject;
-        this.logicalTimestamp = logicalTimestamp;
-        this.tombstone = tombstone;
-    }
+  private Subscription(
+      NodeId nodeId,
+      String subject,
+      LogicalTimestamp logicalTimestamp,
+      boolean tombstone) {
+    this.nodeId = nodeId;
+    this.subject = subject;
+    this.logicalTimestamp = logicalTimestamp;
+    this.tombstone = tombstone;
+  }
 
-    /**
-     * Returns the subscription node identifier.
-     *
-     * @return the subscription node identifier
-     */
-    public NodeId nodeId() {
-        return nodeId;
-    }
+  /**
+   * Returns the subscription node identifier.
+   *
+   * @return the subscription node identifier
+   */
+  public NodeId nodeId() {
+    return nodeId;
+  }
 
-    /**
-     * Returns the subscription subject.
-     *
-     * @return the subscription subject
-     */
-    public MessageSubject subject() {
-        return subject;
-    }
+  /**
+   * Returns the subscription subject.
+   *
+   * @return the subscription subject
+   */
+  public String subject() {
+    return subject;
+  }
 
-    /**
-     * Returns the logical subscription timestamp.
-     *
-     * @return the logical subscription timestamp
-     */
-    LogicalTimestamp logicalTimestamp() {
-        return logicalTimestamp;
-    }
+  /**
+   * Returns the logical subscription timestamp.
+   *
+   * @return the logical subscription timestamp
+   */
+  LogicalTimestamp logicalTimestamp() {
+    return logicalTimestamp;
+  }
 
-    /**
-     * Returns a boolean indicating whether the subscription is a tombstone.
-     *
-     * @return indicates whether the subscription is a tombstone
-     */
-    boolean isTombstone() {
-        return tombstone;
-    }
+  /**
+   * Returns a boolean indicating whether the subscription is a tombstone.
+   *
+   * @return indicates whether the subscription is a tombstone
+   */
+  boolean isTombstone() {
+    return tombstone;
+  }
 
-    /**
-     * Returns the time at which the subscription was created.
-     *
-     * @return the time at which the subscription was created
-     */
-    public WallClockTimestamp timestamp() {
-        return timestamp;
-    }
+  /**
+   * Returns the time at which the subscription was created.
+   *
+   * @return the time at which the subscription was created
+   */
+  public WallClockTimestamp timestamp() {
+    return timestamp;
+  }
 
-    /**
-     * Returns the subscription as a tombstone.
-     *
-     * @return the subscription as a tombstone
-     */
-    Subscription asTombstone() {
-        return new Subscription(nodeId, subject, logicalTimestamp, true);
-    }
+  /**
+   * Returns the subscription as a tombstone.
+   *
+   * @return the subscription as a tombstone
+   */
+  Subscription asTombstone() {
+    return new Subscription(nodeId, subject, logicalTimestamp, true);
+  }
 }

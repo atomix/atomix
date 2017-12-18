@@ -39,7 +39,7 @@ public class StatefulNode extends Node {
   }
 
   @Override
-  public State state() {
+  public State getState() {
     return state;
   }
 }

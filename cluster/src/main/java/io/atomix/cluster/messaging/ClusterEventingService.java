@@ -25,7 +25,7 @@ import static io.atomix.utils.serializer.serializers.DefaultSerializers.BASIC;
 /**
  * Cluster event service.
  */
-public interface ClusterEventsService {
+public interface ClusterEventingService {
 
   /**
    * Broadcasts a message to all controller nodes.
@@ -35,7 +35,7 @@ public interface ClusterEventsService {
    * @param <M>     message type
    */
   default <M> void broadcast(
-      MessageSubject subject,
+      String subject,
       M message) {
     broadcast(subject, message, BASIC::encode);
   }
@@ -49,7 +49,7 @@ public interface ClusterEventsService {
    * @param <M>     message type
    */
   <M> void broadcast(
-      MessageSubject subject,
+      String subject,
       M message,
       Function<M, byte[]> encoder);
 
@@ -62,7 +62,7 @@ public interface ClusterEventsService {
    * @return future that is completed when the message is sent
    */
   default <M> CompletableFuture<Void> unicast(
-      MessageSubject subject,
+      String subject,
       M message) {
     return unicast(subject, message, BASIC::encode);
   }
@@ -77,7 +77,7 @@ public interface ClusterEventsService {
    * @return future that is completed when the message is sent
    */
   <M> CompletableFuture<Void> unicast(
-      MessageSubject subject,
+      String subject,
       M message,
       Function<M, byte[]> encoder);
 
@@ -90,10 +90,10 @@ public interface ClusterEventsService {
    * @param <R>     reply type
    * @return reply future
    */
-  default <M, R> CompletableFuture<R> sendAndReceive(
-      MessageSubject subject,
+  default <M, R> CompletableFuture<R> send(
+      String subject,
       M message) {
-    return sendAndReceive(subject, message, BASIC::encode, BASIC::decode);
+    return send(subject, message, BASIC::encode, BASIC::decode);
   }
 
   /**
@@ -107,8 +107,8 @@ public interface ClusterEventsService {
    * @param <R>     reply type
    * @return reply future
    */
-  <M, R> CompletableFuture<R> sendAndReceive(
-      MessageSubject subject,
+  <M, R> CompletableFuture<R> send(
+      String subject,
       M message,
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder);
@@ -123,11 +123,11 @@ public interface ClusterEventsService {
    * @param <R>      reply message type
    * @return future to be completed once the subscription has been propagated
    */
-  default <M, R> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  default <M, R> CompletableFuture<Void> subscribe(
+      String subject,
       Function<M, R> handler,
       Executor executor) {
-    return addSubscriber(subject, BASIC::decode, handler, BASIC::encode, executor);
+    return subscribe(subject, BASIC::decode, handler, BASIC::encode, executor);
   }
 
   /**
@@ -142,8 +142,8 @@ public interface ClusterEventsService {
    * @param <R>      reply message type
    * @return future to be completed once the subscription has been propagated
    */
-  <M, R> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  <M, R> CompletableFuture<Void> subscribe(
+      String subject,
       Function<byte[], M> decoder,
       Function<M, R> handler,
       Function<R, byte[]> encoder,
@@ -158,10 +158,10 @@ public interface ClusterEventsService {
    * @param <R>     reply message type
    * @return future to be completed once the subscription has been propagated
    */
-  default <M, R> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  default <M, R> CompletableFuture<Void> subscribe(
+      String subject,
       Function<M, CompletableFuture<R>> handler) {
-    return addSubscriber(subject, BASIC::decode, handler, BASIC::encode);
+    return subscribe(subject, BASIC::decode, handler, BASIC::encode);
   }
 
   /**
@@ -175,8 +175,8 @@ public interface ClusterEventsService {
    * @param <R>     reply message type
    * @return future to be completed once the subscription has been propagated
    */
-  <M, R> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  <M, R> CompletableFuture<Void> subscribe(
+      String subject,
       Function<byte[], M> decoder,
       Function<M, CompletableFuture<R>> handler,
       Function<R, byte[]> encoder);
@@ -190,11 +190,11 @@ public interface ClusterEventsService {
    * @param <M>      incoming message type
    * @return future to be completed once the subscription has been propagated
    */
-  default <M> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  default <M> CompletableFuture<Void> subscribe(
+      String subject,
       Consumer<M> handler,
       Executor executor) {
-    return addSubscriber(subject, BASIC::decode, handler, executor);
+    return subscribe(subject, BASIC::decode, handler, executor);
   }
 
   /**
@@ -207,8 +207,8 @@ public interface ClusterEventsService {
    * @param <M>      incoming message type
    * @return future to be completed once the subscription has been propagated
    */
-  <M> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  <M> CompletableFuture<Void> subscribe(
+      String subject,
       Function<byte[], M> decoder,
       Consumer<M> handler,
       Executor executor);
@@ -218,6 +218,6 @@ public interface ClusterEventsService {
    *
    * @param subject message subject
    */
-  void removeSubscriber(MessageSubject subject);
+  void unsubscribe(String subject);
 
 }

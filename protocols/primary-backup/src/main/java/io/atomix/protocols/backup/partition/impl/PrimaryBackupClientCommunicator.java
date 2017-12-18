@@ -17,8 +17,7 @@ package io.atomix.protocols.backup.partition.impl;
 
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.MessageSubject;
+import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.CloseRequest;
@@ -40,16 +39,16 @@ import java.util.function.Consumer;
 public class PrimaryBackupClientCommunicator implements PrimaryBackupClientProtocol {
   private final PrimaryBackupMessageContext context;
   private final Serializer serializer;
-  private final ClusterCommunicationService clusterCommunicator;
+  private final ClusterMessagingService clusterCommunicator;
 
-  public PrimaryBackupClientCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+  public PrimaryBackupClientCommunicator(String prefix, Serializer serializer, ClusterMessagingService clusterCommunicator) {
     this.context = new PrimaryBackupMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private <T, U> CompletableFuture<U> sendAndReceive(MessageSubject subject, T request, NodeId nodeId) {
-    return clusterCommunicator.sendAndReceive(subject, request, serializer::encode, serializer::decode, nodeId);
+  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, NodeId nodeId) {
+    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, nodeId);
   }
 
   @Override
@@ -69,11 +68,11 @@ public class PrimaryBackupClientCommunicator implements PrimaryBackupClientProto
 
   @Override
   public void registerEventListener(SessionId sessionId, Consumer<PrimitiveEvent> listener, Executor executor) {
-    clusterCommunicator.addSubscriber(context.eventSubject(sessionId.id()), serializer::decode, listener, executor);
+    clusterCommunicator.subscribe(context.eventSubject(sessionId.id()), serializer::decode, listener, executor);
   }
 
   @Override
   public void unregisterEventListener(SessionId sessionId) {
-    clusterCommunicator.removeSubscriber(context.eventSubject(sessionId.id()));
+    clusterCommunicator.unsubscribe(context.eventSubject(sessionId.id()));
   }
 }

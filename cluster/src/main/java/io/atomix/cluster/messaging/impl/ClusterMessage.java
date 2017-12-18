@@ -18,7 +18,6 @@ package io.atomix.cluster.messaging.impl;
 import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.utils.ArraySizeHashPrinter;
 
 import java.nio.ByteBuffer;
@@ -31,7 +30,7 @@ import java.util.Objects;
 public class ClusterMessage {
 
   private final NodeId sender;
-  private final MessageSubject subject;
+  private final String subject;
   private final byte[] payload;
   private transient byte[] response;
 
@@ -42,7 +41,7 @@ public class ClusterMessage {
    * @param subject message subject
    * @param payload message payload
    */
-  public ClusterMessage(NodeId sender, MessageSubject subject, byte[] payload) {
+  public ClusterMessage(NodeId sender, String subject, byte[] payload) {
     this.sender = sender;
     this.subject = subject;
     this.payload = payload;
@@ -62,7 +61,7 @@ public class ClusterMessage {
    *
    * @return message subject
    */
-  public MessageSubject subject() {
+  public String subject() {
     return subject;
   }
 
@@ -122,7 +121,7 @@ public class ClusterMessage {
    */
   public byte[] getBytes() {
     byte[] senderBytes = sender.toString().getBytes(Charsets.UTF_8);
-    byte[] subjectBytes = subject.name().getBytes(Charsets.UTF_8);
+    byte[] subjectBytes = subject.getBytes(Charsets.UTF_8);
     int capacity = 12 + senderBytes.length + subjectBytes.length + payload.length;
     ByteBuffer buffer = ByteBuffer.allocate(capacity);
     buffer.putInt(senderBytes.length);
@@ -150,7 +149,7 @@ public class ClusterMessage {
     buffer.get(payloadBytes);
 
     return new ClusterMessage(new NodeId(new String(senderBytes, Charsets.UTF_8)),
-        new MessageSubject(new String(subjectBytes, Charsets.UTF_8)),
+        new String(new String(subjectBytes, Charsets.UTF_8)),
         payloadBytes);
   }
 
