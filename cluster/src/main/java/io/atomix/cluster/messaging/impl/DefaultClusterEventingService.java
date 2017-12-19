@@ -70,7 +70,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
       .register(NodeId.class)
       .register(LogicalTimestamp.class)
       .register(WallClockTimestamp.class)
-      .register(SubscriptionMetadata.class)
+      .register(InternalSubscriptionInfo.class)
       .register(InternalMessage.class)
       .register(InternalMessage.Type.class)
       .build());
@@ -86,9 +86,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   private final AtomicLong logicalTime = new AtomicLong();
   private ScheduledExecutorService gossipExecutor;
   private final Map<NodeId, Long> updateTimes = Maps.newConcurrentMap();
-  private final Map<String, TopicSubscribers> topicSubscribers = Maps.newConcurrentMap();
-  private final Map<String, List<SubscriptionMetadata>> topicSubscriptions = Maps.newConcurrentMap();
-  private final Map<String, TopicIterator> topicIterators = Maps.newConcurrentMap();
+  private final Map<String, InternalTopic> topics = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
 
   public DefaultClusterEventingService(ClusterService clusterService, MessagingService messagingService) {
@@ -137,15 +135,15 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   /**
    * Returns a collection of nodes that subscribe to the given topic.
    *
-   * @param topic the topic for which to return the collection of subscriber nodes
+   * @param topicName the topic for which to return the collection of subscriber nodes
    * @return the collection of subscribers for the given topic
    */
-  private Stream<NodeId> getSubscriberNodes(String topic) {
-    List<SubscriptionMetadata> subscribers = topicSubscriptions.get(topic);
-    if (subscribers == null) {
+  private Stream<NodeId> getSubscriberNodes(String topicName) {
+    InternalTopic topic = topics.get(topicName);
+    if (topic == null) {
       return Stream.empty();
     }
-    return subscribers.stream()
+    return topic.remoteSubscriptions().stream()
         .filter(s -> !s.isTombstone())
         .map(s -> s.nodeId())
         .distinct();
@@ -154,114 +152,50 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   /**
    * Returns the next node ID for the given message topic.
    *
-   * @param topic the topic for which to return the next node ID
+   * @param topicName the topic for which to return the next node ID
    * @return the next node ID for the given message topic
    */
-  private NodeId getNextNodeId(String topic) {
-    TopicIterator iterator = topicIterators.get(topic);
-    return iterator != null && iterator.hasNext() ? iterator.next().nodeId() : null;
-  }
-
-  /**
-   * Resets the iterator for the given message topic.
-   *
-   * @param topic the topic for which to reset the iterator
-   */
-  private synchronized void setSubscriberIterator(String topic) {
-    List<SubscriptionMetadata> subscribers = topicSubscriptions.get(topic);
-    if (subscribers == null) {
-      topicIterators.remove(topic);
-    } else {
-      topicIterators.put(topic, new TopicIterator(subscribers));
+  private NodeId getNextNodeId(String topicName) {
+    InternalTopic topic = topics.get(topicName);
+    if (topic == null) {
+      return null;
     }
-  }
 
-  /**
-   * Registers the node as a subscriber for the given topic.
-   *
-   * @param subscription the topic for which to register the node as a subscriber
-   */
-  private synchronized CompletableFuture<Subscription> registerSubscriber(InternalSubscription subscription) {
-    TopicSubscribers subscribers = topicSubscribers.computeIfAbsent(subscription.topic(), t -> new TopicSubscribers(Collections.emptyList()));
-    subscribers = subscribers.add(subscription);
-    messagingService.registerHandler(subscription.topic(), subscribers);
-    topicSubscribers.put(subscription.topic(), subscribers);
-    List<SubscriptionMetadata> subscriptions = topicSubscriptions.computeIfAbsent(subscription.topic(), t -> Lists.newCopyOnWriteArrayList());
-    subscriptions.add(subscription.metadata);
-    return updateNodes().thenApply(v -> subscription);
-  }
-
-  /**
-   * Unregisters the node as a subscriber for the given topic.
-   */
-  private synchronized CompletableFuture<Void> unregisterSubscriber(InternalSubscription subscription) {
-    topicSubscribers.computeIfPresent(subscription.topic(), (topic, subscribers) -> {
-      List<InternalSubscription> subscriptions = Arrays.asList(subscribers.subscriptions);
-      if (subscriptions.remove(subscription)) {
-        return new TopicSubscribers(subscriptions);
-      }
-      return subscribers;
-    });
-
-    List<SubscriptionMetadata> subscriptions = topicSubscriptions.get(subscription.topic());
-    if (subscriptions != null) {
-      // Create a new list of subscriptions with the given subscription changed to a tombstone.
-      List<SubscriptionMetadata> newSubscriptions = subscriptions.stream()
-          .map(s -> s == subscription.metadata ? s.asTombstone() : s)
-          .collect(Collectors.toList());
-      topicSubscriptions.put(subscription.topic(), newSubscriptions);
-
-      // If all remaining subscriptions are tombstones, unsubscribe from the underlying topic.
-      if (newSubscriptions.stream().filter(s -> s.isTombstone()).count() == 0) {
-        messagingService.unregisterHandler(subscription.topic());
-      }
-      updateNodes();
+    TopicIterator iterator = topic.iterator();
+    if (iterator.hasNext()) {
+      return iterator.next().nodeId();
     }
-    return CompletableFuture.completedFuture(null);
+    return null;
   }
 
   @Override
-  public <M, R> CompletableFuture<Subscription> subscribe(String topic, Function<byte[], M> decoder, Function<M, R> handler, Function<R, byte[]> encoder, Executor executor) {
-    return registerSubscriber(new InternalSubscription(topic, payload -> {
-      CompletableFuture<byte[]> future = new CompletableFuture<>();
-      executor.execute(() -> {
-        try {
-          future.complete(encoder.apply(handler.apply(decoder.apply(payload))));
-        } catch (Exception e) {
-          future.completeExceptionally(e);
-        }
-      });
-      return future;
-    }));
+  public <M, R> CompletableFuture<Subscription> subscribe(
+      String topic, Function<byte[], M> decoder, Function<M, R> handler, Function<R, byte[]> encoder, Executor executor) {
+    return topics.computeIfAbsent(topic, t -> new InternalTopic(topic))
+        .subscribe(decoder, handler, encoder, executor);
   }
 
   @Override
-  public <M, R> CompletableFuture<Subscription> subscribe(String topic, Function<byte[], M> decoder, Function<M, CompletableFuture<R>> handler, Function<R, byte[]> encoder) {
-    return registerSubscriber(new InternalSubscription(topic, payload -> {
-      return handler.apply(decoder.apply(payload)).thenApply(encoder);
-    }));
+  public <M, R> CompletableFuture<Subscription> subscribe(
+      String topic, Function<byte[], M> decoder, Function<M, CompletableFuture<R>> handler, Function<R, byte[]> encoder) {
+    return topics.computeIfAbsent(topic, t -> new InternalTopic(topic))
+        .subscribe(decoder, handler, encoder);
   }
 
   @Override
-  public <M> CompletableFuture<Subscription> subscribe(String topic, Function<byte[], M> decoder, Consumer<M> handler, Executor executor) {
-    return registerSubscriber(new InternalSubscription(topic, payload -> {
-      executor.execute(() -> {
-        try {
-          handler.accept(decoder.apply(payload));
-        } catch (Exception e) {
-        }
-      });
-      return CompletableFuture.completedFuture(null);
-    }));
+  public <M> CompletableFuture<Subscription> subscribe(
+      String topic, Function<byte[], M> decoder, Consumer<M> handler, Executor executor) {
+    return topics.computeIfAbsent(topic, t -> new InternalTopic(topic))
+        .subscribe(decoder, handler, executor);
   }
 
   @Override
-  public List<Subscription> getSubscriptions(String topic) {
-    TopicSubscribers subscribers = topicSubscribers.get(topic);
-    if (subscribers == null) {
-      return Collections.emptyList();
+  public List<Subscription> getSubscriptions(String topicName) {
+    InternalTopic topic = topics.get(topicName);
+    if (topic == null) {
+      return ImmutableList.of();
     }
-    return ImmutableList.copyOf(subscribers.subscriptions);
+    return ImmutableList.copyOf(topic.localSubscriber().subscriptions());
   }
 
   /**
@@ -269,18 +203,17 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    *
    * @param subscriptions a collection of subscriptions provided by the sender
    */
-  private void update(Collection<SubscriptionMetadata> subscriptions) {
-    for (SubscriptionMetadata subscription : subscriptions) {
-      List<SubscriptionMetadata> topic = topicSubscriptions.computeIfAbsent(subscription.topic(), s -> Lists.newCopyOnWriteArrayList());
-      SubscriptionMetadata matchingSubscription = topic.stream()
-          .filter(s -> s.logicalTimestamp().equals(subscription.logicalTimestamp()))
+  private void update(Collection<InternalSubscriptionInfo> subscriptions) {
+    for (InternalSubscriptionInfo subscription : subscriptions) {
+      InternalTopic topic = topics.computeIfAbsent(subscription.topic, InternalTopic::new);
+      InternalSubscriptionInfo matchingSubscription = topic.remoteSubscriptions().stream()
+          .filter(s -> s.nodeId().equals(subscription.nodeId()) && s.logicalTimestamp().equals(subscription.logicalTimestamp()))
           .findFirst()
           .orElse(null);
       if (matchingSubscription == null) {
-        List<SubscriptionMetadata> newSubscriptions = Lists.newArrayList(topic);
-        newSubscriptions.add(subscription);
-        topicSubscriptions.put(subscription.topic(), newSubscriptions);
-        setSubscriberIterator(subscription.topic());
+        topic.addRemoteSubscription(subscription);
+      } else if (subscription.isTombstone()) {
+        topic.removeRemoteSubscription(subscription);
       }
     }
   }
@@ -323,13 +256,13 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
     long updateTime = System.currentTimeMillis();
     long lastUpdateTime = updateTimes.getOrDefault(node.id(), 0L);
 
-    Collection<SubscriptionMetadata> subscriptions = topicSubscriptions.values()
+    Collection<InternalSubscriptionInfo> subscriptions = topics.values()
         .stream()
-        .flatMap(s -> s.stream().filter(subscriber -> subscriber.timestamp().unixTimestamp() >= lastUpdateTime))
+        .flatMap(t -> t.remoteSubscriptions().stream().filter(subscriber -> subscriber.timestamp().unixTimestamp() >= lastUpdateTime))
         .collect(Collectors.toList());
 
     CompletableFuture<Void> future = new CompletableFuture<>();
-    messagingService.sendAsync(node.endpoint(), GOSSIP_MESSAGE_SUBJECT, SERIALIZER.encode(subscriptions))
+    messagingService.sendAndReceive(node.endpoint(), GOSSIP_MESSAGE_SUBJECT, SERIALIZER.encode(subscriptions))
         .whenComplete((result, error) -> {
           if (error == null) {
             updateTimes.put(node.id(), updateTime);
@@ -348,8 +281,8 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
         .map(node -> updateTimes.getOrDefault(node.id(), 0L))
         .reduce(Math::min)
         .orElse(0L);
-    for (List<SubscriptionMetadata> subscriptions : topicSubscriptions.values()) {
-      subscriptions.removeIf(subscription -> subscription.isTombstone() && subscription.timestamp().unixTimestamp() < minTombstoneTime);
+    for (InternalTopic topic : topics.values()) {
+      topic.purgeTombstones(minTombstoneTime);
     }
   }
 
@@ -370,6 +303,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
           TimeUnit.MILLISECONDS);
       messagingService.registerHandler(GOSSIP_MESSAGE_SUBJECT, (endpoint, payload) -> {
         update(SERIALIZER.decode(payload));
+        return new byte[0];
       }, gossipExecutor);
       LOGGER.info("Started");
     }
@@ -429,16 +363,195 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   }
 
   /**
-   * A set of internal subscribers.
+   * Internal topic.
    */
-  private class TopicSubscribers implements BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> {
-    private final AtomicInteger counter = new AtomicInteger();
-    private final InternalSubscription[] subscriptions;
-    private final int length;
+  private class InternalTopic {
+    private final String topic;
+    private final InternalSubscriber subscribers = new InternalSubscriber();
+    private final List<InternalSubscriptionInfo> subscriptions = Lists.newCopyOnWriteArrayList();
+    private TopicIterator iterator;
 
-    TopicSubscribers(Collection<InternalSubscription> subscriptions) {
-      this.length = subscriptions.size();
-      this.subscriptions = subscriptions.toArray(new InternalSubscription[length]);
+    InternalTopic(String topic) {
+      this.topic = topic;
+    }
+
+    /**
+     * Returns the local subscriber for the topic.
+     *
+     * @return the local subscriber for the topic
+     */
+    InternalSubscriber localSubscriber() {
+      return subscribers;
+    }
+
+    /**
+     * Returns the list of remote subscriptions for the topic.
+     *
+     * @return the list of remote subscriptions for the topic
+     */
+    List<InternalSubscriptionInfo> remoteSubscriptions() {
+      return subscriptions;
+    }
+
+    /**
+     * Returns the topic subscription iterator.
+     *
+     * @return the topic subscription iterator
+     */
+    TopicIterator iterator() {
+      return iterator;
+    }
+
+    /**
+     * Subscribes to messages from the topic.
+     */
+    <M, R> CompletableFuture<Subscription> subscribe(
+        Function<byte[], M> decoder, Function<M, R> handler, Function<R, byte[]> encoder, Executor executor) {
+      return addLocalSubscription(new InternalSubscription(this, payload -> {
+        CompletableFuture<byte[]> future = new CompletableFuture<>();
+        executor.execute(() -> {
+          try {
+            future.complete(encoder.apply(handler.apply(decoder.apply(payload))));
+          } catch (Exception e) {
+            future.completeExceptionally(e);
+          }
+        });
+        return future;
+      }));
+    }
+
+    /**
+     * Subscribes to messages from the topic.
+     */
+    <M, R> CompletableFuture<Subscription> subscribe(
+        Function<byte[], M> decoder, Function<M, CompletableFuture<R>> handler, Function<R, byte[]> encoder) {
+      return addLocalSubscription(new InternalSubscription(this, payload -> {
+        return handler.apply(decoder.apply(payload)).thenApply(encoder);
+      }));
+    }
+
+    /**
+     * Subscribes to messages from the topic.
+     */
+    <M> CompletableFuture<Subscription> subscribe(
+        Function<byte[], M> decoder, Consumer<M> handler, Executor executor) {
+      return addLocalSubscription(new InternalSubscription(this, payload -> {
+        executor.execute(() -> {
+          try {
+            handler.accept(decoder.apply(payload));
+          } catch (Exception e) {
+          }
+        });
+        return CompletableFuture.completedFuture(null);
+      }));
+    }
+
+    /**
+     * Registers the node as a subscriber for the given topic.
+     *
+     * @param subscription the subscription to register
+     */
+    private synchronized CompletableFuture<Subscription> addLocalSubscription(InternalSubscription subscription) {
+      subscribers.add(subscription);
+      subscriptions.add(subscription.metadata);
+      iterator = new TopicIterator(subscriptions);
+      messagingService.registerHandler(subscription.topic(), subscribers);
+      return updateNodes().thenApply(v -> subscription);
+    }
+
+    /**
+     * Unregisters the node as a subscriber for the given topic.
+     *
+     * @param subscription the subscription to unregister
+     */
+    private synchronized CompletableFuture<Void> removeLocalSubscription(InternalSubscription subscription) {
+      subscribers.remove(subscription);
+      subscriptions.remove(subscription.metadata);
+      subscriptions.add(subscription.metadata.asTombstone());
+      iterator = new TopicIterator(subscriptions);
+      if (subscriptions.stream().filter(s -> s.isTombstone()).count() == 0) {
+        messagingService.unregisterHandler(subscription.topic());
+      }
+      return updateNodes();
+    }
+
+    /**
+     * Adds a subscription to the topic.
+     *
+     * @param subscription the subscription to add
+     */
+    synchronized void addRemoteSubscription(InternalSubscriptionInfo subscription) {
+      subscriptions.add(subscription);
+      iterator = new TopicIterator(subscriptions);
+    }
+
+    /**
+     * Updates a subscription to the topic.
+     *
+     * @param subscription the subscription to update
+     */
+    synchronized void removeRemoteSubscription(InternalSubscriptionInfo subscription) {
+      subscriptions.remove(subscription);
+      subscriptions.add(subscription);
+      iterator = new TopicIterator(subscriptions);
+    }
+
+    /**
+     * Purges tombstones from the topic.
+     *
+     * @param minTombstoneTime the time before which tombstones can be removed
+     */
+    synchronized void purgeTombstones(long minTombstoneTime) {
+      int startSize = subscriptions.size();
+      subscriptions.removeIf(subscription -> {
+        return subscription.isTombstone() && subscription.timestamp().unixTimestamp() < minTombstoneTime;
+      });
+      if (subscriptions.size() != startSize) {
+        iterator = new TopicIterator(subscriptions);
+      }
+    }
+  }
+
+  /**
+   * Subscriber iterator that iterates subscribers in a loop.
+   */
+  private class TopicIterator implements Iterator<InternalSubscriptionInfo> {
+    private final AtomicInteger counter = new AtomicInteger();
+    private final InternalSubscriptionInfo[] subscribers;
+
+    TopicIterator(List<InternalSubscriptionInfo> subscribers) {
+      List<InternalSubscriptionInfo> filteredSubscribers = subscribers.stream()
+          .filter(s -> !s.isTombstone())
+          .collect(Collectors.toList());
+      Collections.reverse(filteredSubscribers);
+      this.subscribers = filteredSubscribers.toArray(new InternalSubscriptionInfo[filteredSubscribers.size()]);
+    }
+
+    @Override
+    public boolean hasNext() {
+      return subscribers.length > 0;
+    }
+
+    @Override
+    public InternalSubscriptionInfo next() {
+      return subscribers[Math.abs(counter.incrementAndGet() % subscribers.length)];
+    }
+  }
+
+  /**
+   * Internal subscriber.
+   */
+  private class InternalSubscriber implements BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> {
+    private final AtomicInteger counter = new AtomicInteger();
+    private InternalSubscription[] subscriptions = new InternalSubscription[0];
+
+    /**
+     * Returns a list of subscriptions within the subscripber.
+     *
+     * @return a list of subscriptions
+     */
+    List<InternalSubscription> subscriptions() {
+      return ImmutableList.copyOf(subscriptions);
     }
 
     /**
@@ -447,7 +560,8 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
      * @return the next subscription
      */
     private InternalSubscription next() {
-      return subscriptions[counter.incrementAndGet() % length];
+      InternalSubscription[] subscriptions = this.subscriptions;
+      return subscriptions[counter.incrementAndGet() % subscriptions.length];
     }
 
     @Override
@@ -466,11 +580,27 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
       }
     }
 
-    TopicSubscribers add(InternalSubscription subscription) {
+    /**
+     * Adds a local subscription.
+     *
+     * @param subscription the subscription to add
+     */
+    void add(InternalSubscription subscription) {
       List<InternalSubscription> subscriptions = new ArrayList<>(this.subscriptions.length + 1);
       subscriptions.addAll(Arrays.asList(this.subscriptions));
       subscriptions.add(subscription);
-      return new TopicSubscribers(subscriptions);
+      this.subscriptions = subscriptions.toArray(new InternalSubscription[subscriptions.size()]);
+    }
+
+    /**
+     * Removes a local subscription.
+     *
+     * @param subscription the subscription to remove
+     */
+    void remove(InternalSubscription subscription) {
+      List<InternalSubscription> subscriptions = Lists.newArrayList(this.subscriptions);
+      subscriptions.remove(subscription);
+      this.subscriptions = subscriptions.toArray(new InternalSubscription[subscriptions.size()]);
     }
   }
 
@@ -478,11 +608,13 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    * Internal subscription.
    */
   private class InternalSubscription implements Subscription {
-    private final SubscriptionMetadata metadata;
+    private final InternalTopic topic;
+    private final InternalSubscriptionInfo metadata;
     private final Function<byte[], CompletableFuture<byte[]>> callback;
 
-    public InternalSubscription(String topic, Function<byte[], CompletableFuture<byte[]>> callback) {
-      this.metadata = new SubscriptionMetadata(localNodeId, topic, new LogicalTimestamp(logicalTime.incrementAndGet()));
+    public InternalSubscription(InternalTopic topic, Function<byte[], CompletableFuture<byte[]>> callback) {
+      this.topic = topic;
+      this.metadata = new InternalSubscriptionInfo(localNodeId, topic.topic, new LogicalTimestamp(logicalTime.incrementAndGet()));
       this.callback = callback;
     }
 
@@ -493,77 +625,83 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
 
     @Override
     public CompletableFuture<Void> close() {
-      return unregisterSubscriber(this);
+      return topic.removeLocalSubscription(this);
     }
   }
 
   /**
    * Subscription metadata.
    */
-  private static class SubscriptionMetadata {
+  private static class InternalSubscriptionInfo {
     private final NodeId nodeId;
     private final String topic;
     private final LogicalTimestamp logicalTimestamp;
     private final boolean tombstone;
     private final WallClockTimestamp timestamp = new WallClockTimestamp();
 
-    SubscriptionMetadata(NodeId nodeId, String topic, LogicalTimestamp logicalTimestamp) {
+    InternalSubscriptionInfo(NodeId nodeId, String topic, LogicalTimestamp logicalTimestamp) {
       this(nodeId, topic, logicalTimestamp, false);
     }
 
-    SubscriptionMetadata(NodeId nodeId, String topic, LogicalTimestamp logicalTimestamp, boolean tombstone) {
+    InternalSubscriptionInfo(NodeId nodeId, String topic, LogicalTimestamp logicalTimestamp, boolean tombstone) {
       this.nodeId = nodeId;
       this.topic = topic;
       this.logicalTimestamp = logicalTimestamp;
       this.tombstone = tombstone;
     }
 
-    public NodeId nodeId() {
+    /**
+     * Returns the node to which the subscription belongs.
+     *
+     * @return the node to which the subscription belongs
+     */
+    NodeId nodeId() {
       return nodeId;
     }
 
-    public String topic() {
+    /**
+     * Returns the topic name.
+     *
+     * @return the topic name
+     */
+    String topic() {
       return topic;
     }
 
-    public LogicalTimestamp logicalTimestamp() {
+    /**
+     * Returns the logical time at which the subscription was created.
+     *
+     * @return the logical time at which the subscription was created
+     */
+    LogicalTimestamp logicalTimestamp() {
       return logicalTimestamp;
     }
 
-    public WallClockTimestamp timestamp() {
+    /**
+     * Returns the wall clock time at which the subscription was created.
+     *
+     * @return the wall clock time at which the subscription was created
+     */
+    WallClockTimestamp timestamp() {
       return timestamp;
     }
 
-    public boolean isTombstone() {
+    /**
+     * Returns a boolean indicating whether the subscription is a tombstone.
+     *
+     * @return indicates whether the subscription is a tombstone
+     */
+    boolean isTombstone() {
       return tombstone;
     }
 
-    public SubscriptionMetadata asTombstone() {
-      return new SubscriptionMetadata(nodeId, topic, logicalTimestamp, true);
-    }
-  }
-
-  /**
-   * Subscriber iterator that iterates subscribers in a loop.
-   */
-  private class TopicIterator implements Iterator<SubscriptionMetadata> {
-    private final AtomicInteger counter = new AtomicInteger();
-    private final SubscriptionMetadata[] subscribers;
-    private final int length;
-
-    TopicIterator(Collection<SubscriptionMetadata> subscribers) {
-      this.length = subscribers.size();
-      this.subscribers = subscribers.toArray(new SubscriptionMetadata[length]);
-    }
-
-    @Override
-    public boolean hasNext() {
-      return true;
-    }
-
-    @Override
-    public SubscriptionMetadata next() {
-      return subscribers[counter.incrementAndGet() % length];
+    /**
+     * Returns a new subscription as a tombstone.
+     *
+     * @return the subscription as a tombstone
+     */
+    InternalSubscriptionInfo asTombstone() {
+      return new InternalSubscriptionInfo(nodeId, topic, logicalTimestamp, true);
     }
   }
 }
