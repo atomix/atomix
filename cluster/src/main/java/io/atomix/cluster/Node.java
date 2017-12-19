@@ -161,7 +161,7 @@ public class Node {
    *
    * @return the node state
    */
-  public State state() {
+  public State getState() {
     throw new UnsupportedOperationException();
   }
 

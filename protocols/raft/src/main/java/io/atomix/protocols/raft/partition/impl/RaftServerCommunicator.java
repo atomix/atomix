@@ -17,8 +17,7 @@ package io.atomix.protocols.raft.partition.impl;
 
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.MessageSubject;
+import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -63,25 +62,25 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Raft server protocol that uses a {@link ClusterCommunicationService}.
+ * Raft server protocol that uses a {@link ClusterMessagingService}.
  */
 public class RaftServerCommunicator implements RaftServerProtocol {
   private final RaftMessageContext context;
   private final Serializer serializer;
-  private final ClusterCommunicationService clusterCommunicator;
+  private final ClusterMessagingService clusterCommunicator;
 
-  public RaftServerCommunicator(Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+  public RaftServerCommunicator(Serializer serializer, ClusterMessagingService clusterCommunicator) {
     this(null, serializer, clusterCommunicator);
   }
 
-  public RaftServerCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+  public RaftServerCommunicator(String prefix, Serializer serializer, ClusterMessagingService clusterCommunicator) {
     this.context = new RaftMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private <T, U> CompletableFuture<U> sendAndReceive(MessageSubject subject, T request, NodeId nodeId) {
-    return clusterCommunicator.sendAndReceive(subject, request, serializer::encode, serializer::decode, NodeId.from(nodeId.id()));
+  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, NodeId nodeId) {
+    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, NodeId.from(nodeId.id()));
   }
 
   @Override
@@ -171,161 +170,161 @@ public class RaftServerCommunicator implements RaftServerProtocol {
 
   @Override
   public void registerOpenSessionHandler(Function<OpenSessionRequest, CompletableFuture<OpenSessionResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.openSessionSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.openSessionSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterOpenSessionHandler() {
-    clusterCommunicator.removeSubscriber(context.openSessionSubject);
+    clusterCommunicator.unsubscribe(context.openSessionSubject);
   }
 
   @Override
   public void registerCloseSessionHandler(Function<CloseSessionRequest, CompletableFuture<CloseSessionResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.closeSessionSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.closeSessionSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterCloseSessionHandler() {
-    clusterCommunicator.removeSubscriber(context.closeSessionSubject);
+    clusterCommunicator.unsubscribe(context.closeSessionSubject);
   }
 
   @Override
   public void registerKeepAliveHandler(Function<KeepAliveRequest, CompletableFuture<KeepAliveResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.keepAliveSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.keepAliveSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterKeepAliveHandler() {
-    clusterCommunicator.removeSubscriber(context.keepAliveSubject);
+    clusterCommunicator.unsubscribe(context.keepAliveSubject);
   }
 
   @Override
   public void registerQueryHandler(Function<QueryRequest, CompletableFuture<QueryResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.querySubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.querySubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterQueryHandler() {
-    clusterCommunicator.removeSubscriber(context.querySubject);
+    clusterCommunicator.unsubscribe(context.querySubject);
   }
 
   @Override
   public void registerCommandHandler(Function<CommandRequest, CompletableFuture<CommandResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.commandSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.commandSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterCommandHandler() {
-    clusterCommunicator.removeSubscriber(context.commandSubject);
+    clusterCommunicator.unsubscribe(context.commandSubject);
   }
 
   @Override
   public void registerMetadataHandler(Function<MetadataRequest, CompletableFuture<MetadataResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.metadataSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.metadataSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterMetadataHandler() {
-    clusterCommunicator.removeSubscriber(context.metadataSubject);
+    clusterCommunicator.unsubscribe(context.metadataSubject);
   }
 
   @Override
   public void registerJoinHandler(Function<JoinRequest, CompletableFuture<JoinResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.joinSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.joinSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterJoinHandler() {
-    clusterCommunicator.removeSubscriber(context.joinSubject);
+    clusterCommunicator.unsubscribe(context.joinSubject);
   }
 
   @Override
   public void registerLeaveHandler(Function<LeaveRequest, CompletableFuture<LeaveResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.leaveSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.leaveSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterLeaveHandler() {
-    clusterCommunicator.removeSubscriber(context.leaveSubject);
+    clusterCommunicator.unsubscribe(context.leaveSubject);
   }
 
   @Override
   public void registerConfigureHandler(Function<ConfigureRequest, CompletableFuture<ConfigureResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.configureSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.configureSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterConfigureHandler() {
-    clusterCommunicator.removeSubscriber(context.configureSubject);
+    clusterCommunicator.unsubscribe(context.configureSubject);
   }
 
   @Override
   public void registerReconfigureHandler(Function<ReconfigureRequest, CompletableFuture<ReconfigureResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.reconfigureSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.reconfigureSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterReconfigureHandler() {
-    clusterCommunicator.removeSubscriber(context.reconfigureSubject);
+    clusterCommunicator.unsubscribe(context.reconfigureSubject);
   }
 
   @Override
   public void registerInstallHandler(Function<InstallRequest, CompletableFuture<InstallResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.installSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.installSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterInstallHandler() {
-    clusterCommunicator.removeSubscriber(context.installSubject);
+    clusterCommunicator.unsubscribe(context.installSubject);
   }
 
   @Override
   public void registerTransferHandler(Function<TransferRequest, CompletableFuture<TransferResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.transferSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.transferSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterTransferHandler() {
-    clusterCommunicator.removeSubscriber(context.transferSubject);
+    clusterCommunicator.unsubscribe(context.transferSubject);
   }
 
   @Override
   public void registerPollHandler(Function<PollRequest, CompletableFuture<PollResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.pollSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.pollSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterPollHandler() {
-    clusterCommunicator.removeSubscriber(context.pollSubject);
+    clusterCommunicator.unsubscribe(context.pollSubject);
   }
 
   @Override
   public void registerVoteHandler(Function<VoteRequest, CompletableFuture<VoteResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.voteSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.voteSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterVoteHandler() {
-    clusterCommunicator.removeSubscriber(context.voteSubject);
+    clusterCommunicator.unsubscribe(context.voteSubject);
   }
 
   @Override
   public void registerAppendHandler(Function<AppendRequest, CompletableFuture<AppendResponse>> handler) {
-    clusterCommunicator.addSubscriber(context.appendSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.appendSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterAppendHandler() {
-    clusterCommunicator.removeSubscriber(context.appendSubject);
+    clusterCommunicator.unsubscribe(context.appendSubject);
   }
 
   @Override
   public void registerResetListener(SessionId sessionId, Consumer<ResetRequest> listener, Executor executor) {
-    clusterCommunicator.addSubscriber(context.resetSubject(sessionId.id()), serializer::decode, listener, executor);
+    clusterCommunicator.subscribe(context.resetSubject(sessionId.id()), serializer::decode, listener, executor);
   }
 
   @Override
   public void unregisterResetListener(SessionId sessionId) {
-    clusterCommunicator.removeSubscriber(context.resetSubject(sessionId.id()));
+    clusterCommunicator.unsubscribe(context.resetSubject(sessionId.id()));
   }
 }

@@ -126,11 +126,11 @@ public class DefaultClusterService
         sendHeartbeat(node.endpoint(), payload);
         double phi = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector()).phi();
         if (phi >= phiFailureThreshold) {
-          if (node.state() == State.ACTIVE) {
+          if (node.getState() == State.ACTIVE) {
             deactivateNode(node);
           }
         } else {
-          if (node.state() == State.INACTIVE) {
+          if (node.getState() == State.INACTIVE) {
             activateNode(node);
           }
         }
@@ -170,7 +170,7 @@ public class DefaultClusterService
       nodes.put(node.id(), node);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
       sendHeartbeat(node.endpoint(), SERIALIZER.encode(new ClusterHeartbeat(localNode.id(), localNode.type())));
-    } else if (existingNode.state() == State.INACTIVE) {
+    } else if (existingNode.getState() == State.INACTIVE) {
       existingNode.setState(State.ACTIVE);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, existingNode));
     }
@@ -181,7 +181,7 @@ public class DefaultClusterService
    */
   private void deactivateNode(StatefulNode node) {
     StatefulNode existingNode = nodes.get(node.id());
-    if (existingNode != null && existingNode.state() == State.ACTIVE) {
+    if (existingNode != null && existingNode.getState() == State.ACTIVE) {
       existingNode.setState(State.INACTIVE);
       switch (existingNode.type()) {
         case DATA:

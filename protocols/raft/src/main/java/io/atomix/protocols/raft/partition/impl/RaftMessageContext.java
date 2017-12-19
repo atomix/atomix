@@ -15,29 +15,27 @@
  */
 package io.atomix.protocols.raft.partition.impl;
 
-import io.atomix.cluster.messaging.MessageSubject;
-
 /**
  * Protocol message context.
  */
 class RaftMessageContext {
   private final String prefix;
-  final MessageSubject heartbeatSubject;
-  final MessageSubject openSessionSubject;
-  final MessageSubject closeSessionSubject;
-  final MessageSubject keepAliveSubject;
-  final MessageSubject querySubject;
-  final MessageSubject commandSubject;
-  final MessageSubject metadataSubject;
-  final MessageSubject joinSubject;
-  final MessageSubject leaveSubject;
-  final MessageSubject configureSubject;
-  final MessageSubject reconfigureSubject;
-  final MessageSubject installSubject;
-  final MessageSubject transferSubject;
-  final MessageSubject pollSubject;
-  final MessageSubject voteSubject;
-  final MessageSubject appendSubject;
+  final String heartbeatSubject;
+  final String openSessionSubject;
+  final String closeSessionSubject;
+  final String keepAliveSubject;
+  final String querySubject;
+  final String commandSubject;
+  final String metadataSubject;
+  final String joinSubject;
+  final String leaveSubject;
+  final String configureSubject;
+  final String reconfigureSubject;
+  final String installSubject;
+  final String transferSubject;
+  final String pollSubject;
+  final String voteSubject;
+  final String appendSubject;
 
   RaftMessageContext(String prefix) {
     this.prefix = prefix;
@@ -59,11 +57,11 @@ class RaftMessageContext {
     this.appendSubject = getSubject(prefix, "append");
   }
 
-  private static MessageSubject getSubject(String prefix, String type) {
+  private static String getSubject(String prefix, String type) {
     if (prefix == null) {
-      return new MessageSubject(type);
+      return type;
     } else {
-      return new MessageSubject(String.format("%s-%s", prefix, type));
+      return String.format("%s-%s", prefix, type);
     }
   }
 
@@ -73,11 +71,11 @@ class RaftMessageContext {
    * @param sessionId the session for which to return the publish subject
    * @return the publish subject for the given session
    */
-  MessageSubject publishSubject(long sessionId) {
+  String publishSubject(long sessionId) {
     if (prefix == null) {
-      return new MessageSubject(String.format("publish-%d", sessionId));
+      return String.format("publish-%d", sessionId);
     } else {
-      return new MessageSubject(String.format("%s-publish-%d", prefix, sessionId));
+      return String.format("%s-publish-%d", prefix, sessionId);
     }
   }
 
@@ -87,11 +85,11 @@ class RaftMessageContext {
    * @param sessionId the session for which to return the reset subject
    * @return the reset subject for the given session
    */
-  MessageSubject resetSubject(long sessionId) {
+  String resetSubject(long sessionId) {
     if (prefix == null) {
-      return new MessageSubject(String.format("reset-%d", sessionId));
+      return String.format("reset-%d", sessionId);
     } else {
-      return new MessageSubject(String.format("%s-reset-%d", prefix, sessionId));
+      return String.format("%s-reset-%d", prefix, sessionId);
     }
   }
 }

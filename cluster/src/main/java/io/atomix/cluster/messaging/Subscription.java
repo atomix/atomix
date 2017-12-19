@@ -13,33 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster.impl;
+package io.atomix.cluster.messaging;
 
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
-import io.atomix.messaging.Endpoint;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Default cluster node.
+ * Message subscription.
  */
-public class StatefulNode extends Node {
-  private State state = State.INACTIVE;
-
-  public StatefulNode(NodeId id, Type type, Endpoint endpoint) {
-    super(id, type, endpoint);
-  }
+public interface Subscription {
 
   /**
-   * Updates the node state.
+   * Returns the subscription topic.
    *
-   * @param state the node state
+   * @return the subscription topic
    */
-  void setState(State state) {
-    this.state = state;
-  }
+  String topic();
 
-  @Override
-  public State getState() {
-    return state;
-  }
+  /**
+   * Closes the subscription, causing it to be unregistered.
+   *
+   * @return a future to be completed once the subscription has been closed
+   */
+  CompletableFuture<Void> close();
+
 }

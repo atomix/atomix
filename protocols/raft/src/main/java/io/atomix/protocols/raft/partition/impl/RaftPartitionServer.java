@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.partition.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
@@ -51,14 +51,14 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
 
   private final NodeId localNodeId;
   private final RaftPartition partition;
-  private final ClusterCommunicationService clusterCommunicator;
+  private final ClusterMessagingService clusterCommunicator;
   private final PrimitiveTypeRegistry primitiveTypes;
   private RaftServer server;
 
   public RaftPartitionServer(
       RaftPartition partition,
       NodeId localNodeId,
-      ClusterCommunicationService clusterCommunicator,
+      ClusterMessagingService clusterCommunicator,
       PrimitiveTypeRegistry primitiveTypes) {
     this.partition = partition;
     this.localNodeId = localNodeId;

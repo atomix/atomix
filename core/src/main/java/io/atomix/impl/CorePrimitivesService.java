@@ -20,8 +20,8 @@ import com.google.common.collect.Sets;
 import io.atomix.ManagedPrimitivesService;
 import io.atomix.PrimitivesService;
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventsService;
+import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -48,8 +48,8 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   public CorePrimitivesService(
       ClusterService clusterService,
-      ClusterCommunicationService communicationService,
-      ClusterEventsService eventService,
+      ClusterMessagingService communicationService,
+      ClusterEventingService eventService,
       PartitionService partitionService) {
     this.managementService = new CorePrimitiveManagementService(
         clusterService,

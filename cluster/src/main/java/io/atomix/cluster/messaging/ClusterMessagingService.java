@@ -28,7 +28,7 @@ import static io.atomix.utils.serializer.serializers.DefaultSerializers.BASIC;
 /**
  * Service for assisting communications between controller cluster nodes.
  */
-public interface ClusterCommunicationService {
+public interface ClusterMessagingService {
 
   /**
    * Broadcasts a message to all controller nodes.
@@ -37,7 +37,7 @@ public interface ClusterCommunicationService {
    * @param message message to send
    * @param <M>     message type
    */
-  default <M> void broadcast(MessageSubject subject, M message) {
+  default <M> void broadcast(String subject, M message) {
     broadcast(subject, message, BASIC::encode);
   }
 
@@ -49,7 +49,7 @@ public interface ClusterCommunicationService {
    * @param encoder function for encoding message to byte[]
    * @param <M>     message type
    */
-  <M> void broadcast(MessageSubject subject, M message, Function<M, byte[]> encoder);
+  <M> void broadcast(String subject, M message, Function<M, byte[]> encoder);
 
   /**
    * Broadcasts a message to all controller nodes including self.
@@ -58,7 +58,7 @@ public interface ClusterCommunicationService {
    * @param message message to send
    * @param <M>     message type
    */
-  default <M> void broadcastIncludeSelf(MessageSubject subject, M message) {
+  default <M> void broadcastIncludeSelf(String subject, M message) {
     broadcastIncludeSelf(subject, message, BASIC::encode);
   }
 
@@ -70,7 +70,7 @@ public interface ClusterCommunicationService {
    * @param encoder function for encoding message to byte[]
    * @param <M>     message type
    */
-  <M> void broadcastIncludeSelf(MessageSubject subject, M message, Function<M, byte[]> encoder);
+  <M> void broadcastIncludeSelf(String subject, M message, Function<M, byte[]> encoder);
 
   /**
    * Sends a message to the specified controller node.
@@ -81,7 +81,7 @@ public interface ClusterCommunicationService {
    * @param <M>      message type
    * @return future that is completed when the message is sent
    */
-  default <M> CompletableFuture<Void> unicast(MessageSubject subject, M message, NodeId toNodeId) {
+  default <M> CompletableFuture<Void> unicast(String subject, M message, NodeId toNodeId) {
     return unicast(subject, message, BASIC::encode, toNodeId);
   }
 
@@ -95,7 +95,7 @@ public interface ClusterCommunicationService {
    * @param <M>      message type
    * @return future that is completed when the message is sent
    */
-  <M> CompletableFuture<Void> unicast(MessageSubject subject, M message, Function<M, byte[]> encoder, NodeId toNodeId);
+  <M> CompletableFuture<Void> unicast(String subject, M message, Function<M, byte[]> encoder, NodeId toNodeId);
 
   /**
    * Multicasts a message to a set of controller nodes.
@@ -105,7 +105,7 @@ public interface ClusterCommunicationService {
    * @param nodeIds recipient node identifiers
    * @param <M>     message type
    */
-  default <M> void multicast(MessageSubject subject, M message, Set<NodeId> nodeIds) {
+  default <M> void multicast(String subject, M message, Set<NodeId> nodeIds) {
     multicast(subject, message, BASIC::encode, nodeIds);
   }
 
@@ -118,7 +118,7 @@ public interface ClusterCommunicationService {
    * @param nodeIds recipient node identifiers
    * @param <M>     message type
    */
-  <M> void multicast(MessageSubject subject, M message, Function<M, byte[]> encoder, Set<NodeId> nodeIds);
+  <M> void multicast(String subject, M message, Function<M, byte[]> encoder, Set<NodeId> nodeIds);
 
   /**
    * Sends a message and expects a reply.
@@ -130,11 +130,11 @@ public interface ClusterCommunicationService {
    * @param <R>      reply type
    * @return reply future
    */
-  default <M, R> CompletableFuture<R> sendAndReceive(
-      MessageSubject subject,
+  default <M, R> CompletableFuture<R> send(
+      String subject,
       M message,
       NodeId toNodeId) {
-    return sendAndReceive(subject, message, BASIC::encode, BASIC::decode, toNodeId);
+    return send(subject, message, BASIC::encode, BASIC::decode, toNodeId);
   }
 
   /**
@@ -149,8 +149,8 @@ public interface ClusterCommunicationService {
    * @param <R>      reply type
    * @return reply future
    */
-  <M, R> CompletableFuture<R> sendAndReceive(
-      MessageSubject subject,
+  <M, R> CompletableFuture<R> send(
+      String subject,
       M message,
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder,
@@ -166,11 +166,11 @@ public interface ClusterCommunicationService {
    * @param <R>      reply message type
    * @return future to be completed once the subscription has been propagated
    */
-  default <M, R> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  default <M, R> CompletableFuture<Void> subscribe(
+      String subject,
       Function<M, R> handler,
       Executor executor) {
-    return addSubscriber(subject, BASIC::decode, handler, BASIC::encode, executor);
+    return subscribe(subject, BASIC::decode, handler, BASIC::encode, executor);
   }
 
   /**
@@ -185,8 +185,8 @@ public interface ClusterCommunicationService {
    * @param <R>      reply message type
    * @return future to be completed once the subscription has been propagated
    */
-  <M, R> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  <M, R> CompletableFuture<Void> subscribe(
+      String subject,
       Function<byte[], M> decoder,
       Function<M, R> handler,
       Function<R, byte[]> encoder,
@@ -201,10 +201,10 @@ public interface ClusterCommunicationService {
    * @param <R>     reply message type
    * @return future to be completed once the subscription has been propagated
    */
-  default <M, R> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  default <M, R> CompletableFuture<Void> subscribe(
+      String subject,
       Function<M, CompletableFuture<R>> handler) {
-    return addSubscriber(subject, BASIC::decode, handler, BASIC::encode);
+    return subscribe(subject, BASIC::decode, handler, BASIC::encode);
   }
 
   /**
@@ -218,8 +218,8 @@ public interface ClusterCommunicationService {
    * @param <R>     reply message type
    * @return future to be completed once the subscription has been propagated
    */
-  <M, R> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  <M, R> CompletableFuture<Void> subscribe(
+      String subject,
       Function<byte[], M> decoder,
       Function<M, CompletableFuture<R>> handler,
       Function<R, byte[]> encoder);
@@ -233,11 +233,11 @@ public interface ClusterCommunicationService {
    * @param <M>      incoming message type
    * @return future to be completed once the subscription has been propagated
    */
-  default <M> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  default <M> CompletableFuture<Void> subscribe(
+      String subject,
       Consumer<M> handler,
       Executor executor) {
-    return addSubscriber(subject, BASIC::decode, handler, executor);
+    return subscribe(subject, BASIC::decode, handler, executor);
   }
 
   /**
@@ -250,8 +250,8 @@ public interface ClusterCommunicationService {
    * @param <M>      incoming message type
    * @return future to be completed once the subscription has been propagated
    */
-  <M> CompletableFuture<Void> addSubscriber(
-      MessageSubject subject,
+  <M> CompletableFuture<Void> subscribe(
+      String subject,
       Function<byte[], M> decoder,
       Consumer<M> handler,
       Executor executor);
@@ -261,6 +261,6 @@ public interface ClusterCommunicationService {
    *
    * @param subject message subject
    */
-  void removeSubscriber(MessageSubject subject);
+  void unsubscribe(String subject);
 
 }

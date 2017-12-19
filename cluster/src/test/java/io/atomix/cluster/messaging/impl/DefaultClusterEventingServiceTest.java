@@ -21,9 +21,7 @@ import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.impl.TestClusterMetadataService;
-import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventsService;
-import io.atomix.cluster.messaging.MessageSubject;
+import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -34,19 +32,20 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Cluster event service test.
  */
-public class DefaultClusterEventsServiceTest {
+public class DefaultClusterEventingServiceTest {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
   private final InetAddress localhost;
 
-  public DefaultClusterEventsServiceTest() {
+  public DefaultClusterEventingServiceTest() {
     try {
       localhost = InetAddress.getByName("127.0.0.1");
     } catch (UnknownHostException e) {
@@ -81,82 +80,89 @@ public class DefaultClusterEventsServiceTest {
     Node localNode1 = buildNode(1, Node.Type.DATA);
     MessagingService messagingService1 = factory.newMessagingService(localNode1.endpoint()).start().join();
     ClusterService clusterService1 = new DefaultClusterService(localNode1, new TestClusterMetadataService(clusterMetadata), messagingService1).start().join();
-    ClusterCommunicationService clusterCommunicator1 = new DefaultClusterCommunicationService(clusterService1, messagingService1).start().join();
-    ClusterEventsService eventService1 = new DefaultClusterEventsService(clusterService1, clusterCommunicator1).start().join();
+    ClusterEventingService eventService1 = new DefaultClusterEventingService(clusterService1, messagingService1).start().join();
 
     Node localNode2 = buildNode(2, Node.Type.DATA);
     MessagingService messagingService2 = factory.newMessagingService(localNode2.endpoint()).start().join();
     ClusterService clusterService2 = new DefaultClusterService(localNode2, new TestClusterMetadataService(clusterMetadata), messagingService2).start().join();
-    ClusterCommunicationService clusterCommunicator2 = new DefaultClusterCommunicationService(clusterService2, messagingService2).start().join();
-    ClusterEventsService eventService2 = new DefaultClusterEventsService(clusterService2, clusterCommunicator2).start().join();
+    ClusterEventingService eventService2 = new DefaultClusterEventingService(clusterService2, messagingService2).start().join();
 
     Node localNode3 = buildNode(3, Node.Type.DATA);
     MessagingService messagingService3 = factory.newMessagingService(localNode3.endpoint()).start().join();
     ClusterService clusterService3 = new DefaultClusterService(localNode3, new TestClusterMetadataService(clusterMetadata), messagingService3).start().join();
-    ClusterCommunicationService clusterCommunicator3 = new DefaultClusterCommunicationService(clusterService3, messagingService3).start().join();
-    ClusterEventsService eventService3 = new DefaultClusterEventsService(clusterService3, clusterCommunicator3).start().join();
+    ClusterEventingService eventService3 = new DefaultClusterEventingService(clusterService3, messagingService3).start().join();
 
     Thread.sleep(100);
 
-    AtomicReference<String> value1 = new AtomicReference<>();
-    eventService1.<String>addSubscriber(new MessageSubject("test1"), SERIALIZER::decode, message -> {
-      value1.set(message);
+    Set<Integer> events = new CopyOnWriteArraySet<>();
+
+    eventService1.<String>subscribe("test1", SERIALIZER::decode, message -> {
+      assertEquals(message, "Hello world!");
+      events.add(1);
     }, MoreExecutors.directExecutor()).join();
 
-    AtomicReference<String> value2 = new AtomicReference<>();
-    eventService2.<String>addSubscriber(new MessageSubject("test1"), SERIALIZER::decode, message -> {
-      value2.set(message);
+    eventService2.<String>subscribe("test1", SERIALIZER::decode, message -> {
+      assertEquals(message, "Hello world!");
+      events.add(2);
     }, MoreExecutors.directExecutor()).join();
 
-    eventService3.broadcast(new MessageSubject("test1"), "Hello world!", SERIALIZER::encode);
+    eventService2.<String>subscribe("test1", SERIALIZER::decode, message -> {
+      assertEquals(message, "Hello world!");
+      events.add(3);
+    }, MoreExecutors.directExecutor()).join();
+
+    eventService3.broadcast("test1", "Hello world!", SERIALIZER::encode);
 
     Thread.sleep(100);
 
-    assertEquals("Hello world!", value1.get());
-    assertEquals("Hello world!", value2.get());
+    assertEquals(3, events.size());
+    events.clear();
 
-    value1.set(null);
-    value2.set(null);
-
-    eventService3.unicast(new MessageSubject("test1"), "Hello world again!");
+    eventService3.unicast("test1", "Hello world!");
     Thread.sleep(100);
-    assertEquals("Hello world again!", value2.get());
-    assertNull(value1.get());
-    value2.set(null);
+    assertEquals(1, events.size());
+    assertTrue(events.contains(3));
+    events.clear();
 
-    eventService3.unicast(new MessageSubject("test1"), "Hello world again!");
+    eventService3.unicast("test1", "Hello world!");
     Thread.sleep(100);
-    assertEquals("Hello world again!", value1.get());
-    assertNull(value2.get());
-    value1.set(null);
+    assertEquals(1, events.size());
+    assertTrue(events.contains(1));
+    events.clear();
 
-    eventService3.unicast(new MessageSubject("test1"), "Hello world again!");
+    eventService3.unicast("test1", "Hello world!");
     Thread.sleep(100);
-    assertEquals("Hello world again!", value2.get());
-    assertNull(value1.get());
-    value2.set(null);
+    assertEquals(1, events.size());
+    assertTrue(events.contains(2));
+    events.clear();
 
-    eventService1.<String, String>addSubscriber(new MessageSubject("test2"), SERIALIZER::decode, message -> {
-      value1.set(message);
+    eventService3.unicast("test1", "Hello world!");
+    Thread.sleep(100);
+    assertEquals(1, events.size());
+    assertTrue(events.contains(3));
+    events.clear();
+
+    eventService1.<String, String>subscribe("test2", SERIALIZER::decode, message -> {
+      events.add(1);
       return message;
     }, SERIALIZER::encode, MoreExecutors.directExecutor()).join();
-    eventService2.<String, String>addSubscriber(new MessageSubject("test2"), SERIALIZER::decode, message -> {
-      value2.set(message);
+    eventService2.<String, String>subscribe("test2", SERIALIZER::decode, message -> {
+      events.add(2);
       return message;
     }, SERIALIZER::encode, MoreExecutors.directExecutor()).join();
 
-    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
-    assertEquals("Hello world!", value2.get());
-    assertNull(value1.get());
-    value2.set(null);
+    assertEquals("Hello world!", eventService3.send("test2", "Hello world!").join());
+    assertEquals(1, events.size());
+    assertTrue(events.contains(1));
+    events.clear();
 
-    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
-    assertEquals("Hello world!", value1.get());
-    assertNull(value2.get());
-    value1.set(null);
+    assertEquals("Hello world!", eventService3.send("test2", "Hello world!").join());
+    assertEquals(1, events.size());
+    assertTrue(events.contains(2));
+    events.clear();
 
-    assertEquals("Hello world!", eventService3.sendAndReceive(new MessageSubject("test2"), "Hello world!").join());
-    assertEquals("Hello world!", value2.get());
-    assertNull(value1.get());
+    assertEquals("Hello world!", eventService3.send("test2", "Hello world!").join());
+    assertEquals(1, events.size());
+    assertTrue(events.contains(1));
   }
 }
