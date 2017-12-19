@@ -500,15 +500,15 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedMessagingService messagingService = buildMessagingService();
       ManagedClusterMetadataService metadataService = buildClusterMetadataService(messagingService);
       ManagedClusterService clusterService = buildClusterService(metadataService, messagingService);
-      ManagedClusterMessagingService clusterCommunicator = buildClusterCommunicationService(clusterService, messagingService);
-      ManagedClusterEventingService clusterEventService = buildClusterEventService(clusterService, clusterCommunicator);
+      ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
+      ManagedClusterEventingService clusterEventService = buildClusterEventService(clusterService, messagingService);
       ManagedPartitionGroup corePartitionGroup = buildCorePartitionGroup();
       ManagedPartitionService partitionService = buildPartitionService();
       return new Atomix(
           messagingService,
           metadataService,
           clusterService,
-          clusterCommunicator,
+          clusterMessagingService,
           clusterEventService,
           corePartitionGroup,
           partitionService,
@@ -540,9 +540,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     /**
-     * Builds a cluster communication service.
+     * Builds a cluster messaging service.
      */
-    protected ManagedClusterMessagingService buildClusterCommunicationService(
+    protected ManagedClusterMessagingService buildClusterMessagingService(
         ClusterService clusterService, MessagingService messagingService) {
       return new DefaultClusterMessagingService(clusterService, messagingService);
     }
@@ -551,8 +551,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds a cluster event service.
      */
     protected ManagedClusterEventingService buildClusterEventService(
-        ClusterService clusterService, ClusterMessagingService clusterCommunicator) {
-      return new DefaultClusterEventingService(clusterService, clusterCommunicator);
+        ClusterService clusterService, MessagingService messagingService) {
+      return new DefaultClusterEventingService(clusterService, messagingService);
     }
 
     /**
