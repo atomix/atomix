@@ -68,8 +68,10 @@ class DefaultServiceSessions implements RaftSessions {
    */
   void expireSession(RaftSessionContext session) {
     final RaftSessionContext singletonSession = sessionManager.removeSession(session.sessionId());
-    singletonSession.expire();
-    listeners.forEach(l -> l.onExpire(singletonSession));
+    if (singletonSession != null) {
+      singletonSession.expire();
+      listeners.forEach(l -> l.onExpire(singletonSession));
+    }
   }
 
   /**
@@ -79,8 +81,10 @@ class DefaultServiceSessions implements RaftSessions {
    */
   void closeSession(RaftSessionContext session) {
     final RaftSessionContext singletonSession = sessionManager.removeSession(session.sessionId());
-    singletonSession.close();
-    listeners.forEach(l -> l.onClose(singletonSession));
+    if (singletonSession != null) {
+      singletonSession.close();
+      listeners.forEach(l -> l.onClose(singletonSession));
+    }
   }
 
   /**
