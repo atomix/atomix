@@ -41,14 +41,24 @@ class RaftSessions implements Sessions {
   }
 
   /**
+   * Adds a session to the sessions set.
+   *
+   * @param session the session to add
+   * @return the added session or an existing session if the session already exists
+   */
+  RaftSession addSession(RaftSession session) {
+    return sessionManager.addSession(session);
+  }
+
+  /**
    * Adds a session to the sessions list.
    *
    * @param session The session to add.
    */
   void openSession(RaftSession session) {
-    session.open();
-    sessionManager.addSession(session);
-    listeners.forEach(l -> l.onOpen(session));
+    final RaftSession singletonSession = sessionManager.addSession(session);
+    singletonSession.open();
+    listeners.forEach(l -> l.onOpen(singletonSession));
   }
 
   /**
@@ -57,9 +67,9 @@ class RaftSessions implements Sessions {
    * @param session The session to remove.
    */
   void expireSession(RaftSession session) {
-    session.expire();
-    sessionManager.removeSession(session.sessionId());
-    listeners.forEach(l -> l.onExpire(session));
+    final RaftSession singletonSession = sessionManager.removeSession(session.sessionId());
+    singletonSession.expire();
+    listeners.forEach(l -> l.onExpire(singletonSession));
   }
 
   /**
@@ -68,9 +78,9 @@ class RaftSessions implements Sessions {
    * @param session The session to remove.
    */
   void closeSession(RaftSession session) {
-    session.close();
-    sessionManager.removeSession(session.sessionId());
-    listeners.forEach(l -> l.onClose(session));
+    final RaftSession singletonSession = sessionManager.removeSession(session.sessionId());
+    singletonSession.close();
+    listeners.forEach(l -> l.onClose(singletonSession));
   }
 
   /**
