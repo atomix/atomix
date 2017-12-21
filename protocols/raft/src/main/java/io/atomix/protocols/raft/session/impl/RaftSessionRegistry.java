@@ -32,15 +32,16 @@ public class RaftSessionRegistry {
   /**
    * Adds a session.
    */
-  public void addSession(RaftSessionContext session) {
-    sessions.putIfAbsent(session.sessionId().id(), session);
+  public RaftSessionContext addSession(RaftSessionContext session) {
+    RaftSessionContext existingSession = sessions.putIfAbsent(session.sessionId().id(), session);
+    return existingSession != null ? existingSession : session;
   }
 
   /**
    * Removes a session.
    */
-  public void removeSession(SessionId sessionId) {
-    sessions.remove(sessionId.id());
+  public RaftSessionContext removeSession(SessionId sessionId) {
+    return sessions.remove(sessionId.id());
   }
 
   /**

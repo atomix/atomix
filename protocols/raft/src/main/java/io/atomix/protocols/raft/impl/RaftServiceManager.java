@@ -426,7 +426,7 @@ public class RaftServiceManager implements AutoCloseable {
     }
 
     SessionId sessionId = SessionId.from(entry.index());
-    RaftSessionContext session = new RaftSessionContext(
+    RaftSessionContext session = raft.getSessions().addSession(new RaftSessionContext(
         sessionId,
         MemberId.from(entry.entry().memberId()),
         entry.entry().serviceName(),
@@ -437,8 +437,7 @@ public class RaftServiceManager implements AutoCloseable {
         entry.entry().timestamp(),
         service,
         raft,
-        threadContextFactory);
-    raft.getSessions().addSession(session);
+        threadContextFactory));
     return service.openSession(entry.index(), entry.entry().timestamp(), session);
   }
 
