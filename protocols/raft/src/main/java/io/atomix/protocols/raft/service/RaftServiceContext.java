@@ -270,24 +270,20 @@ public class RaftServiceContext implements ServiceContext {
           long maxTimeout = reader.readLong();
           long sessionTimestamp = reader.readLong();
 
-          // Lookup the session in the global session registry and only create a new session if one does not already
-          // exist. A race condition exists such that a session created by a global snapshot may prevent the local
-          // session from being opened since local sessions cannot override global sessions.
-          RaftSession session = raft.getSessions().getSession(sessionId);
-          if (session == null) {
-            session = new RaftSession(
-                sessionId,
-                node,
-                serviceName,
-                primitiveType,
-                readConsistency,
-                minTimeout,
-                maxTimeout,
-                sessionTimestamp,
-                this,
-                raft,
-                threadContextFactory);
-          }
+          // Only create a new session if one does not already exist. This is necessary to ensure only a single session
+          // is ever opened and exposed to the state machine.
+          RaftSession session = raft.getSessions().addSession(new RaftSession(
+              sessionId,
+              node,
+              serviceName,
+              primitiveType,
+              readConsistency,
+              minTimeout,
+              maxTimeout,
+              sessionTimestamp,
+              this,
+              raft,
+              threadContextFactory));
 
           session.setRequestSequence(reader.readLong());
           session.setCommandSequence(reader.readLong());
