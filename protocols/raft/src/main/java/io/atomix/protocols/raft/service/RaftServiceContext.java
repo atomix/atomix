@@ -269,23 +269,32 @@ public class RaftServiceContext implements ServiceContext {
           long minTimeout = reader.readLong();
           long maxTimeout = reader.readLong();
           long sessionTimestamp = reader.readLong();
-          RaftSession session = new RaftSession(
-              sessionId,
-              node,
-              serviceName,
-              primitiveType,
-              readConsistency,
-              minTimeout,
-              maxTimeout,
-              sessionTimestamp,
-              this,
-              raft,
-              threadContextFactory);
+
+          // Lookup the session in the global session registry and only create a new session if one does not already
+          // exist. A race condition exists such that a session created by a global snapshot may prevent the local
+          // session from being opened since local sessions cannot override global sessions.
+          RaftSession session = raft.getSessions().getSession(sessionId);
+          if (session == null) {
+            session = new RaftSession(
+                sessionId,
+                node,
+                serviceName,
+                primitiveType,
+                readConsistency,
+                minTimeout,
+                maxTimeout,
+                sessionTimestamp,
+                this,
+                raft,
+                threadContextFactory);
+          }
+
           session.setRequestSequence(reader.readLong());
           session.setCommandSequence(reader.readLong());
           session.setEventIndex(reader.readLong());
           session.setLastCompleted(reader.readLong());
           session.setLastApplied(snapshot.index());
+          session.setLastUpdated(sessionTimestamp);
           sessions.openSession(session);
         }
         currentIndex = snapshot.index();
