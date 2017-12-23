@@ -53,7 +53,7 @@
         <configuration>
           <instructions>
             <Export-Package>
-              io.atomix.*
+              io.atomix.primitive.*
             </Export-Package>
             <Import-Package>
               !sun.nio.ch,!sun.misc,*

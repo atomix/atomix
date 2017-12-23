@@ -72,7 +72,7 @@
         <configuration>
           <instructions>
             <Export-Package>
-              io.atomix.*
+              io.atomix.rest.*
             </Export-Package>
             <Import-Package>
               !sun.nio.ch,!sun.misc,*
