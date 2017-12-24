@@ -322,7 +322,7 @@ public class RaftServiceContext implements ServiceContext {
 
       // If there's already a snapshot taken at a higher index, skip the snapshot.
       Snapshot currentSnapshot = raft.getSnapshotStore().getSnapshotById(primitiveId);
-      if (currentSnapshot != null && currentSnapshot.index() > index) {
+      if (currentSnapshot != null && currentSnapshot.index() >= index) {
         return;
       }
 
