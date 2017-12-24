@@ -41,6 +41,7 @@ import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
+import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -237,7 +238,7 @@ public class DefaultServiceContext implements ServiceContext {
 
             // Update the snapshot index to ensure we don't simply install the same snapshot.
             snapshotIndex = snapshot.index();
-            pendingSnapshot.future.complete(null);
+            pendingSnapshot.future.complete(snapshotIndex);
           }
         }
       }
@@ -307,10 +308,11 @@ public class DefaultServiceContext implements ServiceContext {
    * @return a future to be completed once the snapshot has been taken
    */
   public CompletableFuture<Long> takeSnapshot(long index) {
-    CompletableFuture<Long> future = new CompletableFuture<>();
+    ComposableFuture<Long> future = new ComposableFuture<>();
     serviceExecutor.execute(() -> {
       // If no entries have been applied to the state machine, skip the snapshot.
       if (currentIndex == 0) {
+        future.complete(currentIndex);
         return;
       }
 
@@ -320,12 +322,14 @@ public class DefaultServiceContext implements ServiceContext {
       // If a snapshot is already persisted at this index, skip the snapshot.
       Snapshot existingSnapshot = raft.getSnapshotStore().getSnapshot(serviceId, snapshotIndex);
       if (existingSnapshot != null) {
+        future.complete(snapshotIndex);
         return;
       }
 
       // If there's already a snapshot taken at a higher index, skip the snapshot.
       Snapshot currentSnapshot = raft.getSnapshotStore().getSnapshotById(serviceId);
       if (currentSnapshot != null && currentSnapshot.index() >= index) {
+        future.complete(snapshotIndex);
         return;
       }
 
@@ -336,7 +340,9 @@ public class DefaultServiceContext implements ServiceContext {
       // Add the snapshot to the pending snapshots registry. If a snapshot is already pending for this index,
       // skip the snapshot.
       PendingSnapshot pendingSnapshot = new PendingSnapshot(snapshot);
-      if (pendingSnapshots.putIfAbsent(snapshotIndex, pendingSnapshot) != null) {
+      PendingSnapshot existingPendingSnapshot = pendingSnapshots.putIfAbsent(snapshotIndex, pendingSnapshot);
+      if (existingPendingSnapshot != null) {
+        existingPendingSnapshot.future.whenComplete(future);
         return;
       }
 
@@ -388,7 +394,7 @@ public class DefaultServiceContext implements ServiceContext {
       return CompletableFuture.completedFuture(null);
     }
     serviceExecutor.execute(() -> maybeCompleteSnapshot(index));
-    return pendingSnapshot.future;
+    return pendingSnapshot.future.thenApply(v -> null);
   }
 
   /**
@@ -785,7 +791,7 @@ public class DefaultServiceContext implements ServiceContext {
    */
   private class PendingSnapshot {
     private volatile Snapshot snapshot;
-    private final CompletableFuture<Void> future = new CompletableFuture<>();
+    private final CompletableFuture<Long> future = new CompletableFuture<>();
 
     public PendingSnapshot(Snapshot snapshot) {
       this.snapshot = snapshot;
