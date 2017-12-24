@@ -495,6 +495,15 @@ public class PassiveRole extends InactiveRole {
           .build()));
     }
 
+    // If the snapshot already exists locally, do not overwrite it with a replicated snapshot. Simply reply to the
+    // request successfully.
+    Snapshot existingSnapshot = raft.getSnapshotStore().getSnapshot(ServiceId.from(request.serviceId()), request.snapshotIndex());
+    if (existingSnapshot != null) {
+      return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
+          .withStatus(RaftResponse.Status.OK)
+          .build()));
+    }
+
     // Get the pending snapshot for the associated snapshot ID.
     PendingSnapshot pendingSnapshot = pendingSnapshots.get(request.serviceId());
 
