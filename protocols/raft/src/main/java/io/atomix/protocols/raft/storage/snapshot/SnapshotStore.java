@@ -110,6 +110,22 @@ public class SnapshotStore implements AutoCloseable {
   }
 
   /**
+   * Returns the snapshot for the given service at the given index.
+   *
+   * @param serviceId the service for which to lookup the snapshot
+   * @param index     the index for which to lookup the snapshot
+   * @return the snapshot for the given service at the given index or {@code null} if the snapshot doesn't exist
+   */
+  public Snapshot getSnapshot(ServiceId serviceId, long index) {
+    Collection<Snapshot> snapshots = indexSnapshots.get(index);
+    return snapshots == null ? null :
+        snapshots.stream()
+            .filter(s -> s.serviceId().equals(serviceId))
+            .findFirst()
+            .orElse(null);
+  }
+
+  /**
    * Returns the last snapshot for the given state machine identifier.
    *
    * @param id The state machine identifier for which to return the snapshot.
@@ -173,10 +189,10 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a temporary in-memory snapshot.
    *
-   * @param serviceId The snapshot identifier.
+   * @param serviceId   The snapshot identifier.
    * @param serviceName The snapshot service name.
-   * @param index The snapshot index.
-   * @param timestamp The snapshot timestamp.
+   * @param index       The snapshot index.
+   * @param timestamp   The snapshot timestamp.
    * @return The snapshot.
    */
   public Snapshot newTemporarySnapshot(ServiceId serviceId, String serviceName, long index, WallClockTimestamp timestamp) {
@@ -191,10 +207,10 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a new snapshot.
    *
-   * @param serviceId The snapshot identifier.
+   * @param serviceId   The snapshot identifier.
    * @param serviceName The snapshot service name.
-   * @param index The snapshot index.
-   * @param timestamp The snapshot timestamp.
+   * @param index       The snapshot index.
+   * @param timestamp   The snapshot timestamp.
    * @return The snapshot.
    */
   public Snapshot newSnapshot(ServiceId serviceId, String serviceName, long index, WallClockTimestamp timestamp) {
