@@ -131,6 +131,29 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     }
   }
 
+  /**
+   * Tests writing multiple times to a snapshot designed to mimic chunked snapshots from leaders.
+   */
+  @Test
+  public void testStreamSnapshot() throws Exception {
+    SnapshotStore store = createSnapshotStore();
+
+    Snapshot snapshot = store.newSnapshot(PrimitiveId.from(1), "foo", 1, new WallClockTimestamp());
+    for (long i = 1; i <= 10; i++) {
+      try (SnapshotWriter writer = snapshot.openWriter()) {
+        writer.writeLong(i);
+      }
+    }
+    snapshot.complete();
+
+    snapshot = store.getSnapshotById(PrimitiveId.from(1));
+    try (SnapshotReader reader = snapshot.openReader()) {
+      for (long i = 1; i <= 10; i++) {
+        assertEquals(i, reader.readLong());
+      }
+    }
+  }
+
   @Before
   @After
   public void cleanupStorage() throws IOException {

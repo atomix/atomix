@@ -98,6 +98,9 @@ public class SnapshotStore implements AutoCloseable {
           existingSnapshot.close();
           existingSnapshot.delete();
         }
+      } else {
+        snapshot.close();
+        snapshot.delete();
       }
     }
 
@@ -247,7 +250,7 @@ public class SnapshotStore implements AutoCloseable {
 
     // Only store the snapshot if no existing snapshot exists.
     Snapshot existingSnapshot = serviceSnapshots.get(snapshot.serviceId());
-    if (existingSnapshot == null || existingSnapshot.index() <= snapshot.index()) {
+    if (existingSnapshot == null || existingSnapshot.index() < snapshot.index()) {
       serviceSnapshots.put(snapshot.serviceId(), snapshot);
       indexSnapshots.computeIfAbsent(snapshot.index(), i -> Sets.newConcurrentHashSet()).add(snapshot);
 
@@ -265,6 +268,15 @@ public class SnapshotStore implements AutoCloseable {
           existingSnapshot.delete();
         }
       }
+    }
+    // If a snapshot already exists at this index, overwrite it with the new snapshot, but don't delete the old
+    // snapshot to avoid deleting the underlying snapshot file.
+    else if (existingSnapshot.index() == snapshot.index()) {
+      serviceSnapshots.put(snapshot.serviceId(), snapshot);
+      Set<Snapshot> existingSnapshots = indexSnapshots.computeIfAbsent(snapshot.index(), i -> Sets.newConcurrentHashSet());
+      existingSnapshots.remove(existingSnapshot);
+      existingSnapshots.add(snapshot);
+      existingSnapshot.close();
     }
     // If the snapshot was old, delete it if necessary.
     else if (!storage.isRetainStaleSnapshots()) {

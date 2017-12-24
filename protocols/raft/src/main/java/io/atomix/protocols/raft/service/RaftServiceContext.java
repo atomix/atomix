@@ -334,7 +334,6 @@ public class RaftServiceContext implements ServiceContext {
 
       // Add the snapshot to the pending snapshots registry.
       PendingSnapshot pendingSnapshot = new PendingSnapshot(snapshot);
-      pendingSnapshots.put(snapshotIndex, pendingSnapshot);
       pendingSnapshot.future.whenComplete((r, e) -> pendingSnapshots.remove(snapshotIndex));
 
       // Serialize sessions to the in-memory snapshot and request a snapshot from the state machine.
@@ -363,6 +362,7 @@ public class RaftServiceContext implements ServiceContext {
       // Persist the snapshot to disk in a background thread before completing the snapshot future.
       snapshotExecutor.execute(() -> {
         pendingSnapshot.persist();
+        pendingSnapshots.put(snapshotIndex, pendingSnapshot);
         future.complete(snapshotIndex);
       });
     });

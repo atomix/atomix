@@ -17,6 +17,8 @@ package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,6 +32,7 @@ import static com.google.common.base.Preconditions.checkState;
  * File-based snapshot backed by a {@link FileBuffer}.
  */
 final class FileSnapshot extends Snapshot {
+  private static final Logger LOGGER = LoggerFactory.getLogger(FileSnapshot.class);
   private final SnapshotFile file;
 
   FileSnapshot(SnapshotFile file, SnapshotDescriptor descriptor, SnapshotStore store) {
@@ -88,6 +91,7 @@ final class FileSnapshot extends Snapshot {
    */
   @Override
   public void delete() {
+    LOGGER.debug("Deleting {}", this);
     Path path = file.file().toPath();
     if (Files.exists(path)) {
       try {
@@ -101,6 +105,8 @@ final class FileSnapshot extends Snapshot {
   public String toString() {
     return toStringHelper(this)
         .add("index", index())
+        .add("serviceId", serviceId())
+        .add("serviceName", serviceName())
         .toString();
   }
 
