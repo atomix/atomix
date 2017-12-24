@@ -18,7 +18,8 @@ package io.atomix.rest.utils;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
-import io.atomix.PrimitivesService;
+
+import io.atomix.core.PrimitivesService;
 import io.atomix.primitive.AsyncPrimitive;
 
 import java.util.concurrent.ExecutionException;

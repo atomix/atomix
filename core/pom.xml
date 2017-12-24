@@ -58,7 +58,7 @@
         <configuration>
           <instructions>
             <Export-Package>
-              !io.atomix.cluster.*,!io.atomix.protocols.*,!io.atomix.utils.*,io.atomix.*
+              io.atomix.core.*
             </Export-Package>
             <Import-Package>
               !sun.nio.ch,!sun.misc,*

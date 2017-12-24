@@ -15,9 +15,10 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.counter.AsyncAtomicCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.atomix.core.counter.AsyncAtomicCounter;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;

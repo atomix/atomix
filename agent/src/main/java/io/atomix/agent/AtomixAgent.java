@@ -15,9 +15,9 @@
  */
 package io.atomix.agent;
 
-import io.atomix.Atomix;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
+import io.atomix.core.Atomix;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.rest.ManagedRestService;
