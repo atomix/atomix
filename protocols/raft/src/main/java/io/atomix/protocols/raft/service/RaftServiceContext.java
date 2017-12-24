@@ -320,21 +320,32 @@ public class RaftServiceContext implements ServiceContext {
       // Compute the snapshot index as the greater of the compaction index and the last index applied to this service.
       long snapshotIndex = Math.max(index, currentIndex);
 
+      // If a snapshot is already persisted at this index, skip the snapshot.
+      Snapshot existingSnapshot = raft.getSnapshotStore().getSnapshot(serviceId, snapshotIndex);
+      if (existingSnapshot != null) {
+        return;
+      }
+
       // If there's already a snapshot taken at a higher index, skip the snapshot.
       Snapshot currentSnapshot = raft.getSnapshotStore().getSnapshotById(primitiveId);
       if (currentSnapshot != null && currentSnapshot.index() >= index) {
         return;
       }
 
-      log.debug("Taking snapshot {}", snapshotIndex);
-
       // Create a temporary in-memory snapshot buffer.
       Snapshot snapshot = raft.getSnapshotStore()
           .newTemporarySnapshot(primitiveId, serviceName, snapshotIndex, WallClockTimestamp.from(currentTimestamp));
 
-      // Add the snapshot to the pending snapshots registry.
+      // Add the snapshot to the pending snapshots registry. If a snapshot is already pending for this index,
+      // skip the snapshot.
       PendingSnapshot pendingSnapshot = new PendingSnapshot(snapshot);
+      if (pendingSnapshots.putIfAbsent(snapshotIndex, pendingSnapshot) != null) {
+        return;
+      }
+
       pendingSnapshot.future.whenComplete((r, e) -> pendingSnapshots.remove(snapshotIndex));
+
+      log.debug("Taking snapshot {}", snapshotIndex);
 
       // Serialize sessions to the in-memory snapshot and request a snapshot from the state machine.
       try (SnapshotWriter writer = snapshot.openWriter()) {
@@ -362,7 +373,6 @@ public class RaftServiceContext implements ServiceContext {
       // Persist the snapshot to disk in a background thread before completing the snapshot future.
       snapshotExecutor.execute(() -> {
         pendingSnapshot.persist();
-        pendingSnapshots.put(snapshotIndex, pendingSnapshot);
         future.complete(snapshotIndex);
       });
     });
