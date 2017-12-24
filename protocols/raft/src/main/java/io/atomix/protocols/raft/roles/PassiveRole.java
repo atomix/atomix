@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.primitive.PrimitiveId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
@@ -49,7 +50,6 @@ import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.primitive.PrimitiveId;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
@@ -328,7 +328,7 @@ public class PassiveRole extends InactiveRole {
    * Returns a failed append response.
    *
    * @param lastLogIndex the last log index
-   * @param future the append response future
+   * @param future       the append response future
    * @return the append response status
    */
   protected boolean failAppend(long lastLogIndex, CompletableFuture<AppendResponse> future) {
@@ -339,7 +339,7 @@ public class PassiveRole extends InactiveRole {
    * Returns a successful append response.
    *
    * @param lastLogIndex the last log index
-   * @param future the append response future
+   * @param future       the append response future
    * @return the append response status
    */
   protected boolean succeedAppend(long lastLogIndex, CompletableFuture<AppendResponse> future) {
@@ -349,9 +349,9 @@ public class PassiveRole extends InactiveRole {
   /**
    * Returns a successful append response.
    *
-   * @param succeeded whether the append succeeded
+   * @param succeeded    whether the append succeeded
    * @param lastLogIndex the last log index
-   * @param future the append response future
+   * @param future       the append response future
    * @return the append response status
    */
   protected boolean completeAppend(boolean succeeded, long lastLogIndex, CompletableFuture<AppendResponse> future) {
@@ -520,10 +520,10 @@ public class PassiveRole extends InactiveRole {
       }
 
       Snapshot snapshot = raft.getSnapshotStore().newSnapshot(
-              PrimitiveId.from(request.serviceId()),
-              request.serviceName(),
-              request.snapshotIndex(),
-              WallClockTimestamp.from(request.snapshotTimestamp()));
+          PrimitiveId.from(request.serviceId()),
+          request.serviceName(),
+          request.snapshotIndex(),
+          WallClockTimestamp.from(request.snapshotTimestamp()));
       pendingSnapshot = new PendingSnapshot(snapshot);
     }
 
@@ -532,6 +532,12 @@ public class PassiveRole extends InactiveRole {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request chunk offset does not match the next chunk offset")
+          .build()));
+    }
+    // If the request offset has already been written, return OK to skip to the next chunk.
+    else if (request.chunkOffset() < pendingSnapshot.nextOffset()) {
+      return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+          .withStatus(RaftResponse.Status.OK)
           .build()));
     }
 
