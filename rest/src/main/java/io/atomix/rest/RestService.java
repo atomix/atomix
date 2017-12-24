@@ -15,7 +15,7 @@
  */
 package io.atomix.rest;
 
-import io.atomix.Atomix;
+import io.atomix.core.Atomix;
 import io.atomix.messaging.Endpoint;
 import io.atomix.rest.impl.VertxRestService;
 

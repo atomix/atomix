@@ -15,10 +15,10 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.election.AsyncLeaderElection;
-import io.atomix.election.Leadership;
-import io.atomix.election.LeadershipEvent;
-import io.atomix.election.LeadershipEventListener;
+import io.atomix.core.election.AsyncLeaderElection;
+import io.atomix.core.election.Leadership;
+import io.atomix.core.election.LeadershipEvent;
+import io.atomix.core.election.LeadershipEventListener;
 import io.atomix.rest.utils.EventLog;
 import io.atomix.rest.utils.EventManager;
 import org.slf4j.Logger;

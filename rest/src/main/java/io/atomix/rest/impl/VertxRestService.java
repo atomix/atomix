@@ -15,10 +15,10 @@
  */
 package io.atomix.rest.impl;
 
-import io.atomix.Atomix;
-import io.atomix.PrimitivesService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.core.Atomix;
+import io.atomix.core.PrimitivesService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.messaging.Endpoint;
 import io.atomix.rest.ManagedRestService;

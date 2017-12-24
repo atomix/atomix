@@ -16,10 +16,11 @@
 package io.atomix.rest.resources;
 
 import com.google.common.collect.Maps;
-import io.atomix.tree.AsyncDocumentTree;
-import io.atomix.tree.DocumentPath;
-import io.atomix.tree.IllegalDocumentModificationException;
-import io.atomix.tree.NoSuchDocumentPathException;
+
+import io.atomix.core.tree.AsyncDocumentTree;
+import io.atomix.core.tree.DocumentPath;
+import io.atomix.core.tree.IllegalDocumentModificationException;
+import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

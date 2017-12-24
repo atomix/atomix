@@ -15,9 +15,10 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.lock.AsyncDistributedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.atomix.core.lock.AsyncDistributedLock;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;

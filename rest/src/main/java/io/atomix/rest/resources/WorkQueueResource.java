@@ -16,7 +16,8 @@
 package io.atomix.rest.resources;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.queue.AsyncWorkQueue;
+
+import io.atomix.core.queue.AsyncWorkQueue;
 import io.atomix.rest.utils.EventLog;
 import io.atomix.rest.utils.EventManager;
 import org.slf4j.Logger;
