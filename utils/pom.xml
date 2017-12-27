@@ -61,7 +61,7 @@
               io.atomix.utils.*
             </Export-Package>
             <Import-Package>
-              !sun.nio.ch,!sun.misc,*
+              !sun.nio.ch,*
             </Import-Package>
           </instructions>
         </configuration>
