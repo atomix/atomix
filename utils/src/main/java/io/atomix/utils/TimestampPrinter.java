@@ -15,8 +15,10 @@
  */
 package io.atomix.utils;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Timestamp printer.
@@ -33,7 +35,7 @@ public class TimestampPrinter {
     return new TimestampPrinter(timestamp);
   }
 
-  private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
+  private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss,SSS");
 
   private final long timestamp;
 
@@ -43,6 +45,6 @@ public class TimestampPrinter {
 
   @Override
   public String toString() {
-    return FORMAT.format(new Date(timestamp));
+    return FORMATTER.format(LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()));
   }
 }
