@@ -24,7 +24,7 @@ import sun.misc.Unsafe;
  */
 public class HeapMemory implements Memory {
   public static final int ARRAY_BASE_OFFSET = NativeMemory.UNSAFE.arrayBaseOffset(byte[].class);
-  public static final int MAX_SIZE = Integer.MAX_VALUE;
+  public static final int MAX_SIZE = Integer.MAX_VALUE - 5;
 
   /**
    * Allocates heap memory via {@link HeapMemoryAllocator}.
