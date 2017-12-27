@@ -21,7 +21,7 @@ import io.atomix.utils.serializer.Serializer;
  * Primary-backup serializers.
  */
 public final class PrimaryBackupSerializers {
-  public static Serializer PROTOCOL = Serializer.using(PrimaryBackupNamespaces.PROTOCOL);
+  public static final Serializer PROTOCOL = Serializer.using(PrimaryBackupNamespaces.PROTOCOL);
 
   private PrimaryBackupSerializers() {
   }

@@ -515,7 +515,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   /**
    * Subscriber iterator that iterates subscribers in a loop.
    */
-  private class TopicIterator implements Iterator<InternalSubscriptionInfo> {
+  private static class TopicIterator implements Iterator<InternalSubscriptionInfo> {
     private final AtomicInteger counter = new AtomicInteger();
     private final InternalSubscriptionInfo[] subscribers;
 
@@ -541,7 +541,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   /**
    * Internal subscriber.
    */
-  private class InternalSubscriber implements BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> {
+  private static class InternalSubscriber implements BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> {
     private final AtomicInteger counter = new AtomicInteger();
     private InternalSubscription[] subscriptions = new InternalSubscription[0];
 

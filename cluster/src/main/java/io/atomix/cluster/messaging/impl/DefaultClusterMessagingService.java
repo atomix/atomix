@@ -210,7 +210,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     return CompletableFuture.completedFuture(null);
   }
 
-  private class InternalMessageResponder<M, R> implements BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> {
+  private static class InternalMessageResponder<M, R> implements BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> {
     private final Function<byte[], M> decoder;
     private final Function<R, byte[]> encoder;
     private final Function<M, CompletableFuture<R>> handler;
@@ -229,7 +229,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     }
   }
 
-  private class InternalMessageConsumer<M> implements BiConsumer<Endpoint, byte[]> {
+  private static class InternalMessageConsumer<M> implements BiConsumer<Endpoint, byte[]> {
     private final Function<byte[], M> decoder;
     private final Consumer<M> consumer;
 
