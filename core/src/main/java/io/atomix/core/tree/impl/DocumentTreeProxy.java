@@ -250,7 +250,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
     events.forEach(event -> eventListeners.values().forEach(listener -> listener.event(event)));
   }
 
-  private class InternalListener implements DocumentTreeListener<byte[]> {
+  private static class InternalListener implements DocumentTreeListener<byte[]> {
 
     private final DocumentPath path;
     private final DocumentTreeListener<byte[]> listener;

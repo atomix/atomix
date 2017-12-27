@@ -717,7 +717,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   /**
    * Wraps a {@link CompletableFuture} and tracks its type and creation time.
    */
-  private final class Callback {
+  private static final class Callback {
     private final String type;
     private final CompletableFuture<byte[]> future;
     private final long time = System.currentTimeMillis();
@@ -820,7 +820,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   /**
    * Local server connection.
    */
-  private final class LocalServerConnection implements ServerConnection {
+  private static final class LocalServerConnection implements ServerConnection {
     private final CompletableFuture<byte[]> future;
 
     LocalServerConnection(CompletableFuture<byte[]> future) {

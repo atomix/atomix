@@ -67,6 +67,7 @@ import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REPLA
 import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.SIZE;
 import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.VALUES;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -586,7 +587,7 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
    * values in the map an equal number of times to the number of sets in
    * which they participate.
    */
-  private class HashMultisetValueCollector implements
+  private static class HashMultisetValueCollector implements
       Collector<MapEntryValue,
           HashMultiset<byte[]>,
           HashMultiset<byte[]>> {
@@ -626,7 +627,7 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
    * A collector that creates Entries of {@code <String, MapEntryValue>} and
    * creates a set of entries all key value pairs in the map.
    */
-  private class EntrySetCollector implements
+  private static class EntrySetCollector implements
       Collector<Map.Entry<String, MapEntryValue>,
           Set<Map.Entry<String, byte[]>>,
           Set<Map.Entry<String, byte[]>>> {
@@ -689,7 +690,9 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
             value.version());
   }
 
-  private static class ByteArrayComparator implements Comparator<byte[]> {
+  private static class ByteArrayComparator implements Comparator<byte[]>, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Override
     public int compare(byte[] o1, byte[] o2) {

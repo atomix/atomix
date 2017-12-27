@@ -795,7 +795,7 @@ public class RaftServiceContext implements ServiceContext {
   /**
    * Pending snapshot.
    */
-  private class PendingSnapshot {
+  private static class PendingSnapshot {
     private volatile Snapshot snapshot;
     private final CompletableFuture<Long> future = new CompletableFuture<>();
 

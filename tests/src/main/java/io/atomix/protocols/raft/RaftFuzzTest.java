@@ -654,7 +654,7 @@ public class RaftFuzzTest implements Runnable {
   /**
    * Fuzz test state machine.
    */
-  public class FuzzStateMachine extends AbstractPrimitiveService {
+  public static class FuzzStateMachine extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
 
     @Override
