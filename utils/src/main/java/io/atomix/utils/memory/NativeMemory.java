@@ -219,7 +219,7 @@ public class NativeMemory implements Memory {
   @Override
   public void putChar(int offset, char c) {
     if (UNALIGNED) {
-      putChar(offset, c);
+      UNSAFE.putChar(offset, c);
     } else if (BIG_ENDIAN) {
       putByte(offset, (byte) (c >>> 8));
       putByte(offset, 1, (byte) c);
