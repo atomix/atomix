@@ -24,8 +24,8 @@ public class HeapMemoryAllocator implements MemoryAllocator<HeapMemory> {
 
   @Override
   public HeapMemory allocate(int size) {
-    if (size > Integer.MAX_VALUE)
-      throw new IllegalArgumentException("size cannot be greater than " + Integer.MAX_VALUE);
+    if (size > HeapMemory.MAX_SIZE)
+      throw new IllegalArgumentException("size cannot be greater than " + HeapMemory.MAX_SIZE);
     return new HeapMemory(new byte[(int) size], this);
   }
 
