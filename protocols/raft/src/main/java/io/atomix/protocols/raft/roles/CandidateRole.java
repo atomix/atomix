@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
  */
 public final class CandidateRole extends ActiveRole {
   private final Random random = new Random();
-  private Quorum quorum;
   private Scheduled currentTimer;
 
   public CandidateRole(RaftContext context) {
@@ -89,19 +88,6 @@ public final class CandidateRole extends ActiveRole {
     raft.setTerm(raft.getTerm() + 1);
     raft.setLastVotedFor(raft.getCluster().getMember().nodeId());
 
-    Duration delay = raft.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) raft.getElectionTimeout().toMillis())));
-    currentTimer = raft.getThreadContext().schedule(delay, () -> {
-      // When the election times out, clear the previous majority vote
-      // check and restart the election.
-      log.debug("Election timed out");
-      if (quorum != null) {
-        quorum.cancel();
-        quorum = null;
-      }
-      sendVoteRequests();
-      log.debug("Restarted election");
-    });
-
     final AtomicBoolean complete = new AtomicBoolean();
     final Set<DefaultRaftMember> votingMembers = new HashSet<>(raft.getCluster().getActiveMemberStates().stream().map(RaftMemberContext::getMember).collect(Collectors.toList()));
 
@@ -117,11 +103,28 @@ public final class CandidateRole extends ActiveRole {
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
     final Quorum quorum = new Quorum(raft.getCluster().getQuorum(), (elected) -> {
+      if (!isRunning()) {
+        return;
+      }
+
       complete.set(true);
       if (elected) {
         raft.transition(RaftServer.Role.LEADER);
       } else {
         raft.transition(RaftServer.Role.FOLLOWER);
+      }
+    });
+
+    Duration delay = raft.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) raft.getElectionTimeout().toMillis())));
+    currentTimer = raft.getThreadContext().schedule(delay, () -> {
+      if (!complete.get()) {
+        // When the election times out, clear the previous majority vote
+        // check and restart the election.
+        log.debug("Election timed out");
+        quorum.cancel();
+
+        sendVoteRequests();
+        log.debug("Restarted election");
       }
     });
 
@@ -227,10 +230,6 @@ public final class CandidateRole extends ActiveRole {
     if (currentTimer != null) {
       log.debug("Cancelling election");
       currentTimer.cancel();
-    }
-    if (quorum != null) {
-      quorum.cancel();
-      quorum = null;
     }
   }
 
