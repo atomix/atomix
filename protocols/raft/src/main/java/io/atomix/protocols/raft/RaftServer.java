@@ -29,6 +29,8 @@ import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.ThreadModel;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +41,7 @@ import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.protocols.raft.RaftException.*;
 
 /**
  * Provides a standalone implementation of the <a href="http://raft.github.io/">Raft consensus algorithm</a>.
@@ -153,7 +156,12 @@ public interface RaftServer {
    * @return The server builder.
    */
   static Builder builder() {
-    return builder(null);
+    try {
+      InetAddress address = InetAddress.getByName("0.0.0.0");
+      return builder(NodeId.from(address.getHostName()));
+    } catch (UnknownHostException e) {
+      throw new ConfigurationException("Cannot configure local node", e);
+    }
   }
 
   /**
