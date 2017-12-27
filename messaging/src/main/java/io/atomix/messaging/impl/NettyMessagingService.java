@@ -361,6 +361,10 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   private List<CompletableFuture<Channel>> getChannelPool(Endpoint endpoint) {
+    List<CompletableFuture<Channel>> channelPool = channels.get(endpoint);
+    if (channelPool != null) {
+      return channelPool;
+    }
     return channels.computeIfAbsent(endpoint, e -> {
       List<CompletableFuture<Channel>> defaultList = new ArrayList<>(CHANNEL_POOL_SIZE);
       for (int i = 0; i < CHANNEL_POOL_SIZE; i++) {
@@ -454,7 +458,10 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     getChannel(endpoint, type).whenComplete((channel, channelError) -> {
       if (channelError == null) {
-        ClientConnection connection = clientConnections.computeIfAbsent(channel, RemoteClientConnection::new);
+        ClientConnection connection = clientConnections.get(channel);
+        if (connection == null) {
+          connection = clientConnections.computeIfAbsent(channel, RemoteClientConnection::new);
+        }
         callback.apply(connection).whenComplete((result, sendError) -> {
           if (sendError == null) {
             executor.execute(() -> future.complete(result));
@@ -672,12 +679,16 @@ public class NettyMessagingService implements ManagedMessagingService {
       InternalMessage message = (InternalMessage) rawMessage;
       try {
         if (message.isRequest()) {
-          RemoteServerConnection connection =
-              serverConnections.computeIfAbsent(ctx.channel(), RemoteServerConnection::new);
+          RemoteServerConnection connection = serverConnections.get(ctx.channel());
+          if (connection == null) {
+            connection = serverConnections.computeIfAbsent(ctx.channel(), RemoteServerConnection::new);
+          }
           connection.dispatch((InternalRequest) message);
         } else {
-          RemoteClientConnection connection =
-              clientConnections.computeIfAbsent(ctx.channel(), RemoteClientConnection::new);
+          RemoteClientConnection connection = clientConnections.get(ctx.channel());
+          if (connection == null) {
+            connection = clientConnections.computeIfAbsent(ctx.channel(), RemoteClientConnection::new);
+          }
           connection.dispatch((InternalReply) message);
         }
       } catch (RejectedExecutionException e) {
