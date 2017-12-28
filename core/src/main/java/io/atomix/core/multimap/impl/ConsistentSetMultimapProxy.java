@@ -16,7 +16,6 @@
 
 package io.atomix.core.multimap.impl;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
@@ -59,6 +58,7 @@ import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.VALUE
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,15 +128,14 @@ public class ConsistentSetMultimapProxy
     return proxy.invoke(
         PUT,
         SERIALIZER::encode,
-        new Put(key, Lists.newArrayList(value), null),
+        new Put(key, Collections.singletonList(value), null),
         SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<Boolean> remove(String key, byte[] value) {
     return proxy.invoke(REMOVE, SERIALIZER::encode, new MultiRemove(key,
-        Lists.newArrayList(value),
-        null), SERIALIZER::decode);
+            Collections.singletonList(value), null), SERIALIZER::decode);
   }
 
   @Override
