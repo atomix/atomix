@@ -51,11 +51,11 @@ public abstract class AbstractRaftResponse implements RaftResponse {
 
   @Override
   public boolean equals(Object object) {
-    if (object.getClass() == getClass()) {
-      AbstractRaftResponse response = (AbstractRaftResponse) object;
-      return response.status == status && Objects.equals(response.error, error);
-    }
-    return false;
+    if (this == object) return true;
+    if (object == null || !getClass().isAssignableFrom(object.getClass())) return false;
+
+    AbstractRaftResponse response = (AbstractRaftResponse) object;
+    return response.status == status && Objects.equals(response.error, error);
   }
 
   @Override

@@ -218,11 +218,11 @@ public abstract class Snapshot implements AutoCloseable {
 
   @Override
   public boolean equals(Object object) {
-    if (getClass() == object.getClass()) {
-      Snapshot snapshot = (Snapshot) object;
-      return snapshot.serviceId().equals(serviceId()) && snapshot.index() == index();
-    }
-    return false;
+    if (this == object) return true;
+    if (object == null || !getClass().isAssignableFrom(object.getClass())) return false;
+
+    Snapshot snapshot = (Snapshot) object;
+    return snapshot.serviceId().equals(serviceId()) && snapshot.index() == index();
   }
 
 }
