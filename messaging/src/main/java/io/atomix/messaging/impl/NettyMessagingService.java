@@ -251,13 +251,17 @@ public class NettyMessagingService implements ManagedMessagingService {
       char[] tsPwd = System.getProperty("javax.net.ssl.trustStorePassword", DEFAULT_KS_PASSWORD).toCharArray();
 
       tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-      KeyStore ts = KeyStore.getInstance("JKS");
-      ts.load(new FileInputStream(tsLocation), tsPwd);
+      KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
+      try (FileInputStream fileInputStream = new FileInputStream(tsLocation)) {
+        ts.load(fileInputStream, tsPwd);
+      }
       tmf.init(ts);
 
       kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-      KeyStore ks = KeyStore.getInstance("JKS");
-      ks.load(new FileInputStream(ksLocation), ksPwd);
+      KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+      try (FileInputStream fileInputStream = new FileInputStream(ksLocation)) {
+        ks.load(fileInputStream, ksPwd);
+      }
       kmf.init(ks, ksPwd);
       if (log.isInfoEnabled()) {
         logKeyStore(ks, ksLocation, ksPwd);
