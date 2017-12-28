@@ -17,6 +17,7 @@ package io.atomix.primitive.operation;
 
 import io.atomix.utils.ArraySizeHashPrinter;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -65,7 +66,7 @@ public class PrimitiveOperation {
   public boolean equals(Object object) {
     if (object instanceof PrimitiveOperation) {
       PrimitiveOperation operation = (PrimitiveOperation) object;
-      return Objects.equals(operation.id, id) && Objects.equals(operation.value, value);
+      return Objects.equals(operation.id, id) && Arrays.equals(operation.value, value);
     }
     return false;
   }

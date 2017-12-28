@@ -17,6 +17,7 @@ package io.atomix.primitive.event;
 
 import io.atomix.utils.ArraySizeHashPrinter;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -65,7 +66,7 @@ public class PrimitiveEvent {
   public boolean equals(Object object) {
     if (object instanceof PrimitiveEvent) {
       PrimitiveEvent event = (PrimitiveEvent) object;
-      return Objects.equals(event.type, type) && Objects.equals(event.value, value);
+      return Objects.equals(event.type, type) && Arrays.equals(event.value, value);
     }
     return false;
   }
