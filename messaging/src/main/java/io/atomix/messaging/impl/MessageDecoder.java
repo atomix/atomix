@@ -35,13 +35,13 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
+  private static final byte[] EMPTY_PAYLOAD = new byte[0];
+
   private InetAddress senderIp;
   private int senderPort;
 
   private InternalMessage.Type type;
   private int preamble;
-  private long logicalTime;
-  private long logicalCounter;
   private long messageId;
   private int contentLength;
   private byte[] content;
@@ -66,7 +66,6 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
         buffer.readBytes(octets);
         senderIp = InetAddress.getByAddress(octets);
         checkpoint(DecoderState.READ_SENDER_PORT);
-        checkpoint(DecoderState.READ_SENDER_PORT);
       case READ_SENDER_PORT:
         senderPort = buffer.readInt();
         checkpoint(DecoderState.READ_TYPE);
@@ -88,7 +87,7 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
           content = new byte[contentLength];
           buffer.readBytes(content);
         } else {
-          content = new byte[0];
+          content = EMPTY_PAYLOAD;
         }
 
         switch (type) {
@@ -151,7 +150,10 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext context, Throwable cause) {
-    log.error("Exception inside channel handling pipeline.", cause);
-    context.close();
+    try {
+      log.error("Exception inside channel handling pipeline.", cause);
+    } finally {
+      context.close();
+    }
   }
 }
