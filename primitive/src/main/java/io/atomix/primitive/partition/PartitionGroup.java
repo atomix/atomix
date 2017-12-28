@@ -15,10 +15,10 @@
  */
 package io.atomix.primitive.partition;
 
-import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import io.atomix.primitive.PrimitiveProtocol;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 
@@ -57,7 +57,7 @@ public interface PartitionGroup {
    * @return the partition for the given key
    */
   default Partition getPartition(String key) {
-    int hashCode = Hashing.sha256().hashString(key, Charsets.UTF_8).asInt();
+    int hashCode = Hashing.sha256().hashString(key, StandardCharsets.UTF_8).asInt();
     return getPartition(getPartitionIds().get(Math.abs(hashCode) % getPartitionIds().size()));
   }
 

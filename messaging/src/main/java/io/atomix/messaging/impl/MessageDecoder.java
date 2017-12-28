@@ -15,7 +15,6 @@
  */
 package io.atomix.messaging.impl;
 
-import com.google.common.base.Charsets;
 import io.atomix.messaging.Endpoint;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -24,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -114,7 +114,7 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
           case READ_SUBJECT:
             byte[] messageTypeBytes = new byte[subjectLength];
             buffer.readBytes(messageTypeBytes);
-            subject = new String(messageTypeBytes, Charsets.UTF_8);
+            subject = new String(messageTypeBytes, StandardCharsets.UTF_8);
             InternalRequest message = new InternalRequest(
                 preamble,
                 messageId,

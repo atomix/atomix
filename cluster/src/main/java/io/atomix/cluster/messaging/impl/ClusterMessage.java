@@ -15,12 +15,12 @@
  */
 package io.atomix.cluster.messaging.impl;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import io.atomix.cluster.NodeId;
 import io.atomix.utils.ArraySizeHashPrinter;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -120,8 +120,8 @@ public class ClusterMessage {
    * @return bytes
    */
   public byte[] getBytes() {
-    byte[] senderBytes = sender.toString().getBytes(Charsets.UTF_8);
-    byte[] subjectBytes = subject.getBytes(Charsets.UTF_8);
+    byte[] senderBytes = sender.toString().getBytes(StandardCharsets.UTF_8);
+    byte[] subjectBytes = subject.getBytes(StandardCharsets.UTF_8);
     int capacity = 12 + senderBytes.length + subjectBytes.length + payload.length;
     ByteBuffer buffer = ByteBuffer.allocate(capacity);
     buffer.putInt(senderBytes.length);
@@ -148,8 +148,8 @@ public class ClusterMessage {
     byte[] payloadBytes = new byte[buffer.getInt()];
     buffer.get(payloadBytes);
 
-    return new ClusterMessage(new NodeId(new String(senderBytes, Charsets.UTF_8)),
-        new String(new String(subjectBytes, Charsets.UTF_8)),
+    return new ClusterMessage(new NodeId(new String(senderBytes, StandardCharsets.UTF_8)),
+            new String(subjectBytes, StandardCharsets.UTF_8),
         payloadBytes);
   }
 
