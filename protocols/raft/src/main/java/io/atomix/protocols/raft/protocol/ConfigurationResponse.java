@@ -85,15 +85,15 @@ public abstract class ConfigurationResponse extends AbstractRaftResponse {
 
   @Override
   public boolean equals(Object object) {
-    if (getClass().isAssignableFrom(object.getClass())) {
-      ConfigurationResponse response = (ConfigurationResponse) object;
-      return response.status == status
-          && response.index == index
-          && response.term == term
-          && response.timestamp == timestamp
-          && response.members.equals(members);
-    }
-    return false;
+    if (this == object) return true;
+    if (object == null || !getClass().isAssignableFrom(object.getClass())) return false;
+
+    ConfigurationResponse response = (ConfigurationResponse) object;
+    return response.status == status
+            && response.index == index
+            && response.term == term
+            && response.timestamp == timestamp
+            && response.members.equals(members);
   }
 
   @Override
