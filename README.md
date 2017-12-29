@@ -128,15 +128,15 @@ should provide the same set of bootstrap nodes. Bootstrap nodes _must_ be `DATA`
 builder.withBootstrapNodes(
   Node.builder("server1")
     .withType(Node.Type.DATA)
-    .withEndpoint(Endpoint.from("localhost", 5000)
+    .withEndpoint(Endpoint.from("localhost", 5000))
     .build(),
   Node.builder("server2")
     .withType(Node.Type.DATA)
-    .withEndpoint(Endpoint.from("localhost", 5001)
+    .withEndpoint(Endpoint.from("localhost", 5001))
     .build(),
   Node.builder("server3")
     .withType(Node.Type.DATA)
-    .withEndpoint(Endpoint.from("localhost", 5002)
+    .withEndpoint(Endpoint.from("localhost", 5002))
     .build());
 ```
 
@@ -174,15 +174,15 @@ Atomix atomix = Atomix.builder()
   .withBootstrapNodes(
       Node.builder("server1")
         .withType(Node.Type.DATA)
-        .withEndpoint(Endpoint.from("localhost", 5000)
+        .withEndpoint(Endpoint.from("localhost", 5000))
         .build(),
       Node.builder("server2")
         .withType(Node.Type.DATA)
-        .withEndpoint(Endpoint.from("localhost", 5001)
+        .withEndpoint(Endpoint.from("localhost", 5001))
         .build(),
       Node.builder("server3")
         .withType(Node.Type.DATA)
-        .withEndpoint(Endpoint.from("localhost", 5002)
+        .withEndpoint(Endpoint.from("localhost", 5002))
         .build())
   .build();
 
