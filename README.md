@@ -334,7 +334,7 @@ core primitive builders are exposed via the `Atomix` API:
 ```java
 DistributedLock lock = atomix.lockBuilder("test-lock")
   .withLockTimeout(Duration.ofSeconds(2))
-  .buld();
+  .build();
 ```
 
 The _lock timeout_ is the approximate time it takes to determine whether a lock has failed.
