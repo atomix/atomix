@@ -21,9 +21,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
-import io.atomix.core.multimap.impl.ConsistentSetMultimapProxy;
 
 import org.junit.Test;
 
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the {@link ConsistentSetMultimapProxy}.
  */
-public class ConsistentSetMultimapTest extends AbstractAtomixTest {
+public class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
   private final String one = "hello";
   private final String two = "goodbye";
   private final String three = "foo";

@@ -15,7 +15,7 @@
  */
 package io.atomix.core.value.impl;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.value.AsyncAtomicValue;
 
 import org.junit.Test;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Raft atomic value test.
  */
-public class AtomicValueTest extends AbstractAtomixTest {
+public class AtomicValueTest extends AbstractPrimitiveTest {
   @Test
   public void testValue() throws Exception {
     AsyncAtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value").build().async();

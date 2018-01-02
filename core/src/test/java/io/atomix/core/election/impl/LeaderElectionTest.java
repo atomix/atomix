@@ -16,12 +16,11 @@
 package io.atomix.core.election.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.election.AsyncLeaderElection;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
-import io.atomix.core.election.impl.LeaderElectionProxy;
 
 import org.junit.Test;
 
@@ -36,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link LeaderElectionProxy}.
  */
-public class LeaderElectionTest extends AbstractAtomixTest {
+public class LeaderElectionTest extends AbstractPrimitiveTest {
 
   NodeId node1 = NodeId.from("node1");
   NodeId node2 = NodeId.from("node2");

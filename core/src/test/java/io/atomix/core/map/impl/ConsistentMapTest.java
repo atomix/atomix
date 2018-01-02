@@ -18,7 +18,7 @@ package io.atomix.core.map.impl;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.MapEvent;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link io.atomix.core.map.ConsistentMap}.
  */
-public class ConsistentMapTest extends AbstractAtomixTest {
+public class ConsistentMapTest extends AbstractPrimitiveTest {
 
   /**
    * Tests null values.

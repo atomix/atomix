@@ -18,14 +18,13 @@ package io.atomix.core.tree.impl;
 
 import com.google.common.base.Throwables;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeListener;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
-import io.atomix.core.tree.impl.DocumentTreeProxy;
 import io.atomix.primitive.Ordering;
 import io.atomix.utils.time.Versioned;
 import org.junit.Ignore;
@@ -46,7 +45,7 @@ import static org.junit.Assert.fail;
 /**
  * Unit tests for {@link DocumentTreeProxy}.
  */
-public class DocumentTreeTest extends AbstractAtomixTest {
+public class DocumentTreeTest extends AbstractPrimitiveTest {
 
   protected AsyncDocumentTree<String> newTree(String name) throws Exception {
     return newTree(name, null);

@@ -15,9 +15,8 @@
  */
 package io.atomix.core.counter.impl;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.counter.AsyncAtomicCounter;
-import io.atomix.core.counter.impl.AtomicCounterProxy;
 
 import org.junit.Test;
 
@@ -28,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link AtomicCounterProxy}.
  */
-public class AtomicCounterTest extends AbstractAtomixTest {
+public class AtomicCounterTest extends AbstractPrimitiveTest {
   @Test
   public void testBasicOperations() throws Throwable {
     AsyncAtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations").build().async();

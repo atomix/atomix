@@ -15,9 +15,8 @@
  */
 package io.atomix.core.generator.impl;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.generator.AsyncAtomicIdGenerator;
-import io.atomix.core.generator.impl.DelegatingIdGenerator;
 
 import org.junit.Test;
 
@@ -28,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Unit test for {@code AtomixIdGenerator}.
  */
-public class IdGeneratorTest extends AbstractAtomixTest {
+public class IdGeneratorTest extends AbstractPrimitiveTest {
 
   /**
    * Tests generating IDs.
