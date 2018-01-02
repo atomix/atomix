@@ -145,6 +145,10 @@ public class DefaultClusterMetadataService
         .filter(endpoint -> !endpoint.equals(messagingService.endpoint()))
         .collect(Collectors.toSet());
     final int totalPeers = peers.size();
+    if (totalPeers == 0) {
+      return CompletableFuture.completedFuture(null);
+    }
+
     AtomicBoolean successful = new AtomicBoolean();
     AtomicInteger totalCount = new AtomicInteger();
     AtomicReference<Throwable> lastError = new AtomicReference<>();
