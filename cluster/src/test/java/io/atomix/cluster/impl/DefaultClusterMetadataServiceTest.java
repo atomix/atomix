@@ -52,6 +52,29 @@ public class DefaultClusterMetadataServiceTest {
   }
 
   @Test
+  public void testSingleNodeBootstrap() throws Exception {
+    TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
+
+    ClusterMetadata clusterMetadata = buildClusterMetadata(1);
+
+    Node localNode1 = buildNode(1, Node.Type.DATA);
+    ManagedClusterMetadataService metadataService1 = new DefaultClusterMetadataService(
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode1.endpoint()).start().join());
+
+    metadataService1.start().join();
+
+    assertEquals(1, metadataService1.getMetadata().bootstrapNodes().size());
+
+    Node localNode2 = buildNode(2, Node.Type.DATA);
+    ManagedClusterMetadataService metadataService2 = new DefaultClusterMetadataService(
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode2.endpoint()).start().join());
+    metadataService2.start().join();
+    metadataService2.addNode(localNode2);
+
+    assertEquals(2, metadataService2.getMetadata().bootstrapNodes().size());
+  }
+
+  @Test
   public void testClusterMetadataService() throws Exception {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
 
