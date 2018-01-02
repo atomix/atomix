@@ -144,7 +144,7 @@ public class RaftPartition implements Partition<RaftProtocol> {
     if (server == null && metadata.members().contains(managementService.getClusterService().getLocalNode().id())) {
       server = createServer(managementService);
       return server.join(metadata.members());
-    } else if (server != null && server.isRunning()) {
+    } else if (server != null && !metadata.members().contains(managementService.getClusterService().getLocalNode().id())) {
       return server.leave().thenRun(() -> server = null);
     }
     return CompletableFuture.completedFuture(null);
