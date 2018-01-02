@@ -17,11 +17,10 @@ package io.atomix.core.queue.impl;
 
 import com.google.common.util.concurrent.Uninterruptibles;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.queue.AsyncWorkQueue;
 import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueueStats;
-import io.atomix.core.queue.impl.WorkQueueProxy;
 
 import org.junit.Test;
 
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link WorkQueueProxy}.
  */
-public class WorkQueueTest extends AbstractAtomixTest {
+public class WorkQueueTest extends AbstractPrimitiveTest {
   private static final Duration DEFAULT_PROCESSING_TIME = Duration.ofMillis(100);
   private static final String DEFAULT_PAYLOAD = "hello world";
 

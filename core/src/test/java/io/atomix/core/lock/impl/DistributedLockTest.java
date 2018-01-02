@@ -15,7 +15,7 @@
  */
 package io.atomix.core.lock.impl;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.utils.time.Version;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertFalse;
 /**
  * Raft lock test.
  */
-public class DistributedLockTest extends AbstractAtomixTest {
+public class DistributedLockTest extends AbstractPrimitiveTest {
 
   /**
    * Tests locking and unlocking a lock.

@@ -18,11 +18,10 @@ package io.atomix.core.map.impl;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
-import io.atomix.core.map.impl.ConsistentTreeMapProxy;
 
 import org.junit.Test;
 
@@ -43,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link ConsistentTreeMapProxy}.
  */
-public class ConsistentTreeMapTest extends AbstractAtomixTest {
+public class ConsistentTreeMapTest extends AbstractPrimitiveTest {
   private final String four = "hello";
   private final String three = "goodbye";
   private final String two = "foo";

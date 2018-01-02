@@ -15,7 +15,7 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.AsyncAtomicCounterMap;
 
 import org.junit.Test;
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit test for {@code AtomixCounterMap}.
  */
-public class AtomicCounterMapTest extends AbstractAtomixTest {
+public class AtomicCounterMapTest extends AbstractPrimitiveTest {
 
   /**
    * Tests basic counter map operations.

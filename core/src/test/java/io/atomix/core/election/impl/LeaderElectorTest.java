@@ -16,7 +16,7 @@
 package io.atomix.core.election.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.core.AbstractAtomixTest;
+import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.election.AsyncLeaderElector;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Leader elector test.
  */
-public class LeaderElectorTest extends AbstractAtomixTest {
+public class LeaderElectorTest extends AbstractPrimitiveTest {
 
   NodeId node1 = new NodeId("4");
   NodeId node2 = new NodeId("5");
