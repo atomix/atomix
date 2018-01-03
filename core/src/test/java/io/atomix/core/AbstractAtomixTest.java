@@ -61,13 +61,6 @@ public abstract class AbstractAtomixTest {
    * Creates an Atomix instance.
    */
   protected static Atomix createAtomix(Node.Type type, int id, Integer... ids) {
-    return createAtomix(ids.length, type, id, ids);
-  }
-
-  /**
-   * Creates an Atomix instance.
-   */
-  protected static Atomix createAtomix(int numPartitions, Node.Type type, int id, Integer... ids) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
         .withEndpoint(Endpoint.from("localhost", BASE_PORT + id))
@@ -85,7 +78,7 @@ public abstract class AbstractAtomixTest {
         .withDataDirectory(new File("target/test-logs/" + id))
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrapNodes)
-        .withCoordinationPartitions(numPartitions)
+        .withCoordinationPartitions(3)
         .withDataPartitions(3) // Lower number of partitions for faster testing
         .build();
   }
