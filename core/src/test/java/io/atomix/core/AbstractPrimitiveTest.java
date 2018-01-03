@@ -45,7 +45,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
 
   @BeforeClass
   public static void setupAtomix() throws Exception {
-    deleteData();
+    AbstractAtomixTest.setupAtomix();
     instances = new ArrayList<>();
     instances.add(createAtomix(Node.Type.DATA, 1, 1, 2, 3));
     instances.add(createAtomix(Node.Type.DATA, 2, 1, 2, 3));
@@ -62,6 +62,6 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
     } catch (Exception e) {
       // Do nothing
     }
-    deleteData();
+    AbstractAtomixTest.teardownAtomix();
   }
 }
