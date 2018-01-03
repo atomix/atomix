@@ -341,7 +341,9 @@ public final class LeaderRole extends ActiveRole {
 
           return appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            raft.getStateMachine().<OperationResult>apply(entry.index());
+            if (isRunning() && commitError == null) {
+              raft.getStateMachine().<OperationResult>apply(entry.index());
+            }
             configuring = 0;
           });
         }, raft.getThreadContext());
