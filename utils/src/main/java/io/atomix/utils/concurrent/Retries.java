@@ -15,7 +15,7 @@
  */
 package io.atomix.utils.concurrent;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -23,7 +23,6 @@ import java.util.function.Supplier;
  * Retry utilities.
  */
 public final class Retries {
-  private static final Random random = new Random();
 
   /**
    * Returns a function that retries execution on failure.
@@ -71,7 +70,7 @@ public final class Retries {
    */
   public static void randomDelay(int ms) {
     try {
-      Thread.sleep(random.nextInt(ms));
+      Thread.sleep(ThreadLocalRandom.current().nextInt(ms));
     } catch (InterruptedException e) {
       throw new RuntimeException("Interrupted", e);
     }
