@@ -261,8 +261,9 @@ public class DefaultClusterMetadataService
   private Optional<Endpoint> pickRandomPeer() {
     List<Endpoint> nodes = this.nodes.values()
         .stream()
+        .filter(replicatedNode -> !replicatedNode.tombstone() &&
+                !replicatedNode.endpoint().equals(messagingService.endpoint()))
         .map(Node::endpoint)
-        .filter(endpoint -> !endpoint.equals(messagingService.endpoint()))
         .collect(Collectors.toList());
     Collections.shuffle(nodes);
     return nodes.stream().findFirst();
