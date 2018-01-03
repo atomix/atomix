@@ -286,7 +286,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   public static class Builder implements io.atomix.utils.Builder<Atomix> {
     protected static final String DEFAULT_CLUSTER_NAME = "atomix";
+    // Default to 7 Raft partitions to allow a leader per node in 7 node clusters
+    protected static final int DEFAULT_COORDINATION_PARTITIONS = 7;
+    // Default to 3-node partitions for the best latency/throughput per Raft partition
     protected static final int DEFAULT_COORDINATION_PARTITION_SIZE = 3;
+    // Default to 71 primary-backup partitions - a prime number that creates about 10 partitions per node in a 7-node cluster
     protected static final int DEFAULT_DATA_PARTITIONS = 71;
     protected static final String COORDINATION_GROUP_NAME = "coordination";
     protected static final String DATA_GROUP_NAME = "data";
@@ -295,7 +299,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     protected Node localNode;
     protected Collection<Node> bootstrapNodes;
     protected File dataDirectory = new File(System.getProperty("user.dir"), "data");
-    protected int numCoordinationPartitions;
+    protected int numCoordinationPartitions = DEFAULT_COORDINATION_PARTITIONS;
     protected int coordinationPartitionSize = DEFAULT_COORDINATION_PARTITION_SIZE;
     protected int numDataPartitions = DEFAULT_DATA_PARTITIONS;
     protected Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
@@ -572,7 +576,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       if (partitionGroups.isEmpty()) {
         partitionGroups.add(RaftPartitionGroup.builder(COORDINATION_GROUP_NAME)
             .withDataDirectory(new File(dataDirectory, COORDINATION_GROUP_NAME))
-            .withNumPartitions(numCoordinationPartitions > 0 ? numCoordinationPartitions : bootstrapNodes.size())
+            .withNumPartitions(numCoordinationPartitions)
             .withPartitionSize(coordinationPartitionSize)
             .build());
         partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
