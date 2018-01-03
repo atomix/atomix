@@ -34,7 +34,7 @@ public class AtomixTest extends AbstractAtomixTest {
 
   @Before
   public void setupInstances() throws Exception {
-    deleteData();
+    AbstractAtomixTest.setupAtomix();
     instances = new ArrayList<>();
   }
 
@@ -46,7 +46,7 @@ public class AtomixTest extends AbstractAtomixTest {
     } catch (Exception e) {
       // Do nothing
     }
-    deleteData();
+    AbstractAtomixTest.teardownAtomix();
   }
 
   protected CompletableFuture<Atomix> startAtomix(int numPartitions, Node.Type type, int id, Integer... ids) {
