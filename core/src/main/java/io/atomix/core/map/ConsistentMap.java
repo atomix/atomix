@@ -23,6 +23,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -167,7 +168,22 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    * @return the previous value (and version) associated with key, or null if there was
    * no mapping for key.
    */
-  Versioned<V> put(K key, V value);
+  default Versioned<V> put(K key, V value) {
+    return put(key, value, Duration.ZERO);
+  }
+
+  /**
+   * Associates the specified value with the specified key in this map (optional operation).
+   * If the map previously contained a mapping for the key, the old value is replaced by the
+   * specified value.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @param ttl   the time to live after which to remove the value
+   * @return the previous value (and version) associated with key, or null if there was
+   * no mapping for key.
+   */
+  Versioned<V> put(K key, V value, Duration ttl);
 
   /**
    * Associates the specified value with the specified key in this map (optional operation).
@@ -178,7 +194,21 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    * @param value value to be associated with the specified key
    * @return new value.
    */
-  Versioned<V> putAndGet(K key, V value);
+  default Versioned<V> putAndGet(K key, V value) {
+    return putAndGet(key, value, Duration.ZERO);
+  }
+
+  /**
+   * Associates the specified value with the specified key in this map (optional operation).
+   * If the map previously contained a mapping for the key, the old value is replaced by the
+   * specified value.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @param ttl   the time to live after which to remove the value
+   * @return new value.
+   */
+  Versioned<V> putAndGet(K key, V value, Duration ttl);
 
   /**
    * Removes the mapping for a key from this map if it is present (optional operation).
@@ -237,7 +267,21 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    * @return the previous value associated with the specified key or null
    * if key does not already mapped to a value.
    */
-  Versioned<V> putIfAbsent(K key, V value);
+  default Versioned<V> putIfAbsent(K key, V value) {
+    return putIfAbsent(key, value, Duration.ZERO);
+  }
+
+  /**
+   * If the specified key is not already associated with a value
+   * associates it with the given value and returns null, else returns the current value.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @param ttl   the time to live after which to remove the value
+   * @return the previous value associated with the specified key or null
+   * if key does not already mapped to a value.
+   */
+  Versioned<V> putIfAbsent(K key, V value, Duration ttl);
 
   /**
    * Removes the entry for the specified key only if it is currently

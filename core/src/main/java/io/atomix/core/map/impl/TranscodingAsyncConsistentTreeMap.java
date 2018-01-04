@@ -17,7 +17,6 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.collect.Maps;
-
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.MapEvent;
@@ -207,14 +206,14 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> put(String key, V1 value) {
-    return backingMap.put(key, valueEncoder.apply(value))
+  public CompletableFuture<Versioned<V1>> put(String key, V1 value, Duration ttl) {
+    return backingMap.put(key, valueEncoder.apply(value), ttl)
         .thenApply(versionedValueTransform);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> putAndGet(String key, V1 value) {
-    return backingMap.putAndGet(key, valueEncoder.apply(value))
+  public CompletableFuture<Versioned<V1>> putAndGet(String key, V1 value, Duration ttl) {
+    return backingMap.putAndGet(key, valueEncoder.apply(value), ttl)
         .thenApply(versionedValueTransform);
   }
 
@@ -250,8 +249,8 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> putIfAbsent(String key, V1 value) {
-    return backingMap.putIfAbsent(key, valueEncoder.apply(value))
+  public CompletableFuture<Versioned<V1>> putIfAbsent(String key, V1 value, Duration ttl) {
+    return backingMap.putIfAbsent(key, valueEncoder.apply(value), ttl)
         .thenApply(versionedValueTransform);
   }
 

@@ -16,7 +16,6 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
-
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapBackedJavaMap;
@@ -26,6 +25,7 @@ import io.atomix.primitive.Synchronous;
 import io.atomix.utils.concurrent.Retries;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -118,13 +118,13 @@ public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<
   }
 
   @Override
-  public Versioned<V> put(K key, V value) {
-    return complete(asyncMap.put(key, value));
+  public Versioned<V> put(K key, V value, Duration ttl) {
+    return complete(asyncMap.put(key, value, ttl));
   }
 
   @Override
-  public Versioned<V> putAndGet(K key, V value) {
-    return complete(asyncMap.putAndGet(key, value));
+  public Versioned<V> putAndGet(K key, V value, Duration ttl) {
+    return complete(asyncMap.putAndGet(key, value, ttl));
   }
 
   @Override
@@ -153,8 +153,8 @@ public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<
   }
 
   @Override
-  public Versioned<V> putIfAbsent(K key, V value) {
-    return complete(asyncMap.putIfAbsent(key, value));
+  public Versioned<V> putIfAbsent(K key, V value, Duration ttl) {
+    return complete(asyncMap.putIfAbsent(key, value, ttl));
   }
 
   @Override

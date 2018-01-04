@@ -182,11 +182,11 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> put(String key, byte[] value) {
+  public CompletableFuture<Versioned<byte[]>> put(String key, byte[] value, Duration ttl) {
     return proxy.<Put, MapEntryUpdateResult<String, byte[]>>invoke(
         PUT,
         serializer()::encode,
-        new Put(key, value),
+        new Put(key, value, ttl.toMillis()),
         serializer()::decode)
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
@@ -194,11 +194,11 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> putAndGet(String key, byte[] value) {
+  public CompletableFuture<Versioned<byte[]>> putAndGet(String key, byte[] value, Duration ttl) {
     return proxy.<Put, MapEntryUpdateResult<String, byte[]>>invoke(
         PUT_AND_GET,
         serializer()::encode,
-        new Put(key, value),
+        new Put(key, value, ttl.toMillis()),
         serializer()::decode)
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
@@ -206,11 +206,11 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> putIfAbsent(String key, byte[] value) {
+  public CompletableFuture<Versioned<byte[]>> putIfAbsent(String key, byte[] value, Duration ttl) {
     return proxy.<Put, MapEntryUpdateResult<String, byte[]>>invoke(
         PUT_IF_ABSENT,
         serializer()::encode,
-        new Put(key, value),
+        new Put(key, value, ttl.toMillis()),
         serializer()::decode)
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
@@ -322,7 +322,7 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
         return proxy.<Put, MapEntryUpdateResult<String, byte[]>>invoke(
             PUT_IF_ABSENT,
             serializer()::encode,
-            new Put(key, computedValue),
+            new Put(key, computedValue, 0),
             serializer()::decode)
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))

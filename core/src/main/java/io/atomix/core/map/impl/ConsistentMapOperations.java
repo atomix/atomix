@@ -282,11 +282,18 @@ public enum ConsistentMapOperations implements OperationId {
    * Map put operation.
    */
   public static class Put extends KeyValueOperation {
+    private long ttl;
+
     public Put() {
     }
 
-    public Put(String key, byte[] value) {
+    public Put(String key, byte[] value, long ttl) {
       super(key, value);
+      this.ttl = ttl;
+    }
+
+    public long ttl() {
+      return ttl;
     }
   }
 

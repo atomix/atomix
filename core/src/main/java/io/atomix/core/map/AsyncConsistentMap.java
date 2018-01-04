@@ -17,7 +17,6 @@
 package io.atomix.core.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
-
 import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.transaction.Transactional;
@@ -213,7 +212,22 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    * @return the previous value (and version) associated with key, or null if there was
    * no mapping for key.
    */
-  CompletableFuture<Versioned<V>> put(K key, V value);
+  default CompletableFuture<Versioned<V>> put(K key, V value) {
+    return put(key, value, Duration.ZERO);
+  }
+
+  /**
+   * Associates the specified value with the specified key in this map (optional operation).
+   * If the map previously contained a mapping for the key, the old value is replaced by the
+   * specified value.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @param ttl   the time to live after which to remove the value
+   * @return the previous value (and version) associated with key, or null if there was
+   * no mapping for key.
+   */
+  CompletableFuture<Versioned<V>> put(K key, V value, Duration ttl);
 
   /**
    * Associates the specified value with the specified key in this map (optional operation).
@@ -224,7 +238,21 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    * @param value value to be associated with the specified key
    * @return new value.
    */
-  CompletableFuture<Versioned<V>> putAndGet(K key, V value);
+  default CompletableFuture<Versioned<V>> putAndGet(K key, V value) {
+    return putAndGet(key, value, Duration.ZERO);
+  }
+
+  /**
+   * Associates the specified value with the specified key in this map (optional operation).
+   * If the map previously contained a mapping for the key, the old value is replaced by the
+   * specified value.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @param ttl   the time to live after which to remove the value
+   * @return new value.
+   */
+  CompletableFuture<Versioned<V>> putAndGet(K key, V value, Duration ttl);
 
   /**
    * Removes the mapping for a key from this map if it is present (optional operation).
@@ -286,7 +314,22 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    * @return the previous value associated with the specified key or null
    * if key does not already mapped to a value.
    */
-  CompletableFuture<Versioned<V>> putIfAbsent(K key, V value);
+  default CompletableFuture<Versioned<V>> putIfAbsent(K key, V value) {
+    return putIfAbsent(key, value, Duration.ZERO);
+  }
+
+  /**
+   * If the specified key is not already associated with a value associates
+   * it with the given value and returns null, else behaves as a get
+   * returning the existing mapping without making any changes.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @param ttl   the time to live after which to remove the value
+   * @return the previous value associated with the specified key or null
+   * if key does not already mapped to a value.
+   */
+  CompletableFuture<Versioned<V>> putIfAbsent(K key, V value, Duration ttl);
 
   /**
    * Removes the entry for the specified key only if it is currently
