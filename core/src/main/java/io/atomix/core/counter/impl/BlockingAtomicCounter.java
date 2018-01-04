@@ -45,8 +45,18 @@ public class BlockingAtomicCounter extends Synchronous<AsyncAtomicCounter> imple
   }
 
   @Override
+  public long decrementAndGet() {
+    return complete(asyncCounter.decrementAndGet());
+  }
+
+  @Override
   public long getAndIncrement() {
     return complete(asyncCounter.getAndIncrement());
+  }
+
+  @Override
+  public long getAndDecrement() {
+    return complete(asyncCounter.getAndDecrement());
   }
 
   @Override

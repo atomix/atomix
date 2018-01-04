@@ -29,8 +29,10 @@ import io.atomix.utils.serializer.Serializer;
 
 import static io.atomix.core.counter.impl.AtomicCounterOperations.ADD_AND_GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.COMPARE_AND_SET;
+import static io.atomix.core.counter.impl.AtomicCounterOperations.DECREMENT_AND_GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_ADD;
+import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_DECREMENT;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_INCREMENT;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.INCREMENT_AND_GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.SET;
@@ -89,6 +91,16 @@ public class AtomicCounterProxy extends AbstractAsyncPrimitive implements AsyncA
   @Override
   public CompletableFuture<Long> getAndIncrement() {
     return proxy.invoke(GET_AND_INCREMENT, SERIALIZER::decode);
+  }
+
+  @Override
+  public CompletableFuture<Long> decrementAndGet() {
+    return proxy.invoke(DECREMENT_AND_GET, SERIALIZER::decode);
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndDecrement() {
+    return proxy.invoke(GET_AND_DECREMENT, SERIALIZER::decode);
   }
 
   @Override

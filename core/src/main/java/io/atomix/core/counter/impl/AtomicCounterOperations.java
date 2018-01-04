@@ -28,6 +28,8 @@ public enum AtomicCounterOperations implements OperationId {
   COMPARE_AND_SET("compareAndSet", OperationType.COMMAND),
   INCREMENT_AND_GET("incrementAndGet", OperationType.COMMAND),
   GET_AND_INCREMENT("getAndIncrement", OperationType.COMMAND),
+  DECREMENT_AND_GET("decrementAndGet", OperationType.COMMAND),
+  GET_AND_DECREMENT("getAndDecrement", OperationType.COMMAND),
   ADD_AND_GET("addAndGet", OperationType.COMMAND),
   GET_AND_ADD("getAndAdd", OperationType.COMMAND),
   GET("get", OperationType.QUERY);
