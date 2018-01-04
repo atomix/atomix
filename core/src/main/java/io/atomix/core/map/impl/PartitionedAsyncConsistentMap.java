@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.MapEventListener;
@@ -129,13 +128,13 @@ public class PartitionedAsyncConsistentMap<K, V> implements AsyncConsistentMap<K
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> put(K key, V value) {
-    return getMap(key).put(key, value);
+  public CompletableFuture<Versioned<V>> put(K key, V value, Duration ttl) {
+    return getMap(key).put(key, value, ttl);
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putAndGet(K key, V value) {
-    return getMap(key).putAndGet(key, value);
+  public CompletableFuture<Versioned<V>> putAndGet(K key, V value, Duration ttl) {
+    return getMap(key).putAndGet(key, value, ttl);
   }
 
   @Override
@@ -172,8 +171,8 @@ public class PartitionedAsyncConsistentMap<K, V> implements AsyncConsistentMap<K
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value) {
-    return getMap(key).putIfAbsent(key, value);
+  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value, Duration ttl) {
+    return getMap(key).putIfAbsent(key, value, ttl);
   }
 
   @Override

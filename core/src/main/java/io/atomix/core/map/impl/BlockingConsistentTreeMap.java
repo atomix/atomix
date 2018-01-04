@@ -17,7 +17,6 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
-
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.ConsistentMapBackedJavaMap;
 import io.atomix.core.map.ConsistentMapException;
@@ -26,6 +25,7 @@ import io.atomix.core.map.MapEventListener;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -198,13 +198,13 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public Versioned<V> put(String key, V value) {
-    return complete(treeMap.put(key, value));
+  public Versioned<V> put(String key, V value, Duration ttl) {
+    return complete(treeMap.put(key, value, ttl));
   }
 
   @Override
-  public Versioned<V> putAndGet(String key, V value) {
-    return complete(treeMap.putAndGet(key, value));
+  public Versioned<V> putAndGet(String key, V value, Duration ttl) {
+    return complete(treeMap.putAndGet(key, value, ttl));
   }
 
   @Override
@@ -233,8 +233,8 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public Versioned<V> putIfAbsent(String key, V value) {
-    return complete(treeMap.putIfAbsent(key, value));
+  public Versioned<V> putIfAbsent(String key, V value, Duration ttl) {
+    return complete(treeMap.putIfAbsent(key, value, ttl));
   }
 
   @Override

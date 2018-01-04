@@ -154,9 +154,9 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> put(K1 key, V1 value) {
+  public CompletableFuture<Versioned<V1>> put(K1 key, V1 value, Duration ttl) {
     try {
-      return backingMap.put(keyEncoder.apply(key), valueEncoder.apply(value))
+      return backingMap.put(keyEncoder.apply(key), valueEncoder.apply(value), ttl)
           .thenApply(versionedValueTransform);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
@@ -164,9 +164,9 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> putAndGet(K1 key, V1 value) {
+  public CompletableFuture<Versioned<V1>> putAndGet(K1 key, V1 value, Duration ttl) {
     try {
-      return backingMap.putAndGet(keyEncoder.apply(key), valueEncoder.apply(value))
+      return backingMap.putAndGet(keyEncoder.apply(key), valueEncoder.apply(value), ttl)
           .thenApply(versionedValueTransform);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
@@ -209,9 +209,9 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> putIfAbsent(K1 key, V1 value) {
+  public CompletableFuture<Versioned<V1>> putIfAbsent(K1 key, V1 value, Duration ttl) {
     try {
-      return backingMap.putIfAbsent(keyEncoder.apply(key), valueEncoder.apply(value))
+      return backingMap.putIfAbsent(keyEncoder.apply(key), valueEncoder.apply(value), ttl)
           .thenApply(versionedValueTransform);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);

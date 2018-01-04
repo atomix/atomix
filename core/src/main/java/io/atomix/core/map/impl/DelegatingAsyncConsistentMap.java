@@ -92,13 +92,13 @@ public class DelegatingAsyncConsistentMap<K, V>
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> put(K key, V value) {
-    return delegateMap.put(key, value);
+  public CompletableFuture<Versioned<V>> put(K key, V value, Duration ttl) {
+    return delegateMap.put(key, value, ttl);
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putAndGet(K key, V value) {
-    return delegateMap.putAndGet(key, value);
+  public CompletableFuture<Versioned<V>> putAndGet(K key, V value, Duration ttl) {
+    return delegateMap.putAndGet(key, value, ttl);
   }
 
   @Override
@@ -127,8 +127,8 @@ public class DelegatingAsyncConsistentMap<K, V>
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value) {
-    return delegateMap.putIfAbsent(key, value);
+  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value, Duration ttl) {
+    return delegateMap.putIfAbsent(key, value, ttl);
   }
 
   @Override

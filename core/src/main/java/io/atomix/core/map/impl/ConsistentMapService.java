@@ -19,7 +19,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.impl.ConsistentMapOperations.ContainsKey;
 import io.atomix.core.map.impl.ConsistentMapOperations.ContainsValue;
@@ -47,11 +46,13 @@ import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -152,6 +153,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
     map = reader.readObject(serializer()::decode);
     activeTransactions = reader.readObject(serializer()::decode);
     currentVersion = reader.readLong();
+    map.forEach(this::scheduleTtl);
   }
 
   @Override
@@ -343,6 +345,43 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   }
 
   /**
+   * Updates the given value.
+   *
+   * @param key the key to update
+   * @param value the value to update
+   */
+  protected void putValue(String key, MapEntryValue value) {
+    MapEntryValue oldValue = entries().put(key, value);
+    cancelTtl(oldValue);
+    scheduleTtl(key, value);
+  }
+
+  /**
+   * Schedules the TTL for the given value.
+   *
+   * @param value the value for which to schedule the TTL
+   */
+  protected void scheduleTtl(String key, MapEntryValue value) {
+    if (value.ttl() > 0) {
+      value.timer = scheduler().schedule(Duration.ofMillis(value.ttl() - value.created()), () -> {
+        entries().remove(key, value);
+        publish(new MapEvent<>(MapEvent.Type.REMOVE, "", key, null, toVersioned(value)));
+      });
+    }
+  }
+
+  /**
+   * Cancels the TTL for the given value.
+   *
+   * @param value the value for which to cancel the TTL
+   */
+  protected void cancelTtl(MapEntryValue value) {
+    if (value != null && value.timer != null) {
+      value.timer.cancel();
+    }
+  }
+
+  /**
    * Handles a put commit.
    *
    * @param commit put commit
@@ -351,7 +390,12 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   protected MapEntryUpdateResult<String, byte[]> put(Commit<? extends Put> commit) {
     String key = commit.value().key();
     MapEntryValue oldValue = entries().get(key);
-    MapEntryValue newValue = new MapEntryValue(MapEntryValue.Type.VALUE, commit.index(), commit.value().value());
+    MapEntryValue newValue = new MapEntryValue(
+        MapEntryValue.Type.VALUE,
+        commit.index(),
+        commit.value().value(),
+        commit.wallClockTime().unixTimestamp(),
+        commit.value().ttl());
 
     // If the value is null or a tombstone, this is an insert.
     // Otherwise, only update the value if it has changed to reduce the number of events.
@@ -364,8 +408,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
             key,
             toVersioned(oldValue));
       }
-      entries().put(commit.value().key(),
-          new MapEntryValue(MapEntryValue.Type.VALUE, newValue.version(), newValue.value()));
+      putValue(commit.value().key(), newValue);
       Versioned<byte[]> result = toVersioned(oldValue);
       publish(new MapEvent<>(MapEvent.Type.INSERT, "", key, toVersioned(newValue), result));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, commit.index(), key, result);
@@ -378,8 +421,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
             key,
             toVersioned(oldValue));
       }
-      entries().put(commit.value().key(),
-          new MapEntryValue(MapEntryValue.Type.VALUE, newValue.version(), newValue.value()));
+      putValue(commit.value().key(), newValue);
       Versioned<byte[]> result = toVersioned(oldValue);
       publish(new MapEvent<>(MapEvent.Type.UPDATE, "", key, toVersioned(newValue), result));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, commit.index(), key, result);
@@ -411,8 +453,10 @@ public class ConsistentMapService extends AbstractPrimitiveService {
       MapEntryValue newValue = new MapEntryValue(
           MapEntryValue.Type.VALUE,
           commit.index(),
-          commit.value().value());
-      entries().put(commit.value().key(), newValue);
+          commit.value().value(),
+          commit.wallClockTime().unixTimestamp(),
+          commit.value().ttl());
+      putValue(commit.value().key(), newValue);
       Versioned<byte[]> result = toVersioned(newValue);
       publish(new MapEvent<>(MapEvent.Type.INSERT, "", key, result, null));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, commit.index(), key, null);
@@ -433,7 +477,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   protected MapEntryUpdateResult<String, byte[]> putAndGet(Commit<? extends Put> commit) {
     String key = commit.value().key();
     MapEntryValue oldValue = entries().get(key);
-    MapEntryValue newValue = new MapEntryValue(MapEntryValue.Type.VALUE, commit.index(), commit.value().value());
+    MapEntryValue newValue = new MapEntryValue(MapEntryValue.Type.VALUE, commit.index(), commit.value().value(), commit.wallClockTime().unixTimestamp(), commit.value().ttl());
 
     // If the value is null or a tombstone, this is an insert.
     // Otherwise, only update the value if it has changed to reduce the number of events.
@@ -446,7 +490,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
             key,
             toVersioned(oldValue));
       }
-      entries().put(commit.value().key(), newValue);
+      putValue(commit.value().key(), newValue);
       Versioned<byte[]> result = toVersioned(newValue);
       publish(new MapEvent<>(MapEvent.Type.INSERT, "", key, result, null));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, commit.index(), key, result);
@@ -459,7 +503,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
             key,
             toVersioned(oldValue));
       }
-      entries().put(commit.value().key(), newValue);
+      putValue(commit.value().key(), newValue);
       Versioned<byte[]> result = toVersioned(newValue);
       publish(new MapEvent<>(MapEvent.Type.UPDATE, "", key, result, toVersioned(oldValue)));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, commit.index(), key, result);
@@ -492,8 +536,11 @@ public class ConsistentMapService extends AbstractPrimitiveService {
     if (activeTransactions.isEmpty()) {
       entries().remove(key);
     } else {
-      entries().put(key, new MapEntryValue(MapEntryValue.Type.TOMBSTONE, index, null));
+      entries().put(key, new MapEntryValue(MapEntryValue.Type.TOMBSTONE, index, null, 0, 0));
     }
+
+    // Cancel the timer if one is scheduled.
+    cancelTtl(value);
 
     Versioned<byte[]> result = toVersioned(value);
     publish(new MapEvent<>(MapEvent.Type.REMOVE, "", key, null, result));
@@ -518,7 +565,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    */
   protected MapEntryUpdateResult<String, byte[]> removeValue(Commit<? extends RemoveValue> commit) {
     return removeIf(commit.index(), commit.value().key(), v ->
-        valuesEqual(v, new MapEntryValue(MapEntryValue.Type.VALUE, commit.index(), commit.value().value())));
+        valuesEqual(v, new MapEntryValue(MapEntryValue.Type.VALUE, commit.index(), commit.value().value(), commit.wallClockTime().unixTimestamp(), 0)));
   }
 
   /**
@@ -558,7 +605,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.WRITE_LOCK, index, key, null);
     }
 
-    entries().put(key, newValue);
+    putValue(key, newValue);
     Versioned<byte[]> result = toVersioned(oldValue);
     publish(new MapEvent<>(MapEvent.Type.UPDATE, "", key, toVersioned(newValue), result));
     return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, index, key, result);
@@ -571,7 +618,12 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    * @return map entry update result
    */
   protected MapEntryUpdateResult<String, byte[]> replace(Commit<? extends Replace> commit) {
-    MapEntryValue value = new MapEntryValue(MapEntryValue.Type.VALUE, commit.index(), commit.value().value());
+    MapEntryValue value = new MapEntryValue(
+        MapEntryValue.Type.VALUE,
+        commit.index(),
+        commit.value().value(),
+        commit.wallClockTime().unixTimestamp(),
+        0);
     return replaceIf(commit.index(), commit.value().key(), value, v -> true);
   }
 
@@ -582,7 +634,12 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    * @return map entry update result
    */
   protected MapEntryUpdateResult<String, byte[]> replaceValue(Commit<? extends ReplaceValue> commit) {
-    MapEntryValue value = new MapEntryValue(MapEntryValue.Type.VALUE, commit.index(), commit.value().newValue());
+    MapEntryValue value = new MapEntryValue(
+        MapEntryValue.Type.VALUE,
+        commit.index(),
+        commit.value().newValue(),
+        commit.wallClockTime().unixTimestamp(),
+        0);
     return replaceIf(commit.index(), commit.value().key(), value,
         v -> valuesEqual(v.value(), commit.value().oldValue()));
   }
@@ -594,7 +651,12 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    * @return map entry update result
    */
   protected MapEntryUpdateResult<String, byte[]> replaceVersion(Commit<? extends ReplaceVersion> commit) {
-    MapEntryValue value = new MapEntryValue(MapEntryValue.Type.VALUE, commit.index(), commit.value().newValue());
+    MapEntryValue value = new MapEntryValue(
+        MapEntryValue.Type.VALUE,
+        commit.index(),
+        commit.value().newValue(),
+        commit.wallClockTime().unixTimestamp(),
+        0);
     return replaceIf(commit.index(), commit.value().key(), value,
         v -> v.version() == commit.value().oldVersion());
   }
@@ -614,10 +676,11 @@ public class ConsistentMapService extends AbstractPrimitiveService {
       if (!valueIsNull(value)) {
         Versioned<byte[]> removedValue = new Versioned<>(value.value(), value.version());
         publish(new MapEvent<>(MapEvent.Type.REMOVE, "", key, null, removedValue));
+        cancelTtl(value);
         if (activeTransactions.isEmpty()) {
           iterator.remove();
         } else {
-          entriesToAdd.put(key, new MapEntryValue(MapEntryValue.Type.TOMBSTONE, value.version, null));
+          entriesToAdd.put(key, new MapEntryValue(MapEntryValue.Type.TOMBSTONE, value.version, null, 0, 0));
         }
       }
     }
@@ -795,14 +858,18 @@ public class ConsistentMapService extends AbstractPrimitiveService {
       }
 
       MapEntryValue previousValue = entries().remove(key);
+
+      // Cancel the previous timer if set.
+      cancelTtl(previousValue);
+
       MapEntryValue newValue = null;
 
       // If the record is not a delete, create a transactional commit.
       if (record.type() != MapUpdate.Type.REMOVE_IF_VERSION_MATCH) {
-        newValue = new MapEntryValue(MapEntryValue.Type.VALUE, currentVersion, record.value());
+        newValue = new MapEntryValue(MapEntryValue.Type.VALUE, currentVersion, record.value(), 0, 0);
       } else if (retainTombstones) {
         // For deletes, if tombstones need to be retained then create and store a tombstone commit.
-        newValue = new MapEntryValue(MapEntryValue.Type.TOMBSTONE, currentVersion, null);
+        newValue = new MapEntryValue(MapEntryValue.Type.TOMBSTONE, currentVersion, null, 0, 0);
       }
 
       MapEvent<String, byte[]> event;
@@ -951,14 +1018,19 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    * Interface implemented by map values.
    */
   protected static class MapEntryValue {
-    protected final Type type;
-    protected final long version;
-    protected final byte[] value;
+    final Type type;
+    final long version;
+    final byte[] value;
+    final long created;
+    final long ttl;
+    transient Scheduled timer;
 
-    MapEntryValue(Type type, long version, byte[] value) {
+    MapEntryValue(Type type, long version, byte[] value, long created, long ttl) {
       this.type = type;
       this.version = version;
       this.value = value;
+      this.created = created;
+      this.ttl = ttl;
     }
 
     /**
@@ -986,6 +1058,24 @@ public class ConsistentMapService extends AbstractPrimitiveService {
      */
     byte[] value() {
       return value;
+    }
+
+    /**
+     * Returns the time at which the value was created.
+     *
+     * @return time at which the value was created
+     */
+    long created() {
+      return created;
+    }
+
+    /**
+     * Returns the value time to live.
+     *
+     * @return time to live
+     */
+    long ttl() {
+      return ttl;
     }
 
     /**

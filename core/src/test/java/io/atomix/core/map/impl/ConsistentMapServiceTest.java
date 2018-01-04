@@ -15,15 +15,19 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.impl.ConsistentMapService;
 import io.atomix.core.map.impl.ConsistentMapOperations.Get;
 import io.atomix.core.map.impl.ConsistentMapOperations.Put;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
+import io.atomix.utils.concurrent.Scheduled;
+import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.time.Versioned;
+import io.atomix.utils.time.WallClock;
 import org.junit.Test;
+
+import java.time.Duration;
 
 import static io.atomix.core.map.impl.ConsistentMapOperations.GET;
 import static io.atomix.core.map.impl.ConsistentMapOperations.PUT;
@@ -35,21 +39,23 @@ import static org.mockito.Mockito.mock;
  * Consistent map service test.
  */
 public class ConsistentMapServiceTest {
+
   @Test
   @SuppressWarnings("unchecked")
   public void testSnapshot() throws Exception {
-    ConsistentMapService service = new ConsistentMapService();
+    ConsistentMapService service = new TestConsistentMapService();
+
     service.put(new DefaultCommit<>(
         2,
         PUT,
-        new Put("foo", "Hello world!".getBytes()),
+        new Put("foo", "Hello world!".getBytes(), 1000),
         mock(Session.class),
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(buffer);
 
-    service = new ConsistentMapService();
+    service = new TestConsistentMapService();
     service.restore(buffer.flip());
 
     Versioned<byte[]> value = service.get(new DefaultCommit<>(
@@ -60,5 +66,29 @@ public class ConsistentMapServiceTest {
         System.currentTimeMillis()));
     assertNotNull(value);
     assertArrayEquals("Hello world!".getBytes(), value.value());
+
+    assertNotNull(service.entries().get("foo").timer);
+  }
+
+  private static class TestConsistentMapService extends ConsistentMapService {
+    @Override
+    protected Scheduler scheduler() {
+      return new Scheduler() {
+        @Override
+        public Scheduled schedule(Duration delay, Runnable callback) {
+          return mock(Scheduled.class);
+        }
+
+        @Override
+        public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
+          return mock(Scheduled.class);
+        }
+      };
+    }
+
+    @Override
+    protected WallClock wallClock() {
+      return new WallClock();
+    }
   }
 }

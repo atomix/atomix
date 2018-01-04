@@ -30,6 +30,7 @@ import io.atomix.core.transaction.TransactionalMap;
 import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -222,6 +223,52 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
     map.size().thenAccept(result -> {
       assertTrue(result == 0);
     }).join();
+
+    map.put("foo", "Hello foo!", Duration.ofSeconds(1)).thenAccept(result -> {
+      assertNull(result);
+    }).join();
+
+    map.get("foo").thenAccept(result -> {
+      assertEquals("Hello foo!", result.value());
+    }).join();
+
+    Thread.sleep(5000);
+
+    map.get("foo").thenAccept(result -> {
+      assertNull(result);
+    }).join();
+
+    map.put("bar", "Hello bar!").thenAccept(result -> {
+      assertNull(result);
+    }).join();
+
+    map.put("bar", "Goodbye bar!", Duration.ofSeconds(1)).thenAccept(result -> {
+      assertEquals("Hello bar!", result.value());
+    }).join();
+
+    map.get("bar").thenAccept(result -> {
+      assertEquals("Goodbye bar!", result.value());
+    }).join();
+
+    Thread.sleep(5000);
+
+    map.get("bar").thenAccept(result -> {
+      assertNull(result);
+    }).join();
+
+    map.putIfAbsent("baz", "Hello baz!", Duration.ofSeconds(1)).thenAccept(result -> {
+      assertNull(result);
+    }).join();
+
+    map.get("baz").thenAccept(result -> {
+      assertNotNull(result);
+    }).join();
+
+    Thread.sleep(5000);
+
+    map.get("baz").thenAccept(result -> {
+      assertNull(result);
+    }).join();
   }
 
   @Test
@@ -317,6 +364,17 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
     assertNotNull(event);
     assertEquals(MapEvent.Type.REMOVE, event.type());
     assertEquals(value2, event.oldValue().value());
+
+    map.put("bar", "expire", Duration.ofSeconds(1)).join();
+    event = listener.event();
+    assertNotNull(event);
+    assertEquals(MapEvent.Type.INSERT, event.type());
+    assertEquals("expire", event.newValue().value());
+
+    event = listener.event();
+    assertNotNull(event);
+    assertEquals(MapEvent.Type.REMOVE, event.type());
+    assertEquals("expire", event.oldValue().value());
 
     map.removeListener(listener).join();
   }

@@ -178,13 +178,13 @@ public class DelegatingAsyncConsistentTreeMap<V>
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> put(String key, V value) {
-    return delegateMap.put(key, value);
+  public CompletableFuture<Versioned<V>> put(String key, V value, Duration ttl) {
+    return delegateMap.put(key, value, ttl);
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putAndGet(String key, V value) {
-    return delegateMap.putAndGet(key, value);
+  public CompletableFuture<Versioned<V>> putAndGet(String key, V value, Duration ttl) {
+    return delegateMap.putAndGet(key, value, ttl);
   }
 
   @Override
@@ -213,8 +213,8 @@ public class DelegatingAsyncConsistentTreeMap<V>
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putIfAbsent(String key, V value) {
-    return delegateMap.putIfAbsent(key, value);
+  public CompletableFuture<Versioned<V>> putIfAbsent(String key, V value, Duration ttl) {
+    return delegateMap.putIfAbsent(key, value, ttl);
   }
 
   @Override
