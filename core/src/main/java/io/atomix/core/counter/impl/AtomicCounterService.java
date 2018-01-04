@@ -30,8 +30,10 @@ import io.atomix.utils.serializer.Serializer;
 
 import static io.atomix.core.counter.impl.AtomicCounterOperations.ADD_AND_GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.COMPARE_AND_SET;
+import static io.atomix.core.counter.impl.AtomicCounterOperations.DECREMENT_AND_GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_ADD;
+import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_DECREMENT;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_INCREMENT;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.INCREMENT_AND_GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.SET;
@@ -56,6 +58,8 @@ public class AtomicCounterService extends AbstractPrimitiveService {
     executor.register(COMPARE_AND_SET, SERIALIZER::decode, this::compareAndSet, SERIALIZER::encode);
     executor.register(INCREMENT_AND_GET, this::incrementAndGet, SERIALIZER::encode);
     executor.register(GET_AND_INCREMENT, this::getAndIncrement, SERIALIZER::encode);
+    executor.register(DECREMENT_AND_GET, this::decrementAndGet, SERIALIZER::encode);
+    executor.register(GET_AND_DECREMENT, this::getAndDecrement, SERIALIZER::encode);
     executor.register(ADD_AND_GET, SERIALIZER::decode, this::addAndGet, SERIALIZER::encode);
     executor.register(GET_AND_ADD, SERIALIZER::decode, this::getAndAdd, SERIALIZER::encode);
   }
@@ -124,6 +128,30 @@ public class AtomicCounterService extends AbstractPrimitiveService {
   protected long getAndIncrement(Commit<Void> commit) {
     Long oldValue = value;
     value = oldValue + 1;
+    return oldValue;
+  }
+
+  /**
+   * Handles a decrement and get commit.
+   *
+   * @param commit the commit to handle
+   * @return counter value
+   */
+  protected long decrementAndGet(Commit<Void> commit) {
+    Long oldValue = value;
+    value = oldValue - 1;
+    return value;
+  }
+
+  /**
+   * Handles a get and decrement commit.
+   *
+   * @param commit the commit to handle
+   * @return counter value
+   */
+  protected long getAndDecrement(Commit<Void> commit) {
+    Long oldValue = value;
+    value = oldValue - 1;
     return oldValue;
   }
 

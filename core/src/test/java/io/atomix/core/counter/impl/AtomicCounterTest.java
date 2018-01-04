@@ -42,5 +42,8 @@ public class AtomicCounterTest extends AbstractPrimitiveTest {
     assertEquals(100, along.addAndGet(-11).join().longValue());
     assertEquals(100, along.getAndIncrement().join().longValue());
     assertEquals(101, along.get().join().longValue());
+    assertEquals(100, along.decrementAndGet().join().longValue());
+    assertEquals(100, along.getAndDecrement().join().longValue());
+    assertEquals(99, along.get().join().longValue());
   }
 }

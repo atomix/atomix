@@ -34,18 +34,32 @@ public interface AsyncAtomicCounter extends AsyncPrimitive {
   }
 
   /**
-   * Atomically increment by one the current value.
+   * Atomically increment by one and return the updated value.
    *
    * @return updated value
    */
   CompletableFuture<Long> incrementAndGet();
 
   /**
-   * Atomically increment by one the current value.
+   * Atomically decrement by one and return the updated value.
+   *
+   * @return updated value
+   */
+  CompletableFuture<Long> decrementAndGet();
+
+  /**
+   * Atomically increment by one and return the previous value.
    *
    * @return previous value
    */
   CompletableFuture<Long> getAndIncrement();
+
+  /**
+   * Atomically increment by one and return the previous value.
+   *
+   * @return previous value
+   */
+  CompletableFuture<Long> getAndDecrement();
 
   /**
    * Atomically adds the given value to the current value.

@@ -30,18 +30,32 @@ public interface AtomicCounter extends SyncPrimitive {
   }
 
   /**
-   * Atomically increment by one the current value.
+   * Atomically increment by one and return the updated value.
    *
    * @return updated value
    */
   long incrementAndGet();
 
   /**
-   * Atomically increment by one the current value.
+   * Atomically decrement by one and return the updated value.
+   *
+   * @return updated value
+   */
+  long decrementAndGet();
+
+  /**
+   * Atomically increment by one and return the previous value.
    *
    * @return previous value
    */
   long getAndIncrement();
+
+  /**
+   * Atomically decrement by one and return the previous value.
+   *
+   * @return previous value
+   */
+  long getAndDecrement();
 
   /**
    * Atomically adds the given value to the current value.
