@@ -21,9 +21,11 @@ import io.atomix.utils.time.Version;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Raft lock test.
@@ -54,7 +56,7 @@ public class DistributedLockTest extends AbstractPrimitiveTest {
   }
 
   /**
-   * Tests attempting to acquire a lock with a timeout.
+   * Tests attempting to acquire a lock.
    */
   @Test
   public void testTryLockFail() throws Throwable {
@@ -63,7 +65,44 @@ public class DistributedLockTest extends AbstractPrimitiveTest {
 
     lock1.lock().join();
 
+    assertFalse(lock2.tryLock().join().isPresent());
+  }
+
+  /**
+   * Tests attempting to acquire a lock.
+   */
+  @Test
+  public void testTryLockSucceed() throws Throwable {
+    AsyncDistributedLock lock = atomix().lockBuilder("test-try-lock-succeed").build().async();
+    assertTrue(lock.tryLock().join().isPresent());
+  }
+
+  /**
+   * Tests attempting to acquire a lock with a timeout.
+   */
+  @Test
+  public void testTryLockFailWithTimeout() throws Throwable {
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail-with-timeout").build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail-with-timeout").build().async();
+
+    lock1.lock().join();
+
     assertFalse(lock2.tryLock(Duration.ofSeconds(1)).join().isPresent());
+  }
+
+  /**
+   * Tests attempting to acquire a lock with a timeout.
+   */
+  @Test
+  public void testTryLockSucceedWithTimeout() throws Throwable {
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-succeed-with-timeout").build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-succeed-with-timeout").build().async();
+
+    lock1.lock().join();
+
+    CompletableFuture<Optional<Version>> future = lock2.tryLock(Duration.ofSeconds(1));
+    lock1.unlock().join();
+    assertTrue(future.join().isPresent());
   }
 
   /**
