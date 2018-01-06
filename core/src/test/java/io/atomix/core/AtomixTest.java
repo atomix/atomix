@@ -15,6 +15,9 @@
  */
 package io.atomix.core;
 
+import com.google.common.base.Throwables;
+import io.atomix.cluster.ClusterEvent;
+import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.Node;
 import io.atomix.utils.concurrent.Futures;
 import org.junit.After;
@@ -23,8 +26,12 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Atomix test.
@@ -81,5 +88,82 @@ public class AtomixTest extends AbstractAtomixTest {
     instances.get(0).stop().join();
     instances.get(1).stop().join();
     instances.get(2).stop().join();
+  }
+
+  /**
+   * Tests a client joining and leaving the cluster.
+   */
+  @Test
+  public void testClientJoinLeave() throws Exception {
+    List<CompletableFuture<Atomix>> futures = new ArrayList<>();
+    futures.add(startAtomix(Node.Type.DATA, 1, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.DATA, 2, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.DATA, 3, 1, 2, 3));
+    Futures.allOf(futures).join();
+
+    TestClusterEventListener dataListener = new TestClusterEventListener();
+    instances.get(0).clusterService().addListener(dataListener);
+
+    Atomix client1 = startAtomix(Node.Type.CLIENT, 4, 1, 2, 3).join();
+
+    // client1 added to data node
+    ClusterEvent event1 = dataListener.event();
+    assertEquals(ClusterEvent.Type.NODE_ADDED, event1.type());
+    event1 = dataListener.event();
+    assertEquals(ClusterEvent.Type.NODE_ACTIVATED, event1.type());
+
+    Thread.sleep(1000);
+
+    TestClusterEventListener clientListener = new TestClusterEventListener();
+    client1.clusterService().addListener(clientListener);
+
+    Atomix client2 = startAtomix(Node.Type.CLIENT, 5, 1, 2, 3).join();
+
+    // client2 added to data node
+    ClusterEvent event2 = dataListener.event();
+    assertEquals(ClusterEvent.Type.NODE_ADDED, event2.type());
+    event2 = dataListener.event();
+    assertEquals(ClusterEvent.Type.NODE_ACTIVATED, event2.type());
+
+    // client2 added to client node
+    event1 = clientListener.event();
+    assertEquals(ClusterEvent.Type.NODE_ADDED, event1.type());
+    event1 = clientListener.event();
+    assertEquals(ClusterEvent.Type.NODE_ACTIVATED, event1.type());
+
+    client2.stop().join();
+
+    // client2 removed from data node
+    event1 = dataListener.event();
+    assertEquals(ClusterEvent.Type.NODE_DEACTIVATED, event1.type());
+    event1 = dataListener.event();
+    assertEquals(ClusterEvent.Type.NODE_REMOVED, event1.type());
+
+    // client2 removed from client node
+    event1 = clientListener.event();
+    assertEquals(ClusterEvent.Type.NODE_DEACTIVATED, event1.type());
+    event1 = clientListener.event();
+    assertEquals(ClusterEvent.Type.NODE_REMOVED, event1.type());
+  }
+
+  private static class TestClusterEventListener implements ClusterEventListener {
+
+    private final BlockingQueue<ClusterEvent> queue = new ArrayBlockingQueue<>(1);
+
+    @Override
+    public void onEvent(ClusterEvent event) {
+      try {
+        queue.put(event);
+      } catch (InterruptedException e) {
+      }
+    }
+
+    public boolean eventReceived() {
+      return !queue.isEmpty();
+    }
+
+    public ClusterEvent event() throws InterruptedException {
+      return queue.take();
+    }
   }
 }

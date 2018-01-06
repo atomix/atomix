@@ -55,7 +55,7 @@ public class PhiAccrualFailureDetector {
    * Creates a new failure detector.
    *
    * @param minSamples the minimum number of samples required to compute phi
-   * @param phiFactor the phi factor
+   * @param phiFactor  the phi factor
    */
   public PhiAccrualFailureDetector(int minSamples, double phiFactor) {
     this(minSamples, phiFactor, DEFAULT_WINDOW_SIZE);
@@ -65,13 +65,22 @@ public class PhiAccrualFailureDetector {
    * Creates a new failure detector.
    *
    * @param minSamples the minimum number of samples required to compute phi
-   * @param phiFactor the phi factor
+   * @param phiFactor  the phi factor
    * @param windowSize the phi accrual window size
    */
   public PhiAccrualFailureDetector(int minSamples, double phiFactor, int windowSize) {
     this.minSamples = minSamples;
     this.phiFactor = phiFactor;
     this.history = new History(windowSize);
+  }
+
+  /**
+   * Returns the last time a heartbeat was reported.
+   *
+   * @return the last time a heartbeat was reported
+   */
+  public long lastUpdated() {
+    return history.latestHeartbeatTime();
   }
 
   /**
@@ -112,9 +121,9 @@ public class PhiAccrualFailureDetector {
   /**
    * Computes the phi value from the given samples.
    *
-   * @param samples the samples from which to compute phi
+   * @param samples       the samples from which to compute phi
    * @param lastHeartbeat the last heartbeat
-   * @param currentTime the current time
+   * @param currentTime   the current time
    * @return phi
    */
   private double computePhi(DescriptiveStatistics samples, long lastHeartbeat, long currentTime) {
