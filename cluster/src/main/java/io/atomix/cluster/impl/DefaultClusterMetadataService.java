@@ -345,7 +345,7 @@ public class DefaultClusterMetadataService
   /**
    * Endpoint serializer.
    */
-  private static class EndpointSerializer extends com.esotericsoftware.kryo.Serializer<Endpoint> {
+  static class EndpointSerializer extends com.esotericsoftware.kryo.Serializer<Endpoint> {
     @Override
     public void write(Kryo kryo, Output output, Endpoint endpoint) {
       output.writeString(endpoint.host().getHostAddress());

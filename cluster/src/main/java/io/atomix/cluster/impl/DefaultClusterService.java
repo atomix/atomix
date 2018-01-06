@@ -36,6 +36,7 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -62,6 +63,7 @@ public class DefaultClusterService
 
   private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
+  private static final long DEFAULT_FAILURE_TIME = 1000;
   private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
 
   private int heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
@@ -74,7 +76,10 @@ public class DefaultClusterService
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
           .register(NodeId.class)
           .register(Node.Type.class)
+          .register(Node.State.class)
           .register(ClusterHeartbeat.class)
+          .register(StatefulNode.class)
+          .register(new DefaultClusterMetadataService.EndpointSerializer(), Endpoint.class)
           .build("ClusterService"));
 
   private final MessagingService messagingService;
@@ -104,12 +109,16 @@ public class DefaultClusterService
 
   @Override
   public Set<Node> getNodes() {
-    return ImmutableSet.copyOf(nodes.values());
+    return ImmutableSet.copyOf(nodes.values()
+        .stream()
+        .filter(node -> node.type() == Node.Type.DATA || node.getState() == State.ACTIVE)
+        .collect(Collectors.toList()));
   }
 
   @Override
   public Node getNode(NodeId nodeId) {
-    return nodes.get(nodeId);
+    Node node = nodes.get(nodeId);
+    return node != null ? node.type() == Node.Type.DATA || node.getState() == State.ACTIVE ? node : null : null;
   }
 
   /**
@@ -124,8 +133,9 @@ public class DefaultClusterService
       byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(localNode.id(), localNode.type()));
       peers.forEach((node) -> {
         sendHeartbeat(node.endpoint(), payload);
-        double phi = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector()).phi();
-        if (phi >= phiFailureThreshold) {
+        PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
+        double phi = failureDetector.phi();
+        if (phi >= phiFailureThreshold || System.currentTimeMillis() - failureDetector.lastUpdated() > DEFAULT_FAILURE_TIME) {
           if (node.getState() == State.ACTIVE) {
             deactivateNode(node);
           }
@@ -144,8 +154,21 @@ public class DefaultClusterService
    * Sends a heartbeat to the given peer.
    */
   private void sendHeartbeat(Endpoint endpoint, byte[] payload) {
-    messagingService.sendAsync(endpoint, HEARTBEAT_MESSAGE, payload).whenComplete((result, error) -> {
-      if (error != null) {
+    messagingService.sendAndReceive(endpoint, HEARTBEAT_MESSAGE, payload).whenComplete((response, error) -> {
+      if (error == null) {
+        Collection<StatefulNode> nodes = SERIALIZER.decode(response);
+        boolean sendHeartbeats = false;
+        for (StatefulNode node : nodes) {
+          if (this.nodes.putIfAbsent(node.id(), node) == null) {
+            post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
+            post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, node));
+            sendHeartbeats = true;
+          }
+        }
+        if (sendHeartbeats) {
+          sendHeartbeats();
+        }
+      } else {
         LOGGER.trace("Sending heartbeat to {} failed", endpoint, error);
       }
     });
@@ -154,10 +177,13 @@ public class DefaultClusterService
   /**
    * Handles a heartbeat message.
    */
-  private void handleHeartbeat(Endpoint endpoint, byte[] message) {
+  private byte[] handleHeartbeat(Endpoint endpoint, byte[] message) {
     ClusterHeartbeat heartbeat = SERIALIZER.decode(message);
     failureDetectors.computeIfAbsent(heartbeat.nodeId(), n -> new PhiAccrualFailureDetector()).report();
     activateNode(new StatefulNode(heartbeat.nodeId(), heartbeat.nodeType(), endpoint));
+    return SERIALIZER.encode(nodes.values().stream()
+        .filter(node -> node.type() == Node.Type.CLIENT)
+        .collect(Collectors.toList()));
   }
 
   /**
@@ -169,6 +195,7 @@ public class DefaultClusterService
       node.setState(State.ACTIVE);
       nodes.put(node.id(), node);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
+      post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, node));
       sendHeartbeat(node.endpoint(), SERIALIZER.encode(new ClusterHeartbeat(localNode.id(), localNode.type())));
     } else if (existingNode.getState() == State.INACTIVE) {
       existingNode.setState(State.ACTIVE);
@@ -188,7 +215,7 @@ public class DefaultClusterService
           post(new ClusterEvent(ClusterEvent.Type.NODE_DEACTIVATED, existingNode));
           break;
         case CLIENT:
-          nodes.remove(node.id());
+          post(new ClusterEvent(ClusterEvent.Type.NODE_DEACTIVATED, existingNode));
           post(new ClusterEvent(ClusterEvent.Type.NODE_REMOVED, existingNode));
           break;
         default:
