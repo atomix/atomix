@@ -109,7 +109,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
     } else if (commit.value().timeout() == 0) {
       commit.session().publish(DistributedLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
     } else if (commit.value().timeout() > 0) {
-      LockHolder holder = lock = new LockHolder(
+      LockHolder holder = new LockHolder(
           commit.value().id(),
           commit.index(),
           commit.session().sessionId().id(),
