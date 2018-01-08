@@ -17,7 +17,6 @@ package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
-
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
@@ -224,9 +223,11 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
       assertTrue(result == 0);
     }).join();
 
-    map.put("foo", "Hello foo!", Duration.ofSeconds(1)).thenAccept(result -> {
+    map.put("foo", "Hello foo!", Duration.ofSeconds(3)).thenAccept(result -> {
       assertNull(result);
     }).join();
+
+    Thread.sleep(1000);
 
     map.get("foo").thenAccept(result -> {
       assertEquals("Hello foo!", result.value());
