@@ -153,7 +153,14 @@ public class ConsistentMapService extends AbstractPrimitiveService {
     map = reader.readObject(serializer()::decode);
     activeTransactions = reader.readObject(serializer()::decode);
     currentVersion = reader.readLong();
-    map.forEach(this::scheduleTtl);
+    map.forEach((key, value) -> {
+      if (value.ttl() > 0) {
+        value.timer = scheduler().schedule(Duration.ofMillis(value.ttl() - (wallClock().time().unixTimestamp() - value.created())), () -> {
+          entries().remove(key, value);
+          publish(new MapEvent<>(MapEvent.Type.REMOVE, "", key, null, toVersioned(value)));
+        });
+      }
+    });
   }
 
   @Override
@@ -363,7 +370,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    */
   protected void scheduleTtl(String key, MapEntryValue value) {
     if (value.ttl() > 0) {
-      value.timer = scheduler().schedule(Duration.ofMillis(value.ttl() - value.created()), () -> {
+      value.timer = scheduler().schedule(Duration.ofMillis(value.ttl()), () -> {
         entries().remove(key, value);
         publish(new MapEvent<>(MapEvent.Type.REMOVE, "", key, null, toVersioned(value)));
       });
