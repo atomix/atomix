@@ -64,9 +64,9 @@ public class IdGeneratorTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testNextIdBatchRollover() throws Throwable {
-    DelegatingIdGenerator idGenerator1 = new DelegatingIdGenerator(
+    DelegatingAtomicIdGenerator idGenerator1 = new DelegatingAtomicIdGenerator(
         atomix().atomicCounterBuilder("testNextIdBatchRollover").build().async(), 2);
-    DelegatingIdGenerator idGenerator2 = new DelegatingIdGenerator(
+    DelegatingAtomicIdGenerator idGenerator2 = new DelegatingAtomicIdGenerator(
         atomix().atomicCounterBuilder("testNextIdBatchRollover").build().async(), 2);
 
     CompletableFuture<Long> future11 = idGenerator1.nextId();
