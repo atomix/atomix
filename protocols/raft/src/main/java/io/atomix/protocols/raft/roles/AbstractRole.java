@@ -117,11 +117,6 @@ public abstract class AbstractRole implements RaftRole {
       raft.getCluster().reset();
       return true;
     }
-
-    // If the leader is non-null, update the last heartbeat time.
-    if (leader != null) {
-      raft.setLastHeartbeatTime();
-    }
     return false;
   }
 

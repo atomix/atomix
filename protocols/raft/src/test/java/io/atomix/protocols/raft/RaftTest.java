@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -82,6 +83,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Raft test.
@@ -1209,6 +1211,7 @@ public class RaftTest extends ConcurrentTestCase {
    */
   private RaftServer createServer(NodeId nodeId) {
     RaftServer.Builder builder = RaftServer.builder(nodeId)
+        .withClusterService(mock(ClusterService.class))
         .withProtocol(protocolFactory.newServerProtocol(nodeId))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)

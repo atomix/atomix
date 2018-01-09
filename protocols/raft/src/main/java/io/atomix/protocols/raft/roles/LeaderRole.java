@@ -15,9 +15,8 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import com.google.common.collect.Sets;
-import io.atomix.cluster.NodeId;
-import io.atomix.primitive.session.SessionId;
+import io.atomix.cluster.ClusterEvent;
+import io.atomix.cluster.ClusterEventListener;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
@@ -33,7 +32,6 @@ import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.CloseSessionResponse;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
-import io.atomix.protocols.raft.protocol.HeartbeatRequest;
 import io.atomix.protocols.raft.protocol.JoinRequest;
 import io.atomix.protocols.raft.protocol.JoinResponse;
 import io.atomix.protocols.raft.protocol.KeepAliveRequest;
@@ -74,10 +72,6 @@ import io.atomix.utils.concurrent.Scheduled;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.OptionalLong;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -88,10 +82,9 @@ import java.util.stream.Collectors;
 public final class LeaderRole extends ActiveRole {
   private static final int MAX_APPEND_ATTEMPTS = 5;
 
+  private final ClusterEventListener clusterListener = this::handleClusterEvent;
   private final LeaderAppender appender;
   private Scheduled appendTimer;
-  private final Map<NodeId, Scheduled> heartbeatTimers = new HashMap<>();
-  private final Set<SessionId> expiring = Sets.newHashSet();
   private long configuring;
   private boolean transferring;
 
@@ -116,9 +109,11 @@ public final class LeaderRole extends ActiveRole {
     // Commit the initial leader entries.
     commitInitialEntries();
 
+    // Register the cluster event listener.
+    raft.getClusterService().addListener(clusterListener);
+
     return super.start()
         .thenRun(this::startAppendTimer)
-        .thenRun(this::startHeartbeatTimer)
         .thenApply(v -> this);
   }
 
@@ -190,112 +185,29 @@ public final class LeaderRole extends ActiveRole {
   }
 
   /**
-   * Starts checking for session heartbeat timeouts.
+   * Handles a cluster event.
    */
-  private void startHeartbeatTimer() {
-    raft.setLastHeartbeatTime();
-    raft.getSessions().getSessions().forEach(s -> s.resetHeartbeats());
-    log.trace("Starting heartbeat timers");
-    raft.getSessions().getSessions().stream()
-        .map(s -> s.nodeId())
-        .distinct()
-        .forEach(this::resetHeartbeatTimer);
-  }
-
-  /**
-   * Resets the heartbeat timer.
-   */
-  private void resetHeartbeatTimer(NodeId member) {
-    // Compute the smallest timeout of all open sessions for the member.
-    OptionalLong minTimeout = raft.getSessions().getSessions().stream()
-        .filter(s -> s.nodeId().equals(member))
-        .mapToLong(s -> s.minTimeout())
-        .min();
-
-    Scheduled oldTimer;
-    if (minTimeout.isPresent()) {
-      Scheduled newTimer = raft.getThreadContext().schedule(
-          Duration.ZERO,
-          Duration.ofMillis(minTimeout.getAsLong()),
-          () -> sendHeartbeats(member));
-      oldTimer = heartbeatTimers.put(member, newTimer);
-    } else {
-      oldTimer = heartbeatTimers.remove(member);
+  private void handleClusterEvent(ClusterEvent event) {
+    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
+      log.debug("Node {} deactivated", event.subject().id());
+      raft.getSessions().getSessions().stream()
+          .filter(session -> session.nodeId().equals(event.subject().id()))
+          .forEach(this::expireSession);
     }
-
-    // Cancel the old timer if one exists.
-    if (oldTimer != null) {
-      oldTimer.cancel();
-    }
-  }
-
-  /**
-   * Sends heartbeats to sessions of the given member.
-   *
-   * @param member the member to which to send heartbeats
-   */
-  private void sendHeartbeats(NodeId member) {
-    sendHeartbeat(member, raft.getSessions().getSessions().stream()
-        .filter(s -> s.nodeId().equals(member))
-        .collect(Collectors.toList()));
-  }
-
-  /**
-   * Attempts to send a heartbeat to the given session.
-   */
-  private void sendHeartbeat(NodeId member, Collection<RaftSession> sessions) {
-    HeartbeatRequest request = HeartbeatRequest.builder()
-        .withLeader(raft.getCluster().getMember().nodeId())
-        .withMembers(raft.getCluster().getMembers().stream()
-            .map(RaftMember::nodeId)
-            .filter(m -> m != null)
-            .collect(Collectors.toList()))
-        .build();
-    log.trace("Sending {} to {}", request, member);
-    raft.getProtocol().heartbeat(member, request).whenCompleteAsync((response, error) -> {
-      long timestamp = System.currentTimeMillis();
-      if (error == null && response.status() == RaftResponse.Status.OK) {
-        log.trace("Received {} from {}", response, member);
-        sessions.forEach(s -> s.setLastHeartbeat(timestamp));
-      } else {
-        sessions.forEach(session -> {
-          // If no heartbeats have been received, use the session's minimum timeout.
-          if (session.getLastHeartbeat() == 0) {
-            if (timestamp - raft.getLastHeartbeatTime() > session.minTimeout()) {
-              expireSession(session);
-            }
-          }
-          // Otherwise, if the session is still active but has failed according to the failure detector, expire the session.
-          else if (session.getState().active() && session.isFailed(raft.getSessionFailureThreshold())) {
-            expireSession(session);
-          }
-        });
-      }
-    }, raft.getThreadContext());
   }
 
   /**
    * Expires the given session.
    */
   private void expireSession(RaftSession session) {
-    log.debug("Expiring session due to heartbeat failure: {}", session);
+    log.debug("Expiring session: {}", session);
     appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
         .whenCompleteAsync((entry, error) -> {
-          if (error != null) {
-            expiring.remove(session.sessionId());
-            return;
-          }
-
           log.trace("Appended {}", entry);
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            if (isRunning()) {
-              if (commitError == null) {
-                raft.getStateMachine().<Long>apply(entry.index())
-                    .whenCompleteAsync((r, e) -> expiring.remove(session.sessionId()), raft.getThreadContext());
-              } else {
-                expiring.remove(session.sessionId());
-              }
+            if (isRunning() && commitError == null) {
+              raft.getStateMachine().<Long>apply(entry.index());
             }
           });
         }, raft.getThreadContext());
@@ -883,7 +795,6 @@ public final class LeaderRole extends ActiveRole {
               if (commitError == null) {
                 raft.getStateMachine().<Long>apply(entry.index()).whenComplete((sessionId, sessionError) -> {
                   if (sessionError == null) {
-                    resetHeartbeatTimer(NodeId.from(request.node()));
                     future.complete(logResponse(OpenSessionResponse.builder()
                         .withStatus(RaftResponse.Status.OK)
                         .withSession(sessionId)
@@ -1109,14 +1020,6 @@ public final class LeaderRole extends ActiveRole {
   }
 
   /**
-   * Cancels the heartbeat timers.
-   */
-  private void cancelHeartbeatTimers() {
-    log.trace("Cancelling heartbeat timers");
-    heartbeatTimers.values().forEach(Scheduled::cancel);
-  }
-
-  /**
    * Ensures the local server is not the leader.
    */
   private void stepDown() {
@@ -1127,10 +1030,10 @@ public final class LeaderRole extends ActiveRole {
 
   @Override
   public synchronized CompletableFuture<Void> stop() {
+    raft.getClusterService().removeListener(clusterListener);
     return super.stop()
         .thenRun(appender::close)
         .thenRun(this::cancelAppendTimer)
-        .thenRun(this::cancelHeartbeatTimers)
         .thenRun(this::stepDown);
   }
 

@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
@@ -549,21 +550,18 @@ public interface RaftServer {
   abstract class Builder implements io.atomix.utils.Builder<RaftServer> {
     private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(750);
     private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
-    private static final int DEFAULT_ELECTION_THRESHOLD = 3;
     private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofMillis(5000);
-    private static final int DEFAULT_SESSION_FAILURE_THRESHOLD = 3;
     private static final ThreadModel DEFAULT_THREAD_MODEL = ThreadModel.SHARED_THREAD_POOL;
     private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
     protected String name;
     protected NodeId localNodeId;
+    protected ClusterService clusterService;
     protected RaftServerProtocol protocol;
     protected RaftStorage storage;
     protected Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
-    protected int electionThreshold = DEFAULT_ELECTION_THRESHOLD;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    protected int sessionFailureThreshold = DEFAULT_SESSION_FAILURE_THRESHOLD;
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
@@ -582,6 +580,17 @@ public interface RaftServer {
      */
     public Builder withName(String name) {
       this.name = checkNotNull(name, "name cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the cluster service.
+     *
+     * @param clusterService the cluster service
+     * @return the server builder
+     */
+    public Builder withClusterService(ClusterService clusterService) {
+      this.clusterService = checkNotNull(clusterService, "clusterService cannot be null");
       return this;
     }
 
@@ -687,22 +696,6 @@ public interface RaftServer {
     }
 
     /**
-     * Sets the election failure detection threshold.
-     * <p>
-     * This is the phi value at which a follower will attempt to start a new election after not receiving any
-     * communication from the leader.
-     *
-     * @param electionThreshold the election failure detection threshold
-     * @return The Raft server builder
-     * @throws IllegalArgumentException if the threshold is not positive
-     */
-    public Builder withElectionThreshold(int electionThreshold) {
-      checkArgument(electionThreshold > 0, "electionThreshold must be positive");
-      this.electionThreshold = electionThreshold;
-      return this;
-    }
-
-    /**
      * Sets the Raft session timeout, returning the Raft configuration for method chaining.
      *
      * @param sessionTimeout The Raft session timeout duration.
@@ -719,21 +712,6 @@ public interface RaftServer {
     }
 
     /**
-     * Sets the session failure detection threshold.
-     * <p>
-     * The threshold is a phi value at which sessions will be expired if the leader cannot communicate with the client.
-     *
-     * @param sessionFailureThreshold the session failure threshold
-     * @return The Raft server builder.
-     * @throws IllegalArgumentException if the threshold is not positive
-     */
-    public Builder withSessionFailureThreshold(int sessionFailureThreshold) {
-      checkArgument(sessionFailureThreshold > 0, "sessionFailureThreshold must be positive");
-      this.sessionFailureThreshold = sessionFailureThreshold;
-      return this;
-    }
-
-    /**
      * Sets the server thread pool size.
      *
      * @param threadPoolSize The server thread pool size.
@@ -745,5 +723,4 @@ public interface RaftServer {
       return this;
     }
   }
-
 }
