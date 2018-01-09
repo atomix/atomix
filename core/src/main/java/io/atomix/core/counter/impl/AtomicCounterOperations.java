@@ -21,30 +21,31 @@ import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 
 /**
- * Counter commands.
+ * {@link io.atomix.core.counter.AtomicCounter} operations.
+ * <p>
+ * WARNING: Do not refactor enum values. Only add to them.
+ * Changing values risk breaking the ability to backup/restore/upgrade clusters.
  */
 public enum AtomicCounterOperations implements OperationId {
-  SET("set", OperationType.COMMAND),
-  COMPARE_AND_SET("compareAndSet", OperationType.COMMAND),
-  INCREMENT_AND_GET("incrementAndGet", OperationType.COMMAND),
-  GET_AND_INCREMENT("getAndIncrement", OperationType.COMMAND),
-  DECREMENT_AND_GET("decrementAndGet", OperationType.COMMAND),
-  GET_AND_DECREMENT("getAndDecrement", OperationType.COMMAND),
-  ADD_AND_GET("addAndGet", OperationType.COMMAND),
-  GET_AND_ADD("getAndAdd", OperationType.COMMAND),
-  GET("get", OperationType.QUERY);
+  SET(OperationType.COMMAND),
+  COMPARE_AND_SET(OperationType.COMMAND),
+  INCREMENT_AND_GET(OperationType.COMMAND),
+  GET_AND_INCREMENT(OperationType.COMMAND),
+  DECREMENT_AND_GET(OperationType.COMMAND),
+  GET_AND_DECREMENT(OperationType.COMMAND),
+  ADD_AND_GET(OperationType.COMMAND),
+  GET_AND_ADD(OperationType.COMMAND),
+  GET(OperationType.QUERY);
 
-  private final String id;
   private final OperationType type;
 
-  AtomicCounterOperations(String id, OperationType type) {
-    this.id = id;
+  AtomicCounterOperations(OperationType type) {
     this.type = type;
   }
 
   @Override
   public String id() {
-    return id;
+    return name();
   }
 
   @Override

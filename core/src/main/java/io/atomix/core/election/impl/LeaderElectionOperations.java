@@ -16,7 +16,6 @@
 package io.atomix.core.election.impl;
 
 import com.google.common.base.MoreObjects;
-
 import io.atomix.core.election.Leader;
 import io.atomix.core.election.Leadership;
 import io.atomix.primitive.operation.OperationId;
@@ -26,29 +25,30 @@ import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 
 /**
- * {@link LeaderElectionProxy} resource state machine operations.
+ * {@link io.atomix.core.election.LeaderElection} operations.
+ * <p>
+ * WARNING: Do not refactor enum values. Only add to them.
+ * Changing values risk breaking the ability to backup/restore/upgrade clusters.
  */
 public enum LeaderElectionOperations implements OperationId {
-  ADD_LISTENER("addListener", OperationType.COMMAND),
-  REMOVE_LISTENER("removeListener", OperationType.COMMAND),
-  RUN("run", OperationType.COMMAND),
-  WITHDRAW("withdraw", OperationType.COMMAND),
-  ANOINT("anoint", OperationType.COMMAND),
-  PROMOTE("promote", OperationType.COMMAND),
-  EVICT("evict", OperationType.COMMAND),
-  GET_LEADERSHIP("getLeadership", OperationType.QUERY);
+  ADD_LISTENER(OperationType.COMMAND),
+  REMOVE_LISTENER(OperationType.COMMAND),
+  RUN(OperationType.COMMAND),
+  WITHDRAW(OperationType.COMMAND),
+  ANOINT(OperationType.COMMAND),
+  PROMOTE(OperationType.COMMAND),
+  EVICT(OperationType.COMMAND),
+  GET_LEADERSHIP(OperationType.QUERY);
 
-  private final String id;
   private final OperationType type;
 
-  LeaderElectionOperations(String id, OperationType type) {
-    this.id = id;
+  LeaderElectionOperations(OperationType type) {
     this.type = type;
   }
 
   @Override
   public String id() {
-    return id;
+    return name();
   }
 
   @Override
