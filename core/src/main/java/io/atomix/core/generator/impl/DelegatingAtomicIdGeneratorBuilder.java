@@ -28,10 +28,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Default implementation of AtomicIdGeneratorBuilder.
  */
-public class DelegatingIdGeneratorBuilder extends AtomicIdGeneratorBuilder {
+public class DelegatingAtomicIdGeneratorBuilder extends AtomicIdGeneratorBuilder {
   private final PrimitiveManagementService managementService;
 
-  public DelegatingIdGeneratorBuilder(String name, PrimitiveManagementService managementService) {
+  public DelegatingAtomicIdGeneratorBuilder(String name, PrimitiveManagementService managementService) {
     super(name);
     this.managementService = checkNotNull(managementService);
   }
@@ -46,6 +46,6 @@ public class DelegatingIdGeneratorBuilder extends AtomicIdGeneratorBuilder {
         .getPrimitiveClient()
         .newProxy(name(), primitiveType(), protocol)
         .connect()
-        .thenApply(proxy -> new DelegatingIdGenerator(new AtomicCounterProxy(proxy)).sync());
+        .thenApply(proxy -> new DelegatingAtomicIdGenerator(new AtomicCounterProxy(proxy)).sync());
   }
 }

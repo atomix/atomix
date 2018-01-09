@@ -68,7 +68,7 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
             .build());
     return proxy.connect()
         .thenApply(v -> {
-          idGenerator = new DelegatingIdGenerator(new AtomicCounterProxy(proxy));
+          idGenerator = new DelegatingAtomicIdGenerator(new AtomicCounterProxy(proxy));
           started.set(true);
           return this;
         });

@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@code AsyncAtomicIdGenerator} implementation backed by Atomix
  * {@link AsyncAtomicCounter}.
  */
-public class DelegatingIdGenerator implements AsyncAtomicIdGenerator {
+public class DelegatingAtomicIdGenerator implements AsyncAtomicIdGenerator {
 
   private static final long DEFAULT_BATCH_SIZE = 1000;
   private final AsyncAtomicCounter counter;
@@ -36,11 +36,11 @@ public class DelegatingIdGenerator implements AsyncAtomicIdGenerator {
   private long base;
   private final AtomicLong delta = new AtomicLong();
 
-  public DelegatingIdGenerator(AsyncAtomicCounter counter) {
+  public DelegatingAtomicIdGenerator(AsyncAtomicCounter counter) {
     this(counter, DEFAULT_BATCH_SIZE);
   }
 
-  DelegatingIdGenerator(AsyncAtomicCounter counter, long batchSize) {
+  DelegatingAtomicIdGenerator(AsyncAtomicCounter counter, long batchSize) {
     this.counter = counter;
     this.batchSize = batchSize;
   }
