@@ -41,7 +41,7 @@ import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static io.atomix.protocols.raft.RaftException.*;
+import static io.atomix.protocols.raft.RaftException.ConfigurationException;
 
 /**
  * Provides a standalone implementation of the <a href="http://raft.github.io/">Raft consensus algorithm</a>.
@@ -174,19 +174,6 @@ public interface RaftServer {
    */
   static Builder builder(NodeId localNodeId) {
     return new DefaultRaftServer.Builder(localNodeId);
-  }
-
-  @Deprecated
-  static Builder newBuilder() {
-    return builder();
-  }
-
-  /**
-   * @deprecated since 2.1
-   */
-  @Deprecated
-  static Builder newBuilder(NodeId localNodeId) {
-    return builder(localNodeId);
   }
 
   /**

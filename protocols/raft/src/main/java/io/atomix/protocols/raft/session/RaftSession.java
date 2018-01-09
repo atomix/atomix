@@ -145,12 +145,20 @@ public class RaftSession implements Session {
     return readConsistency;
   }
 
-  @Override
+  /**
+   * Returns the minimum session timeout.
+   *
+   * @return the minimum session timeout
+   */
   public long minTimeout() {
     return minTimeout;
   }
 
-  @Override
+  /**
+   * Returns the maximum session timeout.
+   *
+   * @return the maximum session timeout
+   */
   public long maxTimeout() {
     return maxTimeout;
   }
