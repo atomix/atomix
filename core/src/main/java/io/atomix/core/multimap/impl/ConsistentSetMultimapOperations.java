@@ -31,38 +31,39 @@ import java.util.Collection;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * AsyncConsistentMultimap state machine commands.
+ * {@link io.atomix.core.multimap.ConsistentMultimap} operations.
+ * <p>
+ * WARNING: Do not refactor enum values. Only add to them.
+ * Changing values risk breaking the ability to backup/restore/upgrade clusters.
  */
 public enum ConsistentSetMultimapOperations implements OperationId {
-  GET("get", OperationType.QUERY),
-  SIZE("size", OperationType.QUERY),
-  IS_EMPTY("isEmpty", OperationType.QUERY),
-  CONTAINS_KEY("containsKey", OperationType.QUERY),
-  CONTAINS_VALUE("containsValue", OperationType.QUERY),
-  CONTAINS_ENTRY("containsEntry", OperationType.QUERY),
-  KEY_SET("keySet", OperationType.QUERY),
-  KEYS("keys", OperationType.QUERY),
-  VALUES("values", OperationType.QUERY),
-  ENTRIES("entries", OperationType.QUERY),
-  PUT("put", OperationType.COMMAND),
-  REMOVE("remove", OperationType.COMMAND),
-  REMOVE_ALL("removeAll", OperationType.COMMAND),
-  REPLACE("replace", OperationType.COMMAND),
-  CLEAR("clear", OperationType.COMMAND),
-  ADD_LISTENER("addListener", OperationType.COMMAND),
-  REMOVE_LISTENER("removeListener", OperationType.COMMAND);
+  GET(OperationType.QUERY),
+  SIZE(OperationType.QUERY),
+  IS_EMPTY(OperationType.QUERY),
+  CONTAINS_KEY(OperationType.QUERY),
+  CONTAINS_VALUE(OperationType.QUERY),
+  CONTAINS_ENTRY(OperationType.QUERY),
+  KEY_SET(OperationType.QUERY),
+  KEYS(OperationType.QUERY),
+  VALUES(OperationType.QUERY),
+  ENTRIES(OperationType.QUERY),
+  PUT(OperationType.COMMAND),
+  REMOVE(OperationType.COMMAND),
+  REMOVE_ALL(OperationType.COMMAND),
+  REPLACE(OperationType.COMMAND),
+  CLEAR(OperationType.COMMAND),
+  ADD_LISTENER(OperationType.COMMAND),
+  REMOVE_LISTENER(OperationType.COMMAND);
 
-  private final String id;
   private final OperationType type;
 
-  ConsistentSetMultimapOperations(String id, OperationType type) {
-    this.id = id;
+  ConsistentSetMultimapOperations(OperationType type) {
     this.type = type;
   }
 
   @Override
   public String id() {
-    return id;
+    return name();
   }
 
   @Override

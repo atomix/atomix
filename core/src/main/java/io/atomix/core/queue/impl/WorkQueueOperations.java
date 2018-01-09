@@ -16,7 +16,6 @@
 package io.atomix.core.queue.impl;
 
 import com.google.common.base.MoreObjects;
-
 import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueueStats;
 import io.atomix.primitive.operation.OperationId;
@@ -27,28 +26,29 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import java.util.Collection;
 
 /**
- * {@link WorkQueueProxy} resource state machine operations.
+ * {@link io.atomix.core.queue.WorkQueue} operations.
+ * <p>
+ * WARNING: Do not refactor enum values. Only add to them.
+ * Changing values risk breaking the ability to backup/restore/upgrade clusters.
  */
 public enum WorkQueueOperations implements OperationId {
-  STATS("stats", OperationType.QUERY),
-  REGISTER("register", OperationType.COMMAND),
-  UNREGISTER("unregister", OperationType.COMMAND),
-  ADD("add", OperationType.COMMAND),
-  TAKE("take", OperationType.COMMAND),
-  COMPLETE("complete", OperationType.COMMAND),
-  CLEAR("clear", OperationType.COMMAND);
+  STATS(OperationType.QUERY),
+  REGISTER(OperationType.COMMAND),
+  UNREGISTER(OperationType.COMMAND),
+  ADD(OperationType.COMMAND),
+  TAKE(OperationType.COMMAND),
+  COMPLETE(OperationType.COMMAND),
+  CLEAR(OperationType.COMMAND);
 
-  private final String id;
   private final OperationType type;
 
-  WorkQueueOperations(String id, OperationType type) {
-    this.id = id;
+  WorkQueueOperations(OperationType type) {
     this.type = type;
   }
 
   @Override
   public String id() {
-    return id;
+    return name();
   }
 
   @Override

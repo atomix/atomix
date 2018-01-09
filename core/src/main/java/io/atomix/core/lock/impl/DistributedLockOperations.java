@@ -23,23 +23,24 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Counter commands.
+ * {@link io.atomix.core.lock.DistributedLock} operations.
+ * <p>
+ * WARNING: Do not refactor enum values. Only add to them.
+ * Changing values risk breaking the ability to backup/restore/upgrade clusters.
  */
 public enum DistributedLockOperations implements OperationId {
-  LOCK("lock", OperationType.COMMAND),
-  UNLOCK("unlock", OperationType.COMMAND);
+  LOCK(OperationType.COMMAND),
+  UNLOCK(OperationType.COMMAND);
 
-  private final String id;
   private final OperationType type;
 
-  DistributedLockOperations(String id, OperationType type) {
-    this.id = id;
+  DistributedLockOperations(OperationType type) {
     this.type = type;
   }
 
   @Override
   public String id() {
-    return id;
+    return name();
   }
 
   @Override

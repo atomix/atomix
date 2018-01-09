@@ -17,7 +17,6 @@
 package io.atomix.core.tree.impl;
 
 import com.google.common.base.MoreObjects;
-
 import io.atomix.core.map.impl.CommitResult;
 import io.atomix.core.map.impl.PrepareResult;
 import io.atomix.core.map.impl.RollbackResult;
@@ -35,32 +34,33 @@ import java.util.LinkedHashMap;
 import java.util.Optional;
 
 /**
- * {@link DocumentTreeProxy} resource state machine operations.
+ * {@link io.atomix.core.tree.DocumentTree} operations.
+ * <p>
+ * WARNING: Do not refactor enum values. Only add to them.
+ * Changing values risk breaking the ability to backup/restore/upgrade clusters.
  */
 public enum DocumentTreeOperations implements OperationId {
-  ADD_LISTENER("addListener", OperationType.COMMAND),
-  REMOVE_LISTENER("removeListener", OperationType.COMMAND),
-  GET("get", OperationType.QUERY),
-  GET_CHILDREN("getChildren", OperationType.QUERY),
-  UPDATE("update", OperationType.COMMAND),
-  CLEAR("clear", OperationType.COMMAND),
-  BEGIN("begin", OperationType.COMMAND),
-  PREPARE("prepare", OperationType.COMMAND),
-  PREPARE_AND_COMMIT("prepareAndCommit", OperationType.COMMAND),
-  COMMIT("commit", OperationType.COMMAND),
-  ROLLBACK("rollback", OperationType.COMMAND);
+  ADD_LISTENER(OperationType.COMMAND),
+  REMOVE_LISTENER(OperationType.COMMAND),
+  GET(OperationType.QUERY),
+  GET_CHILDREN(OperationType.QUERY),
+  UPDATE(OperationType.COMMAND),
+  CLEAR(OperationType.COMMAND),
+  BEGIN(OperationType.COMMAND),
+  PREPARE(OperationType.COMMAND),
+  PREPARE_AND_COMMIT(OperationType.COMMAND),
+  COMMIT(OperationType.COMMAND),
+  ROLLBACK(OperationType.COMMAND);
 
-  private final String id;
   private final OperationType type;
 
-  DocumentTreeOperations(String id, OperationType type) {
-    this.id = id;
+  DocumentTreeOperations(OperationType type) {
     this.type = type;
   }
 
   @Override
   public String id() {
-    return id;
+    return name();
   }
 
   @Override

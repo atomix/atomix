@@ -24,27 +24,28 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Counter commands.
+ * {@link io.atomix.core.value.AtomicValue} operations.
+ * <p>
+ * WARNING: Do not refactor enum values. Only add to them.
+ * Changing values risk breaking the ability to backup/restore/upgrade clusters.
  */
 public enum AtomicValueOperations implements OperationId {
-  GET("get", OperationType.QUERY),
-  SET("set", OperationType.COMMAND),
-  COMPARE_AND_SET("compareAndSet", OperationType.COMMAND),
-  GET_AND_SET("getAndSet", OperationType.COMMAND),
-  ADD_LISTENER("addListener", OperationType.COMMAND),
-  REMOVE_LISTENER("removeListener", OperationType.COMMAND);
+  GET(OperationType.QUERY),
+  SET(OperationType.COMMAND),
+  COMPARE_AND_SET(OperationType.COMMAND),
+  GET_AND_SET(OperationType.COMMAND),
+  ADD_LISTENER(OperationType.COMMAND),
+  REMOVE_LISTENER(OperationType.COMMAND);
 
-  private final String id;
   private final OperationType type;
 
-  AtomicValueOperations(String id, OperationType type) {
-    this.id = id;
+  AtomicValueOperations(OperationType type) {
     this.type = type;
   }
 
   @Override
   public String id() {
-    return id;
+    return name();
   }
 
   @Override

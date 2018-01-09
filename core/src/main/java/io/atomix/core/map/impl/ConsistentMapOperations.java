@@ -30,48 +30,49 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * {@link ConsistentMapProxy} resource state machine operations.
+ * {@link io.atomix.core.map.ConsistentMap} operations.
+ * <p>
+ * WARNING: Do not refactor enum values. Only add to them.
+ * Changing values risk breaking the ability to backup/restore/upgrade clusters.
  */
 public enum ConsistentMapOperations implements OperationId {
-  IS_EMPTY("isEmpty", OperationType.QUERY),
-  SIZE("size", OperationType.QUERY),
-  CONTAINS_KEY("containsKey", OperationType.QUERY),
-  CONTAINS_VALUE("containsValue", OperationType.QUERY),
-  GET("get", OperationType.QUERY),
-  GET_ALL_PRESENT("getAllPresent", OperationType.QUERY),
-  GET_OR_DEFAULT("getOrDefault", OperationType.QUERY),
-  KEY_SET("keySet", OperationType.QUERY),
-  VALUES("values", OperationType.QUERY),
-  ENTRY_SET("entrySet", OperationType.QUERY),
-  PUT("put", OperationType.COMMAND),
-  PUT_IF_ABSENT("putIfAbsent", OperationType.COMMAND),
-  PUT_AND_GET("putAndGet", OperationType.COMMAND),
-  REMOVE("remove", OperationType.COMMAND),
-  REMOVE_VALUE("removeValue", OperationType.COMMAND),
-  REMOVE_VERSION("removeVersion", OperationType.COMMAND),
-  REPLACE("replace", OperationType.COMMAND),
-  REPLACE_VALUE("replaceValue", OperationType.COMMAND),
-  REPLACE_VERSION("replaceVersion", OperationType.COMMAND),
-  CLEAR("clear", OperationType.COMMAND),
-  ADD_LISTENER("addListener", OperationType.COMMAND),
-  REMOVE_LISTENER("removeListener", OperationType.COMMAND),
-  BEGIN("begin", OperationType.COMMAND),
-  PREPARE("prepare", OperationType.COMMAND),
-  PREPARE_AND_COMMIT("prepareAndCommit", OperationType.COMMAND),
-  COMMIT("commit", OperationType.COMMAND),
-  ROLLBACK("rollback", OperationType.COMMAND);
+  IS_EMPTY(OperationType.QUERY),
+  SIZE(OperationType.QUERY),
+  CONTAINS_KEY(OperationType.QUERY),
+  CONTAINS_VALUE(OperationType.QUERY),
+  GET(OperationType.QUERY),
+  GET_ALL_PRESENT(OperationType.QUERY),
+  GET_OR_DEFAULT(OperationType.QUERY),
+  KEY_SET(OperationType.QUERY),
+  VALUES(OperationType.QUERY),
+  ENTRY_SET(OperationType.QUERY),
+  PUT(OperationType.COMMAND),
+  PUT_IF_ABSENT(OperationType.COMMAND),
+  PUT_AND_GET(OperationType.COMMAND),
+  REMOVE(OperationType.COMMAND),
+  REMOVE_VALUE(OperationType.COMMAND),
+  REMOVE_VERSION(OperationType.COMMAND),
+  REPLACE(OperationType.COMMAND),
+  REPLACE_VALUE(OperationType.COMMAND),
+  REPLACE_VERSION(OperationType.COMMAND),
+  CLEAR(OperationType.COMMAND),
+  ADD_LISTENER(OperationType.COMMAND),
+  REMOVE_LISTENER(OperationType.COMMAND),
+  BEGIN(OperationType.COMMAND),
+  PREPARE(OperationType.COMMAND),
+  PREPARE_AND_COMMIT(OperationType.COMMAND),
+  COMMIT(OperationType.COMMAND),
+  ROLLBACK(OperationType.COMMAND);
 
-  private final String id;
   private final OperationType type;
 
-  ConsistentMapOperations(String id, OperationType type) {
-    this.id = id;
+  ConsistentMapOperations(OperationType type) {
     this.type = type;
   }
 
   @Override
   public String id() {
-    return id;
+    return name();
   }
 
   @Override
@@ -571,8 +572,8 @@ public enum ConsistentMapOperations implements OperationId {
     @Override
     public String toString() {
       return toStringHelper(this)
-              .add("keys", keys)
-              .toString();
+          .add("keys", keys)
+          .toString();
     }
   }
 
