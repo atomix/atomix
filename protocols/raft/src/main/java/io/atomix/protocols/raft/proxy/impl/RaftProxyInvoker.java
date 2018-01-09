@@ -150,7 +150,7 @@ final class RaftProxyInvoker {
    */
   private <T extends OperationRequest, U extends OperationResponse> void invoke(OperationAttempt<T, U> attempt) {
     if (state.getState() == PrimitiveProxy.State.CLOSED) {
-      attempt.fail(new RaftException.ClosedSession("session closed"));
+      attempt.fail(new PrimitiveException.ClosedSession("session closed"));
     } else {
       attempts.put(attempt.sequence, attempt);
       attempt.send();
@@ -201,7 +201,7 @@ final class RaftProxyInvoker {
    */
   public CompletableFuture<Void> close() {
     for (OperationAttempt attempt : new ArrayList<>(attempts.values())) {
-      attempt.fail(new RaftException.ClosedSession("session closed"));
+      attempt.fail(new PrimitiveException.ClosedSession("session closed"));
     }
     attempts.clear();
     return CompletableFuture.completedFuture(null);
