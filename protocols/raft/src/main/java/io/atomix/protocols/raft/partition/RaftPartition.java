@@ -178,6 +178,7 @@ public class RaftPartition implements Partition<RaftProtocol> {
     return new RaftPartitionServer(
         this,
         managementService.getClusterService().getLocalNode().id(),
+        managementService.getClusterService(),
         managementService.getCommunicationService(),
         managementService.getPrimitiveTypes());
   }

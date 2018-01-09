@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.protocols.raft.RaftException;
@@ -81,6 +82,7 @@ public class RaftContext implements AutoCloseable {
   protected final String name;
   protected final ThreadContext threadContext;
   protected final PrimitiveTypeRegistry primitiveTypes;
+  protected final ClusterService clusterService;
   protected final RaftClusterContext cluster;
   protected final RaftServerProtocol protocol;
   protected final RaftStorage storage;
@@ -101,13 +103,10 @@ public class RaftContext implements AutoCloseable {
   protected RaftRole role = new InactiveRole(this);
   private Duration electionTimeout = Duration.ofMillis(500);
   private Duration heartbeatInterval = Duration.ofMillis(150);
-  private int electionThreshold = 3;
   private Duration sessionTimeout = Duration.ofMillis(5000);
-  private int sessionFailureThreshold = 5;
   private volatile NodeId leader;
   private volatile long term;
   private NodeId lastVotedFor;
-  private long lastHeartbeatTime;
   private long commitIndex;
   private volatile long firstCommitIndex;
   private volatile long lastApplied;
@@ -116,12 +115,14 @@ public class RaftContext implements AutoCloseable {
   public RaftContext(
       String name,
       NodeId localNodeId,
+      ClusterService clusterService,
       RaftServerProtocol protocol,
       RaftStorage storage,
       PrimitiveTypeRegistry primitiveTypes,
       ThreadModel threadModel,
       int threadPoolSize) {
     this.name = checkNotNull(name, "name cannot be null");
+    this.clusterService = checkNotNull(clusterService, "clusterService cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
     this.primitiveTypes = checkNotNull(primitiveTypes, "registry cannot be null");
@@ -211,7 +212,7 @@ public class RaftContext implements AutoCloseable {
   /**
    * Awaits a state change.
    *
-   * @param state the state for which to wait
+   * @param state    the state for which to wait
    * @param listener the listener to call when the next state change occurs
    */
   public void awaitState(State state, Consumer<State> listener) {
@@ -253,6 +254,15 @@ public class RaftContext implements AutoCloseable {
    */
   public ThreadContext getThreadContext() {
     return threadContext;
+  }
+
+  /**
+   * Returns the cluster service.
+   *
+   * @return the cluster service
+   */
+  public ClusterService getClusterService() {
+    return clusterService;
   }
 
   /**
@@ -319,24 +329,6 @@ public class RaftContext implements AutoCloseable {
   }
 
   /**
-   * Sets the election threshold.
-   *
-   * @param electionThreshold the election threshold
-   */
-  public void setElectionThreshold(int electionThreshold) {
-    this.electionThreshold = electionThreshold;
-  }
-
-  /**
-   * Returns the election threshold.
-   *
-   * @return the election threshold
-   */
-  public int getElectionThreshold() {
-    return electionThreshold;
-  }
-
-  /**
    * Returns the session timeout.
    *
    * @return The session timeout.
@@ -352,24 +344,6 @@ public class RaftContext implements AutoCloseable {
    */
   public void setSessionTimeout(Duration sessionTimeout) {
     this.sessionTimeout = checkNotNull(sessionTimeout, "sessionTimeout cannot be null");
-  }
-
-  /**
-   * Returns the session failure threshold.
-   *
-   * @return the session failure threshold
-   */
-  public int getSessionFailureThreshold() {
-    return sessionFailureThreshold;
-  }
-
-  /**
-   * Sets the session failure threshold.
-   *
-   * @param sessionFailureThreshold the session failure threshold
-   */
-  public void setSessionFailureThreshold(int sessionFailureThreshold) {
-    this.sessionFailureThreshold = sessionFailureThreshold;
   }
 
   /**
@@ -472,31 +446,6 @@ public class RaftContext implements AutoCloseable {
     } else {
       log.trace("Reset last voted for");
     }
-  }
-
-  /**
-   * Returns the last time a request was received from the leader.
-   *
-   * @return The last time a request was received
-   */
-  public long getLastHeartbeatTime() {
-    return lastHeartbeatTime;
-  }
-
-  /**
-   * Sets the last time a request was received from the leader.
-   */
-  public void setLastHeartbeatTime() {
-    setLastHeartbeatTime(System.currentTimeMillis());
-  }
-
-  /**
-   * Sets the last time a request was received by the node.
-   *
-   * @param lastHeartbeatTime The last time a request was received
-   */
-  public void setLastHeartbeatTime(long lastHeartbeatTime) {
-    this.lastHeartbeatTime = lastHeartbeatTime;
   }
 
   /**

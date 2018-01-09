@@ -16,10 +16,9 @@
 package io.atomix.protocols.raft.session;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.impl.PhiAccrualFailureDetector;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionEvent;
 import io.atomix.primitive.session.SessionEventListener;
@@ -67,8 +66,6 @@ public class RaftSession implements Session {
   private final ThreadContext eventExecutor;
   private volatile State state = State.CLOSED;
   private volatile long lastUpdated;
-  private long lastHeartbeat;
-  private PhiAccrualFailureDetector failureDetector = new PhiAccrualFailureDetector();
   private long requestSequence;
   private volatile long commandSequence;
   private volatile long lastApplied;
@@ -191,43 +188,6 @@ public class RaftSession implements Session {
   public boolean isTimedOut(long timestamp) {
     long lastUpdated = this.lastUpdated;
     return lastUpdated > 0 && timestamp - lastUpdated > maxTimeout;
-  }
-
-  /**
-   * Returns the current heartbeat time.
-   *
-   * @return The current heartbeat time.
-   */
-  public long getLastHeartbeat() {
-    return lastHeartbeat;
-  }
-
-  /**
-   * Sets the last heartbeat time.
-   *
-   * @param lastHeartbeat The last heartbeat time.
-   */
-  public void setLastHeartbeat(long lastHeartbeat) {
-    this.lastHeartbeat = Math.max(this.lastHeartbeat, lastHeartbeat);
-    failureDetector.report(lastHeartbeat);
-  }
-
-  /**
-   * Resets heartbeat times.
-   */
-  public void resetHeartbeats() {
-    this.lastHeartbeat = 0;
-    this.failureDetector = new PhiAccrualFailureDetector();
-  }
-
-  /**
-   * Returns a boolean indicating whether the session appears to have failed due to lack of heartbeats.
-   *
-   * @param threshold The phi failure threshold
-   * @return Indicates whether the session has failed.
-   */
-  public boolean isFailed(int threshold) {
-    return failureDetector.phi() >= threshold;
   }
 
   @Override
