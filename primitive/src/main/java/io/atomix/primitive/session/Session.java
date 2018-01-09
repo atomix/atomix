@@ -77,30 +77,6 @@ public interface Session {
   NodeId nodeId();
 
   /**
-   * Returns the session timeout.
-   *
-   * @return The session timeout.
-   */
-  @Deprecated
-  default long timeout() {
-    return maxTimeout();
-  }
-
-  /**
-   * Returns the minimum session timeout.
-   *
-   * @return The minimum session timeout.
-   */
-  long minTimeout();
-
-  /**
-   * Returns the maximum session timeout.
-   *
-   * @return The maximum session timeout.
-   */
-  long maxTimeout();
-
-  /**
    * Returns the session state.
    *
    * @return The session state.
@@ -134,9 +110,9 @@ public interface Session {
    * Publishes an event to the session.
    *
    * @param eventType the event identifier
-   * @param encoder the event value encoder
-   * @param event the event value
-   * @param <T> the event type
+   * @param encoder   the event value encoder
+   * @param event     the event value
+   * @param <T>       the event type
    */
   default <T> void publish(EventType eventType, Function<T, byte[]> encoder, T event) {
     publish(eventType, encoder.apply(event));
@@ -146,7 +122,7 @@ public interface Session {
    * Publishes an event to the session.
    *
    * @param eventType the event identifier
-   * @param event the event to publish
+   * @param event     the event to publish
    * @throws NullPointerException if the event is {@code null}
    */
   default void publish(EventType eventType, byte[] event) {

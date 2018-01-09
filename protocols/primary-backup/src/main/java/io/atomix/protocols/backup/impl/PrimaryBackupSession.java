@@ -74,16 +74,6 @@ public class PrimaryBackupSession implements Session {
   }
 
   @Override
-  public long minTimeout() {
-    return 0; // TODO
-  }
-
-  @Override
-  public long maxTimeout() {
-    return 0; // TODO
-  }
-
-  @Override
   public State getState() {
     return state;
   }
