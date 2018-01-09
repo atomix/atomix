@@ -38,6 +38,12 @@ public class PrimitiveException extends AtomixRuntimeException {
    * Store is temporarily unavailable.
    */
   public static class Unavailable extends PrimitiveException {
+    public Unavailable() {
+    }
+
+    public Unavailable(String message) {
+      super(message);
+    }
   }
 
   /**
@@ -62,35 +68,83 @@ public class PrimitiveException extends AtomixRuntimeException {
    * Primitive service exception.
    */
   public static class ServiceException extends PrimitiveException {
+    public ServiceException() {
+    }
+
+    public ServiceException(String message) {
+      super(message);
+    }
   }
 
   /**
    * Command failure exception.
    */
   public static class CommandFailure extends PrimitiveException {
+    public CommandFailure() {
+    }
+
+    public CommandFailure(String message) {
+      super(message);
+    }
   }
 
   /**
    * Query failure exception.
    */
   public static class QueryFailure extends PrimitiveException {
+    public QueryFailure() {
+    }
+
+    public QueryFailure(String message) {
+      super(message);
+    }
   }
 
   /**
    * Unknown client exception.
    */
   public static class UnknownClient extends PrimitiveException {
+    public UnknownClient() {
+    }
+
+    public UnknownClient(String message) {
+      super(message);
+    }
   }
 
   /**
    * Unknown session exception.
    */
   public static class UnknownSession extends PrimitiveException {
+    public UnknownSession() {
+    }
+
+    public UnknownSession(String message) {
+      super(message);
+    }
+  }
+
+  /**
+   * Unknown service exception.
+   */
+  public static class UnknownService extends PrimitiveException {
+    public UnknownService() {
+    }
+
+    public UnknownService(String message) {
+      super(message);
+    }
   }
 
   /**
    * Closed session exception.
    */
   public static class ClosedSession extends PrimitiveException {
+    public ClosedSession() {
+    }
+
+    public ClosedSession(String message) {
+      super(message);
+    }
   }
 }

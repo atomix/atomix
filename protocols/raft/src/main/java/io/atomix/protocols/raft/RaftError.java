@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.primitive.PrimitiveException;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -56,7 +58,7 @@ public class RaftError {
    *
    * @return The error exception.
    */
-  public RaftException createException() {
+  public PrimitiveException createException() {
     return type.createException(message);
   }
 
@@ -78,13 +80,13 @@ public class RaftError {
      */
     NO_LEADER {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Failed to locate leader");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.NoLeader(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.Unavailable(message) : createException();
       }
     },
 
@@ -93,13 +95,13 @@ public class RaftError {
      */
     QUERY_FAILURE {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Failed to obtain read quorum");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.QueryFailure(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.QueryFailure(message) : createException();
       }
     },
 
@@ -108,13 +110,13 @@ public class RaftError {
      */
     COMMAND_FAILURE {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Failed to obtain write quorum");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.CommandFailure(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.CommandFailure(message) : createException();
       }
     },
 
@@ -123,13 +125,13 @@ public class RaftError {
      */
     APPLICATION_ERROR {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("An application error occurred");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.ApplicationException(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.ServiceException(message) : createException();
       }
     },
 
@@ -138,13 +140,13 @@ public class RaftError {
      */
     ILLEGAL_MEMBER_STATE {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Illegal member state");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.IllegalMemberState(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.Unavailable(message) : createException();
       }
     },
 
@@ -153,13 +155,13 @@ public class RaftError {
      */
     UNKNOWN_CLIENT {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Unknown client");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.UnknownClient(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.UnknownClient(message) : createException();
       }
     },
 
@@ -168,13 +170,13 @@ public class RaftError {
      */
     UNKNOWN_SESSION {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Unknown member session");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.UnknownSession(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.UnknownSession(message) : createException();
       }
     },
 
@@ -183,13 +185,13 @@ public class RaftError {
      */
     UNKNOWN_SERVICE {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Unknown state machine");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.UnknownService(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.UnknownService(message) : createException();
       }
     },
 
@@ -198,13 +200,13 @@ public class RaftError {
      */
     CLOSED_SESSION {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Closed session");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.ClosedSession(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.ClosedSession(message) : createException();
       }
     },
 
@@ -213,13 +215,13 @@ public class RaftError {
      */
     PROTOCOL_ERROR {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Failed to reach consensus");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.ProtocolException(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.Unavailable(message) : createException();
       }
     },
 
@@ -228,13 +230,13 @@ public class RaftError {
      */
     CONFIGURATION_ERROR {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Configuration failed");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.ConfigurationException(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.Unavailable(message) : createException();
       }
     },
 
@@ -243,13 +245,13 @@ public class RaftError {
      */
     UNAVAILABLE {
       @Override
-      RaftException createException() {
+      PrimitiveException createException() {
         return createException("Service is unavailable");
       }
 
       @Override
-      RaftException createException(String message) {
-        return message != null ? new RaftException.Unavailable(message) : createException();
+      PrimitiveException createException(String message) {
+        return message != null ? new PrimitiveException.Unavailable(message) : createException();
       }
     };
 
@@ -258,7 +260,7 @@ public class RaftError {
      *
      * @return the exception
      */
-    abstract RaftException createException();
+    abstract PrimitiveException createException();
 
     /**
      * Creates an exception with the given message.
@@ -266,6 +268,6 @@ public class RaftError {
      * @param message the exception message
      * @return the exception
      */
-    abstract RaftException createException(String message);
+    abstract PrimitiveException createException(String message);
   }
 }
