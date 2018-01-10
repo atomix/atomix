@@ -109,10 +109,12 @@ public class BackupRole extends PrimaryBackupRole {
             context.setIndex(operation.index()),
             operation.operation().id(),
             operation.operation().value(),
-            session,
+            context.setSession(session),
             context.setTimestamp(operation.timestamp())));
       } catch (Exception e) {
         log.warn("Failed to apply operation: {}", e);
+      } finally {
+        context.setSession(null);
       }
     }
   }
