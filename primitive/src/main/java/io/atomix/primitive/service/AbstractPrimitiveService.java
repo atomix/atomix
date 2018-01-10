@@ -70,15 +70,6 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
   protected abstract void configure(ServiceExecutor executor);
 
   /**
-   * Returns the service context.
-   *
-   * @return the service context
-   */
-  protected ServiceContext getContext() {
-    return context;
-  }
-
-  /**
    * Returns the service logger.
    *
    * @return the service logger
