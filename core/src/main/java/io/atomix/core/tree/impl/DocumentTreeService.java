@@ -88,7 +88,7 @@ public class DocumentTreeService extends AbstractPrimitiveService {
 
         @Override
         public Listener read(Kryo kryo, Input input, Class<Listener> type) {
-          return new Listener(sessions().getSession(input.readLong()),
+          return new Listener(getSessions().getSession(input.readLong()),
               kryo.readObjectOrNull(input, DocumentPath.class));
         }
       }, Listener.class)
@@ -247,7 +247,7 @@ public class DocumentTreeService extends AbstractPrimitiveService {
     } catch (NoSuchDocumentPathException e) {
       result = DocumentTreeResult.invalidPath();
     } catch (Exception e) {
-      logger().error("Failed to apply {} to state machine", commit.value(), e);
+      getLogger().error("Failed to apply {} to state machine", commit.value(), e);
       throw Throwables.propagate(e);
     }
     return result;

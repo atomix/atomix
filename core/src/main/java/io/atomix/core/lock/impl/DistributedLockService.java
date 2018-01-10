@@ -73,10 +73,10 @@ public class DistributedLockService extends AbstractPrimitiveService {
     timers.clear();
     for (LockHolder holder : queue) {
       if (holder.expire > 0) {
-        timers.put(holder.index, scheduler().schedule(Duration.ofMillis(holder.expire - context().wallClock().getTime().unixTimestamp()), () -> {
+        timers.put(holder.index, getScheduler().schedule(Duration.ofMillis(holder.expire - getContext().wallClock().getTime().unixTimestamp()), () -> {
           timers.remove(holder.index);
           queue.remove(holder);
-          Session session = sessions().getSession(holder.session);
+          Session session = getSessions().getSession(holder.session);
           if (session != null && session.getState().active()) {
             session.publish(DistributedLockEvents.FAIL, SERIALIZER::encode, new LockEvent(holder.id, holder.index));
           }
@@ -113,9 +113,9 @@ public class DistributedLockService extends AbstractPrimitiveService {
           commit.value().id(),
           commit.index(),
           commit.session().sessionId().id(),
-          context().wallClock().getTime().unixTimestamp() + commit.value().timeout());
+          getContext().wallClock().getTime().unixTimestamp() + commit.value().timeout());
       queue.add(holder);
-      timers.put(commit.index(), scheduler().schedule(Duration.ofMillis(commit.value().timeout()), () -> {
+      timers.put(commit.index(), getScheduler().schedule(Duration.ofMillis(commit.value().timeout()), () -> {
         timers.remove(commit.index());
         queue.remove(holder);
         if (commit.session().getState().active()) {
@@ -148,7 +148,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
           timer.cancel();
         }
 
-        Session session = sessions().getSession(lock.session);
+        Session session = getSessions().getSession(lock.session);
         if (session == null || session.getState() == Session.State.EXPIRED || session.getState() == Session.State.CLOSED) {
           lock = queue.poll();
         } else {
@@ -171,7 +171,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
             timer.cancel();
           }
 
-          Session lockSession = sessions().getSession(lock.session);
+          Session lockSession = getSessions().getSession(lock.session);
           if (lockSession == null || lockSession.getState() == Session.State.EXPIRED || lockSession.getState() == Session.State.CLOSED) {
             lock = queue.poll();
           } else {
