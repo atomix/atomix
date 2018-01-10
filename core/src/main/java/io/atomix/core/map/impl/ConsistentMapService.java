@@ -155,7 +155,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
     currentVersion = reader.readLong();
     map.forEach((key, value) -> {
       if (value.ttl() > 0) {
-        value.timer = scheduler().schedule(Duration.ofMillis(value.ttl() - (wallClock().time().unixTimestamp() - value.created())), () -> {
+        value.timer = scheduler().schedule(Duration.ofMillis(value.ttl() - (wallClock().getTime().unixTimestamp() - value.created())), () -> {
           entries().remove(key, value);
           publish(new MapEvent<>(MapEvent.Type.REMOVE, "", key, null, toVersioned(value)));
         });

@@ -87,13 +87,13 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private OperationType currentOperation = OperationType.COMMAND;
   private final LogicalClock logicalClock = new LogicalClock() {
     @Override
-    public LogicalTimestamp time() {
+    public LogicalTimestamp getTime() {
       return new LogicalTimestamp(operationIndex);
     }
   };
   private final WallClock wallClock = new WallClock() {
     @Override
-    public WallClockTimestamp time() {
+    public WallClockTimestamp getTime() {
       return WallClockTimestamp.from(currentTimestamp);
     }
   };

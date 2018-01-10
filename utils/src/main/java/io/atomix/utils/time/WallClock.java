@@ -22,14 +22,14 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class WallClock implements Clock<WallClockTimestamp> {
   @Override
-  public WallClockTimestamp time() {
+  public WallClockTimestamp getTime() {
     return new WallClockTimestamp();
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("time", time())
+        .add("time", getTime())
         .toString();
   }
 }
