@@ -539,7 +539,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
       if (commit.value()) {
         commit.session().publish(CHANGE_EVENT, SERIALIZER::encode, commit.index());
       } else {
-        for (Session session : sessions()) {
+        for (Session session : getSessions()) {
           session.publish(CHANGE_EVENT, SERIALIZER::encode, commit.index());
         }
       }

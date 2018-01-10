@@ -86,7 +86,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
     writer.writeLong(termStartTime);
     writer.writeObject(registrations, SERIALIZER::encode);
     writer.writeObject(Sets.newHashSet(listeners.keySet()), SERIALIZER::encode);
-    logger().debug("Took state machine snapshot");
+    getLogger().debug("Took state machine snapshot");
   }
 
   @Override
@@ -98,9 +98,9 @@ public class LeaderElectionService extends AbstractPrimitiveService {
     registrations = reader.readObject(SERIALIZER::decode);
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
-      listeners.put(sessionId, sessions().getSession(sessionId));
+      listeners.put(sessionId, getSessions().getSession(sessionId));
     }
-    logger().debug("Reinstated state machine from snapshot");
+    getLogger().debug("Reinstated state machine from snapshot");
   }
 
   @Override
@@ -165,7 +165,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
       }
       return newLeadership;
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -182,7 +182,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
         notifyLeadershipChange(oldLeadership, newLeadership);
       }
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -204,7 +204,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
       if (newLeader != null) {
         this.leader = newLeader;
         this.term = termCounter.incrementAndGet();
-        this.termStartTime = context().wallClock().getTime().unixTimestamp();
+        this.termStartTime = getContext().wallClock().getTime().unixTimestamp();
       }
       Leadership<byte[]> newLeadership = leadership();
       if (!Objects.equal(oldLeadership, newLeadership)) {
@@ -212,7 +212,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
       }
       return leader != null && Arrays.equals(commit.value().id(), leader.id());
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -252,7 +252,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
       }
       return true;
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -278,7 +278,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
             this.registrations = updatedRegistrations;
             this.leader = updatedRegistrations.get(0);
             this.term = termCounter.incrementAndGet();
-            this.termStartTime = context().wallClock().getTime().unixTimestamp();
+            this.termStartTime = getContext().wallClock().getTime().unixTimestamp();
           } else {
             this.registrations = updatedRegistrations;
             this.leader = null;
@@ -292,7 +292,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
         notifyLeadershipChange(oldLeadership, newLeadership);
       }
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -306,7 +306,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
     try {
       return leadership();
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -364,7 +364,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
           this.registrations = updatedRegistrations;
           this.leader = updatedRegistrations.get(0);
           this.term = termCounter.incrementAndGet();
-          this.termStartTime = context().wallClock().getTime().unixTimestamp();
+          this.termStartTime = getContext().wallClock().getTime().unixTimestamp();
         } else {
           this.registrations = updatedRegistrations;
           this.leader = null;
@@ -388,7 +388,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
           this.registrations = updatedRegistrations;
           this.leader = updatedRegistrations.get(0);
           this.term = termCounter.incrementAndGet();
-          this.termStartTime = context().wallClock().getTime().unixTimestamp();
+          this.termStartTime = getContext().wallClock().getTime().unixTimestamp();
         } else {
           this.registrations = updatedRegistrations;
           this.leader = null;
@@ -421,7 +421,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
       if (newLeader) {
         this.leader = registration;
         this.term = termCounter.incrementAndGet();
-        this.termStartTime = context().wallClock().getTime().unixTimestamp();
+        this.termStartTime = getContext().wallClock().getTime().unixTimestamp();
       }
     }
   }

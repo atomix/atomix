@@ -91,19 +91,19 @@ public class LeaderElectorService extends AbstractPrimitiveService {
     writer.writeObject(Sets.newHashSet(listeners.keySet()), SERIALIZER::encode);
     writer.writeObject(termCounters, SERIALIZER::encode);
     writer.writeObject(elections, SERIALIZER::encode);
-    logger().debug("Took state machine snapshot");
+    getLogger().debug("Took state machine snapshot");
   }
 
   @Override
   public void restore(BufferInput<?> reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
-      listeners.put(sessionId, sessions().getSession(sessionId));
+      listeners.put(sessionId, getSessions().getSession(sessionId));
     }
     termCounters = reader.readObject(SERIALIZER::decode);
     elections = reader.readObject(SERIALIZER::decode);
     elections.values().forEach(e -> e.elections = elections);
-    logger().debug("Reinstated state machine from snapshot");
+    getLogger().debug("Reinstated state machine from snapshot");
   }
 
   @Override
@@ -182,7 +182,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
       }
       return newLeadership;
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -203,7 +203,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
         notifyLeadershipChange(topic, oldLeadership, newLeadership);
       }
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -229,7 +229,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
           electionState.leader() != null &&
           Arrays.equals(commit.value().id(), electionState.leader().id()));
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -255,7 +255,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
       }
       return true;
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -280,7 +280,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
       });
       notifyLeadershipChanges(changes);
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -296,7 +296,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
     try {
       return leadership(topic);
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -315,7 +315,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
         return leader != null && Arrays.equals(leader.id(), id);
       }).keySet());
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -332,7 +332,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
       result.putAll(Maps.transformEntries(elections, (k, v) -> leadership(k)));
       return result;
     } catch (Exception e) {
-      logger().error("State machine operation failed", e);
+      getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);
     }
   }

@@ -72,7 +72,7 @@ public class ConsistentMapServiceTest {
 
   private static class TestConsistentMapService extends ConsistentMapService {
     @Override
-    protected Scheduler scheduler() {
+    protected Scheduler getScheduler() {
       return new Scheduler() {
         @Override
         public Scheduled schedule(Duration delay, Runnable callback) {
@@ -87,7 +87,7 @@ public class ConsistentMapServiceTest {
     }
 
     @Override
-    protected WallClock wallClock() {
+    protected WallClock getWallClock() {
       return new WallClock();
     }
   }

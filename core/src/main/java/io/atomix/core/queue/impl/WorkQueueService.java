@@ -91,7 +91,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
   public void restore(BufferInput<?> reader) {
     registeredWorkers = Maps.newHashMap();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
-      registeredWorkers.put(sessionId, sessions().getSession(sessionId));
+      registeredWorkers.put(sessionId, getSessions().getSession(sessionId));
     }
     assignments = reader.readObject(SERIALIZER::decode);
     unassignedTasks = reader.readObject(SERIALIZER::decode);
@@ -169,7 +169,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
           })
           .collect(Collectors.toCollection(ArrayList::new));
     } catch (Exception e) {
-      logger().warn("State machine update failed", e);
+      getLogger().warn("State machine update failed", e);
       throw Throwables.propagate(e);
     }
   }
@@ -186,7 +186,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
         }
       });
     } catch (Exception e) {
-      logger().warn("State machine update failed", e);
+      getLogger().warn("State machine update failed", e);
       throw Throwables.propagate(e);
     }
   }

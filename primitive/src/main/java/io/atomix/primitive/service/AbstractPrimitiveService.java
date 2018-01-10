@@ -74,7 +74,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return the service context
    */
-  protected ServiceContext context() {
+  protected ServiceContext getContext() {
     return context;
   }
 
@@ -83,7 +83,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return the service logger
    */
-  protected Logger logger() {
+  protected Logger getLogger() {
     return log;
   }
 
@@ -92,7 +92,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The state machine scheduler.
    */
-  protected Scheduler scheduler() {
+  protected Scheduler getScheduler() {
     return executor;
   }
 
@@ -101,7 +101,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The unique state machine identifier.
    */
-  protected PrimitiveId serviceId() {
+  protected PrimitiveId getServiceId() {
     return context.serviceId();
   }
 
@@ -110,7 +110,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The unique state machine name.
    */
-  protected String serviceName() {
+  protected String getServiceName() {
     return context.serviceName();
   }
 
@@ -119,7 +119,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The state machine's current index.
    */
-  protected long currentIndex() {
+  protected long getCurrentIndex() {
     return context.currentIndex();
   }
 
@@ -128,8 +128,8 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The state machine's clock.
    */
-  protected Clock clock() {
-    return wallClock();
+  protected Clock getClock() {
+    return getWallClock();
   }
 
   /**
@@ -137,7 +137,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The state machine's wall clock.
    */
-  protected WallClock wallClock() {
+  protected WallClock getWallClock() {
     return context.wallClock();
   }
 
@@ -146,7 +146,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The state machine's logical clock.
    */
-  protected LogicalClock logicalClock() {
+  protected LogicalClock getLogicalClock() {
     return context.logicalClock();
   }
 
@@ -155,7 +155,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The state machine's sessions.
    */
-  protected Sessions sessions() {
+  protected Sessions getSessions() {
     return context.sessions();
   }
 

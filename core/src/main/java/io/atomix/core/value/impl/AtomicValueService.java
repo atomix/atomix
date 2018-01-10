@@ -80,7 +80,7 @@ public class AtomicValueService extends AbstractPrimitiveService {
     value = reader.readBytes(reader.readInt());
     listeners = new HashSet<>();
     for (Long sessionId : reader.<java.util.Set<Long>>readObject(SERIALIZER::decode)) {
-      listeners.add(sessions().getSession(sessionId));
+      listeners.add(getSessions().getSession(sessionId));
     }
   }
 
