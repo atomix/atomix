@@ -82,13 +82,13 @@ public class RaftServiceContext implements ServiceContext {
   private OperationType currentOperation;
   private final LogicalClock logicalClock = new LogicalClock() {
     @Override
-    public LogicalTimestamp time() {
+    public LogicalTimestamp getTime() {
       return new LogicalTimestamp(currentIndex);
     }
   };
   private final WallClock wallClock = new WallClock() {
     @Override
-    public WallClockTimestamp time() {
+    public WallClockTimestamp getTime() {
       return new WallClockTimestamp(currentTimestamp);
     }
   };

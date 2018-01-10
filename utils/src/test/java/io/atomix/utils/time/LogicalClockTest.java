@@ -27,11 +27,11 @@ public class LogicalClockTest {
   public void testLogicalClock() throws Exception {
     LogicalClock clock = new LogicalClock();
     assertEquals(1, clock.increment().value());
-    assertEquals(1, clock.time().value());
+    assertEquals(1, clock.getTime().value());
     assertEquals(2, clock.increment().value());
-    assertEquals(2, clock.time().value());
+    assertEquals(2, clock.getTime().value());
     assertEquals(5, clock.update(LogicalTimestamp.of(5)).value());
-    assertEquals(5, clock.time().value());
+    assertEquals(5, clock.getTime().value());
     assertEquals(5, clock.update(LogicalTimestamp.of(3)).value());
   }
 }

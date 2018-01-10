@@ -27,9 +27,9 @@ public class WallClockTest {
   @Test
   public void testWallClock() throws Exception {
     WallClock clock = new WallClock();
-    WallClockTimestamp time = clock.time();
+    WallClockTimestamp time = clock.getTime();
     assertNotNull(time);
     Thread.sleep(5);
-    assertTrue(clock.time().unixTimestamp() > time.unixTimestamp());
+    assertTrue(clock.getTime().unixTimestamp() > time.unixTimestamp());
   }
 }

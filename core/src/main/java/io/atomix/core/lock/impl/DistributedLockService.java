@@ -73,7 +73,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
     timers.clear();
     for (LockHolder holder : queue) {
       if (holder.expire > 0) {
-        timers.put(holder.index, scheduler().schedule(Duration.ofMillis(holder.expire - context().wallClock().time().unixTimestamp()), () -> {
+        timers.put(holder.index, scheduler().schedule(Duration.ofMillis(holder.expire - context().wallClock().getTime().unixTimestamp()), () -> {
           timers.remove(holder.index);
           queue.remove(holder);
           Session session = sessions().getSession(holder.session);
@@ -113,7 +113,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
           commit.value().id(),
           commit.index(),
           commit.session().sessionId().id(),
-          context().wallClock().time().unixTimestamp() + commit.value().timeout());
+          context().wallClock().getTime().unixTimestamp() + commit.value().timeout());
       queue.add(holder);
       timers.put(commit.index(), scheduler().schedule(Duration.ofMillis(commit.value().timeout()), () -> {
         timers.remove(commit.index());

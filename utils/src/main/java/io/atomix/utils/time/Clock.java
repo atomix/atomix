@@ -25,6 +25,6 @@ public interface Clock<T extends Timestamp> {
    *
    * @return the current time
    */
-  T time();
+  T getTime();
 
 }

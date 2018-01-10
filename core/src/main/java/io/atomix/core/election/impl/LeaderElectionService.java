@@ -204,7 +204,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
       if (newLeader != null) {
         this.leader = newLeader;
         this.term = termCounter.incrementAndGet();
-        this.termStartTime = context().wallClock().time().unixTimestamp();
+        this.termStartTime = context().wallClock().getTime().unixTimestamp();
       }
       Leadership<byte[]> newLeadership = leadership();
       if (!Objects.equal(oldLeadership, newLeadership)) {
@@ -278,7 +278,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
             this.registrations = updatedRegistrations;
             this.leader = updatedRegistrations.get(0);
             this.term = termCounter.incrementAndGet();
-            this.termStartTime = context().wallClock().time().unixTimestamp();
+            this.termStartTime = context().wallClock().getTime().unixTimestamp();
           } else {
             this.registrations = updatedRegistrations;
             this.leader = null;
@@ -364,7 +364,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
           this.registrations = updatedRegistrations;
           this.leader = updatedRegistrations.get(0);
           this.term = termCounter.incrementAndGet();
-          this.termStartTime = context().wallClock().time().unixTimestamp();
+          this.termStartTime = context().wallClock().getTime().unixTimestamp();
         } else {
           this.registrations = updatedRegistrations;
           this.leader = null;
@@ -388,7 +388,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
           this.registrations = updatedRegistrations;
           this.leader = updatedRegistrations.get(0);
           this.term = termCounter.incrementAndGet();
-          this.termStartTime = context().wallClock().time().unixTimestamp();
+          this.termStartTime = context().wallClock().getTime().unixTimestamp();
         } else {
           this.registrations = updatedRegistrations;
           this.leader = null;
@@ -421,7 +421,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
       if (newLeader) {
         this.leader = registration;
         this.term = termCounter.incrementAndGet();
-        this.termStartTime = context().wallClock().time().unixTimestamp();
+        this.termStartTime = context().wallClock().getTime().unixTimestamp();
       }
     }
   }
