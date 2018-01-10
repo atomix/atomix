@@ -100,11 +100,13 @@ public class PrimaryRole extends PrimaryBackupRole {
                 context.setIndex(index),
                 request.operation().id(),
                 request.operation().value(),
-                session,
+                context.setSession(session),
                 context.setTimestamp(timestamp)));
             return ExecuteResponse.ok(result);
           } catch (Exception e) {
             return ExecuteResponse.error();
+          } finally {
+            context.setSession(null);
           }
         });
   }
@@ -138,11 +140,13 @@ public class PrimaryRole extends PrimaryBackupRole {
           context.getIndex(),
           request.operation().id(),
           request.operation().value(),
-          session,
+          context.setSession(session),
           context.currentTimestamp()));
       return ExecuteResponse.ok(result);
     } catch (Exception e) {
       return ExecuteResponse.error();
+    } finally {
+      context.setSession(null);
     }
   }
 

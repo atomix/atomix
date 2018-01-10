@@ -81,6 +81,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private List<NodeId> backups;
   private long currentTerm;
   private long currentIndex;
+  private Session currentSession;
   private long currentTimestamp;
   private long operationIndex;
   private long commitIndex;
@@ -199,6 +200,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     return currentIndex;
   }
 
+  @Override
+  public Session currentSession() {
+    return currentSession;
+  }
+
   /**
    * Returns the current wall clock timestamp.
    *
@@ -298,6 +304,17 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public long getIndex() {
     currentOperation = OperationType.QUERY;
     return currentIndex;
+  }
+
+  /**
+   * Sets the current session.
+   *
+   * @param session the current session
+   * @return the updated session
+   */
+  public Session setSession(Session session) {
+    this.currentSession = session;
+    return session;
   }
 
   /**

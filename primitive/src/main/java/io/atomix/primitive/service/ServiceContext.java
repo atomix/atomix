@@ -19,6 +19,7 @@ package io.atomix.primitive.service;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationType;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.Sessions;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.WallClock;
@@ -63,6 +64,13 @@ public interface ServiceContext {
    * @return The current state machine index.
    */
   long currentIndex();
+
+  /**
+   * Returns the current session.
+   *
+   * @return the current session
+   */
+  Session currentSession();
 
   /**
    * Returns the current operation type.

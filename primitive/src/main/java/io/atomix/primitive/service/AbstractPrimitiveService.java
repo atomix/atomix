@@ -124,6 +124,15 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
   }
 
   /**
+   * Returns the current session.
+   *
+   * @return the current session
+   */
+  protected Session getCurrentSession() {
+    return context.currentSession();
+  }
+
+  /**
    * Returns the state machine's clock.
    *
    * @return The state machine's clock.
