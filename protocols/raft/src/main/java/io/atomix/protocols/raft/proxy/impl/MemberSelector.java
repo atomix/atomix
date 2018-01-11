@@ -138,7 +138,7 @@ public final class MemberSelector implements Iterator<NodeId>, AutoCloseable {
    */
   public MemberSelector reset(NodeId leader, Collection<NodeId> members) {
     if (changed(leader, members)) {
-      this.leader = leader;
+      this.leader = leader != null && members.contains(leader) ? leader : null;
       this.members = Sets.newLinkedHashSet(members);
       this.selections = strategy.selectConnections(leader, Lists.newLinkedList(members));
       this.selectionsIterator = null;
@@ -152,8 +152,8 @@ public final class MemberSelector implements Iterator<NodeId>, AutoCloseable {
   private boolean changed(NodeId leader, Collection<NodeId> members) {
     checkNotNull(members, "members");
     checkArgument(!members.isEmpty(), "members cannot be empty");
-    if (leader != null) {
-      checkArgument(members.contains(leader), "leader must be present in members list");
+    if (leader != null && !members.contains(leader)) {
+      leader = null;
     }
     if (!Objects.equals(this.leader, leader)) {
       return true;
