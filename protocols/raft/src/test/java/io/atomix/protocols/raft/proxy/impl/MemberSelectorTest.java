@@ -141,6 +141,10 @@ public class MemberSelectorTest {
     selectorManager.resetAll(null, Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
     assertNull(selector.leader());
     assertTrue(selector.hasNext());
+
+    selectorManager.resetAll(NodeId.from("a"), Arrays.asList(NodeId.from("b"), NodeId.from("c")));
+    assertNull(selector.leader());
+    assertTrue(selector.hasNext());
   }
 
 }
