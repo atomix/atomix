@@ -16,7 +16,11 @@
 package io.atomix.protocols.raft;
 
 import com.google.common.collect.Maps;
+import io.atomix.cluster.ClusterMetadata;
+import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
+import io.atomix.cluster.impl.DefaultClusterMetadataService;
+import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
@@ -94,7 +98,6 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -117,6 +120,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Copycat performance test.
@@ -237,7 +241,7 @@ public class RaftPerformanceTest implements Runnable {
 
   private int nextId;
   private int port = 5000;
-  private List<NodeId> members = new ArrayList<>();
+  private List<Node> members = new ArrayList<>();
   private List<RaftClient> clients = new ArrayList<>();
   private List<RaftServer> servers = new ArrayList<>();
   private LocalRaftProtocolFactory protocolFactory;
@@ -420,8 +424,14 @@ public class RaftPerformanceTest implements Runnable {
    *
    * @return The next unique member identifier.
    */
-  private NodeId nextNodeId() {
-    return NodeId.from(String.valueOf(++nextId));
+  private Node nextNode(Node.Type type) {
+    Endpoint endpoint = Endpoint.from("localhost", ++port);
+    Node node = Node.builder(NodeId.from(String.valueOf(++nextId)))
+        .withType(type)
+        .withEndpoint(endpoint)
+        .build();
+    endpointMap.put(node.id(), endpoint);
+    return node;
   }
 
   /**
@@ -431,13 +441,13 @@ public class RaftPerformanceTest implements Runnable {
     List<RaftServer> servers = new ArrayList<>();
 
     for (int i = 0; i < nodes; i++) {
-      members.add(nextNodeId());
+      members.add(nextNode(Node.Type.DATA));
     }
 
     CountDownLatch latch = new CountDownLatch(nodes);
     for (int i = 0; i < nodes; i++) {
-      RaftServer server = createServer(members.get(i));
-      server.bootstrap(members).thenRun(latch::countDown);
+      RaftServer server = createServer(members.get(i), members);
+      server.bootstrap(members.stream().map(Node::id).collect(Collectors.toList())).thenRun(latch::countDown);
       servers.add(server);
     }
 
@@ -449,24 +459,30 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Creates a Raft server.
    */
-  private RaftServer createServer(NodeId nodeId) throws UnknownHostException {
+  private RaftServer createServer(Node node, List<Node> members) throws UnknownHostException {
     RaftServerProtocol protocol;
+    ManagedMessagingService messagingService;
     if (USE_NETTY) {
-      Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      ManagedMessagingService messagingService = (ManagedMessagingService) NettyMessagingService.builder().withEndpoint(endpoint).build().start().join();
+      messagingService = (ManagedMessagingService) NettyMessagingService.builder()
+          .withEndpoint(node.endpoint())
+          .build()
+          .start()
+          .join();
       messagingServices.add(messagingService);
-      endpointMap.put(nodeId, endpoint);
       protocol = new RaftServerMessagingProtocol(messagingService, protocolSerializer, endpointMap::get);
     } else {
-      protocol = protocolFactory.newServerProtocol(nodeId);
+      protocol = protocolFactory.newServerProtocol(node.id());
     }
 
-    RaftServer.Builder builder = RaftServer.builder(nodeId)
+    RaftServer.Builder builder = RaftServer.builder(node.id())
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
+        .withClusterService(new DefaultClusterService(node, new DefaultClusterMetadataService(ClusterMetadata.builder()
+            .withBootstrapNodes(members)
+            .build(), messagingService), messagingService))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MAPPED)
-            .withDirectory(new File(String.format("target/perf-logs/%s", nodeId)))
+            .withDirectory(new File(String.format("target/perf-logs/%s", node.id())))
             .withSerializer(storageSerializer)
             .withMaxEntriesPerSegment(32768)
             .withMaxSegmentSize(1024 * 1024)
@@ -482,25 +498,23 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a Raft client.
    */
   private RaftClient createClient() throws Exception {
-    NodeId nodeId = nextNodeId();
+    Node node = nextNode(Node.Type.CLIENT);
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
-      Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      MessagingService messagingService = NettyMessagingService.builder().withEndpoint(endpoint).build().start().join();
-      endpointMap.put(nodeId, endpoint);
+      MessagingService messagingService = NettyMessagingService.builder().withEndpoint(node.endpoint()).build().start().join();
       protocol = new RaftClientMessagingProtocol(messagingService, protocolSerializer, endpointMap::get);
     } else {
-      protocol = protocolFactory.newClientProtocol(nodeId);
+      protocol = protocolFactory.newClientProtocol(node.id());
     }
 
     RaftClient client = RaftClient.builder()
-        .withNodeId(nodeId)
+        .withNodeId(node.id())
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .build();
 
-    client.connect(members).join();
+    client.connect(members.stream().map(Node::id).collect(Collectors.toList())).join();
     clients.add(client);
     return client;
   }
