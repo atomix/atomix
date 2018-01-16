@@ -1020,6 +1020,7 @@ public class NettyMessagingService implements ManagedMessagingService {
    * Request-reply timeout history tracker.
    */
   private static final class RequestMonitor {
+    private static final int MIN_REPLY_TIME = 1;
     private final DescriptiveStatistics samples = new SynchronizedDescriptiveStatistics(WINDOW_SIZE);
 
     /**
@@ -1028,7 +1029,9 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @param replyTime the reply time to add to the history
      */
     void addReplyTime(long replyTime) {
-      samples.addValue(replyTime);
+      if (replyTime > MIN_REPLY_TIME) {
+        samples.addValue(replyTime);
+      }
     }
 
     /**
