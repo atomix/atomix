@@ -151,6 +151,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   private static final long HISTORY_EXPIRE_MILLIS = Duration.ofMinutes(1).toMillis();
+  private static final long MIN_TIMEOUT_MILLIS = 100;
   private static final long MAX_TIMEOUT_MILLIS = 15000;
   private static final long TIMEOUT_INTERVAL = 50;
   private static final int WINDOW_SIZE = 100;
@@ -888,7 +889,7 @@ public class NettyMessagingService implements ManagedMessagingService {
         try {
           RequestMonitor requestMonitor = requestMonitors.get(callback.type, RequestMonitor::new);
           long elapsedTime = currentTime - callback.time;
-          if (elapsedTime > MAX_TIMEOUT_MILLIS || requestMonitor.isTimedOut(elapsedTime)) {
+          if (elapsedTime > MAX_TIMEOUT_MILLIS || (elapsedTime > MIN_TIMEOUT_MILLIS && requestMonitor.isTimedOut(elapsedTime))) {
             iterator.remove();
             requestMonitor.addReplyTime(elapsedTime);
             callback.completeExceptionally(
