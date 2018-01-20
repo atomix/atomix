@@ -243,6 +243,47 @@ public abstract class AbstractLogTest {
   }
 
   @Test
+  public void testTruncateRead() throws Exception {
+    for (int i = 1; i <= 55; i++) {
+      if (i < 3) {
+        continue;
+      }
+
+      RaftLog log = createLog();
+      RaftLogWriter writer = log.writer();
+      RaftLogReader reader = log.openReader(1);
+
+      long term = 0;
+
+      for (int j = 1; j <= i; j++) {
+        assertEquals(j, writer.append(new TestEntry(++term, 32)).index());
+      }
+
+      for (int j = 1; j <= i - 2; j++) {
+        assertTrue(reader.hasNext());
+        assertEquals(j, reader.next().index());
+      }
+
+      writer.truncate(i - 2);
+
+      assertFalse(reader.hasNext());
+      assertEquals(i - 1, writer.append(new TestEntry(++term, 32)).index());
+      assertEquals(i, writer.append(new TestEntry(++term, 32)).index());
+
+      assertTrue(reader.hasNext());
+      Indexed<RaftLogEntry> entry = reader.next();
+      assertEquals(i - 1, entry.index());
+      assertEquals(i + 1, entry.entry().term());
+      assertTrue(reader.hasNext());
+      entry = reader.next();
+      assertEquals(i, entry.index());
+      assertEquals(i + 2, entry.entry().term());
+
+      cleanupStorage();
+    }
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   public void testWriteReadEntries() throws Exception {
     RaftLog log = createLog();
