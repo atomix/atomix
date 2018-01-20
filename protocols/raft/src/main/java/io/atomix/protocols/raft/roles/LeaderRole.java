@@ -25,6 +25,7 @@ import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
 import io.atomix.protocols.raft.impl.MetadataResult;
 import io.atomix.protocols.raft.impl.OperationResult;
+import io.atomix.protocols.raft.impl.PendingCommand;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -80,6 +81,7 @@ import java.util.stream.Collectors;
  * Leader state.
  */
 public final class LeaderRole extends ActiveRole {
+  private static final int MAX_PENDING_COMMANDS = 1000;
   private static final int MAX_APPEND_ATTEMPTS = 5;
 
   private final ClusterEventListener clusterListener = this::handleClusterEvent;
@@ -594,19 +596,37 @@ public final class LeaderRole extends ActiveRole {
 
     final long sequenceNumber = request.sequenceNumber();
 
+    // If a command with the given sequence number is already pending, return the existing future to ensure
+    // duplicate requests aren't committed as duplicate entries in the log.
+    PendingCommand existingCommand = session.getCommand(sequenceNumber);
+    if (existingCommand != null) {
+      if (sequenceNumber == session.nextRequestSequence()) {
+          session.removeCommand(sequenceNumber);
+          commitCommand(existingCommand.request(), existingCommand.future());
+          session.setRequestSequence(sequenceNumber);
+          drainCommands(session);
+      }
+      return existingCommand.future();
+    }
+
     final CompletableFuture<CommandResponse> future = new CompletableFuture<>();
 
-    // If the session's current sequence number is less then one prior to the request sequence number, reject
-    // the command to force it to be resent in the correct order. Note that it's possible for the session
-    // sequence number to be greater than the request sequence number. In that case, it's likely that the
-    // command was submitted more than once to the cluster, and the command will be deduplicated once
-    // applied to the state machine.
+    // If the request sequence number is greater than the next sequence number, that indicates a command is missing.
+    // Register the command request and return a future to be completed once commands are properly sequenced.
+    // If the session's current sequence number is too far beyond the last known sequence number, reject the command
+    // to force it to be resent by the client.
     if (sequenceNumber > session.nextRequestSequence()) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
-          .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.COMMAND_FAILURE)
-          .withLastSequence(session.getRequestSequence())
-          .build()));
+      if (session.getCommands().size() < MAX_PENDING_COMMANDS) {
+          log.trace("Registered sequence command {} > {}", sequenceNumber, session.nextRequestSequence());
+          session.registerCommand(request.sequenceNumber(), new PendingCommand(request, future));
+          return future;
+      } else {
+          return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+                  .withStatus(RaftResponse.Status.ERROR)
+                  .withError(RaftError.Type.COMMAND_FAILURE)
+                  .withLastSequence(session.getRequestSequence())
+                  .build()));
+      }
     }
 
     // If the command has already been applied to the state machine then return a cached result if possible, otherwise
@@ -614,14 +634,12 @@ public final class LeaderRole extends ActiveRole {
     if (sequenceNumber <= session.getCommandSequence()) {
       OperationResult result = session.getResult(sequenceNumber);
       if (result != null) {
-        completeOperation(result, CommandResponse.builder(), null, future);
+          completeOperation(result, CommandResponse.builder(), null, future);
       } else {
-        future.complete(CommandResponse.builder()
-            .withStatus(RaftResponse.Status.OK)
-            .withIndex(session.getLastApplied())
-            .withEventIndex(0)
-            .withResult(new byte[0])
-            .build());
+          future.complete(CommandResponse.builder()
+                  .withStatus(RaftResponse.Status.ERROR)
+                  .withError(RaftError.Type.PROTOCOL_ERROR)
+                  .build());
       }
     }
     // Otherwise, commit the command and update the request sequence number.
@@ -631,6 +649,22 @@ public final class LeaderRole extends ActiveRole {
     }
 
     return future.thenApply(this::logResponse);
+  }
+
+  /**
+   * Sequentially drains pending commands from the session's command request queue.
+   *
+   * @param session the session for which to drain commands
+   */
+  private void drainCommands(RaftSession session) {
+    long nextSequence = session.nextRequestSequence();
+    PendingCommand nextCommand = session.removeCommand(nextSequence);
+    while (nextCommand != null) {
+      commitCommand(nextCommand.request(), nextCommand.future());
+      session.setRequestSequence(nextSequence);
+      nextSequence = session.nextRequestSequence();
+      nextCommand = session.removeCommand(nextSequence);
+    }
   }
 
   /**
@@ -1028,13 +1062,28 @@ public final class LeaderRole extends ActiveRole {
     }
   }
 
+  /**
+   * Fails pending commands.
+   */
+  private void failPendingCommands() {
+    for (RaftSession session : raft.getSessions().getSessions()) {
+      for (PendingCommand command : session.clearCommands()) {
+        command.future().complete(logResponse(CommandResponse.builder()
+            .withStatus(RaftResponse.Status.ERROR)
+            .withError(RaftError.Type.COMMAND_FAILURE, "Request sequence number " + command.request().sequenceNumber() + " out of sequence")
+            .withLastSequence(session.getRequestSequence())
+            .build()));
+      }
+    }
+  }
+
   @Override
   public synchronized CompletableFuture<Void> stop() {
     raft.getClusterService().removeListener(clusterListener);
     return super.stop()
         .thenRun(appender::close)
         .thenRun(this::cancelAppendTimer)
-        .thenRun(this::stepDown);
+        .thenRun(this::stepDown)
+        .thenRun(this::failPendingCommands);
   }
-
 }
