@@ -92,7 +92,7 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
 
   private void scheduleRetry(RaftOperation operation, int attemptIndex, CompletableFuture<byte[]> future) {
     RaftProxy.State retryState = client.getState();
-    scheduler.schedule(delayBetweenRetries, () -> {
+    scheduler.schedule(delayBetweenRetries.multipliedBy(2 ^ attemptIndex), () -> {
       if (retryState == RaftProxy.State.CONNECTED || client.getState() == RaftProxy.State.CONNECTED) {
         execute(operation, attemptIndex + 1, future);
       } else {
