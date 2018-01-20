@@ -768,7 +768,7 @@ public class RaftServiceContext implements ServiceContext {
     // Set the current operation type to QUERY to prevent events from being sent to clients.
     setOperation(OperationType.QUERY);
 
-    Commit<byte[]> commit = new DefaultCommit<>(session.getLastApplied(), operation.id(), operation.value(), session, timestamp);
+    Commit<byte[]> commit = new DefaultCommit<>(currentIndex, operation.id(), operation.value(), session, timestamp);
 
     long eventIndex = session.getEventIndex();
 
