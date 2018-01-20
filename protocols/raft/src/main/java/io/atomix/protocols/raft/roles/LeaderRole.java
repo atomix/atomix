@@ -701,7 +701,7 @@ public final class LeaderRole extends ActiveRole {
               } else {
                 future.complete(CommandResponse.builder()
                     .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.PROTOCOL_ERROR)
+                    .withError(RaftError.Type.COMMAND_FAILURE)
                     .build());
               }
             } else {

@@ -462,9 +462,15 @@ public class PassiveRole extends InactiveRole {
     }
 
     if (error == null) {
-      future.complete(builder.withStatus(RaftResponse.Status.OK)
-          .withResult(result != null ? result.result() : null)
-          .build());
+      if (result == null) {
+        future.complete(builder.withStatus(RaftResponse.Status.ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .build());
+      } else {
+        future.complete(builder.withStatus(RaftResponse.Status.OK)
+            .withResult(result.result())
+            .build());
+      }
     } else if (error instanceof CompletionException && error.getCause() instanceof RaftException) {
       future.complete(builder.withStatus(RaftResponse.Status.ERROR)
           .withError(((RaftException) error.getCause()).getType(), error.getMessage())
