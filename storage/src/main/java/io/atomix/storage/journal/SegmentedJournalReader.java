@@ -133,7 +133,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
   public boolean hasNext() {
     if (!currentReader.hasNext()) {
       JournalSegment<E> nextSegment = journal.getNextSegment(currentSegment.index());
-      if (nextSegment != null) {
+      if (nextSegment != null && nextSegment.index() == getNextIndex()) {
         previousEntry = currentReader.getCurrentEntry();
         currentSegment = nextSegment;
         currentReader = currentSegment.createReader();
@@ -148,7 +148,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
   public Indexed<E> next() {
     if (!currentReader.hasNext()) {
       JournalSegment<E> nextSegment = journal.getNextSegment(currentSegment.index());
-      if (nextSegment != null) {
+      if (nextSegment != null && nextSegment.index() == getNextIndex()) {
         previousEntry = currentReader.getCurrentEntry();
         currentSegment = nextSegment;
         currentReader = currentSegment.createReader();
