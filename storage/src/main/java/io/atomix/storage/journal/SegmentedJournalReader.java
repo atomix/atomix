@@ -100,6 +100,8 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
       rewind(index);
     } else if (index > currentReader.getNextIndex()) {
       forward(index);
+    } else {
+      currentReader.reset(index);
     }
   }
 

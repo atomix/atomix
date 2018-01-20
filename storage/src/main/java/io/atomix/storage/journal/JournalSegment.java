@@ -187,6 +187,8 @@ public class JournalSegment<E> implements AutoCloseable {
     return toStringHelper(this)
         .add("id", id())
         .add("version", version())
+        .add("index", index())
+        .add("size", size())
         .toString();
   }
 }
