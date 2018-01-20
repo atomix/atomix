@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import io.atomix.cluster.NodeId;
@@ -44,6 +45,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -238,6 +240,36 @@ public class RaftProxyManager {
   }
 
   /**
+   * Resets indexes for all sessions.
+   */
+  private synchronized void resetAllIndexes() {
+    Collection<RaftProxyState> sessions = Lists.newArrayList(this.sessions.values());
+
+    // Allocate session IDs, command response sequence numbers, and event index arrays.
+    long[] sessionIds = new long[sessions.size()];
+    long[] commandResponses = new long[sessions.size()];
+    long[] eventIndexes = new long[sessions.size()];
+
+    // For each session that needs to be kept alive, populate batch request arrays.
+    int i = 0;
+    for (RaftProxyState sessionState : sessions) {
+      sessionIds[i] = sessionState.getSessionId().id();
+      commandResponses[i] = sessionState.getCommandResponse();
+      eventIndexes[i] = sessionState.getEventIndex();
+      i++;
+    }
+
+    log.trace("Resetting {} sessions", sessionIds.length);
+
+    KeepAliveRequest request = KeepAliveRequest.builder()
+        .withSessionIds(sessionIds)
+        .withCommandSequences(commandResponses)
+        .withEventIndexes(eventIndexes)
+        .build();
+    connection.keepAlive(request);
+  }
+
+  /**
    * Resets indexes for the given session.
    *
    * @param sessionId The session for which to reset indexes.
@@ -379,10 +411,14 @@ public class RaftProxyManager {
    */
   private CompletableFuture<HeartbeatResponse> handleHeartbeat(HeartbeatRequest request) {
     log.trace("Received {}", request);
+    boolean newLeader = !Objects.equals(selectorManager.leader(), request.leader());
     selectorManager.resetAll(request.leader(), request.members());
     HeartbeatResponse response = HeartbeatResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .build();
+    if (newLeader) {
+      resetAllIndexes();
+    }
     log.trace("Sending {}", response);
     return CompletableFuture.completedFuture(response);
   }
