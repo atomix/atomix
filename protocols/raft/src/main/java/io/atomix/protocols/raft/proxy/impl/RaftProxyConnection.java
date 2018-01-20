@@ -275,9 +275,15 @@ public class RaftProxyConnection {
     }
 
     if (!selector.hasNext()) {
-      log.debug("Failed to connect to the cluster");
-      selector.reset();
-      return null;
+      if (selector.leader() != null) {
+        selector.reset(null, selector.members());
+        this.member = selector.next();
+        return member;
+      } else {
+        log.debug("Failed to connect to the cluster");
+        selector.reset();
+        return null;
+      }
     } else {
       this.member = selector.next();
       return member;
