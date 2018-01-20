@@ -553,7 +553,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   void resetTail(long index) {
     for (SegmentedJournalReader<E> reader : readers) {
-      if (reader.getNextIndex() > index) {
+      if (reader.getNextIndex() >= index) {
         reader.reset(index);
       }
     }
