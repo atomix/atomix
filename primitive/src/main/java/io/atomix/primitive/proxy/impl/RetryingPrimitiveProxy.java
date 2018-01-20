@@ -93,7 +93,7 @@ public class RetryingPrimitiveProxy extends DelegatingPrimitiveProxy {
 
   private void scheduleRetry(PrimitiveOperation operation, int attemptIndex, CompletableFuture<byte[]> future) {
     PrimitiveProxy.State retryState = proxy.getState();
-    scheduler.schedule(delayBetweenRetries, () -> {
+    scheduler.schedule(delayBetweenRetries.multipliedBy(2 ^ attemptIndex), () -> {
       if (retryState == PrimitiveProxy.State.CONNECTED || proxy.getState() == PrimitiveProxy.State.CONNECTED) {
         execute(operation, attemptIndex + 1, future);
       } else {
