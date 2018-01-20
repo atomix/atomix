@@ -281,7 +281,10 @@ final class RaftProxyInvoker {
      * @param t The exception with which to fail the attempt.
      */
     public void fail(Throwable t) {
-      complete(t);
+      sequence(null, () -> {
+        state.setCommandResponse(request.sequenceNumber());
+        future.completeExceptionally(t);
+      });
 
       // If the session has been closed, update the client's state.
       if (CLOSED_PREDICATE.test(t)) {
