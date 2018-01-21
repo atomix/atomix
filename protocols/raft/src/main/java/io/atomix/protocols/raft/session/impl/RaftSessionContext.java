@@ -459,6 +459,7 @@ public class RaftSessionContext implements RaftSession {
    * @param result   The result.
    */
   public void registerResult(long sequence, OperationResult result) {
+    setRequestSequence(sequence);
     results.put(sequence, result);
   }
 
