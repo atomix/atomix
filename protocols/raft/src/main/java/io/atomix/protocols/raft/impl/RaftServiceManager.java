@@ -509,8 +509,10 @@ public class RaftServiceManager implements AutoCloseable {
     // If the session is null, return an UnknownSessionException. Commands applied to the state machine must
     // have a session. We ensure that session register/unregister entries are not compacted from the log
     // until all associated commands have been cleaned.
+    // Note that it's possible for a session to be unknown if a later snapshot has been taken, so we don't want
+    // to log warnings here.
     if (session == null) {
-      logger.warn("Unknown session: " + entry.entry().session());
+      logger.debug("Unknown session: " + entry.entry().session());
       return Futures.exceptionalFuture(new RaftException.UnknownSession("unknown session: " + entry.entry().session()));
     }
 
