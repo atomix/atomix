@@ -38,6 +38,7 @@ public class RaftLogCompactor {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftLogCompactor.class);
 
   private static final Duration SNAPSHOT_INTERVAL = Duration.ofSeconds(10);
+  private static final Duration SNAPSHOT_DELAY = Duration.ofMinutes(1);
   private static final Duration MIN_COMPACT_INTERVAL = Duration.ofSeconds(10);
 
   private static final int SEGMENT_BUFFER_FACTOR = 5;
@@ -276,8 +277,7 @@ public class RaftLogCompactor {
    */
   private CompletableFuture<Void> scheduleCompletion(DefaultServiceContext serviceContext, long snapshotIndex) {
     ComposableFuture<Void> future = new ComposableFuture<>();
-    Duration delay = SNAPSHOT_INTERVAL.plusMillis(random.nextInt((int) SNAPSHOT_INTERVAL.toMillis()));
-    threadContext.schedule(delay, () -> serviceContext.completeSnapshot(snapshotIndex).whenComplete(future));
+    threadContext.schedule(SNAPSHOT_DELAY, () -> serviceContext.completeSnapshot(snapshotIndex).whenComplete(future));
     return future;
   }
 
