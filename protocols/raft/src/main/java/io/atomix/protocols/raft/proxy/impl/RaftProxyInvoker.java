@@ -192,6 +192,17 @@ final class RaftProxyInvoker {
   }
 
   /**
+   * Resubmits pending commands.
+   */
+  public void reset() {
+    context.execute(() -> {
+      for (OperationAttempt attempt : attempts.values()) {
+        attempt.retry();
+      }
+    });
+  }
+
+  /**
    * Closes the submitter.
    *
    * @return A completable future to be completed with a list of pending operations.
