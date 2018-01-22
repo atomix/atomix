@@ -21,16 +21,37 @@ import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 
 /**
  * Cluster member selectors.
  */
 public final class MemberSelectorManager {
   private final Set<MemberSelector> selectors = new CopyOnWriteArraySet<>();
+  private final Set<Consumer<NodeId>> leaderChangeListeners = new CopyOnWriteArraySet<>();
   private volatile NodeId leader;
   private volatile Collection<NodeId> members = Collections.emptyList();
+
+  /**
+   * Adds a leader change listener.
+   *
+   * @param listener the listener to add
+   */
+  public void addLeaderChangeListener(Consumer<NodeId> listener) {
+    leaderChangeListeners.add(listener);
+  }
+
+  /**
+   * Removes a leader change listener.
+   *
+   * @param listener the listener to remove
+   */
+  public void removeLeaderChangeListener(Consumer<NodeId> listener) {
+    leaderChangeListeners.remove(listener);
+  }
 
   /**
    * Returns the current cluster leader.
@@ -76,9 +97,13 @@ public final class MemberSelectorManager {
    * @param members The collection of all active members.
    */
   public void resetAll(NodeId leader, Collection<NodeId> members) {
+    NodeId oldLeader = this.leader;
     this.leader = leader;
     this.members = Lists.newLinkedList(members);
     selectors.forEach(s -> s.reset(leader, this.members));
+    if (!Objects.equals(oldLeader, leader)) {
+      leaderChangeListeners.forEach(l -> l.accept(leader));
+    }
   }
 
   /**
