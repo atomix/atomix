@@ -80,7 +80,6 @@ final class FileSnapshot extends Snapshot {
   public Snapshot complete() {
     Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
     try (SnapshotDescriptor descriptor = new SnapshotDescriptor(buffer)) {
-      checkState(!descriptor.isLocked(), "cannot complete locked snapshot descriptor");
       descriptor.lock();
     }
     return super.complete();
