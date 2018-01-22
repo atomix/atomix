@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -54,6 +55,7 @@ public class DiscreteRaftProxyClient implements RaftProxyClient {
   private final RaftProxyManager sessionManager;
   private final RaftProxyListener proxyListener;
   private final RaftProxyInvoker proxySubmitter;
+  private final Consumer<MemberId> leaderChangeListener = this::onLeaderChange;
 
   public DiscreteRaftProxyClient(
       RaftProxyState state,
@@ -100,6 +102,19 @@ public class DiscreteRaftProxyClient implements RaftProxyClient {
         sequencer,
         sessionManager,
         context);
+
+    selectorManager.addLeaderChangeListener(leaderChangeListener);
+    state.addStateChangeListener(s -> {
+      if (s == RaftProxy.State.CLOSED) {
+        selectorManager.removeLeaderChangeListener(leaderChangeListener);
+      }
+    });
+  }
+
+  private void onLeaderChange(MemberId memberId) {
+    if (memberId != null) {
+      proxySubmitter.reset();
+    }
   }
 
   @Override
