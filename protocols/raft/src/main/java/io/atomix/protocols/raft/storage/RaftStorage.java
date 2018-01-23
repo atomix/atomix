@@ -347,7 +347,7 @@ public class RaftStorage {
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
     private static final double DEFAULT_FREE_DISK_BUFFER = .2;
-    private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
+    private static final boolean DEFAULT_FLUSH_ON_COMMIT = true;
     private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
 
     private String prefix = DEFAULT_PREFIX;
