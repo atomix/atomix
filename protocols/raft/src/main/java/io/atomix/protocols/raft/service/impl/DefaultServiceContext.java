@@ -250,57 +250,62 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Installs a snapshot if one exists.
    */
-  private void maybeInstallSnapshot(long index) {
-    // Look up the latest snapshot for this state machine.
-    Snapshot snapshot = raft.getSnapshotStore().getSnapshotById(serviceId);
+  public CompletableFuture<Void> installSnapshot(long index) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    serviceExecutor.execute(() -> {
+      // Look up the latest snapshot for this state machine.
+      Snapshot snapshot = raft.getSnapshotStore().getSnapshotById(serviceId);
 
-    // If the latest snapshot is non-null, hasn't been installed, and has an index lower than the current index, install it.
-    if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() < index) {
-      log.debug("Installing snapshot {}", snapshot.index());
-      try (SnapshotReader reader = snapshot.openReader()) {
-        reader.skip(Bytes.LONG); // Skip the service ID
-        ServiceType serviceType = ServiceType.from(reader.readString());
-        String serviceName = reader.readString();
-        int sessionCount = reader.readInt();
-        for (int i = 0; i < sessionCount; i++) {
-          SessionId sessionId = SessionId.from(reader.readLong());
-          MemberId node = MemberId.from(reader.readString());
-          ReadConsistency readConsistency = ReadConsistency.valueOf(reader.readString());
-          long minTimeout = reader.readLong();
-          long maxTimeout = reader.readLong();
-          long sessionTimestamp = reader.readLong();
+      // If the latest snapshot is non-null, hasn't been installed, and has an index equal to the given index, install it.
+      if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() == index) {
+        log.debug("Installing snapshot {}", snapshot.index());
+        try (SnapshotReader reader = snapshot.openReader()) {
+          reader.skip(Bytes.LONG); // Skip the service ID
+          ServiceType serviceType = ServiceType.from(reader.readString());
+          String serviceName = reader.readString();
+          int sessionCount = reader.readInt();
+          for (int i = 0; i < sessionCount; i++) {
+            SessionId sessionId = SessionId.from(reader.readLong());
+            MemberId node = MemberId.from(reader.readString());
+            ReadConsistency readConsistency = ReadConsistency.valueOf(reader.readString());
+            long minTimeout = reader.readLong();
+            long maxTimeout = reader.readLong();
+            long sessionTimestamp = reader.readLong();
 
-          // Only create a new session if one does not already exist. This is necessary to ensure only a single session
-          // is ever opened and exposed to the state machine.
-          RaftSessionContext session = sessions.addSession(new RaftSessionContext(
-              sessionId,
-              node,
-              serviceName,
-              serviceType,
-              readConsistency,
-              minTimeout,
-              maxTimeout,
-              sessionTimestamp,
-              this,
-              raft,
-              threadContextFactory));
+            // Only create a new session if one does not already exist. This is necessary to ensure only a single session
+            // is ever opened and exposed to the state machine.
+            RaftSessionContext session = sessions.addSession(new RaftSessionContext(
+                sessionId,
+                node,
+                serviceName,
+                serviceType,
+                readConsistency,
+                minTimeout,
+                maxTimeout,
+                sessionTimestamp,
+                this,
+                raft,
+                threadContextFactory));
 
-          session.setRequestSequence(reader.readLong());
-          session.setCommandSequence(reader.readLong());
-          session.setEventIndex(reader.readLong());
-          session.setLastCompleted(reader.readLong());
-          session.setLastApplied(snapshot.index());
-          session.setLastUpdated(sessionTimestamp);
-          sessions.openSession(session);
+            session.setRequestSequence(reader.readLong());
+            session.setCommandSequence(reader.readLong());
+            session.setEventIndex(reader.readLong());
+            session.setLastCompleted(reader.readLong());
+            session.setLastApplied(snapshot.index());
+            session.setLastUpdated(sessionTimestamp);
+            sessions.openSession(session);
+          }
+          currentIndex = snapshot.index();
+          currentTimestamp = snapshot.timestamp().unixTimestamp();
+          service.install(reader);
+        } catch (Exception e) {
+          log.error("Snapshot installation failed: {}", e);
         }
-        currentIndex = snapshot.index();
-        currentTimestamp = snapshot.timestamp().unixTimestamp();
-        service.install(reader);
-      } catch (Exception e) {
-        log.error("Snapshot installation failed: {}", e);
+        snapshotIndex = snapshot.index();
       }
-      snapshotIndex = snapshot.index();
-    }
+      future.complete(null);
+    });
+    return future;
   }
 
   /**
@@ -414,9 +419,6 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session's timestamp to prevent it from being expired.
       session.setLastUpdated(timestamp);
 
-      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
-      maybeInstallSnapshot(index);
-
       // Update the state machine index/timestamp.
       tick(index, timestamp);
 
@@ -450,9 +452,6 @@ public class DefaultServiceContext implements ServiceContext {
   public CompletableFuture<Boolean> keepAlive(long index, long timestamp, RaftSessionContext session, long commandSequence, long eventIndex) {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     serviceExecutor.execute(() -> {
-
-      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
-      maybeInstallSnapshot(index);
 
       // Update the state machine index/timestamp.
       tick(index, timestamp);
@@ -557,9 +556,6 @@ public class DefaultServiceContext implements ServiceContext {
       // Update the session's timestamp to prevent it from being expired.
       session.setLastUpdated(timestamp);
 
-      // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
-      maybeInstallSnapshot(index);
-
       // Update the state machine index/timestamp.
       tick(index, timestamp);
 
@@ -607,9 +603,6 @@ public class DefaultServiceContext implements ServiceContext {
   private void executeCommand(long index, long sequence, long timestamp, RaftSessionContext session, RaftOperation operation, CompletableFuture<OperationResult> future) {
     // Update the session's timestamp to prevent it from being expired.
     session.setLastUpdated(timestamp);
-
-    // If a snapshot exists prior to the given index and hasn't yet been installed, install the snapshot.
-    maybeInstallSnapshot(index);
 
     // Update the state machine index/timestamp.
     tick(index, timestamp);

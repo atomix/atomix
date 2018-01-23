@@ -206,8 +206,12 @@ public class RaftServiceManager implements AutoCloseable {
     // If snapshots exist for the prior index, iterate through snapshots and populate services/sessions.
     if (snapshots != null) {
       for (Snapshot snapshot : snapshots) {
+        DefaultServiceContext service = null;
         try (SnapshotReader reader = snapshot.openReader()) {
-          restoreService(reader);
+          service = restoreService(reader);
+        }
+        if (service != null) {
+          service.installSnapshot(index);
         }
       }
     }
@@ -218,7 +222,7 @@ public class RaftServiceManager implements AutoCloseable {
    *
    * @param reader the snapshot reader
    */
-  private void restoreService(SnapshotReader reader) {
+  private DefaultServiceContext restoreService(SnapshotReader reader) {
     ServiceId serviceId = ServiceId.from(reader.readLong());
     ServiceType serviceType = ServiceType.from(reader.readString());
     String serviceName = reader.readString();
@@ -227,10 +231,11 @@ public class RaftServiceManager implements AutoCloseable {
     logger.debug("Restoring service {} {}", serviceId, serviceName);
     DefaultServiceContext service = initializeService(serviceId, serviceType, serviceName);
     if (service == null) {
-      return;
+      return null;
     }
 
     restoreSessions(reader, service);
+    return service;
   }
 
   /**
