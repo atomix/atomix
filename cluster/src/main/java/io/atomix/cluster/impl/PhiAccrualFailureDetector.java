@@ -22,7 +22,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * Phi Accrual failure detector.
  * <p>
- * Based on a paper titled: "The φ Accrual Failure Detector" by Hayashibara, et al.
+ * A modified version based on a paper titled:
+ * "The φ Accrual Failure Detector" by Hayashibara, et al.
  */
 public class PhiAccrualFailureDetector {
 
@@ -120,6 +121,9 @@ public class PhiAccrualFailureDetector {
 
   /**
    * Computes the phi value from the given samples.
+   * <p>
+   *The original phi value in Hayashibara's paper is calculated based on a normal distribution.
+   *Here, we calculate it based on an exponential distribution.
    *
    * @param samples       the samples from which to compute phi
    * @param lastHeartbeat the last heartbeat
