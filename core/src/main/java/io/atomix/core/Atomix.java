@@ -51,6 +51,7 @@ import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import org.slf4j.Logger;
@@ -217,6 +218,10 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   @Override
   public synchronized CompletableFuture<Atomix> start() {
+    if (closeFuture != null) {
+      return Futures.exceptionalFuture(new IllegalStateException("Atomix instance " +
+              (closeFuture.isDone() ? "shutdown" : "shutting down")));
+    }
     if (openFuture != null) {
       return openFuture;
     }
