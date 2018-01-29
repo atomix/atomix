@@ -15,7 +15,6 @@
  */
 package io.atomix.core;
 
-import com.google.common.base.Throwables;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.Node;
@@ -29,9 +28,12 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Atomix test.
@@ -73,6 +75,19 @@ public class AtomixTest extends AbstractAtomixTest {
     Atomix atomix1 = startAtomix(Node.Type.DATA, 1, 1).join();
     Atomix atomix2 = startAtomix(Node.Type.DATA, 2, 1, 2).join();
     Atomix atomix3 = startAtomix(Node.Type.DATA, 3, 1, 2, 3).join();
+  }
+
+  @Test
+  public void testStopStart() throws Exception {
+    Atomix atomix1 = startAtomix(Node.Type.DATA, 1, 1).join();
+    atomix1.stop().join();
+    try {
+      atomix1.start().join();
+      fail("Expected CompletionException");
+    } catch (CompletionException ex) {
+      assertTrue(ex.getCause() instanceof IllegalStateException);
+      assertEquals("Atomix instance shutdown", ex.getCause().getMessage());
+    }
   }
 
   /**
