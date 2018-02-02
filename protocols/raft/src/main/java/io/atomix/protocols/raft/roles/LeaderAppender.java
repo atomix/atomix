@@ -198,6 +198,7 @@ final class LeaderAppender extends AbstractAppender {
           return;
         }
 
+        log.debug("Replicating {} snapshots to {}", snapshots.size(), member.getMember().nodeId());
         Snapshot nextSnapshot = null;
         for (Snapshot snapshot : snapshots) {
           if (snapshot.serviceId().id() > member.getSnapshotId()) {
@@ -209,7 +210,9 @@ final class LeaderAppender extends AbstractAppender {
         if (nextSnapshot != null) {
           sendInstallRequest(member, buildInstallRequest(member, nextSnapshot));
         } else if (member.canAppend()) {
+          log.debug("Completed replicating {} snapshots to {}", snapshots.size(), member.getMember().nodeId());
           member.setSnapshotIndex(currentIndex);
+          member.setSnapshotId(0);
           sendAppendRequest(member, buildAppendRequest(member, -1));
         }
       } else if (member.canAppend()) {
