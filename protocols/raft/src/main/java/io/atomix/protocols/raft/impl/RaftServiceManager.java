@@ -124,8 +124,8 @@ public class RaftServiceManager implements AutoCloseable {
       if (nextIndex < index) {
         Indexed<RaftLogEntry> entry = reader.next();
         try {
+          restoreIndex(entry.index() - 1);
           apply(entry);
-          restoreIndex(entry.index());
         } catch (Exception e) {
           logger.error("Failed to apply {}: {}", entry, e);
         } finally {
@@ -141,9 +141,8 @@ public class RaftServiceManager implements AutoCloseable {
           if (entry.index() != index) {
             throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
           }
-          CompletableFuture<T> future = apply(entry);
-          restoreIndex(entry.index());
-          return future;
+          restoreIndex(entry.index() - 1);
+          return apply(entry);
         } catch (Exception e) {
           logger.error("Failed to apply {}: {}", entry, e);
         } finally {
@@ -152,6 +151,7 @@ public class RaftServiceManager implements AutoCloseable {
       }
       // If the applied index has been passed, return a null result.
       else {
+        logger.warn("Skipped applying index {}", index);
         raft.setLastApplied(nextIndex);
         return Futures.completedFuture(null);
       }
