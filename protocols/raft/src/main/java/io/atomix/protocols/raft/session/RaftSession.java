@@ -580,7 +580,7 @@ public class RaftSession implements Session {
         PublishRequest request = PublishRequest.builder()
             .withSession(sessionId().id())
             .withEventIndex(event.eventIndex)
-            .withPreviousIndex(Math.max(event.previousIndex, completeIndex))
+            .withPreviousIndex(event.previousIndex)
             .withEvents(event.events)
             .build();
 
