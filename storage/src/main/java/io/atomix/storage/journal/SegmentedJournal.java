@@ -621,6 +621,7 @@ public class SegmentedJournal<E> implements Journal<E> {
           segment.delete();
         }
         compactSegments.clear();
+        resetHead(segmentEntry.getValue().index());
       }
     }
   }
