@@ -608,7 +608,7 @@ public class RaftSessionContext implements RaftSession {
         PublishRequest request = PublishRequest.newBuilder()
             .withSession(sessionId().id())
             .withEventIndex(event.eventIndex)
-            .withPreviousIndex(Math.max(event.previousIndex, completeIndex))
+            .withPreviousIndex(event.previousIndex)
             .withEvents(event.events)
             .build();
 
