@@ -202,6 +202,7 @@ public class SnapshotWriter implements BufferOutput<SnapshotWriter> {
 
   @Override
   public void close() {
+    buffer.flush();
     snapshot.closeWriter(this);
     buffer.close();
   }
