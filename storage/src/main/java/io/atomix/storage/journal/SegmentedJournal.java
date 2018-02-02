@@ -442,7 +442,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     Buffer buffer = MappedBuffer.allocate(file, Math.min(DEFAULT_BUFFER_SIZE, maxSegmentSize), Integer.MAX_VALUE);
     JournalSegmentDescriptor descriptor = new JournalSegmentDescriptor(buffer);
     JournalSegment<E> segment = newSegment(new JournalSegmentFile(file), descriptor);
-    log.debug("Loaded disk segment: {} ({})", descriptor.id(), file.getName());
+    log.debug("Loaded memory mapped segment: {} ({})", descriptor.id(), file.getName());
     return segment;
   }
 
