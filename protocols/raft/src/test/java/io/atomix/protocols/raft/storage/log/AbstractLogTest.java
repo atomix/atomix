@@ -351,6 +351,47 @@ public abstract class AbstractLogTest {
     }
   }
 
+  @Test
+  public void testReadAfterCompact() throws Exception {
+    RaftLog log = createLog();
+    RaftLogWriter writer = log.writer();
+    RaftLogReader uncommittedReader = log.openReader(1, RaftLogReader.Mode.ALL);
+    RaftLogReader committedReader = log.openReader(1, RaftLogReader.Mode.COMMITS);
+
+    for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 10; i++) {
+      assertEquals(i, writer.append(new TestEntry(1, 32)).index());
+    }
+
+    assertEquals(1, uncommittedReader.getNextIndex());
+    assertTrue(uncommittedReader.hasNext());
+    assertEquals(1, committedReader.getNextIndex());
+    assertFalse(committedReader.hasNext());
+
+    writer.commit(MAX_ENTRIES_PER_SEGMENT * 9);
+
+    assertTrue(uncommittedReader.hasNext());
+    assertTrue(committedReader.hasNext());
+
+    for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 2.5; i++) {
+      assertEquals(i, uncommittedReader.next().index());
+      assertEquals(i, committedReader.next().index());
+    }
+
+    log.compact(MAX_ENTRIES_PER_SEGMENT * 5 + 1);
+
+    assertNull(uncommittedReader.getCurrentEntry());
+    assertEquals(0, uncommittedReader.getCurrentIndex());
+    assertTrue(uncommittedReader.hasNext());
+    assertEquals(MAX_ENTRIES_PER_SEGMENT * 5 + 1, uncommittedReader.getNextIndex());
+    assertEquals(MAX_ENTRIES_PER_SEGMENT * 5 + 1, uncommittedReader.next().index());
+
+    assertNull(committedReader.getCurrentEntry());
+    assertEquals(0, committedReader.getCurrentIndex());
+    assertTrue(committedReader.hasNext());
+    assertEquals(MAX_ENTRIES_PER_SEGMENT * 5 + 1, committedReader.getNextIndex());
+    assertEquals(MAX_ENTRIES_PER_SEGMENT * 5 + 1, committedReader.next().index());
+  }
+
   @Before
   @After
   public void cleanupStorage() throws IOException {
