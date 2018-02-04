@@ -309,7 +309,7 @@ public class RaftLogCompactor {
       this.compactFuture.complete(null);
       this.compactFuture = null;
       // Immediately attempt to take new snapshots since compaction is already run after a time interval.
-      compact();
+      snapshotServices(false, false);
     }
   }
 }
