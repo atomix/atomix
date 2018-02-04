@@ -408,7 +408,6 @@ final class LeaderAppender extends AbstractAppender {
     // us converge on the matchIndex faster than by simply decrementing nextIndex one index at a time.
     else {
       member.appendFailed();
-      resetMatchIndex(member, response);
       resetNextIndex(member);
 
       // If there are more entries to send then attempt to send another commit.
