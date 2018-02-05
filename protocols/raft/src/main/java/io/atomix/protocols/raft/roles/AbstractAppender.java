@@ -242,7 +242,8 @@ abstract class AbstractAppender implements AutoCloseable {
     // If the response failed, the follower should have provided the correct last index in their log. This helps
     // us converge on the matchIndex faster than by simply decrementing nextIndex one index at a time.
     else {
-      resetNextIndex(member);
+      resetMatchIndex(member, response);
+      resetNextIndex(member, response);
 
       // If there are more entries to send then attempt to send another commit.
       if (response.lastLogIndex() != request.prevLogIndex() && hasMoreEntries(member)) {
@@ -299,16 +300,21 @@ abstract class AbstractAppender implements AutoCloseable {
   }
 
   /**
+   * Resets the match index when a response fails.
+   */
+  protected void resetMatchIndex(RaftMemberContext member, AppendResponse response) {
+    if (response.lastLogIndex() < member.getMatchIndex()) {
+      member.setMatchIndex(response.lastLogIndex());
+      log.trace("Reset match index for {} to {}", member, member.getMatchIndex());
+    }
+  }
+
+  /**
    * Resets the next index when a response fails.
    */
-  protected void resetNextIndex(RaftMemberContext member) {
-    final RaftLogReader reader = member.getLogReader();
-    if (member.getMatchIndex() != 0) {
-      reader.reset(member.getMatchIndex() + 1);
-    } else {
-      reader.reset();
-    }
-    log.trace("Reset next index for {} to {} + 1", member, member.getMatchIndex());
+  protected void resetNextIndex(RaftMemberContext member, AppendResponse response) {
+    member.getLogReader().reset(response.lastLogIndex() + 1);
+    log.trace("Reset next index for {} to {} + 1", member, response.lastLogIndex());
   }
 
   /**
