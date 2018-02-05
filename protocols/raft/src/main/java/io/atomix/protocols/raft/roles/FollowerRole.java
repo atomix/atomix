@@ -95,7 +95,7 @@ public final class FollowerRole extends ActiveRole {
     Duration delay = raft.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) raft.getElectionTimeout().toMillis())));
     heartbeatTimer = raft.getThreadContext().schedule(delay, () -> {
       heartbeatTimer = null;
-      if (isRunning()) {
+      if (isRunning() && (raft.getFirstCommitIndex() == 0 || raft.getState() == RaftContext.State.READY)) {
         raft.setLeader(null);
         log.debug("Heartbeat timed out in {}", delay);
         sendPollRequests();
