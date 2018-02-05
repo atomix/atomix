@@ -313,8 +313,11 @@ abstract class AbstractAppender implements AutoCloseable {
    * Resets the next index when a response fails.
    */
   protected void resetNextIndex(RaftMemberContext member, AppendResponse response) {
-    member.getLogReader().reset(response.lastLogIndex() + 1);
-    log.trace("Reset next index for {} to {} + 1", member, response.lastLogIndex());
+    long nextIndex = response.lastLogIndex() + 1;
+    if (member.getLogReader().getNextIndex() != nextIndex) {
+      member.getLogReader().reset(nextIndex);
+      log.trace("Reset next index for {} to {}", member, nextIndex);
+    }
   }
 
   /**

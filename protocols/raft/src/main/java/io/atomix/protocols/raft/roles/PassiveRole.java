@@ -169,7 +169,9 @@ public class PassiveRole extends InactiveRole {
         // If the previous log index is less than the last written entry index, look up the entry.
         if (request.prevLogIndex() < lastEntry.index()) {
           // Reset the reader to the previous log index.
-          reader.reset(request.prevLogIndex());
+          if (reader.getNextIndex() != request.prevLogIndex()) {
+            reader.reset(request.prevLogIndex());
+          }
 
           // The previous entry should exist in the log if we've gotten this far.
           if (!reader.hasNext()) {
@@ -236,7 +238,9 @@ public class PassiveRole extends InactiveRole {
           // we need to validate that the entry that's already in the log matches this entry.
           if (lastEntry.index() > index) {
             // Reset the reader to the current entry index.
-            reader.reset(index);
+            if (reader.getNextIndex() != index) {
+              reader.reset(index);
+            }
 
             // If the reader does not have any next entry, that indicates an inconsistency between the reader and writer.
             if (!reader.hasNext()) {
