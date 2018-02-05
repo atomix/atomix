@@ -183,9 +183,12 @@ final class LeaderAppender extends AbstractAppender {
     // member state in a set of configuring members.
     // Once the configuration is complete sendAppendRequest will be called recursively.
     else if (member.getConfigTerm() < raft.getTerm()
-        || member.getConfigIndex() < raft.getCluster().getConfiguration().index()
-        && member.canConfigure()) {
-      sendConfigureRequest(member, buildConfigureRequest(member));
+        || member.getConfigIndex() < raft.getCluster().getConfiguration().index()) {
+      if (member.canConfigure()) {
+        sendConfigureRequest(member, buildConfigureRequest(member));
+      } else if (member.canHeartbeat()) {
+        sendAppendRequest(member, buildAppendEmptyRequest(member));
+      }
     }
     // If there's a snapshot at the member's nextIndex, replicate the snapshot.
     else if (member.getMember().getType() == RaftMember.Type.ACTIVE
