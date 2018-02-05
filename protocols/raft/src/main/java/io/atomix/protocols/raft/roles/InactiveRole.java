@@ -88,6 +88,7 @@ public class InactiveRole extends AbstractRole {
       raft.getCluster().commit();
     }
 
+    raft.setLastHeartbeatTime();
     return CompletableFuture.completedFuture(logResponse(ConfigureResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .build()));
