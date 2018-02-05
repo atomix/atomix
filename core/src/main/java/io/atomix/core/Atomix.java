@@ -482,7 +482,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       // If the local node has not be configured, create a default node.
       if (localNode == null) {
         try {
-          InetAddress address = InetAddress.getByName("0.0.0.0");
+          InetAddress address = getLocalAddress();
           localNode = Node.builder(address.getHostName())
               .withType(Node.Type.DATA)
               .withEndpoint(new Endpoint(address, NettyMessagingService.DEFAULT_PORT))
@@ -517,6 +517,15 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
           corePartitionGroup,
           partitionService,
           primitiveTypes);
+    }
+
+    private static InetAddress getLocalAddress() throws UnknownHostException {
+      try {
+        return InetAddress.getLocalHost();  // first NIC
+      } catch (Exception ignore) {
+
+      }
+      return InetAddress.getByName(null);
     }
 
     /**
