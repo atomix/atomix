@@ -92,8 +92,10 @@ public final class FollowerRole extends ActiveRole {
     heartbeatTimeout = raft.getThreadContext().schedule(delay, () -> {
       heartbeatTimeout = null;
       if (isOpen()) {
-        if (System.currentTimeMillis() - raft.getLastHeartbeatTime() > raft.getElectionTimeout().toMillis()
-            || failureDetector.phi() >= raft.getElectionThreshold()) {
+        // Do not attempt to start an election if the log is still being replayed.
+        if ((raft.getFirstCommitIndex() == 0 || raft.getState() == RaftContext.State.READY)
+            && (System.currentTimeMillis() - raft.getLastHeartbeatTime() > raft.getElectionTimeout().toMillis()
+            || failureDetector.phi() >= raft.getElectionThreshold())) {
           log.debug("Heartbeat timed out in {}", System.currentTimeMillis() - raft.getLastHeartbeatTime());
           sendPollRequests();
         } else {
