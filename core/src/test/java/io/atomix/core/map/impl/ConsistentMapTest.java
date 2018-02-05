@@ -30,8 +30,10 @@ import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -426,6 +428,11 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
     ConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("test-transactional-map").build();
     assertEquals(map.get("foo").value(), "baz");
     assertEquals(map.get("bar").value(), "baz");
+
+    Map<String, Versioned<String>> result = map.getAllPresent(Collections.singleton("foo"));
+    assertNotNull(result);
+    assertTrue(result.size() == 1);
+    assertEquals(result.get("foo").value(), "baz");
   }
 
   private static class TestMapEventListener implements MapEventListener<String, String> {

@@ -85,6 +85,11 @@ public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<
   }
 
   @Override
+  public Map<K, Versioned<V>> getAllPresent(Iterable<K> keys) {
+    return complete(asyncMap.getAllPresent(keys));
+  }
+
+  @Override
   public Versioned<V> getOrDefault(K key, V defaultValue) {
     return complete(asyncMap.getOrDefault(key, defaultValue));
   }
