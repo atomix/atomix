@@ -373,9 +373,8 @@ final class LeaderAppender extends AbstractAppender {
 
   @Override
   protected void handleAppendResponse(RaftMemberContext member, AppendRequest request, AppendResponse response, long timestamp) {
-    // Record a successful heartbeat to the member.
-    recordHeartbeat(member, timestamp);
     super.handleAppendResponse(member, request, response, timestamp);
+    recordHeartbeat(member, timestamp);
   }
 
   @Override
@@ -452,16 +451,14 @@ final class LeaderAppender extends AbstractAppender {
 
   @Override
   protected void handleConfigureResponse(RaftMemberContext member, ConfigureRequest request, ConfigureResponse response, long timestamp) {
-    // Record a successful heartbeat to the member.
-    recordHeartbeat(member, timestamp);
     super.handleConfigureResponse(member, request, response, timestamp);
+    recordHeartbeat(member, timestamp);
   }
 
   @Override
   protected void handleInstallResponse(RaftMemberContext member, InstallRequest request, InstallResponse response, long timestamp) {
-    // Record a successful heartbeat to the member.
-    recordHeartbeat(member, timestamp);
     super.handleInstallResponse(member, request, response, timestamp);
+    recordHeartbeat(member, timestamp);
   }
 
   @Override
