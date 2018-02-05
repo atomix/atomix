@@ -41,12 +41,29 @@ public final class Endpoint {
     }
   }
 
+  public static Endpoint from(int port) {
+    try {
+      return new Endpoint(getLocalAddress(), port);
+    } catch (UnknownHostException e) {
+      throw new IllegalArgumentException("Failed to locate host", e);
+    }
+  }
+
   private final int port;
   private final InetAddress ip;
 
   public Endpoint(InetAddress host, int port) {
     this.ip = Preconditions.checkNotNull(host);
     this.port = port;
+  }
+
+  private static InetAddress getLocalAddress() throws UnknownHostException {
+    try {
+      return InetAddress.getLocalHost();  // first NIC
+    } catch (Exception ignore) {
+
+    }
+    return InetAddress.getByName(null);
   }
 
   public InetAddress host() {
