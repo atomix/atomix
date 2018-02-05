@@ -88,6 +88,18 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
   Versioned<V> get(K key);
 
   /**
+   * Returns a map of the values associated with the {@code keys} in this map. The returned map
+   * will only contain entries which already exist in the map.
+   * <p>
+   * Note that duplicate elements in {@code keys}, as determined by {@link Object#equals}, will be
+   * ignored.
+   *
+   * @param keys the keys whose associated values are to be returned
+   * @return the unmodifiable mapping of keys to values for the specified keys found in the map
+   */
+  Map<K, Versioned<V>> getAllPresent(Iterable<K> keys);
+
+  /**
    * Returns the value (and version) to which the specified key is mapped, or the provided
    * default value if this map contains no mapping for the key.
    * <p>

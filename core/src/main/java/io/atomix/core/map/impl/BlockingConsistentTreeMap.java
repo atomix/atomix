@@ -171,6 +171,11 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
+  public Map<String, Versioned<V>> getAllPresent(Iterable<String> keys) {
+    return complete(treeMap.getAllPresent(keys));
+  }
+
+  @Override
   public Versioned<V> getOrDefault(String key, V defaultValue) {
     return complete(treeMap.getOrDefault(key, defaultValue));
   }
