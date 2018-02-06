@@ -138,12 +138,7 @@ public final class LeaderRole extends ActiveRole {
   private CompletableFuture<Void> appendInitialEntries() {
     final long term = raft.getTerm();
 
-    return appendAndCompact(new InitializeEntry(term, appender.getTime()))
-        .whenComplete((entry, error) -> {
-          if (error != null) {
-            log.trace("Appended {}", entry);
-          }
-        }).thenApply(index -> null);
+    return appendAndCompact(new InitializeEntry(term, appender.getTime())).thenApply(index -> null);
   }
 
   /**
@@ -289,7 +284,6 @@ public final class LeaderRole extends ActiveRole {
               return;
             }
 
-            log.trace("Appended {}", entry);
             appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
               raft.checkThread();
               if (isOpen()) {
@@ -336,8 +330,6 @@ public final class LeaderRole extends ActiveRole {
 
     return appendAndCompact(new ConfigurationEntry(term, System.currentTimeMillis(), members))
         .thenComposeAsync(entry -> {
-          log.trace("Appended {}", entry);
-
           // Store the index of the configuration entry in order to prevent other configurations from
           // being logged and committed concurrently. This is an important safety property of Raft.
           configuring = entry.index();
@@ -694,6 +686,7 @@ public final class LeaderRole extends ActiveRole {
         session.setRequestSequence(sequenceNumber);
         drainCommands(session);
       }
+      log.trace("Returning pending result for command sequence {}", sequenceNumber);
       return existingCommand.future();
     }
 
@@ -774,8 +767,6 @@ public final class LeaderRole extends ActiveRole {
               .build());
           return;
         }
-
-        log.trace("Appended {}", entry);
 
         // Replicate the command to followers.
         appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
@@ -909,8 +900,6 @@ public final class LeaderRole extends ActiveRole {
             return;
           }
 
-          log.trace("Appended {}", entry);
-
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
             if (isOpen()) {
@@ -977,8 +966,6 @@ public final class LeaderRole extends ActiveRole {
                 .build()));
             return;
           }
-
-          log.trace("Appended {}", entry);
 
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
@@ -1055,8 +1042,6 @@ public final class LeaderRole extends ActiveRole {
             return;
           }
 
-          log.trace("Appended {}", entry);
-
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
             if (isOpen()) {
@@ -1125,8 +1110,13 @@ public final class LeaderRole extends ActiveRole {
       return Futures.exceptionalFuture(new StorageException.OutOfDiskSpace("Not enough space to append entry"));
     } else {
       try {
-        return CompletableFuture.completedFuture(raft.getLogWriter().append(entry));
+        return CompletableFuture.completedFuture(raft.getLogWriter().append(entry))
+            .thenApply(indexed -> {
+              log.trace("Appended {}", indexed);
+              return indexed;
+            });
       } catch (StorageException.OutOfDiskSpace e) {
+        log.warn("Caught OutOfDiskSpace error! Force compacting logs...");
         return raft.getLogCompactor().compact().thenCompose(v -> appendAndCompact(entry, attempt + 1));
       }
     }

@@ -925,7 +925,6 @@ public class RaftTest extends ConcurrentTestCase {
    * Tests submitting sequential events.
    */
   @Test
-  @Ignore // Ignored due to lack of timeouts/retries in test protocol
   public void testThreeNodesEventsAfterFollowerKill() throws Throwable {
     testEventsAfterFollowerKill(3);
   }
@@ -934,7 +933,6 @@ public class RaftTest extends ConcurrentTestCase {
    * Tests submitting sequential events.
    */
   @Test
-  @Ignore // Ignored due to lack of timeouts/retries in test protocol
   public void testFiveNodesEventsAfterFollowerKill() throws Throwable {
     testEventsAfterFollowerKill(5);
   }
@@ -976,7 +974,6 @@ public class RaftTest extends ConcurrentTestCase {
    * Tests submitting events.
    */
   @Test
-  @Ignore // Ignored due to lack of timeouts/retries in test protocol
   public void testFiveNodesEventsAfterLeaderKill() throws Throwable {
     testEventsAfterLeaderKill(5);
   }
