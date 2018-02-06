@@ -23,10 +23,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Decoder for inbound messages.
@@ -112,9 +112,14 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
             subjectLength = buffer.readShort();
             checkpoint(DecoderState.READ_SUBJECT);
           case READ_SUBJECT:
-            byte[] messageTypeBytes = new byte[subjectLength];
-            buffer.readBytes(messageTypeBytes);
-            subject = new String(messageTypeBytes, StandardCharsets.UTF_8);
+            if (buffer.isDirect()) {
+              subject = buffer.toString(buffer.readerIndex(), subjectLength, UTF_8);
+              buffer.skipBytes(subjectLength);
+            } else {
+              byte[] messageTypeBytes = new byte[subjectLength];
+              buffer.readBytes(messageTypeBytes);
+              subject = new String(messageTypeBytes, UTF_8);
+            }
             InternalRequest message = new InternalRequest(
                 preamble,
                 messageId,
