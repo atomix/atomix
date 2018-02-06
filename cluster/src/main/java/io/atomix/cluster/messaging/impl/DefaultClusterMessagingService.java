@@ -190,6 +190,14 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
   }
 
   @Override
+  public <M> CompletableFuture<Void> subscribe(String subject, Function<byte[], M> decoder, BiConsumer<Endpoint, M> handler, Executor executor) {
+    messagingService.registerHandler(subject,
+            new InternalMessageBiConsumer<>(decoder, handler),
+            executor);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public CompletableFuture<ClusterMessagingService> start() {
     if (started.compareAndSet(false, true)) {
       log.info("Started");
@@ -215,7 +223,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     private final Function<R, byte[]> encoder;
     private final Function<M, CompletableFuture<R>> handler;
 
-    public InternalMessageResponder(Function<byte[], M> decoder,
+    InternalMessageResponder(Function<byte[], M> decoder,
                                     Function<R, byte[]> encoder,
                                     Function<M, CompletableFuture<R>> handler) {
       this.decoder = decoder;
@@ -229,11 +237,26 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     }
   }
 
+  private static class InternalMessageBiConsumer<M> implements BiConsumer<Endpoint, byte[]> {
+    private final Function<byte[], M> decoder;
+    private final BiConsumer<Endpoint, M> consumer;
+
+    InternalMessageBiConsumer(Function<byte[], M> decoder, BiConsumer<Endpoint, M> consumer) {
+      this.decoder = decoder;
+      this.consumer = consumer;
+    }
+
+    @Override
+    public void accept(Endpoint sender, byte[] bytes) {
+      consumer.accept(sender, decoder.apply(ClusterMessage.fromBytes(bytes).payload()));
+    }
+  }
+
   private static class InternalMessageConsumer<M> implements BiConsumer<Endpoint, byte[]> {
     private final Function<byte[], M> decoder;
     private final Consumer<M> consumer;
 
-    public InternalMessageConsumer(Function<byte[], M> decoder, Consumer<M> consumer) {
+    InternalMessageConsumer(Function<byte[], M> decoder, Consumer<M> consumer) {
       this.decoder = decoder;
       this.consumer = consumer;
     }
