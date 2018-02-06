@@ -153,6 +153,17 @@ public class ClusterMessage {
         payloadBytes);
   }
 
+  static byte[] getPayload(byte[] bytes) {
+    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    int senderLength = buffer.getInt();
+    buffer.position(buffer.position() + senderLength);
+    int subjectLength = buffer.getInt();
+    buffer.position(buffer.position() + subjectLength);
+    byte[] payloadBytes = new byte[buffer.getInt()];
+    buffer.get(payloadBytes);
+    return payloadBytes;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(sender, subject, payload);

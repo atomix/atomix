@@ -233,7 +233,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
 
     @Override
     public CompletableFuture<byte[]> apply(Endpoint sender, byte[] bytes) {
-      return handler.apply(decoder.apply(ClusterMessage.fromBytes(bytes).payload())).thenApply(encoder);
+      return handler.apply(decoder.apply(ClusterMessage.getPayload(bytes))).thenApply(encoder);
     }
   }
 
@@ -248,7 +248,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
 
     @Override
     public void accept(Endpoint sender, byte[] bytes) {
-      consumer.accept(sender, decoder.apply(ClusterMessage.fromBytes(bytes).payload()));
+      consumer.accept(sender, decoder.apply(ClusterMessage.getPayload(bytes)));
     }
   }
 
@@ -263,7 +263,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
 
     @Override
     public void accept(Endpoint sender, byte[] bytes) {
-      consumer.accept(decoder.apply(ClusterMessage.fromBytes(bytes).payload()));
+      consumer.accept(decoder.apply(ClusterMessage.getPayload(bytes)));
     }
   }
 }
