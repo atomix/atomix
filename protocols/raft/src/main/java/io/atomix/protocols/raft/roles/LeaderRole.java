@@ -15,8 +15,10 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
+import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
@@ -73,6 +75,7 @@ import io.atomix.utils.concurrent.Scheduled;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -87,6 +90,7 @@ public final class LeaderRole extends ActiveRole {
   private final ClusterEventListener clusterListener = this::handleClusterEvent;
   private final LeaderAppender appender;
   private Scheduled appendTimer;
+  private final Set<SessionId> expiring = Sets.newHashSet();
   private long configuring;
   private boolean transferring;
 
@@ -133,12 +137,7 @@ public final class LeaderRole extends ActiveRole {
   private CompletableFuture<Void> appendInitialEntries() {
     final long term = raft.getTerm();
 
-    return appendAndCompact(new InitializeEntry(term, appender.getTime()))
-        .whenComplete((entry, error) -> {
-          if (error == null) {
-            log.trace("Appended {}", entry);
-          }
-        }).thenApply(index -> null);
+    return appendAndCompact(new InitializeEntry(term, appender.getTime())).thenApply(index -> null);
   }
 
   /**
@@ -202,17 +201,28 @@ public final class LeaderRole extends ActiveRole {
    * Expires the given session.
    */
   private void expireSession(RaftSession session) {
-    log.debug("Expiring session: {}", session);
-    appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
-        .whenCompleteAsync((entry, error) -> {
-          log.trace("Appended {}", entry);
-          appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
-            raft.checkThread();
-            if (isRunning() && commitError == null) {
-              raft.getStateMachine().<Long>apply(entry.index());
-            }
-          });
-        }, raft.getThreadContext());
+    if (expiring.add(session.sessionId())) {
+      log.debug("Expiring session due to heartbeat failure: {}", session);
+      appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
+              .whenCompleteAsync((entry, error) -> {
+                if (error != null) {
+                  expiring.remove(session.sessionId());
+                  return;
+                }
+
+                appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+                  raft.checkThread();
+                  if (isRunning()) {
+                    if (commitError == null) {
+                      raft.getStateMachine().<Long>apply(entry.index())
+                              .whenCompleteAsync((r, e) -> expiring.remove(session.sessionId()), raft.getThreadContext());
+                    } else {
+                      expiring.remove(session.sessionId());
+                    }
+                  }
+                });
+              }, raft.getThreadContext());
+    }
   }
 
   /**
@@ -246,8 +256,6 @@ public final class LeaderRole extends ActiveRole {
 
     return appendAndCompact(new ConfigurationEntry(term, System.currentTimeMillis(), members))
         .thenComposeAsync(entry -> {
-          log.trace("Appended {}", entry);
-
           // Store the index of the configuration entry in order to prevent other configurations from
           // being logged and committed concurrently. This is an important safety property of Raft.
           configuring = entry.index();
@@ -606,6 +614,7 @@ public final class LeaderRole extends ActiveRole {
           session.setRequestSequence(sequenceNumber);
           drainCommands(session);
       }
+      log.trace("Returning pending result for command sequence {}", sequenceNumber);
       return existingCommand.future();
     }
 
@@ -687,31 +696,31 @@ public final class LeaderRole extends ActiveRole {
             return;
           }
 
-          log.trace("Appended {}", entry);
 
-          // Replicate the command to followers.
-          appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
-            raft.checkThread();
-            if (isRunning()) {
-              // If the command was successfully committed, apply it to the state machine.
-              if (commitError == null) {
-                raft.getStateMachine().<OperationResult>apply(entry.index()).whenComplete((r, e) -> {
-                  completeOperation(r, CommandResponse.builder(), e, future);
-                });
-              } else {
-                future.complete(CommandResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.COMMAND_FAILURE)
-                    .build());
-              }
+
+        // Replicate the command to followers.
+        appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+          raft.checkThread();
+          if (isRunning()) {
+            // If the command was successfully committed, apply it to the state machine.
+            if (commitError == null) {
+              raft.getStateMachine().<OperationResult>apply(entry.index()).whenComplete((r, e) -> {
+                completeOperation(r, CommandResponse.builder(), e, future);
+              });
             } else {
               future.complete(CommandResponse.builder()
                   .withStatus(RaftResponse.Status.ERROR)
                   .withError(RaftError.Type.COMMAND_FAILURE)
                   .build());
             }
-          });
-        }, raft.getThreadContext());
+          } else {
+            future.complete(CommandResponse.builder()
+                .withStatus(RaftResponse.Status.ERROR)
+                .withError(RaftError.Type.COMMAND_FAILURE)
+                .build());
+          }
+        });
+      }, raft.getThreadContext());
   }
 
   @Override
@@ -821,8 +830,6 @@ public final class LeaderRole extends ActiveRole {
             return;
           }
 
-          log.trace("Appended {}", entry);
-
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
             if (isRunning()) {
@@ -888,8 +895,6 @@ public final class LeaderRole extends ActiveRole {
                 .build()));
             return;
           }
-
-          log.trace("Appended {}", entry);
 
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
@@ -966,8 +971,6 @@ public final class LeaderRole extends ActiveRole {
             return;
           }
 
-          log.trace("Appended {}", entry);
-
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
             if (isRunning()) {
@@ -1036,8 +1039,13 @@ public final class LeaderRole extends ActiveRole {
       return Futures.exceptionalFuture(new StorageException.OutOfDiskSpace("Not enough space to append entry"));
     } else {
       try {
-        return CompletableFuture.completedFuture(raft.getLogWriter().append(entry));
+        return CompletableFuture.completedFuture(raft.getLogWriter().append(entry))
+            .thenApply(indexed -> {
+              log.trace("Appended {}", indexed);
+              return indexed;
+            });
       } catch (StorageException.OutOfDiskSpace e) {
+        log.warn("Caught OutOfDiskSpace error! Force compacting logs...");
         return raft.getLogCompactor().compact().thenCompose(v -> appendAndCompact(entry, attempt + 1));
       }
     }
