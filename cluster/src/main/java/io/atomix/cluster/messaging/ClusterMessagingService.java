@@ -16,10 +16,12 @@
 package io.atomix.cluster.messaging;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.messaging.Endpoint;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -244,6 +246,22 @@ public interface ClusterMessagingService {
    * Adds a new subscriber for the specified message subject.
    *
    * @param subject  message subject
+   * @param handler  handler for handling message
+   * @param executor executor to run this handler on
+   * @param <M>      incoming message type
+   * @return future to be completed once the subscription has been propagated
+   */
+  default <M> CompletableFuture<Void> subscribe(
+          String subject,
+          BiConsumer<Endpoint, M> handler,
+          Executor executor) {
+    return subscribe(subject, BASIC::decode, handler, executor);
+  }
+
+  /**
+   * Adds a new subscriber for the specified message subject.
+   *
+   * @param subject  message subject
    * @param decoder  decoder to resurrecting incoming message
    * @param handler  handler for handling message
    * @param executor executor to run this handler on
@@ -255,6 +273,22 @@ public interface ClusterMessagingService {
       Function<byte[], M> decoder,
       Consumer<M> handler,
       Executor executor);
+
+  /**
+   * Adds a new subscriber for the specified message subject.
+   *
+   * @param subject  message subject
+   * @param decoder  decoder to resurrecting incoming message
+   * @param handler  handler for handling message
+   * @param executor executor to run this handler on
+   * @param <M>      incoming message type
+   * @return future to be completed once the subscription has been propagated
+   */
+  <M> CompletableFuture<Void> subscribe(
+          String subject,
+          Function<byte[], M> decoder,
+          BiConsumer<Endpoint, M> handler,
+          Executor executor);
 
   /**
    * Removes a subscriber for the specified message subject.
