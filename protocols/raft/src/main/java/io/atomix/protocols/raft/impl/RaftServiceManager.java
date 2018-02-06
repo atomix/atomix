@@ -94,7 +94,7 @@ public class RaftServiceManager implements AutoCloseable {
   public void applyAll(long index) {
     // Don't attempt to apply indices that have already been applied.
     if (index > raft.getLastApplied()) {
-      raft.getThreadContext().execute(() -> apply(index));
+      raft.getThreadContext().execute(() -> applyNext(index));
     }
   }
 
@@ -111,7 +111,7 @@ public class RaftServiceManager implements AutoCloseable {
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> apply(long index) {
     CompletableFuture<T> future = futures.computeIfAbsent(index, i -> new CompletableFuture<T>());
-    applyNext(index);
+    raft.getThreadContext().execute(() -> applyNext(index));
     return future;
   }
 
@@ -187,20 +187,20 @@ public class RaftServiceManager implements AutoCloseable {
       }
       // If the applied index has been passed, return a null result.
       else {
-        logger.warn("Skipped applying index {}", index);
-        raft.setLastApplied(nextIndex);
         CompletableFuture future = futures.remove(nextIndex);
         if (future != null) {
+          logger.warn("Skipped applying index {}", index);
           future.complete(null);
         }
+        raft.setLastApplied(nextIndex);
         return;
       }
     }
 
     CompletableFuture future = futures.remove(index);
     if (future != null) {
-      logger.error("Cannot commit index " + index);
-      future.completeExceptionally(new IndexOutOfBoundsException("Cannot commit index " + index));
+      logger.error("Cannot apply index " + index);
+      future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply index " + index));
     }
   }
 
