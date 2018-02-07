@@ -18,7 +18,7 @@ package io.atomix.messaging.impl;
 import io.atomix.messaging.Endpoint;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ReplayingDecoder;
+import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,11 +31,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Decoder for inbound messages.
  */
-public class MessageDecoder extends ReplayingDecoder<DecoderState> {
+public class MessageDecoder extends ByteToMessageDecoder {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private static final byte[] EMPTY_PAYLOAD = new byte[0];
+
+  private static final int BYTE_SIZE = 1;
+  private static final int SHORT_SIZE = 2;
+  private static final int INT_SIZE = 4;
+  private static final int LONG_SIZE = 8;
+
+  private DecoderState currentState = DecoderState.READ_SENDER_IP;
 
   private InetAddress senderIp;
   private int senderPort;
@@ -46,12 +53,6 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
   private int contentLength;
   private byte[] content;
   private int subjectLength;
-  private String subject;
-  private InternalReply.Status status;
-
-  public MessageDecoder() {
-    super(DecoderState.READ_SENDER_IP);
-  }
 
   @Override
   @SuppressWarnings("squid:S128") // suppress switch fall through warning
@@ -60,30 +61,58 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
       ByteBuf buffer,
       List<Object> out) throws Exception {
 
-    switch (state()) {
+    switch (currentState) {
       case READ_SENDER_IP:
-        byte[] octets = new byte[buffer.readByte()];
+        if (buffer.readableBytes() < BYTE_SIZE) {
+          return;
+        }
+        buffer.markReaderIndex();
+        int octetsLength = buffer.readByte();
+        if (buffer.readableBytes() < octetsLength) {
+          buffer.resetReaderIndex();
+          return;
+        }
+
+        byte[] octets = new byte[octetsLength];
         buffer.readBytes(octets);
         senderIp = InetAddress.getByAddress(octets);
-        checkpoint(DecoderState.READ_SENDER_PORT);
+        currentState = DecoderState.READ_SENDER_PORT;
       case READ_SENDER_PORT:
+        if (buffer.readableBytes() < INT_SIZE) {
+          return;
+        }
         senderPort = buffer.readInt();
-        checkpoint(DecoderState.READ_TYPE);
+        currentState = DecoderState.READ_TYPE;
       case READ_TYPE:
+        if (buffer.readableBytes() < BYTE_SIZE) {
+          return;
+        }
         type = InternalMessage.Type.forId(buffer.readByte());
-        checkpoint(DecoderState.READ_PREAMBLE);
+        currentState = DecoderState.READ_PREAMBLE;
       case READ_PREAMBLE:
+        if (buffer.readableBytes() < INT_SIZE) {
+          return;
+        }
         preamble = buffer.readInt();
-        checkpoint(DecoderState.READ_MESSAGE_ID);
+        currentState = DecoderState.READ_MESSAGE_ID;
       case READ_MESSAGE_ID:
+        if (buffer.readableBytes() < LONG_SIZE) {
+          return;
+        }
         messageId = buffer.readLong();
-        checkpoint(DecoderState.READ_CONTENT_LENGTH);
+        currentState = DecoderState.READ_CONTENT_LENGTH;
       case READ_CONTENT_LENGTH:
+        if (buffer.readableBytes() < INT_SIZE) {
+          return;
+        }
         contentLength = buffer.readInt();
-        checkpoint(DecoderState.READ_CONTENT);
+        currentState = DecoderState.READ_CONTENT;
       case READ_CONTENT:
+        if (buffer.readableBytes() < contentLength) {
+          return;
+        }
         if (contentLength > 0) {
-          //TODO Perform a sanity check on the size before allocating
+          // TODO: Perform a sanity check on the size before allocating
           content = new byte[contentLength];
           buffer.readBytes(content);
         } else {
@@ -92,10 +121,10 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
 
         switch (type) {
           case REQUEST:
-            checkpoint(DecoderState.READ_SUBJECT_LENGTH);
+            currentState = DecoderState.READ_SUBJECT_LENGTH;
             break;
           case REPLY:
-            checkpoint(DecoderState.READ_STATUS);
+            currentState = DecoderState.READ_STATUS;
             break;
           default:
             checkState(false, "Must not be here");
@@ -107,11 +136,18 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
 
     switch (type) {
       case REQUEST:
-        switch (state()) {
+        switch (currentState) {
           case READ_SUBJECT_LENGTH:
+            if (buffer.readableBytes() < SHORT_SIZE) {
+              return;
+            }
             subjectLength = buffer.readShort();
-            checkpoint(DecoderState.READ_SUBJECT);
+            currentState = DecoderState.READ_SUBJECT;
           case READ_SUBJECT:
+            if (buffer.readableBytes() < subjectLength) {
+              return;
+            }
+            final String subject;
             if (buffer.isDirect()) {
               subject = buffer.toString(buffer.readerIndex(), subjectLength, UTF_8);
               buffer.skipBytes(subjectLength);
@@ -127,22 +163,25 @@ public class MessageDecoder extends ReplayingDecoder<DecoderState> {
                 subject,
                 content);
             out.add(message);
-            checkpoint(DecoderState.READ_TYPE);
+            currentState = DecoderState.READ_TYPE;
             break;
           default:
             break;
         }
         break;
       case REPLY:
-        switch (state()) {
+        switch (currentState) {
           case READ_STATUS:
-            status = InternalReply.Status.forId(buffer.readByte());
+            if (buffer.readableBytes() < BYTE_SIZE) {
+              return;
+            }
+            InternalReply.Status status = InternalReply.Status.forId(buffer.readByte());
             InternalReply message = new InternalReply(preamble,
                 messageId,
                 content,
                 status);
             out.add(message);
-            checkpoint(DecoderState.READ_TYPE);
+            currentState = DecoderState.READ_TYPE;
             break;
           default:
             break;
