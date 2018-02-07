@@ -525,14 +525,15 @@ public class NettyMessagingService implements ManagedMessagingService {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK,
-        new WriteBufferWaterMark(10 * 32 * 1024, 10 * 64 * 1024));
-    bootstrap.option(ChannelOption.SO_SNDBUF, 1048576);
+            new WriteBufferWaterMark(10 * 32 * 1024, 10 * 64 * 1024));
+    bootstrap.option(ChannelOption.SO_RCVBUF, 1024 * 1024);
+    bootstrap.option(ChannelOption.SO_SNDBUF, 1024 * 1024);
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000);
     bootstrap.group(clientGroup);
     // TODO: Make this faster:
     // http://normanmaurer.me/presentations/2014-facebook-eng-netty/slides.html#37.0
     bootstrap.channel(clientChannelClass);
-    bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.remoteAddress(endpoint.host(), endpoint.port());
     if (enableNettyTls) {
       bootstrap.handler(new SslClientCommunicationChannelInitializer());
@@ -545,9 +546,12 @@ public class NettyMessagingService implements ManagedMessagingService {
   private CompletableFuture<Void> startAcceptingConnections() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     ServerBootstrap b = new ServerBootstrap();
+    b.option(ChannelOption.SO_REUSEADDR, true);
+    b.option(ChannelOption.SO_BACKLOG, 128);
     b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
-        new WriteBufferWaterMark(8 * 1024, 32 * 1024));
-    b.option(ChannelOption.SO_RCVBUF, 1048576);
+            new WriteBufferWaterMark(8 * 1024, 32 * 1024));
+    b.childOption(ChannelOption.SO_RCVBUF, 1024 * 1024);
+    b.childOption(ChannelOption.SO_SNDBUF, 1024 * 1024);
     b.childOption(ChannelOption.SO_KEEPALIVE, true);
     b.childOption(ChannelOption.TCP_NODELAY, true);
     b.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
@@ -558,7 +562,6 @@ public class NettyMessagingService implements ManagedMessagingService {
     } else {
       b.childHandler(new BasicChannelInitializer());
     }
-    b.option(ChannelOption.SO_BACKLOG, 128);
 
     // Bind and start to accept incoming connections.
     b.bind(localEndpoint.port()).addListener(f -> {
