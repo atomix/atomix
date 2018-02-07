@@ -1083,7 +1083,7 @@ public class NettyMessagingService implements ManagedMessagingService {
           message.id(),
           payload.orElse(EMPTY_PAYLOAD),
           status);
-      channel.writeAndFlush(response);
+      channel.writeAndFlush(response, channel.voidPromise());
     }
   }
 
