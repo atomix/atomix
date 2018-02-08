@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.nio.charset.Charset;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -147,15 +148,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             if (buffer.readableBytes() < subjectLength) {
               return;
             }
-            final String subject;
-            if (buffer.isDirect()) {
-              subject = buffer.toString(buffer.readerIndex(), subjectLength, UTF_8);
-              buffer.skipBytes(subjectLength);
-            } else {
-              byte[] messageTypeBytes = new byte[subjectLength];
-              buffer.readBytes(messageTypeBytes);
-              subject = new String(messageTypeBytes, UTF_8);
-            }
+            final String subject = readString(buffer, subjectLength, UTF_8);
             InternalRequest message = new InternalRequest(
                 preamble,
                 messageId,
@@ -189,6 +182,29 @@ public class MessageDecoder extends ByteToMessageDecoder {
         break;
       default:
         checkState(false, "Must not be here");
+    }
+  }
+
+  static String readString(ByteBuf buffer, int length, Charset charset) {
+    if (buffer.isDirect()) {
+      final String result = buffer.toString(buffer.readerIndex(), length, charset);
+      buffer.skipBytes(length);
+      return result;
+    } else {
+      if (buffer.hasArray()) {
+        final int offset = buffer.arrayOffset() + buffer.readerIndex();
+        final String result;
+        if (offset == 0 && length == buffer.array().length) {
+          result = new String(buffer.array(), charset);
+        } else {
+          result = new String(buffer.array(), offset, length, charset);
+        }
+        buffer.skipBytes(length);
+        return result;
+      }
+      final byte[] array = new byte[length];
+      buffer.readBytes(array);
+      return new String(array, charset);
     }
   }
 
