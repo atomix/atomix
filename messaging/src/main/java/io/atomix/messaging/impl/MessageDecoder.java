@@ -190,18 +190,11 @@ public class MessageDecoder extends ByteToMessageDecoder {
       final String result = buffer.toString(buffer.readerIndex(), length, charset);
       buffer.skipBytes(length);
       return result;
+    } else if (buffer.hasArray()) {
+      final String result = new String(buffer.array(), buffer.arrayOffset() + buffer.readerIndex(), length, charset);
+      buffer.skipBytes(length);
+      return result;
     } else {
-      if (buffer.hasArray()) {
-        final int offset = buffer.arrayOffset() + buffer.readerIndex();
-        final String result;
-        if (offset == 0 && length == buffer.array().length) {
-          result = new String(buffer.array(), charset);
-        } else {
-          result = new String(buffer.array(), offset, length, charset);
-        }
-        buffer.skipBytes(length);
-        return result;
-      }
       final byte[] array = new byte[length];
       buffer.readBytes(array);
       return new String(array, charset);
