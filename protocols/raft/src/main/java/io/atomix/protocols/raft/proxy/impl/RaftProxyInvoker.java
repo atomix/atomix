@@ -128,7 +128,7 @@ final class RaftProxyInvoker {
         .withSession(state.getSessionId().id())
         .withSequence(state.getCommandRequest())
         .withOperation(operation)
-        .withIndex(Math.max(state.getResponseIndex(), state.getEventIndex()))
+        .withIndex(state.getResponseIndex())
         .build();
     invokeQuery(request, future);
   }
