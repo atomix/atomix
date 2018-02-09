@@ -529,6 +529,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     bootstrap.option(ChannelOption.SO_RCVBUF, 1024 * 1024);
     bootstrap.option(ChannelOption.SO_SNDBUF, 1024 * 1024);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+    bootstrap.option(ChannelOption.TCP_NODELAY, true);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000);
     bootstrap.group(clientGroup);
     // TODO: Make this faster:
