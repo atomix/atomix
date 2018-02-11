@@ -16,6 +16,7 @@
 package io.atomix.storage.journal;
 
 import io.atomix.serializer.Serializer;
+import io.atomix.storage.journal.index.JournalIndex;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -28,15 +29,17 @@ import static com.google.common.base.Preconditions.checkState;
 public class JournalSegment<E> implements AutoCloseable {
   protected final JournalSegmentFile file;
   protected final JournalSegmentDescriptor descriptor;
+  protected final JournalIndex index;
   protected final Serializer serializer;
   private final JournalSegmentWriter<E> writer;
   private boolean open = true;
 
-  public JournalSegment(JournalSegmentFile file, JournalSegmentDescriptor descriptor, Serializer serializer) {
+  public JournalSegment(JournalSegmentFile file, JournalSegmentDescriptor descriptor, JournalIndex index, Serializer serializer) {
     this.file = file;
     this.descriptor = descriptor;
+    this.index = index;
     this.serializer = serializer;
-    this.writer = new JournalSegmentWriter<>(descriptor, serializer);
+    this.writer = new JournalSegmentWriter<>(descriptor, index, serializer);
   }
 
   /**
@@ -146,7 +149,7 @@ public class JournalSegment<E> implements AutoCloseable {
    */
   JournalSegmentReader<E> createReader() {
     checkOpen();
-    return new JournalSegmentReader<>(descriptor, serializer);
+    return new JournalSegmentReader<>(descriptor, index, serializer);
   }
 
   /**
