@@ -68,7 +68,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    * Opens a new Raft log reader with the given reader mode.
    *
    * @param index The index from which to begin reading entries.
-   * @param mode The mode in which to read entries.
+   * @param mode  The mode in which to read entries.
    * @return The Raft log reader.
    */
   public RaftLogReader openReader(long index, RaftLogReader.Mode mode) {
@@ -242,6 +242,21 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
      */
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       journalBuilder.withMaxEntriesPerSegment(maxEntriesPerSegment);
+      return this;
+    }
+
+    /**
+     * Sets the journal index density.
+     * <p>
+     * The index density is the frequency at which the position of entries written to the journal will be recorded in
+     * an in-memory index for faster seeking.
+     *
+     * @param indexDensity the index density
+     * @return the journal builder
+     * @throws IllegalArgumentException if the density is not between 0 and 1
+     */
+    public Builder withIndexDensity(double indexDensity) {
+      journalBuilder.withIndexDensity(indexDensity);
       return this;
     }
 
