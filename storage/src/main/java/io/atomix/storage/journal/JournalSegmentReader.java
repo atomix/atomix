@@ -18,6 +18,8 @@ package io.atomix.storage.journal;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
+import io.atomix.storage.journal.index.JournalIndex;
+import io.atomix.storage.journal.index.Position;
 
 import java.nio.BufferUnderflowException;
 import java.util.NoSuchElementException;
@@ -31,14 +33,16 @@ import java.util.zip.Checksum;
  */
 public class JournalSegmentReader<E> implements JournalReader<E> {
   private final Buffer buffer;
+  private final JournalIndex index;
   private final Serializer serializer;
   private final HeapBuffer memory = HeapBuffer.allocate();
   private final long firstIndex;
   private Indexed<E> currentEntry;
   private Indexed<E> nextEntry;
 
-  public JournalSegmentReader(JournalSegmentDescriptor descriptor, Serializer serializer) {
+  public JournalSegmentReader(JournalSegmentDescriptor descriptor, JournalIndex index, Serializer serializer) {
     this.buffer = descriptor.buffer().slice().duplicate();
+    this.index = index;
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
     readNext();
@@ -62,6 +66,12 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   @Override
   public void reset(long index) {
     reset();
+    Position position = this.index.lookup(index - 1);
+    if (position != null) {
+      currentEntry = new Indexed<>(position.index() - 1, null, 0);
+      buffer.position(position.position());
+      readNext();
+    }
     while (getNextIndex() < index && hasNext()) {
       next();
     }
