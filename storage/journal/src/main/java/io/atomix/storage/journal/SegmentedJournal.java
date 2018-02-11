@@ -23,6 +23,7 @@ import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
+import io.atomix.storage.journal.index.SparseJournalIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +65,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   private final Serializer serializer;
   private final int maxSegmentSize;
   private final int maxEntriesPerSegment;
+  private final double indexDensity;
 
   private final NavigableMap<Long, JournalSegment<E>> segments = new ConcurrentSkipListMap<>();
   private final Collection<SegmentedJournalReader<E>> readers = Sets.newConcurrentHashSet();
@@ -78,13 +80,15 @@ public class SegmentedJournal<E> implements Journal<E> {
       File directory,
       Serializer serializer,
       int maxSegmentSize,
-      int maxEntriesPerSegment) {
+      int maxEntriesPerSegment,
+      double indexDensity) {
     this.name = checkNotNull(name, "name cannot be null");
     this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
     this.directory = checkNotNull(directory, "directory cannot be null");
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
     this.maxSegmentSize = maxSegmentSize;
     this.maxEntriesPerSegment = maxEntriesPerSegment;
+    this.indexDensity = indexDensity;
     open();
     this.writer = openWriter();
   }
@@ -367,7 +371,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @return The segment instance.
    */
   protected JournalSegment<E> newSegment(JournalSegmentFile segmentFile, JournalSegmentDescriptor descriptor) {
-    return new JournalSegment<>(segmentFile, descriptor, serializer);
+    return new JournalSegment<>(segmentFile, descriptor, new SparseJournalIndex(indexDensity), serializer);
   }
 
   /**
@@ -644,6 +648,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
+    private static final double DEFAULT_INDEX_DENSITY = .005;
 
     protected String name = DEFAULT_NAME;
     protected StorageLevel storageLevel = StorageLevel.DISK;
@@ -651,6 +656,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     protected Serializer serializer;
     protected int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
     protected int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
+    protected double indexDensity = DEFAULT_INDEX_DENSITY;
 
     protected Builder() {
     }
@@ -759,13 +765,29 @@ public class SegmentedJournal<E> implements Journal<E> {
     }
 
     /**
+     * Sets the journal index density.
+     * <p>
+     * The index density is the frequency at which the position of entries written to the journal will be recorded in
+     * an in-memory index for faster seeking.
+     *
+     * @param indexDensity the index density
+     * @return the journal builder
+     * @throws IllegalArgumentException if the density is not between 0 and 1
+     */
+    public Builder<E> withIndexDensity(double indexDensity) {
+      checkArgument(indexDensity > 0 && indexDensity < 1, "index density must be between 0 and 1");
+      this.indexDensity = indexDensity;
+      return this;
+    }
+
+    /**
      * Builds the journal.
      *
      * @return The built storage configuration.
      */
     @Override
     public SegmentedJournal<E> build() {
-      return new SegmentedJournal<>(name, storageLevel, directory, serializer, maxSegmentSize, maxEntriesPerSegment);
+      return new SegmentedJournal<>(name, storageLevel, directory, serializer, maxSegmentSize, maxEntriesPerSegment, indexDensity);
     }
   }
 }
