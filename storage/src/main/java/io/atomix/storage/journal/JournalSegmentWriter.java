@@ -43,6 +43,7 @@ import java.util.zip.Checksum;
  */
 public class JournalSegmentWriter<E> implements JournalWriter<E> {
   private final JournalSegmentDescriptor descriptor;
+  private final JournalSegmentCache cache;
   private final JournalIndex index;
   private final Buffer buffer;
   private final Serializer serializer;
@@ -50,8 +51,9 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
   private final long firstIndex;
   private Indexed<E> lastEntry;
 
-  public JournalSegmentWriter(JournalSegmentDescriptor descriptor, JournalIndex index, Serializer serializer) {
+  public JournalSegmentWriter(JournalSegmentDescriptor descriptor, JournalSegmentCache cache, JournalIndex index, Serializer serializer) {
     this.descriptor = descriptor;
+    this.cache = cache;
     this.index = index;
     this.buffer = descriptor.buffer().slice();
     this.serializer = serializer;
@@ -205,6 +207,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     // Update the last entry with the correct index/term/length.
     Indexed<E> indexedEntry = new Indexed<>(index, entry, length);
     this.lastEntry = indexedEntry;
+    this.cache.put(indexedEntry);
     this.index.index(index, position);
     return (Indexed<T>) indexedEntry;
   }
@@ -223,11 +226,13 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     // If the index is less than the segment index, clear the segment buffer.
     if (index < descriptor.index()) {
       buffer.zero().clear();
+      this.cache.truncate(index);
       this.index.truncate(index);
       return;
     }
 
     // Truncate the index.
+    this.cache.truncate(index);
     this.index.truncate(index);
 
     // Reset the writer to the given index.
