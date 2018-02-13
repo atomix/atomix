@@ -246,17 +246,29 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
     }
 
     /**
-     * Sets the journal index density.
+     * Sets the log index density.
      * <p>
      * The index density is the frequency at which the position of entries written to the journal will be recorded in
      * an in-memory index for faster seeking.
      *
      * @param indexDensity the index density
-     * @return the journal builder
+     * @return the log builder
      * @throws IllegalArgumentException if the density is not between 0 and 1
      */
     public Builder withIndexDensity(double indexDensity) {
       journalBuilder.withIndexDensity(indexDensity);
+      return this;
+    }
+
+    /**
+     * Sets the log cache size.
+     *
+     * @param cacheSize the log cache size
+     * @return the log builder
+     * @throws IllegalArgumentException if the cache size is not positive
+     */
+    public Builder withCacheSize(int cacheSize) {
+      journalBuilder.withCacheSize(cacheSize);
       return this;
     }
 

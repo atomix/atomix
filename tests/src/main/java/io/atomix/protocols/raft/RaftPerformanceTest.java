@@ -299,11 +299,11 @@ public class RaftPerformanceTest implements Runnable {
     long endTime = System.currentTimeMillis();
     long runTime = endTime - startTime;
     System.out.println(String.format("readCount: %d/%d, writeCount: %d/%d, runTime: %dms",
-      readCount.get(),
-      TOTAL_OPERATIONS,
-      writeCount.get(),
-      TOTAL_OPERATIONS,
-      runTime));
+        readCount.get(),
+        TOTAL_OPERATIONS,
+        writeCount.get(),
+        TOTAL_OPERATIONS,
+        runTime));
     return runTime;
   }
 

@@ -17,6 +17,7 @@ package io.atomix.storage.journal;
 
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.Bytes;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.journal.index.JournalIndex;
 import io.atomix.storage.journal.index.Position;
@@ -33,6 +34,7 @@ import java.util.zip.Checksum;
  */
 public class JournalSegmentReader<E> implements JournalReader<E> {
   private final Buffer buffer;
+  private final JournalSegmentCache cache;
   private final JournalIndex index;
   private final Serializer serializer;
   private final HeapBuffer memory = HeapBuffer.allocate();
@@ -40,8 +42,9 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   private Indexed<E> currentEntry;
   private Indexed<E> nextEntry;
 
-  public JournalSegmentReader(JournalSegmentDescriptor descriptor, JournalIndex index, Serializer serializer) {
+  public JournalSegmentReader(JournalSegmentDescriptor descriptor, JournalSegmentCache cache, JournalIndex index, Serializer serializer) {
     this.buffer = descriptor.buffer().slice().duplicate();
+    this.cache = cache;
     this.index = index;
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
@@ -120,6 +123,13 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   private void readNext() {
     // Compute the index of the next entry in the segment.
     final long index = getNextIndex();
+
+    Indexed cachedEntry = cache.get(index);
+    if (cachedEntry != null) {
+      this.nextEntry = cachedEntry;
+      buffer.skip(cachedEntry.size() + Bytes.INTEGER + Bytes.INTEGER);
+      return;
+    }
 
     // Mark the buffer so it can be reset if necessary.
     buffer.mark();
