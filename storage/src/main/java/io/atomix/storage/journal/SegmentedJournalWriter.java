@@ -15,6 +15,8 @@
  */
 package io.atomix.storage.journal;
 
+import java.nio.BufferOverflowException;
+
 /**
  * Log writer.
  *
@@ -60,7 +62,14 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
 
   @Override
   public <T extends E> Indexed<T> append(T entry) {
-    if (currentWriter.isFull()) {
+    try {
+      if (currentWriter.isFull()) {
+        currentWriter.flush();
+        currentSegment = journal.getNextSegment();
+        currentWriter = currentSegment.writer();
+      }
+      return currentWriter.append(entry);
+    } catch (BufferOverflowException e) {
       currentWriter.flush();
       currentSegment = journal.getNextSegment();
       currentWriter = currentSegment.writer();
@@ -70,7 +79,14 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
 
   @Override
   public void append(Indexed<E> entry) {
-    if (currentWriter.isFull()) {
+    try {
+      if (currentWriter.isFull()) {
+        currentWriter.flush();
+        currentSegment = journal.getNextSegment();
+        currentWriter = currentSegment.writer();
+      }
+      currentWriter.append(entry);
+    } catch (BufferOverflowException e) {
       currentWriter.flush();
       currentSegment = journal.getNextSegment();
       currentWriter = currentSegment.writer();

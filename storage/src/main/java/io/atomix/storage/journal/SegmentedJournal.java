@@ -66,6 +66,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   private final int maxSegmentSize;
   private final int maxEntriesPerSegment;
   private final double indexDensity;
+  private final int cacheSize;
 
   private final NavigableMap<Long, JournalSegment<E>> segments = new ConcurrentSkipListMap<>();
   private final Collection<SegmentedJournalReader<E>> readers = Sets.newConcurrentHashSet();
@@ -81,7 +82,8 @@ public class SegmentedJournal<E> implements Journal<E> {
       Serializer serializer,
       int maxSegmentSize,
       int maxEntriesPerSegment,
-      double indexDensity) {
+      double indexDensity,
+      int cacheSize) {
     this.name = checkNotNull(name, "name cannot be null");
     this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
     this.directory = checkNotNull(directory, "directory cannot be null");
@@ -89,6 +91,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     this.maxSegmentSize = maxSegmentSize;
     this.maxEntriesPerSegment = maxEntriesPerSegment;
     this.indexDensity = indexDensity;
+    this.cacheSize = cacheSize;
     open();
     this.writer = openWriter();
   }
@@ -371,7 +374,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @return The segment instance.
    */
   protected JournalSegment<E> newSegment(JournalSegmentFile segmentFile, JournalSegmentDescriptor descriptor) {
-    return new JournalSegment<>(segmentFile, descriptor, new SparseJournalIndex(indexDensity), serializer);
+    return new JournalSegment<>(segmentFile, descriptor, indexDensity, cacheSize, serializer);
   }
 
   /**
@@ -649,6 +652,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final double DEFAULT_INDEX_DENSITY = .005;
+    private static final int DEFAULT_CACHE_SIZE = 1024;
 
     protected String name = DEFAULT_NAME;
     protected StorageLevel storageLevel = StorageLevel.DISK;
@@ -657,6 +661,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     protected int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
     protected int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
     protected double indexDensity = DEFAULT_INDEX_DENSITY;
+    protected int cacheSize = DEFAULT_CACHE_SIZE;
 
     protected Builder() {
     }
@@ -781,13 +786,26 @@ public class SegmentedJournal<E> implements Journal<E> {
     }
 
     /**
+     * Sets the journal cache size.
+     *
+     * @param cacheSize the journal cache size
+     * @return the journal builder
+     * @throws IllegalArgumentException if the cache size is not positive
+     */
+    public Builder<E> withCacheSize(int cacheSize) {
+      checkArgument(cacheSize >= 0, "cacheSize must be positive");
+      this.cacheSize = cacheSize;
+      return this;
+    }
+
+    /**
      * Builds the journal.
      *
      * @return The built storage configuration.
      */
     @Override
     public SegmentedJournal<E> build() {
-      return new SegmentedJournal<>(name, storageLevel, directory, serializer, maxSegmentSize, maxEntriesPerSegment, indexDensity);
+      return new SegmentedJournal<>(name, storageLevel, directory, serializer, maxSegmentSize, maxEntriesPerSegment, indexDensity, cacheSize);
     }
   }
 }
