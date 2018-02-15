@@ -20,6 +20,7 @@ import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.RaftContext;
+import io.atomix.protocols.raft.impl.RaftServiceManager;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.proxy.impl.TestPrimitiveType;
 import io.atomix.protocols.raft.service.RaftServiceContext;
@@ -56,10 +57,12 @@ public class RaftSessionRegistryTest {
     when(context.serviceType()).thenReturn(new TestPrimitiveType());
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
-    when(context.executor()).thenReturn(mock(ThreadContext.class));
 
     RaftContext server = mock(RaftContext.class);
     when(server.getProtocol()).thenReturn(mock(RaftServerProtocol.class));
+    RaftServiceManager manager = mock(RaftServiceManager.class);
+    when(manager.executor()).thenReturn(mock(ThreadContext.class));
+    when(server.getServiceManager()).thenReturn(manager);
 
     return new RaftSession(
         SessionId.from(sessionId),

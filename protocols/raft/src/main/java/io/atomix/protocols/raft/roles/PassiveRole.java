@@ -15,41 +15,13 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.primitive.PrimitiveId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftContext;
-import io.atomix.protocols.raft.protocol.AppendRequest;
-import io.atomix.protocols.raft.protocol.AppendResponse;
-import io.atomix.protocols.raft.protocol.CloseSessionRequest;
-import io.atomix.protocols.raft.protocol.CloseSessionResponse;
-import io.atomix.protocols.raft.protocol.CommandRequest;
-import io.atomix.protocols.raft.protocol.CommandResponse;
-import io.atomix.protocols.raft.protocol.InstallRequest;
-import io.atomix.protocols.raft.protocol.InstallResponse;
-import io.atomix.protocols.raft.protocol.JoinRequest;
-import io.atomix.protocols.raft.protocol.JoinResponse;
-import io.atomix.protocols.raft.protocol.KeepAliveRequest;
-import io.atomix.protocols.raft.protocol.KeepAliveResponse;
-import io.atomix.protocols.raft.protocol.LeaveRequest;
-import io.atomix.protocols.raft.protocol.LeaveResponse;
-import io.atomix.protocols.raft.protocol.MetadataRequest;
-import io.atomix.protocols.raft.protocol.MetadataResponse;
-import io.atomix.protocols.raft.protocol.OpenSessionRequest;
-import io.atomix.protocols.raft.protocol.OpenSessionResponse;
-import io.atomix.protocols.raft.protocol.OperationResponse;
-import io.atomix.protocols.raft.protocol.PollRequest;
-import io.atomix.protocols.raft.protocol.PollResponse;
-import io.atomix.protocols.raft.protocol.QueryRequest;
-import io.atomix.protocols.raft.protocol.QueryResponse;
-import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.protocol.ReconfigureRequest;
-import io.atomix.protocols.raft.protocol.ReconfigureResponse;
-import io.atomix.protocols.raft.protocol.VoteRequest;
-import io.atomix.protocols.raft.protocol.VoteResponse;
+import io.atomix.protocols.raft.protocol.*;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
@@ -61,8 +33,6 @@ import io.atomix.storage.StorageException;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.utils.time.WallClockTimestamp;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -72,7 +42,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Passive state.
  */
 public class PassiveRole extends InactiveRole {
-  private final Map<Long, PendingSnapshot> pendingSnapshots = new HashMap<>();
+  private PendingSnapshot pendingSnapshot;
 
   public PassiveRole(RaftContext context) {
     super(context);
@@ -305,7 +275,7 @@ public class PassiveRole extends InactiveRole {
     long previousCommitIndex = raft.setCommitIndex(commitIndex);
     if (previousCommitIndex < commitIndex) {
       log.trace("Committed entries up to index {}", commitIndex);
-      raft.getStateMachine().applyAll(commitIndex);
+      raft.getServiceManager().applyAll(commitIndex);
     }
 
     // Return a successful append response.
@@ -321,7 +291,7 @@ public class PassiveRole extends InactiveRole {
       log.trace("Appended {}", indexed);
     } catch (StorageException.OutOfDiskSpace e) {
       log.trace("Append failed: {}", e);
-      raft.getLogCompactor().compact();
+      raft.getServiceManager().compact();
       failAppend(index - 1, future);
       return false;
     }
@@ -447,7 +417,7 @@ public class PassiveRole extends InactiveRole {
     // In the case of the leader, the state machine is always up to date, so no queries will be queued and all query
     // indexes will be the last applied index.
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    raft.getStateMachine().<OperationResult>apply(entry).whenComplete((result, error) -> {
+    raft.getServiceManager().<OperationResult>apply(entry).whenComplete((result, error) -> {
       completeOperation(result, QueryResponse.builder(), error, future);
     });
     return future;
@@ -507,15 +477,12 @@ public class PassiveRole extends InactiveRole {
 
     // If the snapshot already exists locally, do not overwrite it with a replicated snapshot. Simply reply to the
     // request successfully.
-    Snapshot existingSnapshot = raft.getSnapshotStore().getSnapshot(PrimitiveId.from(request.serviceId()), request.snapshotIndex());
+    Snapshot existingSnapshot = raft.getSnapshotStore().getSnapshot(request.snapshotIndex());
     if (existingSnapshot != null) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .build()));
     }
-
-    // Get the pending snapshot for the associated snapshot ID.
-    PendingSnapshot pendingSnapshot = pendingSnapshots.get(request.serviceId());
 
     // If a snapshot is currently being received and the snapshot versions don't match, simply
     // close the existing snapshot. This is a naive implementation that assumes that the leader
@@ -539,8 +506,6 @@ public class PassiveRole extends InactiveRole {
       }
 
       Snapshot snapshot = raft.getSnapshotStore().newSnapshot(
-          PrimitiveId.from(request.serviceId()),
-          request.serviceName(),
           request.snapshotIndex(),
           WallClockTimestamp.from(request.snapshotTimestamp()));
       pendingSnapshot = new PendingSnapshot(snapshot);
@@ -568,10 +533,9 @@ public class PassiveRole extends InactiveRole {
     // If the snapshot is complete, store the snapshot and reset state, otherwise update the next snapshot offset.
     if (request.complete()) {
       pendingSnapshot.commit();
-      pendingSnapshots.remove(request.serviceId());
+      pendingSnapshot = null;
     } else {
       pendingSnapshot.incrementOffset();
-      pendingSnapshots.put(request.serviceId(), pendingSnapshot);
     }
 
     return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
@@ -764,7 +728,7 @@ public class PassiveRole extends InactiveRole {
 
   @Override
   public CompletableFuture<Void> stop() {
-    for (PendingSnapshot pendingSnapshot : pendingSnapshots.values()) {
+    if (pendingSnapshot != null) {
       pendingSnapshot.rollback();
     }
     return super.stop();

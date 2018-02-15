@@ -54,7 +54,6 @@ public final class SnapshotDescriptor implements AutoCloseable {
   }
 
   private Buffer buffer;
-  private final long serviceId;
   private final long index;
   private final long timestamp;
   private boolean locked;
@@ -64,20 +63,10 @@ public final class SnapshotDescriptor implements AutoCloseable {
    */
   public SnapshotDescriptor(Buffer buffer) {
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
-    this.serviceId = buffer.readLong();
     this.index = buffer.readLong();
     this.timestamp = buffer.readLong();
     this.locked = buffer.readBoolean();
     buffer.skip(BYTES - buffer.position());
-  }
-
-  /**
-   * Returns the service identifier.
-   *
-   * @return The service identifier.
-   */
-  public long serviceId() {
-    return serviceId;
   }
 
   /**
@@ -114,7 +103,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    */
   public void lock() {
     buffer.flush()
-        .writeBoolean(24, true)
+        .writeBoolean(16, true)
         .flush();
     locked = true;
   }
@@ -124,7 +113,6 @@ public final class SnapshotDescriptor implements AutoCloseable {
    */
   SnapshotDescriptor copyTo(Buffer buffer) {
     this.buffer = buffer
-        .writeLong(serviceId)
         .writeLong(index)
         .writeLong(timestamp)
         .writeBoolean(locked)
@@ -158,24 +146,13 @@ public final class SnapshotDescriptor implements AutoCloseable {
     }
 
     /**
-     * Sets the snapshot identifier.
-     *
-     * @param id The snapshot identifier.
-     * @return The snapshot builder.
-     */
-    public Builder withServiceId(long id) {
-      buffer.writeLong(0, id);
-      return this;
-    }
-
-    /**
      * Sets the snapshot index.
      *
      * @param index The snapshot index.
      * @return The snapshot builder.
      */
     public Builder withIndex(long index) {
-      buffer.writeLong(8, index);
+      buffer.writeLong(0, index);
       return this;
     }
 
@@ -186,7 +163,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @return The snapshot builder.
      */
     public Builder withTimestamp(long timestamp) {
-      buffer.writeLong(16, timestamp);
+      buffer.writeLong(8, timestamp);
       return this;
     }
 
@@ -198,7 +175,5 @@ public final class SnapshotDescriptor implements AutoCloseable {
     public SnapshotDescriptor build() {
       return new SnapshotDescriptor(buffer);
     }
-
   }
-
 }

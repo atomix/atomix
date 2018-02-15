@@ -29,11 +29,9 @@ public class SnapshotDescriptorTest {
   @Test
   public void testSnapshotDescriptor() throws Exception {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
-        .withServiceId(1)
         .withIndex(2)
         .withTimestamp(3)
         .build();
-    assertEquals(1, descriptor.serviceId());
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
   }
@@ -41,7 +39,6 @@ public class SnapshotDescriptorTest {
   @Test
   public void testCopySnapshotDescriptor() throws Exception {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
-        .withServiceId(1)
         .withIndex(2)
         .withTimestamp(3)
         .build();
@@ -49,7 +46,6 @@ public class SnapshotDescriptorTest {
     descriptor.copyTo(buffer);
     buffer.flip();
     descriptor = new SnapshotDescriptor(buffer);
-    assertEquals(1, descriptor.serviceId());
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
   }

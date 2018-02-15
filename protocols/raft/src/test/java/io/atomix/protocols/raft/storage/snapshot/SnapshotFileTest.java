@@ -32,8 +32,8 @@ public class SnapshotFileTest {
    */
   @Test
   public void testCreateSnapshotFileName() throws Exception {
-    assertEquals(SnapshotFile.createSnapshotFileName("foo", 1, 2), "foo-1-2.snapshot");
-    assertEquals(SnapshotFile.createSnapshotFileName("foo-bar", 1, 2), "foo-bar-1-2.snapshot");
+    assertEquals(SnapshotFile.createSnapshotFileName("test", 1), "test-1.snapshot");
+    assertEquals(SnapshotFile.createSnapshotFileName("test", 2), "test-2.snapshot");
   }
 
   /**
@@ -41,8 +41,8 @@ public class SnapshotFileTest {
    */
   @Test
   public void testCreateValidateSnapshotFile() throws Exception {
-    assertTrue(SnapshotFile.isSnapshotFile(SnapshotFile.createSnapshotFile(new File(System.getProperty("user.dir")), "foo", 1, 2)));
-    assertTrue(SnapshotFile.isSnapshotFile(SnapshotFile.createSnapshotFile(new File(System.getProperty("user.dir")), "foo-bar", 1, 2)));
+    assertTrue(SnapshotFile.isSnapshotFile(SnapshotFile.createSnapshotFile(new File(System.getProperty("user.dir")), "foo", 1)));
+    assertTrue(SnapshotFile.isSnapshotFile(SnapshotFile.createSnapshotFile(new File(System.getProperty("user.dir")), "foo-bar", 1)));
   }
 
   @Test
