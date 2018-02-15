@@ -70,11 +70,14 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
       }
       return currentWriter.append(entry);
     } catch (BufferOverflowException e) {
+      if (currentWriter.firstIndex() == currentWriter.getNextIndex()) {
+        throw e;
+      }
       currentWriter.flush();
       currentSegment = journal.getNextSegment();
       currentWriter = currentSegment.writer();
+      return currentWriter.append(entry);
     }
-    return currentWriter.append(entry);
   }
 
   @Override
@@ -87,11 +90,14 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
       }
       currentWriter.append(entry);
     } catch (BufferOverflowException e) {
+      if (currentWriter.firstIndex() == currentWriter.getNextIndex()) {
+        throw e;
+      }
       currentWriter.flush();
       currentSegment = journal.getNextSegment();
       currentWriter = currentSegment.writer();
+      currentWriter.append(entry);
     }
-    currentWriter.append(entry);
   }
 
   @Override

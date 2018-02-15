@@ -33,9 +33,7 @@ public final class RaftMemberContext {
   private long term;
   private long configIndex;
   private long snapshotIndex;
-  private long snapshotId;
   private long nextSnapshotIndex;
-  private long nextSnapshotId;
   private int nextSnapshotOffset;
   private long matchIndex;
   private long heartbeatTime;
@@ -154,24 +152,6 @@ public final class RaftMemberContext {
   }
 
   /**
-   * Returns the member's current snapshot identifier.
-   *
-   * @return The member's current snapshot identifier.
-   */
-  public long getSnapshotId() {
-    return snapshotId;
-  }
-
-  /**
-   * Sets the member's current snapshot identifier.
-   *
-   * @param snapshotId The member's current snapshot identifier.
-   */
-  public void setSnapshotId(long snapshotId) {
-    this.snapshotId = snapshotId;
-  }
-
-  /**
    * Returns the member's next snapshot index.
    *
    * @return The member's next snapshot index.
@@ -187,24 +167,6 @@ public final class RaftMemberContext {
    */
   public void setNextSnapshotIndex(long nextSnapshotIndex) {
     this.nextSnapshotIndex = nextSnapshotIndex;
-  }
-
-  /**
-   * Returns the member's next snapshot identifier.
-   *
-   * @return The member's next snapshot identifier.
-   */
-  public long getNextSnapshotId() {
-    return nextSnapshotId;
-  }
-
-  /**
-   * Sets the member's next snapshot identifier.
-   *
-   * @param nextSnapshotId The member's next snapshot identifier.
-   */
-  public void setNextSnapshotId(long nextSnapshotId) {
-    this.nextSnapshotId = nextSnapshotId;
   }
 
   /**

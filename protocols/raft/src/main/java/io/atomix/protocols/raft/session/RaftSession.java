@@ -595,7 +595,7 @@ public class RaftSession implements Session {
    */
   public void open() {
     setState(State.OPEN);
-    protocol.registerResetListener(sessionId, request -> resendEvents(request.index()), context.executor());
+    protocol.registerResetListener(sessionId, request -> resendEvents(request.index()), server.getServiceManager().executor());
   }
 
   /**

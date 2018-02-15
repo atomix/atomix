@@ -40,7 +40,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Segmented journal implementation.
+ *
+ *  Segmented journal implementation.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -353,7 +354,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   /**
    * Creates a new segment.
    */
-  private JournalSegment<E> createSegment(JournalSegmentDescriptor descriptor) {
+  JournalSegment<E> createSegment(JournalSegmentDescriptor descriptor) {
     switch (storageLevel) {
       case MEMORY:
         return createMemorySegment(descriptor);
@@ -537,6 +538,19 @@ public class SegmentedJournal<E> implements Journal<E> {
         descriptor.close();
       }
     }
+
+    for (Long segmentId : segments.keySet()) {
+      JournalSegment<E> segment = segments.get(segmentId);
+      Map.Entry<Long, JournalSegment<E>> previousEntry = segments.floorEntry(segmentId - 1);
+      if (previousEntry != null) {
+        JournalSegment<E> previousSegment = previousEntry.getValue();
+        if (previousSegment.lastIndex() != segment.index() - 1) {
+          log.warn("Found misaligned segment {}", segment);
+          segments.remove(segmentId);
+        }
+      }
+    }
+
     return segments.values();
   }
 

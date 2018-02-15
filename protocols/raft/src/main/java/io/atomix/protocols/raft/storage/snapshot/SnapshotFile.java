@@ -53,18 +53,12 @@ public final class SnapshotFile {
     // Parse the file name parts.
     String[] parts = fileName.substring(0, fileName.lastIndexOf(EXTENSION_SEPARATOR)).split(String.valueOf(PART_SEPARATOR));
 
-    // The total number of file name parts should be at least 4.
-    if (parts.length < 3) {
+    // The total number of file name parts should be at least 2.
+    if (parts.length < 2) {
       return false;
     }
 
     // The second part of the file name should be numeric.
-    // Subtract from the number of parts to ensure PART_SEPARATOR can be used in snapshot names.
-    if (!isNumeric(parts[parts.length - 2])) {
-      return false;
-    }
-
-    // The third part of the file name should be numeric.
     // Subtract from the number of parts to ensure PART_SEPARATOR can be used in snapshot names.
     if (!isNumeric(parts[parts.length - 1])) {
       return false;
@@ -93,18 +87,17 @@ public final class SnapshotFile {
    * Creates a snapshot file for the given directory, log name, and snapshot index.
    */
   @VisibleForTesting
-  static File createSnapshotFile(File directory, String serviceName, long serviceId, long index) {
-    return new File(directory, createSnapshotFileName(serviceName, serviceId, index));
+  static File createSnapshotFile(File directory, String serverName, long index) {
+    return new File(directory, createSnapshotFileName(serverName, index));
   }
 
   /**
    * Creates a snapshot file name from the given parameters.
    */
   @VisibleForTesting
-  static String createSnapshotFileName(String serviceName, long serviceId, long index) {
-    return String.format("%s-%d-%d.%s",
-        serviceName,
-        serviceId,
+  static String createSnapshotFileName(String serverName, long index) {
+    return String.format("%s-%d.%s",
+        serverName,
         index,
         EXTENSION);
   }
