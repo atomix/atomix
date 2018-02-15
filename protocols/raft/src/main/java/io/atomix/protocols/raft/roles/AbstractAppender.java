@@ -148,12 +148,6 @@ abstract class AbstractAppender implements AutoCloseable {
       if (entry.index() == lastIndex || size >= MAX_BATCH_SIZE) {
         break;
       }
-
-      // If a snapshot exists at the next index, complete the request. This will ensure that
-      // the snapshot is sent on the next index.
-      if (raft.getSnapshotStore().getSnapshotsByIndex(entry.index()) != null) {
-        break;
-      }
     }
 
     // Add the entries to the request builder and build the request.
@@ -412,10 +406,6 @@ abstract class AbstractAppender implements AutoCloseable {
   protected InstallRequest buildInstallRequest(RaftMemberContext member, Snapshot snapshot) {
     if (member.getNextSnapshotIndex() != snapshot.index()) {
       member.setNextSnapshotIndex(snapshot.index());
-      member.setNextSnapshotId(snapshot.serviceId().id());
-      member.setNextSnapshotOffset(0);
-    } else if (member.getNextSnapshotId() != snapshot.serviceId().id()) {
-      member.setNextSnapshotId(snapshot.serviceId().id());
       member.setNextSnapshotOffset(0);
     }
 
@@ -434,8 +424,6 @@ abstract class AbstractAppender implements AutoCloseable {
         request = InstallRequest.newBuilder()
             .withTerm(raft.getTerm())
             .withLeader(leader != null ? leader.memberId() : null)
-            .withServiceId(snapshot.serviceId().id())
-            .withServiceName(snapshot.serviceName())
             .withIndex(snapshot.index())
             .withOffset(member.getNextSnapshotOffset())
             .withData(data)
@@ -482,7 +470,6 @@ abstract class AbstractAppender implements AutoCloseable {
     // Reset the member's snapshot index and offset to resend the snapshot from the start
     // once a connection to the member is re-established.
     member.setNextSnapshotIndex(0);
-    member.setNextSnapshotId(0);
     member.setNextSnapshotOffset(0);
 
     // Log the failed attempt to contact the member.
@@ -512,10 +499,8 @@ abstract class AbstractAppender implements AutoCloseable {
     // the next snapshot index/offset.
     if (request.complete()) {
       member.setNextSnapshotIndex(0);
-      member.setNextSnapshotId(0);
       member.setNextSnapshotOffset(0);
       member.setSnapshotIndex(request.snapshotIndex());
-      member.setSnapshotId(request.serviceId());
     }
     // If more install requests remain, increment the member's snapshot offset.
     else {

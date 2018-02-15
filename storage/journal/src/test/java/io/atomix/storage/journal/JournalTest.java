@@ -18,7 +18,17 @@ package io.atomix.storage.journal;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.storage.StorageLevel;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,22 +40,24 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class JournalTest {
+  private static final Path PATH = Paths.get("target/test-logs/");
   private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
       .register(TestEntry.class)
       .register(byte[].class)
       .build());
 
-  private Journal<TestEntry> createJournal() {
+  private SegmentedJournal<TestEntry> createJournal(StorageLevel storageLevel) {
     return SegmentedJournal.<TestEntry>newBuilder()
         .withName("test")
+        .withDirectory(PATH.toFile())
         .withSerializer(serializer)
-        .withStorageLevel(StorageLevel.MEMORY)
+        .withStorageLevel(storageLevel)
         .build();
   }
 
   @Test
   public void testLogWriteRead() throws Exception {
-    Journal<TestEntry> journal = createJournal();
+    Journal<TestEntry> journal = createJournal(StorageLevel.MEMORY);
     JournalWriter<TestEntry> writer = journal.writer();
     JournalReader<TestEntry> reader = journal.openReader(1);
 
@@ -135,5 +147,54 @@ public class JournalTest {
     assertEquals(reader.getCurrentEntry(), closeSession);
     assertEquals(reader.getCurrentIndex(), 2);
     assertFalse(reader.hasNext());
+  }
+
+  @Test
+  public void testLoadSegments() throws Exception {
+    SegmentedJournal<TestEntry> journal = createJournal(StorageLevel.DISK);
+    JournalSegment<TestEntry> segment1 = journal.createSegment(JournalSegmentDescriptor.newBuilder()
+        .withId(1)
+        .withIndex(1)
+        .withMaxEntries(10)
+        .withMaxSegmentSize(1024)
+        .build());
+    segment1.writer().append(new TestEntry(32));
+    JournalSegment<TestEntry> segment2 = journal.createSegment(JournalSegmentDescriptor.newBuilder()
+        .withId(2)
+        .withIndex(10)
+        .withMaxEntries(10)
+        .withMaxSegmentSize(1024)
+        .build());
+    segment2.writer().append(new TestEntry(32));
+    segment1.close();
+    segment2.close();
+    journal.close();
+
+    journal = createJournal(StorageLevel.DISK);
+    JournalReader<TestEntry> reader = journal.openReader(1);
+    assertEquals(1, reader.getNextIndex());
+    assertTrue(reader.hasNext());
+    assertEquals(1, reader.next().index());
+    assertFalse(reader.hasNext());
+  }
+
+  @Before
+  @After
+  public void cleanupStorage() throws IOException {
+    if (Files.exists(PATH)) {
+      Files.walkFileTree(PATH, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          Files.delete(file);
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+          Files.delete(dir);
+          return FileVisitResult.CONTINUE;
+        }
+      });
+    }
   }
 }

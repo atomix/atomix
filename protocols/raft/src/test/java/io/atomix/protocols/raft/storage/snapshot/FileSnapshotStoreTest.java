@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.time.WallClockTimestamp;
@@ -64,24 +63,17 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testStoreLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newSnapshot(ServiceId.from(1), "foo", 2, new WallClockTimestamp());
+    Snapshot snapshot = store.newSnapshot(2, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
     snapshot.complete();
-    assertNotNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNotNull(store.getSnapshotsByIndex(2));
+    assertNotNull(store.getSnapshot(2));
     store.close();
 
     store = createSnapshotStore();
-    assertNotNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNotNull(store.getSnapshotsByIndex(2));
-    assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceId(), ServiceId.from(1));
-    assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceName(), "foo");
-    assertEquals(store.getSnapshotById(ServiceId.from(1)).index(), 2);
-    assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceId(), ServiceId.from(1));
-    assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceName(), "foo");
-    assertEquals(store.getSnapshotsByIndex(2).iterator().next().index(), 2);
+    assertNotNull(store.getSnapshot(2));
+    assertEquals(store.getSnapshot(2).index(), 2);
 
     try (SnapshotReader reader = snapshot.openReader()) {
       assertEquals(reader.readLong(), 10);
@@ -95,19 +87,17 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testPersistLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newTemporarySnapshot(ServiceId.from(1), "foo", 2, new WallClockTimestamp());
+    Snapshot snapshot = store.newTemporarySnapshot(2, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
 
     snapshot = snapshot.persist();
 
-    assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotsByIndex(2));
+    assertNull(store.getSnapshot(2));
 
     snapshot.complete();
-    assertNotNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNotNull(store.getSnapshotsByIndex(2));
+    assertNotNull(store.getSnapshot(2));
 
     try (SnapshotReader reader = snapshot.openReader()) {
       assertEquals(reader.readLong(), 10);
@@ -116,16 +106,10 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     store.close();
 
     store = createSnapshotStore();
-    assertNotNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNotNull(store.getSnapshotsByIndex(2));
-    assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceId(), ServiceId.from(1));
-    assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceName(), "foo");
-    assertEquals(store.getSnapshotById(ServiceId.from(1)).index(), 2);
-    assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceId(), ServiceId.from(1));
-    assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceName(), "foo");
-    assertEquals(store.getSnapshotsByIndex(2).iterator().next().index(), 2);
+    assertNotNull(store.getSnapshot(2));
+    assertEquals(store.getSnapshot(2).index(), 2);
 
-    snapshot = store.getSnapshotById(ServiceId.from(1));
+    snapshot = store.getSnapshot(2);
     try (SnapshotReader reader = snapshot.openReader()) {
       assertEquals(reader.readLong(), 10);
     }
@@ -138,7 +122,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testStreamSnapshot() throws Exception {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newSnapshot(ServiceId.from(1), "foo", 1, new WallClockTimestamp());
+    Snapshot snapshot = store.newSnapshot(1, new WallClockTimestamp());
     for (long i = 1; i <= 10; i++) {
       try (SnapshotWriter writer = snapshot.openWriter()) {
         writer.writeLong(i);
@@ -146,7 +130,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     }
     snapshot.complete();
 
-    snapshot = store.getSnapshotById(ServiceId.from(1));
+    snapshot = store.getSnapshot(1);
     try (SnapshotReader reader = snapshot.openReader()) {
       for (long i = 1; i <= 10; i++) {
         assertEquals(i, reader.readLong());

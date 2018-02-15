@@ -23,7 +23,6 @@ import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
-import io.atomix.storage.journal.index.SparseJournalIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -353,7 +352,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   /**
    * Creates a new segment.
    */
-  private JournalSegment<E> createSegment(JournalSegmentDescriptor descriptor) {
+  JournalSegment<E> createSegment(JournalSegmentDescriptor descriptor) {
     switch (storageLevel) {
       case MEMORY:
         return createMemorySegment(descriptor);
@@ -537,6 +536,19 @@ public class SegmentedJournal<E> implements Journal<E> {
         descriptor.close();
       }
     }
+
+    for (Long segmentId : segments.keySet()) {
+      JournalSegment<E> segment = segments.get(segmentId);
+      Map.Entry<Long, JournalSegment<E>> previousEntry = segments.floorEntry(segmentId - 1);
+      if (previousEntry != null) {
+        JournalSegment<E> previousSegment = previousEntry.getValue();
+        if (previousSegment.lastIndex() != segment.index() - 1) {
+          log.warn("Found misaligned segment {}", segment);
+          segments.remove(segmentId);
+        }
+      }
+    }
+
     return segments.values();
   }
 

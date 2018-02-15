@@ -41,11 +41,6 @@ final class FileSnapshot extends Snapshot {
   }
 
   @Override
-  public String serviceName() {
-    return file.name();
-  }
-
-  @Override
   public synchronized SnapshotWriter openWriter() {
     checkWriter();
     Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
@@ -99,14 +94,4 @@ final class FileSnapshot extends Snapshot {
       }
     }
   }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("index", index())
-        .add("serviceId", serviceId())
-        .add("serviceName", serviceName())
-        .toString();
-  }
-
 }

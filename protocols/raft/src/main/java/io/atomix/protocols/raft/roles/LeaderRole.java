@@ -154,7 +154,7 @@ public final class LeaderRole extends ActiveRole {
       raft.checkThread();
       if (isOpen()) {
         if (error == null) {
-          raft.getStateMachine().apply(resultIndex);
+          raft.getServiceManager().apply(resultIndex);
           future.complete(null);
         } else {
           raft.setLeader(null);
@@ -288,7 +288,7 @@ public final class LeaderRole extends ActiveRole {
               raft.checkThread();
               if (isOpen()) {
                 if (commitError == null) {
-                  raft.getStateMachine().<Long>apply(entry.index())
+                  raft.getServiceManager().<Long>apply(entry.index())
                       .whenCompleteAsync((r, e) -> expiring.remove(session.sessionId()), raft.getThreadContext());
                 } else {
                   expiring.remove(session.sessionId());
@@ -337,7 +337,7 @@ public final class LeaderRole extends ActiveRole {
 
           return appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
-            raft.getStateMachine().<OperationResult>apply(entry.index());
+            raft.getServiceManager().<OperationResult>apply(entry.index());
             configuring = 0;
           });
         }, raft.getThreadContext());
@@ -637,7 +637,7 @@ public final class LeaderRole extends ActiveRole {
     Indexed<MetadataEntry> entry = new Indexed<>(
         raft.getLastApplied(),
         new MetadataEntry(raft.getTerm(), System.currentTimeMillis(), request.session()), 0);
-    raft.getStateMachine().<MetadataResult>apply(entry).whenComplete((result, error) -> {
+    raft.getServiceManager().<MetadataResult>apply(entry).whenComplete((result, error) -> {
       if (error == null) {
         future.complete(logResponse(MetadataResponse.newBuilder()
             .withStatus(RaftResponse.Status.OK)
@@ -752,45 +752,45 @@ public final class LeaderRole extends ActiveRole {
    * Commits a command.
    *
    * @param request the command request
-   * @param future the command response future
+   * @param future  the command response future
    */
   private void commitCommand(CommandRequest request, CompletableFuture<CommandResponse> future) {
     final long term = raft.getTerm();
     final long timestamp = System.currentTimeMillis();
 
     appendAndCompact(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation()))
-      .whenCompleteAsync((entry, error) -> {
-        if (error != null) {
-          future.complete(CommandResponse.newBuilder()
-              .withStatus(RaftResponse.Status.ERROR)
-              .withError(RaftError.Type.COMMAND_FAILURE)
-              .build());
-          return;
-        }
+        .whenCompleteAsync((entry, error) -> {
+          if (error != null) {
+            future.complete(CommandResponse.newBuilder()
+                .withStatus(RaftResponse.Status.ERROR)
+                .withError(RaftError.Type.COMMAND_FAILURE)
+                .build());
+            return;
+          }
 
-        // Replicate the command to followers.
-        appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
-          raft.checkThread();
-          if (isOpen()) {
-            // If the command was successfully committed, apply it to the state machine.
-            if (commitError == null) {
-              raft.getStateMachine().<OperationResult>apply(entry.index()).whenComplete((r, e) -> {
-                completeOperation(r, CommandResponse.newBuilder(), e, future);
-              });
+          // Replicate the command to followers.
+          appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+            raft.checkThread();
+            if (isOpen()) {
+              // If the command was successfully committed, apply it to the state machine.
+              if (commitError == null) {
+                raft.getServiceManager().<OperationResult>apply(entry.index()).whenComplete((r, e) -> {
+                  completeOperation(r, CommandResponse.newBuilder(), e, future);
+                });
+              } else {
+                future.complete(CommandResponse.newBuilder()
+                    .withStatus(RaftResponse.Status.ERROR)
+                    .withError(RaftError.Type.COMMAND_FAILURE)
+                    .build());
+              }
             } else {
               future.complete(CommandResponse.newBuilder()
                   .withStatus(RaftResponse.Status.ERROR)
                   .withError(RaftError.Type.COMMAND_FAILURE)
                   .build());
             }
-          } else {
-            future.complete(CommandResponse.newBuilder()
-                .withStatus(RaftResponse.Status.ERROR)
-                .withError(RaftError.Type.COMMAND_FAILURE)
-                .build());
-          }
-        });
-      }, raft.getThreadContext());
+          });
+        }, raft.getThreadContext());
   }
 
   @Override
@@ -904,7 +904,7 @@ public final class LeaderRole extends ActiveRole {
             raft.checkThread();
             if (isOpen()) {
               if (commitError == null) {
-                raft.getStateMachine().<Long>apply(entry.index()).whenComplete((sessionId, sessionError) -> {
+                raft.getServiceManager().<Long>apply(entry.index()).whenComplete((sessionId, sessionError) -> {
                   if (sessionError == null) {
                     resetHeartbeatTimer(MemberId.from(request.member()));
                     future.complete(logResponse(OpenSessionResponse.newBuilder()
@@ -971,7 +971,7 @@ public final class LeaderRole extends ActiveRole {
             raft.checkThread();
             if (isOpen()) {
               if (commitError == null) {
-                raft.getStateMachine().<long[]>apply(entry.index()).whenCompleteAsync((sessionResult, sessionError) -> {
+                raft.getServiceManager().<long[]>apply(entry.index()).whenCompleteAsync((sessionResult, sessionError) -> {
                   if (sessionError == null) {
                     future.complete(logResponse(KeepAliveResponse.newBuilder()
                         .withStatus(RaftResponse.Status.OK)
@@ -1046,7 +1046,7 @@ public final class LeaderRole extends ActiveRole {
             raft.checkThread();
             if (isOpen()) {
               if (commitError == null) {
-                raft.getStateMachine().<Long>apply(entry.index()).whenComplete((closeResult, closeError) -> {
+                raft.getServiceManager().<Long>apply(entry.index()).whenComplete((closeResult, closeError) -> {
                   if (closeError == null) {
                     future.complete(logResponse(CloseSessionResponse.newBuilder()
                         .withStatus(RaftResponse.Status.OK)
@@ -1090,7 +1090,7 @@ public final class LeaderRole extends ActiveRole {
    * Appends an entry to the Raft log and compacts logs if necessary.
    *
    * @param entry the entry to append
-   * @param <E> the entry type
+   * @param <E>   the entry type
    * @return a completable future to be completed once the entry has been appended
    */
   private <E extends RaftLogEntry> CompletableFuture<Indexed<E>> appendAndCompact(E entry) {
@@ -1100,9 +1100,9 @@ public final class LeaderRole extends ActiveRole {
   /**
    * Appends an entry to the Raft log and compacts logs if necessary.
    *
-   * @param entry the entry to append
+   * @param entry   the entry to append
    * @param attempt the append attempt count
-   * @param <E> the entry type
+   * @param <E>     the entry type
    * @return a completable future to be completed once the entry has been appended
    */
   protected <E extends RaftLogEntry> CompletableFuture<Indexed<E>> appendAndCompact(E entry, int attempt) {
@@ -1117,7 +1117,7 @@ public final class LeaderRole extends ActiveRole {
             });
       } catch (StorageException.OutOfDiskSpace e) {
         log.warn("Caught OutOfDiskSpace error! Force compacting logs...");
-        return raft.getLogCompactor().compact().thenCompose(v -> appendAndCompact(entry, attempt + 1));
+        return raft.getServiceManager().compact().thenCompose(v -> appendAndCompact(entry, attempt + 1));
       }
     }
   }

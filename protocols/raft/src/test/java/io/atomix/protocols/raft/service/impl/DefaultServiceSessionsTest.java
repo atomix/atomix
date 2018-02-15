@@ -18,6 +18,7 @@ package io.atomix.protocols.raft.service.impl;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.RaftContext;
+import io.atomix.protocols.raft.impl.RaftServiceManager;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.service.ServiceType;
@@ -81,10 +82,12 @@ public class DefaultServiceSessionsTest {
     when(context.serviceType()).thenReturn(ServiceType.from("test"));
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(ServiceId.from(1));
-    when(context.executor()).thenReturn(mock(ThreadContext.class));
 
     RaftContext server = mock(RaftContext.class);
     when(server.getProtocol()).thenReturn(mock(RaftServerProtocol.class));
+    RaftServiceManager manager = mock(RaftServiceManager.class);
+    when(manager.executor()).thenReturn(mock(ThreadContext.class));
+    when(server.getServiceManager()).thenReturn(manager);
 
     return new RaftSessionContext(
         SessionId.from(sessionId),

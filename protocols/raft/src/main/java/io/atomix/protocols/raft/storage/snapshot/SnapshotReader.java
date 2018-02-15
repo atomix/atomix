@@ -41,7 +41,7 @@ public class SnapshotReader implements BufferInput<SnapshotReader> {
   private final Buffer buffer;
   private final Snapshot snapshot;
 
-  SnapshotReader(Buffer buffer, Snapshot snapshot) {
+  public SnapshotReader(Buffer buffer, Snapshot snapshot) {
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.snapshot = checkNotNull(snapshot, "snapshot cannot be null");
   }
@@ -53,6 +53,15 @@ public class SnapshotReader implements BufferInput<SnapshotReader> {
    */
   public Snapshot snapshot() {
     return snapshot;
+  }
+
+  /**
+   * Returns the snapshot buffer.
+   *
+   * @return the snapshot buffer
+   */
+  public Buffer buffer() {
+    return buffer;
   }
 
   @Override

@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.time.WallClockTimestamp;
 import org.junit.Test;
 
@@ -41,42 +40,34 @@ public abstract class AbstractSnapshotStoreTest {
   public void testWriteSnapshotChunks() {
     SnapshotStore store = createSnapshotStore();
     WallClockTimestamp timestamp = new WallClockTimestamp();
-    Snapshot snapshot = store.newSnapshot(ServiceId.from(1), "foo", 2, timestamp);
-    assertEquals(snapshot.serviceId(), ServiceId.from(1));
+    Snapshot snapshot = store.newSnapshot(2, timestamp);
     assertEquals(snapshot.index(), 2);
     assertEquals(snapshot.timestamp(), timestamp);
 
-    assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotsByIndex(2));
+    assertNull(store.getSnapshot(2));
 
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
 
-    assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotsByIndex(2));
+    assertNull(store.getSnapshot(2));
 
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(11);
     }
 
-    assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotsByIndex(2));
+    assertNull(store.getSnapshot(2));
 
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(12);
     }
 
-    assertNull(store.getSnapshotById(ServiceId.from(1)));
-    assertNull(store.getSnapshotsByIndex(2));
+    assertNull(store.getSnapshot(2));
     snapshot.complete();
 
-    assertEquals(store.getSnapshotById(ServiceId.from(1)).serviceId(), ServiceId.from(1));
-    assertEquals(store.getSnapshotById(ServiceId.from(1)).index(), 2);
-    assertEquals(store.getSnapshotsByIndex(2).iterator().next().serviceId(), ServiceId.from(1));
-    assertEquals(store.getSnapshotsByIndex(2).iterator().next().index(), 2);
+    assertEquals(store.getSnapshot(2).index(), 2);
 
-    try (SnapshotReader reader = store.getSnapshotById(ServiceId.from(1)).openReader()) {
+    try (SnapshotReader reader = store.getSnapshot(2).openReader()) {
       assertEquals(reader.readLong(), 10);
       assertEquals(reader.readLong(), 11);
       assertEquals(reader.readLong(), 12);

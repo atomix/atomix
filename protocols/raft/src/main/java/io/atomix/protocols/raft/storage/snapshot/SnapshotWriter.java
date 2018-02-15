@@ -41,7 +41,7 @@ public class SnapshotWriter implements BufferOutput<SnapshotWriter> {
   final Buffer buffer;
   private final Snapshot snapshot;
 
-  SnapshotWriter(Buffer buffer, Snapshot snapshot) {
+  public SnapshotWriter(Buffer buffer, Snapshot snapshot) {
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.snapshot = checkNotNull(snapshot, "snapshot cannot be null");
   }
@@ -53,6 +53,15 @@ public class SnapshotWriter implements BufferOutput<SnapshotWriter> {
    */
   public Snapshot snapshot() {
     return snapshot;
+  }
+
+  /**
+   * Returns the snapshot buffer.
+   *
+   * @return the snapshot buffer
+   */
+  public Buffer buffer() {
+    return buffer;
   }
 
   /**

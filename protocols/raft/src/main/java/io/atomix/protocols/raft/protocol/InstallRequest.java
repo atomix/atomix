@@ -48,19 +48,15 @@ public class InstallRequest extends AbstractRaftRequest {
 
   private final long term;
   private final MemberId leader;
-  private final long serviceId;
-  private final String serviceName;
   private final long index;
   private final long timestamp;
   private final int offset;
   private final byte[] data;
   private final boolean complete;
 
-  public InstallRequest(long term, MemberId leader, long serviceId, String serviceName, long index, long timestamp, int offset, byte[] data, boolean complete) {
+  public InstallRequest(long term, MemberId leader, long index, long timestamp, int offset, byte[] data, boolean complete) {
     this.term = term;
     this.leader = leader;
-    this.serviceId = serviceId;
-    this.serviceName = serviceName;
     this.index = index;
     this.timestamp = timestamp;
     this.offset = offset;
@@ -84,24 +80,6 @@ public class InstallRequest extends AbstractRaftRequest {
    */
   public MemberId leader() {
     return leader;
-  }
-
-  /**
-   * Returns the snapshot identifier.
-   *
-   * @return The snapshot identifier.
-   */
-  public long serviceId() {
-    return serviceId;
-  }
-
-  /**
-   * Returns the service name.
-   *
-   * @return The service name.
-   */
-  public String serviceName() {
-    return serviceName;
   }
 
   /**
@@ -151,7 +129,7 @@ public class InstallRequest extends AbstractRaftRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), term, leader, serviceId, index, offset, complete, data);
+    return Objects.hash(getClass(), term, leader, index, offset, complete, data);
   }
 
   @Override
@@ -160,8 +138,6 @@ public class InstallRequest extends AbstractRaftRequest {
       InstallRequest request = (InstallRequest) object;
       return request.term == term
           && request.leader == leader
-          && request.serviceId == serviceId
-          && Objects.equals(request.serviceName, serviceName)
           && request.index == index
           && request.offset == offset
           && request.complete == complete
@@ -175,8 +151,6 @@ public class InstallRequest extends AbstractRaftRequest {
     return toStringHelper(this)
         .add("term", term)
         .add("leader", leader)
-        .add("id", serviceId)
-        .add("name", serviceName)
         .add("index", index)
         .add("offset", offset)
         .add("data", ArraySizeHashPrinter.of(data))
@@ -190,8 +164,6 @@ public class InstallRequest extends AbstractRaftRequest {
   public static class Builder extends AbstractRaftRequest.Builder<Builder, InstallRequest> {
     private long term;
     private MemberId leader;
-    private long serviceId;
-    private String serviceName;
     private long index;
     private long timestamp;
     private int offset;
@@ -220,29 +192,6 @@ public class InstallRequest extends AbstractRaftRequest {
      */
     public Builder withLeader(MemberId leader) {
       this.leader = checkNotNull(leader, "leader cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the request snapshot identifier.
-     *
-     * @param serviceId The request snapshot identifier.
-     * @return The request builder.
-     */
-    public Builder withServiceId(long serviceId) {
-      checkArgument(serviceId > 0, "serviceId must be positive");
-      this.serviceId = serviceId;
-      return this;
-    }
-
-    /**
-     * Sets the request service name.
-     *
-     * @param serviceName The snapshot's service name.
-     * @return The request builder.
-     */
-    public Builder withServiceName(String serviceName) {
-      this.serviceName = checkNotNull(serviceName, "serviceName cannot be null");
       return this;
     }
 
@@ -310,8 +259,6 @@ public class InstallRequest extends AbstractRaftRequest {
       super.validate();
       checkArgument(term > 0, "term must be positive");
       checkNotNull(leader, "leader cannot be null");
-      checkArgument(serviceId > 0, "serviceId must be positive");
-      checkNotNull(serviceName, "serviceName cannot be null");
       checkArgument(index >= 0, "index must be positive");
       checkArgument(offset >= 0, "offset must be positive");
       checkNotNull(data, "data cannot be null");
@@ -323,7 +270,7 @@ public class InstallRequest extends AbstractRaftRequest {
     @Override
     public InstallRequest build() {
       validate();
-      return new InstallRequest(term, leader, serviceId, serviceName, index, timestamp, offset, data, complete);
+      return new InstallRequest(term, leader, index, timestamp, offset, data, complete);
     }
   }
 

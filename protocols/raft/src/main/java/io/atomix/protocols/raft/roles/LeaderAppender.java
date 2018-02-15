@@ -194,30 +194,14 @@ final class LeaderAppender extends AbstractAppender {
     else if (member.getMember().getType() == RaftMember.Type.ACTIVE
         || member.getMember().getType() == RaftMember.Type.PROMOTABLE
         || member.getMember().getType() == RaftMember.Type.PASSIVE) {
-      long currentIndex = member.getLogReader().getCurrentIndex();
-      Collection<Snapshot> snapshots = raft.getSnapshotStore().getSnapshotsByIndex(currentIndex);
-      if (snapshots != null && member.getSnapshotIndex() <= currentIndex) {
+      Snapshot snapshot = raft.getSnapshotStore().getCurrentSnapshot();
+      if (snapshot != null && member.getSnapshotIndex() < snapshot.index() && snapshot.index() >= member.getLogReader().getCurrentIndex()) {
         if (!member.canInstall()) {
           return;
         }
 
-        log.debug("Replicating {} snapshots to {}", snapshots.size(), member.getMember().memberId());
-        Snapshot nextSnapshot = null;
-        for (Snapshot snapshot : snapshots) {
-          if (snapshot.serviceId().id() > member.getSnapshotId()) {
-            nextSnapshot = snapshot;
-            break;
-          }
-        }
-
-        if (nextSnapshot != null) {
-          sendInstallRequest(member, buildInstallRequest(member, nextSnapshot));
-        } else if (member.canAppend()) {
-          log.debug("Completed replicating {} snapshots to {}", snapshots.size(), member.getMember().memberId());
-          member.setSnapshotIndex(currentIndex);
-          member.setSnapshotId(0);
-          sendAppendRequest(member, buildAppendRequest(member, -1));
-        }
+        log.debug("Replicating snapshot {} to {}", snapshot.index(), member.getMember().memberId());
+        sendInstallRequest(member, buildInstallRequest(member, snapshot));
       } else if (member.canAppend()) {
         sendAppendRequest(member, buildAppendRequest(member, -1));
       }

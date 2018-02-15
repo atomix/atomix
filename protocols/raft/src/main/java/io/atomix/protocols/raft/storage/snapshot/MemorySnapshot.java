@@ -25,24 +25,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * In-memory snapshot backed by a {@link HeapBuffer}.
  */
 final class MemorySnapshot extends Snapshot {
-  private final String name;
   private final HeapBuffer buffer;
   private final SnapshotDescriptor descriptor;
   private final SnapshotStore store;
 
-  MemorySnapshot(String name, HeapBuffer buffer, SnapshotDescriptor descriptor, SnapshotStore store) {
+  MemorySnapshot(HeapBuffer buffer, SnapshotDescriptor descriptor, SnapshotStore store) {
     super(descriptor, store);
     buffer.mark();
-    this.name = checkNotNull(name, "name cannot be null");
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.buffer.position(SnapshotDescriptor.BYTES).mark();
     this.descriptor = checkNotNull(descriptor, "descriptor cannot be null");
     this.store = checkNotNull(store, "store cannot be null");
-  }
-
-  @Override
-  public String serviceName() {
-    return name;
   }
 
   @Override
@@ -65,7 +58,7 @@ final class MemorySnapshot extends Snapshot {
   @Override
   public Snapshot persist() {
     if (store.storage.storageLevel() != StorageLevel.MEMORY) {
-      try (Snapshot newSnapshot = store.newSnapshot(serviceId(), name, index(), timestamp())) {
+      try (Snapshot newSnapshot = store.newSnapshot(index(), timestamp())) {
         try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter()) {
           buffer.flip().skip(SnapshotDescriptor.BYTES);
           newSnapshotWriter.write(buffer.array(), buffer.position(), buffer.remaining());
@@ -92,12 +85,4 @@ final class MemorySnapshot extends Snapshot {
   public void close() {
     buffer.close();
   }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("index", index())
-        .toString();
-  }
-
 }
