@@ -49,10 +49,6 @@
    * [Starting a client node](#starting-a-client-node)
    * [REST API examples](#rest-api-examples)
 1. [Docker container](#docker)
-1. [Interactive CLI](#interactive-cli)
-   * [Starting the CLI](#starting-the-cli)
-   * [Print help](#print-help)
-   * [Running a command](#running-a-command)
 
 ## Overview
 
@@ -687,40 +683,6 @@ curl -XGET http://localhost:5678/v1/events/something-happened
 mvn clean package
 docker build -t atomix .
 docker run -p 5678:5678 -p 5679:5679 atomix docker:0.0.0.0
-```
-
-### Interactive CLI
-
-Atomix provides an interactive command line interface through which the Atomix cluster and its
-primitives can be managed. This tool can be useful for inspecting the state of the cluster or
-for demos.
-
-#### Starting the CLI
-
-To run the interactive CLI, set the `ATOMIX_HOST` and `ATOMIX_PORT` environment variables and
-run the `atomix` script with no arguments:
-
-```
-ATOMIX_HOST=127.0.0.1 ATOMIX_PORT=5678 bin/atomix
-```
-
-To view a list of commands supported by the CLI, type `help`
-
-#### Print help
-```
-atomix> election foo leader
-{
-  "candidates": [
-    "d718897a-e651-416c-94c3-9ddc09b2d0e5",
-    "7f01be7d-514f-4561-a2ba-3ccbf3edfbb2"
-  ],
-  "leader": "d718897a-e651-416c-94c3-9ddc09b2d0e5"
-}
-```
-
-#### Running a command
-```
-election foo leader
 ```
 
 ### Acknowledgements
