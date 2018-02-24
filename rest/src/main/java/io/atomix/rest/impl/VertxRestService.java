@@ -27,6 +27,7 @@ import io.atomix.rest.resources.ClusterResource;
 import io.atomix.rest.resources.EventsResource;
 import io.atomix.rest.resources.MessagesResource;
 import io.atomix.rest.resources.PrimitivesResource;
+import io.atomix.rest.resources.StatusResource;
 import io.atomix.rest.utils.EventManager;
 import io.atomix.rest.utils.PrimitiveCache;
 import io.vertx.core.Vertx;
@@ -80,6 +81,7 @@ public class VertxRestService implements ManagedRestService {
     deployment.getDispatcher().getDefaultContextObjects()
         .put(EventManager.class, new EventManager());
 
+    deployment.getRegistry().addPerInstanceResource(StatusResource.class);
     deployment.getRegistry().addPerInstanceResource(ClusterResource.class);
     deployment.getRegistry().addPerInstanceResource(EventsResource.class);
     deployment.getRegistry().addPerInstanceResource(MessagesResource.class);
