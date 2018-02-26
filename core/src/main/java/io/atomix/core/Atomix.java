@@ -226,22 +226,48 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       return openFuture;
     }
 
+    LOGGER.debug("Initializing messaging service");
     openFuture = messagingService.start()
-        .thenComposeAsync(v -> metadataService.start(), context)
-        .thenComposeAsync(v -> clusterService.start(), context)
-        .thenComposeAsync(v -> clusterMessagingService.start(), context)
-        .thenComposeAsync(v -> clusterEventingService.start(), context)
-        .thenComposeAsync(v -> corePartitionGroup.open(
-            new DefaultPartitionManagementService(metadataService, clusterService, clusterMessagingService, primitiveTypes, null, null)), context)
         .thenComposeAsync(v -> {
+          LOGGER.debug("Initializing metadata service");
+          return metadataService.start();
+        }, context)
+        .thenComposeAsync(v -> {
+          LOGGER.debug("Initializing cluster service");
+          return clusterService.start();
+        }, context)
+        .thenComposeAsync(v -> {
+          LOGGER.debug("Initializing cluster messaging service");
+          return clusterMessagingService.start();
+        }, context)
+        .thenComposeAsync(v -> {
+          LOGGER.debug("Initializing cluster eventing service");
+          return clusterEventingService.start();
+        }, context)
+        .thenComposeAsync(v -> {
+          LOGGER.debug("Initializing core partition group");
+          return corePartitionGroup.open(
+                  new DefaultPartitionManagementService(metadataService, clusterService, clusterMessagingService, primitiveTypes, null, null));
+        }, context)
+        .thenComposeAsync(v -> {
+          LOGGER.debug("Initializing election service");
           ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(corePartitionGroup);
           ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(corePartitionGroup);
           return electionService.start()
-              .thenComposeAsync(v2 -> sessionIdService.start(), context)
+              .thenComposeAsync(v2 -> {
+                LOGGER.debug("Initializing session id service");
+                return sessionIdService.start();
+              }, context)
               .thenApply(v2 -> new DefaultPartitionManagementService(metadataService, clusterService, clusterMessagingService, primitiveTypes, electionService, sessionIdService));
         }, context)
-        .thenComposeAsync(partitionManagementService -> partitions.open(partitionManagementService), context)
-        .thenComposeAsync(v -> primitives.start(), context)
+        .thenComposeAsync(partitionManagementService -> {
+          LOGGER.debug("Initializing partitions");
+          return partitions.open(partitionManagementService);
+        }, context)
+        .thenComposeAsync(v -> {
+          LOGGER.debug("Initializing primitives");
+          return primitives.start();
+        }, context)
         .thenApplyAsync(v -> {
           metadataService.addNode(clusterService.getLocalNode());
           started.set(true);
