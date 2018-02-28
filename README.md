@@ -4,6 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/atomix/atomix/badge.svg?branch=master)](https://coveralls.io/github/atomix/atomix?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
+[![Open Source Helpers](https://www.codetriage.com/atomix/atomix/badges/users.svg)](https://www.codetriage.com/atomix/atomix)
 
 **A framework for building fault-tolerant distributed systems for the JVM**
 
