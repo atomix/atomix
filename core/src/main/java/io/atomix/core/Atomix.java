@@ -124,15 +124,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   /**
-   * Returns the cluster metadata service.
-   *
-   * @return the cluster metadata service
-   */
-  public ClusterMetadataService metadataService() {
-    return metadataService;
-  }
-
-  /**
    * Returns the cluster service.
    *
    * @return the cluster service
