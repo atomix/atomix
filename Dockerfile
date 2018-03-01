@@ -16,7 +16,7 @@ RUN wget https://www.yourkit.com/download/YourKit-JavaProfiler-$yourkit_version.
 
 ENV profile false
 RUN echo '#!/bin/bash' >> run_atomix \
-  && echo "if [ \"$profile\" = true ]; then java -agentpath:/atomix/libyjpagent.so -jar /atomix/atomix-agent.jar; else java -jar /atomix/atomix-agent.jar; fi" >> run_atomix \
+  && echo 'if [ "$profile" = true ]; then java -agentpath:/atomix/libyjpagent.so -jar /atomix/atomix-agent.jar "$@"; else java -jar /atomix/atomix-agent.jar "$@"; fi' >> run_atomix \
   && chmod +x run_atomix
 
 EXPOSE 5678
