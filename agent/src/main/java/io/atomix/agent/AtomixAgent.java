@@ -99,6 +99,18 @@ public class AtomixAgent {
         .required(false)
         .setDefault(new File(System.getProperty("user.dir"), "data"))
         .help("The server data directory");
+    parser.addArgument("--core-partitions", "-cp")
+        .type(Integer.class)
+        .metavar("NUM")
+        .required(false)
+        .setDefault(7)
+        .help("The number of core partitions");
+    parser.addArgument("--data-partitions", "-dp")
+        .type(Integer.class)
+        .metavar("NUM")
+        .required(false)
+        .setDefault(71)
+        .help("The number of data partitions");
 
     Namespace namespace = null;
     try {
@@ -123,6 +135,8 @@ public class AtomixAgent {
 
     File dataDir = namespace.get("data_dir");
     Integer httpPort = namespace.getInt("http_port");
+    Integer corePartitions = namespace.getInt("core_partitions");
+    Integer dataPartitions = namespace.getInt("data_partitions");
 
     LOGGER.info("Node: {}", localNode);
     LOGGER.info("Bootstrap: {}", bootstrap);
@@ -132,6 +146,8 @@ public class AtomixAgent {
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrap)
         .withDataDirectory(dataDir)
+        .withCoordinationPartitions(corePartitions)
+        .withDataPartitions(dataPartitions)
         .build();
 
     atomix.start().join();
