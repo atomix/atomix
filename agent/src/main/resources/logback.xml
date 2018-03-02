@@ -15,7 +15,7 @@
   -->
 <configuration>
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${atomix.logging.path:-logs}/atomix.log</file>
+        <file>${atomix.logging.file.path:-logs}/atomix.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>atomix.%d{yyyy-MM-dd}.log</fileNamePattern>
@@ -26,6 +26,10 @@
             <maxFileSize>10MB</maxFileSize>
         </triggeringPolicy>
 
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${atomix.logging.file.level:-${atomix.logging.level:-INFO}}</level>
+        </filter>
+
         <encoder>
             <charset>UTF-8</charset>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -33,9 +37,12 @@
     </appender>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${atomix.logging.console.level:-${atomix.logging.level:-INFO}}</level>
+        </filter>
+
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
-            </pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
