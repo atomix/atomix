@@ -4,7 +4,7 @@ FROM  java:8
 
 MAINTAINER  Jordan Halterman <jordan.halterman@gmail.com>
 
-RUN apt-get update && apt-get install -y git stress
+RUN apt-get update && apt-get install -y iptables git stress
 
 ARG YOURKIT_VERSION=2017.02-b75
 ENV yourkit_version=$YOURKIT_VERSION
