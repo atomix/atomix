@@ -150,6 +150,10 @@ public class AtomixAgent {
         .withDataPartitions(dataPartitions)
         .build();
 
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      atomix.stop().join();
+    }));
+
     atomix.start().join();
 
     LOGGER.info("Atomix listening at {}:{}", localNode.endpoint().host().getHostAddress(), localNode.endpoint().port());
