@@ -139,11 +139,8 @@ public class AtomixAgent {
         .withDataDirectory(dataDir)
         .withCorePartitions(corePartitions)
         .withDataPartitions(dataPartitions)
+        .withShutdownHook(true)
         .build();
-
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      atomix.stop().join();
-    }));
 
     atomix.start().join();
 

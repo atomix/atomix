@@ -116,7 +116,7 @@ public abstract class AbstractAtomixTest {
    */
   static class TestAtomix extends Atomix {
     TestAtomix(ManagedMessagingService messagingService, ManagedClusterMetadataService metadataService, ManagedClusterService clusterService, ManagedClusterMessagingService clusterCommunicator, ManagedClusterEventingService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
-      super(messagingService, metadataService, clusterService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes);
+      super(messagingService, metadataService, clusterService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes, false);
     }
 
     static class Builder extends Atomix.Builder {
