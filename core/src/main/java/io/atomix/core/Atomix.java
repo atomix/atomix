@@ -99,6 +99,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final PrimitiveTypeRegistry primitiveTypes;
   private final AtomicBoolean started = new AtomicBoolean();
   private final ThreadContext context = new SingleThreadContext("atomix-%d");
+  private final boolean enableShutdownHook;
+  private Thread shutdownHook = null;
   private volatile CompletableFuture<Atomix> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
 
@@ -110,7 +112,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterEventingService clusterEventingService,
       ManagedPartitionGroup corePartitionGroup,
       ManagedPartitionService partitions,
-      PrimitiveTypeRegistry primitiveTypes) {
+      PrimitiveTypeRegistry primitiveTypes,
+      boolean enableShutdownHook) {
     PrimitiveTypes.register(primitiveTypes);
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.metadataService = checkNotNull(metadataService, "metadataService cannot be null");
@@ -121,6 +124,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     this.partitions = checkNotNull(partitions, "partitions cannot be null");
     this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
     this.primitives = new CorePrimitivesService(cluster, clusterMessagingService, clusterEventingService, partitions);
+    this.enableShutdownHook = enableShutdownHook;
   }
 
   /**
@@ -239,6 +243,14 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
           LOGGER.info("Started");
           return this;
         }, context);
+
+    if (enableShutdownHook) {
+      if (shutdownHook == null) {
+        shutdownHook = new Thread(() -> this.doStop().join());
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+      }
+    }
+
     return openFuture;
   }
 
@@ -249,6 +261,18 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
   @Override
   public synchronized CompletableFuture<Void> stop() {
+    if (shutdownHook != null) {
+      try {
+        Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        shutdownHook = null;
+      } catch (IllegalStateException e) {
+        // JVM shutting down
+      }
+    }
+    return doStop();
+  }
+
+  private synchronized CompletableFuture<Void> doStop() {
     if (closeFuture != null) {
       return closeFuture;
     }
@@ -300,6 +324,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     protected int numDataPartitions = DEFAULT_DATA_PARTITIONS;
     protected Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
+    protected boolean enableShutdownHook;
 
     /**
      * Sets the cluster name.
@@ -310,6 +335,17 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     public Builder withClusterName(String name) {
       this.name = checkNotNull(name, "name cannot be null");
+      return this;
+    }
+
+    /**
+     * Enables the shutdown hook.
+     *
+     * @param enable if <code>true</code> a shutdown hook will be registered
+     * @return the cluster metadata builder
+     */
+    public Builder withShutdownHook(boolean enable) {
+      this.enableShutdownHook = enable;
       return this;
     }
 
@@ -512,7 +548,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
           clusterEventService,
           corePartitionGroup,
           partitionService,
-          primitiveTypes);
+          primitiveTypes,
+          enableShutdownHook);
     }
 
     private static InetAddress getLocalAddress() throws UnknownHostException {
