@@ -32,7 +32,6 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
-import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.buffer.Bytes;
@@ -45,9 +44,7 @@ import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -64,8 +61,6 @@ public class DefaultServiceContext implements ServiceContext {
   private final RaftContext raft;
   private final DefaultServiceSessions sessions;
   private final ThreadContextFactory threadContextFactory;
-  private final Map<Long, PendingSnapshot> pendingSnapshots = new ConcurrentSkipListMap<>();
-  private long snapshotIndex;
   private long currentIndex;
   private long currentTimestamp;
   private OperationType currentOperation;
@@ -588,24 +583,5 @@ public class DefaultServiceContext implements ServiceContext {
         .add("name", serviceName)
         .add("id", serviceId)
         .toString();
-  }
-
-  /**
-   * Pending snapshot.
-   */
-  private class PendingSnapshot {
-    private volatile Snapshot snapshot;
-    private final CompletableFuture<Long> future = new CompletableFuture<>();
-
-    public PendingSnapshot(Snapshot snapshot) {
-      this.snapshot = snapshot;
-    }
-
-    /**
-     * Persists the snapshot.
-     */
-    void persist() {
-      this.snapshot = snapshot.persist();
-    }
   }
 }
