@@ -513,6 +513,7 @@ public class RaftSession implements Session {
     if (currentEventList != null && currentEventList.eventIndex == index) {
       events.add(currentEventList);
       sendEvents(currentEventList);
+      currentEventList = null;
     }
     setLastApplied(index);
   }
