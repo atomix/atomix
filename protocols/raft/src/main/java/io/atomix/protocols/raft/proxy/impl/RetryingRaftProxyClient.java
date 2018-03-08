@@ -81,23 +81,12 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
       if (e != null) {
         if (attemptIndex < maxRetries + 1 && retryableCheck.test(Throwables.getRootCause(e))) {
           log.debug("Retry attempt ({} of {}). Failure due to {}", attemptIndex, maxRetries, Throwables.getRootCause(e).getClass());
-          scheduleRetry(operation, attemptIndex, future);
+          scheduler.schedule(delayBetweenRetries.multipliedBy(2 ^ attemptIndex), () -> execute(operation, attemptIndex + 1, future));
         } else {
           future.completeExceptionally(e);
         }
       } else {
         future.complete(r);
-      }
-    });
-  }
-
-  private void scheduleRetry(RaftOperation operation, int attemptIndex, CompletableFuture<byte[]> future) {
-    RaftProxy.State retryState = client.getState();
-    scheduler.schedule(delayBetweenRetries.multipliedBy(2 ^ attemptIndex), () -> {
-      if (retryState == RaftProxy.State.CONNECTED || client.getState() == RaftProxy.State.CONNECTED) {
-        execute(operation, attemptIndex + 1, future);
-      } else {
-        scheduleRetry(operation, attemptIndex, future);
       }
     });
   }
