@@ -86,6 +86,7 @@ public class RaftServiceManager implements AutoCloseable {
   private final RaftLogReader reader;
   private final Map<Long, CompletableFuture> futures = Maps.newHashMap();
   private volatile CompletableFuture<Void> compactFuture;
+  private long lastEnqueued;
   private long lastCompacted;
 
   public RaftServiceManager(RaftContext raft, ThreadContext stateContext, ThreadContext compactionContext, ThreadContextFactory threadContextFactory) {
@@ -98,6 +99,7 @@ public class RaftServiceManager implements AutoCloseable {
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(raft.getName())
         .build());
+    this.lastEnqueued = reader.getFirstIndex() - 1;
     scheduleSnapshots();
   }
 
@@ -287,10 +289,7 @@ public class RaftServiceManager implements AutoCloseable {
    * @param index The index up to which to apply commits.
    */
   public void applyAll(long index) {
-    // Don't attempt to apply indices that have already been applied.
-    if (index > raft.getLastApplied()) {
-      raft.getThreadContext().execute(() -> applyNext(index));
-    }
+    enqueueBatch(index);
   }
 
   /**
@@ -306,8 +305,28 @@ public class RaftServiceManager implements AutoCloseable {
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> apply(long index) {
     CompletableFuture<T> future = futures.computeIfAbsent(index, i -> new CompletableFuture<T>());
-    raft.getThreadContext().execute(() -> applyNext(index));
+    enqueueBatch(index);
     return future;
+  }
+
+  /**
+   * Applies all entries up to the given index.
+   *
+   * @param index the index up to which to apply entries
+   */
+  private void enqueueBatch(long index) {
+    while (lastEnqueued < index) {
+      enqueueIndex(++lastEnqueued);
+    }
+  }
+
+  /**
+   * Enqueues an index to be applied to the state machine.
+   *
+   * @param index the index to be applied to the state machine
+   */
+  private void enqueueIndex(long index) {
+    raft.getThreadContext().execute(() -> applyIndex(index));
   }
 
   /**
@@ -316,84 +335,37 @@ public class RaftServiceManager implements AutoCloseable {
    * @param index the index up to which to apply the entry
    */
   @SuppressWarnings("unchecked")
-  private void applyNext(long index) {
+  private void applyIndex(long index) {
     // Apply entries prior to this entry.
-    if (reader.hasNext()) {
-      long nextIndex = reader.getNextIndex();
-
-      // Validate that the next entry can be applied.
-      long lastApplied = raft.getLastApplied();
-      if (nextIndex > lastApplied + 1 && nextIndex != reader.getFirstIndex()) {
-        logger.error("Cannot apply non-sequential index {} unless it's the first entry in the log: {}", nextIndex, reader.getFirstIndex());
-        CompletableFuture future = futures.remove(nextIndex);
-        if (future != null) {
-          future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply non-sequential index unless it's the first entry in the log"));
+    if (reader.hasNext() && reader.getNextIndex() == index) {
+      // Read the entry from the log. If the entry is non-null then apply it, otherwise
+      // simply update the last applied index and return a null result.
+      Indexed<RaftLogEntry> entry = reader.next();
+      try {
+        if (entry.index() != index) {
+          throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
         }
-        return;
-      } else if (nextIndex < lastApplied) {
-        logger.error("Cannot apply duplicate entry at index {}", nextIndex);
-        CompletableFuture future = futures.remove(nextIndex);
-        if (future != null) {
-          future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply duplicate entry at index " + nextIndex));
-        }
-        return;
-      }
-
-      // If the next index is less than or equal to the given index, read and apply the entry.
-      if (nextIndex < index) {
-        Indexed<RaftLogEntry> entry = reader.next();
-        try {
-          apply(entry);
-        } catch (Exception e) {
-          logger.error("Failed to apply {}: {}", entry, e);
-        } finally {
-          raft.setLastApplied(nextIndex);
-        }
-        raft.getThreadContext().execute(() -> applyNext(index));
-        return;
-      }
-      // If the next index is equal to the applied index, apply it and return the result.
-      else if (nextIndex == index) {
-        // Read the entry from the log. If the entry is non-null then apply it, otherwise
-        // simply update the last applied index and return a null result.
-        Indexed<RaftLogEntry> entry = reader.next();
-        try {
-          if (entry.index() != index) {
-            throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
-          }
-          CompletableFuture future = futures.remove(nextIndex);
-          apply(entry).whenComplete((r, e) -> {
-            if (future != null) {
-              if (e == null) {
-                future.complete(r);
-              } else {
-                future.completeExceptionally(e);
-              }
+        CompletableFuture future = futures.remove(index);
+        apply(entry).whenComplete((r, e) -> {
+          if (future != null) {
+            if (e == null) {
+              future.complete(r);
+            } else {
+              future.completeExceptionally(e);
             }
-          });
-        } catch (Exception e) {
-          logger.error("Failed to apply {}: {}", entry, e);
-        } finally {
-          raft.setLastApplied(nextIndex);
-        }
-        return;
+          }
+        });
+      } catch (Exception e) {
+        logger.error("Failed to apply {}: {}", entry, e);
+      } finally {
+        raft.setLastApplied(index);
       }
-      // If the applied index has been passed, return a null result.
-      else {
-        CompletableFuture future = futures.remove(nextIndex);
-        if (future != null) {
-          logger.warn("Skipped applying index {}", index);
-          future.complete(null);
-        }
-        raft.setLastApplied(nextIndex);
-        return;
+    } else {
+      CompletableFuture future = futures.remove(index);
+      if (future != null) {
+        logger.error("Cannot apply index " + index);
+        future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply index " + index));
       }
-    }
-
-    CompletableFuture future = futures.remove(index);
-    if (future != null) {
-      logger.error("Cannot apply index " + index);
-      future.completeExceptionally(new IndexOutOfBoundsException("Cannot apply index " + index));
     }
   }
 
