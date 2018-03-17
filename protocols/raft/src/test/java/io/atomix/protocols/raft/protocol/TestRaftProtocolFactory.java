@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.protocol;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.NodeId;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Map;
 
@@ -26,6 +27,11 @@ import java.util.Map;
 public class TestRaftProtocolFactory {
   private final Map<NodeId, TestRaftServerProtocol> servers = Maps.newConcurrentMap();
   private final Map<NodeId, TestRaftClientProtocol> clients = Maps.newConcurrentMap();
+  private final ThreadContext context;
+
+  public TestRaftProtocolFactory(ThreadContext context) {
+    this.context = context;
+  }
 
   /**
    * Returns a new test client protocol.
@@ -34,7 +40,7 @@ public class TestRaftProtocolFactory {
    * @return a new test client protocol
    */
   public RaftClientProtocol newClientProtocol(NodeId memberId) {
-    return new TestRaftClientProtocol(memberId, servers, clients);
+    return new TestRaftClientProtocol(memberId, servers, clients, context);
   }
 
   /**
@@ -44,6 +50,6 @@ public class TestRaftProtocolFactory {
    * @return a new test server protocol
    */
   public RaftServerProtocol newServerProtocol(NodeId memberId) {
-    return new TestRaftServerProtocol(memberId, servers, clients);
+    return new TestRaftServerProtocol(memberId, servers, clients, context);
   }
 }

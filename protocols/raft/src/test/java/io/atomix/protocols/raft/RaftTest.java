@@ -49,6 +49,8 @@ import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.utils.concurrent.SingleThreadContext;
+import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 import net.jodah.concurrentunit.ConcurrentTestCase;
@@ -120,6 +122,7 @@ public class RaftTest extends ConcurrentTestCase {
   protected volatile List<RaftClient> clients = new ArrayList<>();
   protected volatile List<RaftServer> servers = new ArrayList<>();
   protected volatile TestRaftProtocolFactory protocolFactory;
+  protected volatile ThreadContext context;
 
   /**
    * Tests getting session metadata.
@@ -1295,11 +1298,16 @@ public class RaftTest extends ConcurrentTestCase {
       });
     }
 
+    if (context != null) {
+      context.close();
+    }
+
     members = new ArrayList<>();
     nextId = 0;
     clients = new ArrayList<>();
     servers = new ArrayList<>();
-    protocolFactory = new TestRaftProtocolFactory();
+    context = new SingleThreadContext("raft-test-messaging-%d");
+    protocolFactory = new TestRaftProtocolFactory(context);
   }
 
   private static final OperationId WRITE = OperationId.command("write");

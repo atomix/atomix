@@ -19,6 +19,7 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.net.ConnectException;
 import java.util.Map;
@@ -48,8 +49,12 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
   private Function<AppendRequest, CompletableFuture<AppendResponse>> appendHandler;
   private final Map<Long, Consumer<ResetRequest>> resetListeners = Maps.newConcurrentMap();
 
-  public TestRaftServerProtocol(NodeId memberId, Map<NodeId, TestRaftServerProtocol> servers, Map<NodeId, TestRaftClientProtocol> clients) {
-    super(servers, clients);
+  public TestRaftServerProtocol(
+      NodeId memberId,
+      Map<NodeId, TestRaftServerProtocol> servers,
+      Map<NodeId, TestRaftClientProtocol> clients,
+      ThreadContext context) {
+    super(servers, clients, context);
     servers.put(memberId, this);
   }
 
@@ -73,77 +78,77 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
 
   @Override
   public CompletableFuture<OpenSessionResponse> openSession(NodeId memberId, OpenSessionRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.openSession(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.openSession(request)));
   }
 
   @Override
   public CompletableFuture<CloseSessionResponse> closeSession(NodeId memberId, CloseSessionRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.closeSession(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.closeSession(request)));
   }
 
   @Override
   public CompletableFuture<KeepAliveResponse> keepAlive(NodeId memberId, KeepAliveRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.keepAlive(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.keepAlive(request)));
   }
 
   @Override
   public CompletableFuture<QueryResponse> query(NodeId memberId, QueryRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.query(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.query(request)));
   }
 
   @Override
   public CompletableFuture<CommandResponse> command(NodeId memberId, CommandRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.command(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.command(request)));
   }
 
   @Override
   public CompletableFuture<MetadataResponse> metadata(NodeId memberId, MetadataRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.metadata(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.metadata(request)));
   }
 
   @Override
   public CompletableFuture<JoinResponse> join(NodeId memberId, JoinRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.join(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.join(request)));
   }
 
   @Override
   public CompletableFuture<LeaveResponse> leave(NodeId memberId, LeaveRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.leave(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.leave(request)));
   }
 
   @Override
   public CompletableFuture<ConfigureResponse> configure(NodeId memberId, ConfigureRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.configure(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.configure(request)));
   }
 
   @Override
   public CompletableFuture<ReconfigureResponse> reconfigure(NodeId memberId, ReconfigureRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.reconfigure(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.reconfigure(request)));
   }
 
   @Override
   public CompletableFuture<InstallResponse> install(NodeId memberId, InstallRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.install(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.install(request)));
   }
 
   @Override
   public CompletableFuture<TransferResponse> transfer(NodeId memberId, TransferRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.transfer(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.transfer(request)));
   }
 
   @Override
   public CompletableFuture<PollResponse> poll(NodeId memberId, PollRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.poll(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.poll(request)));
   }
 
   @Override
   public CompletableFuture<VoteResponse> vote(NodeId memberId, VoteRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.vote(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.vote(request)));
   }
 
   @Override
   public CompletableFuture<AppendResponse> append(NodeId memberId, AppendRequest request) {
-    return getServer(memberId).thenCompose(listener -> listener.append(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(listener -> listener.append(request)));
   }
 
   @Override
@@ -153,7 +158,7 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
 
   @Override
   public CompletableFuture<HeartbeatResponse> heartbeat(NodeId memberId, HeartbeatRequest request) {
-    return getClient(memberId).thenCompose(protocol -> protocol.heartbeat(request));
+    return scheduleTimeout(getClient(memberId).thenCompose(protocol -> protocol.heartbeat(request)));
   }
 
   CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
