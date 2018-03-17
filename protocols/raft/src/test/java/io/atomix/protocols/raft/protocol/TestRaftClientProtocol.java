@@ -19,6 +19,7 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.net.ConnectException;
 import java.util.Map;
@@ -35,8 +36,12 @@ public class TestRaftClientProtocol extends TestRaftProtocol implements RaftClie
   private Function<HeartbeatRequest, CompletableFuture<HeartbeatResponse>> heartbeatHandler;
   private final Map<Long, Consumer<PublishRequest>> publishListeners = Maps.newConcurrentMap();
 
-  public TestRaftClientProtocol(NodeId memberId, Map<NodeId, TestRaftServerProtocol> servers, Map<NodeId, TestRaftClientProtocol> clients) {
-    super(servers, clients);
+  public TestRaftClientProtocol(
+      NodeId memberId,
+      Map<NodeId, TestRaftServerProtocol> servers,
+      Map<NodeId, TestRaftClientProtocol> clients,
+      ThreadContext context) {
+    super(servers, clients, context);
     clients.put(memberId, this);
   }
 
@@ -69,32 +74,32 @@ public class TestRaftClientProtocol extends TestRaftProtocol implements RaftClie
 
   @Override
   public CompletableFuture<OpenSessionResponse> openSession(NodeId memberId, OpenSessionRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.openSession(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(protocol -> protocol.openSession(request)));
   }
 
   @Override
   public CompletableFuture<CloseSessionResponse> closeSession(NodeId memberId, CloseSessionRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.closeSession(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(protocol -> protocol.closeSession(request)));
   }
 
   @Override
   public CompletableFuture<KeepAliveResponse> keepAlive(NodeId memberId, KeepAliveRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.keepAlive(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(protocol -> protocol.keepAlive(request)));
   }
 
   @Override
   public CompletableFuture<QueryResponse> query(NodeId memberId, QueryRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.query(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(protocol -> protocol.query(request)));
   }
 
   @Override
   public CompletableFuture<CommandResponse> command(NodeId memberId, CommandRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.command(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(protocol -> protocol.command(request)));
   }
 
   @Override
   public CompletableFuture<MetadataResponse> metadata(NodeId memberId, MetadataRequest request) {
-    return getServer(memberId).thenCompose(protocol -> protocol.metadata(request));
+    return scheduleTimeout(getServer(memberId).thenCompose(protocol -> protocol.metadata(request)));
   }
 
   @Override

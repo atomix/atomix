@@ -16,9 +16,14 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.utils.concurrent.Scheduled;
+import io.atomix.utils.concurrent.ThreadContext;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Base class for Raft protocol.
@@ -26,10 +31,24 @@ import java.util.Map;
 public abstract class TestRaftProtocol {
   private final Map<NodeId, TestRaftServerProtocol> servers;
   private final Map<NodeId, TestRaftClientProtocol> clients;
+  private final ThreadContext context;
 
-  public TestRaftProtocol(Map<NodeId, TestRaftServerProtocol> servers, Map<NodeId, TestRaftClientProtocol> clients) {
+  public TestRaftProtocol(
+      Map<NodeId, TestRaftServerProtocol> servers,
+      Map<NodeId, TestRaftClientProtocol> clients,
+      ThreadContext context) {
     this.servers = servers;
     this.clients = clients;
+    this.context = context;
+  }
+
+  <T> CompletableFuture<T> scheduleTimeout(CompletableFuture<T> future) {
+    Scheduled scheduled = context.schedule(Duration.ofSeconds(1), () -> {
+      if (!future.isDone()) {
+        future.completeExceptionally(new TimeoutException());
+      }
+    });
+    return future.whenComplete((r, e) -> scheduled.cancel());
   }
 
   TestRaftServerProtocol server(NodeId memberId) {
