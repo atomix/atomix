@@ -122,6 +122,49 @@ public final class Futures {
    * descendants is blocked on a {@link CompletableFuture#get()} or {@link CompletableFuture#join()} call, completion
    * of the returned future will be done using the provided {@code threadPoolExecutor}.
    *
+   * @param future the future to convert into an asynchronous future
+   * @param orderedExecutor the ordered executor with which to attempt to complete the future
+   * @param threadPoolExecutor the backup executor with which to complete blocked futures
+   * @param <T> future value type
+   * @return a new completable future to be completed using the provided {@code executor} once the provided
+   * {@code future} is complete
+   */
+  public static <T> CompletableFuture<T> orderedFuture(
+      CompletableFuture<T> future,
+      Executor orderedExecutor,
+      Executor threadPoolExecutor) {
+    if (future.isDone()) {
+      return future;
+    }
+
+    BlockingAwareFuture<T> newFuture = new BlockingAwareFuture<>();
+    future.whenComplete((result, error) -> {
+      Runnable completer = () -> {
+        if (future.isCompletedExceptionally()) {
+          newFuture.completeExceptionally(error);
+        } else {
+          newFuture.complete(result);
+        }
+      };
+
+      if (newFuture.isBlocked()) {
+        threadPoolExecutor.execute(completer);
+      } else {
+        orderedExecutor.execute(completer);
+      }
+    });
+    return newFuture;
+  }
+
+  /**
+   * Returns a future that's completed using the given {@code orderedExecutor} if the future is not blocked or the
+   * given {@code threadPoolExecutor} if the future is blocked.
+   * <p>
+   * This method allows futures to maintain single-thread semantics via the provided {@code orderedExecutor} while
+   * ensuring user code can block without blocking completion of futures. When the returned future or any of its
+   * descendants is blocked on a {@link CompletableFuture#get()} or {@link CompletableFuture#join()} call, completion
+   * of the returned future will be done using the provided {@code threadPoolExecutor}.
+   *
    * @param future             the future to convert into an asynchronous future
    * @param executor    the executor with which to attempt to complete the future
    * @param <T>                future value type

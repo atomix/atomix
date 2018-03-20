@@ -22,10 +22,13 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.partition.PartitionService;
 
+import java.util.concurrent.ScheduledExecutorService;
+
 /**
  * Default primitive management service.
  */
 public class CorePrimitiveManagementService implements PrimitiveManagementService {
+  private final ScheduledExecutorService executorService;
   private final ClusterService clusterService;
   private final ClusterMessagingService communicationService;
   private final ClusterEventingService eventService;
@@ -33,16 +36,23 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   private final PrimitiveRegistry primitiveRegistry;
 
   public CorePrimitiveManagementService(
+      ScheduledExecutorService executorService,
       ClusterService clusterService,
       ClusterMessagingService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
       PrimitiveRegistry primitiveRegistry) {
+    this.executorService = executorService;
     this.clusterService = clusterService;
     this.communicationService = communicationService;
     this.eventService = eventService;
     this.partitionService = partitionService;
     this.primitiveRegistry = primitiveRegistry;
+  }
+
+  @Override
+  public ScheduledExecutorService getExecutorService() {
+    return executorService;
   }
 
   @Override

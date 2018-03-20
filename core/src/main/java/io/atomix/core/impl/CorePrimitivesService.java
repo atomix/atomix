@@ -67,6 +67,7 @@ import io.atomix.utils.AtomixRuntimeException;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -87,6 +88,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   private final AtomicBoolean started = new AtomicBoolean();
 
   public CorePrimitivesService(
+      ScheduledExecutorService executorService,
       ClusterService clusterService,
       ClusterMessagingService communicationService,
       ClusterEventingService eventService,
@@ -95,6 +97,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       AtomixConfig config) {
     this.primitiveRegistry = new CorePrimitiveRegistry(systemPartitionGroup);
     this.managementService = new CorePrimitiveManagementService(
+        executorService,
         clusterService,
         communicationService,
         eventService,

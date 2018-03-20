@@ -80,6 +80,7 @@ import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.Threads;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 import org.slf4j.Logger;
@@ -91,6 +92,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -416,6 +419,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> context.messagingService.stop(), threadContext)
         .exceptionally(e -> null)
         .thenRunAsync(() -> {
+          context.executorService.shutdownNow();
           threadContext.close();
           started.set(false);
           LOGGER.info("Stopped");
@@ -467,6 +471,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Builds a context from the given configuration.
    */
   private static Context buildContext(AtomixConfig config) {
+    ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), Threads.namedThreads("atomix-primitive-%d", LOGGER));
     ManagedMessagingService messagingService = buildMessagingService(config);
     ManagedBroadcastService broadcastService = buildBroadcastService(config);
     ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config);
@@ -477,9 +482,10 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup(config);
     ManagedPartitionService partitions = buildPartitionService(config);
     ManagedPrimitivesService primitives = new CorePrimitivesService(
-        clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, config);
+        executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, config);
     PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
     return new Context(
+        executorService,
         messagingService,
         broadcastService,
         bootstrapMetadataService,
@@ -614,6 +620,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Atomix instance context.
    */
   private static class Context {
+    private final ScheduledExecutorService executorService;
     private final ManagedMessagingService messagingService;
     private final ManagedBroadcastService broadcastService;
     private final ManagedBootstrapMetadataService bootstrapMetadataService;
@@ -628,6 +635,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     private final boolean enableShutdownHook;
 
     public Context(
+        ScheduledExecutorService executorService,
         ManagedMessagingService messagingService,
         ManagedBroadcastService broadcastService,
         ManagedBootstrapMetadataService bootstrapMetadataService,
@@ -640,6 +648,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         ManagedPrimitivesService primitives,
         PrimitiveTypeRegistry primitiveTypes,
         boolean enableShutdownHook) {
+      this.executorService = executorService;
       this.messagingService = messagingService;
       this.broadcastService = broadcastService;
       this.bootstrapMetadataService = bootstrapMetadataService;
@@ -916,6 +925,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     @Override
     public Atomix build() {
+      ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), Threads.namedThreads("atomix-primitive-%d", LOGGER));
       ManagedMessagingService messagingService = buildMessagingService();
       ManagedBroadcastService broadcastService = buildBroadcastService();
       ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService();
@@ -926,8 +936,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup();
       ManagedPartitionService partitions = buildPartitionService();
       ManagedPrimitivesService primitives = new CorePrimitivesService(
-          clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, new AtomixConfig());
+          executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, new AtomixConfig());
       return new Atomix(new Context(
+          executorService,
           messagingService,
           broadcastService,
           bootstrapMetadataService,

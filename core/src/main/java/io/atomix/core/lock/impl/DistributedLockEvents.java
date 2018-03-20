@@ -23,8 +23,8 @@ import io.atomix.utils.serializer.KryoNamespaces;
  * Raft value events.
  */
 public enum DistributedLockEvents implements EventType {
-  LOCK("lock"),
-  FAIL("fail");
+  LOCKED("lock"),
+  FAILED("fail");
 
   private final String id;
 
