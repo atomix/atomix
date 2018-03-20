@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Queue;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static io.atomix.core.lock.impl.DistributedLockEvents.FAILED;
+import static io.atomix.core.lock.impl.DistributedLockEvents.LOCKED;
 import static io.atomix.core.lock.impl.DistributedLockOperations.LOCK;
 import static io.atomix.core.lock.impl.DistributedLockOperations.UNLOCK;
 
@@ -60,15 +62,18 @@ public class DistributedLockService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void backup(BufferOutput<?> writer) {
-    writer.writeObject(lock, SERIALIZER::encode);
-    writer.writeObject(queue, SERIALIZER::encode);
+  public void backup(BufferOutput<?> output) {
+    output.writeObject(lock, SERIALIZER::encode);
+    output.writeObject(queue, SERIALIZER::encode);
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
-    lock = reader.readObject(SERIALIZER::decode);
-    queue = reader.readObject(SERIALIZER::decode);
+  public void restore(BufferInput<?> input) {
+    lock = input.readObject(SERIALIZER::decode);
+    queue = input.readObject(SERIALIZER::decode);
+
+    // After the snapshot is installed, we need to cancel any existing timers and schedule new ones based on the
+    // state provided by the snapshot.
     timers.values().forEach(Scheduled::cancel);
     timers.clear();
     for (LockHolder holder : queue) {
@@ -78,7 +83,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
           queue.remove(holder);
           Session session = getSessions().getSession(holder.session);
           if (session != null && session.getState().active()) {
-            session.publish(DistributedLockEvents.FAIL, SERIALIZER::encode, new LockEvent(holder.id, holder.index));
+            session.publish(FAILED, SERIALIZER::encode, new LockEvent(holder.id, holder.index));
           }
         }));
       }
@@ -97,17 +102,28 @@ public class DistributedLockService extends AbstractPrimitiveService {
 
   /**
    * Applies a lock commit.
+   *
+   * @param commit the lock commit
    */
   protected void lock(Commit<Lock> commit) {
+    // If the lock is not already owned, immediately grant the lock to the requester.
+    // Note that we still have to publish an event to the session. The event is guaranteed to be received
+    // by the client-side primitive after the LOCK response.
     if (lock == null) {
       lock = new LockHolder(
           commit.value().id(),
           commit.index(),
           commit.session().sessionId().id(),
           0);
-      commit.session().publish(DistributedLockEvents.LOCK, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+      commit.session().publish(
+          LOCKED,
+          SERIALIZER::encode,
+          new LockEvent(commit.value().id(), commit.index()));
+      // If the timeout is 0, that indicates this is a tryLock request. Immediately fail the request.
     } else if (commit.value().timeout() == 0) {
-      commit.session().publish(DistributedLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+      commit.session().publish(FAILED, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+      // If a timeout exists, add the request to the queue and set a timer. Note that the lock request expiration
+      // time is based on the *state machine* time - not the system time - to ensure consistency across servers.
     } else if (commit.value().timeout() > 0) {
       LockHolder holder = new LockHolder(
           commit.value().id(),
@@ -116,12 +132,19 @@ public class DistributedLockService extends AbstractPrimitiveService {
           getWallClock().getTime().unixTimestamp() + commit.value().timeout());
       queue.add(holder);
       timers.put(commit.index(), getScheduler().schedule(Duration.ofMillis(commit.value().timeout()), () -> {
+        // When the lock request timer expires, remove the request from the queue and publish a FAILED
+        // event to the session. Note that this timer is guaranteed to be executed in the same thread as the
+        // state machine commands, so there's no need to use a lock here.
         timers.remove(commit.index());
         queue.remove(holder);
         if (commit.session().getState().active()) {
-          commit.session().publish(DistributedLockEvents.FAIL, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+          commit.session().publish(
+              FAILED,
+              SERIALIZER::encode,
+              new LockEvent(commit.value().id(), commit.index()));
         }
       }));
+      // If the lock is -1, just add the request to the queue with no expiration.
     } else {
       LockHolder holder = new LockHolder(
           commit.value().id(),
@@ -134,50 +157,83 @@ public class DistributedLockService extends AbstractPrimitiveService {
 
   /**
    * Applies an unlock commit.
+   *
+   * @param commit the unlock commit
    */
   protected void unlock(Commit<Unlock> commit) {
     if (lock != null) {
+      // If the commit's session does not match the current lock holder, ignore the request.
       if (lock.session != commit.session().sessionId().id()) {
         return;
       }
 
+      // If the current lock ID does not match the requested lock ID, ignore the request. This ensures that
+      // internal releases of locks that were never acquired by the client-side primitive do not cause
+      // legitimate locks to be unlocked.
+      if (lock.id != commit.value().id()) {
+        return;
+      }
+
+      // The lock has been released. Populate the lock from the queue.
       lock = queue.poll();
       while (lock != null) {
+        // If the waiter has a lock timer, cancel the timer.
         Scheduled timer = timers.remove(lock.index);
         if (timer != null) {
           timer.cancel();
         }
 
+        // If the lock session is for some reason inactive, continue on to the next waiter. Otherwise,
+        // publish a LOCKED event to the new lock holder's session.
         Session session = getSessions().getSession(lock.session);
-        if (session == null || session.getState() == Session.State.EXPIRED || session.getState() == Session.State.CLOSED) {
+        if (session == null || !session.getState().active()) {
           lock = queue.poll();
         } else {
-          session.publish(DistributedLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, commit.index()));
+          session.publish(
+              LOCKED,
+              SERIALIZER::encode,
+              new LockEvent(lock.id, commit.index()));
           break;
         }
       }
     }
   }
 
+  /**
+   * Handles a session that has been closed by a client or expired by the cluster.
+   * <p>
+   * When a session is removed, if the session is the current lock holder then the lock is released and the next
+   * session waiting in the queue is granted the lock. Additionally, all pending lock requests for the session
+   * are removed from the lock queue.
+   *
+   * @param session the closed session
+   */
   private void releaseSession(Session session) {
+    // Remove all instances of the session from the lock queue.
+    queue.removeIf(lock -> lock.session == session.sessionId().id());
+
+    // If the removed session is the current holder of the lock, nullify the lock and attempt to grant it
+    // to the next waiter in the queue.
     if (lock != null && lock.session == session.sessionId().id()) {
       lock = queue.poll();
       while (lock != null) {
-        if (lock.session == session.sessionId().id()) {
+        // If the waiter has a lock timer, cancel the timer.
+        Scheduled timer = timers.remove(lock.index);
+        if (timer != null) {
+          timer.cancel();
+        }
+
+        // If the lock session is inactive, continue on to the next waiter. Otherwise,
+        // publish a LOCKED event to the new lock holder's session.
+        Session lockSession = getSessions().getSession(lock.session);
+        if (lockSession == null || !lockSession.getState().active()) {
           lock = queue.poll();
         } else {
-          Scheduled timer = timers.remove(lock.index);
-          if (timer != null) {
-            timer.cancel();
-          }
-
-          Session lockSession = getSessions().getSession(lock.session);
-          if (lockSession == null || lockSession.getState() == Session.State.EXPIRED || lockSession.getState() == Session.State.CLOSED) {
-            lock = queue.poll();
-          } else {
-            lockSession.publish(DistributedLockEvents.LOCK, SERIALIZER::encode, new LockEvent(lock.id, lock.index));
-            break;
-          }
+          lockSession.publish(
+              LOCKED,
+              SERIALIZER::encode,
+              new LockEvent(lock.id, lock.index));
+          break;
         }
       }
     }
