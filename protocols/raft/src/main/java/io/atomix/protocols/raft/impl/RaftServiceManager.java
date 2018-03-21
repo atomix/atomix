@@ -20,14 +20,16 @@ import com.google.common.primitives.Longs;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.service.ServiceId;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionMetadata;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
-import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
@@ -38,7 +40,9 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
+import io.atomix.protocols.raft.storage.snapshot.EphemeralSnapshot;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
+import io.atomix.protocols.raft.storage.snapshot.SnapshotDescriptor;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.StorageLevel;
@@ -82,7 +86,6 @@ public class RaftServiceManager implements AutoCloseable {
   private final ThreadContext stateContext;
   private final ThreadContext compactionContext;
   private final ThreadContextFactory threadContextFactory;
-  private final RaftLog log;
   private final RaftLogReader reader;
   private final Map<Long, CompletableFuture> futures = Maps.newHashMap();
   private volatile CompletableFuture<Void> compactFuture;
@@ -91,8 +94,7 @@ public class RaftServiceManager implements AutoCloseable {
 
   public RaftServiceManager(RaftContext raft, ThreadContext stateContext, ThreadContext compactionContext, ThreadContextFactory threadContextFactory) {
     this.raft = checkNotNull(raft, "state cannot be null");
-    this.log = raft.getLog();
-    this.reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
+    this.reader = raft.getLog().openReader(1, RaftLogReader.Mode.COMMITS);
     this.stateContext = stateContext;
     this.compactionContext = compactionContext;
     this.threadContextFactory = threadContextFactory;
@@ -397,7 +399,7 @@ public class RaftServiceManager implements AutoCloseable {
           if (entry.type() == CommandEntry.class) {
             future.complete((T) applyCommand(entry.cast()));
           } else if (entry.type() == OpenSessionEntry.class) {
-            future.complete((T) (Long) applyOpenSession(entry.cast()));
+            future.complete((T) applyOpenSession(entry.cast()));
           } else if (entry.type() == KeepAliveEntry.class) {
             future.complete((T) applyKeepAlive(entry.cast()));
           } else if (entry.type() == CloseSessionEntry.class) {
@@ -452,6 +454,8 @@ public class RaftServiceManager implements AutoCloseable {
     writer.writeLong(service.serviceId().id());
     writer.writeString(service.serviceType().id());
     writer.writeString(service.serviceName());
+    writer.writeInt(service.revision().revision());
+    writer.writeByte(service.revision().propagationStrategy().ordinal());
     service.takeSnapshot(writer);
   }
 
@@ -488,9 +492,15 @@ public class RaftServiceManager implements AutoCloseable {
     ServiceId serviceId = ServiceId.from(reader.readLong());
     ServiceType serviceType = ServiceType.from(reader.readString());
     String serviceName = reader.readString();
+    int revision = reader.readInt();
+    PropagationStrategy propagationStrategy = PropagationStrategy.values()[reader.readByte()];
 
     // Get or create the service associated with the snapshot.
-    DefaultServiceContext service = initializeService(serviceId, serviceType, serviceName);
+    DefaultServiceContext service = initializeService(
+        serviceId,
+        serviceType,
+        serviceName,
+        new ServiceRevision(revision, propagationStrategy));
     if (service != null) {
       service.installSnapshot(reader);
     }
@@ -593,11 +603,26 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Gets or initializes a service context.
    */
-  private DefaultServiceContext getOrInitializeService(ServiceId serviceId, ServiceType serviceType, String serviceName) {
+  private DefaultServiceContext getOrInitializeService(
+      ServiceId serviceId,
+      ServiceType serviceType,
+      String serviceName,
+      int revision,
+      PropagationStrategy propagationStrategy) {
+    if (revision == 0) {
+      DefaultServiceContext service = raft.getServices().getCurrentRevision(serviceName);
+      if (service != null) {
+        return service;
+      } else {
+        revision = 1;
+      }
+    }
+
     // Get the state machine executor or create one if it doesn't already exist.
-    DefaultServiceContext service = raft.getServices().getService(serviceName);
+    ServiceRevision serviceRevision = new ServiceRevision(revision, propagationStrategy);
+    DefaultServiceContext service = raft.getServices().getRevision(serviceName, serviceRevision);
     if (service == null) {
-      service = initializeService(serviceId, serviceType, serviceName);
+      service = initializeService(serviceId, serviceType, serviceName, serviceRevision);
     }
     return service;
   }
@@ -605,26 +630,57 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Initializes a new service.
    */
-  private DefaultServiceContext initializeService(ServiceId serviceId, ServiceType serviceType, String serviceName) {
+  private DefaultServiceContext initializeService(
+      ServiceId serviceId, ServiceType serviceType, String serviceName, ServiceRevision revision) {
     Supplier<RaftService> serviceFactory = raft.getServiceFactories().getFactory(serviceType.id());
     if (serviceFactory == null) {
       logger.warn("Unknown service type: {}", serviceType);
       return null;
     }
 
-    DefaultServiceContext oldService = raft.getServices().getService(serviceName);
+    DefaultServiceContext oldService = raft.getServices().getRevision(serviceName, revision);
+    DefaultServiceContext parent = raft.getServices().getCurrentRevision(serviceName);
+
     DefaultServiceContext service = new DefaultServiceContext(
         serviceId,
         serviceName,
         serviceType,
+        revision,
         serviceFactory.get(),
         raft,
         threadContextFactory);
+
     raft.getServices().registerService(service);
 
     // If a service with this name was already registered, remove all of its sessions.
     if (oldService != null) {
       raft.getSessions().removeSessions(oldService.serviceId());
+    }
+
+    // If an older revision exists, take a snapshot of the state machine and apply it to the new revision.
+    if (parent != null) {
+      // Add a reference to the parent revision for write propagation.
+      parent.setNextRevision(service);
+
+      // Create a snapshot descriptor.
+      SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
+          .withIndex(raft.getLastApplied())
+          .withTimestamp(parent.wallClock().getTime().unixTimestamp())
+          .build();
+
+      // Take a snapshot of the parent state machine.
+      Snapshot snapshot = new EphemeralSnapshot(descriptor);
+      try (SnapshotWriter writer = snapshot.openWriter()) {
+        parent.service().snapshot(writer);
+      }
+
+      // Complete the snapshot to make it readable.
+      snapshot.complete();
+
+      // Install the snapshot on the new state machine.
+      try (SnapshotReader reader = snapshot.openReader()) {
+        service.service().install(reader);
+      }
     }
     return service;
   }
@@ -632,12 +688,14 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies an open session entry to the state machine.
    */
-  private long applyOpenSession(Indexed<OpenSessionEntry> entry) {
+  private RaftSession applyOpenSession(Indexed<OpenSessionEntry> entry) {
     // Get the state machine executor or create one if it doesn't already exist.
     DefaultServiceContext service = getOrInitializeService(
         ServiceId.from(entry.index()),
         ServiceType.from(entry.entry().serviceType()),
-        entry.entry().serviceName());
+        entry.entry().serviceName(),
+        entry.entry().revision(),
+        entry.entry().propagationStrategy());
     if (service == null) {
       throw new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType());
     }
@@ -655,7 +713,8 @@ public class RaftServiceManager implements AutoCloseable {
         service,
         raft,
         threadContextFactory));
-    return service.openSession(entry.index(), entry.entry().timestamp(), session);
+    service.openSession(entry.index(), entry.entry().timestamp(), session);
+    return session;
   }
 
   /**
@@ -736,14 +795,13 @@ public class RaftServiceManager implements AutoCloseable {
     // Increment the load counter to avoid snapshotting under high load.
     raft.getLoadMonitor().recordEvent();
 
-    // Execute the command using the state machine associated with the session.
-    return session.getService()
-        .executeCommand(
-            entry.index(),
-            entry.entry().sequenceNumber(),
-            entry.entry().timestamp(),
-            session,
-            entry.entry().operation());
+    // Finally, apply the operation to the revision.
+    return session.getService().executeCommand(
+        entry.index(),
+        entry.entry().sequenceNumber(),
+        entry.entry().timestamp(),
+        session,
+        entry.entry().operation());
   }
 
   /**

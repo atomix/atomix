@@ -56,12 +56,10 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public abstract class Snapshot implements AutoCloseable {
   protected final SnapshotDescriptor descriptor;
-  protected final SnapshotStore store;
   private SnapshotWriter writer;
 
-  protected Snapshot(SnapshotDescriptor descriptor, SnapshotStore store) {
+  protected Snapshot(SnapshotDescriptor descriptor) {
     this.descriptor = checkNotNull(descriptor, "descriptor cannot be null");
-    this.store = checkNotNull(store, "store cannot be null");
   }
 
   /**
@@ -160,7 +158,6 @@ public abstract class Snapshot implements AutoCloseable {
    * @return The completed snapshot.
    */
   public Snapshot complete() {
-    store.completeSnapshot(this);
     return this;
   }
 

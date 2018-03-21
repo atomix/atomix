@@ -26,6 +26,7 @@ import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
 import io.atomix.protocols.raft.session.RaftSession;
@@ -133,6 +134,11 @@ public class RaftSessionContext implements RaftSession {
   @Override
   public ServiceType serviceType() {
     return serviceType;
+  }
+
+  @Override
+  public ServiceRevision serviceRevision() {
+    return context.revision();
   }
 
   @Override
@@ -511,6 +517,11 @@ public class RaftSessionContext implements RaftSession {
 
   @Override
   public void publish(RaftEvent event) {
+    // If the service to which this session belongs is locked, ignore the event.
+    if (this.context.locked()) {
+      return;
+    }
+
     // Store volatile state in a local variable.
     State state = this.state;
     checkState(state != State.EXPIRED, "session is expired");

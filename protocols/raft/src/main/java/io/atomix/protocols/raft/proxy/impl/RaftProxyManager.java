@@ -32,6 +32,8 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceRevision;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
@@ -139,7 +141,9 @@ public class RaftProxyManager {
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
       Duration minTimeout,
-      Duration maxTimeout) {
+      Duration maxTimeout,
+      int revision,
+      PropagationStrategy propagationStrategy) {
     checkNotNull(serviceName, "serviceName cannot be null");
     checkNotNull(serviceType, "serviceType cannot be null");
     checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
@@ -153,6 +157,8 @@ public class RaftProxyManager {
         .withReadConsistency(readConsistency)
         .withMinTimeout(minTimeout.toMillis())
         .withMaxTimeout(maxTimeout.toMillis())
+        .withRevision(revision)
+        .withPropagationStrategy(propagationStrategy)
         .build();
 
     CompletableFuture<RaftProxyClient> future = new CompletableFuture<>();
@@ -166,6 +172,7 @@ public class RaftProxyManager {
               SessionId.from(response.session()),
               serviceName,
               serviceType,
+              new ServiceRevision(response.revision(), response.propagationStrategy()),
               response.timeout());
           sessions.put(state.getSessionId().id(), state);
 

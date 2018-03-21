@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.service.ServiceType;
 
 import java.util.Objects;
@@ -45,14 +46,26 @@ public class OpenSessionRequest extends AbstractRaftRequest {
   private final ReadConsistency readConsistency;
   private final long minTimeout;
   private final long maxTimeout;
+  private final int revision;
+  private final PropagationStrategy propagationStrategy;
 
-  public OpenSessionRequest(String member, String name, String typeName, ReadConsistency readConsistency, long minTimeout, long maxTimeout) {
+  public OpenSessionRequest(
+      String member,
+      String name,
+      String typeName,
+      ReadConsistency readConsistency,
+      long minTimeout,
+      long maxTimeout,
+      int revision,
+      PropagationStrategy propagationStrategy) {
     this.member = member;
     this.name = name;
     this.typeName = typeName;
     this.readConsistency = readConsistency;
     this.minTimeout = minTimeout;
     this.maxTimeout = maxTimeout;
+    this.revision = revision;
+    this.propagationStrategy = propagationStrategy;
   }
 
   /**
@@ -109,6 +122,24 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     return maxTimeout;
   }
 
+  /**
+   * Returns the revision number.
+   *
+   * @return the revision number
+   */
+  public int revision() {
+    return revision;
+  }
+
+  /**
+   * Returns the revision synchronization strategy.
+   *
+   * @return the revision synchronization strategy
+   */
+  public PropagationStrategy propagationStrategy() {
+    return propagationStrategy;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(getClass(), name, typeName, minTimeout, maxTimeout);
@@ -123,7 +154,9 @@ public class OpenSessionRequest extends AbstractRaftRequest {
           && request.typeName.equals(typeName)
           && request.readConsistency == readConsistency
           && request.minTimeout == minTimeout
-          && request.maxTimeout == maxTimeout;
+          && request.maxTimeout == maxTimeout
+          && request.revision == revision
+          && request.propagationStrategy == propagationStrategy;
     }
     return false;
   }
@@ -137,6 +170,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
         .add("readConsistency", readConsistency)
         .add("minTimeout", minTimeout)
         .add("maxTimeout", maxTimeout)
+        .add("revision", revision)
+        .add("synchronizationStrategy", propagationStrategy)
         .toString();
   }
 
@@ -150,6 +185,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     private ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
     private long minTimeout;
     private long maxTimeout;
+    private int revision;
+    private PropagationStrategy propagationStrategy;
 
     /**
      * Sets the client node identifier.
@@ -225,6 +262,29 @@ public class OpenSessionRequest extends AbstractRaftRequest {
       return this;
     }
 
+    /**
+     * Sets the revision number.
+     *
+     * @param revision the revision number
+     * @return the proxy builder
+     */
+    public Builder withRevision(int revision) {
+      checkArgument(revision >= 0, "revision must be positive");
+      this.revision = revision;
+      return this;
+    }
+
+    /**
+     * Sets the revision propagation strategy.
+     *
+     * @param propagationStrategy the revision propagation strategy
+     * @return the proxy builder
+     */
+    public Builder withPropagationStrategy(PropagationStrategy propagationStrategy) {
+      this.propagationStrategy = checkNotNull(propagationStrategy);
+      return this;
+    }
+
     @Override
     protected void validate() {
       super.validate();
@@ -233,6 +293,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
       checkNotNull(serviceType, "typeName cannot be null");
       checkArgument(minTimeout >= 0, "minTimeout must be positive");
       checkArgument(maxTimeout >= 0, "maxTimeout must be positive");
+      checkArgument(revision >= 0, "revision must be positive");
     }
 
     /**
@@ -241,7 +302,15 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     public OpenSessionRequest build() {
       validate();
-      return new OpenSessionRequest(memberId, serviceName, serviceType, readConsistency, minTimeout, maxTimeout);
+      return new OpenSessionRequest(
+          memberId,
+          serviceName,
+          serviceType,
+          readConsistency,
+          minTimeout,
+          maxTimeout,
+          revision,
+          propagationStrategy);
     }
   }
 }

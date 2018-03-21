@@ -28,6 +28,7 @@ import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 import io.atomix.protocols.raft.proxy.impl.RecoveringRaftProxyClient;
 import io.atomix.protocols.raft.proxy.impl.RetryingRaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -132,7 +133,15 @@ public class DefaultRaftClient implements RaftClient {
       RaftProxyClient.Builder clientBuilder = new RaftProxyClient.Builder() {
         @Override
         public CompletableFuture<RaftProxyClient> buildAsync() {
-          return sessionManager.openSession(name, serviceType, readConsistency, communicationStrategy, minTimeout, maxTimeout);
+          return sessionManager.openSession(
+              name,
+              serviceType,
+              readConsistency,
+              communicationStrategy,
+              minTimeout,
+              maxTimeout,
+              revision,
+              propagationStrategy);
         }
       };
 
@@ -145,13 +154,21 @@ public class DefaultRaftClient implements RaftClient {
           .withCommunicationStrategy(communicationStrategy)
           .withRecoveryStrategy(recoveryStrategy)
           .withMinTimeout(minTimeout)
-          .withMaxTimeout(maxTimeout);
+          .withMaxTimeout(maxTimeout)
+          .withRevision(revision)
+          .withPropagationStrategy(propagationStrategy);
 
       RaftProxyClient client;
 
       // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
       if (recoveryStrategy == RecoveryStrategy.RECOVER) {
-        client = new RecoveringRaftProxyClient(clientId, name, serviceType, clientBuilder, threadContextFactory.createContext());
+        client = new RecoveringRaftProxyClient(
+            clientId,
+            name,
+            serviceType,
+            new ServiceRevision(revision, propagationStrategy),
+            clientBuilder,
+            threadContextFactory.createContext());
       } else {
         client = clientBuilder.build();
       }

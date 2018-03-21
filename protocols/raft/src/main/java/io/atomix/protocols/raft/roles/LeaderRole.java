@@ -55,6 +55,7 @@ import io.atomix.protocols.raft.protocol.TransferRequest;
 import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -890,7 +891,17 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
-    appendAndCompact(new OpenSessionEntry(term, timestamp, request.member(), request.serviceName(), request.serviceType(), request.readConsistency(), minTimeout, maxTimeout))
+    appendAndCompact(new OpenSessionEntry(
+        term,
+        timestamp,
+        request.member(),
+        request.serviceName(),
+        request.serviceType(),
+        request.readConsistency(),
+        minTimeout,
+        maxTimeout,
+        request.revision(),
+        request.propagationStrategy()))
         .whenCompleteAsync((entry, error) -> {
           if (error != null) {
             future.complete(logResponse(OpenSessionResponse.newBuilder()
@@ -904,13 +915,15 @@ public final class LeaderRole extends ActiveRole {
             raft.checkThread();
             if (isOpen()) {
               if (commitError == null) {
-                raft.getServiceManager().<Long>apply(entry.index()).whenComplete((sessionId, sessionError) -> {
+                raft.getServiceManager().<RaftSession>apply(entry.index()).whenComplete((session, sessionError) -> {
                   if (sessionError == null) {
                     resetHeartbeatTimer(MemberId.from(request.member()));
                     future.complete(logResponse(OpenSessionResponse.newBuilder()
                         .withStatus(RaftResponse.Status.OK)
-                        .withSession(sessionId)
+                        .withSession(session.sessionId().id())
                         .withTimeout(maxTimeout)
+                        .withRevision(session.serviceRevision().revision())
+                        .withPropagationStrategy(session.serviceRevision().propagationStrategy())
                         .build()));
                   } else if (sessionError instanceof CompletionException && sessionError.getCause() instanceof RaftException) {
                     future.complete(logResponse(OpenSessionResponse.newBuilder()

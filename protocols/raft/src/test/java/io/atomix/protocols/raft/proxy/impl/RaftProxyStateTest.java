@@ -15,7 +15,9 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.session.SessionId;
 import org.junit.Test;
 
@@ -36,7 +38,13 @@ public class RaftProxyStateTest {
   @Test
   public void testSessionStateDefaults() {
     String sessionName = UUID.randomUUID().toString();
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), sessionName, ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState(
+        "test",
+        SessionId.from(1),
+        UUID.randomUUID().toString(),
+        ServiceType.from("test"),
+        new ServiceRevision(1, PropagationStrategy.NONE),
+        1000);
     assertEquals(state.getSessionId(), SessionId.from(1));
     assertEquals(state.getServiceName(), sessionName);
     assertEquals(state.getServiceType().id(), "test");
@@ -51,7 +59,13 @@ public class RaftProxyStateTest {
    */
   @Test
   public void testSessionState() {
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000);
+    RaftProxyState state = new RaftProxyState(
+        "test",
+        SessionId.from(1),
+        UUID.randomUUID().toString(),
+        ServiceType.from("test"),
+        new ServiceRevision(1, PropagationStrategy.NONE),
+        1000);
     assertEquals(state.getSessionId(), SessionId.from(1));
     assertEquals(state.getResponseIndex(), 1);
     assertEquals(state.getEventIndex(), 1);

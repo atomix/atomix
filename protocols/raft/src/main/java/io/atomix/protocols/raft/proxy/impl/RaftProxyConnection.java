@@ -60,7 +60,8 @@ public class RaftProxyConnection {
           || response.error().type() == RaftError.Type.UNKNOWN_CLIENT
           || response.error().type() == RaftError.Type.UNKNOWN_SESSION
           || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
-          || response.error().type() == RaftError.Type.PROTOCOL_ERROR;
+          || response.error().type() == RaftError.Type.PROTOCOL_ERROR
+          || response.error().type() == RaftError.Type.READ_ONLY;
 
   private final Logger log;
   private final RaftClientProtocol protocol;

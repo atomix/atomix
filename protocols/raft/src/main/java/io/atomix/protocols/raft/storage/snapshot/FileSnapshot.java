@@ -31,7 +31,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * File-based snapshot backed by a {@link FileBuffer}.
  */
-final class FileSnapshot extends Snapshot {
+public final class FileSnapshot extends StoredSnapshot {
   private static final Logger LOGGER = LoggerFactory.getLogger(FileSnapshot.class);
   private final SnapshotFile file;
 

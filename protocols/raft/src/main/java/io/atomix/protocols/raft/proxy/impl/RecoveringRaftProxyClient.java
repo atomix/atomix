@@ -21,6 +21,7 @@ import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
@@ -47,6 +48,7 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   private static final SessionId DEFAULT_SESSION_ID = SessionId.from(0);
   private final String name;
   private final ServiceType serviceType;
+  private final ServiceRevision revision;
   private final RaftProxyClient.Builder proxyClientBuilder;
   private final Scheduler scheduler;
   private Logger log;
@@ -58,9 +60,16 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   private Scheduled recoverTask;
   private volatile boolean open = false;
 
-  public RecoveringRaftProxyClient(String clientId, String name, ServiceType serviceType, RaftProxyClient.Builder proxyClientBuilder, Scheduler scheduler) {
+  public RecoveringRaftProxyClient(
+      String clientId,
+      String name,
+      ServiceType serviceType,
+      ServiceRevision revision,
+      RaftProxyClient.Builder proxyClientBuilder,
+      Scheduler scheduler) {
     this.name = checkNotNull(name);
     this.serviceType = checkNotNull(serviceType);
+    this.revision = checkNotNull(revision);
     this.proxyClientBuilder = checkNotNull(proxyClientBuilder);
     this.scheduler = checkNotNull(scheduler);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftClient.class)
@@ -82,6 +91,12 @@ public class RecoveringRaftProxyClient implements RaftProxyClient {
   @Override
   public ServiceType serviceType() {
     return serviceType;
+  }
+
+  @Override
+  public ServiceRevision revision() {
+    RaftProxyClient client = this.client;
+    return client != null ? client.revision() : revision;
   }
 
   @Override

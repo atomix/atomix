@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.utils.TimestampPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -30,8 +31,20 @@ public class OpenSessionEntry extends TimestampedEntry {
   private final ReadConsistency readConsistency;
   private final long minTimeout;
   private final long maxTimeout;
+  private final int revision;
+  private final PropagationStrategy propagationStrategy;
 
-  public OpenSessionEntry(long term, long timestamp, String memberId, String serviceName, String serviceType, ReadConsistency readConsistency, long minTimeout, long maxTimeout) {
+  public OpenSessionEntry(
+      long term,
+      long timestamp,
+      String memberId,
+      String serviceName,
+      String serviceType,
+      ReadConsistency readConsistency,
+      long minTimeout,
+      long maxTimeout,
+      int revision,
+      PropagationStrategy propagationStrategy) {
     super(term, timestamp);
     this.memberId = memberId;
     this.serviceName = serviceName;
@@ -39,6 +52,8 @@ public class OpenSessionEntry extends TimestampedEntry {
     this.readConsistency = readConsistency;
     this.minTimeout = minTimeout;
     this.maxTimeout = maxTimeout;
+    this.revision = revision;
+    this.propagationStrategy = propagationStrategy;
   }
 
   /**
@@ -95,6 +110,24 @@ public class OpenSessionEntry extends TimestampedEntry {
     return maxTimeout;
   }
 
+  /**
+   * Returns the revision number.
+   *
+   * @return the revision number
+   */
+  public int revision() {
+    return revision;
+  }
+
+  /**
+   * Returns the revision propagation strategy.
+   *
+   * @return the revision propagation strategy
+   */
+  public PropagationStrategy propagationStrategy() {
+    return propagationStrategy;
+  }
+
   @Override
   public String toString() {
     return toStringHelper(this)
@@ -106,6 +139,8 @@ public class OpenSessionEntry extends TimestampedEntry {
         .add("readConsistency", readConsistency)
         .add("minTimeout", minTimeout)
         .add("maxTimeout", maxTimeout)
+        .add("revision", revision)
+        .add("synchronizationStrategy", propagationStrategy)
         .toString();
   }
 }

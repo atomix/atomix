@@ -20,6 +20,7 @@ import io.atomix.protocols.raft.event.EventType;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.service.ServiceType;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.utils.Managed;
 
 import java.time.Duration;
@@ -198,6 +199,8 @@ public interface RaftProxy extends RaftProxyExecutor, Managed<RaftProxy> {
     protected RecoveryStrategy recoveryStrategy = RecoveryStrategy.RECOVER;
     protected Duration minTimeout = Duration.ofMillis(250);
     protected Duration maxTimeout = Duration.ofMillis(0);
+    protected int revision = 0;
+    protected PropagationStrategy propagationStrategy = PropagationStrategy.NONE;
 
     /**
      * Sets the session name.
@@ -396,6 +399,29 @@ public interface RaftProxy extends RaftProxyExecutor, Managed<RaftProxy> {
      */
     public Builder withExecutor(Executor executor) {
       this.executor = checkNotNull(executor, "executor cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the revision number.
+     *
+     * @param revision the revision number
+     * @return the proxy builder
+     */
+    public Builder withRevision(int revision) {
+      checkArgument(revision >= 0, "revision must be positive");
+      this.revision = revision;
+      return this;
+    }
+
+    /**
+     * Sets the revision propagation strategy.
+     *
+     * @param propagationStrategy the revision propagation strategy
+     * @return the proxy builder
+     */
+    public Builder withPropagationStrategy(PropagationStrategy propagationStrategy) {
+      this.propagationStrategy = checkNotNull(propagationStrategy);
       return this;
     }
   }

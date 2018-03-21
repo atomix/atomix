@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
+import com.google.common.collect.Maps;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftClusterEvent;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -28,6 +29,7 @@ import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.RaftSession;
@@ -64,8 +66,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -104,11 +108,15 @@ public class RaftTest extends ConcurrentTestCase {
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
+      .register(PropagationStrategy.class)
       .register(byte[].class)
       .register(long[].class)
       .build());
 
-  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.DEFAULT);
+  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.newBuilder()
+      .register(Maps.immutableEntry("", "").getClass())
+      .register(HashMap.class)
+      .build());
 
   protected volatile int nextId;
   protected volatile List<RaftMember> members;
@@ -922,6 +930,198 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
+   * Tests an isolated revision.
+   */
+  @Test
+  public void testNoneRevision() throws Throwable {
+    createServers(3);
+
+    RaftClient oldClient = createClient();
+    RaftProxy oldProxy = createSession(oldClient, "map");
+
+    assertEquals(1, oldProxy.revision().revision());
+
+    oldProxy.addEventListener(PUT_EVENT, e -> resume());
+
+    oldProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("foo", "bar"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "foo", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("bar", value);
+      resume();
+    });
+    await(5000);
+
+    RaftClient newClient = createClient();
+    RaftProxy newProxy = createSession(newClient, "map", 2, PropagationStrategy.NONE);
+
+    assertEquals(2, newProxy.revision().revision());
+
+    newProxy.addEventListener(PUT_EVENT, e -> resume());
+
+    newProxy.invoke(GET, clientSerializer::encode, "foo", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("bar", value);
+      resume();
+    });
+    await(5000);
+
+    newProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("bar", "baz"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    newProxy.invoke(GET, clientSerializer::encode, "bar", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("baz", value);
+      resume();
+    });
+    await(5000);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "bar", clientSerializer::decode).thenAccept(value -> {
+      threadAssertNull(value);
+      resume();
+    });
+    await(5000);
+
+    oldProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("baz", "foo"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "baz", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("foo", value);
+      resume();
+    });
+    await(5000);
+
+    newProxy.invoke(GET, clientSerializer::encode, "baz", clientSerializer::decode).thenAccept(value -> {
+      threadAssertNull(value);
+      resume();
+    });
+    await(5000);
+  }
+
+  /**
+   * Tests a versioned revision.
+   */
+  @Test
+  public void testVersionedRevision() throws Throwable {
+    createServers(3);
+
+    RaftClient oldClient = createClient();
+    RaftProxy oldProxy = createSession(oldClient, "map");
+
+    assertEquals(1, oldProxy.revision().revision());
+
+    oldProxy.addEventListener(PUT_EVENT, e -> resume());
+
+    oldProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("foo", "bar"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "foo", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("bar", value);
+      resume();
+    });
+    await(5000);
+
+    RaftClient newClient = createClient();
+    RaftProxy newProxy = createSession(newClient, "map", 2, PropagationStrategy.VERSION);
+
+    assertEquals(2, newProxy.revision().revision());
+
+    newProxy.addEventListener(PUT_EVENT, e -> resume());
+
+    newProxy.invoke(GET, clientSerializer::encode, "foo", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("bar", value);
+      resume();
+    });
+    await(5000);
+
+    newProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("bar", "baz"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    newProxy.invoke(GET, clientSerializer::encode, "bar", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("baz", value);
+      resume();
+    });
+    await(5000);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "bar", clientSerializer::decode).thenAccept(value -> {
+      threadAssertNull(value);
+      resume();
+    });
+    await(5000);
+
+    oldProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("baz", "foo"), clientSerializer::decode).whenComplete((result, error) -> {
+      assertTrue(error.getCause() instanceof RaftException.ReadOnly);
+      resume();
+    });
+    await(5000);
+  }
+
+  /**
+   * Tests a backwards compatible revision.
+   */
+  @Test
+  public void testPropagateRevision() throws Throwable {
+    createServers(3);
+
+    RaftClient oldClient = createClient();
+    RaftProxy oldProxy = createSession(oldClient, "map");
+
+    assertEquals(1, oldProxy.revision().revision());
+
+    oldProxy.addEventListener(PUT_EVENT, e -> resume());
+
+    oldProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("foo", "bar"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "foo", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("bar", value);
+      resume();
+    });
+    await(5000);
+
+    RaftClient newClient = createClient();
+    RaftProxy newProxy = createSession(newClient, "map", 2, PropagationStrategy.PROPAGATE);
+
+    assertEquals(2, newProxy.revision().revision());
+
+    newProxy.addEventListener(PUT_EVENT, e -> resume());
+
+    newProxy.invoke(GET, clientSerializer::encode, "foo", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("bar", value);
+      resume();
+    });
+    await(5000);
+
+    newProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("bar", "baz"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    newProxy.invoke(GET, clientSerializer::encode, "bar", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("baz", value);
+      resume();
+    });
+    await(5000);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "bar", clientSerializer::decode).thenAccept(value -> {
+      threadAssertNull(value);
+      resume();
+    });
+    await(5000);
+
+    oldProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("baz", "foo"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 3);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "baz", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("foo", value);
+      resume();
+    });
+    await(5000);
+
+    newProxy.invoke(GET, clientSerializer::encode, "baz", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("foo", value);
+      resume();
+    });
+    await(5000);
+  }
+
+  /**
    * Tests submitting sequential events.
    */
   @Test
@@ -1211,7 +1411,8 @@ public class RaftTest extends ConcurrentTestCase {
             .withMaxSegmentSize(1024 * 10)
             .withMaxEntriesPerSegment(10)
             .build())
-        .addService("test", TestStateMachine::new);
+        .addService("test", TestStateMachine::new)
+        .addService("map", MapStateMachine::new);
 
     RaftServer server = builder.build();
     servers.add(server);
@@ -1237,17 +1438,40 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a test session.
    */
   private RaftProxy createSession(RaftClient client)throws Exception  {
-    return createSession(client, ReadConsistency.LINEARIZABLE);
+    return createSession(client, "test", 0, PropagationStrategy.NONE, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Creates a test session.
    */
-  private RaftProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
+  private RaftProxy createSession(RaftClient client, String type) throws Exception  {
+    return createSession(client, type, 0, PropagationStrategy.NONE, ReadConsistency.LINEARIZABLE);
+  }
+
+  /**
+   * Creates a test session.
+   */
+  private RaftProxy createSession(RaftClient client, String type, int revision, PropagationStrategy synchronization) throws Exception  {
+    return createSession(client, type, revision, synchronization, ReadConsistency.LINEARIZABLE);
+  }
+
+  /**
+   * Creates a test session.
+   */
+  private RaftProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception  {
+    return createSession(client, "test", 0, PropagationStrategy.NONE, consistency);
+  }
+
+  /**
+   * Creates a test session.
+   */
+  private RaftProxy createSession(RaftClient client, String type, int revision, PropagationStrategy synchronization, ReadConsistency consistency) throws Exception {
     return client.newProxyBuilder()
         .withName("test")
-        .withServiceType("test")
+        .withServiceType(type)
         .withReadConsistency(consistency)
+        .withRevision(revision)
+        .withPropagationStrategy(synchronization)
         .build()
         .open()
         .get(5, TimeUnit.SECONDS);
@@ -1294,6 +1518,44 @@ public class RaftTest extends ConcurrentTestCase {
     clients = new ArrayList<>();
     servers = new ArrayList<>();
     protocolFactory = new TestRaftProtocolFactory();
+  }
+
+  private static final OperationId PUT = OperationId.command("put");
+  private static final OperationId GET = OperationId.query("get");
+  private static final EventType PUT_EVENT = EventType.from("put");
+
+  /**
+   * Map state machine.
+   */
+  public static class MapStateMachine extends AbstractRaftService {
+    private Map<String, String> map = new HashMap<>();
+
+    @Override
+    protected void configure(RaftServiceExecutor executor) {
+      executor.register(PUT, clientSerializer::decode, this::put, clientSerializer::encode);
+      executor.register(GET, clientSerializer::decode, this::get, clientSerializer::encode);
+    }
+
+    @Override
+    public void snapshot(SnapshotWriter writer) {
+      writer.writeObject(map, clientSerializer::encode);
+    }
+
+    @Override
+    public void install(SnapshotReader reader) {
+      map = reader.readObject(clientSerializer::decode);
+    }
+
+    protected String put(Commit<Map.Entry<String, String>> commit) {
+      for (RaftSession session : sessions()) {
+        session.publish(PUT_EVENT, clientSerializer::encode, commit.value().getKey());
+      }
+      return map.put(commit.value().getKey(), commit.value().getValue());
+    }
+
+    protected String get(Commit<String> commit) {
+      return map.get(commit.value());
+    }
   }
 
   private static final OperationId WRITE = OperationId.command("write");
