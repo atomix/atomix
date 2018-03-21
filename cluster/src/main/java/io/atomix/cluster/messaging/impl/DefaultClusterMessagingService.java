@@ -27,6 +27,7 @@ import io.atomix.utils.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -46,6 +47,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DefaultClusterMessagingService implements ManagedClusterMessagingService {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
+  private static final Exception CONNECT_EXCEPTION = new ConnectException();
+
+  static {
+    CONNECT_EXCEPTION.setStackTrace(new StackTraceElement[0]);
+  }
 
   protected final ClusterService cluster;
   protected final MessagingService messagingService;
@@ -133,13 +139,17 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
 
   private CompletableFuture<Void> doUnicast(String subject, byte[] payload, NodeId toNodeId) {
     Node node = cluster.getNode(toNodeId);
-    checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
+    if (node == null) {
+      return Futures.exceptionalFuture(CONNECT_EXCEPTION);
+    }
     return messagingService.sendAsync(node.endpoint(), subject, payload);
   }
 
   private CompletableFuture<byte[]> sendAndReceive(String subject, byte[] payload, NodeId toNodeId) {
     Node node = cluster.getNode(toNodeId);
-    checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
+    if (node == null) {
+      return Futures.exceptionalFuture(CONNECT_EXCEPTION);
+    }
     return messagingService.sendAndReceive(node.endpoint(), subject, payload);
   }
 

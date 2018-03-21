@@ -118,7 +118,7 @@ public class DefaultClusterService
   @Override
   public Node getNode(NodeId nodeId) {
     Node node = nodes.get(nodeId);
-    return node != null ? node.type() == Node.Type.DATA || node.getState() == State.ACTIVE ? node : null : null;
+    return node != null && (node.type() == Node.Type.DATA || node.getState() == State.ACTIVE) ? node : null;
   }
 
   /**
