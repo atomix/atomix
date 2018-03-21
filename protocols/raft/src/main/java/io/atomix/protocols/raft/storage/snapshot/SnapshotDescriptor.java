@@ -31,6 +31,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class SnapshotDescriptor implements AutoCloseable {
   public static final int BYTES = 64;
 
+  private static final int INDEX_OFFSET = 0;
+  private static final int TIMESTAMP_OFFSET = 8;
+  private static final int LOCK_OFFSET = 16;
+
   /**
    * Returns a descriptor builder.
    * <p>
@@ -103,7 +107,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    */
   public void lock() {
     buffer.flush()
-        .writeBoolean(16, true)
+        .writeBoolean(LOCK_OFFSET, true)
         .flush();
     locked = true;
   }
@@ -152,7 +156,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @return The snapshot builder.
      */
     public Builder withIndex(long index) {
-      buffer.writeLong(0, index);
+      buffer.writeLong(INDEX_OFFSET, index);
       return this;
     }
 
@@ -163,7 +167,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @return The snapshot builder.
      */
     public Builder withTimestamp(long timestamp) {
-      buffer.writeLong(8, timestamp);
+      buffer.writeLong(TIMESTAMP_OFFSET, timestamp);
       return this;
     }
 

@@ -19,7 +19,9 @@ import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.session.SessionId;
 import org.junit.Test;
 
@@ -44,7 +46,14 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventBeforeCommand() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
+    RaftProxyState state = new RaftProxyState(
+        "test",
+        SessionId.from(1),
+        UUID.randomUUID().toString(),
+        ServiceType.from("test"),
+        new ServiceRevision(1, PropagationStrategy.NONE),
+        1000);
+    RaftProxySequencer sequencer = new RaftProxySequencer(state);
     long sequence = sequencer.nextRequest();
 
     PublishRequest request = PublishRequest.newBuilder()
@@ -71,7 +80,14 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventAfterCommand() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
+    RaftProxyState state = new RaftProxyState(
+        "test",
+        SessionId.from(1),
+        UUID.randomUUID().toString(),
+        ServiceType.from("test"),
+        new ServiceRevision(1, PropagationStrategy.NONE),
+        1000);
+    RaftProxySequencer sequencer = new RaftProxySequencer(state);
     long sequence = sequencer.nextRequest();
 
     PublishRequest request = PublishRequest.newBuilder()
@@ -98,7 +114,14 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventAtCommand() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
+    RaftProxyState state = new RaftProxyState(
+        "test",
+        SessionId.from(1),
+        UUID.randomUUID().toString(),
+        ServiceType.from("test"),
+        new ServiceRevision(1, PropagationStrategy.NONE),
+        1000);
+    RaftProxySequencer sequencer = new RaftProxySequencer(state);
     long sequence = sequencer.nextRequest();
 
     PublishRequest request = PublishRequest.newBuilder()
@@ -125,7 +148,14 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventAfterAllCommands() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
+    RaftProxyState state = new RaftProxyState(
+        "test",
+        SessionId.from(1),
+        UUID.randomUUID().toString(),
+        ServiceType.from("test"),
+        new ServiceRevision(1, PropagationStrategy.NONE),
+        1000);
+    RaftProxySequencer sequencer = new RaftProxySequencer(state);
     long sequence = sequencer.nextRequest();
 
     PublishRequest request1 = PublishRequest.newBuilder()
@@ -160,7 +190,14 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventAbsentCommand() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
+    RaftProxyState state = new RaftProxyState(
+        "test",
+        SessionId.from(1),
+        UUID.randomUUID().toString(),
+        ServiceType.from("test"),
+        new ServiceRevision(1, PropagationStrategy.NONE),
+        1000);
+    RaftProxySequencer sequencer = new RaftProxySequencer(state);
 
     PublishRequest request1 = PublishRequest.newBuilder()
         .withSession(1)
@@ -187,7 +224,14 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceResponses() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), ServiceType.from("test"), 1000));
+    RaftProxyState state = new RaftProxyState(
+        "test",
+        SessionId.from(1),
+        UUID.randomUUID().toString(),
+        ServiceType.from("test"),
+        new ServiceRevision(1, PropagationStrategy.NONE),
+        1000);
+    RaftProxySequencer sequencer = new RaftProxySequencer(state);
     long sequence1 = sequencer.nextRequest();
     long sequence2 = sequencer.nextRequest();
     assertTrue(sequence2 == sequence1 + 1);

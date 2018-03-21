@@ -19,6 +19,7 @@ import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 
@@ -51,6 +52,11 @@ public class DelegatingRaftProxyClient implements RaftProxyClient {
   @Override
   public SessionId sessionId() {
     return delegate.sessionId();
+  }
+
+  @Override
+  public ServiceRevision revision() {
+    return delegate.revision();
   }
 
   @Override

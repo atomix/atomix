@@ -22,6 +22,7 @@ import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -130,6 +131,11 @@ public class DiscreteRaftProxyClient implements RaftProxyClient {
   @Override
   public SessionId sessionId() {
     return state.getSessionId();
+  }
+
+  @Override
+  public ServiceRevision revision() {
+    return state.getRevision();
   }
 
   @Override

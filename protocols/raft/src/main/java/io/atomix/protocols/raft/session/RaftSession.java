@@ -19,6 +19,7 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.event.EventType;
 import io.atomix.protocols.raft.event.RaftEvent;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.storage.buffer.HeapBytes;
 
@@ -69,6 +70,13 @@ public interface RaftSession {
    * @return The session's service type.
    */
   ServiceType serviceType();
+
+  /**
+   * Returns the session's service revision.
+   *
+   * @return the session's service revision
+   */
+  ServiceRevision serviceRevision();
 
   /**
    * Returns the member identifier to which the session belongs.

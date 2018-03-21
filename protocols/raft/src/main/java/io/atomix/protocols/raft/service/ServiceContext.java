@@ -52,6 +52,13 @@ public interface ServiceContext {
   ServiceType serviceType();
 
   /**
+   * Returns the service revision number.
+   *
+   * @return the service revision number
+   */
+  ServiceRevision revision();
+
+  /**
    * Returns the current state machine index.
    * <p>
    * The state index is indicative of the index of the current operation

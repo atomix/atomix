@@ -27,6 +27,7 @@ import io.atomix.protocols.raft.service.Commit;
 import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.service.ServiceContext;
 import io.atomix.protocols.raft.service.ServiceId;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessions;
@@ -34,7 +35,6 @@ import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
-import io.atomix.storage.buffer.Bytes;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
 import io.atomix.time.WallClock;
@@ -57,6 +57,7 @@ public class DefaultServiceContext implements ServiceContext {
   private final ServiceId serviceId;
   private final String serviceName;
   private final ServiceType serviceType;
+  private final ServiceRevision revision;
   private final RaftService service;
   private final RaftContext raft;
   private final DefaultServiceSessions sessions;
@@ -76,17 +77,21 @@ public class DefaultServiceContext implements ServiceContext {
       return new WallClockTimestamp(currentTimestamp);
     }
   };
+  private DefaultServiceContext nextRevision;
+  private boolean locked = false;
 
   public DefaultServiceContext(
       ServiceId serviceId,
       String serviceName,
       ServiceType serviceType,
+      ServiceRevision revision,
       RaftService service,
       RaftContext raft,
       ThreadContextFactory threadContextFactory) {
     this.serviceId = checkNotNull(serviceId);
     this.serviceName = checkNotNull(serviceName);
     this.serviceType = checkNotNull(serviceType);
+    this.revision = checkNotNull(revision);
     this.service = checkNotNull(service);
     this.raft = checkNotNull(raft);
     this.sessions = new DefaultServiceSessions(serviceId, raft.getSessions());
@@ -123,6 +128,20 @@ public class DefaultServiceContext implements ServiceContext {
   }
 
   @Override
+  public ServiceRevision revision() {
+    return revision;
+  }
+
+  /**
+   * Returns the underlying state machine.
+   *
+   * @return the underlying state machine
+   */
+  public RaftService service() {
+    return service;
+  }
+
+  @Override
   public long currentIndex() {
     return currentIndex;
   }
@@ -145,6 +164,24 @@ public class DefaultServiceContext implements ServiceContext {
   @Override
   public RaftSessions sessions() {
     return sessions;
+  }
+
+  /**
+   * Sets the next revision to which to propagate writes.
+   *
+   * @param revision the revision to which to propagate writes
+   */
+  public void setNextRevision(DefaultServiceContext revision) {
+    this.nextRevision = revision;
+  }
+
+  /**
+   * Returns whether the context is locked.
+   *
+   * @return whether the context is locked
+   */
+  public boolean locked() {
+    return locked;
   }
 
   /**
@@ -187,9 +224,6 @@ public class DefaultServiceContext implements ServiceContext {
    */
   public void installSnapshot(SnapshotReader reader) {
     log.debug("Installing snapshot {}", reader.snapshot().index());
-    reader.skip(Bytes.LONG); // Skip the service ID
-    ServiceType serviceType = ServiceType.from(reader.readString());
-    String serviceName = reader.readString();
     int sessionCount = reader.readInt();
     for (int i = 0; i < sessionCount; i++) {
       SessionId sessionId = SessionId.from(reader.readLong());
@@ -234,9 +268,6 @@ public class DefaultServiceContext implements ServiceContext {
     log.debug("Taking snapshot {}", writer.snapshot().index());
 
     // Serialize sessions to the in-memory snapshot and request a snapshot from the state machine.
-    writer.writeLong(serviceId.id());
-    writer.writeString(serviceType.id());
-    writer.writeString(serviceName);
     writer.writeInt(sessions.getSessions().size());
     for (RaftSessionContext session : sessions.getSessions()) {
       writer.writeLong(session.sessionId().id());
@@ -407,9 +438,6 @@ public class DefaultServiceContext implements ServiceContext {
     // Update the session's timestamp to prevent it from being expired.
     session.setLastUpdated(timestamp);
 
-    // Update the state machine index/timestamp.
-    tick(index, timestamp);
-
     // If the session is not open, fail the request.
     if (!session.getState().active()) {
       log.warn("Session not open: {}", session);
@@ -421,7 +449,7 @@ public class DefaultServiceContext implements ServiceContext {
     // returning the cached response instead of applying it to the user defined state machine.
     if (sequence > 0 && sequence < session.nextCommandSequence()) {
       log.trace("Returning cached result for command with sequence number {} < {}", sequence, session.nextCommandSequence());
-      return sequenceCommand(index, sequence, session);
+      return sequenceCommand(index, sequence, timestamp, session);
     }
     // If we've made it this far, the command must have been applied in the proper order as sequenced by the
     // session. This should be the case for most commands applied to the state machine.
@@ -435,7 +463,10 @@ public class DefaultServiceContext implements ServiceContext {
   /**
    * Loads and returns a cached command result according to the sequence number.
    */
-  private OperationResult sequenceCommand(long index, long sequence, RaftSessionContext session) {
+  private OperationResult sequenceCommand(long index, long sequence, long timestamp, RaftSessionContext session) {
+    // Update the state machine index/timestamp.
+    tick(index, timestamp);
+
     OperationResult result = session.getResult(sequence);
     if (result == null) {
       log.debug("Missing command result at index {}", index);
@@ -447,6 +478,30 @@ public class DefaultServiceContext implements ServiceContext {
    * Applies the given commit to the state machine.
    */
   private OperationResult applyCommand(long index, long sequence, long timestamp, RaftOperation operation, RaftSessionContext session) {
+    // If a later revision of this service exists, determine whether the command needs to be propagated.
+    if (nextRevision != null) {
+      switch (nextRevision.revision().propagationStrategy()) {
+        case VERSION:
+          return OperationResult.failed(
+              index,
+              session.getEventIndex(),
+              new RaftException.ReadOnly(serviceName() + " revision " + revision.revision() + " is read-only"));
+        case PROPAGATE:
+          locked = true;
+          try {
+            nextRevision.applyCommand(index, sequence, timestamp, operation, session);
+          } finally {
+            locked = false;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Update the state machine index/timestamp.
+    tick(index, timestamp);
+
     Commit<byte[]> commit = new DefaultCommit<>(index, operation.id(), operation.value(), session, timestamp);
 
     long eventIndex = session.getEventIndex();

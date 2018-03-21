@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.time.WallClockTimestamp;

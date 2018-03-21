@@ -251,6 +251,21 @@ public class RaftError {
       RaftException createException(String message) {
         return message != null ? new RaftException.Unavailable(message) : createException();
       }
+    },
+
+    /**
+     * Read-only service error.
+     */
+    READ_ONLY {
+      @Override
+      RaftException createException() {
+        return createException("Service is read-only");
+      }
+
+      @Override
+      RaftException createException(String message) {
+        return message != null ? new RaftException.ReadOnly(message) : createException();
+      }
     };
 
     /**

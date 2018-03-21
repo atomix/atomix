@@ -139,4 +139,10 @@ public abstract class RaftException extends RuntimeException {
       super(RaftError.Type.UNAVAILABLE, cause);
     }
   }
+
+  public static class ReadOnly extends RaftException {
+    public ReadOnly(String message, Object... args) {
+      super(RaftError.Type.READ_ONLY, message, args);
+    }
+  }
 }

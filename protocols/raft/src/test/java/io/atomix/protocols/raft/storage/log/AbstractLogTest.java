@@ -19,6 +19,7 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
 import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;
@@ -107,7 +108,17 @@ public abstract class AbstractLogTest {
     // Append a couple entries.
     Indexed<RaftLogEntry> indexed;
     assertEquals(writer.getNextIndex(), 1);
-    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), "client", "test1", "test", ReadConsistency.LINEARIZABLE, 100, 1000));
+    indexed = writer.append(new OpenSessionEntry(
+        1,
+        System.currentTimeMillis(),
+        "client",
+        "test1",
+        "test",
+        ReadConsistency.LINEARIZABLE,
+        100,
+        1000,
+        1,
+        PropagationStrategy.NONE));
     assertEquals(indexed.index(), 1);
 
     assertEquals(writer.getNextIndex(), 2);

@@ -357,7 +357,8 @@ final class RaftProxyInvoker {
         }
         // If a PROTOCOL_ERROR or APPLICATION_ERROR occurred, complete the request exceptionally with the error message.
         else if (response.error().type() == RaftError.Type.PROTOCOL_ERROR
-            || response.error().type() == RaftError.Type.APPLICATION_ERROR) {
+            || response.error().type() == RaftError.Type.APPLICATION_ERROR
+            || response.error().type() == RaftError.Type.READ_ONLY) {
           complete(response.error().createException());
         }
         // If the client is unknown by the cluster, close the session and complete the operation exceptionally.

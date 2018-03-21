@@ -20,6 +20,8 @@ import io.atomix.storage.buffer.HeapBuffer;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Snapshot descriptor test.
@@ -50,4 +52,14 @@ public class SnapshotDescriptorTest {
     assertEquals(3, descriptor.timestamp());
   }
 
+  @Test
+  public void testLockSnapshotDescriptor() throws Exception {
+    SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
+        .withIndex(2)
+        .withTimestamp(3)
+        .build();
+    assertFalse(descriptor.isLocked());
+    descriptor.lock();
+    assertTrue(descriptor.isLocked());
+  }
 }

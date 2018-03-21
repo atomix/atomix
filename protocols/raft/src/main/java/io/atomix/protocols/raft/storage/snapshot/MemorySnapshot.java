@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * In-memory snapshot backed by a {@link HeapBuffer}.
  */
-final class MemorySnapshot extends Snapshot {
+public final class MemorySnapshot extends StoredSnapshot {
   private final HeapBuffer buffer;
   private final SnapshotDescriptor descriptor;
   private final SnapshotStore store;

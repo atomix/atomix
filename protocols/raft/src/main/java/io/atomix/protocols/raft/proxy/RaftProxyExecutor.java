@@ -18,6 +18,7 @@ package io.atomix.protocols.raft.proxy;
 import io.atomix.protocols.raft.event.RaftEvent;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.RaftOperation;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.storage.buffer.HeapBytes;
@@ -50,6 +51,13 @@ public interface RaftProxyExecutor {
    * @return The client proxy type.
    */
   ServiceType serviceType();
+
+  /**
+   * Returns the proxy revision.
+   *
+   * @return the proxy revision
+   */
+  ServiceRevision revision();
 
   /**
    * Returns the session state.

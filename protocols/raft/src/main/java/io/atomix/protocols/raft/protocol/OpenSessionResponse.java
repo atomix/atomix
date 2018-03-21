@@ -16,11 +16,13 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.RaftError;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Open session response.
@@ -38,11 +40,15 @@ public class OpenSessionResponse extends AbstractRaftResponse {
 
   protected final long session;
   protected final long timeout;
+  protected final int revision;
+  protected final PropagationStrategy propagationStrategy;
 
-  public OpenSessionResponse(Status status, RaftError error, long session, long timeout) {
+  public OpenSessionResponse(Status status, RaftError error, long session, long timeout, int revision, PropagationStrategy propagationStrategy) {
     super(status, error);
     this.session = session;
     this.timeout = timeout;
+    this.revision = revision;
+    this.propagationStrategy = propagationStrategy;
   }
 
   /**
@@ -61,6 +67,24 @@ public class OpenSessionResponse extends AbstractRaftResponse {
    */
   public long timeout() {
     return timeout;
+  }
+
+  /**
+   * Returns the final revision number.
+   *
+   * @return the final revision number
+   */
+  public int revision() {
+    return revision;
+  }
+
+  /**
+   * Returns the final propagation strategy.
+   *
+   * @return the final propagation strategy
+   */
+  public PropagationStrategy propagationStrategy() {
+    return propagationStrategy;
   }
 
   @Override
@@ -87,6 +111,7 @@ public class OpenSessionResponse extends AbstractRaftResponse {
           .add("status", status)
           .add("session", session)
           .add("timeout", timeout)
+          .add("revision", revision)
           .toString();
     } else {
       return toStringHelper(this)
@@ -102,6 +127,8 @@ public class OpenSessionResponse extends AbstractRaftResponse {
   public static class Builder extends AbstractRaftResponse.Builder<Builder, OpenSessionResponse> {
     private long session;
     private long timeout;
+    private int revision;
+    private PropagationStrategy propagationStrategy;
 
     /**
      * Sets the response session ID.
@@ -128,19 +155,44 @@ public class OpenSessionResponse extends AbstractRaftResponse {
       return this;
     }
 
+    /**
+     * Sets the revision number.
+     *
+     * @param revision the revision number
+     * @return the response builder
+     */
+    public Builder withRevision(int revision) {
+      checkArgument(revision > 0, "revision must be positive");
+      this.revision = revision;
+      return this;
+    }
+
+    /**
+     * Sets the propagation strategy.
+     *
+     * @param propagationStrategy the propagation strategy
+     * @return the response builder
+     */
+    public Builder withPropagationStrategy(PropagationStrategy propagationStrategy) {
+      this.propagationStrategy = checkNotNull(propagationStrategy);
+      return this;
+    }
+
     @Override
     protected void validate() {
       super.validate();
       if (status == Status.OK) {
         checkArgument(session > 0, "session must be positive");
         checkArgument(timeout > 0, "timeout must be positive");
+        checkArgument(revision > 0, "revision must be positive");
+        checkNotNull(propagationStrategy, "propagationStrategy must not be null");
       }
     }
 
     @Override
     public OpenSessionResponse build() {
       validate();
-      return new OpenSessionResponse(status, error, session, timeout);
+      return new OpenSessionResponse(status, error, session, timeout, revision, propagationStrategy);
     }
   }
 }

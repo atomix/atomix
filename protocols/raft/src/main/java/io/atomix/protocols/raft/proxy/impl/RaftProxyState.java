@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.service.ServiceRevision;
 import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.session.SessionId;
 
@@ -33,6 +34,7 @@ public final class RaftProxyState {
   private final SessionId sessionId;
   private final String serviceName;
   private final ServiceType serviceType;
+  private final ServiceRevision revision;
   private final long timeout;
   private volatile RaftProxy.State state = RaftProxy.State.CONNECTED;
   private volatile Long suspendedTime;
@@ -42,11 +44,12 @@ public final class RaftProxyState {
   private volatile long eventIndex;
   private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
 
-  RaftProxyState(String clientId, SessionId sessionId, String serviceName, ServiceType serviceType, long timeout) {
+  RaftProxyState(String clientId, SessionId sessionId, String serviceName, ServiceType serviceType, ServiceRevision revision, long timeout) {
     this.clientId = clientId;
     this.sessionId = sessionId;
     this.serviceName = serviceName;
     this.serviceType = serviceType;
+    this.revision = revision;
     this.timeout = timeout;
     this.responseIndex = sessionId.id();
     this.eventIndex = sessionId.id();
@@ -86,6 +89,15 @@ public final class RaftProxyState {
    */
   public ServiceType getServiceType() {
     return serviceType;
+  }
+
+  /**
+   * Returns the revision number.
+   *
+   * @return the revision number
+   */
+  public ServiceRevision getRevision() {
+    return revision;
   }
 
   /**
