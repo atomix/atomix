@@ -79,7 +79,7 @@ public interface LeaderElection<T> extends SyncPrimitive {
    *
    * @return current Leadership state of the topic
    */
-  Leadership getLeadership();
+  Leadership<T> getLeadership();
 
   /**
    * Registers a listener to be notified of Leadership changes for all topics.
