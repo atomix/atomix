@@ -23,7 +23,6 @@ import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import net.sourceforge.argparse4j.ArgumentParsers;
-import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -45,45 +44,38 @@ public class AtomixAgent {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
-    ArgumentType<Node> nodeType = new ArgumentType<Node>() {
-      @Override
-      public Node convert(ArgumentParser argumentParser, Argument argument, String value) throws ArgumentParserException {
-        String[] address = parseAddress(value);
-        return Node.builder(parseNodeId(address))
-            .withType(Node.Type.DATA)
-            .withEndpoint(parseEndpoint(address))
-            .build();
-      }
+    ArgumentType<Node> nodeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> {
+      String[] address = parseAddress(value);
+      return Node.builder(parseNodeId(address))
+          .withType(Node.Type.CORE)
+          .withEndpoint(parseEndpoint(address))
+          .build();
     };
 
-    ArgumentType<File> fileType = new ArgumentType<File>() {
-      @Override
-      public File convert(ArgumentParser argumentParser, Argument argument, String value) throws ArgumentParserException {
-        return new File(value);
-      }
-    };
+    ArgumentType<Node.Type> typeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> Node.Type.valueOf(value.toUpperCase());
+    ArgumentType<File> fileArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> new File(value);
 
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
         .description("Atomix server");
     parser.addArgument("node")
-        .type(nodeType)
+        .type(nodeArgumentType)
         .nargs("?")
         .metavar("NAME:HOST:PORT")
         .setDefault(Node.builder("local")
-            .withType(Node.Type.DATA)
+            .withType(Node.Type.CORE)
             .withEndpoint(new Endpoint(InetAddress.getByName("127.0.0.1"), NettyMessagingService.DEFAULT_PORT))
             .build())
         .help("The local node info");
-    parser.addArgument("--client", "-c")
-        .action(new StoreTrueArgumentAction())
-        .help("Indicates this is a client node");
-    parser.addArgument("--server", "-s")
-        .action(new StoreTrueArgumentAction())
-        .help("Indicates that this is a server node");
+    parser.addArgument("--type", "-t")
+        .type(typeArgumentType)
+        .metavar("TYPE")
+        .choices("core", "data", "client")
+        .setDefault(Node.Type.CORE)
+        .help("Indicates the local node type");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
-        .type(nodeType)
+        .type(nodeArgumentType)
         .metavar("NAME:HOST:PORT")
         .required(false)
         .help("Bootstraps a new cluster");
@@ -93,8 +85,8 @@ public class AtomixAgent {
         .required(false)
         .setDefault(5678)
         .help("An optional HTTP server port");
-    parser.addArgument("--data-dir", "-d")
-        .type(fileType)
+    parser.addArgument("--data-dir", "-dd")
+        .type(fileArgumentType)
         .metavar("FILE")
         .required(false)
         .setDefault(new File(System.getProperty("user.dir"), "data"))
@@ -121,12 +113,11 @@ public class AtomixAgent {
     }
 
     Node localNode = namespace.get("node");
-    if (namespace.getBoolean("client")) {
-      localNode = Node.builder(localNode.id())
-          .withType(Node.Type.CLIENT)
-          .withEndpoint(localNode.endpoint())
-          .build();
-    }
+    Node.Type type = namespace.get("type");
+    localNode = Node.builder(localNode.id())
+        .withType(type)
+        .withEndpoint(localNode.endpoint())
+        .build();
 
     List<Node> bootstrap = namespace.getList("bootstrap");
     if (bootstrap == null) {
@@ -138,15 +129,15 @@ public class AtomixAgent {
     Integer corePartitions = namespace.getInt("core_partitions");
     Integer dataPartitions = namespace.getInt("data_partitions");
 
-    LOGGER.info("Node: {}", localNode);
-    LOGGER.info("Bootstrap: {}", bootstrap);
-    LOGGER.info("Data: {}", dataDir);
+    LOGGER.info("node: {}", localNode);
+    LOGGER.info("bootstrap: {}", bootstrap);
+    LOGGER.info("data-dir: {}", dataDir);
 
     Atomix atomix = Atomix.builder()
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrap)
         .withDataDirectory(dataDir)
-        .withCoordinationPartitions(corePartitions)
+        .withCorePartitions(corePartitions)
         .withDataPartitions(dataPartitions)
         .build();
 
@@ -165,7 +156,7 @@ public class AtomixAgent {
 
     rest.start().join();
 
-    LOGGER.info("Server listening at {}:{}", localNode.endpoint().host().getHostAddress(), httpPort);
+    LOGGER.info("HTTP server listening at {}:{}", localNode.endpoint().host().getHostAddress(), httpPort);
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {

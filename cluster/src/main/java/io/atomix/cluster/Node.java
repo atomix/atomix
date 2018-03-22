@@ -59,6 +59,20 @@ public class Node {
   }
 
   /**
+   * Returns a new core node.
+   *
+   * @param nodeId   the core node ID
+   * @param endpoint the core node endpoint
+   * @return a new core node
+   */
+  public static Node core(NodeId nodeId, Endpoint endpoint) {
+    return builder(nodeId)
+        .withType(Type.CORE)
+        .withEndpoint(endpoint)
+        .build();
+  }
+
+  /**
    * Returns a new data node.
    *
    * @param nodeId   the data node ID
@@ -90,6 +104,11 @@ public class Node {
    * Node type.
    */
   public enum Type {
+
+    /**
+     * Represents a core node.
+     */
+    CORE,
 
     /**
      * Represents a data node.

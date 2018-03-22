@@ -441,7 +441,7 @@ public class RaftPerformanceTest implements Runnable {
     List<RaftServer> servers = new ArrayList<>();
 
     for (int i = 0; i < nodes; i++) {
-      members.add(nextNode(Node.Type.DATA));
+      members.add(nextNode(Node.Type.CORE));
     }
 
     CountDownLatch latch = new CountDownLatch(nodes);

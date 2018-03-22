@@ -72,14 +72,14 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testScaleUp() throws Exception {
-    Atomix atomix1 = startAtomix(Node.Type.DATA, 1, 1).join();
-    Atomix atomix2 = startAtomix(Node.Type.DATA, 2, 1, 2).join();
-    Atomix atomix3 = startAtomix(Node.Type.DATA, 3, 1, 2, 3).join();
+    Atomix atomix1 = startAtomix(Node.Type.CORE, 1, 1).join();
+    Atomix atomix2 = startAtomix(Node.Type.CORE, 2, 1, 2).join();
+    Atomix atomix3 = startAtomix(Node.Type.CORE, 3, 1, 2, 3).join();
   }
 
   @Test
   public void testStopStart() throws Exception {
-    Atomix atomix1 = startAtomix(Node.Type.DATA, 1, 1).join();
+    Atomix atomix1 = startAtomix(Node.Type.CORE, 1, 1).join();
     atomix1.stop().join();
     try {
       atomix1.start().join();
@@ -96,9 +96,9 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testScaleDown() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(Node.Type.DATA, 1, 1, 2, 3));
-    futures.add(startAtomix(Node.Type.DATA, 2, 1, 2, 3));
-    futures.add(startAtomix(Node.Type.DATA, 3, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.CORE, 1, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.CORE, 2, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.CORE, 3, 1, 2, 3));
     Futures.allOf(futures).join();
     instances.get(0).stop().join();
     instances.get(1).stop().join();
@@ -111,9 +111,9 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testClientJoinLeave() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(Node.Type.DATA, 1, 1, 2, 3));
-    futures.add(startAtomix(Node.Type.DATA, 2, 1, 2, 3));
-    futures.add(startAtomix(Node.Type.DATA, 3, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.CORE, 1, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.CORE, 2, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.CORE, 3, 1, 2, 3));
     Futures.allOf(futures).join();
 
     TestClusterEventListener dataListener = new TestClusterEventListener();
