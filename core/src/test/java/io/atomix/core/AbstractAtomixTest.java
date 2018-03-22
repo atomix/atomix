@@ -25,7 +25,6 @@ import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
-import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.RaftProtocol;
