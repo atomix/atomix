@@ -25,8 +25,10 @@ import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
+import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.storage.StorageLevel;
 import org.junit.AfterClass;
@@ -68,7 +70,7 @@ public abstract class AbstractAtomixTest {
 
     Collection<Node> bootstrapNodes = Stream.of(ids)
         .map(nodeId -> Node.builder(String.valueOf(nodeId))
-            .withType(Node.Type.DATA)
+            .withType(Node.Type.CORE)
             .withEndpoint(Endpoint.from("localhost", BASE_PORT + nodeId))
             .build())
         .collect(Collectors.toList());
@@ -78,7 +80,7 @@ public abstract class AbstractAtomixTest {
         .withDataDirectory(new File("target/test-logs/" + id))
         .withLocalNode(localNode)
         .withBootstrapNodes(bootstrapNodes)
-        .withCoordinationPartitions(3)
+        .withCorePartitions(3)
         .withDataPartitions(3) // Lower number of partitions for faster testing
         .build();
   }
@@ -125,10 +127,10 @@ public abstract class AbstractAtomixTest {
       }
 
       @Override
-      protected ManagedPartitionGroup buildCorePartitionGroup() {
-        return RaftPartitionGroup.builder("core")
+      protected ManagedPartitionGroup buildSystemPartitionGroup() {
+        return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
             .withStorageLevel(StorageLevel.MEMORY)
-            .withDataDirectory(new File(dataDirectory, "core"))
+            .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
             .withNumPartitions(1)
             .build();
       }
@@ -136,15 +138,26 @@ public abstract class AbstractAtomixTest {
       @Override
       protected ManagedPartitionService buildPartitionService() {
         if (partitionGroups.isEmpty()) {
-          partitionGroups.add(RaftPartitionGroup.builder(COORDINATION_GROUP_NAME)
+          partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
               .withStorageLevel(StorageLevel.MEMORY)
-              .withDataDirectory(new File(dataDirectory, "coordination"))
-              .withNumPartitions(numCoordinationPartitions > 0 ? numCoordinationPartitions : bootstrapNodes.size())
-              .withPartitionSize(coordinationPartitionSize)
+              .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
+              .withNumPartitions(numCorePartitions > 0 ? numCorePartitions : bootstrapNodes.size())
+              .withPartitionSize(corePartitionSize)
               .build());
           partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
               .withNumPartitions(numDataPartitions)
               .build());
+        } else {
+          boolean hasConsensus = partitionGroups.stream()
+              .anyMatch(group -> group.type() == RaftProtocol.TYPE);
+          if (!hasConsensus) {
+            partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
+                .withStorageLevel(StorageLevel.MEMORY)
+                .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
+                .withNumPartitions(numCorePartitions > 0 ? numCorePartitions : bootstrapNodes.size())
+                .withPartitionSize(corePartitionSize)
+                .build());
+          }
         }
         return new DefaultPartitionService(partitionGroups);
       }

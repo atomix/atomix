@@ -36,7 +36,7 @@ public class TestClusterService implements ClusterService {
   @Override
   public Node getLocalNode() {
     return Node.builder(localNode)
-        .withType(Node.Type.DATA)
+        .withType(Node.Type.CORE)
         .withEndpoint(Endpoint.from("localhost", localNode.hashCode()))
         .build();
   }
@@ -45,7 +45,7 @@ public class TestClusterService implements ClusterService {
   public Set<Node> getNodes() {
     return nodes.stream()
         .map(node -> Node.builder(node)
-            .withType(Node.Type.DATA)
+            .withType(Node.Type.CORE)
             .withEndpoint(Endpoint.from("localhost", node.hashCode()))
             .build())
         .collect(Collectors.toSet());

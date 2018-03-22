@@ -64,7 +64,7 @@ public class DefaultClusterEventingServiceTest {
     List<Node> bootstrap = new ArrayList<>();
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
-          .withType(Node.Type.DATA)
+          .withType(Node.Type.CORE)
           .withEndpoint(new Endpoint(localhost, bootstrapNode))
           .build());
     }
@@ -77,17 +77,17 @@ public class DefaultClusterEventingServiceTest {
 
     ClusterMetadata clusterMetadata = buildClusterMetadata(1, 1, 2, 3);
 
-    Node localNode1 = buildNode(1, Node.Type.DATA);
+    Node localNode1 = buildNode(1, Node.Type.CORE);
     MessagingService messagingService1 = factory.newMessagingService(localNode1.endpoint()).start().join();
     ClusterService clusterService1 = new DefaultClusterService(localNode1, new TestClusterMetadataService(clusterMetadata), messagingService1).start().join();
     ClusterEventingService eventService1 = new DefaultClusterEventingService(clusterService1, messagingService1).start().join();
 
-    Node localNode2 = buildNode(2, Node.Type.DATA);
+    Node localNode2 = buildNode(2, Node.Type.CORE);
     MessagingService messagingService2 = factory.newMessagingService(localNode2.endpoint()).start().join();
     ClusterService clusterService2 = new DefaultClusterService(localNode2, new TestClusterMetadataService(clusterMetadata), messagingService2).start().join();
     ClusterEventingService eventService2 = new DefaultClusterEventingService(clusterService2, messagingService2).start().join();
 
-    Node localNode3 = buildNode(3, Node.Type.DATA);
+    Node localNode3 = buildNode(3, Node.Type.CORE);
     MessagingService messagingService3 = factory.newMessagingService(localNode3.endpoint()).start().join();
     ClusterService clusterService3 = new DefaultClusterService(localNode3, new TestClusterMetadataService(clusterMetadata), messagingService3).start().join();
     ClusterEventingService eventService3 = new DefaultClusterEventingService(clusterService3, messagingService3).start().join();

@@ -42,7 +42,7 @@ public class ClusterMetadata {
 
   public ClusterMetadata(Collection<Node> bootstrapNodes) {
     this.bootstrapNodes = bootstrapNodes.stream()
-        .filter(node -> node.type() == Type.DATA)
+        .filter(node -> node.type() == Type.CORE)
         .collect(Collectors.toSet());
   }
 

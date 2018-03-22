@@ -93,7 +93,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private final ManagedClusterService clusterService;
   private final ManagedClusterMessagingService clusterMessagingService;
   private final ManagedClusterEventingService clusterEventingService;
-  private final ManagedPartitionGroup corePartitionGroup;
+  private final ManagedPartitionGroup systemPartitionGroup;
   private final ManagedPartitionService partitions;
   private final ManagedPrimitivesService primitives;
   private final PrimitiveTypeRegistry primitiveTypes;
@@ -108,7 +108,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterService cluster,
       ManagedClusterMessagingService clusterMessagingService,
       ManagedClusterEventingService clusterEventingService,
-      ManagedPartitionGroup corePartitionGroup,
+      ManagedPartitionGroup systemPartitionGroup,
       ManagedPartitionService partitions,
       PrimitiveTypeRegistry primitiveTypes) {
     PrimitiveTypes.register(primitiveTypes);
@@ -117,7 +117,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     this.clusterService = checkNotNull(cluster, "cluster cannot be null");
     this.clusterMessagingService = checkNotNull(clusterMessagingService, "clusterCommunicator cannot be null");
     this.clusterEventingService = checkNotNull(clusterEventingService, "clusterEventService cannot be null");
-    this.corePartitionGroup = checkNotNull(corePartitionGroup, "corePartitionGroup cannot be null");
+    this.systemPartitionGroup = checkNotNull(systemPartitionGroup, "systemPartitionGroup cannot be null");
     this.partitions = checkNotNull(partitions, "partitions cannot be null");
     this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
     this.primitives = new CorePrimitivesService(cluster, clusterMessagingService, clusterEventingService, partitions);
@@ -222,11 +222,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> clusterService.start(), context)
         .thenComposeAsync(v -> clusterMessagingService.start(), context)
         .thenComposeAsync(v -> clusterEventingService.start(), context)
-        .thenComposeAsync(v -> corePartitionGroup.open(
+        .thenComposeAsync(v -> systemPartitionGroup.open(
             new DefaultPartitionManagementService(metadataService, clusterService, clusterMessagingService, primitiveTypes, null, null)), context)
         .thenComposeAsync(v -> {
-          ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(corePartitionGroup);
-          ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(corePartitionGroup);
+          ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(systemPartitionGroup);
+          ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(systemPartitionGroup);
           return electionService.start()
               .thenComposeAsync(v2 -> sessionIdService.start(), context)
               .thenApply(v2 -> new DefaultPartitionManagementService(metadataService, clusterService, clusterMessagingService, primitiveTypes, electionService, sessionIdService));
@@ -256,7 +256,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     metadataService.removeNode(clusterService.getLocalNode());
     closeFuture = primitives.stop()
         .thenComposeAsync(v -> partitions.close(), context)
-        .thenComposeAsync(v -> corePartitionGroup.close(), context)
+        .thenComposeAsync(v -> systemPartitionGroup.close(), context)
         .thenComposeAsync(v -> clusterMessagingService.stop(), context)
         .thenComposeAsync(v -> clusterEventingService.stop(), context)
         .thenComposeAsync(v -> clusterService.stop(), context)
@@ -283,20 +283,22 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   public static class Builder implements io.atomix.utils.Builder<Atomix> {
     protected static final String DEFAULT_CLUSTER_NAME = "atomix";
     // Default to 7 Raft partitions to allow a leader per node in 7 node clusters
-    protected static final int DEFAULT_COORDINATION_PARTITIONS = 7;
+    protected static final int DEFAULT_CORE_PARTITIONS = 7;
     // Default to 3-node partitions for the best latency/throughput per Raft partition
-    protected static final int DEFAULT_COORDINATION_PARTITION_SIZE = 3;
+    protected static final int DEFAULT_CORE_PARTITION_SIZE = 3;
     // Default to 71 primary-backup partitions - a prime number that creates about 10 partitions per node in a 7-node cluster
     protected static final int DEFAULT_DATA_PARTITIONS = 71;
-    protected static final String COORDINATION_GROUP_NAME = "coordination";
+
+    protected static final String SYSTEM_GROUP_NAME = "system";
+    protected static final String CORE_GROUP_NAME = "core";
     protected static final String DATA_GROUP_NAME = "data";
 
     protected String name = DEFAULT_CLUSTER_NAME;
     protected Node localNode;
     protected Collection<Node> bootstrapNodes;
     protected File dataDirectory = new File(System.getProperty("user.dir"), "data");
-    protected int numCoordinationPartitions = DEFAULT_COORDINATION_PARTITIONS;
-    protected int coordinationPartitionSize = DEFAULT_COORDINATION_PARTITION_SIZE;
+    protected int numCorePartitions = DEFAULT_CORE_PARTITIONS;
+    protected int corePartitionSize = DEFAULT_CORE_PARTITION_SIZE;
     protected int numDataPartitions = DEFAULT_DATA_PARTITIONS;
     protected Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
@@ -360,28 +362,28 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     /**
-     * Sets the number of coordination (Raft) partitions.
+     * Sets the number of core (Raft) partitions.
      *
-     * @param corePartitions the number of coordination partitions
+     * @param corePartitions the number of core partitions
      * @return the Atomix builder
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
-    public Builder withCoordinationPartitions(int corePartitions) {
+    public Builder withCorePartitions(int corePartitions) {
       checkArgument(corePartitions > 0, "corePartitions must be positive");
-      this.numCoordinationPartitions = corePartitions;
+      this.numCorePartitions = corePartitions;
       return this;
     }
 
     /**
-     * Sets the coordination (Raft) partition size.
+     * Sets the core (Raft) partition size.
      *
-     * @param partitionSize the coordination partition size
+     * @param partitionSize the core partition size
      * @return the Atomix builder
      * @throws IllegalArgumentException if the partition size is not positive
      */
-    public Builder withCoordinationPartitionSize(int partitionSize) {
+    public Builder withCorePartitionSize(int partitionSize) {
       checkArgument(partitionSize > 0, "partitionSize must be positive");
-      this.coordinationPartitionSize = partitionSize;
+      this.corePartitionSize = partitionSize;
       return this;
     }
 
@@ -480,7 +482,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         try {
           InetAddress address = getLocalAddress();
           localNode = Node.builder(address.getHostName())
-              .withType(Node.Type.DATA)
+              .withType(Node.Type.CORE)
               .withEndpoint(new Endpoint(address, NettyMessagingService.DEFAULT_PORT))
               .build();
         } catch (UnknownHostException e) {
@@ -490,7 +492,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
       // If the bootstrap nodes have not been configured, default to the local node if possible.
       if (bootstrapNodes == null) {
-        if (localNode.type() == Node.Type.DATA) {
+        if (localNode.type() == Node.Type.CORE) {
           bootstrapNodes = Collections.singleton(localNode);
         } else {
           throw new ConfigurationException("No bootstrap nodes configured");
@@ -502,7 +504,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterService clusterService = buildClusterService(metadataService, messagingService);
       ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
       ManagedClusterEventingService clusterEventService = buildClusterEventService(clusterService, messagingService);
-      ManagedPartitionGroup corePartitionGroup = buildCorePartitionGroup();
+      ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup();
       ManagedPartitionService partitionService = buildPartitionService();
       return new Atomix(
           messagingService,
@@ -510,7 +512,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
           clusterService,
           clusterMessagingService,
           clusterEventService,
-          corePartitionGroup,
+          systemPartitionGroup,
           partitionService,
           primitiveTypes);
     }
@@ -567,10 +569,10 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds the core partition group.
      */
-    protected ManagedPartitionGroup buildCorePartitionGroup() {
-      return RaftPartitionGroup.builder("core")
+    protected ManagedPartitionGroup buildSystemPartitionGroup() {
+      return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
           .withNumPartitions(1)
-          .withDataDirectory(new File(dataDirectory, "core"))
+          .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
           .build();
     }
 
@@ -579,10 +581,10 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     protected ManagedPartitionService buildPartitionService() {
       if (partitionGroups.isEmpty()) {
-        partitionGroups.add(RaftPartitionGroup.builder(COORDINATION_GROUP_NAME)
-            .withDataDirectory(new File(dataDirectory, COORDINATION_GROUP_NAME))
-            .withNumPartitions(numCoordinationPartitions)
-            .withPartitionSize(coordinationPartitionSize)
+        partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
+            .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
+            .withNumPartitions(numCorePartitions)
+            .withPartitionSize(corePartitionSize)
             .build());
         partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
             .withNumPartitions(numDataPartitions)
