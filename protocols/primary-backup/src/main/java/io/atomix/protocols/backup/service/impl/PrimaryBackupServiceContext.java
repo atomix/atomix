@@ -57,6 +57,7 @@ import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -525,48 +526,37 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    */
   private void changeRole(PrimaryTerm term) {
     if (term.term() > currentTerm) {
-      log.trace("Term changed: {}", term);
+      log.debug("Term changed: {}", term);
       currentTerm = term.term();
       primary = term.primary();
       backups = term.backups().subList(0, Math.min(descriptor.backups(), term.backups().size()));
 
-      if (backups.size() < descriptor.backups()) {
-        if (this.role == null) {
-          log.warn("Not enough backups; transitioning to {}", Role.NONE);
-          this.role = new NoneRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
-        } else if (this.role.role() != Role.NONE) {
-          log.warn("Not enough backups; transitioning to {}", Role.NONE);
-          this.role.close();
-          this.role = new NoneRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
-        }
-      } else if (primary.equals(clusterService.getLocalNode().id())) {
+      if (Objects.equals(primary, clusterService.getLocalNode().id())) {
         if (this.role == null) {
           this.role = new PrimaryRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
+          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
         } else if (this.role.role() != Role.PRIMARY) {
           this.role.close();
           this.role = new PrimaryRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
+          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
         }
       } else if (backups.contains(clusterService.getLocalNode().id())) {
         if (this.role == null) {
           this.role = new BackupRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
+          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
         } else if (this.role.role() != Role.BACKUP) {
           this.role.close();
           this.role = new BackupRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
+          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
         }
       } else {
         if (this.role == null) {
           this.role = new NoneRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
         } else if (this.role.role() != Role.NONE) {
           this.role.close();
           this.role = new NoneRole(this);
-          log.trace("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
         }
       }
     }
