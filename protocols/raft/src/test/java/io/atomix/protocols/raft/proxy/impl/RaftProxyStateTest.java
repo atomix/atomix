@@ -41,7 +41,7 @@ public class RaftProxyStateTest {
     RaftProxyState state = new RaftProxyState(
         "test",
         SessionId.from(1),
-        UUID.randomUUID().toString(),
+        sessionName,
         ServiceType.from("test"),
         new ServiceRevision(1, PropagationStrategy.NONE),
         1000);
