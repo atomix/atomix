@@ -427,7 +427,7 @@ public class RaftServiceManager implements AutoCloseable {
    *
    * @param index the index for which to take snapshots
    */
-  private Snapshot snapshot(long index) {
+  Snapshot snapshot(long index) {
     Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(index, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       for (DefaultServiceContext service : raft.getServices()) {
@@ -464,7 +464,7 @@ public class RaftServiceManager implements AutoCloseable {
    *
    * @param index the index for which to install snapshots
    */
-  private void install(long index) {
+  void install(long index) {
     Snapshot snapshot = raft.getSnapshotStore().getSnapshot(index - 1);
 
     // If snapshots exist for the prior index, iterate through snapshots and populate services/sessions.
