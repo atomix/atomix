@@ -103,16 +103,16 @@ public class PartitionedAsyncLeaderElector<T> implements AsyncLeaderElector<T> {
   }
 
   @Override
-  public CompletableFuture<Void> addListener(LeadershipEventListener<T> listener) {
+  public CompletableFuture<Void> addListener(String topic, LeadershipEventListener<T> listener) {
     return CompletableFuture.allOf(getLeaderElectors().stream()
-        .map(map -> map.addListener(listener))
+        .map(map -> map.addListener(topic, listener))
         .toArray(CompletableFuture[]::new));
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(LeadershipEventListener<T> listener) {
+  public CompletableFuture<Void> removeListener(String topic, LeadershipEventListener<T> listener) {
     return CompletableFuture.allOf(getLeaderElectors().stream()
-        .map(map -> map.removeListener(listener))
+        .map(map -> map.removeListener(topic, listener))
         .toArray(CompletableFuture[]::new));
   }
 

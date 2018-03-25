@@ -81,13 +81,13 @@ public class BlockingLeaderElector<T> extends Synchronous<AsyncLeaderElector<T>>
   }
 
   @Override
-  public void addListener(LeadershipEventListener<T> listener) {
-    complete(asyncElector.addListener(listener));
+  public void addListener(String topic, LeadershipEventListener<T> listener) {
+    complete(asyncElector.addListener(topic, listener));
   }
 
   @Override
-  public void removeListener(LeadershipEventListener<T> listener) {
-    complete(asyncElector.removeListener(listener));
+  public void removeListener(String topic, LeadershipEventListener<T> listener) {
+    complete(asyncElector.removeListener(topic, listener));
   }
 
   @Override

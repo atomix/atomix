@@ -90,20 +90,20 @@ public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector
   }
 
   @Override
-  public CompletableFuture<Void> addListener(LeadershipEventListener<V1> listener) {
+  public CompletableFuture<Void> addListener(String topic, LeadershipEventListener<V1> listener) {
     synchronized (listeners) {
       InternalLeadershipEventListener internalListener =
           listeners.computeIfAbsent(listener, k -> new InternalLeadershipEventListener(listener));
-      return backingElector.addListener(internalListener);
+      return backingElector.addListener(topic, internalListener);
     }
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(LeadershipEventListener<V1> listener) {
+  public CompletableFuture<Void> removeListener(String topic, LeadershipEventListener<V1> listener) {
     synchronized (listeners) {
       InternalLeadershipEventListener internalListener = listeners.remove(listener);
       if (internalListener != null) {
-        return backingElector.removeListener(internalListener);
+        return backingElector.removeListener(topic, internalListener);
       } else {
         return CompletableFuture.completedFuture(null);
       }
