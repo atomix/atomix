@@ -16,7 +16,6 @@
 package io.atomix.primitive.partition;
 
 import com.google.common.collect.Sets;
-import io.atomix.cluster.NodeId;
 import io.atomix.primitive.partition.PrimaryElectionEvent.Type;
 
 import java.util.ArrayList;
@@ -30,22 +29,27 @@ import java.util.stream.Collectors;
  * Test primary election.
  */
 public class TestPrimaryElection implements PrimaryElection {
+  private final PartitionId partitionId;
   private long counter;
   private PrimaryTerm term;
-  private final List<NodeId> candidates = new ArrayList<>();
+  private final List<Member> candidates = new ArrayList<>();
   private final Set<PrimaryElectionEventListener> listeners = Sets.newConcurrentHashSet();
 
+  public TestPrimaryElection(PartitionId partitionId) {
+    this.partitionId = partitionId;
+  }
+
   @Override
-  public CompletableFuture<PrimaryTerm> enter(NodeId nodeId) {
-    candidates.add(nodeId);
+  public CompletableFuture<PrimaryTerm> enter(Member member) {
+    candidates.add(member);
     if (term == null) {
-      term = new PrimaryTerm(++counter, nodeId, Collections.emptyList());
-      listeners.forEach(l -> l.onEvent(new PrimaryElectionEvent(Type.PRIMARY_AND_BACKUPS_CHANGED, term)));
+      term = new PrimaryTerm(++counter, member, Collections.emptyList());
+      listeners.forEach(l -> l.onEvent(new PrimaryElectionEvent(Type.CHANGED, partitionId, term)));
     } else {
       term = new PrimaryTerm(term.term(), term.primary(), candidates.stream()
           .filter(candidate -> !candidate.equals(term.primary()))
           .collect(Collectors.toList()));
-      listeners.forEach(l -> l.onEvent(new PrimaryElectionEvent(Type.BACKUPS_CHANGED, term)));
+      listeners.forEach(l -> l.onEvent(new PrimaryElectionEvent(Type.CHANGED, partitionId, term)));
     }
     return CompletableFuture.completedFuture(term);
   }
@@ -56,11 +60,6 @@ public class TestPrimaryElection implements PrimaryElection {
   }
 
   @Override
-  public CompletableFuture<Void> open() {
-    return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
   public void addListener(PrimaryElectionEventListener listener) {
     listeners.add(listener);
   }
@@ -68,10 +67,5 @@ public class TestPrimaryElection implements PrimaryElection {
   @Override
   public void removeListener(PrimaryElectionEventListener listener) {
     listeners.remove(listener);
-  }
-
-  @Override
-  public void close() {
-
   }
 }

@@ -19,6 +19,9 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterService;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.partition.ManagedMemberGroupService;
+import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.MemberGroup;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.protocol.BackupRequest;
@@ -34,34 +37,40 @@ import io.atomix.protocols.backup.protocol.PrimitiveRequest;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
+import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
  * Primary-backup server context.
  */
-public class PrimaryBackupServerContext {
+public class PrimaryBackupServerContext implements Managed<Void> {
   private final String serverName;
   private final ClusterService clusterService;
+  private final ManagedMemberGroupService memberGroupService;
   private final PrimaryBackupServerProtocol protocol;
   private final ThreadContextFactory threadContextFactory;
   private final PrimitiveTypeRegistry primitiveTypes;
   private final PrimaryElection primaryElection;
   private final Map<String, CompletableFuture<PrimaryBackupServiceContext>> services = Maps.newConcurrentMap();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public PrimaryBackupServerContext(
       String serverName,
       ClusterService clusterService,
+      ManagedMemberGroupService memberGroupService,
       PrimaryBackupServerProtocol protocol,
       ThreadContextFactory threadContextFactory,
       PrimitiveTypeRegistry primitiveTypes,
       PrimaryElection primaryElection) {
     this.serverName = serverName;
     this.clusterService = clusterService;
+    this.memberGroupService = memberGroupService;
     this.protocol = protocol;
     this.threadContextFactory = threadContextFactory;
     this.primitiveTypes = primitiveTypes;
@@ -79,12 +88,17 @@ public class PrimaryBackupServerContext {
         : Role.BACKUP;
   }
 
-  /**
-   * Opens the server context.
-   */
-  public void open() {
+  @Override
+  public CompletableFuture<Void> start() {
     registerListeners();
-    primaryElection.enter(clusterService.getLocalNode().id());
+    started.set(true);
+    return memberGroupService.start().thenCompose(v -> {
+      MemberGroup group = memberGroupService.getMemberGroup(clusterService.getLocalNode());
+      if (group != null) {
+        return primaryElection.enter(new Member(clusterService.getLocalNode().id(), group.id()));
+      }
+      return CompletableFuture.completedFuture(null);
+    }).thenApply(v -> null);
   }
 
   /**
@@ -127,6 +141,7 @@ public class PrimaryBackupServerContext {
           request.primitive(),
           threadContextFactory.createContext(),
           clusterService,
+          memberGroupService,
           protocol,
           primaryElection);
       return service.open().thenApply(v -> service);
@@ -165,10 +180,15 @@ public class PrimaryBackupServerContext {
     protocol.unregisterMetadataHandler();
   }
 
-  /**
-   * Closes the server context.
-   */
-  public void close() {
+  @Override
+  public boolean isRunning() {
+    return started.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> stop() {
     unregisterListeners();
+    started.set(false);
+    return memberGroupService.stop();
   }
 }

@@ -147,9 +147,9 @@ public abstract class AbstractAtomixTest {
               .withNumPartitions(numDataPartitions)
               .build());
         } else {
-          boolean hasConsensus = partitionGroups.stream()
+          boolean hasCore = partitionGroups.stream()
               .anyMatch(group -> group.type() == RaftProtocol.TYPE);
-          if (!hasConsensus) {
+          if (!hasCore) {
             partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
                 .withStorageLevel(StorageLevel.MEMORY)
                 .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))

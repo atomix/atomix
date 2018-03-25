@@ -25,8 +25,14 @@ import io.atomix.messaging.Endpoint;
 public class StatefulNode extends Node {
   private State state = State.INACTIVE;
 
-  public StatefulNode(NodeId id, Type type, Endpoint endpoint) {
-    super(id, type, endpoint);
+  public StatefulNode(
+      NodeId id,
+      Type type,
+      Endpoint endpoint,
+      String zone,
+      String rack,
+      String host) {
+    super(id, type, endpoint, zone, rack, host);
   }
 
   /**

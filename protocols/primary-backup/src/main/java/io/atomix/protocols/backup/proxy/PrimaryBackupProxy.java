@@ -40,6 +40,7 @@ import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
+import java.net.ConnectException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -147,32 +148,36 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
     ExecuteRequest request = ExecuteRequest.request(descriptor, sessionId.id(), clusterService.getLocalNode().id(), operation);
     log.trace("Sending {} to {}", request, term.primary());
     PrimaryTerm term = this.term;
-    protocol.execute(term.primary(), request).whenCompleteAsync((response, error) -> {
-      if (error == null) {
-        log.trace("Received {}", response);
-        if (response.status() == Status.OK) {
-          future.complete(response.result());
-        } else {
-          if (this.term.term() > term.term()) {
-            execute(operation).whenComplete(future);
+    if (term.primary() != null) {
+      protocol.execute(term.primary().nodeId(), request).whenCompleteAsync((response, error) -> {
+        if (error == null) {
+          log.trace("Received {}", response);
+          if (response.status() == Status.OK) {
+            future.complete(response.result());
           } else {
-            primaryElection.getTerm().whenComplete((newTerm, termError) -> {
-              if (termError == null) {
-                if (newTerm.term() > term.term() && newTerm.primary() != null) {
-                  execute(operation).whenComplete(future);
+            if (this.term.term() > term.term()) {
+              execute(operation).whenComplete(future);
+            } else {
+              primaryElection.getTerm().whenComplete((newTerm, termError) -> {
+                if (termError == null) {
+                  if (newTerm.term() > term.term() && newTerm.primary() != null) {
+                    execute(operation).whenComplete(future);
+                  } else {
+                    future.completeExceptionally(new PrimitiveException.Unavailable());
+                  }
                 } else {
                   future.completeExceptionally(new PrimitiveException.Unavailable());
                 }
-              } else {
-                future.completeExceptionally(new PrimitiveException.Unavailable());
-              }
-            });
+              });
+            }
           }
+        } else {
+          future.completeExceptionally(error);
         }
-      } else {
-        future.completeExceptionally(error);
-      }
-    }, threadContext);
+      }, threadContext);
+    } else {
+      future.completeExceptionally(new ConnectException());
+    }
   }
 
   @Override
@@ -241,7 +246,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     if (term.primary() != null) {
-      protocol.close(term.primary(), new CloseRequest(descriptor, sessionId.id()))
+      protocol.close(term.primary().nodeId(), new CloseRequest(descriptor, sessionId.id()))
           .whenCompleteAsync((response, error) -> {
             protocol.unregisterEventListener(sessionId);
             clusterService.removeListener(clusterEventListener);

@@ -30,6 +30,7 @@ import io.atomix.core.tree.DocumentTreeType;
 import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.partition.impl.PrimaryElectorType;
 
 /**
  * Primitive types.
@@ -196,6 +197,7 @@ public final class PrimitiveTypes {
     registry.register(tree(Ordering.INSERTION));
     registry.register(value());
     registry.register(workQueue());
+    registry.register(PrimaryElectorType.instance());
   }
 
   private PrimitiveTypes() {

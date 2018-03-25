@@ -17,6 +17,8 @@ package io.atomix.primitive.partition;
 
 import io.atomix.utils.event.AbstractEvent;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Primary election event.
  */
@@ -26,13 +28,23 @@ public class PrimaryElectionEvent extends AbstractEvent<PrimaryElectionEvent.Typ
    * Returns the election event type.
    */
   public enum Type {
-    PRIMARY_CHANGED,
-    BACKUPS_CHANGED,
-    PRIMARY_AND_BACKUPS_CHANGED,
+    CHANGED
   }
 
-  public PrimaryElectionEvent(Type type, PrimaryTerm subject) {
+  private final PartitionId partitionId;
+
+  public PrimaryElectionEvent(Type type, PartitionId partitionId, PrimaryTerm subject) {
     super(type, subject);
+    this.partitionId = partitionId;
+  }
+
+  /**
+   * Returns the partition ID.
+   *
+   * @return the election partition
+   */
+  public PartitionId partitionId() {
+    return partitionId;
   }
 
   /**
@@ -42,5 +54,13 @@ public class PrimaryElectionEvent extends AbstractEvent<PrimaryElectionEvent.Typ
    */
   public PrimaryTerm term() {
     return subject();
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("partition", partitionId)
+        .add("term", term())
+        .toString();
   }
 }

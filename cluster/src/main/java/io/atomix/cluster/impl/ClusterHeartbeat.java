@@ -26,10 +26,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 final class ClusterHeartbeat {
   private final NodeId nodeId;
   private final Node.Type type;
+  private final String zone;
+  private final String rack;
+  private final String host;
 
-  ClusterHeartbeat(NodeId nodeId, Node.Type type) {
+  ClusterHeartbeat(NodeId nodeId, Node.Type type, String zone, String rack, String host) {
     this.nodeId = nodeId;
     this.type = type;
+    this.zone = zone;
+    this.rack = rack;
+    this.host = host;
   }
 
   /**
@@ -48,6 +54,33 @@ final class ClusterHeartbeat {
    */
   public Node.Type nodeType() {
     return type;
+  }
+
+  /**
+   * Returns the zone.
+   *
+   * @return the zone
+   */
+  public String zone() {
+    return zone;
+  }
+
+  /**
+   * Returns the rack.
+   *
+   * @return the rack
+   */
+  public String rack() {
+    return rack;
+  }
+
+  /**
+   * Returns the host.
+   *
+   * @return the host
+   */
+  public String host() {
+    return host;
   }
 
   @Override

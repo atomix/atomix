@@ -16,12 +16,12 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveException.Unavailable;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
+import io.atomix.primitive.partition.Member;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
@@ -140,13 +140,13 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
     CompletableFuture<Set<String>> future = new CompletableFuture<>();
     MetadataRequest request = MetadataRequest.request(primitiveType.id());
     threadContext.execute(() -> {
-      NodeId primary = primaryElection.getTerm().join().primary();
+      Member primary = primaryElection.getTerm().join().primary();
       if (primary == null) {
         future.completeExceptionally(new Unavailable());
         return;
       }
 
-      protocol.metadata(primary, request).whenCompleteAsync((response, error) -> {
+      protocol.metadata(primary.nodeId(), request).whenCompleteAsync((response, error) -> {
         if (error == null) {
           if (response.status() == Status.OK) {
             future.complete(response.primitiveNames());

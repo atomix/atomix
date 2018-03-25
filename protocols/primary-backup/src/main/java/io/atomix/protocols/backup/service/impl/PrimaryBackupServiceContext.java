@@ -23,6 +23,8 @@ import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationType;
+import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.MemberGroupService;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
@@ -59,6 +61,7 @@ import org.slf4j.Logger;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -76,6 +79,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private final PrimaryBackupServiceSessions sessions = new PrimaryBackupServiceSessions();
   private final ThreadContext threadContext;
   private final ClusterService clusterService;
+  private final MemberGroupService memberGroupService;
   private final PrimaryBackupServerProtocol protocol;
   private final PrimaryElection primaryElection;
   private NodeId primary;
@@ -110,6 +114,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       PrimitiveDescriptor descriptor,
       ThreadContext threadContext,
       ClusterService clusterService,
+      MemberGroupService memberGroupService,
       PrimaryBackupServerProtocol protocol,
       PrimaryElection primaryElection) {
     this.localNodeId = clusterService.getLocalNode().id();
@@ -120,6 +125,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     this.service = primitiveType.newService();
     this.threadContext = checkNotNull(threadContext);
     this.clusterService = checkNotNull(clusterService);
+    this.memberGroupService = checkNotNull(memberGroupService);
     this.protocol = checkNotNull(protocol);
     this.primaryElection = checkNotNull(primaryElection);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
@@ -260,7 +266,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   /**
    * Increments the current index and returns true if the given index is the next index.
    *
-   * @param index     the index to which to increment the current index
+   * @param index the index to which to increment the current index
    * @return indicates whether the current index was successfully incremented
    */
   public boolean nextIndex(long index) {
@@ -528,8 +534,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     if (term.term() > currentTerm) {
       log.debug("Term changed: {}", term);
       currentTerm = term.term();
-      primary = term.primary();
-      backups = term.backups().subList(0, Math.min(descriptor.backups(), term.backups().size()));
+      primary = term.primary() != null ? term.primary().nodeId() : null;
+      backups = term.backups(descriptor.backups())
+          .stream()
+          .map(Member::nodeId)
+          .collect(Collectors.toList());
 
       if (Objects.equals(primary, clusterService.getLocalNode().id())) {
         if (this.role == null) {
