@@ -110,20 +110,22 @@ public interface AsyncLeaderElector<T> extends AsyncPrimitive {
   /**
    * Registers a listener to be notified of Leadership changes for all topics.
    *
+   * @param topic    leadership topic
    * @param listener listener to notify
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> addListener(LeadershipEventListener<T> listener);
+  CompletableFuture<Void> addListener(String topic, LeadershipEventListener<T> listener);
 
   /**
    * Unregisters a previously registered change notification listener.
    * <p>
    * If the specified listener was not previously registered, this operation will be a noop.
    *
+   * @param topic    leadership topic
    * @param listener listener to remove
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> removeListener(LeadershipEventListener<T> listener);
+  CompletableFuture<Void> removeListener(String topic, LeadershipEventListener<T> listener);
 
   @Override
   default LeaderElector<T> sync() {

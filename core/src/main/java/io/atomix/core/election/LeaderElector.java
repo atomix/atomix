@@ -98,18 +98,20 @@ public interface LeaderElector<T> extends SyncPrimitive {
   /**
    * Registers a listener to be notified of Leadership changes for all topics.
    *
+   * @param topic    leadership topic
    * @param listener listener to notify
    */
-  void addListener(LeadershipEventListener<T> listener);
+  void addListener(String topic, LeadershipEventListener<T> listener);
 
   /**
    * Unregisters a previously registered change notification listener.
    * <p>
    * If the specified listener was not previously registered, this operation will be a noop.
    *
+   * @param topic    leadership topic
    * @param listener listener to remove
    */
-  void removeListener(LeadershipEventListener<T> listener);
+  void removeListener(String topic, LeadershipEventListener<T> listener);
 
   @Override
   AsyncLeaderElector<T> async();

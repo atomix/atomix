@@ -47,7 +47,7 @@ public class LeaderElectorPrimaryElection implements PrimaryElection {
   public LeaderElectorPrimaryElection(PartitionId partitionId, AsyncLeaderElector<NodeId> elector) {
     this.partitionId = checkNotNull(partitionId);
     this.elector = checkNotNull(elector);
-    elector.addListener(eventListener);
+    elector.addListener(partitionId.toString(), eventListener);
   }
 
   @Override
@@ -115,6 +115,6 @@ public class LeaderElectorPrimaryElection implements PrimaryElection {
 
   @Override
   public void close() {
-    elector.removeListener(eventListener);
+    elector.removeListener(partitionId.toString(), eventListener);
   }
 }
