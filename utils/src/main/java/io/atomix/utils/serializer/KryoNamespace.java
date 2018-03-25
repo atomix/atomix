@@ -21,7 +21,6 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoCallback;
 import com.esotericsoftware.kryo.pool.KryoFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
@@ -33,7 +32,6 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -57,7 +55,6 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
    * @see #serialize(Object)
    */
   public static final int DEFAULT_BUFFER_SIZE = 4096;
-  public static final int MAX_BUFFER_SIZE = 100 * 1000 * 1000;
 
   /**
    * ID to use if this KryoNamespace does not define registration id.
@@ -78,9 +75,12 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
    */
   public static Namespace DEFAULT = builder().build();
 
-  private final KryoPool pool = new KryoPool.Builder(this)
+  private final KryoPool kryoPool = new KryoPool.Builder(this)
       .softReferences()
       .build();
+
+  private final KryoOutputPool kryoOutputPool = new KryoOutputPool();
+  private final KryoInputPool kryoInputPool = new KryoInputPool();
 
   private final ImmutableList<RegistrationBlock> registeredBlocks;
 
@@ -296,13 +296,12 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
    * @return serialized bytes
    */
   public byte[] serialize(final Object obj, final int bufferSize) {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream(bufferSize);
-    Output out = new Output(outputStream);
-    return pool.run(kryo -> {
-      kryo.writeClassAndObject(out, obj);
-      out.flush();
-      return outputStream.toByteArray();
-    });
+    return kryoOutputPool.run(output -> {
+      return kryoPool.run(kryo -> {
+        kryo.writeClassAndObject(output, obj);
+        return output.toBytes();
+      });
+    }, bufferSize);
   }
 
   /**
@@ -358,15 +357,14 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
    * @return deserialized Object
    */
   public <T> T deserialize(final byte[] bytes) {
-    Input in = new Input(new ByteArrayInputStream(bytes));
-    Kryo kryo = borrow();
-    try {
-      @SuppressWarnings("unchecked")
-      T obj = (T) kryo.readClassAndObject(in);
-      return obj;
-    } finally {
-      release(kryo);
-    }
+    return kryoInputPool.run(input -> {
+      input.setInputStream(new ByteArrayInputStream(bytes));
+      return kryoPool.run(kryo -> {
+        @SuppressWarnings("unchecked")
+        T obj = (T) kryo.readClassAndObject(input);
+        return obj;
+      });
+    }, DEFAULT_BUFFER_SIZE);
   }
 
   /**
@@ -515,17 +513,17 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
 
   @Override
   public Kryo borrow() {
-    return pool.borrow();
+    return kryoPool.borrow();
   }
 
   @Override
   public void release(Kryo kryo) {
-    pool.release(kryo);
+    kryoPool.release(kryo);
   }
 
   @Override
   public <T> T run(KryoCallback<T> callback) {
-    return pool.run(callback);
+    return kryoPool.run(callback);
   }
 
   @Override
