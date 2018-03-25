@@ -17,6 +17,8 @@ package io.atomix.protocols.backup.partition;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveClient;
+import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
@@ -28,6 +30,7 @@ import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -36,12 +39,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
   private final PartitionId partitionId;
+  private final MemberGroupProvider memberGroupProvider;
   private PrimaryElection election;
   private PrimaryBackupPartitionServer server;
   private PrimaryBackupPartitionClient client;
 
-  public PrimaryBackupPartition(PartitionId partitionId) {
+  public PrimaryBackupPartition(
+      PartitionId partitionId,
+      MemberGroupProvider memberGroupProvider) {
     this.partitionId = partitionId;
+    this.memberGroupProvider = memberGroupProvider;
   }
 
   @Override
@@ -56,12 +63,20 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
 
   @Override
   public NodeId primary() {
-    return election.getTerm().join().primary();
+    return election.getTerm()
+        .join()
+        .primary()
+        .nodeId();
   }
 
   @Override
   public Collection<NodeId> backups() {
-    return election.getTerm().join().backups();
+    return election.getTerm()
+        .join()
+        .candidates()
+        .stream()
+        .map(Member::nodeId)
+        .collect(Collectors.toList());
   }
 
   /**
@@ -85,7 +100,11 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
       PartitionManagementService managementService,
       ThreadContextFactory threadFactory) {
     election = managementService.getElectionService().getElectionFor(partitionId);
-    server = new PrimaryBackupPartitionServer(this, managementService, threadFactory);
+    server = new PrimaryBackupPartitionServer(
+        this,
+        managementService,
+        memberGroupProvider,
+        threadFactory);
     client = new PrimaryBackupPartitionClient(this, managementService, threadFactory);
     return server.start().thenCompose(v -> client.start()).thenApply(v -> this);
   }

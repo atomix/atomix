@@ -249,7 +249,11 @@ public class DefaultServiceExecutor implements ServiceExecutor {
      * Executes the task.
      */
     private synchronized void execute() {
-      callback.run();
+      try {
+        callback.run();
+      } catch (Exception e) {
+        log.error("An exception occurred in a scheduled task", e);
+      }
     }
 
     @Override

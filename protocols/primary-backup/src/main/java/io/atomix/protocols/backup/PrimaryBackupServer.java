@@ -18,7 +18,9 @@ package io.atomix.protocols.backup;
 import io.atomix.cluster.ClusterService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PrimaryElection;
+import io.atomix.primitive.partition.impl.DefaultMemberGroupService;
 import io.atomix.protocols.backup.impl.PrimaryBackupServerContext;
 import io.atomix.protocols.backup.protocol.PrimaryBackupServerProtocol;
 import io.atomix.utils.Managed;
@@ -29,7 +31,6 @@ import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -70,7 +71,6 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
   }
 
   private final PrimaryBackupServerContext context;
-  private final AtomicBoolean open = new AtomicBoolean();
 
   public PrimaryBackupServer(PrimaryBackupServerContext context) {
     this.context = checkNotNull(context, "context cannot be null");
@@ -87,21 +87,17 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
 
   @Override
   public CompletableFuture<PrimaryBackupServer> start() {
-    context.open();
-    open.set(true);
-    return CompletableFuture.completedFuture(this);
+    return context.start().thenApply(v -> this);
   }
 
   @Override
   public boolean isRunning() {
-    return open.get();
+    return context.isRunning();
   }
 
   @Override
   public CompletableFuture<Void> stop() {
-    open.set(false);
-    context.close();
-    return CompletableFuture.completedFuture(null);
+    return context.stop();
   }
 
   /**
@@ -113,6 +109,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     protected PrimaryBackupServerProtocol protocol;
     protected PrimaryElection primaryElection;
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
+    protected MemberGroupProvider memberGroupProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
     protected ThreadContextFactory threadContextFactory;
@@ -187,6 +184,17 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     }
 
     /**
+     * Sets the member group provider.
+     *
+     * @param memberGroupProvider the member group provider
+     * @return the partition group builder
+     */
+    public Builder withMemberGroupProvider(MemberGroupProvider memberGroupProvider) {
+      this.memberGroupProvider = checkNotNull(memberGroupProvider);
+      return this;
+    }
+
+    /**
      * Sets the client thread model.
      *
      * @param threadModel the client thread model
@@ -234,6 +242,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
       return new PrimaryBackupServer(new PrimaryBackupServerContext(
           serverName,
           clusterService,
+          new DefaultMemberGroupService(clusterService, memberGroupProvider),
           protocol,
           threadContextFactory,
           primitiveTypes,

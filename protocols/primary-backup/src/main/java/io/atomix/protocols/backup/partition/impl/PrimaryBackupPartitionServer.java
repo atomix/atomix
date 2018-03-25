@@ -16,6 +16,7 @@
 package io.atomix.protocols.backup.partition.impl;
 
 import io.atomix.cluster.Node;
+import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.backup.PrimaryBackupServer;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
@@ -36,6 +37,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
+  private final MemberGroupProvider memberGroupProvider;
   private final ThreadContextFactory threadFactory;
   private PrimaryBackupServer server;
   private final AtomicBoolean started = new AtomicBoolean();
@@ -43,9 +45,11 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   public PrimaryBackupPartitionServer(
       PrimaryBackupPartition partition,
       PartitionManagementService managementService,
+      MemberGroupProvider memberGroupProvider,
       ThreadContextFactory threadFactory) {
     this.partition = partition;
     this.managementService = managementService;
+    this.memberGroupProvider = memberGroupProvider;
     this.threadFactory = threadFactory;
   }
 
@@ -56,7 +60,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
       synchronized (this) {
         server = buildServer();
       }
-      return server.start().thenApply(v -> {
+      return server.start().thenApply(s -> {
         log.info("Successfully started server for {}", partition.id());
         started.set(true);
         return this;
@@ -75,6 +79,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
     return PrimaryBackupServer.builder()
         .withServerName(partition.name())
         .withClusterService(managementService.getClusterService())
+        .withMemberGroupProvider(memberGroupProvider)
         .withProtocol(new PrimaryBackupServerCommunicator(
             partition.name(),
             Serializer.using(PrimaryBackupNamespaces.PROTOCOL),

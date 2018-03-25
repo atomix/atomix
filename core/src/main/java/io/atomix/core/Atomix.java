@@ -29,7 +29,6 @@ import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
-import io.atomix.core.election.impl.LeaderElectorPrimaryElectionService;
 import io.atomix.core.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.core.impl.CorePrimitivesService;
 import io.atomix.core.transaction.TransactionBuilder;
@@ -41,15 +40,20 @@ import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionManagementService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
+import io.atomix.primitive.partition.impl.DefaultPrimaryElectionService;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
+import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -60,6 +64,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -211,7 +216,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   public synchronized CompletableFuture<Atomix> start() {
     if (closeFuture != null) {
       return Futures.exceptionalFuture(new IllegalStateException("Atomix instance " +
-              (closeFuture.isDone() ? "shutdown" : "shutting down")));
+          (closeFuture.isDone() ? "shutdown" : "shutting down")));
     }
     if (openFuture != null) {
       return openFuture;
@@ -225,7 +230,16 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> systemPartitionGroup.open(
             new DefaultPartitionManagementService(metadataService, clusterService, clusterMessagingService, primitiveTypes, null, null)), context)
         .thenComposeAsync(v -> {
-          ManagedPrimaryElectionService electionService = new LeaderElectorPrimaryElectionService(systemPartitionGroup);
+          ManagedPrimaryElectionService electionService = new DefaultPrimaryElectionService(
+              systemPartitionGroup,
+              RaftProtocol.builder()
+                  .withMinTimeout(Duration.ofMillis(250))
+                  .withMaxTimeout(Duration.ofSeconds(5))
+                  .withReadConsistency(ReadConsistency.LINEARIZABLE)
+                  .withCommunicationStrategy(CommunicationStrategy.LEADER)
+                  .withRecoveryStrategy(Recovery.RECOVER)
+                  .withMaxRetries(5)
+                  .build());
           ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(systemPartitionGroup);
           return electionService.start()
               .thenComposeAsync(v2 -> sessionIdService.start(), context)

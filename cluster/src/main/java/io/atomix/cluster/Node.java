@@ -141,11 +141,17 @@ public class Node {
   private final NodeId id;
   private final Type type;
   private final Endpoint endpoint;
+  private final String zone;
+  private final String rack;
+  private final String host;
 
-  protected Node(NodeId id, Type type, Endpoint endpoint) {
+  protected Node(NodeId id, Type type, Endpoint endpoint, String zone, String rack, String host) {
     this.id = checkNotNull(id, "id cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
     this.endpoint = checkNotNull(endpoint, "endpoint cannot be null");
+    this.zone = zone;
+    this.rack = rack;
+    this.host = host;
   }
 
   /**
@@ -184,6 +190,33 @@ public class Node {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Returns the zone to which the node belongs.
+   *
+   * @return the zone to which the node belongs
+   */
+  public String zone() {
+    return zone;
+  }
+
+  /**
+   * Returns the rack to which the node belongs.
+   *
+   * @return the rack to which the node belongs
+   */
+  public String rack() {
+    return rack;
+  }
+
+  /**
+   * Returns the host to which the rack belongs.
+   *
+   * @return the host to which the rack belongs
+   */
+  public String host() {
+    return host;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(id);
@@ -200,6 +233,10 @@ public class Node {
         .add("id", id)
         .add("type", type)
         .add("endpoint", endpoint)
+        .add("zone", zone)
+        .add("rack", rack)
+        .add("host", host)
+        .omitNullValues()
         .toString();
   }
 
@@ -210,6 +247,9 @@ public class Node {
     protected NodeId id;
     protected Type type;
     protected Endpoint endpoint;
+    protected String zone;
+    protected String rack;
+    protected String host;
 
     protected Builder(NodeId id) {
       this.id = id;
@@ -249,12 +289,45 @@ public class Node {
       return this;
     }
 
+    /**
+     * Sets the zone to which the node belongs.
+     *
+     * @param zone the zone to which the node belongs
+     * @return the node builder
+     */
+    public Builder withZone(String zone) {
+      this.zone = zone;
+      return this;
+    }
+
+    /**
+     * Sets the rack to which the node belongs.
+     *
+     * @param rack the rack to which the node belongs
+     * @return the node builder
+     */
+    public Builder withRack(String rack) {
+      this.rack = rack;
+      return this;
+    }
+
+    /**
+     * Sets the host to which the node belongs.
+     *
+     * @param host the host to which the node belongs
+     * @return the node builder
+     */
+    public Builder withHost(String host) {
+      this.host = host;
+      return this;
+    }
+
     @Override
     public Node build() {
       if (id == null) {
         id = NodeId.from(endpoint.host().getHostName());
       }
-      return new Node(id, type, endpoint);
+      return new Node(id, type, endpoint, zone, rack, host);
     }
   }
 }

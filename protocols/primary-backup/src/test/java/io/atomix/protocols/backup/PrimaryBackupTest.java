@@ -23,8 +23,11 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Replication;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
+import io.atomix.primitive.partition.MemberGroupStrategy;
+import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.TestPrimaryElection;
+import io.atomix.primitive.partition.impl.DefaultMemberGroupService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
@@ -407,6 +410,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
         .withServerName("test")
         .withProtocol(protocolFactory.newServerProtocol(nodeId))
         .withClusterService(new TestClusterService(nodeId, nodes))
+        .withMemberGroupProvider(MemberGroupStrategy.NODE_AWARE)
         .withPrimaryElection(election)
         .addPrimitiveType(TestPrimitiveType.INSTANCE)
         .build();
@@ -451,7 +455,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     clients = new ArrayList<>();
     servers = new ArrayList<>();
     protocolFactory = new TestPrimaryBackupProtocolFactory();
-    election = new TestPrimaryElection();
+    election = new TestPrimaryElection(PartitionId.from("test", 1));
   }
 
   private static final OperationId WRITE = OperationId.command("write");

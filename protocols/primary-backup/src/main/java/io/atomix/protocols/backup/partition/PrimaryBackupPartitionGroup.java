@@ -19,6 +19,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveProtocol.Type;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
+import io.atomix.primitive.partition.MemberGroup;
+import io.atomix.primitive.partition.MemberGroupProvider;
+import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
@@ -30,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Primary-backup partition group.
@@ -63,7 +68,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   private ThreadContextFactory threadFactory;
 
   public PrimaryBackupPartitionGroup(String name, Collection<PrimaryBackupPartition> partitions) {
-    this.name = name;
+    this.name = checkNotNull(name);
     partitions.forEach(p -> {
       this.partitions.put(p.id(), p);
       this.sortedPartitionIds.add(p.id());
@@ -133,6 +138,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
    */
   public static class Builder extends PartitionGroup.Builder {
     private int numPartitions;
+    private MemberGroupProvider memberGroupProvider = MemberGroupStrategy.NODE_AWARE;
 
     protected Builder(String name) {
       super(name);
@@ -142,7 +148,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
      * Sets the number of partitions.
      *
      * @param numPartitions the number of partitions
-     * @return the cluster metadata builder
+     * @return the partition group builder
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
     public Builder withNumPartitions(int numPartitions) {
@@ -151,11 +157,52 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
       return this;
     }
 
+    /**
+     * Sets the member group provider.
+     *
+     * @param memberGroupProvider the member group provider
+     * @return the partition group builder
+     */
+    public Builder withMemberGroupProvider(MemberGroupProvider memberGroupProvider) {
+      this.memberGroupProvider = checkNotNull(memberGroupProvider, "memberGroupProvider cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the member group strategy.
+     *
+     * @param memberGroupStrategy the member group strategy
+     * @return the partition group builder
+     */
+    public Builder withMemberGroupStrategy(MemberGroupStrategy memberGroupStrategy) {
+      return withMemberGroupProvider(memberGroupStrategy);
+    }
+
+    /**
+     * Sets the member groups.
+     *
+     * @param memberGroups the member groups
+     * @return the partition group builder
+     */
+    public Builder withMemberGroups(MemberGroup... memberGroups) {
+      return withMemberGroups(Arrays.asList(memberGroups));
+    }
+
+    /**
+     * Sets the member groups.
+     *
+     * @param memberGroups the member groups
+     * @return the partition group builder
+     */
+    public Builder withMemberGroups(Collection<MemberGroup> memberGroups) {
+      return withMemberGroupProvider(nodes -> memberGroups);
+    }
+
     @Override
     public ManagedPartitionGroup build() {
       List<PrimaryBackupPartition> partitions = new ArrayList<>(numPartitions);
       for (int i = 0; i < numPartitions; i++) {
-        partitions.add(new PrimaryBackupPartition(PartitionId.from(name, i + 1)));
+        partitions.add(new PrimaryBackupPartition(PartitionId.from(name, i + 1), memberGroupProvider));
       }
       return new PrimaryBackupPartitionGroup(name, partitions);
     }

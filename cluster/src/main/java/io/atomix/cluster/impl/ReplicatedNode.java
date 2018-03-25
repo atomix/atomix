@@ -30,8 +30,16 @@ public class ReplicatedNode extends Node {
   private final LogicalTimestamp timestamp;
   private final boolean tombstone;
 
-  public ReplicatedNode(NodeId id, Type type, Endpoint endpoint, LogicalTimestamp timestamp, boolean tombstone) {
-    super(id, type, endpoint);
+  public ReplicatedNode(
+      NodeId id,
+      Type type,
+      Endpoint endpoint,
+      String zone,
+      String rack,
+      String host,
+      LogicalTimestamp timestamp,
+      boolean tombstone) {
+    super(id, type, endpoint, zone, rack, host);
     this.timestamp = checkNotNull(timestamp, "timestamp cannot be null");
     this.tombstone = tombstone;
   }

@@ -99,7 +99,13 @@ public class DefaultClusterService
   public DefaultClusterService(Node localNode, ClusterMetadataService metadataService, MessagingService messagingService) {
     this.metadataService = checkNotNull(metadataService, "metadataService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
-    this.localNode = new StatefulNode(localNode.id(), localNode.type(), localNode.endpoint());
+    this.localNode = new StatefulNode(
+        localNode.id(),
+        localNode.type(),
+        localNode.endpoint(),
+        localNode.zone(),
+        localNode.rack(),
+        localNode.host());
   }
 
   @Override
@@ -130,7 +136,12 @@ public class DefaultClusterService
           .stream()
           .filter(node -> !node.id().equals(getLocalNode().id()))
           .collect(Collectors.toSet());
-      byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(localNode.id(), localNode.type()));
+      byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
+          localNode.id(),
+          localNode.type(),
+          localNode.zone(),
+          localNode.rack(),
+          localNode.host()));
       peers.forEach((node) -> {
         sendHeartbeat(node.endpoint(), payload);
         PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
@@ -180,7 +191,13 @@ public class DefaultClusterService
   private byte[] handleHeartbeat(Endpoint endpoint, byte[] message) {
     ClusterHeartbeat heartbeat = SERIALIZER.decode(message);
     failureDetectors.computeIfAbsent(heartbeat.nodeId(), n -> new PhiAccrualFailureDetector()).report();
-    activateNode(new StatefulNode(heartbeat.nodeId(), heartbeat.nodeType(), endpoint));
+    activateNode(new StatefulNode(
+        heartbeat.nodeId(),
+        heartbeat.nodeType(),
+        endpoint,
+        heartbeat.zone(),
+        heartbeat.rack(),
+        heartbeat.host()));
     return SERIALIZER.encode(nodes.values().stream()
         .filter(node -> node.type() == Node.Type.CLIENT)
         .collect(Collectors.toList()));
@@ -196,7 +213,12 @@ public class DefaultClusterService
       nodes.put(node.id(), node);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
       post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, node));
-      sendHeartbeat(node.endpoint(), SERIALIZER.encode(new ClusterHeartbeat(localNode.id(), localNode.type())));
+      sendHeartbeat(node.endpoint(), SERIALIZER.encode(new ClusterHeartbeat(
+          localNode.id(),
+          localNode.type(),
+          localNode.zone(),
+          localNode.rack(),
+          localNode.host())));
     } else if (existingNode.getState() == State.INACTIVE) {
       existingNode.setState(State.ACTIVE);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, existingNode));
@@ -235,7 +257,13 @@ public class DefaultClusterService
         .map(node -> {
           StatefulNode existingNode = nodes.get(node.id());
           if (existingNode == null) {
-            StatefulNode newNode = new StatefulNode(node.id(), node.type(), node.endpoint());
+            StatefulNode newNode = new StatefulNode(
+                node.id(),
+                node.type(),
+                node.endpoint(),
+                node.zone(),
+                node.rack(),
+                node.host());
             nodes.put(newNode.id(), newNode);
             post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, newNode));
           }
@@ -267,7 +295,13 @@ public class DefaultClusterService
       localNode.setState(State.ACTIVE);
       nodes.put(localNode.id(), localNode);
       metadataService.getMetadata().bootstrapNodes()
-          .forEach(node -> nodes.putIfAbsent(node.id(), new StatefulNode(node.id(), node.type(), node.endpoint())));
+          .forEach(node -> nodes.putIfAbsent(node.id(), new StatefulNode(
+              node.id(),
+              node.type(),
+              node.endpoint(),
+              node.zone(),
+              node.rack(),
+              node.host())));
       messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(this::sendHeartbeats, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
       LOGGER.info("Started");

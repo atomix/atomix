@@ -97,8 +97,15 @@ public class DefaultClusterMetadataService
   private ScheduledFuture<?> metadataFuture;
 
   public DefaultClusterMetadataService(ClusterMetadata metadata, MessagingService messagingService) {
-    metadata.bootstrapNodes().forEach(node -> nodes.put(node.id(),
-        new ReplicatedNode(node.id(), node.type(), node.endpoint(), new LogicalTimestamp(0), false)));
+    metadata.bootstrapNodes().forEach(node -> nodes.put(node.id(), new ReplicatedNode(
+        node.id(),
+        node.type(),
+        node.endpoint(),
+        node.zone(),
+        node.rack(),
+        node.host(),
+        new LogicalTimestamp(0),
+        false)));
     this.messagingService = messagingService;
   }
 
@@ -116,7 +123,15 @@ public class DefaultClusterMetadataService
       ReplicatedNode replicatedNode = nodes.get(node.id());
       if (replicatedNode == null) {
         LogicalTimestamp timestamp = clock.increment();
-        replicatedNode = new ReplicatedNode(node.id(), node.type(), node.endpoint(), timestamp, false);
+        replicatedNode = new ReplicatedNode(
+            node.id(),
+            node.type(),
+            node.endpoint(),
+            node.zone(),
+            node.rack(),
+            node.host(),
+            timestamp,
+            false);
         nodes.put(replicatedNode.id(), replicatedNode);
         broadcastUpdate(new NodeUpdate(replicatedNode, timestamp));
         post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
@@ -129,7 +144,15 @@ public class DefaultClusterMetadataService
     ReplicatedNode replicatedNode = nodes.get(node.id());
     if (replicatedNode != null) {
       LogicalTimestamp timestamp = clock.increment();
-      replicatedNode = new ReplicatedNode(node.id(), node.type(), node.endpoint(), timestamp, true);
+      replicatedNode = new ReplicatedNode(
+          node.id(),
+          node.type(),
+          node.endpoint(),
+          node.zone(),
+          node.rack(),
+          node.host(),
+          timestamp,
+          true);
       nodes.put(replicatedNode.id(), replicatedNode);
       broadcastUpdate(new NodeUpdate(replicatedNode, timestamp));
       post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
@@ -262,7 +285,7 @@ public class DefaultClusterMetadataService
     List<Endpoint> nodes = this.nodes.values()
         .stream()
         .filter(replicatedNode -> !replicatedNode.tombstone() &&
-                !replicatedNode.endpoint().equals(messagingService.endpoint()))
+            !replicatedNode.endpoint().equals(messagingService.endpoint()))
         .map(Node::endpoint)
         .collect(Collectors.toList());
     Collections.shuffle(nodes);
@@ -282,7 +305,15 @@ public class DefaultClusterMetadataService
       } else if (digest.isNewerThan(node.timestamp())) {
         if (digest.tombstone()) {
           if (!node.tombstone()) {
-            nodes.put(node.id(), new ReplicatedNode(node.id(), node.type(), node.endpoint(), digest.timestamp(), true));
+            nodes.put(node.id(), new ReplicatedNode(
+                node.id(),
+                node.type(),
+                node.endpoint(),
+                node.zone(),
+                node.rack(),
+                node.host(),
+                digest.timestamp(),
+                true));
             post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
           }
         } else {
