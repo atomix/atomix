@@ -41,6 +41,13 @@ public interface PrimaryElection extends ListenerService<PrimaryElectionEvent, P
   CompletableFuture<PrimaryTerm> getTerm();
 
   /**
+   * Opens the primary election.
+   *
+   * @return a future to be completed once the first term has been received
+   */
+  CompletableFuture<Void> open();
+
+  /**
    * Closes the primary election.
    */
   void close();

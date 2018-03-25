@@ -71,6 +71,7 @@ public class LeaderElectorPrimaryElectionService implements ManagedPrimaryElecti
   public PrimaryElection getElectionFor(PartitionId partitionId) {
     return elections.computeIfAbsent(partitionId, id -> {
       PrimaryElection election = new LeaderElectorPrimaryElection(partitionId, elector);
+      election.open().join();
       election.addListener(eventListener);
       return election;
     });
