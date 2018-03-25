@@ -56,6 +56,11 @@ public class TestPrimaryElection implements PrimaryElection {
   }
 
   @Override
+  public CompletableFuture<Void> open() {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public void addListener(PrimaryElectionEventListener listener) {
     listeners.add(listener);
   }

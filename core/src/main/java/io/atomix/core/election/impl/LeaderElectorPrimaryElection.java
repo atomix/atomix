@@ -60,6 +60,11 @@ public class LeaderElectorPrimaryElection implements PrimaryElection {
     return elector.getLeadership(partitionId.toString()).thenApply(this::createTerm);
   }
 
+  @Override
+  public CompletableFuture<Void> open() {
+      return getTerm().thenAccept(term -> this.term = term);
+  }
+
   private PrimaryTerm createTerm(Leadership<NodeId> leadership) {
     NodeId leader = leadership.leader() != null ? leadership.leader().id() : null;
     return new PrimaryTerm(
