@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,21 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.utils.Managed;
+import io.atomix.messaging.Endpoint;
+
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Managed cluster metadata service.
+ * Bootstrap metadata provider.
  */
-public interface ManagedClusterMetadataService extends ClusterMetadataService, Managed<ClusterMetadataService> {
+public interface BootstrapMetadataProvider {
+
+  /**
+   * Returns a collection of endpoints from which to bootstrap the cluster.
+   *
+   * @return a collection of endpoints from which to bootstrap the cluster
+   */
+  CompletableFuture<Collection<Endpoint>> bootstrap();
+
 }

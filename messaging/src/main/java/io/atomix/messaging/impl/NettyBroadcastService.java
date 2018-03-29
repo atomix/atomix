@@ -17,9 +17,9 @@ package io.atomix.messaging.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.messaging.BroadcastService;
-import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedBroadcastService;
 import io.atomix.utils.AtomixRuntimeException;
+import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -65,29 +65,29 @@ public class NettyBroadcastService implements ManagedBroadcastService {
    * Netty broadcast service builder.
    */
   public static class Builder implements BroadcastService.Builder {
-    private Endpoint localEndpoint;
-    private Endpoint groupEndpoint;
+    private Address localAddress;
+    private Address groupAddress;
     private boolean enabled = true;
 
     /**
-     * Sets the local endpoint.
+     * Sets the local address.
      *
-     * @param endpoint the local endpoint
+     * @param address the local address
      * @return the broadcast service builder
      */
-    public Builder withLocalEndpoint(Endpoint endpoint) {
-      this.localEndpoint = checkNotNull(endpoint);
+    public Builder withLocalAddress(Address address) {
+      this.localAddress = checkNotNull(address);
       return this;
     }
 
     /**
-     * Sets the group endpoint.
+     * Sets the group address.
      *
-     * @param endpoint the group endpoint
+     * @param address the group address
      * @return the broadcast service builder
      */
-    public Builder withGroupEndpoint(Endpoint endpoint) {
-      this.groupEndpoint = checkNotNull(endpoint);
+    public Builder withGroupAddress(Address address) {
+      this.groupAddress = checkNotNull(address);
       return this;
     }
 
@@ -104,7 +104,7 @@ public class NettyBroadcastService implements ManagedBroadcastService {
 
     @Override
     public ManagedBroadcastService build() {
-      return new NettyBroadcastService(localEndpoint, groupEndpoint, enabled);
+      return new NettyBroadcastService(localAddress, groupAddress, enabled);
     }
   }
 
@@ -121,12 +121,12 @@ public class NettyBroadcastService implements ManagedBroadcastService {
   private final Set<Consumer<byte[]>> listeners = Sets.newCopyOnWriteArraySet();
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public NettyBroadcastService(Endpoint localEndpoint, Endpoint groupEndpoint, boolean enabled) {
+  public NettyBroadcastService(Address localAddress, Address groupAddress, boolean enabled) {
     this.enabled = enabled;
-    this.localAddress = new InetSocketAddress(localEndpoint.host(), groupEndpoint.port());
-    this.groupAddress = new InetSocketAddress(groupEndpoint.host(), groupEndpoint.port());
+    this.localAddress = new InetSocketAddress(localAddress.host(), groupAddress.port());
+    this.groupAddress = new InetSocketAddress(groupAddress.host(), groupAddress.port());
     try {
-      iface = NetworkInterface.getByInetAddress(localEndpoint.host());
+      iface = NetworkInterface.getByInetAddress(localAddress.address());
     } catch (SocketException e) {
       throw new AtomixRuntimeException(e);
     }

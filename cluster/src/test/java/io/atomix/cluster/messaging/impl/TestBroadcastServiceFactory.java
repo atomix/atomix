@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.messaging.impl;
 
-import io.atomix.utils.Managed;
+import com.google.common.collect.Sets;
+import io.atomix.messaging.ManagedBroadcastService;
+
+import java.util.Set;
 
 /**
- * Managed cluster metadata service.
+ * Test broadcast service factory.
  */
-public interface ManagedClusterMetadataService extends ClusterMetadataService, Managed<ClusterMetadataService> {
+public class TestBroadcastServiceFactory {
+  private final Set<TestBroadcastService> services = Sets.newCopyOnWriteArraySet();
+
+  /**
+   * Returns a new test broadcast service for the given endpoint.
+   *
+   * @return the broadcast service for the given endpoint
+   */
+  public ManagedBroadcastService newBroadcastService() {
+    return new TestBroadcastService(services);
+  }
 }

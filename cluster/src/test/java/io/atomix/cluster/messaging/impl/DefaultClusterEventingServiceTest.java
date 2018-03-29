@@ -19,8 +19,9 @@ import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
-import io.atomix.cluster.impl.TestClusterMetadataService;
+import io.atomix.cluster.impl.TestCoreMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -28,6 +29,7 @@ import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -56,28 +58,50 @@ public class DefaultClusterEventingServiceTest {
           .withAddress(bootstrapNode)
           .build());
     }
-    return ClusterMetadata.builder().withBootstrapNodes(bootstrap).build();
+    return ClusterMetadata.builder().withNodes(bootstrap).build();
   }
 
   @Test
   public void testClusterEventService() throws Exception {
-    TestMessagingServiceFactory factory = new TestMessagingServiceFactory();
+    TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
+    TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
     ClusterMetadata clusterMetadata = buildClusterMetadata(1, 1, 2, 3);
 
     Node localNode1 = buildNode(1, Node.Type.CORE);
-    MessagingService messagingService1 = factory.newMessagingService(localNode1.address()).start().join();
-    ClusterService clusterService1 = new DefaultClusterService(localNode1, new TestClusterMetadataService(clusterMetadata), messagingService1).start().join();
+    MessagingService messagingService1 = messagingServiceFactory.newMessagingService(localNode1.address()).start().join();
+    ClusterService clusterService1 = new DefaultClusterService(
+        localNode1,
+        new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
+        new TestCoreMetadataService(clusterMetadata),
+        messagingService1,
+        broadcastServiceFactory.newBroadcastService().start().join())
+        .start()
+        .join();
     ClusterEventingService eventService1 = new DefaultClusterEventingService(clusterService1, messagingService1).start().join();
 
     Node localNode2 = buildNode(2, Node.Type.CORE);
-    MessagingService messagingService2 = factory.newMessagingService(localNode2.address()).start().join();
-    ClusterService clusterService2 = new DefaultClusterService(localNode2, new TestClusterMetadataService(clusterMetadata), messagingService2).start().join();
+    MessagingService messagingService2 = messagingServiceFactory.newMessagingService(localNode2.address()).start().join();
+    ClusterService clusterService2 = new DefaultClusterService(
+        localNode2,
+        new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
+        new TestCoreMetadataService(clusterMetadata),
+        messagingService2,
+        broadcastServiceFactory.newBroadcastService().start().join())
+        .start()
+        .join();
     ClusterEventingService eventService2 = new DefaultClusterEventingService(clusterService2, messagingService2).start().join();
 
     Node localNode3 = buildNode(3, Node.Type.CORE);
-    MessagingService messagingService3 = factory.newMessagingService(localNode3.address()).start().join();
-    ClusterService clusterService3 = new DefaultClusterService(localNode3, new TestClusterMetadataService(clusterMetadata), messagingService3).start().join();
+    MessagingService messagingService3 = messagingServiceFactory.newMessagingService(localNode3.address()).start().join();
+    ClusterService clusterService3 = new DefaultClusterService(
+        localNode3,
+        new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
+        new TestCoreMetadataService(clusterMetadata),
+        messagingService3,
+        broadcastServiceFactory.newBroadcastService().start().join())
+        .start()
+        .join();
     ClusterEventingService eventService3 = new DefaultClusterEventingService(clusterService3, messagingService3).start().join();
 
     Thread.sleep(100);

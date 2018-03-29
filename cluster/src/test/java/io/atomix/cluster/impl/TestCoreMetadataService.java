@@ -17,15 +17,15 @@ package io.atomix.cluster.impl;
 
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMetadataEventListener;
-import io.atomix.cluster.ClusterMetadataService;
+import io.atomix.cluster.CoreMetadataService;
 
 /**
  * Test cluster metadata service.
  */
-public class TestClusterMetadataService implements ClusterMetadataService {
+public class TestCoreMetadataService implements CoreMetadataService {
   private final ClusterMetadata metadata;
 
-  public TestClusterMetadataService(ClusterMetadata metadata) {
+  public TestCoreMetadataService(ClusterMetadata metadata) {
     this.metadata = metadata;
   }
 
