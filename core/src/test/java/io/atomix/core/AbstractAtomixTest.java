@@ -15,12 +15,13 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.ManagedClusterMetadataService;
+import io.atomix.cluster.ManagedBootstrapMetadataService;
 import io.atomix.cluster.ManagedClusterService;
+import io.atomix.cluster.ManagedCoreMetadataService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
-import io.atomix.utils.net.Address;
+import io.atomix.messaging.ManagedBroadcastService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
@@ -64,13 +65,13 @@ public abstract class AbstractAtomixTest {
   protected static Atomix createAtomix(Node.Type type, int id, Integer... ids) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
-        .withAddress(Address.from("localhost", BASE_PORT + id))
+        .withAddress("localhost", BASE_PORT + id)
         .build();
 
-    Collection<Node> bootstrapNodes = Stream.of(ids)
+    Collection<Node> coreNodes = Stream.of(ids)
         .map(nodeId -> Node.builder(String.valueOf(nodeId))
             .withType(Node.Type.CORE)
-            .withAddress(Address.from("localhost", BASE_PORT + nodeId))
+            .withAddress("localhost", BASE_PORT + nodeId)
             .build())
         .collect(Collectors.toList());
 
@@ -78,7 +79,7 @@ public abstract class AbstractAtomixTest {
         .withClusterName("test")
         .withDataDirectory(new File("target/test-logs/" + id))
         .withLocalNode(localNode)
-        .withBootstrapNodes(bootstrapNodes)
+        .withCoreNodes(coreNodes)
         .withCorePartitions(3)
         .withDataPartitions(3) // Lower number of partitions for faster testing
         .build();
@@ -115,8 +116,30 @@ public abstract class AbstractAtomixTest {
    * Atomix implementation used for testing.
    */
   static class TestAtomix extends Atomix {
-    TestAtomix(ManagedMessagingService messagingService, ManagedClusterMetadataService metadataService, ManagedClusterService clusterService, ManagedClusterMessagingService clusterCommunicator, ManagedClusterEventingService clusterEventService, ManagedPartitionGroup corePartitionGroup, ManagedPartitionService partitions, PrimitiveTypeRegistry primitiveTypes) {
-      super(messagingService, metadataService, clusterService, clusterCommunicator, clusterEventService, corePartitionGroup, partitions, primitiveTypes, false);
+    TestAtomix(
+        ManagedMessagingService messagingService,
+        ManagedBroadcastService broadcastService,
+        ManagedBootstrapMetadataService bootstrapMetadataService,
+        ManagedCoreMetadataService coreMetadataService,
+        ManagedClusterService cluster,
+        ManagedClusterMessagingService clusterMessagingService,
+        ManagedClusterEventingService clusterEventingService,
+        ManagedPartitionGroup systemPartitionGroup,
+        ManagedPartitionService partitions,
+        PrimitiveTypeRegistry primitiveTypes,
+        boolean enableShutdownHook) {
+      super(
+          messagingService,
+          broadcastService,
+          bootstrapMetadataService,
+          coreMetadataService,
+          cluster,
+          clusterMessagingService,
+          clusterEventingService,
+          systemPartitionGroup,
+          partitions,
+          primitiveTypes,
+          enableShutdownHook);
     }
 
     static class Builder extends Atomix.Builder {

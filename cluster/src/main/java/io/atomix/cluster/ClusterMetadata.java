@@ -38,10 +38,10 @@ public class ClusterMetadata {
     return new Builder();
   }
 
-  private final Collection<Node> bootstrapNodes;
+  private final Collection<Node> nodes;
 
-  public ClusterMetadata(Collection<Node> bootstrapNodes) {
-    this.bootstrapNodes = bootstrapNodes.stream()
+  public ClusterMetadata(Collection<Node> nodes) {
+    this.nodes = nodes.stream()
         .filter(node -> node.type() == Type.CORE)
         .collect(Collectors.toSet());
   }
@@ -51,14 +51,14 @@ public class ClusterMetadata {
    *
    * @return the collection of bootstrap nodes
    */
-  public Collection<Node> bootstrapNodes() {
-    return bootstrapNodes;
+  public Collection<Node> nodes() {
+    return nodes;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("bootstrapNodes", bootstrapNodes)
+        .add("nodes", nodes)
         .toString();
   }
 
@@ -66,7 +66,7 @@ public class ClusterMetadata {
    * Cluster metadata builder.
    */
   public static class Builder implements io.atomix.utils.Builder<ClusterMetadata> {
-    protected Collection<Node> bootstrapNodes;
+    protected Collection<Node> nodes;
 
     /**
      * Sets the bootstrap nodes.
@@ -75,25 +75,25 @@ public class ClusterMetadata {
      * @return the cluster metadata builder
      * @throws NullPointerException if the bootstrap nodes are {@code null}
      */
-    public Builder withBootstrapNodes(Node... bootstrapNodes) {
-      return withBootstrapNodes(Arrays.asList(checkNotNull(bootstrapNodes)));
+    public Builder withNodes(Node... bootstrapNodes) {
+      return withNodes(Arrays.asList(checkNotNull(bootstrapNodes)));
     }
 
     /**
-     * Sets the bootstrap nodes.
+     * Sets the nodes.
      *
-     * @param bootstrapNodes the nodes from which to bootstrap the cluster
+     * @param nodes the nodes from which to the cluster
      * @return the cluster metadata builder
-     * @throws NullPointerException if the bootstrap nodes are {@code null}
+     * @throws NullPointerException if the nodes are {@code null}
      */
-    public Builder withBootstrapNodes(Collection<Node> bootstrapNodes) {
-      this.bootstrapNodes = checkNotNull(bootstrapNodes, "bootstrapNodes cannot be null");
+    public Builder withNodes(Collection<Node> nodes) {
+      this.nodes = checkNotNull(nodes, "nodes cannot be null");
       return this;
     }
 
     @Override
     public ClusterMetadata build() {
-      return new ClusterMetadata(bootstrapNodes);
+      return new ClusterMetadata(nodes);
     }
   }
 }

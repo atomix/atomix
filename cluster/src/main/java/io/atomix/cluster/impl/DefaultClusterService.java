@@ -18,19 +18,21 @@ package io.atomix.cluster.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.cluster.BootstrapMetadataService;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
-import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.CoreMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
-import io.atomix.utils.net.Address;
+import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.event.AbstractListenerManager;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -46,7 +48,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
@@ -79,16 +83,19 @@ public class DefaultClusterService
           .register(Node.State.class)
           .register(ClusterHeartbeat.class)
           .register(StatefulNode.class)
-          .register(new DefaultClusterMetadataService.AddressSerializer(), Address.class)
+          .register(new DefaultCoreMetadataService.AddressSerializer(), Address.class)
           .build("ClusterService"));
 
   private final MessagingService messagingService;
-  private final ClusterMetadataService metadataService;
+  private final BroadcastService broadcastService;
+  private final BootstrapMetadataService bootstrapMetadataService;
+  private final CoreMetadataService coreMetadataService;
   private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulNode localNode;
   private final Map<NodeId, StatefulNode> nodes = Maps.newConcurrentMap();
   private final Map<NodeId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
   private final ClusterMetadataEventListener metadataEventListener = this::handleMetadataEvent;
+  private final Consumer<byte[]> broadcastListener = this::handleBroadcastMessage;
 
   private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
@@ -96,9 +103,16 @@ public class DefaultClusterService
       namedThreads("atomix-cluster-heartbeat-receiver", LOGGER));
   private ScheduledFuture<?> heartbeatFuture;
 
-  public DefaultClusterService(Node localNode, ClusterMetadataService metadataService, MessagingService messagingService) {
-    this.metadataService = checkNotNull(metadataService, "metadataService cannot be null");
+  public DefaultClusterService(
+      Node localNode,
+      BootstrapMetadataService bootstrapMetadataService,
+      CoreMetadataService coreMetadataService,
+      MessagingService messagingService,
+      BroadcastService broadcastService) {
+    this.bootstrapMetadataService = checkNotNull(bootstrapMetadataService, "bootstrapMetadataService cannot be null");
+    this.coreMetadataService = checkNotNull(coreMetadataService, "coreMetadataService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
+    this.broadcastService = checkNotNull(broadcastService, "broadcastService cannot be null");
     this.localNode = new StatefulNode(
         localNode.id(),
         localNode.type(),
@@ -128,37 +142,57 @@ public class DefaultClusterService
   }
 
   /**
+   * Broadcasts this node's identity.
+   */
+  private void broadcastIdentity() {
+    broadcastService.broadcast(SERIALIZER.encode(localNode));
+  }
+
+  /**
+   * Handles a broadcast message.
+   */
+  private void handleBroadcastMessage(byte[] message) {
+    StatefulNode node = SERIALIZER.decode(message);
+    if (nodes.putIfAbsent(node.id(), node) == null) {
+      post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
+      post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, node));
+      sendHeartbeats();
+    }
+  }
+
+  /**
    * Sends heartbeats to all peers.
    */
   private void sendHeartbeats() {
-    try {
-      Set<StatefulNode> peers = nodes.values()
-          .stream()
-          .filter(node -> !node.id().equals(getLocalNode().id()))
-          .collect(Collectors.toSet());
-      byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
-          localNode.id(),
-          localNode.type(),
-          localNode.zone(),
-          localNode.rack(),
-          localNode.host()));
-      peers.forEach((node) -> {
-        sendHeartbeat(node.address(), payload);
-        PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
-        double phi = failureDetector.phi();
-        if (phi >= phiFailureThreshold || System.currentTimeMillis() - failureDetector.lastUpdated() > DEFAULT_FAILURE_TIME) {
-          if (node.getState() == State.ACTIVE) {
-            deactivateNode(node);
-          }
-        } else {
-          if (node.getState() == State.INACTIVE) {
-            activateNode(node);
-          }
+    Set<Node> peers = Stream.concat(
+        nodes.values()
+            .stream()
+            .filter(node -> !node.id().equals(getLocalNode().id())),
+        bootstrapMetadataService.getMetadata()
+            .nodes()
+            .stream()
+            .filter(node -> !node.id().equals(getLocalNode().id())))
+        .collect(Collectors.toSet());
+    byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
+        localNode.id(),
+        localNode.type(),
+        localNode.zone(),
+        localNode.rack(),
+        localNode.host()));
+    peers.forEach((node) -> {
+      sendHeartbeat(node.address(), payload);
+      PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
+      double phi = failureDetector.phi();
+      if (phi >= phiFailureThreshold || System.currentTimeMillis() - failureDetector.lastUpdated() > DEFAULT_FAILURE_TIME) {
+        if (node.getState() == State.ACTIVE) {
+          deactivateNode(node);
         }
-      });
-    } catch (Exception e) {
-      LOGGER.debug("Failed to send heartbeat", e);
-    }
+      } else {
+        if (node.getState() == State.INACTIVE) {
+          activateNode(node);
+        }
+      }
+    });
   }
 
   /**
@@ -206,13 +240,20 @@ public class DefaultClusterService
   /**
    * Activates the given node.
    */
-  private void activateNode(StatefulNode node) {
+  private void activateNode(Node node) {
     StatefulNode existingNode = nodes.get(node.id());
     if (existingNode == null) {
-      node.setState(State.ACTIVE);
-      nodes.put(node.id(), node);
-      post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
-      post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, node));
+      StatefulNode statefulNode = new StatefulNode(
+          node.id(),
+          node.type(),
+          node.address(),
+          node.zone(),
+          node.rack(),
+          node.host());
+      statefulNode.setState(State.ACTIVE);
+      nodes.put(statefulNode.id(), statefulNode);
+      post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, statefulNode));
+      post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, statefulNode));
       sendHeartbeat(node.address(), SERIALIZER.encode(new ClusterHeartbeat(
           localNode.id(),
           localNode.type(),
@@ -228,7 +269,7 @@ public class DefaultClusterService
   /**
    * Deactivates the given node.
    */
-  private void deactivateNode(StatefulNode node) {
+  private void deactivateNode(Node node) {
     StatefulNode existingNode = nodes.get(node.id());
     if (existingNode != null && existingNode.getState() == State.ACTIVE) {
       existingNode.setState(State.INACTIVE);
@@ -253,7 +294,7 @@ public class DefaultClusterService
   private void handleMetadataEvent(ClusterMetadataEvent event) {
     // Iterate through all bootstrap nodes and add any missing data nodes, triggering NODE_ADDED events.
     // Collect the bootstrap node IDs into a set.
-    Set<NodeId> bootstrapNodes = event.subject().bootstrapNodes().stream()
+    Set<NodeId> bootstrapNodes = event.subject().nodes().stream()
         .map(node -> {
           StatefulNode existingNode = nodes.get(node.id());
           if (existingNode == null) {
@@ -291,10 +332,11 @@ public class DefaultClusterService
   @Override
   public CompletableFuture<ClusterService> start() {
     if (started.compareAndSet(false, true)) {
-      metadataService.addListener(metadataEventListener);
+      bootstrapMetadataService.addListener(metadataEventListener);
+      broadcastService.addListener(broadcastListener);
       localNode.setState(State.ACTIVE);
       nodes.put(localNode.id(), localNode);
-      metadataService.getMetadata().bootstrapNodes()
+      coreMetadataService.getMetadata().nodes()
           .forEach(node -> nodes.putIfAbsent(node.id(), new StatefulNode(
               node.id(),
               node.type(),
@@ -303,7 +345,10 @@ public class DefaultClusterService
               node.rack(),
               node.host())));
       messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
-      heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(this::sendHeartbeats, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
+      heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(() -> {
+        broadcastIdentity();
+        sendHeartbeats();
+      }, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
       LOGGER.info("Started");
     }
     return CompletableFuture.completedFuture(this);
@@ -323,7 +368,7 @@ public class DefaultClusterService
       nodes.clear();
       heartbeatFuture.cancel(true);
       messagingService.unregisterHandler(HEARTBEAT_MESSAGE);
-      metadataService.removeListener(metadataEventListener);
+      bootstrapMetadataService.removeListener(metadataEventListener);
       LOGGER.info("Stopped");
     }
     return CompletableFuture.completedFuture(null);

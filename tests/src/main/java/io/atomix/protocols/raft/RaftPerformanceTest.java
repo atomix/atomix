@@ -19,9 +19,10 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
-import io.atomix.cluster.impl.DefaultClusterMetadataService;
+import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
-import io.atomix.utils.net.Address;
+import io.atomix.cluster.impl.DefaultCoreMetadataService;
+import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
@@ -93,6 +94,7 @@ import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.ThreadModel;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
@@ -477,9 +479,12 @@ public class RaftPerformanceTest implements Runnable {
     RaftServer.Builder builder = RaftServer.builder(node.id())
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
-        .withClusterService(new DefaultClusterService(node, new DefaultClusterMetadataService(ClusterMetadata.builder()
-            .withBootstrapNodes(members)
-            .build(), messagingService), messagingService))
+        .withClusterService(new DefaultClusterService(
+            node,
+            new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
+            new DefaultCoreMetadataService(new ClusterMetadata(members), messagingService),
+            messagingService,
+            new BroadcastServiceAdapter()))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MAPPED)
             .withDirectory(new File(String.format("target/perf-logs/%s", node.id())))
@@ -677,4 +682,20 @@ public class RaftPerformanceTest implements Runnable {
     }
   }
 
+  private static class BroadcastServiceAdapter implements BroadcastService {
+    @Override
+    public void broadcast(byte[] message) {
+
+    }
+
+    @Override
+    public void addListener(Consumer<byte[]> listener) {
+
+    }
+
+    @Override
+    public void removeListener(Consumer<byte[]> listener) {
+
+    }
+  }
 }
