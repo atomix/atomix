@@ -52,6 +52,11 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
   }
 
   @Override
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
+    return newProxy(primitiveName, primitiveType, MultiPrimaryProtocol.builder().build());
+  }
+
+  @Override
   public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
     return client.newProxy(primitiveName, primitiveType, primitiveProtocol);
   }

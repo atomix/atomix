@@ -21,6 +21,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +47,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
    * @return a new Atomix instance.
    */
   protected Atomix atomix() throws Exception {
-    Atomix instance = createAtomix(Node.Type.CLIENT, id++, 1, 2, 3).start().get(10, TimeUnit.SECONDS);
+    Atomix instance = createAtomix(Node.Type.CLIENT, id++, Arrays.asList(1, 2, 3), Arrays.asList()).start().get(10, TimeUnit.SECONDS);
     instances.add(instance);
     return instance;
   }
@@ -55,9 +56,9 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   public static void setupAtomix() throws Exception {
     AbstractAtomixTest.setupAtomix();
     instances = new ArrayList<>();
-    instances.add(createAtomix(Node.Type.CORE, 1, 1, 2, 3));
-    instances.add(createAtomix(Node.Type.CORE, 2, 1, 2, 3));
-    instances.add(createAtomix(Node.Type.CORE, 3, 1, 2, 3));
+    instances.add(createAtomix(Node.Type.CORE, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Node.Type.CORE, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Node.Type.CORE, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
     List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::start).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }

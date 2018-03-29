@@ -91,6 +91,11 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
   }
 
   @Override
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
+    return newProxy(primitiveName, primitiveType, MultiPrimaryProtocol.builder().build());
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
     Supplier<PrimitiveProxy> proxyBuilder = () -> new PrimaryBackupProxy(

@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -61,8 +62,8 @@ public class AtomixTest extends AbstractAtomixTest {
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, Integer... ids) {
-    Atomix atomix = createAtomix(type, id, ids);
+  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
+    Atomix atomix = createAtomix(type, id, coreIds, bootstrapIds);
     instances.add(atomix);
     return atomix.start();
   }
@@ -71,15 +72,25 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests scaling up a cluster.
    */
   @Test
-  public void testScaleUp() throws Exception {
-    Atomix atomix1 = startAtomix(Node.Type.CORE, 1, 1).join();
-    Atomix atomix2 = startAtomix(Node.Type.CORE, 2, 1, 2).join();
-    Atomix atomix3 = startAtomix(Node.Type.CORE, 3, 1, 2, 3).join();
+  public void testScaleUpCore() throws Exception {
+    Atomix atomix1 = startAtomix(Node.Type.CORE, 1, Arrays.asList(1), Arrays.asList()).join();
+    Atomix atomix2 = startAtomix(Node.Type.CORE, 2, Arrays.asList(1, 2), Arrays.asList()).join();
+    Atomix atomix3 = startAtomix(Node.Type.CORE, 3, Arrays.asList(1, 2, 3), Arrays.asList()).join();
+  }
+
+  /**
+   * Tests scaling up a cluster.
+   */
+  @Test
+  public void testScaleUpData() throws Exception {
+    Atomix atomix1 = startAtomix(Node.Type.DATA, 1, Arrays.asList(), Arrays.asList()).join();
+    Atomix atomix2 = startAtomix(Node.Type.DATA, 2, Arrays.asList(), Arrays.asList(1)).join();
+    Atomix atomix3 = startAtomix(Node.Type.DATA, 3, Arrays.asList(), Arrays.asList(1)).join();
   }
 
   @Test
-  public void testStopStart() throws Exception {
-    Atomix atomix1 = startAtomix(Node.Type.CORE, 1, 1).join();
+  public void testStopStartCore() throws Exception {
+    Atomix atomix1 = startAtomix(Node.Type.CORE, 1, Arrays.asList(1), Arrays.asList()).join();
     atomix1.stop().join();
     try {
       atomix1.start().join();
@@ -94,11 +105,11 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests scaling down a cluster.
    */
   @Test
-  public void testScaleDown() throws Exception {
+  public void testScaleDownCore() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(Node.Type.CORE, 1, 1, 2, 3));
-    futures.add(startAtomix(Node.Type.CORE, 2, 1, 2, 3));
-    futures.add(startAtomix(Node.Type.CORE, 3, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.CORE, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
+    futures.add(startAtomix(Node.Type.CORE, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
+    futures.add(startAtomix(Node.Type.CORE, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
     Futures.allOf(futures).join();
     instances.get(0).stop().join();
     instances.get(1).stop().join();
@@ -109,17 +120,17 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests a client joining and leaving the cluster.
    */
   @Test
-  public void testClientJoinLeave() throws Exception {
+  public void testClientJoinLeaveCore() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(Node.Type.CORE, 1, 1, 2, 3));
-    futures.add(startAtomix(Node.Type.CORE, 2, 1, 2, 3));
-    futures.add(startAtomix(Node.Type.CORE, 3, 1, 2, 3));
+    futures.add(startAtomix(Node.Type.CORE, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
+    futures.add(startAtomix(Node.Type.CORE, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
+    futures.add(startAtomix(Node.Type.CORE, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
     Futures.allOf(futures).join();
 
     TestClusterEventListener dataListener = new TestClusterEventListener();
     instances.get(0).clusterService().addListener(dataListener);
 
-    Atomix client1 = startAtomix(Node.Type.CLIENT, 4, 1, 2, 3).join();
+    Atomix client1 = startAtomix(Node.Type.CLIENT, 4, Arrays.asList(1, 2, 3), Arrays.asList()).join();
 
     // client1 added to data node
     ClusterEvent event1 = dataListener.event();
@@ -132,7 +143,7 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterEventListener clientListener = new TestClusterEventListener();
     client1.clusterService().addListener(clientListener);
 
-    Atomix client2 = startAtomix(Node.Type.CLIENT, 5, 1, 2, 3).join();
+    Atomix client2 = startAtomix(Node.Type.CLIENT, 5, Arrays.asList(1, 2, 3), Arrays.asList()).join();
 
     // client2 added to data node
     ClusterEvent event2 = dataListener.event();

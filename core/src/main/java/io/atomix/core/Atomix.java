@@ -53,8 +53,13 @@ import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionManagementService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
+<<<<<<< HEAD
 import io.atomix.primitive.partition.impl.DefaultPrimaryElectionService;
+=======
+import io.atomix.primitive.partition.impl.HashBasedPrimaryElectionService;
+>>>>>>> Support bootstrapping clusters without Raft partitions.
 import io.atomix.primitive.session.ManagedSessionIdService;
+import io.atomix.primitive.session.impl.DefaultSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -248,8 +253,16 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> clusterMessagingService.start(), context)
         .thenComposeAsync(v -> clusterEventingService.start(), context)
         .thenComposeAsync(v -> systemPartitionGroup.open(
-            new DefaultPartitionManagementService(coreMetadataService, clusterService, clusterMessagingService, primitiveTypes, null, null)), context)
+            new DefaultPartitionManagementService(
+                coreMetadataService,
+                clusterService,
+                clusterMessagingService,
+                primitiveTypes,
+                new HashBasedPrimaryElectionService(clusterService),
+                new DefaultSessionIdService())),
+            context)
         .thenComposeAsync(v -> {
+<<<<<<< HEAD
           ManagedPrimaryElectionService electionService = new DefaultPrimaryElectionService(
               systemPartitionGroup,
               RaftProtocol.builder()
@@ -264,6 +277,19 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
           return electionService.start()
               .thenComposeAsync(v2 -> sessionIdService.start(), context)
               .thenApply(v2 -> new DefaultPartitionManagementService(coreMetadataService, clusterService, clusterMessagingService, primitiveTypes, electionService, sessionIdService));
+=======
+          ManagedPrimaryElectionService systemElectionService = new LeaderElectorPrimaryElectionService(systemPartitionGroup);
+          ManagedSessionIdService systemSessionIdService = new IdGeneratorSessionIdService(systemPartitionGroup);
+          return systemElectionService.start()
+              .thenComposeAsync(v2 -> systemSessionIdService.start(), context)
+              .thenApply(v2 -> new DefaultPartitionManagementService(
+                  coreMetadataService,
+                  clusterService,
+                  clusterMessagingService,
+                  primitiveTypes,
+                  systemElectionService,
+                  systemSessionIdService));
+>>>>>>> Support bootstrapping clusters without Raft partitions.
         }, context)
         .thenComposeAsync(partitionManagementService -> partitions.open((PartitionManagementService) partitionManagementService), context)
         .thenComposeAsync(v -> primitives.start(), context)
@@ -351,7 +377,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
     protected String name = DEFAULT_CLUSTER_NAME;
     protected Node localNode;
-    protected Collection<Node> coreNodes;
+    protected Collection<Node> coreNodes = Collections.emptyList();
     protected Collection<Node> bootstrapNodes = Collections.emptyList();
     protected boolean multicastEnabled = false;
     protected Address multicastAddress;
@@ -618,12 +644,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       }
 
       // If the core nodes have not been configured, default to the local node if possible.
-      if (coreNodes == null) {
-        if (localNode.type() == Node.Type.CORE) {
-          coreNodes = Collections.singleton(localNode);
-        } else {
-          throw new ConfigurationException("No core nodes configured");
-        }
+      if (coreNodes.isEmpty() && localNode.type() == Node.Type.CORE) {
+        coreNodes = Collections.singleton(localNode);
       }
 
       ManagedMessagingService messagingService = buildMessagingService();
@@ -724,10 +746,16 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds the core partition group.
      */
     protected ManagedPartitionGroup buildSystemPartitionGroup() {
-      return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
-          .withNumPartitions(1)
-          .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
-          .build();
+      if (!coreNodes.isEmpty()) {
+        return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
+            .withNumPartitions(1)
+            .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
+            .build();
+      } else {
+        return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
+            .withNumPartitions(1)
+            .build();
+      }
     }
 
     /**
@@ -735,11 +763,13 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     protected ManagedPartitionService buildPartitionService() {
       if (partitionGroups.isEmpty()) {
-        partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
-            .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
-            .withNumPartitions(numCorePartitions)
-            .withPartitionSize(corePartitionSize)
-            .build());
+        if (!coreNodes.isEmpty()) {
+          partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
+              .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
+              .withNumPartitions(numCorePartitions)
+              .withPartitionSize(corePartitionSize)
+              .build());
+        }
         partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
             .withNumPartitions(numDataPartitions)
             .build());

@@ -18,17 +18,12 @@ package io.atomix.core.generator.impl;
 import io.atomix.core.counter.impl.AtomicCounterProxy;
 import io.atomix.core.generator.AsyncAtomicIdGenerator;
 import io.atomix.core.generator.AtomicIdGeneratorType;
-import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionIdService;
-import io.atomix.protocols.raft.RaftProtocol;
-import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -58,14 +53,7 @@ public class IdGeneratorSessionIdService implements ManagedSessionIdService {
   public CompletableFuture<SessionIdService> start() {
     PrimitiveProxy proxy = partitions.getPartition(PRIMITIVE_NAME)
         .getPrimitiveClient()
-        .newProxy(PRIMITIVE_NAME, AtomicIdGeneratorType.instance(), RaftProtocol.builder()
-            .withMinTimeout(Duration.ofMillis(250))
-            .withMaxTimeout(Duration.ofSeconds(5))
-            .withReadConsistency(ReadConsistency.LINEARIZABLE)
-            .withCommunicationStrategy(CommunicationStrategy.LEADER)
-            .withRecoveryStrategy(Recovery.RECOVER)
-            .withMaxRetries(5)
-            .build());
+        .newProxy(PRIMITIVE_NAME, AtomicIdGeneratorType.instance());
     return proxy.connect()
         .thenApply(v -> {
           idGenerator = new DelegatingAtomicIdGenerator(new AtomicCounterProxy(proxy));
