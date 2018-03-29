@@ -18,14 +18,18 @@ package io.atomix.protocols.raft.partition.impl;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.Recovery;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.utils.Managed;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -65,6 +69,18 @@ public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Manag
    */
   public NodeId leader() {
     return client != null ? client.leader() : null;
+  }
+
+  @Override
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
+    return newProxy(primitiveName, primitiveType, RaftProtocol.builder()
+        .withMinTimeout(Duration.ofMillis(250))
+        .withMaxTimeout(Duration.ofSeconds(5))
+        .withReadConsistency(ReadConsistency.LINEARIZABLE)
+        .withCommunicationStrategy(CommunicationStrategy.LEADER)
+        .withRecoveryStrategy(Recovery.RECOVER)
+        .withMaxRetries(5)
+        .build());
   }
 
   @Override

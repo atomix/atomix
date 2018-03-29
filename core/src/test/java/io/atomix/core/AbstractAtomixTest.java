@@ -28,7 +28,6 @@ import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
-import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.storage.StorageLevel;
 import org.junit.AfterClass;
@@ -43,8 +42,8 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Base Atomix test.
@@ -62,13 +61,20 @@ public abstract class AbstractAtomixTest {
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(Node.Type type, int id, Integer... ids) {
+  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
         .withAddress("localhost", BASE_PORT + id)
         .build();
 
-    Collection<Node> coreNodes = Stream.of(ids)
+    Collection<Node> coreNodes = coreIds.stream()
+        .map(nodeId -> Node.builder(String.valueOf(nodeId))
+            .withType(Node.Type.CORE)
+            .withEndpoint(Endpoint.from("localhost", BASE_PORT + nodeId))
+            .build())
+        .collect(Collectors.toList());
+
+    Collection<Node> bootstrapNodes = bootstrapIds.stream()
         .map(nodeId -> Node.builder(String.valueOf(nodeId))
             .withType(Node.Type.CORE)
             .withAddress("localhost", BASE_PORT + nodeId)
@@ -80,6 +86,7 @@ public abstract class AbstractAtomixTest {
         .withDataDirectory(new File("target/test-logs/" + id))
         .withLocalNode(localNode)
         .withCoreNodes(coreNodes)
+        .withBootstrapNodes(bootstrapNodes)
         .withCorePartitions(3)
         .withDataPartitions(3) // Lower number of partitions for faster testing
         .build();
@@ -150,16 +157,23 @@ public abstract class AbstractAtomixTest {
 
       @Override
       protected ManagedPartitionGroup buildSystemPartitionGroup() {
-        return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
-            .withStorageLevel(StorageLevel.MEMORY)
-            .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
-            .withNumPartitions(1)
-            .build();
+        if (!coreNodes.isEmpty()) {
+          return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
+              .withStorageLevel(StorageLevel.MEMORY)
+              .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
+              .withNumPartitions(1)
+              .build();
+        } else {
+          return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
+              .withNumPartitions(1)
+              .build();
+        }
       }
 
       @Override
       protected ManagedPartitionService buildPartitionService() {
         if (partitionGroups.isEmpty()) {
+<<<<<<< HEAD
           partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
               .withStorageLevel(StorageLevel.MEMORY)
               .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
@@ -173,13 +187,19 @@ public abstract class AbstractAtomixTest {
           boolean hasCore = partitionGroups.stream()
               .anyMatch(group -> group.type() == RaftProtocol.TYPE);
           if (!hasCore) {
+=======
+          if (!coreNodes.isEmpty()) {
+>>>>>>> Support bootstrapping clusters without Raft partitions.
             partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
                 .withStorageLevel(StorageLevel.MEMORY)
                 .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
-                .withNumPartitions(numCorePartitions > 0 ? numCorePartitions : bootstrapNodes.size())
+                .withNumPartitions(numCorePartitions > 0 ? numCorePartitions : coreNodes.size())
                 .withPartitionSize(corePartitionSize)
                 .build());
           }
+          partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
+              .withNumPartitions(numDataPartitions)
+              .build());
         }
         return new DefaultPartitionService(partitionGroups);
       }

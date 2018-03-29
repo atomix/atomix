@@ -28,6 +28,15 @@ public interface PrimitiveClient<P extends PrimitiveProtocol> {
   /**
    * Returns a new proxy builder for the given primitive type.
    *
+   * @param primitiveName the proxy name
+   * @param primitiveType the type for which to return a new proxy builder
+   * @return a new proxy builder for the given primitive type
+   */
+  PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType);
+
+  /**
+   * Returns a new proxy builder for the given primitive type.
+   *
    * @param primitiveName     the proxy name
    * @param primitiveType     the type for which to return a new proxy builder
    * @param primitiveProtocol the primitive protocol

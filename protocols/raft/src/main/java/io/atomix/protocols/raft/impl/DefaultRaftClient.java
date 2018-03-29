@@ -25,7 +25,9 @@ import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
+import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxy;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
@@ -35,6 +37,7 @@ import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -119,6 +122,18 @@ public class DefaultRaftClient implements RaftClient {
       }
     }, threadContext);
     return future;
+  }
+
+  @Override
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
+    return newProxy(primitiveName, primitiveType, RaftProtocol.builder()
+        .withMinTimeout(Duration.ofMillis(250))
+        .withMaxTimeout(Duration.ofSeconds(5))
+        .withReadConsistency(ReadConsistency.LINEARIZABLE)
+        .withCommunicationStrategy(CommunicationStrategy.LEADER)
+        .withRecoveryStrategy(Recovery.RECOVER)
+        .withMaxRetries(5)
+        .build());
   }
 
   @Override
