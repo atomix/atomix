@@ -19,7 +19,8 @@ import com.google.common.hash.Hashing;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.MemberGroupId;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
@@ -29,7 +30,6 @@ import io.atomix.utils.event.AbstractListenerManager;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -53,7 +53,7 @@ public class HashBasedPrimaryElection
   }
 
   @Override
-  public CompletableFuture<PrimaryTerm> enter(NodeId nodeId) {
+  public CompletableFuture<PrimaryTerm> enter(Member member) {
     return CompletableFuture.completedFuture(currentTerm);
   }
 
@@ -66,28 +66,18 @@ public class HashBasedPrimaryElection
    * Recomputes the current term.
    */
   private void recomputeTerm() {
-    List<NodeId> candidates = new ArrayList<>();
+    List<Member> candidates = new ArrayList<>();
     for (Node node : clusterService.getNodes()) {
       if (node.getState() == Node.State.ACTIVE) {
-        candidates.add(node.id());
+        candidates.add(new Member(node.id(), MemberGroupId.from(node.id().id())));
       }
     }
-    Collections.sort(candidates, (a, b) -> {
-      int aoffset = Hashing.murmur3_32().hashString(a.id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
-      int boffset = Hashing.murmur3_32().hashString(b.id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
+    candidates.sort((a, b) -> {
+      int aoffset = Hashing.murmur3_32().hashString(a.nodeId().id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
+      int boffset = Hashing.murmur3_32().hashString(b.nodeId().id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
       return aoffset - boffset;
     });
     currentTerm = new PrimaryTerm(System.currentTimeMillis(), candidates.get(0), candidates.subList(1, candidates.size()));
-  }
-
-  @Override
-  public CompletableFuture<Void> open() {
-    clusterService.addListener(clusterEventListener);
-    return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public void close() {
-    clusterService.removeListener(clusterEventListener);
+    post(new PrimaryElectionEvent(PrimaryElectionEvent.Type.CHANGED, partitionId, currentTerm));
   }
 }

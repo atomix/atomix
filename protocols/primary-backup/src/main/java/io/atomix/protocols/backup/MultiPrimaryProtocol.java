@@ -172,9 +172,9 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    */
   public static class Builder extends PrimitiveProtocol.Builder {
     private Consistency consistency = Consistency.SEQUENTIAL;
-    private Replication replication = Replication.SYNCHRONOUS;
+    private Replication replication = Replication.ASYNCHRONOUS;
     private Recovery recovery = Recovery.RECOVER;
-    private int numBackups;
+    private int numBackups = 1;
     private int maxRetries = 0;
     private Duration retryDelay = Duration.ofMillis(100);
     private Executor executor;

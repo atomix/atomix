@@ -43,6 +43,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -61,7 +62,7 @@ public abstract class AbstractAtomixTest {
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
+  protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
         .withAddress("localhost", BASE_PORT + id)
@@ -88,8 +89,21 @@ public abstract class AbstractAtomixTest {
         .withCoreNodes(coreNodes)
         .withBootstrapNodes(bootstrapNodes)
         .withCorePartitions(3)
-        .withDataPartitions(3) // Lower number of partitions for faster testing
-        .build();
+        .withDataPartitions(3); // Lower number of partitions for faster testing
+  }
+
+  /**
+   * Creates an Atomix instance.
+   */
+  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
+    return createAtomix(type, id, coreIds, bootstrapIds, b -> b.build());
+  }
+
+  /**
+   * Creates an Atomix instance.
+   */
+  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds, Function<Atomix.Builder, Atomix> builderFunction) {
+    return builderFunction.apply(buildAtomix(type, id, coreIds, bootstrapIds));
   }
 
   @AfterClass
@@ -173,23 +187,7 @@ public abstract class AbstractAtomixTest {
       @Override
       protected ManagedPartitionService buildPartitionService() {
         if (partitionGroups.isEmpty()) {
-<<<<<<< HEAD
-          partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
-              .withStorageLevel(StorageLevel.MEMORY)
-              .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
-              .withNumPartitions(numCorePartitions > 0 ? numCorePartitions : bootstrapNodes.size())
-              .withPartitionSize(corePartitionSize)
-              .build());
-          partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
-              .withNumPartitions(numDataPartitions)
-              .build());
-        } else {
-          boolean hasCore = partitionGroups.stream()
-              .anyMatch(group -> group.type() == RaftProtocol.TYPE);
-          if (!hasCore) {
-=======
           if (!coreNodes.isEmpty()) {
->>>>>>> Support bootstrapping clusters without Raft partitions.
             partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
                 .withStorageLevel(StorageLevel.MEMORY)
                 .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))

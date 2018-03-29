@@ -53,11 +53,8 @@ import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionManagementService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
-<<<<<<< HEAD
 import io.atomix.primitive.partition.impl.DefaultPrimaryElectionService;
-=======
 import io.atomix.primitive.partition.impl.HashBasedPrimaryElectionService;
->>>>>>> Support bootstrapping clusters without Raft partitions.
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.impl.DefaultSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
@@ -262,23 +259,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
                 new DefaultSessionIdService())),
             context)
         .thenComposeAsync(v -> {
-<<<<<<< HEAD
-          ManagedPrimaryElectionService electionService = new DefaultPrimaryElectionService(
-              systemPartitionGroup,
-              RaftProtocol.builder()
-                  .withMinTimeout(Duration.ofMillis(250))
-                  .withMaxTimeout(Duration.ofSeconds(5))
-                  .withReadConsistency(ReadConsistency.LINEARIZABLE)
-                  .withCommunicationStrategy(CommunicationStrategy.LEADER)
-                  .withRecoveryStrategy(Recovery.RECOVER)
-                  .withMaxRetries(5)
-                  .build());
-          ManagedSessionIdService sessionIdService = new IdGeneratorSessionIdService(systemPartitionGroup);
-          return electionService.start()
-              .thenComposeAsync(v2 -> sessionIdService.start(), context)
-              .thenApply(v2 -> new DefaultPartitionManagementService(coreMetadataService, clusterService, clusterMessagingService, primitiveTypes, electionService, sessionIdService));
-=======
-          ManagedPrimaryElectionService systemElectionService = new LeaderElectorPrimaryElectionService(systemPartitionGroup);
+          ManagedPrimaryElectionService systemElectionService = new DefaultPrimaryElectionService(systemPartitionGroup);
           ManagedSessionIdService systemSessionIdService = new IdGeneratorSessionIdService(systemPartitionGroup);
           return systemElectionService.start()
               .thenComposeAsync(v2 -> systemSessionIdService.start(), context)
@@ -289,7 +270,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
                   primitiveTypes,
                   systemElectionService,
                   systemSessionIdService));
->>>>>>> Support bootstrapping clusters without Raft partitions.
         }, context)
         .thenComposeAsync(partitionManagementService -> partitions.open((PartitionManagementService) partitionManagementService), context)
         .thenComposeAsync(v -> primitives.start(), context)

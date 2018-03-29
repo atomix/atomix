@@ -17,10 +17,8 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.partition.ManagedPrimaryElection;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
-import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
@@ -54,17 +52,15 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
       .register(PrimaryElectorEvents.NAMESPACE)
       .build());
 
-  private final PartitionGroup partitions;
-  private final PrimitiveProtocol protocol;
+  private final PartitionGroup<?> partitions;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private final Consumer<PrimaryElectionEvent> eventListener = event -> listeners.forEach(l -> l.onEvent(event));
   private final Map<PartitionId, ManagedPrimaryElection> elections = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
   private PrimitiveProxy proxy;
 
-  public DefaultPrimaryElectionService(PartitionGroup partitionGroup, PrimitiveProtocol protocol) {
+  public DefaultPrimaryElectionService(PartitionGroup<?> partitionGroup) {
     this.partitions = checkNotNull(partitionGroup);
-    this.protocol = checkNotNull(protocol);
   }
 
   @Override
@@ -86,8 +82,8 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimaryElectionService> start() {
-    return ((Partition) partitions.getPartitions().iterator().next()).getPrimitiveClient()
-        .newProxy(PRIMITIVE_NAME, PrimaryElectorType.instance(), protocol)
+    return partitions.getPartitions().iterator().next().getPrimitiveClient()
+        .newProxy(PRIMITIVE_NAME, PrimaryElectorType.instance())
         .connect()
         .thenAccept(proxy -> {
           this.proxy = proxy;
