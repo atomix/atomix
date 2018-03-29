@@ -38,6 +38,7 @@ public class HashBasedPrimaryElectionService
 
   private final ClusterService clusterService;
   private final Map<PartitionId, PrimaryElection> elections = Maps.newConcurrentMap();
+  private final PrimaryElectionEventListener primaryElectionListener = this::post;
   private final AtomicBoolean started = new AtomicBoolean();
 
   public HashBasedPrimaryElectionService(ClusterService clusterService) {
@@ -48,7 +49,7 @@ public class HashBasedPrimaryElectionService
   public PrimaryElection getElectionFor(PartitionId partitionId) {
     return elections.computeIfAbsent(partitionId, id -> {
       PrimaryElection election = new HashBasedPrimaryElection(partitionId, clusterService);
-      election.open().join();
+      election.addListener(primaryElectionListener);
       return election;
     });
   }
@@ -66,7 +67,6 @@ public class HashBasedPrimaryElectionService
 
   @Override
   public CompletableFuture<Void> stop() {
-    elections.values().forEach(election -> election.close());
     started.set(false);
     return CompletableFuture.completedFuture(null);
   }

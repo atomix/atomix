@@ -18,11 +18,14 @@ package io.atomix.core;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.Node;
+import io.atomix.messaging.Endpoint;
 import io.atomix.utils.concurrent.Futures;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +33,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -63,7 +67,14 @@ public class AtomixTest extends AbstractAtomixTest {
    * Creates and starts a new test Atomix instance.
    */
   protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
-    Atomix atomix = createAtomix(type, id, coreIds, bootstrapIds);
+    return startAtomix(type, id, coreIds, bootstrapIds, b -> b.build());
+  }
+
+  /**
+   * Creates and starts a new test Atomix instance.
+   */
+  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds, Function<Atomix.Builder, Atomix> builderFunction) {
+    Atomix atomix = createAtomix(type, id, coreIds, bootstrapIds, builderFunction);
     instances.add(atomix);
     return atomix.start();
   }
@@ -86,6 +97,32 @@ public class AtomixTest extends AbstractAtomixTest {
     Atomix atomix1 = startAtomix(Node.Type.DATA, 1, Arrays.asList(), Arrays.asList()).join();
     Atomix atomix2 = startAtomix(Node.Type.DATA, 2, Arrays.asList(), Arrays.asList(1)).join();
     Atomix atomix3 = startAtomix(Node.Type.DATA, 3, Arrays.asList(), Arrays.asList(1)).join();
+  }
+
+  @Test
+  public void testDiscoverData() throws Exception {
+    Endpoint multicastEndpoint = Endpoint.from("230.0.0.1", findAvailablePort(1234));
+    Atomix atomix1 = startAtomix(Node.Type.DATA, 1, Arrays.asList(), Arrays.asList(), builder ->
+        builder.withMulticastEnabled()
+            .withMulticastEndpoint(multicastEndpoint)
+            .build())
+        .join();
+    Atomix atomix2 = startAtomix(Node.Type.DATA, 2, Arrays.asList(), Arrays.asList(), builder ->
+        builder.withMulticastEnabled()
+            .withMulticastEndpoint(multicastEndpoint)
+            .build())
+        .join();
+    Atomix atomix3 = startAtomix(Node.Type.DATA, 3, Arrays.asList(), Arrays.asList(), builder ->
+        builder.withMulticastEnabled()
+            .withMulticastEndpoint(multicastEndpoint)
+            .build())
+        .join();
+
+    Thread.sleep(1000);
+
+    assertEquals(3, atomix1.clusterService().getNodes().size());
+    assertEquals(3, atomix2.clusterService().getNodes().size());
+    assertEquals(3, atomix3.clusterService().getNodes().size());
   }
 
   @Test
@@ -170,6 +207,18 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals(ClusterEvent.Type.NODE_DEACTIVATED, event1.type());
     event1 = clientListener.event();
     assertEquals(ClusterEvent.Type.NODE_REMOVED, event1.type());
+  }
+
+  private static int findAvailablePort(int defaultPort) {
+    try {
+      ServerSocket socket = new ServerSocket(0);
+      socket.setReuseAddress(true);
+      int port = socket.getLocalPort();
+      socket.close();
+      return port;
+    } catch (IOException ex) {
+      return defaultPort;
+    }
   }
 
   private static class TestClusterEventListener implements ClusterEventListener {
