@@ -680,11 +680,11 @@ public final class LeaderRole extends ActiveRole {
     // duplicate requests aren't committed as duplicate entries in the log.
     PendingCommand existingCommand = session.getCommand(sequenceNumber);
     if (existingCommand != null) {
-      if (sequenceNumber == session.nextRequestSequence()) {
+      if (sequenceNumber <= session.nextRequestSequence()) {
         session.removeCommand(sequenceNumber);
         commitCommand(existingCommand.request(), existingCommand.future());
         session.setRequestSequence(sequenceNumber);
-        drainCommands(session);
+        drainCommands(sequenceNumber, session);
       }
       log.trace("Returning pending result for command sequence {}", sequenceNumber);
       return existingCommand.future();
@@ -737,8 +737,18 @@ public final class LeaderRole extends ActiveRole {
    *
    * @param session the session for which to drain commands
    */
-  private void drainCommands(RaftSessionContext session) {
+  private void drainCommands(long sequenceNumber, RaftSessionContext session) {
+    // First we need to drain any commands that exist in the queue *prior* to the next sequence number. This is
+    // possible if commands from the prior term are committed after a leader change.
     long nextSequence = session.nextRequestSequence();
+    for (long i = sequenceNumber + 1; i < nextSequence; i++) {
+      PendingCommand nextCommand = session.removeCommand(nextSequence);
+      if (nextCommand != null) {
+        commitCommand(nextCommand.request(), nextCommand.future());
+      }
+    }
+
+    // Finally, drain any commands that are sequenced in the session.
     PendingCommand nextCommand = session.removeCommand(nextSequence);
     while (nextCommand != null) {
       commitCommand(nextCommand.request(), nextCommand.future());
