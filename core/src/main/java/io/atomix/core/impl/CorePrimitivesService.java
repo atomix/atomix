@@ -17,15 +17,14 @@ package io.atomix.core.impl;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
-import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -66,7 +65,9 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(String name, PrimitiveType<B, P> primitiveType) {
+  public <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(
+      String name,
+      PrimitiveType<B, P> primitiveType) {
     return primitiveType.newPrimitiveBuilder(name, managementService);
   }
 

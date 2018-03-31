@@ -45,16 +45,15 @@ import static org.junit.Assert.fail;
 /**
  * Unit tests for {@link DocumentTreeProxy}.
  */
-public class DocumentTreeTest extends AbstractPrimitiveTest {
+public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
 
   protected AsyncDocumentTree<String> newTree(String name) throws Exception {
     return newTree(name, null);
   }
 
   protected AsyncDocumentTree<String> newTree(String name, Ordering ordering) throws Exception {
-    return atomix().<String>documentTreeBuilder(name)
+    return atomix().<String>documentTreeBuilder(name, protocol())
         .withOrdering(ordering)
-        .withMaxRetries(5)
         .build()
         .async();
   }

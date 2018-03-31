@@ -16,10 +16,7 @@
 package io.atomix.core.transaction;
 
 import io.atomix.core.map.ConsistentMapType;
-import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.Persistence;
-import io.atomix.primitive.Replication;
 
 /**
  * Transactional map builder.
@@ -28,20 +25,5 @@ public abstract class TransactionalMapBuilder<K, V>
     extends DistributedPrimitiveBuilder<TransactionalMapBuilder<K, V>, TransactionalMap<K, V>> {
   protected TransactionalMapBuilder(String name) {
     super(ConsistentMapType.instance(), name);
-  }
-
-  @Override
-  protected Consistency defaultConsistency() {
-    return Consistency.LINEARIZABLE;
-  }
-
-  @Override
-  protected Persistence defaultPersistence() {
-    return Persistence.PERSISTENT;
-  }
-
-  @Override
-  protected Replication defaultReplication() {
-    return Replication.SYNCHRONOUS;
   }
 }

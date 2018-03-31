@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link ConsistentTreeMapProxy}.
  */
-public class ConsistentTreeMapTest extends AbstractPrimitiveTest {
+public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
   private final String four = "hello";
   private final String three = "goodbye";
   private final String two = "foo";
@@ -458,7 +458,7 @@ public class ConsistentTreeMapTest extends AbstractPrimitiveTest {
 
   private AsyncConsistentTreeMap<String> createResource(String mapName) {
     try {
-      return atomix().<String>consistentTreeMapBuilder(mapName).build().async();
+      return atomix().<String>consistentTreeMapBuilder(mapName, protocol()).build().async();
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }

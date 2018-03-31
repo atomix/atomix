@@ -16,6 +16,7 @@
 package io.atomix.core;
 
 import io.atomix.cluster.Node;
+import io.atomix.primitive.PrimitiveProtocol;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -31,6 +32,13 @@ import java.util.stream.Collectors;
 public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   private static List<Atomix> instances;
   private static int id = 10;
+
+  /**
+   * Returns the primitive protocol with which to test.
+   *
+   * @return the protocol with which to test
+   */
+  protected abstract PrimitiveProtocol protocol();
 
   /**
    * Returns a new Atomix instance.

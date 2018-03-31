@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link io.atomix.core.map.ConsistentMap}.
  */
-public class ConsistentMapTest extends AbstractPrimitiveTest {
+public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
 
   /**
    * Tests null values.
@@ -59,7 +59,7 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
     final String barValue = "Hello bar!";
 
     AsyncConsistentMap<String, String> map = atomix()
-        .<String, String>consistentMapBuilder("testNullValues")
+        .<String, String>consistentMapBuilder("testNullValues", protocol())
         .withNullValues()
         .build().async();
 
@@ -96,7 +96,7 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
 
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testBasicMapOperationMap").build().async();
+    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testBasicMapOperationMap", protocol()).build().async();
 
     map.isEmpty().thenAccept(result -> {
       assertTrue(result);
@@ -280,7 +280,7 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapComputeOperationsMap").build().async();
+    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapComputeOperationsMap", protocol()).build().async();
 
     map.computeIfAbsent("foo", k -> value1).thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), value1);
@@ -317,7 +317,7 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapListenerMap").build().async();
+    AsyncConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapListenerMap", protocol()).build().async();
     TestMapEventListener listener = new TestMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event is received.
@@ -388,13 +388,13 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
         .withIsolation(Isolation.READ_COMMITTED)
         .build();
     transaction1.begin();
-    TransactionalMap<String, String> map1 = transaction1.<String, String>mapBuilder("test-transactional-map").build();
+    TransactionalMap<String, String> map1 = transaction1.<String, String>mapBuilder("test-transactional-map", protocol()).build();
 
     Transaction transaction2 = atomix().transactionBuilder()
         .withIsolation(Isolation.REPEATABLE_READS)
         .build();
     transaction2.begin();
-    TransactionalMap<String, String> map2 = transaction2.<String, String>mapBuilder("test-transactional-map").build();
+    TransactionalMap<String, String> map2 = transaction2.<String, String>mapBuilder("test-transactional-map", protocol()).build();
 
     assertNull(map1.get("foo"));
     assertFalse(map1.containsKey("foo"));
@@ -419,13 +419,13 @@ public class ConsistentMapTest extends AbstractPrimitiveTest {
         .withIsolation(Isolation.REPEATABLE_READS)
         .build();
     transaction3.begin();
-    TransactionalMap<String, String> map3 = transaction3.<String, String>mapBuilder("test-transactional-map").build();
+    TransactionalMap<String, String> map3 = transaction3.<String, String>mapBuilder("test-transactional-map", protocol()).build();
     assertEquals(map3.get("foo"), "bar");
     map3.put("foo", "baz");
     assertEquals(map3.get("foo"), "baz");
     assertEquals(transaction3.commit(), CommitStatus.SUCCESS);
 
-    ConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("test-transactional-map").build();
+    ConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("test-transactional-map", protocol()).build();
     assertEquals(map.get("foo").value(), "baz");
     assertEquals(map.get("bar").value(), "baz");
 

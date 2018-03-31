@@ -26,14 +26,14 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit test for {@code AtomixCounterMap}.
  */
-public class AtomicCounterMapTest extends AbstractPrimitiveTest {
+public abstract class AtomicCounterMapTest extends AbstractPrimitiveTest {
 
   /**
    * Tests basic counter map operations.
    */
   @Test
   public void testBasicCounterMapOperations() throws Throwable {
-    AsyncAtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap").build().async();
+    AsyncAtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap", protocol()).build().async();
 
     map.isEmpty().thenAccept(isEmpty -> {
       assertTrue(isEmpty);

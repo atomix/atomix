@@ -16,15 +16,8 @@
 package io.atomix.core.lock;
 
 import io.atomix.core.PrimitiveTypes;
-import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.Persistence;
-import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.Replication;
-import io.atomix.protocols.raft.RaftProtocol;
-import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -82,43 +75,5 @@ public abstract class DistributedLockBuilder
    */
   public Duration lockTimeout() {
     return lockTimeout;
-  }
-
-  @Override
-  protected Consistency defaultConsistency() {
-    return Consistency.LINEARIZABLE;
-  }
-
-  @Override
-  protected Persistence defaultPersistence() {
-    return Persistence.PERSISTENT;
-  }
-
-  @Override
-  protected Replication defaultReplication() {
-    return Replication.SYNCHRONOUS;
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    PrimitiveProtocol protocol = super.protocol();
-    if (protocol != null) {
-      return protocol;
-    }
-    return newRaftProtocol(consistency());
-  }
-
-  private PrimitiveProtocol newRaftProtocol(Consistency readConsistency) {
-    return RaftProtocol.builder()
-        .withMinTimeout(lockTimeout)
-        .withMaxTimeout(Duration.ofSeconds(5))
-        .withReadConsistency(readConsistency == Consistency.LINEARIZABLE
-            ? ReadConsistency.LINEARIZABLE
-            : ReadConsistency.SEQUENTIAL)
-        .withCommunicationStrategy(CommunicationStrategy.LEADER)
-        .withRecoveryStrategy(recovery())
-        .withMaxRetries(maxRetries())
-        .withRetryDelay(retryDelay())
-        .build();
   }
 }

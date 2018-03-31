@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public class DefaultPartitionService implements ManagedPartitionService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionService.class);
 
-  private final Map<String, ManagedPartitionGroup> groups = Maps.newConcurrentMap();
+  private final Map<String, ManagedPartitionGroup<?>> groups = Maps.newConcurrentMap();
 
   public DefaultPartitionService(Collection<ManagedPartitionGroup> groups) {
     groups.forEach(g -> this.groups.put(g.name(), g));
@@ -49,13 +49,14 @@ public class DefaultPartitionService implements ManagedPartitionService {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Collection<PartitionGroup> getPartitionGroups() {
+  public Collection<PartitionGroup<?>> getPartitionGroups() {
     return (Collection) groups.values();
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public CompletableFuture<PartitionService> open(PartitionManagementService managementService) {
-    List<CompletableFuture<ManagedPartitionGroup>> futures = groups.values().stream()
+    List<CompletableFuture> futures = groups.values().stream()
         .map(g -> g.open(managementService))
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
