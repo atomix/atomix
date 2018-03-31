@@ -57,7 +57,7 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
+    PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
     Map<PartitionId, CompletableFuture<AsyncConsistentMap<byte[], byte[]>>> maps = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {

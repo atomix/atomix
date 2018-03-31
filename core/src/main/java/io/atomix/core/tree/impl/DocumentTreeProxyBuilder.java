@@ -55,7 +55,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<DocumentTree<V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
+    PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
     Map<PartitionId, CompletableFuture<AsyncDocumentTree<V>>> trees = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {

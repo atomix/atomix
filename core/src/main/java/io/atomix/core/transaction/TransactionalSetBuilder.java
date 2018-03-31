@@ -16,10 +16,7 @@
 package io.atomix.core.transaction;
 
 import io.atomix.core.set.DistributedSetType;
-import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.Persistence;
-import io.atomix.primitive.Replication;
 
 /**
  * Transactional set builder.
@@ -28,20 +25,5 @@ public abstract class TransactionalSetBuilder<E>
     extends DistributedPrimitiveBuilder<TransactionalSetBuilder<E>, TransactionalSet<E>> {
   protected TransactionalSetBuilder(String name) {
     super(DistributedSetType.instance(), name);
-  }
-
-  @Override
-  protected Consistency defaultConsistency() {
-    return Consistency.LINEARIZABLE;
-  }
-
-  @Override
-  protected Persistence defaultPersistence() {
-    return Persistence.PERSISTENT;
-  }
-
-  @Override
-  protected Replication defaultReplication() {
-    return Replication.SYNCHRONOUS;
   }
 }

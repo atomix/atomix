@@ -44,6 +44,7 @@ import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
+import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionManagementService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
@@ -245,7 +246,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
               .thenComposeAsync(v2 -> sessionIdService.start(), context)
               .thenApply(v2 -> new DefaultPartitionManagementService(metadataService, clusterService, clusterMessagingService, primitiveTypes, electionService, sessionIdService));
         }, context)
-        .thenComposeAsync(partitionManagementService -> partitions.open(partitionManagementService), context)
+        .thenComposeAsync(partitionManagementService -> partitions.open((PartitionManagementService) partitionManagementService), context)
         .thenComposeAsync(v -> primitives.start(), context)
         .thenApplyAsync(v -> {
           metadataService.addNode(clusterService.getLocalNode());

@@ -18,13 +18,9 @@ package io.atomix.core.set.impl;
 import io.atomix.core.map.ConsistentMapBuilder;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
-import io.atomix.primitive.Consistency;
-import io.atomix.primitive.Persistence;
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.Replication;
 import io.atomix.utils.serializer.Serializer;
 
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -65,42 +61,6 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   }
 
   @Override
-  public DistributedSetBuilder<E> withConsistency(Consistency consistency) {
-    mapBuilder.withConsistency(consistency);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withPersistence(Persistence persistence) {
-    mapBuilder.withPersistence(persistence);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withReplication(Replication replication) {
-    mapBuilder.withReplication(replication);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withBackups(int numBackups) {
-    mapBuilder.withBackups(numBackups);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withMaxRetries(int maxRetries) {
-    mapBuilder.withMaxRetries(maxRetries);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withRetryDelay(Duration retryDelay) {
-    mapBuilder.withRetryDelay(retryDelay);
-    return this;
-  }
-
-  @Override
   public boolean readOnly() {
     return mapBuilder.readOnly();
   }
@@ -123,36 +83,6 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   @Override
   public PrimitiveProtocol protocol() {
     return mapBuilder.protocol();
-  }
-
-  @Override
-  public Consistency consistency() {
-    return mapBuilder.consistency();
-  }
-
-  @Override
-  public Persistence persistence() {
-    return mapBuilder.persistence();
-  }
-
-  @Override
-  public Replication replication() {
-    return mapBuilder.replication();
-  }
-
-  @Override
-  public int backups() {
-    return mapBuilder.backups();
-  }
-
-  @Override
-  public int maxRetries() {
-    return mapBuilder.maxRetries();
-  }
-
-  @Override
-  public Duration retryDelay() {
-    return mapBuilder.retryDelay();
   }
 
   @Override

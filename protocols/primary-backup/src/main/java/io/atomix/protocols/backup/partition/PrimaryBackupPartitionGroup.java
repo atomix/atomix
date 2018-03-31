@@ -17,7 +17,10 @@ package io.atomix.protocols.backup.partition;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveProtocol.Type;
+import io.atomix.primitive.Recovery;
+import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.MemberGroup;
 import io.atomix.primitive.partition.MemberGroupProvider;
@@ -84,6 +87,15 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   @Override
   public Type type() {
     return MultiPrimaryProtocol.TYPE;
+  }
+
+  @Override
+  public PrimitiveProtocol newProtocol() {
+    return MultiPrimaryProtocol.builder(name)
+        .withRecovery(Recovery.RECOVER)
+        .withBackups(2)
+        .withReplication(Replication.SYNCHRONOUS)
+        .build();
   }
 
   @Override

@@ -28,10 +28,10 @@ import static org.junit.Assert.assertTrue;
 /**
  * Raft atomic value test.
  */
-public class AtomicValueTest extends AbstractPrimitiveTest {
+public abstract class AtomicValueTest extends AbstractPrimitiveTest {
   @Test
   public void testValue() throws Exception {
-    AsyncAtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value").build().async();
+    AsyncAtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value", protocol()).build().async();
     assertNull(value.get().join());
     value.set("a").join();
     assertEquals("a", value.get().join());

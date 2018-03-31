@@ -74,6 +74,6 @@ public interface PartitionService {
    *
    * @return a collection of all partition groups
    */
-  Collection<PartitionGroup> getPartitionGroups();
+  Collection<PartitionGroup<?>> getPartitionGroups();
 
 }

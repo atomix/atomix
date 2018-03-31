@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Primitive partition group.
  */
-public interface PartitionGroup {
+public interface PartitionGroup<P extends PrimitiveProtocol> {
 
   /**
    * Returns the partition group name.
@@ -40,6 +40,13 @@ public interface PartitionGroup {
    * @return the primitive protocol type supported by the partition group
    */
   PrimitiveProtocol.Type type();
+
+  /**
+   * Returns a new primitive protocol.
+   *
+   * @return a new primitive protocol
+   */
+  P newProtocol();
 
   /**
    * Returns a partition by ID.
@@ -66,7 +73,7 @@ public interface PartitionGroup {
    *
    * @return a collection of all partitions
    */
-  Collection<Partition> getPartitions();
+  Collection<Partition<P>> getPartitions();
 
   /**
    * Returns a sorted list of partition IDs.

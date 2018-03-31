@@ -56,7 +56,7 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<LeaderElector<T>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
+    PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
     Map<PartitionId, CompletableFuture<AsyncLeaderElector<T>>> electors = Maps.newConcurrentMap();
     for (Partition partition : partitions.getPartitions()) {

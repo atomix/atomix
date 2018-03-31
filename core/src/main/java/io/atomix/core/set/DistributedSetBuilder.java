@@ -16,10 +16,7 @@
 package io.atomix.core.set;
 
 import io.atomix.core.PrimitiveTypes;
-import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.Persistence;
-import io.atomix.primitive.Replication;
 
 /**
  * Builder for distributed set.
@@ -29,20 +26,5 @@ import io.atomix.primitive.Replication;
 public abstract class DistributedSetBuilder<E> extends DistributedPrimitiveBuilder<DistributedSetBuilder<E>, DistributedSet<E>> {
   public DistributedSetBuilder(String name) {
     super(PrimitiveTypes.set(), name);
-  }
-
-  @Override
-  protected Consistency defaultConsistency() {
-    return Consistency.SEQUENTIAL;
-  }
-
-  @Override
-  protected Persistence defaultPersistence() {
-    return Persistence.EPHEMERAL;
-  }
-
-  @Override
-  protected Replication defaultReplication() {
-    return Replication.SYNCHRONOUS;
   }
 }

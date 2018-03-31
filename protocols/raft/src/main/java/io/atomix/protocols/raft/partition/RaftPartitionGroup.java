@@ -23,7 +23,9 @@ import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
+import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveProtocol.Type;
+import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
@@ -95,6 +97,14 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   @Override
   public Type type() {
     return RaftProtocol.TYPE;
+  }
+
+  @Override
+  public PrimitiveProtocol newProtocol() {
+    return RaftProtocol.builder(name)
+        .withRecoveryStrategy(Recovery.RECOVER)
+        .withMaxRetries(5)
+        .build();
   }
 
   @Override

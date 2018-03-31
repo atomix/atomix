@@ -30,14 +30,14 @@ import static org.junit.Assert.assertTrue;
 /**
  * Raft lock test.
  */
-public class DistributedLockTest extends AbstractPrimitiveTest {
+public abstract class DistributedLockTest extends AbstractPrimitiveTest {
 
   /**
    * Tests locking and unlocking a lock.
    */
   @Test
   public void testLockUnlock() throws Throwable {
-    AsyncDistributedLock lock = atomix().lockBuilder("test-lock-unlock").build().async();
+    AsyncDistributedLock lock = atomix().lockBuilder("test-lock-unlock", protocol()).build().async();
     lock.lock().join();
     lock.unlock().join();
   }
@@ -47,8 +47,8 @@ public class DistributedLockTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testReleaseOnClose() throws Throwable {
-    AsyncDistributedLock lock1 = atomix().lockBuilder("test-lock-on-close").build().async();
-    AsyncDistributedLock lock2 = atomix().lockBuilder("test-lock-on-close").build().async();
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-lock-on-close", protocol()).build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-lock-on-close", protocol()).build().async();
     lock1.lock().join();
     CompletableFuture<Version> future = lock2.lock();
     lock1.close();
@@ -60,8 +60,8 @@ public class DistributedLockTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testTryLockFail() throws Throwable {
-    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail").build().async();
-    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail").build().async();
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail", protocol()).build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail", protocol()).build().async();
 
     lock1.lock().join();
 
@@ -73,7 +73,7 @@ public class DistributedLockTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testTryLockSucceed() throws Throwable {
-    AsyncDistributedLock lock = atomix().lockBuilder("test-try-lock-succeed").build().async();
+    AsyncDistributedLock lock = atomix().lockBuilder("test-try-lock-succeed", protocol()).build().async();
     assertTrue(lock.tryLock().join().isPresent());
   }
 
@@ -82,8 +82,8 @@ public class DistributedLockTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testTryLockFailWithTimeout() throws Throwable {
-    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail-with-timeout").build().async();
-    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail-with-timeout").build().async();
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail-with-timeout", protocol()).build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail-with-timeout", protocol()).build().async();
 
     lock1.lock().join();
 
@@ -95,8 +95,8 @@ public class DistributedLockTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testTryLockSucceedWithTimeout() throws Throwable {
-    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-succeed-with-timeout").build().async();
-    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-succeed-with-timeout").build().async();
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-succeed-with-timeout", protocol()).build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-succeed-with-timeout", protocol()).build().async();
 
     lock1.lock().join();
 
@@ -110,8 +110,8 @@ public class DistributedLockTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testBlockingUnlock() throws Throwable {
-    AsyncDistributedLock lock1 = atomix().lockBuilder("test-blocking-unlock").build().async();
-    AsyncDistributedLock lock2 = atomix().lockBuilder("test-blocking-unlock").build().async();
+    AsyncDistributedLock lock1 = atomix().lockBuilder("test-blocking-unlock", protocol()).build().async();
+    AsyncDistributedLock lock2 = atomix().lockBuilder("test-blocking-unlock", protocol()).build().async();
 
     lock1.lock().thenRun(() -> {
       lock1.unlock().join();

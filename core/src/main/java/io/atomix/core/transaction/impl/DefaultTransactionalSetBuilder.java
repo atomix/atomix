@@ -19,6 +19,7 @@ import io.atomix.core.transaction.TransactionalMapBuilder;
 import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -31,6 +32,12 @@ public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E
   public DefaultTransactionalSetBuilder(String name, PrimitiveManagementService managementService, DefaultTransaction transaction) {
     super(name);
     this.mapBuilder = new DefaultTransactionalMapBuilder<>(name, managementService, transaction);
+  }
+
+  @Override
+  public TransactionalSetBuilder<E> withProtocol(PrimitiveProtocol protocol) {
+    mapBuilder.withProtocol(protocol);
+    return this;
   }
 
   @Override

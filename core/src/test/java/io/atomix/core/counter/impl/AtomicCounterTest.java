@@ -27,10 +27,10 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link AtomicCounterProxy}.
  */
-public class AtomicCounterTest extends AbstractPrimitiveTest {
+public abstract class AtomicCounterTest extends AbstractPrimitiveTest {
   @Test
   public void testBasicOperations() throws Throwable {
-    AsyncAtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations").build().async();
+    AsyncAtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations", protocol()).build().async();
     assertEquals(0, along.get().join().longValue());
     assertEquals(1, along.incrementAndGet().join().longValue());
     along.set(100).join();

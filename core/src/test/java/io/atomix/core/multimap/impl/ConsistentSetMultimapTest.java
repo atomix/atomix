@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the {@link ConsistentSetMultimapProxy}.
  */
-public class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
+public abstract class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
   private final String one = "hello";
   private final String two = "goodbye";
   private final String three = "foo";
@@ -373,7 +373,7 @@ public class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
 
   private AsyncConsistentMultimap<String, String> createResource(String mapName) {
     try {
-      return atomix().<String, String>consistentMultimapBuilder(mapName).build().async();
+      return atomix().<String, String>consistentMultimapBuilder(mapName, protocol()).build().async();
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }

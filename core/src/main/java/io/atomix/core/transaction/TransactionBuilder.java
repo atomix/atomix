@@ -15,10 +15,7 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.primitive.Consistency;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.Persistence;
-import io.atomix.primitive.Replication;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -30,21 +27,6 @@ public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<Tra
 
   protected TransactionBuilder(String name) {
     super(TransactionType.instance(), name);
-  }
-
-  @Override
-  protected Consistency defaultConsistency() {
-    return Consistency.LINEARIZABLE;
-  }
-
-  @Override
-  protected Persistence defaultPersistence() {
-    return Persistence.PERSISTENT;
-  }
-
-  @Override
-  protected Replication defaultReplication() {
-    return Replication.SYNCHRONOUS;
   }
 
   /**

@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.partition.ManagedPrimaryElection;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
+import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
@@ -85,7 +86,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimaryElectionService> start() {
-    return partitions.getPartitions().iterator().next().getPrimitiveClient()
+    return ((Partition) partitions.getPartitions().iterator().next()).getPrimitiveClient()
         .newProxy(PRIMITIVE_NAME, PrimaryElectorType.instance(), protocol)
         .connect()
         .thenAccept(proxy -> {
