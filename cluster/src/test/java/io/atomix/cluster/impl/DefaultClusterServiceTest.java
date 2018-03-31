@@ -41,7 +41,7 @@ public class DefaultClusterServiceTest {
   private Node buildNode(int nodeId, Node.Type type) {
     return Node.builder(String.valueOf(nodeId))
         .withType(type)
-        .withAddress(nodeId)
+        .withAddress("localhost", nodeId)
         .build();
   }
 
@@ -50,7 +50,7 @@ public class DefaultClusterServiceTest {
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
           .withType(Node.Type.CORE)
-          .withAddress(bootstrapNode)
+          .withAddress("localhost", bootstrapNode)
           .build());
     }
     return ClusterMetadata.builder().withNodes(bootstrap).build();

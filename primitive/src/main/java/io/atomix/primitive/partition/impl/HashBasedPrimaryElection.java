@@ -42,12 +42,14 @@ public class HashBasedPrimaryElection
 
   private final PartitionId partitionId;
   private final ClusterService clusterService;
+  private final HashBasedPrimaryElectionService electionService;
   private final ClusterEventListener clusterEventListener = e -> recomputeTerm();
   private volatile PrimaryTerm currentTerm;
 
-  public HashBasedPrimaryElection(PartitionId partitionId, ClusterService clusterService) {
+  public HashBasedPrimaryElection(PartitionId partitionId, ClusterService clusterService, HashBasedPrimaryElectionService electionService) {
     this.partitionId = partitionId;
     this.clusterService = clusterService;
+    this.electionService = electionService;
     recomputeTerm();
     clusterService.addListener(clusterEventListener);
   }
@@ -77,7 +79,7 @@ public class HashBasedPrimaryElection
       int boffset = Hashing.murmur3_32().hashString(b.nodeId().id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
       return aoffset - boffset;
     });
-    currentTerm = new PrimaryTerm(System.currentTimeMillis(), candidates.get(0), candidates.subList(1, candidates.size()));
+    currentTerm = new PrimaryTerm(electionService.incrementTerm(), candidates.get(0), candidates.subList(1, candidates.size()));
     post(new PrimaryElectionEvent(PrimaryElectionEvent.Type.CHANGED, partitionId, currentTerm));
   }
 }

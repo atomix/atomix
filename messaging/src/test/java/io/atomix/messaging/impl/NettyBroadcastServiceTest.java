@@ -15,15 +15,14 @@
  */
 package io.atomix.messaging.impl;
 
-import io.atomix.messaging.Endpoint;
 import io.atomix.messaging.ManagedBroadcastService;
+import io.atomix.utils.net.Address;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 
 /**
@@ -34,9 +33,9 @@ public class NettyBroadcastServiceTest extends ConcurrentTestCase {
   ManagedBroadcastService netty1;
   ManagedBroadcastService netty2;
 
-  Endpoint localEndpoint1;
-  Endpoint localEndpoint2;
-  Endpoint groupEndpoint;
+  Address localAddress1;
+  Address localAddress2;
+  Address groupAddress;
 
   @Test
   public void testBroadcast() throws Exception {
@@ -51,20 +50,20 @@ public class NettyBroadcastServiceTest extends ConcurrentTestCase {
 
   @Before
   public void setUp() throws Exception {
-    localEndpoint1 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5001));
-    localEndpoint2 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5001));
-    groupEndpoint = new Endpoint(InetAddress.getByName("230.0.0.1"), findAvailablePort(1234));
+    localAddress1 = Address.from("127.0.0.1", findAvailablePort(5001));
+    localAddress2 = Address.from("127.0.0.1", findAvailablePort(5001));
+    groupAddress = Address.from("230.0.0.1", findAvailablePort(1234));
 
     netty1 = (ManagedBroadcastService) NettyBroadcastService.builder()
-        .withLocalEndpoint(localEndpoint1)
-        .withGroupEndpoint(groupEndpoint)
+        .withLocalAddress(localAddress1)
+        .withGroupAddress(groupAddress)
         .build()
         .start()
         .join();
 
     netty2 = (ManagedBroadcastService) NettyBroadcastService.builder()
-        .withLocalEndpoint(localEndpoint2)
-        .withGroupEndpoint(groupEndpoint)
+        .withLocalAddress(localAddress2)
+        .withGroupAddress(groupAddress)
         .build()
         .start()
         .join();

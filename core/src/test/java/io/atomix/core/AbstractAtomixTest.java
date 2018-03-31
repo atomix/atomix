@@ -71,7 +71,7 @@ public abstract class AbstractAtomixTest {
     Collection<Node> coreNodes = coreIds.stream()
         .map(nodeId -> Node.builder(String.valueOf(nodeId))
             .withType(Node.Type.CORE)
-            .withEndpoint(Endpoint.from("localhost", BASE_PORT + nodeId))
+            .withAddress("localhost", BASE_PORT + nodeId)
             .build())
         .collect(Collectors.toList());
 
