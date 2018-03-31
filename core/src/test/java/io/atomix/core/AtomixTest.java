@@ -18,8 +18,8 @@ package io.atomix.core;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.Node;
-import io.atomix.messaging.Endpoint;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.net.Address;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -101,20 +101,20 @@ public class AtomixTest extends AbstractAtomixTest {
 
   @Test
   public void testDiscoverData() throws Exception {
-    Endpoint multicastEndpoint = Endpoint.from("230.0.0.1", findAvailablePort(1234));
+    Address multicastAddress = Address.from("230.0.0.1", findAvailablePort(1234));
     Atomix atomix1 = startAtomix(Node.Type.DATA, 1, Arrays.asList(), Arrays.asList(), builder ->
         builder.withMulticastEnabled()
-            .withMulticastEndpoint(multicastEndpoint)
+            .withMulticastAddress(multicastAddress)
             .build())
         .join();
     Atomix atomix2 = startAtomix(Node.Type.DATA, 2, Arrays.asList(), Arrays.asList(), builder ->
         builder.withMulticastEnabled()
-            .withMulticastEndpoint(multicastEndpoint)
+            .withMulticastAddress(multicastAddress)
             .build())
         .join();
     Atomix atomix3 = startAtomix(Node.Type.DATA, 3, Arrays.asList(), Arrays.asList(), builder ->
         builder.withMulticastEnabled()
-            .withMulticastEndpoint(multicastEndpoint)
+            .withMulticastAddress(multicastAddress)
             .build())
         .join();
 
