@@ -22,11 +22,8 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
-import io.atomix.utils.net.Address;
 import org.junit.Test;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -38,20 +35,11 @@ import static org.junit.Assert.assertNull;
  * Default cluster service test.
  */
 public class DefaultClusterServiceTest {
-  private final InetAddress localhost;
-
-  public DefaultClusterServiceTest() {
-    try {
-      localhost = InetAddress.getByName("127.0.0.1");
-    } catch (UnknownHostException e) {
-      throw new AssertionError();
-    }
-  }
 
   private Node buildNode(int nodeId, Node.Type type) {
     return Node.builder(String.valueOf(nodeId))
         .withType(type)
-        .withAddress(new Address(localhost, nodeId))
+        .withAddress(nodeId)
         .build();
   }
 
@@ -60,7 +48,7 @@ public class DefaultClusterServiceTest {
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
           .withType(Node.Type.CORE)
-          .withAddress(new Address(localhost, bootstrapNode))
+          .withAddress(bootstrapNode)
           .build());
     }
     return ClusterMetadata.builder().withBootstrapNodes(bootstrap).build();

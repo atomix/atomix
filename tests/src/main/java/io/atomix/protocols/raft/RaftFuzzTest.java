@@ -17,7 +17,6 @@ package io.atomix.protocols.raft;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.NodeId;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
@@ -90,13 +89,12 @@ import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -558,15 +556,11 @@ public class RaftFuzzTest implements Runnable {
   private RaftServer createServer(RaftMember member) {
     RaftServerProtocol protocol;
     if (USE_NETTY) {
-      try {
-        Address address = new Address(InetAddress.getLocalHost(), ++port);
-        MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
-        messagingServices.add(messagingManager);
-        addressMap.put(member.nodeId(), address);
-        protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
+      Address address = Address.from(++port);
+      MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
+      messagingServices.add(messagingManager);
+      addressMap.put(member.nodeId(), address);
+      protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
     } else {
       protocol = protocolFactory.newServerProtocol(member.nodeId());
     }
@@ -594,7 +588,7 @@ public class RaftFuzzTest implements Runnable {
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
-      Address address = new Address(InetAddress.getLocalHost(), ++port);
+      Address address = Address.from(++port);
       MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
       addressMap.put(nodeId, address);
       protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);

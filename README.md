@@ -113,7 +113,7 @@ The builder should be configured with the local node configuration:
 ```java
 builder.withLocalNode(Node.builder("server1")
   .withType(Node.Type.DATA)
-  .withAddress(Address.from("localhost", 5000))
+  .withAddress("localhost:5000")
   .build());
 ```
 
@@ -125,15 +125,15 @@ should provide the same set of bootstrap nodes. Bootstrap nodes _must_ be `DATA`
 builder.withBootstrapNodes(
   Node.builder("server1")
     .withType(Node.Type.DATA)
-    .withAddress(Address.from("localhost", 5000))
+    .withAddress("localhost:5000")
     .build(),
   Node.builder("server2")
     .withType(Node.Type.DATA)
-    .withAddress(Address.from("localhost", 5001))
+    .withAddress("localhost:5001")
     .build(),
   Node.builder("server3")
     .withType(Node.Type.DATA)
-    .withAddress(Address.from("localhost", 5002))
+    .withAddress("localhost:5002")
     .build());
 ```
 
@@ -166,20 +166,20 @@ node builder that the node is a `CLIENT`:
 Atomix atomix = Atomix.builder()
   .withLocalNode(Node.builder("client")
     .withType(Node.Type.CLIENT)
-    .withAddress(Address.from("localhost", 5003))
+    .withAddress("localhost:5003")
     .build())
   .withBootstrapNodes(
       Node.builder("server1")
         .withType(Node.Type.DATA)
-        .withAddress(Address.from("localhost", 5000))
+        .withAddress("localhost:5000")
         .build(),
       Node.builder("server2")
         .withType(Node.Type.DATA)
-        .withAddress(Address.from("localhost", 5001))
+        .withAddress("localhost:5001")
         .build(),
       Node.builder("server3")
         .withType(Node.Type.DATA)
-        .withAddress(Address.from("localhost", 5002))
+        .withAddress("localhost:5002")
         .build())
   .build();
 

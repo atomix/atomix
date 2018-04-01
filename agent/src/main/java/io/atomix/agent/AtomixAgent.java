@@ -18,10 +18,10 @@ package io.atomix.agent;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.core.Atomix;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
+import io.atomix.utils.net.Address;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -64,7 +64,7 @@ public class AtomixAgent {
         .metavar("NAME:HOST:PORT")
         .setDefault(Node.builder("local")
             .withType(Node.Type.CORE)
-            .withAddress(new Address(InetAddress.getByName("127.0.0.1"), NettyMessagingService.DEFAULT_PORT))
+            .withAddress(Address.from(NettyMessagingService.DEFAULT_PORT))
             .build())
         .help("The local node info");
     parser.addArgument("--type", "-t")
@@ -147,16 +147,16 @@ public class AtomixAgent {
 
     atomix.start().join();
 
-    LOGGER.info("Atomix listening at {}:{}", localNode.address().ip().getHostAddress(), localNode.address().port());
+    LOGGER.info("Atomix listening at {}:{}", localNode.address().address().getHostAddress(), localNode.address().port());
 
     ManagedRestService rest = RestService.builder()
         .withAtomix(atomix)
-        .withAddress(Address.from(localNode.address().ip().getHostAddress(), httpPort))
+        .withAddress(Address.from(localNode.address().address().getHostAddress(), httpPort))
         .build();
 
     rest.start().join();
 
-    LOGGER.info("HTTP server listening at {}:{}", localNode.address().ip().getHostAddress(), httpPort);
+    LOGGER.info("HTTP server listening at {}:{}", localNode.address().address().getHostAddress(), httpPort);
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {
@@ -182,11 +182,11 @@ public class AtomixAgent {
       } catch (UnknownHostException e) {
         return NodeId.from(address[0]);
       }
-      return NodeId.from(parseAddress(address).ip().getHostName());
+      return NodeId.from(parseAddress(address).address().getHostName());
     } else {
       try {
         InetAddress.getByName(address[0]);
-        return NodeId.from(parseAddress(address).ip().getHostName());
+        return NodeId.from(parseAddress(address).address().getHostName());
       } catch (UnknownHostException e) {
         return NodeId.from(address[0]);
       }
@@ -216,11 +216,6 @@ public class AtomixAgent {
       }
       port = NettyMessagingService.DEFAULT_PORT;
     }
-
-    try {
-      return new Address(InetAddress.getByName(host), port);
-    } catch (UnknownHostException e) {
-      throw new IllegalArgumentException("Failed to resolve host", e);
-    }
+    return Address.from(host, port);
   }
 }

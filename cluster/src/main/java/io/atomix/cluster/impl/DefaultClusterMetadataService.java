@@ -379,7 +379,7 @@ public class DefaultClusterMetadataService
   static class AddressSerializer extends com.esotericsoftware.kryo.Serializer<Address> {
     @Override
     public void write(Kryo kryo, Output output, Address address) {
-      output.writeString(address.ip().getHostAddress());
+      output.writeString(address.address().getHostAddress());
       output.writeInt(address.port());
     }
 

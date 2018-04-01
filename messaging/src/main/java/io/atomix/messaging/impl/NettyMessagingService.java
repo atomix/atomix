@@ -21,10 +21,10 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingException;
 import io.atomix.messaging.MessagingService;
+import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -58,8 +58,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.MessageDigest;
@@ -141,11 +139,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     @Override
     public ManagedMessagingService build() {
       if (address == null) {
-        try {
-          address = new Address(InetAddress.getByName("127.0.0.1"), DEFAULT_PORT);
-        } catch (UnknownHostException e) {
-          throw new IllegalStateException("Failed to instantiate address", e);
-        }
+        address = Address.from(DEFAULT_PORT);
       }
       return new NettyMessagingService(name.hashCode(), address);
     }
@@ -548,7 +542,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK,
-            new WriteBufferWaterMark(10 * 32 * 1024, 10 * 64 * 1024));
+        new WriteBufferWaterMark(10 * 32 * 1024, 10 * 64 * 1024));
     bootstrap.option(ChannelOption.SO_RCVBUF, 1024 * 1024);
     bootstrap.option(ChannelOption.SO_SNDBUF, 1024 * 1024);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
@@ -558,7 +552,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     // TODO: Make this faster:
     // http://normanmaurer.me/presentations/2014-facebook-eng-netty/slides.html#37.0
     bootstrap.channel(clientChannelClass);
-    bootstrap.remoteAddress(address.ip(), address.port());
+    bootstrap.remoteAddress(address.address(), address.port());
     if (enableNettyTls) {
       bootstrap.handler(new SslClientCommunicationChannelInitializer());
     } else {
@@ -573,7 +567,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     b.option(ChannelOption.SO_REUSEADDR, true);
     b.option(ChannelOption.SO_BACKLOG, 128);
     b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK,
-            new WriteBufferWaterMark(8 * 1024, 32 * 1024));
+        new WriteBufferWaterMark(8 * 1024, 32 * 1024));
     b.childOption(ChannelOption.SO_RCVBUF, 1024 * 1024);
     b.childOption(ChannelOption.SO_SNDBUF, 1024 * 1024);
     b.childOption(ChannelOption.SO_KEEPALIVE, true);
@@ -591,11 +585,11 @@ public class NettyMessagingService implements ManagedMessagingService {
     b.bind(localAddress.port()).addListener(f -> {
       if (f.isSuccess()) {
         log.info("{} accepting incoming connections on port {}",
-            localAddress.ip(), localAddress.port());
+            localAddress.address(), localAddress.port());
         future.complete(null);
       } else {
         log.warn("{} failed to bind to port {} due to {}",
-            localAddress.ip(), localAddress.port(), f.cause());
+            localAddress.address(), localAddress.port(), f.cause());
         future.completeExceptionally(f.cause());
       }
     });
@@ -843,8 +837,8 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   private abstract class AbstractClientConnection implements ClientConnection {
     private final Cache<String, RequestMonitor> requestMonitors = CacheBuilder.newBuilder()
-            .expireAfterAccess(HISTORY_EXPIRE_MILLIS, TimeUnit.MILLISECONDS)
-            .build();
+        .expireAfterAccess(HISTORY_EXPIRE_MILLIS, TimeUnit.MILLISECONDS)
+        .build();
     final Map<Long, Callback> futures = Maps.newConcurrentMap();
     final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -864,11 +858,11 @@ public class NettyMessagingService implements ManagedMessagingService {
           RequestMonitor requestMonitor = requestMonitors.get(callback.type, RequestMonitor::new);
           long elapsedTime = currentTime - callback.time;
           if (elapsedTime > MAX_TIMEOUT_MILLIS ||
-                  (elapsedTime > MIN_TIMEOUT_MILLIS && requestMonitor.isTimedOut(elapsedTime))) {
+              (elapsedTime > MIN_TIMEOUT_MILLIS && requestMonitor.isTimedOut(elapsedTime))) {
             iterator.remove();
             requestMonitor.addReplyTime(elapsedTime);
             callback.completeExceptionally(
-                    new TimeoutException("Request timed out in " + elapsedTime + " milliseconds"));
+                new TimeoutException("Request timed out in " + elapsedTime + " milliseconds"));
           }
         } catch (ExecutionException e) {
           throw new AssertionError();

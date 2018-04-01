@@ -494,15 +494,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     public Atomix build() {
       // If the local node has not be configured, create a default node.
       if (localNode == null) {
-        try {
-          InetAddress address = getLocalAddress();
-          localNode = Node.builder(address.getHostName())
-              .withType(Node.Type.CORE)
-              .withAddress(new Address(address, NettyMessagingService.DEFAULT_PORT))
-              .build();
-        } catch (UnknownHostException e) {
-          throw new ConfigurationException("Cannot configure local node", e);
-        }
+        Address address = Address.from(NettyMessagingService.DEFAULT_PORT);
+        localNode = Node.builder(address.toString())
+            .withType(Node.Type.CORE)
+            .withAddress(address)
+            .build();
       }
 
       // If the bootstrap nodes have not been configured, default to the local node if possible.

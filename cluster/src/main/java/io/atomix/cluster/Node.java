@@ -281,6 +281,40 @@ public class Node {
     /**
      * Sets the node address.
      *
+     * @param address a host:port tuple
+     * @return the node builder
+     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+     */
+    public Builder withAddress(String address) {
+      return withAddress(Address.from(address));
+    }
+
+    /**
+     * Sets the node host/port.
+     *
+     * @param host the host name
+     * @param port the port number
+     * @return the node builder
+     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+     */
+    public Builder withAddress(String host, int port) {
+      return withAddress(Address.from(host, port));
+    }
+
+    /**
+     * Sets the node address using local host.
+     *
+     * @param port the port number
+     * @return the node builder
+     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+     */
+    public Builder withAddress(int port) {
+      return withAddress(Address.from(port));
+    }
+
+    /**
+     * Sets the node address.
+     *
      * @param address the node address
      * @return the node builder
      */
@@ -325,7 +359,7 @@ public class Node {
     @Override
     public Node build() {
       if (id == null) {
-        id = NodeId.from(address.ip().getHostName());
+        id = NodeId.from(address.address().getHostName());
       }
       return new Node(id, type, address, zone, rack, host);
     }

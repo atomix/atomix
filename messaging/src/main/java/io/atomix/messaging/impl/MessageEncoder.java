@@ -60,7 +60,7 @@ public class MessageEncoder extends MessageToByteEncoder<Object> {
   private void encodeMessage(InternalMessage message, ByteBuf out) {
     // If the address hasn't been written to the channel, write it.
     if (!addressWritten) {
-      final InetAddress senderIp = address.ip();
+      final InetAddress senderIp = address.address();
       final byte[] senderIpBytes = senderIp.getAddress();
       out.writeByte(senderIpBytes.length);
       out.writeBytes(senderIpBytes);
