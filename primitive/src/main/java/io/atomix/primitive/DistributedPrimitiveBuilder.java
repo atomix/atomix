@@ -19,7 +19,6 @@ import io.atomix.utils.Builder;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,15 +30,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <P> primitive type
  */
 public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> implements Builder<P> {
+  private static final int DEFAULT_CACHE_SIZE = 1000;
+
   private final PrimitiveType type;
   private final String name;
   private Serializer serializer;
-  private boolean readOnly = false;
-  private boolean relaxedReadConsistency = false;
   private PrimitiveProtocol protocol;
-  private int numBackups = 2;
-  private int maxRetries;
-  private Duration retryDelay = Duration.ofMillis(100);
+  private boolean cacheEnabled = false;
+  private int cacheSize = DEFAULT_CACHE_SIZE;
+  private boolean readOnly = false;
 
   public DistributedPrimitiveBuilder(PrimitiveType type, String name) {
     this.type = checkNotNull(type, "type cannot be null");
@@ -59,28 +58,6 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   }
 
   /**
-   * Disables state changing operations on the returned distributed primitive.
-   *
-   * @return this builder
-   */
-  @SuppressWarnings("unchecked")
-  public B withUpdatesDisabled() {
-    this.readOnly = true;
-    return (B) this;
-  }
-
-  /**
-   * Turns on relaxed consistency for read operations.
-   *
-   * @return this builder
-   */
-  @SuppressWarnings("unchecked")
-  public B withRelaxedReadConsistency() {
-    this.relaxedReadConsistency = true;
-    return (B) this;
-  }
-
-  /**
    * Sets the primitive protocol.
    *
    * @param protocol the primitive protocol
@@ -93,33 +70,54 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   }
 
   /**
-   * Returns if updates are disabled.
+   * Enables caching for the primitive.
    *
-   * @return {@code true} if yes; {@code false} otherwise
+   * @return the primitive builder
    */
-  public boolean readOnly() {
-    return readOnly;
+  public B withCacheEnabled() {
+    return withCacheEnabled(true);
   }
 
   /**
-   * Returns if consistency is relaxed for read operations.
+   * Sets whether caching is enabled.
    *
-   * @return {@code true} if yes; {@code false} otherwise
+   * @param cacheEnabled whether caching is enabled
+   * @return the primitive builder
    */
-  public boolean relaxedReadConsistency() {
-    return relaxedReadConsistency;
+  public B withCacheEnabled(boolean cacheEnabled) {
+    this.cacheEnabled = cacheEnabled;
+    return (B) this;
   }
 
   /**
-   * Returns the serializer.
+   * Sets the cache size.
    *
-   * @return serializer
+   * @param cacheSize the cache size
+   * @return the primitive builder
    */
-  public Serializer serializer() {
-    if (serializer == null) {
-      serializer = Serializer.using(KryoNamespaces.BASIC);
-    }
-    return serializer;
+  public B withCacheSize(int cacheSize) {
+    this.cacheSize = cacheSize;
+    return (B) this;
+  }
+
+  /**
+   * Sets the primitive to read-only.
+   *
+   * @return the primitive builder
+   */
+  public B withReadOnly() {
+    return withReadOnly(true);
+  }
+
+  /**
+   * Sets whether the primitive is read-only.
+   *
+   * @param readOnly whether the primitive is read-only
+   * @return the primitive builder
+   */
+  public B withReadOnly(boolean readOnly) {
+    this.readOnly = readOnly;
+    return (B) this;
   }
 
   /**
@@ -147,6 +145,45 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    */
   public PrimitiveProtocol protocol() {
     return protocol;
+  }
+
+  /**
+   * Returns the serializer.
+   *
+   * @return serializer
+   */
+  public Serializer serializer() {
+    if (serializer == null) {
+      serializer = Serializer.using(KryoNamespaces.BASIC);
+    }
+    return serializer;
+  }
+
+  /**
+   * Returns whether caching is enabled.
+   *
+   * @return whether caching is enabled
+   */
+  public boolean cacheEnabled() {
+    return cacheEnabled;
+  }
+
+  /**
+   * Returns the cache size.
+   *
+   * @return the cache size
+   */
+  public int cacheSize() {
+    return cacheSize;
+  }
+
+  /**
+   * Returns whether the primitive is read-only.
+   *
+   * @return whether the primitive is read-only
+   */
+  public boolean readOnly() {
+    return readOnly;
   }
 
   /**

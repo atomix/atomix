@@ -43,14 +43,20 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   }
 
   @Override
-  public DistributedSetBuilder<E> withUpdatesDisabled() {
-    mapBuilder.withUpdatesDisabled();
+  public DistributedSetBuilder<E> withCacheEnabled(boolean cacheEnabled) {
+    mapBuilder.withCacheEnabled(cacheEnabled);
     return this;
   }
 
   @Override
-  public DistributedSetBuilder<E> withRelaxedReadConsistency() {
-    mapBuilder.withRelaxedReadConsistency();
+  public DistributedSetBuilder<E> withCacheSize(int cacheSize) {
+    mapBuilder.withCacheSize(cacheSize);
+    return this;
+  }
+
+  @Override
+  public DistributedSetBuilder<E> withReadOnly(boolean readOnly) {
+    mapBuilder.withReadOnly(readOnly);
     return this;
   }
 
@@ -61,13 +67,13 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   }
 
   @Override
-  public boolean readOnly() {
-    return mapBuilder.readOnly();
+  public String name() {
+    return mapBuilder.name();
   }
 
   @Override
-  public boolean relaxedReadConsistency() {
-    return mapBuilder.relaxedReadConsistency();
+  public PrimitiveProtocol protocol() {
+    return mapBuilder.protocol();
   }
 
   @Override
@@ -76,13 +82,18 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   }
 
   @Override
-  public String name() {
-    return mapBuilder.name();
+  public boolean readOnly() {
+    return mapBuilder.readOnly();
   }
 
   @Override
-  public PrimitiveProtocol protocol() {
-    return mapBuilder.protocol();
+  public boolean cacheEnabled() {
+    return mapBuilder.cacheEnabled();
+  }
+
+  @Override
+  public int cacheSize() {
+    return mapBuilder.cacheSize();
   }
 
   @Override
