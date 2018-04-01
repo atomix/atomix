@@ -15,6 +15,7 @@
  */
 package io.atomix.utils.net;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
@@ -25,22 +26,38 @@ import java.util.Objects;
 public final class Address {
 
   /**
+   * Address type.
+   */
+  public enum Type {
+    IPV4,
+    IPV6,
+  }
+
+  /**
    * Returns the address from the given host:port string.
    *
    * @param address the address string
    * @return the address
    */
   public static Address from(String address) {
-    String[] hostAndPort = address.split(":");
-
-    if (hostAndPort.length != 2) {
+    int lastColon = address.lastIndexOf(':');
+    if (lastColon == -1) {
       throw new MalformedAddressException(address);
     }
 
-    String host = hostAndPort[0];
+    int openBracket = address.indexOf('[');
+    int closeBracket = address.indexOf(']');
+
+    String host;
+    if (openBracket != -1 && closeBracket != -1) {
+      host = address.substring(openBracket + 1, closeBracket);
+    } else {
+      host = address.substring(0, lastColon);
+    }
+
     int port;
     try {
-      port = Integer.parseInt(hostAndPort[1]);
+      port = Integer.parseInt(address.substring(lastColon + 1));
     } catch (NumberFormatException e) {
       throw new MalformedAddressException(address, e);
     }
@@ -96,11 +113,13 @@ public final class Address {
   private final String host;
   private final int port;
   private final InetAddress address;
+  private final Type type;
 
   public Address(String host, int port, InetAddress address) {
     this.host = host;
     this.port = port;
     this.address = address;
+    this.type = address instanceof Inet4Address ? Type.IPV4 : Type.IPV6;
   }
 
   /**
@@ -130,9 +149,25 @@ public final class Address {
     return address;
   }
 
+  /**
+   * Returns the address type.
+   *
+   * @return the address type
+   */
+  public Type type() {
+    return type;
+  }
+
   @Override
   public String toString() {
-    return String.format("%s:%d", host(), port());
+    switch (type) {
+      case IPV4:
+        return String.format("%s:%d", host(), port());
+      case IPV6:
+        return String.format("[%s]:%d", host(), port());
+      default:
+        throw new AssertionError();
+    }
   }
 
   @Override
