@@ -251,6 +251,11 @@ public class RaftSessionManager {
   private synchronized void resetAllIndexes() {
     Collection<RaftSessionState> sessions = Lists.newArrayList(this.sessions.values());
 
+    // If no sessions are open, skip the keep-alive.
+    if (sessions.isEmpty()) {
+      return;
+    }
+
     // Allocate session IDs, command response sequence numbers, and event index arrays.
     long[] sessionIds = new long[sessions.size()];
     long[] commandResponses = new long[sessions.size()];
