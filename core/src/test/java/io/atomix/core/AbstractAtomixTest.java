@@ -20,7 +20,7 @@ import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
@@ -64,13 +64,13 @@ public abstract class AbstractAtomixTest {
   protected static Atomix createAtomix(Node.Type type, int id, Integer... ids) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
-        .withEndpoint(Endpoint.from("localhost", BASE_PORT + id))
+        .withAddress(Address.from("localhost", BASE_PORT + id))
         .build();
 
     Collection<Node> bootstrapNodes = Stream.of(ids)
         .map(nodeId -> Node.builder(String.valueOf(nodeId))
             .withType(Node.Type.CORE)
-            .withEndpoint(Endpoint.from("localhost", BASE_PORT + nodeId))
+            .withAddress(Address.from("localhost", BASE_PORT + nodeId))
             .build())
         .collect(Collectors.toList());
 
@@ -122,7 +122,7 @@ public abstract class AbstractAtomixTest {
     static class Builder extends Atomix.Builder {
       @Override
       protected ManagedMessagingService buildMessagingService() {
-        return messagingServiceFactory.newMessagingService(localNode.endpoint());
+        return messagingServiceFactory.newMessagingService(localNode.address());
       }
 
       @Override

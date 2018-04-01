@@ -16,7 +16,7 @@
 package io.atomix.cluster.messaging;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -253,7 +253,7 @@ public interface ClusterMessagingService {
    */
   default <M> CompletableFuture<Void> subscribe(
           String subject,
-          BiConsumer<Endpoint, M> handler,
+          BiConsumer<Address, M> handler,
           Executor executor) {
     return subscribe(subject, BASIC::decode, handler, executor);
   }
@@ -287,7 +287,7 @@ public interface ClusterMessagingService {
   <M> CompletableFuture<Void> subscribe(
           String subject,
           Function<byte[], M> decoder,
-          BiConsumer<Endpoint, M> handler,
+          BiConsumer<Address, M> handler,
           Executor executor);
 
   /**

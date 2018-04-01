@@ -18,7 +18,7 @@ package io.atomix.agent;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.core.Atomix;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
@@ -45,10 +45,10 @@ public class AtomixAgent {
 
   public static void main(String[] args) throws Exception {
     ArgumentType<Node> nodeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> {
-      String[] address = parseAddress(value);
+      String[] address = parseInfo(value);
       return Node.builder(parseNodeId(address))
           .withType(Node.Type.CORE)
-          .withEndpoint(parseEndpoint(address))
+          .withAddress(parseAddress(address))
           .build();
     };
 
@@ -64,7 +64,7 @@ public class AtomixAgent {
         .metavar("NAME:HOST:PORT")
         .setDefault(Node.builder("local")
             .withType(Node.Type.CORE)
-            .withEndpoint(new Endpoint(InetAddress.getByName("127.0.0.1"), NettyMessagingService.DEFAULT_PORT))
+            .withAddress(new Address(InetAddress.getByName("127.0.0.1"), NettyMessagingService.DEFAULT_PORT))
             .build())
         .help("The local node info");
     parser.addArgument("--type", "-t")
@@ -116,7 +116,7 @@ public class AtomixAgent {
     Node.Type type = namespace.get("type");
     localNode = Node.builder(localNode.id())
         .withType(type)
-        .withEndpoint(localNode.endpoint())
+        .withAddress(localNode.address())
         .build();
 
     List<Node> bootstrap = namespace.getList("bootstrap");
@@ -144,16 +144,16 @@ public class AtomixAgent {
 
     atomix.start().join();
 
-    LOGGER.info("Atomix listening at {}:{}", localNode.endpoint().host().getHostAddress(), localNode.endpoint().port());
+    LOGGER.info("Atomix listening at {}:{}", localNode.address().ip().getHostAddress(), localNode.address().port());
 
     ManagedRestService rest = RestService.builder()
         .withAtomix(atomix)
-        .withEndpoint(Endpoint.from(localNode.endpoint().host().getHostAddress(), httpPort))
+        .withAddress(Address.from(localNode.address().ip().getHostAddress(), httpPort))
         .build();
 
     rest.start().join();
 
-    LOGGER.info("HTTP server listening at {}:{}", localNode.endpoint().host().getHostAddress(), httpPort);
+    LOGGER.info("HTTP server listening at {}:{}", localNode.address().ip().getHostAddress(), httpPort);
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {
@@ -162,7 +162,7 @@ public class AtomixAgent {
     }
   }
 
-  static String[] parseAddress(String address) {
+  static String[] parseInfo(String address) {
     String[] parsed = address.split(":");
     if (parsed.length > 3) {
       throw new IllegalArgumentException("Malformed address " + address);
@@ -179,18 +179,18 @@ public class AtomixAgent {
       } catch (UnknownHostException e) {
         return NodeId.from(address[0]);
       }
-      return NodeId.from(parseEndpoint(address).host().getHostName());
+      return NodeId.from(parseAddress(address).ip().getHostName());
     } else {
       try {
         InetAddress.getByName(address[0]);
-        return NodeId.from(parseEndpoint(address).host().getHostName());
+        return NodeId.from(parseAddress(address).ip().getHostName());
       } catch (UnknownHostException e) {
         return NodeId.from(address[0]);
       }
     }
   }
 
-  static Endpoint parseEndpoint(String[] address) {
+  static Address parseAddress(String[] address) {
     String host;
     int port;
     if (address.length == 3) {
@@ -215,7 +215,7 @@ public class AtomixAgent {
     }
 
     try {
-      return new Endpoint(InetAddress.getByName(host), port);
+      return new Address(InetAddress.getByName(host), port);
     } catch (UnknownHostException e) {
       throw new IllegalArgumentException("Failed to resolve host", e);
     }

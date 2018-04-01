@@ -23,7 +23,7 @@ import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ManagedClusterMetadataService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.concurrent.Futures;
 import org.junit.Test;
 
@@ -59,7 +59,7 @@ public class DefaultClusterMetadataServiceTest {
 
     Node localNode1 = buildNode(1, Node.Type.CORE);
     ManagedClusterMetadataService metadataService1 = new DefaultClusterMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode1.endpoint()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode1.address()).start().join());
 
     metadataService1.start().join();
 
@@ -67,7 +67,7 @@ public class DefaultClusterMetadataServiceTest {
 
     Node localNode2 = buildNode(2, Node.Type.CORE);
     ManagedClusterMetadataService metadataService2 = new DefaultClusterMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode2.endpoint()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode2.address()).start().join());
     metadataService2.start().join();
     metadataService2.addNode(localNode2);
 
@@ -82,15 +82,15 @@ public class DefaultClusterMetadataServiceTest {
 
     Node localNode1 = buildNode(1, Node.Type.CORE);
     ManagedClusterMetadataService metadataService1 = new DefaultClusterMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode1.endpoint()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode1.address()).start().join());
 
     Node localNode2 = buildNode(2, Node.Type.CORE);
     ManagedClusterMetadataService metadataService2 = new DefaultClusterMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode2.endpoint()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode2.address()).start().join());
 
     Node localNode3 = buildNode(3, Node.Type.CORE);
     ManagedClusterMetadataService metadataService3 = new DefaultClusterMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode3.endpoint()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode3.address()).start().join());
 
     List<CompletableFuture<ClusterMetadataService>> futures = new ArrayList<>();
     futures.add(metadataService1.start());
@@ -104,7 +104,7 @@ public class DefaultClusterMetadataServiceTest {
 
     Node localNode4 = buildNode(4, Node.Type.CORE);
     ManagedClusterMetadataService metadataService4 = new DefaultClusterMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode4.endpoint()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode4.address()).start().join());
     metadataService4.start().join();
 
     assertEquals(3, metadataService4.getMetadata().bootstrapNodes().size());
@@ -134,7 +134,7 @@ public class DefaultClusterMetadataServiceTest {
 
     Node localNode5 = buildNode(5, Node.Type.CORE);
     ManagedClusterMetadataService metadataService5 = new DefaultClusterMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode5.endpoint()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localNode5.address()).start().join());
     metadataService5.start().join();
     assertEquals(4, metadataService5.getMetadata().bootstrapNodes().size());
   }
@@ -142,7 +142,7 @@ public class DefaultClusterMetadataServiceTest {
   private Node buildNode(int nodeId, Node.Type type) {
     return Node.builder(String.valueOf(nodeId))
         .withType(type)
-        .withEndpoint(new Endpoint(localhost, nodeId))
+        .withAddress(new Address(localhost, nodeId))
         .build();
   }
 
@@ -151,7 +151,7 @@ public class DefaultClusterMetadataServiceTest {
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
           .withType(Node.Type.CORE)
-          .withEndpoint(new Endpoint(localhost, bootstrapNode))
+          .withAddress(new Address(localhost, bootstrapNode))
           .build());
     }
     return ClusterMetadata.builder().withBootstrapNodes(bootstrap).build();

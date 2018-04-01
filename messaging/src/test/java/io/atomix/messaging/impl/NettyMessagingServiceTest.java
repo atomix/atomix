@@ -17,7 +17,7 @@ package io.atomix.messaging.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.ManagedMessagingService;
 import org.junit.After;
 import org.junit.Before;
@@ -56,27 +56,27 @@ public class NettyMessagingServiceTest {
 
   private static final String IP_STRING = "127.0.0.1";
 
-  Endpoint ep1;
-  Endpoint ep2;
-  Endpoint invalidEndPoint;
+  Address ep1;
+  Address ep2;
+  Address invalidAddress;
 
   @Before
   public void setUp() throws Exception {
-    ep1 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5001));
+    ep1 = new Address(InetAddress.getByName("127.0.0.1"), findAvailablePort(5001));
     netty1 = (ManagedMessagingService) NettyMessagingService.builder()
-        .withEndpoint(ep1)
+        .withAddress(ep1)
         .build()
         .start()
         .join();
 
-    ep2 = new Endpoint(InetAddress.getByName("127.0.0.1"), findAvailablePort(5003));
+    ep2 = new Address(InetAddress.getByName("127.0.0.1"), findAvailablePort(5003));
     netty2 = (ManagedMessagingService) NettyMessagingService.builder()
-        .withEndpoint(ep2)
+        .withAddress(ep2)
         .build()
         .start()
         .join();
 
-    invalidEndPoint = new Endpoint(InetAddress.getByName(IP_STRING), 5003);
+    invalidAddress = new Address(InetAddress.getByName(IP_STRING), 5003);
   }
 
   /**
@@ -110,7 +110,7 @@ public class NettyMessagingServiceTest {
     Uninterruptibles.awaitUninterruptibly(latch1);
 
     CountDownLatch latch2 = new CountDownLatch(1);
-    response = netty1.sendAsync(invalidEndPoint, subject, "hello world".getBytes());
+    response = netty1.sendAsync(invalidAddress, subject, "hello world".getBytes());
     response.whenComplete((r, e) -> {
       assertNotNull(e);
       assertTrue(e instanceof ConnectException);
@@ -125,9 +125,9 @@ public class NettyMessagingServiceTest {
     String subject = nextSubject();
     AtomicBoolean handlerInvoked = new AtomicBoolean(false);
     AtomicReference<byte[]> request = new AtomicReference<>();
-    AtomicReference<Endpoint> sender = new AtomicReference<>();
+    AtomicReference<Address> sender = new AtomicReference<>();
 
-    BiFunction<Endpoint, byte[], byte[]> handler = (ep, data) -> {
+    BiFunction<Address, byte[], byte[]> handler = (ep, data) -> {
       handlerInvoked.set(true);
       sender.set(ep);
       request.set(data);
@@ -145,7 +145,7 @@ public class NettyMessagingServiceTest {
   @Test
   public void testSendTimeout() {
     String subject = nextSubject();
-    BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> handler = (ep, payload) -> new CompletableFuture<>();
+    BiFunction<Address, byte[], CompletableFuture<byte[]>> handler = (ep, payload) -> new CompletableFuture<>();
     netty2.registerHandler(subject, handler);
 
     try {
@@ -171,7 +171,7 @@ public class NettyMessagingServiceTest {
 
     final CountDownLatch latch = new CountDownLatch(1);
 
-    BiFunction<Endpoint, byte[], byte[]> handler = (ep, data) -> {
+    BiFunction<Address, byte[], byte[]> handler = (ep, data) -> {
       handlerThreadName.set(Thread.currentThread().getName());
       try {
         latch.await();

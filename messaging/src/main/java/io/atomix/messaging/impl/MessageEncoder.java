@@ -15,7 +15,7 @@
  */
 package io.atomix.messaging.impl;
 
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
@@ -35,13 +35,13 @@ public class MessageEncoder extends MessageToByteEncoder<Object> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private final Endpoint endpoint;
+  private final Address address;
   private final int preamble;
-  private boolean endpointWritten;
+  private boolean addressWritten;
 
-  public MessageEncoder(Endpoint endpoint, int preamble) {
+  public MessageEncoder(Address address, int preamble) {
     super();
-    this.endpoint = endpoint;
+    this.address = address;
     this.preamble = preamble;
   }
 
@@ -58,17 +58,17 @@ public class MessageEncoder extends MessageToByteEncoder<Object> {
   }
 
   private void encodeMessage(InternalMessage message, ByteBuf out) {
-    // If the endpoint hasn't been written to the channel, write it.
-    if (!endpointWritten) {
-      final InetAddress senderIp = endpoint.host();
+    // If the address hasn't been written to the channel, write it.
+    if (!addressWritten) {
+      final InetAddress senderIp = address.ip();
       final byte[] senderIpBytes = senderIp.getAddress();
       out.writeByte(senderIpBytes.length);
       out.writeBytes(senderIpBytes);
 
       // write sender port
-      out.writeInt(endpoint.port());
+      out.writeInt(address.port());
 
-      endpointWritten = true;
+      addressWritten = true;
     }
 
     out.writeByte(message.type().id());

@@ -16,20 +16,20 @@
 package io.atomix.messaging.impl;
 
 import com.google.common.base.MoreObjects;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.ArraySizeHashPrinter;
 
 /**
  * Internal request message.
  */
 public final class InternalRequest extends InternalMessage {
-    private final Endpoint sender;
+    private final Address sender;
     private final String subject;
 
     public InternalRequest(
         int preamble,
         long id,
-        Endpoint sender,
+        Address sender,
         String subject,
         byte[] payload) {
         super(preamble, id, payload);
@@ -46,7 +46,7 @@ public final class InternalRequest extends InternalMessage {
         return subject;
     }
 
-    public Endpoint sender() {
+    public Address sender() {
         return sender;
     }
 

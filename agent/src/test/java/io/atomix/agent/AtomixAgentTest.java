@@ -30,11 +30,11 @@ import static org.junit.Assert.fail;
 public class AtomixAgentTest {
 
   @Test
-  public void testParseAddress() throws Exception {
-    String[] address = AtomixAgent.parseAddress("a:b:c");
-    assertEquals(3, address.length);
+  public void testParseInfo() throws Exception {
+    String[] info = AtomixAgent.parseInfo("a:b:c");
+    assertEquals(3, info.length);
     try {
-      AtomixAgent.parseAddress("a:b:c:d");
+      AtomixAgent.parseInfo("a:b:c:d");
       fail();
     } catch (IllegalArgumentException e) {
     }
@@ -50,12 +50,12 @@ public class AtomixAgentTest {
   }
 
   @Test
-  public void testParseEndpoint() throws Exception {
-    assertEquals(String.format("0.0.0.0:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseEndpoint(new String[]{"foo"}).toString());
-    assertEquals(String.format("127.0.0.1:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseEndpoint(new String[]{"127.0.0.1"}).toString());
-    assertEquals(String.format("127.0.0.1:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseEndpoint(new String[]{"foo", "127.0.0.1"}).toString());
-    assertEquals("127.0.0.1:1234", AtomixAgent.parseEndpoint(new String[]{"127.0.0.1", "1234"}).toString());
-    assertEquals("127.0.0.1:1234", AtomixAgent.parseEndpoint(new String[]{"foo", "127.0.0.1", "1234"}).toString());
+  public void testParseAddress() throws Exception {
+    assertEquals(String.format("0.0.0.0:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseAddress(new String[]{"foo"}).toString());
+    assertEquals(String.format("127.0.0.1:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseAddress(new String[]{"127.0.0.1"}).toString());
+    assertEquals(String.format("127.0.0.1:%d", NettyMessagingService.DEFAULT_PORT), AtomixAgent.parseAddress(new String[]{"foo", "127.0.0.1"}).toString());
+    assertEquals("127.0.0.1:1234", AtomixAgent.parseAddress(new String[]{"127.0.0.1", "1234"}).toString());
+    assertEquals("127.0.0.1:1234", AtomixAgent.parseAddress(new String[]{"foo", "127.0.0.1", "1234"}).toString());
   }
 
 }

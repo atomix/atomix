@@ -15,7 +15,7 @@
  */
 package io.atomix.messaging.impl;
 
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -152,7 +152,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             InternalRequest message = new InternalRequest(
                 preamble,
                 messageId,
-                new Endpoint(senderIp, senderPort),
+                new Address(senderIp, senderPort),
                 subject,
                 content);
             out.add(message);

@@ -28,7 +28,7 @@ import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ManagedClusterMetadataService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -77,7 +77,7 @@ public class DefaultClusterMetadataService
           .register(ReplicatedNode.class)
           .register(NodeId.class)
           .register(Node.Type.class)
-          .register(new EndpointSerializer(), Endpoint.class)
+          .register(new AddressSerializer(), Address.class)
           .register(LogicalTimestamp.class)
           .register(NodeUpdate.class)
           .register(ClusterMetadataAdvertisement.class)
@@ -100,7 +100,7 @@ public class DefaultClusterMetadataService
     metadata.bootstrapNodes().forEach(node -> nodes.put(node.id(), new ReplicatedNode(
         node.id(),
         node.type(),
-        node.endpoint(),
+        node.address(),
         node.zone(),
         node.rack(),
         node.host(),
@@ -126,7 +126,7 @@ public class DefaultClusterMetadataService
         replicatedNode = new ReplicatedNode(
             node.id(),
             node.type(),
-            node.endpoint(),
+            node.address(),
             node.zone(),
             node.rack(),
             node.host(),
@@ -147,7 +147,7 @@ public class DefaultClusterMetadataService
       replicatedNode = new ReplicatedNode(
           node.id(),
           node.type(),
-          node.endpoint(),
+          node.address(),
           node.zone(),
           node.rack(),
           node.host(),
@@ -163,9 +163,9 @@ public class DefaultClusterMetadataService
    * Bootstraps the cluster metadata.
    */
   private CompletableFuture<Void> bootstrap() {
-    Set<Endpoint> peers = nodes.values().stream()
-        .map(Node::endpoint)
-        .filter(endpoint -> !endpoint.equals(messagingService.endpoint()))
+    Set<Address> peers = nodes.values().stream()
+        .map(Node::address)
+        .filter(address -> !address.equals(messagingService.address()))
         .collect(Collectors.toSet());
     final int totalPeers = peers.size();
     if (totalPeers == 0) {
@@ -204,17 +204,17 @@ public class DefaultClusterMetadataService
   }
 
   /**
-   * Requests a bootstrap from the given endpoint.
+   * Requests a bootstrap from the given address.
    */
-  private CompletableFuture<Void> bootstrap(Endpoint endpoint) {
-    return messagingService.sendAndReceive(endpoint, BOOTSTRAP_MESSAGE, new byte[0])
+  private CompletableFuture<Void> bootstrap(Address address) {
+    return messagingService.sendAndReceive(address, BOOTSTRAP_MESSAGE, new byte[0])
         .thenAccept(response -> nodes.putAll(SERIALIZER.decode(response)));
   }
 
   /**
    * Handles a bootstrap request.
    */
-  private byte[] handleBootstrap(Endpoint endpoint, byte[] payload) {
+  private byte[] handleBootstrap(Address address, byte[] payload) {
     return SERIALIZER.encode(nodes);
   }
 
@@ -223,22 +223,22 @@ public class DefaultClusterMetadataService
    */
   private void broadcastUpdate(NodeUpdate update) {
     nodes.values().stream()
-        .map(Node::endpoint)
-        .filter(endpoint -> !endpoint.equals(messagingService.endpoint()))
-        .forEach(endpoint -> sendUpdate(endpoint, update));
+        .map(Node::address)
+        .filter(address -> !address.equals(messagingService.address()))
+        .forEach(address -> sendUpdate(address, update));
   }
 
   /**
    * Sends the given update to the given node.
    */
-  private void sendUpdate(Endpoint endpoint, NodeUpdate update) {
-    messagingService.sendAsync(endpoint, UPDATE_MESSAGE, SERIALIZER.encode(update));
+  private void sendUpdate(Address address, NodeUpdate update) {
+    messagingService.sendAsync(address, UPDATE_MESSAGE, SERIALIZER.encode(update));
   }
 
   /**
    * Handles an update from another node.
    */
-  private void handleUpdate(Endpoint endpoint, byte[] payload) {
+  private void handleUpdate(Address address, byte[] payload) {
     NodeUpdate update = SERIALIZER.decode(payload);
     clock.incrementAndUpdate(update.timestamp());
     ReplicatedNode node = nodes.get(update.node().id());
@@ -258,22 +258,22 @@ public class DefaultClusterMetadataService
   /**
    * Sends an anti-entropy advertisement to the given node.
    */
-  private void sendAdvertisement(Endpoint endpoint) {
+  private void sendAdvertisement(Address address) {
     clock.increment();
     ClusterMetadataAdvertisement advertisement = new ClusterMetadataAdvertisement(
         Maps.newHashMap(Maps.transformValues(nodes, node -> new NodeDigest(node.timestamp(), node.tombstone()))));
-    messagingService.sendAndReceive(endpoint, ADVERTISEMENT_MESSAGE, SERIALIZER.encode(advertisement))
+    messagingService.sendAndReceive(address, ADVERTISEMENT_MESSAGE, SERIALIZER.encode(advertisement))
         .whenComplete((response, error) -> {
           if (error == null) {
             Set<NodeId> nodes = SERIALIZER.decode(response);
             for (NodeId nodeId : nodes) {
               ReplicatedNode node = this.nodes.get(nodeId);
               if (node != null) {
-                sendUpdate(endpoint, new NodeUpdate(node, clock.increment()));
+                sendUpdate(address, new NodeUpdate(node, clock.increment()));
               }
             }
           } else {
-            log.warn("Anti-entropy advertisement to {} failed!", endpoint);
+            log.warn("Anti-entropy advertisement to {} failed!", address);
           }
         });
   }
@@ -281,12 +281,12 @@ public class DefaultClusterMetadataService
   /**
    * Selects a random peer to which to send an anti-entropy advertisement.
    */
-  private Optional<Endpoint> pickRandomPeer() {
-    List<Endpoint> nodes = this.nodes.values()
+  private Optional<Address> pickRandomPeer() {
+    List<Address> nodes = this.nodes.values()
         .stream()
         .filter(replicatedNode -> !replicatedNode.tombstone() &&
-            !replicatedNode.endpoint().equals(messagingService.endpoint()))
-        .map(Node::endpoint)
+            !replicatedNode.address().equals(messagingService.address()))
+        .map(Node::address)
         .collect(Collectors.toList());
     Collections.shuffle(nodes);
     return nodes.stream().findFirst();
@@ -295,20 +295,20 @@ public class DefaultClusterMetadataService
   /**
    * Handles an anti-entropy advertisement.
    */
-  private byte[] handleAdvertisement(Endpoint endpoint, byte[] payload) {
+  private byte[] handleAdvertisement(Address address, byte[] payload) {
     LogicalTimestamp timestamp = clock.increment();
     ClusterMetadataAdvertisement advertisement = SERIALIZER.decode(payload);
     Set<NodeId> staleNodes = nodes.values().stream().map(node -> {
       NodeDigest digest = advertisement.digest(node.id());
       if (digest == null || node.isNewerThan(digest.timestamp())) {
-        sendUpdate(endpoint, new NodeUpdate(node, timestamp));
+        sendUpdate(address, new NodeUpdate(node, timestamp));
       } else if (digest.isNewerThan(node.timestamp())) {
         if (digest.tombstone()) {
           if (!node.tombstone()) {
             nodes.put(node.id(), new ReplicatedNode(
                 node.id(),
                 node.type(),
-                node.endpoint(),
+                node.address(),
                 node.zone(),
                 node.rack(),
                 node.host(),
@@ -374,20 +374,20 @@ public class DefaultClusterMetadataService
   }
 
   /**
-   * Endpoint serializer.
+   * Address serializer.
    */
-  static class EndpointSerializer extends com.esotericsoftware.kryo.Serializer<Endpoint> {
+  static class AddressSerializer extends com.esotericsoftware.kryo.Serializer<Address> {
     @Override
-    public void write(Kryo kryo, Output output, Endpoint endpoint) {
-      output.writeString(endpoint.host().getHostAddress());
-      output.writeInt(endpoint.port());
+    public void write(Kryo kryo, Output output, Address address) {
+      output.writeString(address.ip().getHostAddress());
+      output.writeInt(address.port());
     }
 
     @Override
-    public Endpoint read(Kryo kryo, Input input, Class<Endpoint> type) {
+    public Address read(Kryo kryo, Input input, Class<Address> type) {
       String host = input.readString();
       int port = input.readInt();
-      return Endpoint.from(host, port);
+      return Address.from(host, port);
     }
   }
 }

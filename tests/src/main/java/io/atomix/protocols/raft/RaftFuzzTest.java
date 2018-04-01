@@ -17,7 +17,7 @@ package io.atomix.protocols.raft;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.NodeId;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
@@ -239,7 +239,7 @@ public class RaftFuzzTest implements Runnable {
   private Map<Integer, Scheduled> restartTimers = new ConcurrentHashMap<>();
   private LocalRaftProtocolFactory protocolFactory;
   private List<MessagingService> messagingServices = new ArrayList<>();
-  private Map<NodeId, Endpoint> endpointMap = new ConcurrentHashMap<>();
+  private Map<NodeId, Address> addressMap = new ConcurrentHashMap<>();
   private static final String[] KEYS = new String[1024];
   private final Random random = new Random();
 
@@ -559,11 +559,11 @@ public class RaftFuzzTest implements Runnable {
     RaftServerProtocol protocol;
     if (USE_NETTY) {
       try {
-        Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-        MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().start().join();
+        Address address = new Address(InetAddress.getLocalHost(), ++port);
+        MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
         messagingServices.add(messagingManager);
-        endpointMap.put(member.nodeId(), endpoint);
-        protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
+        addressMap.put(member.nodeId(), address);
+        protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
       } catch (UnknownHostException e) {
         throw new RuntimeException(e);
       }
@@ -594,10 +594,10 @@ public class RaftFuzzTest implements Runnable {
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
-      Endpoint endpoint = new Endpoint(InetAddress.getLocalHost(), ++port);
-      MessagingService messagingManager = NettyMessagingService.builder().withEndpoint(endpoint).build().start().join();
-      endpointMap.put(nodeId, endpoint);
-      protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, endpointMap::get);
+      Address address = new Address(InetAddress.getLocalHost(), ++port);
+      MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
+      addressMap.put(nodeId, address);
+      protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
     } else {
       protocol = protocolFactory.newClientProtocol(nodeId);
     }

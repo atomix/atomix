@@ -22,7 +22,7 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.impl.TestClusterMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -56,7 +56,7 @@ public class DefaultClusterEventingServiceTest {
   private Node buildNode(int nodeId, Node.Type type) {
     return Node.builder(String.valueOf(nodeId))
         .withType(type)
-        .withEndpoint(new Endpoint(localhost, nodeId))
+        .withAddress(new Address(localhost, nodeId))
         .build();
   }
 
@@ -65,7 +65,7 @@ public class DefaultClusterEventingServiceTest {
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
           .withType(Node.Type.CORE)
-          .withEndpoint(new Endpoint(localhost, bootstrapNode))
+          .withAddress(new Address(localhost, bootstrapNode))
           .build());
     }
     return ClusterMetadata.builder().withBootstrapNodes(bootstrap).build();
@@ -78,17 +78,17 @@ public class DefaultClusterEventingServiceTest {
     ClusterMetadata clusterMetadata = buildClusterMetadata(1, 1, 2, 3);
 
     Node localNode1 = buildNode(1, Node.Type.CORE);
-    MessagingService messagingService1 = factory.newMessagingService(localNode1.endpoint()).start().join();
+    MessagingService messagingService1 = factory.newMessagingService(localNode1.address()).start().join();
     ClusterService clusterService1 = new DefaultClusterService(localNode1, new TestClusterMetadataService(clusterMetadata), messagingService1).start().join();
     ClusterEventingService eventService1 = new DefaultClusterEventingService(clusterService1, messagingService1).start().join();
 
     Node localNode2 = buildNode(2, Node.Type.CORE);
-    MessagingService messagingService2 = factory.newMessagingService(localNode2.endpoint()).start().join();
+    MessagingService messagingService2 = factory.newMessagingService(localNode2.address()).start().join();
     ClusterService clusterService2 = new DefaultClusterService(localNode2, new TestClusterMetadataService(clusterMetadata), messagingService2).start().join();
     ClusterEventingService eventService2 = new DefaultClusterEventingService(clusterService2, messagingService2).start().join();
 
     Node localNode3 = buildNode(3, Node.Type.CORE);
-    MessagingService messagingService3 = factory.newMessagingService(localNode3.endpoint()).start().join();
+    MessagingService messagingService3 = factory.newMessagingService(localNode3.address()).start().join();
     ClusterService clusterService3 = new DefaultClusterService(localNode3, new TestClusterMetadataService(clusterMetadata), messagingService3).start().join();
     ClusterEventingService eventService3 = new DefaultClusterEventingService(clusterService3, messagingService3).start().join();
 

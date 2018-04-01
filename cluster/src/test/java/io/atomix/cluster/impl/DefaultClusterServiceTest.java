@@ -22,7 +22,7 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -51,7 +51,7 @@ public class DefaultClusterServiceTest {
   private Node buildNode(int nodeId, Node.Type type) {
     return Node.builder(String.valueOf(nodeId))
         .withType(type)
-        .withEndpoint(new Endpoint(localhost, nodeId))
+        .withAddress(new Address(localhost, nodeId))
         .build();
   }
 
@@ -60,7 +60,7 @@ public class DefaultClusterServiceTest {
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
           .withType(Node.Type.CORE)
-          .withEndpoint(new Endpoint(localhost, bootstrapNode))
+          .withAddress(new Address(localhost, bootstrapNode))
           .build());
     }
     return ClusterMetadata.builder().withBootstrapNodes(bootstrap).build();
@@ -76,19 +76,19 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clusterService1 = new DefaultClusterService(
         localNode1,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(localNode1.endpoint()).start().join());
+        messagingServiceFactory.newMessagingService(localNode1.address()).start().join());
 
     Node localNode2 = buildNode(2, Node.Type.CORE);
     ManagedClusterService clusterService2 = new DefaultClusterService(
         localNode2,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(localNode2.endpoint()).start().join());
+        messagingServiceFactory.newMessagingService(localNode2.address()).start().join());
 
     Node localNode3 = buildNode(3, Node.Type.CORE);
     ManagedClusterService clusterService3 = new DefaultClusterService(
         localNode3,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(localNode3.endpoint()).start().join());
+        messagingServiceFactory.newMessagingService(localNode3.address()).start().join());
 
     assertNull(clusterService1.getNode(NodeId.from("1")));
     assertNull(clusterService1.getNode(NodeId.from("2")));
@@ -122,7 +122,7 @@ public class DefaultClusterServiceTest {
     ManagedClusterService dataClusterService = new DefaultClusterService(
         dataNode,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(dataNode.endpoint()).start().join());
+        messagingServiceFactory.newMessagingService(dataNode.address()).start().join());
 
     assertEquals(State.INACTIVE, dataClusterService.getLocalNode().getState());
 
@@ -146,7 +146,7 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clientClusterService = new DefaultClusterService(
         clientNode,
         new TestClusterMetadataService(clusterMetadata),
-        messagingServiceFactory.newMessagingService(clientNode.endpoint()).start().join());
+        messagingServiceFactory.newMessagingService(clientNode.address()).start().join());
 
     assertEquals(State.INACTIVE, clientClusterService.getLocalNode().getState());
 

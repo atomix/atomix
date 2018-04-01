@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.messaging;
+package io.atomix.utils.net;
 
 import com.google.common.base.Preconditions;
 
@@ -22,28 +22,34 @@ import java.net.UnknownHostException;
 import java.util.Objects;
 
 /**
- * Representation of a TCP/UDP communication end point.
+ * Representation of a network address.
  */
-public final class Endpoint {
+public final class Address {
 
   /**
-   * Returns an endpoint for the given host/port.
+   * Returns an address for the given host/port.
    *
    * @param host the host
    * @param port the port
-   * @return a new endpoint
+   * @return a new address
    */
-  public static Endpoint from(String host, int port) {
+  public static Address from(String host, int port) {
     try {
-      return new Endpoint(InetAddress.getByName(host), port);
+      return new Address(InetAddress.getByName(host), port);
     } catch (UnknownHostException e) {
       throw new IllegalArgumentException("Failed to locate host", e);
     }
   }
 
-  public static Endpoint from(int port) {
+  /**
+   * Returns an address for the local host and the given port.
+   *
+   * @param port the port
+   * @return a new address
+   */
+  public static Address from(int port) {
     try {
-      return new Endpoint(getLocalAddress(), port);
+      return new Address(getLocalAddress(), port);
     } catch (UnknownHostException e) {
       throw new IllegalArgumentException("Failed to locate host", e);
     }
@@ -52,7 +58,7 @@ public final class Endpoint {
   private final int port;
   private final InetAddress ip;
 
-  public Endpoint(InetAddress host, int port) {
+  public Address(InetAddress host, int port) {
     this.ip = Preconditions.checkNotNull(host);
     this.port = port;
   }
@@ -66,17 +72,27 @@ public final class Endpoint {
     return InetAddress.getByName(null);
   }
 
-  public InetAddress host() {
+  /**
+   * Returns the IP address.
+   *
+   * @return the IP address
+   */
+  public InetAddress ip() {
     return ip;
   }
 
+  /**
+   * Returns the port.
+   *
+   * @return the port
+   */
   public int port() {
     return port;
   }
 
   @Override
   public String toString() {
-    return String.format("%s:%d", host().getHostAddress(), port);
+    return String.format("%s:%d", ip().getHostAddress(), port);
   }
 
   @Override
@@ -95,7 +111,7 @@ public final class Endpoint {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    Endpoint that = (Endpoint) obj;
+    Address that = (Address) obj;
     return this.port == that.port &&
         Objects.equals(this.ip, that.ip);
   }

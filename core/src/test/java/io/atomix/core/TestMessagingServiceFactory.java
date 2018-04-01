@@ -16,7 +16,7 @@
 package io.atomix.core;
 
 import com.google.common.collect.Maps;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.ManagedMessagingService;
 
 import java.util.Map;
@@ -25,15 +25,15 @@ import java.util.Map;
  * Test messaging service factory.
  */
 public class TestMessagingServiceFactory {
-  private final Map<Endpoint, TestMessagingService> services = Maps.newConcurrentMap();
+  private final Map<Address, TestMessagingService> services = Maps.newConcurrentMap();
 
   /**
-   * Returns a new test messaging service for the given endpoint.
+   * Returns a new test messaging service for the given address.
    *
-   * @param endpoint the endpoint for which to return a messaging service
-   * @return the messaging service for the given endpoint
+   * @param address the address for which to return a messaging service
+   * @return the messaging service for the given address
    */
-  public ManagedMessagingService newMessagingService(Endpoint endpoint) {
-    return new TestMessagingService(endpoint, services);
+  public ManagedMessagingService newMessagingService(Address address) {
+    return new TestMessagingService(address, services);
   }
 }
