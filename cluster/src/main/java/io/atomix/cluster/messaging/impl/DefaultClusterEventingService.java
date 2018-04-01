@@ -24,7 +24,7 @@ import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.Subscription;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingException;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.concurrent.Futures;
@@ -101,7 +101,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
     getSubscriberNodes(topic).forEach(nodeId -> {
       Node node = clusterService.getNode(nodeId);
       if (node != null && node.getState() == Node.State.ACTIVE) {
-        messagingService.sendAsync(node.endpoint(), topic, payload);
+        messagingService.sendAsync(node.address(), topic, payload);
       }
     });
   }
@@ -113,7 +113,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
       Node node = clusterService.getNode(nodeId);
       if (node != null && node.getState() == Node.State.ACTIVE) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
-        return messagingService.sendAsync(node.endpoint(), topic, payload);
+        return messagingService.sendAsync(node.address(), topic, payload);
       }
     }
     return CompletableFuture.completedFuture(null);
@@ -126,7 +126,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
       Node node = clusterService.getNode(nodeId);
       if (node != null && node.getState() == Node.State.ACTIVE) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
-        return messagingService.sendAndReceive(node.endpoint(), topic, payload).thenApply(decoder);
+        return messagingService.sendAndReceive(node.address(), topic, payload).thenApply(decoder);
       }
     }
     return Futures.exceptionalFuture(new MessagingException.NoRemoteHandler());
@@ -262,7 +262,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
         .collect(Collectors.toList());
 
     CompletableFuture<Void> future = new CompletableFuture<>();
-    messagingService.sendAndReceive(node.endpoint(), GOSSIP_MESSAGE_SUBJECT, SERIALIZER.encode(subscriptions))
+    messagingService.sendAndReceive(node.address(), GOSSIP_MESSAGE_SUBJECT, SERIALIZER.encode(subscriptions))
         .whenComplete((result, error) -> {
           if (error == null) {
             updateTimes.put(node.id(), updateTime);
@@ -301,7 +301,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
           TOMBSTONE_EXPIRATION_MILLIS,
           TOMBSTONE_EXPIRATION_MILLIS,
           TimeUnit.MILLISECONDS);
-      messagingService.registerHandler(GOSSIP_MESSAGE_SUBJECT, (endpoint, payload) -> {
+      messagingService.registerHandler(GOSSIP_MESSAGE_SUBJECT, (address, payload) -> {
         update(SERIALIZER.decode(payload));
         return new byte[0];
       }, gossipExecutor);
@@ -541,7 +541,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   /**
    * Internal subscriber.
    */
-  private static class InternalSubscriber implements BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> {
+  private static class InternalSubscriber implements BiFunction<Address, byte[], CompletableFuture<byte[]>> {
     private final AtomicInteger counter = new AtomicInteger();
     private InternalSubscription[] subscriptions = new InternalSubscription[0];
 
@@ -565,7 +565,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
     }
 
     @Override
-    public CompletableFuture<byte[]> apply(Endpoint endpoint, byte[] payload) {
+    public CompletableFuture<byte[]> apply(Address address, byte[] payload) {
       InternalMessage message = SERIALIZER.decode(payload);
       switch (message.type()) {
         case DIRECT:

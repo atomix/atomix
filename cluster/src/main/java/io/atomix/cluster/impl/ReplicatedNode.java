@@ -17,7 +17,7 @@ package io.atomix.cluster.impl;
 
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.Timestamp;
 
@@ -33,13 +33,13 @@ public class ReplicatedNode extends Node {
   public ReplicatedNode(
       NodeId id,
       Type type,
-      Endpoint endpoint,
+      Address address,
       String zone,
       String rack,
       String host,
       LogicalTimestamp timestamp,
       boolean tombstone) {
-    super(id, type, endpoint, zone, rack, host);
+    super(id, type, address, zone, rack, host);
     this.timestamp = checkNotNull(timestamp, "timestamp cannot be null");
     this.tombstone = tombstone;
   }

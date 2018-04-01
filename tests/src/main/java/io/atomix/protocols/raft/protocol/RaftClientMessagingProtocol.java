@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Serializer;
@@ -31,8 +31,8 @@ import java.util.function.Function;
  * Raft client messaging service protocol.
  */
 public class RaftClientMessagingProtocol extends RaftMessagingProtocol implements RaftClientProtocol {
-  public RaftClientMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<NodeId, Endpoint> endpointProvider) {
-    super(messagingService, serializer, endpointProvider);
+  public RaftClientMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<NodeId, Address> addressProvider) {
+    super(messagingService, serializer, addressProvider);
   }
 
   @Override

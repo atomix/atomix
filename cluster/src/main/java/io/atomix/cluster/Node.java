@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 
 import java.util.Objects;
 
@@ -62,13 +62,13 @@ public class Node {
    * Returns a new core node.
    *
    * @param nodeId   the core node ID
-   * @param endpoint the core node endpoint
+   * @param address the core node address
    * @return a new core node
    */
-  public static Node core(NodeId nodeId, Endpoint endpoint) {
+  public static Node core(NodeId nodeId, Address address) {
     return builder(nodeId)
         .withType(Type.CORE)
-        .withEndpoint(endpoint)
+        .withAddress(address)
         .build();
   }
 
@@ -76,13 +76,13 @@ public class Node {
    * Returns a new data node.
    *
    * @param nodeId   the data node ID
-   * @param endpoint the data node endpoint
+   * @param address the data node address
    * @return a new data node
    */
-  public static Node data(NodeId nodeId, Endpoint endpoint) {
+  public static Node data(NodeId nodeId, Address address) {
     return builder(nodeId)
         .withType(Type.DATA)
-        .withEndpoint(endpoint)
+        .withAddress(address)
         .build();
   }
 
@@ -90,13 +90,13 @@ public class Node {
    * Returns a new client node.
    *
    * @param nodeId   the client node ID
-   * @param endpoint the client node endpoint
+   * @param address the client node address
    * @return a new client node
    */
-  public static Node client(NodeId nodeId, Endpoint endpoint) {
+  public static Node client(NodeId nodeId, Address address) {
     return builder(nodeId)
         .withType(Type.CLIENT)
-        .withEndpoint(endpoint)
+        .withAddress(address)
         .build();
   }
 
@@ -140,15 +140,15 @@ public class Node {
 
   private final NodeId id;
   private final Type type;
-  private final Endpoint endpoint;
+  private final Address address;
   private final String zone;
   private final String rack;
   private final String host;
 
-  protected Node(NodeId id, Type type, Endpoint endpoint, String zone, String rack, String host) {
+  protected Node(NodeId id, Type type, Address address, String zone, String rack, String host) {
     this.id = checkNotNull(id, "id cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
-    this.endpoint = checkNotNull(endpoint, "endpoint cannot be null");
+    this.address = checkNotNull(address, "address cannot be null");
     this.zone = zone;
     this.rack = rack;
     this.host = host;
@@ -173,12 +173,12 @@ public class Node {
   }
 
   /**
-   * Returns the node endpoint.
+   * Returns the node address.
    *
-   * @return the node endpoint
+   * @return the node address
    */
-  public Endpoint endpoint() {
-    return endpoint;
+  public Address address() {
+    return address;
   }
 
   /**
@@ -232,7 +232,7 @@ public class Node {
     return toStringHelper(this)
         .add("id", id)
         .add("type", type)
-        .add("endpoint", endpoint)
+        .add("address", address)
         .add("zone", zone)
         .add("rack", rack)
         .add("host", host)
@@ -246,7 +246,7 @@ public class Node {
   public static class Builder implements io.atomix.utils.Builder<Node> {
     protected NodeId id;
     protected Type type;
-    protected Endpoint endpoint;
+    protected Address address;
     protected String zone;
     protected String rack;
     protected String host;
@@ -279,13 +279,13 @@ public class Node {
     }
 
     /**
-     * Sets the node endpoint.
+     * Sets the node address.
      *
-     * @param endpoint the node endpoint
+     * @param address the node address
      * @return the node builder
      */
-    public Builder withEndpoint(Endpoint endpoint) {
-      this.endpoint = checkNotNull(endpoint, "endpoint cannot be null");
+    public Builder withAddress(Address address) {
+      this.address = checkNotNull(address, "address cannot be null");
       return this;
     }
 
@@ -325,9 +325,9 @@ public class Node {
     @Override
     public Node build() {
       if (id == null) {
-        id = NodeId.from(endpoint.host().getHostName());
+        id = NodeId.from(address.ip().getHostName());
       }
-      return new Node(id, type, endpoint, zone, rack, host);
+      return new Node(id, type, address, zone, rack, host);
     }
   }
 }

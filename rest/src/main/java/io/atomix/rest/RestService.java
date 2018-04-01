@@ -16,7 +16,7 @@
 package io.atomix.rest;
 
 import io.atomix.core.Atomix;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.rest.impl.VertxRestService;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -39,18 +39,18 @@ public interface RestService {
    * REST service builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<ManagedRestService> {
-    protected Endpoint endpoint;
+    protected Address address;
     protected Atomix atomix;
 
     /**
-     * Sets the REST service endpoint.
+     * Sets the REST service address.
      *
-     * @param endpoint the REST service endpoint
+     * @param address the REST service address
      * @return the REST service builder
-     * @throws NullPointerException if the endpoint is null
+     * @throws NullPointerException if the address is null
      */
-    public Builder withEndpoint(Endpoint endpoint) {
-      this.endpoint = checkNotNull(endpoint, "endpoint cannot be null");
+    public Builder withAddress(Address address) {
+      this.address = checkNotNull(address, "address cannot be null");
       return this;
     }
 

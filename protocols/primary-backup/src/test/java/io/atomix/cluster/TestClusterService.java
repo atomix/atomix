@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 
 import java.util.Collection;
 import java.util.Set;
@@ -37,7 +37,7 @@ public class TestClusterService implements ClusterService {
   public Node getLocalNode() {
     return Node.builder(localNode)
         .withType(Node.Type.CORE)
-        .withEndpoint(Endpoint.from("localhost", localNode.hashCode()))
+        .withAddress(Address.from("localhost", localNode.hashCode()))
         .build();
   }
 
@@ -46,7 +46,7 @@ public class TestClusterService implements ClusterService {
     return nodes.stream()
         .map(node -> Node.builder(node)
             .withType(Node.Type.CORE)
-            .withEndpoint(Endpoint.from("localhost", node.hashCode()))
+            .withAddress(Address.from("localhost", node.hashCode()))
             .build())
         .collect(Collectors.toSet());
   }

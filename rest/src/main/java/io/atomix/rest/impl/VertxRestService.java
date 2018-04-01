@@ -20,7 +20,7 @@ import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
 import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;
@@ -50,15 +50,15 @@ public class VertxRestService implements ManagedRestService {
   private static final int PRIMITIVE_CACHE_SIZE = 1000;
 
   private final Atomix atomix;
-  private final Endpoint endpoint;
+  private final Address address;
   private final Vertx vertx;
   private HttpServer server;
   private VertxResteasyDeployment deployment;
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public VertxRestService(Atomix atomix, Endpoint endpoint) {
+  public VertxRestService(Atomix atomix, Address address) {
     this.atomix = checkNotNull(atomix, "atomix cannot be null");
-    this.endpoint = checkNotNull(endpoint, "endpoint cannot be null");
+    this.address = checkNotNull(address, "address cannot be null");
     this.vertx = Vertx.vertx();
   }
 
@@ -90,7 +90,7 @@ public class VertxRestService implements ManagedRestService {
     server.requestHandler(new VertxRequestHandler(vertx, deployment));
 
     CompletableFuture<RestService> future = new CompletableFuture<>();
-    server.listen(endpoint.port(), endpoint.host().getHostAddress(), result -> {
+    server.listen(address.port(), address.ip().getHostAddress(), result -> {
       if (result.succeeded()) {
         open.set(true);
         LOGGER.info("Started");
@@ -131,10 +131,10 @@ public class VertxRestService implements ManagedRestService {
 
     @Override
     public ManagedRestService build() {
-      if (endpoint == null) {
-        endpoint = Endpoint.from(DEFAULT_HOST, DEFAULT_PORT);
+      if (address == null) {
+        address = Address.from(DEFAULT_HOST, DEFAULT_PORT);
       }
-      return new VertxRestService(atomix, endpoint);
+      return new VertxRestService(atomix, address);
     }
   }
 }

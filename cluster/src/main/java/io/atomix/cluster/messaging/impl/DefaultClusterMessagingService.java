@@ -21,7 +21,7 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.concurrent.Futures;
 import org.slf4j.Logger;
@@ -141,7 +141,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     if (node == null) {
       return Futures.exceptionalFuture(CONNECT_EXCEPTION);
     }
-    return messagingService.sendAsync(node.endpoint(), subject, payload);
+    return messagingService.sendAsync(node.address(), subject, payload);
   }
 
   private CompletableFuture<byte[]> sendAndReceive(String subject, byte[] payload, NodeId toNodeId) {
@@ -149,7 +149,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     if (node == null) {
       return Futures.exceptionalFuture(CONNECT_EXCEPTION);
     }
-    return messagingService.sendAndReceive(node.endpoint(), subject, payload);
+    return messagingService.sendAndReceive(node.address(), subject, payload);
   }
 
   @Override
@@ -199,7 +199,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
   }
 
   @Override
-  public <M> CompletableFuture<Void> subscribe(String subject, Function<byte[], M> decoder, BiConsumer<Endpoint, M> handler, Executor executor) {
+  public <M> CompletableFuture<Void> subscribe(String subject, Function<byte[], M> decoder, BiConsumer<Address, M> handler, Executor executor) {
     messagingService.registerHandler(subject,
             new InternalMessageBiConsumer<>(decoder, handler),
             executor);
@@ -227,7 +227,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     return CompletableFuture.completedFuture(null);
   }
 
-  private static class InternalMessageResponder<M, R> implements BiFunction<Endpoint, byte[], CompletableFuture<byte[]>> {
+  private static class InternalMessageResponder<M, R> implements BiFunction<Address, byte[], CompletableFuture<byte[]>> {
     private final Function<byte[], M> decoder;
     private final Function<R, byte[]> encoder;
     private final Function<M, CompletableFuture<R>> handler;
@@ -241,27 +241,27 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     }
 
     @Override
-    public CompletableFuture<byte[]> apply(Endpoint sender, byte[] bytes) {
+    public CompletableFuture<byte[]> apply(Address sender, byte[] bytes) {
       return handler.apply(decoder.apply(ClusterMessage.getPayload(bytes))).thenApply(encoder);
     }
   }
 
-  private static class InternalMessageBiConsumer<M> implements BiConsumer<Endpoint, byte[]> {
+  private static class InternalMessageBiConsumer<M> implements BiConsumer<Address, byte[]> {
     private final Function<byte[], M> decoder;
-    private final BiConsumer<Endpoint, M> consumer;
+    private final BiConsumer<Address, M> consumer;
 
-    InternalMessageBiConsumer(Function<byte[], M> decoder, BiConsumer<Endpoint, M> consumer) {
+    InternalMessageBiConsumer(Function<byte[], M> decoder, BiConsumer<Address, M> consumer) {
       this.decoder = decoder;
       this.consumer = consumer;
     }
 
     @Override
-    public void accept(Endpoint sender, byte[] bytes) {
+    public void accept(Address sender, byte[] bytes) {
       consumer.accept(sender, decoder.apply(ClusterMessage.getPayload(bytes)));
     }
   }
 
-  private static class InternalMessageConsumer<M> implements BiConsumer<Endpoint, byte[]> {
+  private static class InternalMessageConsumer<M> implements BiConsumer<Address, byte[]> {
     private final Function<byte[], M> decoder;
     private final Consumer<M> consumer;
 
@@ -271,7 +271,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     }
 
     @Override
-    public void accept(Endpoint sender, byte[] bytes) {
+    public void accept(Address sender, byte[] bytes) {
       consumer.accept(decoder.apply(ClusterMessage.getPayload(bytes)));
     }
   }

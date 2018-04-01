@@ -32,7 +32,7 @@ import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
 import io.atomix.core.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.core.impl.CorePrimitivesService;
 import io.atomix.core.transaction.TransactionBuilder;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
@@ -498,7 +498,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
           InetAddress address = getLocalAddress();
           localNode = Node.builder(address.getHostName())
               .withType(Node.Type.CORE)
-              .withEndpoint(new Endpoint(address, NettyMessagingService.DEFAULT_PORT))
+              .withAddress(new Address(address, NettyMessagingService.DEFAULT_PORT))
               .build();
         } catch (UnknownHostException e) {
           throw new ConfigurationException("Cannot configure local node", e);
@@ -547,7 +547,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     protected ManagedMessagingService buildMessagingService() {
       return NettyMessagingService.builder()
           .withName(name)
-          .withEndpoint(localNode.endpoint())
+          .withAddress(localNode.address())
           .build();
     }
 

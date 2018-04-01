@@ -28,7 +28,7 @@ import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
-import io.atomix.messaging.Endpoint;
+import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -79,7 +79,7 @@ public class DefaultClusterService
           .register(Node.State.class)
           .register(ClusterHeartbeat.class)
           .register(StatefulNode.class)
-          .register(new DefaultClusterMetadataService.EndpointSerializer(), Endpoint.class)
+          .register(new DefaultClusterMetadataService.AddressSerializer(), Address.class)
           .build("ClusterService"));
 
   private final MessagingService messagingService;
@@ -102,7 +102,7 @@ public class DefaultClusterService
     this.localNode = new StatefulNode(
         localNode.id(),
         localNode.type(),
-        localNode.endpoint(),
+        localNode.address(),
         localNode.zone(),
         localNode.rack(),
         localNode.host());
@@ -143,7 +143,7 @@ public class DefaultClusterService
           localNode.rack(),
           localNode.host()));
       peers.forEach((node) -> {
-        sendHeartbeat(node.endpoint(), payload);
+        sendHeartbeat(node.address(), payload);
         PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
         double phi = failureDetector.phi();
         if (phi >= phiFailureThreshold || System.currentTimeMillis() - failureDetector.lastUpdated() > DEFAULT_FAILURE_TIME) {
@@ -164,8 +164,8 @@ public class DefaultClusterService
   /**
    * Sends a heartbeat to the given peer.
    */
-  private void sendHeartbeat(Endpoint endpoint, byte[] payload) {
-    messagingService.sendAndReceive(endpoint, HEARTBEAT_MESSAGE, payload).whenComplete((response, error) -> {
+  private void sendHeartbeat(Address address, byte[] payload) {
+    messagingService.sendAndReceive(address, HEARTBEAT_MESSAGE, payload).whenComplete((response, error) -> {
       if (error == null) {
         Collection<StatefulNode> nodes = SERIALIZER.decode(response);
         boolean sendHeartbeats = false;
@@ -180,7 +180,7 @@ public class DefaultClusterService
           sendHeartbeats();
         }
       } else {
-        LOGGER.trace("Sending heartbeat to {} failed", endpoint, error);
+        LOGGER.trace("Sending heartbeat to {} failed", address, error);
       }
     });
   }
@@ -188,13 +188,13 @@ public class DefaultClusterService
   /**
    * Handles a heartbeat message.
    */
-  private byte[] handleHeartbeat(Endpoint endpoint, byte[] message) {
+  private byte[] handleHeartbeat(Address address, byte[] message) {
     ClusterHeartbeat heartbeat = SERIALIZER.decode(message);
     failureDetectors.computeIfAbsent(heartbeat.nodeId(), n -> new PhiAccrualFailureDetector()).report();
     activateNode(new StatefulNode(
         heartbeat.nodeId(),
         heartbeat.nodeType(),
-        endpoint,
+        address,
         heartbeat.zone(),
         heartbeat.rack(),
         heartbeat.host()));
@@ -213,7 +213,7 @@ public class DefaultClusterService
       nodes.put(node.id(), node);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
       post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, node));
-      sendHeartbeat(node.endpoint(), SERIALIZER.encode(new ClusterHeartbeat(
+      sendHeartbeat(node.address(), SERIALIZER.encode(new ClusterHeartbeat(
           localNode.id(),
           localNode.type(),
           localNode.zone(),
@@ -260,7 +260,7 @@ public class DefaultClusterService
             StatefulNode newNode = new StatefulNode(
                 node.id(),
                 node.type(),
-                node.endpoint(),
+                node.address(),
                 node.zone(),
                 node.rack(),
                 node.host());
@@ -298,7 +298,7 @@ public class DefaultClusterService
           .forEach(node -> nodes.putIfAbsent(node.id(), new StatefulNode(
               node.id(),
               node.type(),
-              node.endpoint(),
+              node.address(),
               node.zone(),
               node.rack(),
               node.host())));
