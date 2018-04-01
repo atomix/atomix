@@ -92,8 +92,8 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
             map = new NotNullAsyncConsistentMap<>(map);
           }
 
-          if (relaxedReadConsistency()) {
-            map = new CachingAsyncConsistentMap<>(map);
+          if (cacheEnabled()) {
+            map = new CachingAsyncConsistentMap<>(map, cacheSize());
           }
 
           if (readOnly()) {
