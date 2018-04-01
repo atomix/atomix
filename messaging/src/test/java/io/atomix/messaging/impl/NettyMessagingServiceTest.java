@@ -17,8 +17,8 @@ package io.atomix.messaging.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.ManagedMessagingService;
+import io.atomix.utils.net.Address;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -62,21 +62,21 @@ public class NettyMessagingServiceTest {
 
   @Before
   public void setUp() throws Exception {
-    ep1 = new Address(InetAddress.getByName("127.0.0.1"), findAvailablePort(5001));
+    ep1 = Address.from(findAvailablePort(5001));
     netty1 = (ManagedMessagingService) NettyMessagingService.builder()
         .withAddress(ep1)
         .build()
         .start()
         .join();
 
-    ep2 = new Address(InetAddress.getByName("127.0.0.1"), findAvailablePort(5003));
+    ep2 = Address.from(findAvailablePort(5003));
     netty2 = (ManagedMessagingService) NettyMessagingService.builder()
         .withAddress(ep2)
         .build()
         .start()
         .join();
 
-    invalidAddress = new Address(InetAddress.getByName(IP_STRING), 5003);
+    invalidAddress = Address.from(IP_STRING, 5003);
   }
 
   /**

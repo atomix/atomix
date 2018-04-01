@@ -47,6 +47,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
 
   private InetAddress senderIp;
   private int senderPort;
+  private Address address;
 
   private InternalMessage.Type type;
   private int preamble;
@@ -83,6 +84,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
           return;
         }
         senderPort = buffer.readInt();
+        address = new Address(senderIp.getHostName(), senderPort, senderIp);
         currentState = DecoderState.READ_TYPE;
       case READ_TYPE:
         if (buffer.readableBytes() < BYTE_SIZE) {
@@ -152,7 +154,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             InternalRequest message = new InternalRequest(
                 preamble,
                 messageId,
-                new Address(senderIp, senderPort),
+                address,
                 subject,
                 content);
             out.add(message);

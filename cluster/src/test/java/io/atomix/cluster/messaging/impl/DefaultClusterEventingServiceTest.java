@@ -22,14 +22,11 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.impl.TestClusterMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -43,20 +40,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class DefaultClusterEventingServiceTest {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
-  private final InetAddress localhost;
-
-  public DefaultClusterEventingServiceTest() {
-    try {
-      localhost = InetAddress.getByName("127.0.0.1");
-    } catch (UnknownHostException e) {
-      throw new AssertionError();
-    }
-  }
 
   private Node buildNode(int nodeId, Node.Type type) {
     return Node.builder(String.valueOf(nodeId))
         .withType(type)
-        .withAddress(new Address(localhost, nodeId))
+        .withAddress(nodeId)
         .build();
   }
 
@@ -65,7 +53,7 @@ public class DefaultClusterEventingServiceTest {
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
           .withType(Node.Type.CORE)
-          .withAddress(new Address(localhost, bootstrapNode))
+          .withAddress(bootstrapNode)
           .build());
     }
     return ClusterMetadata.builder().withBootstrapNodes(bootstrap).build();

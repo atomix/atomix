@@ -220,7 +220,7 @@ public class ClusterResource extends AbstractRestResource {
     }
 
     public String getHost() {
-      return node.address().ip().getHostAddress();
+      return node.address().address().getHostAddress();
     }
 
     public int getPort() {

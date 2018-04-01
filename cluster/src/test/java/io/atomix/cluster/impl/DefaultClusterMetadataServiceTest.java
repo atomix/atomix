@@ -23,12 +23,9 @@ import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ManagedClusterMetadataService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
-import io.atomix.utils.net.Address;
 import io.atomix.utils.concurrent.Futures;
 import org.junit.Test;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -41,15 +38,6 @@ import static org.junit.Assert.assertEquals;
  * Default cluster metadata service test.
  */
 public class DefaultClusterMetadataServiceTest {
-  private final InetAddress localhost;
-
-  public DefaultClusterMetadataServiceTest() {
-    try {
-      localhost = InetAddress.getByName("127.0.0.1");
-    } catch (UnknownHostException e) {
-      throw new AssertionError();
-    }
-  }
 
   @Test
   public void testSingleNodeBootstrap() throws Exception {
@@ -142,7 +130,7 @@ public class DefaultClusterMetadataServiceTest {
   private Node buildNode(int nodeId, Node.Type type) {
     return Node.builder(String.valueOf(nodeId))
         .withType(type)
-        .withAddress(new Address(localhost, nodeId))
+        .withAddress(nodeId)
         .build();
   }
 
@@ -151,7 +139,7 @@ public class DefaultClusterMetadataServiceTest {
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
           .withType(Node.Type.CORE)
-          .withAddress(new Address(localhost, bootstrapNode))
+          .withAddress(bootstrapNode)
           .build());
     }
     return ClusterMetadata.builder().withBootstrapNodes(bootstrap).build();

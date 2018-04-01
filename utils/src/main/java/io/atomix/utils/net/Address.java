@@ -15,8 +15,6 @@
  */
 package io.atomix.utils.net;
 
-import com.google.common.base.Preconditions;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
@@ -27,15 +25,43 @@ import java.util.Objects;
 public final class Address {
 
   /**
+   * Returns the address from the given host:port string.
+   *
+   * @param address the address string
+   * @return the address
+   */
+  public static Address from(String address) {
+    String[] hostAndPort = address.split(":");
+
+    if (hostAndPort.length != 2) {
+      throw new MalformedAddressException(address);
+    }
+
+    String host = hostAndPort[0];
+    int port;
+    try {
+      port = Integer.parseInt(hostAndPort[1]);
+    } catch (NumberFormatException e) {
+      throw new MalformedAddressException(address, e);
+    }
+
+    try {
+      return new Address(host, port, InetAddress.getByName(host));
+    } catch (UnknownHostException e) {
+      throw new MalformedAddressException(address, e);
+    }
+  }
+
+  /**
    * Returns an address for the given host/port.
    *
-   * @param host the host
+   * @param host the host name
    * @param port the port
    * @return a new address
    */
   public static Address from(String host, int port) {
     try {
-      return new Address(InetAddress.getByName(host), port);
+      return new Address(host, port, InetAddress.getByName(host));
     } catch (UnknownHostException e) {
       throw new IllegalArgumentException("Failed to locate host", e);
     }
@@ -49,36 +75,41 @@ public final class Address {
    */
   public static Address from(int port) {
     try {
-      return new Address(getLocalAddress(), port);
+      InetAddress address = getLocalAddress();
+      return new Address(address.getHostName(), port, address);
     } catch (UnknownHostException e) {
       throw new IllegalArgumentException("Failed to locate host", e);
     }
   }
 
-  private final int port;
-  private final InetAddress ip;
-
-  public Address(InetAddress host, int port) {
-    this.ip = Preconditions.checkNotNull(host);
-    this.port = port;
-  }
-
+  /**
+   * Returns the local host.
+   */
   private static InetAddress getLocalAddress() throws UnknownHostException {
     try {
       return InetAddress.getLocalHost();  // first NIC
     } catch (Exception ignore) {
-
+      return InetAddress.getByName(null);
     }
-    return InetAddress.getByName(null);
+  }
+
+  private final String host;
+  private final int port;
+  private final InetAddress address;
+
+  public Address(String host, int port, InetAddress address) {
+    this.host = host;
+    this.port = port;
+    this.address = address;
   }
 
   /**
-   * Returns the IP address.
+   * Returns the host name.
    *
-   * @return the IP address
+   * @return the host name
    */
-  public InetAddress ip() {
-    return ip;
+  public String host() {
+    return host;
   }
 
   /**
@@ -90,14 +121,23 @@ public final class Address {
     return port;
   }
 
+  /**
+   * Returns the IP address.
+   *
+   * @return the IP address
+   */
+  public InetAddress address() {
+    return address;
+  }
+
   @Override
   public String toString() {
-    return String.format("%s:%d", ip().getHostAddress(), port);
+    return String.format("%s:%d", host(), port());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(ip, port);
+    return Objects.hash(address, port);
   }
 
   @Override
@@ -113,6 +153,6 @@ public final class Address {
     }
     Address that = (Address) obj;
     return this.port == that.port &&
-        Objects.equals(this.ip, that.ip);
+        Objects.equals(this.address, that.address);
   }
 }
