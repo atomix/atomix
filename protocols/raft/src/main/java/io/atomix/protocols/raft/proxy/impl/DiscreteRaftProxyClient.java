@@ -101,7 +101,6 @@ public class DiscreteRaftProxyClient implements RaftProxyClient {
         sessionConnection,
         state,
         sequencer,
-        sessionManager,
         context);
 
     selectorManager.addLeaderChangeListener(leaderChangeListener);
