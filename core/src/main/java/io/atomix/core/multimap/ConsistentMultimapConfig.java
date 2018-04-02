@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core;
+package io.atomix.core.multimap;
 
-import io.atomix.utils.AtomixRuntimeException;
+import io.atomix.primitive.PrimitiveConfig;
 
 /**
- * Atomix configuration exception.
+ * Consistent multimap configuration.
  */
-public class ConfigurationException extends AtomixRuntimeException {
-  public ConfigurationException(String message) {
-    super(message);
-  }
-
-  public ConfigurationException(String message, Throwable cause) {
-    super(message, cause);
-  }
+public class ConsistentMultimapConfig extends PrimitiveConfig {
 }

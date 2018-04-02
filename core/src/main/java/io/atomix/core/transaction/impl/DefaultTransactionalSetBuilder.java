@@ -15,11 +15,11 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.transaction.TransactionalMapBuilder;
+import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.core.transaction.TransactionalSetBuilder;
+import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,21 +27,19 @@ import java.util.concurrent.CompletableFuture;
  * Default transactional set builder.
  */
 public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E> {
-  private final TransactionalMapBuilder<E, Boolean> mapBuilder;
+  private final PrimitiveManagementService managementService;
+  private final DefaultTransaction transaction;
 
-  public DefaultTransactionalSetBuilder(String name, PrimitiveManagementService managementService, DefaultTransaction transaction) {
-    super(name);
-    this.mapBuilder = new DefaultTransactionalMapBuilder<>(name, managementService, transaction);
-  }
-
-  @Override
-  public TransactionalSetBuilder<E> withProtocol(PrimitiveProtocol protocol) {
-    mapBuilder.withProtocol(protocol);
-    return this;
+  public DefaultTransactionalSetBuilder(String name, TransactionalSetConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
+    super(name, config);
+    this.managementService = managementService;
+    this.transaction = transaction;
   }
 
   @Override
   public CompletableFuture<TransactionalSet<E>> buildAsync() {
-    return mapBuilder.buildAsync().thenApply(map -> new DefaultTransactionalSet<>(map.async()).sync());
+    return new DefaultTransactionalMapBuilder<E, Boolean>(name(), new TransactionalMapConfig(), managementService, transaction)
+        .buildAsync()
+        .thenApply(map -> new DefaultTransactionalSet<>(map.async()).sync());
   }
 }

@@ -19,10 +19,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapBuilder;
+import io.atomix.core.map.ConsistentMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.partition.Partition;
@@ -48,8 +48,8 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
   private static final int NUM_BUCKETS = 128;
   private final PrimitiveManagementService managementService;
 
-  public ConsistentMapProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public ConsistentMapProxyBuilder(String name, ConsistentMapConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

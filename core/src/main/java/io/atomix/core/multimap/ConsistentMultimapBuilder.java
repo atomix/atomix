@@ -23,8 +23,8 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  * A builder class for {@code AsyncConsistentMultimap}.
  */
 public abstract class ConsistentMultimapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>, ConsistentMultimap<K, V>> {
-  public ConsistentMultimapBuilder(String name) {
-    super(PrimitiveTypes.multimap(), name);
+    extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>, ConsistentMultimapConfig, ConsistentMultimap<K, V>> {
+  public ConsistentMultimapBuilder(String name, ConsistentMultimapConfig config) {
+    super(PrimitiveTypes.multimap(), name, config);
   }
 }

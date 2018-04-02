@@ -27,7 +27,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Consistent tree map primitive type.
  */
 public class ConsistentTreeMapType<V>
-    implements PrimitiveType<ConsistentTreeMapBuilder<V>, ConsistentTreeMap<V>> {
+    implements PrimitiveType<ConsistentTreeMapBuilder<V>, ConsistentTreeMapConfig, ConsistentTreeMap<V>> {
   private static final String NAME = "CONSISTENT_TREEMAP";
 
   /**
@@ -55,7 +55,7 @@ public class ConsistentTreeMapType<V>
 
   @Override
   public ConsistentTreeMapBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new ConsistentTreeMapProxyBuilder<>(name, managementService);
+    return new ConsistentTreeMapProxyBuilder<>(name, new ConsistentTreeMapConfig(), managementService);
   }
 
   @Override

@@ -29,20 +29,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <B> builder type
  * @param <P> primitive type
  */
-public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> implements Builder<P> {
+public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> implements Builder<P> {
   private static final int DEFAULT_CACHE_SIZE = 1000;
-
   private final PrimitiveType type;
   private final String name;
+  protected final C config;
   private Serializer serializer;
   private PrimitiveProtocol protocol;
   private boolean cacheEnabled = false;
   private int cacheSize = DEFAULT_CACHE_SIZE;
   private boolean readOnly = false;
 
-  public DistributedPrimitiveBuilder(PrimitiveType type, String name) {
+  public DistributedPrimitiveBuilder(PrimitiveType type, String name, C config) {
     this.type = checkNotNull(type, "type cannot be null");
     this.name = checkNotNull(name, "name cannot be null");
+    this.config = checkNotNull(config, "config cannot be null");
   }
 
   /**

@@ -25,12 +25,12 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  * @param <V> type for map value
  */
 public abstract class ConsistentMapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>> {
+    extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMapConfig, ConsistentMap<K, V>> {
 
   private boolean nullValues = false;
 
-  public ConsistentMapBuilder(String name) {
-    super(PrimitiveTypes.map(), name);
+  public ConsistentMapBuilder(String name, ConsistentMapConfig config) {
+    super(PrimitiveTypes.map(), name, config);
   }
 
   /**

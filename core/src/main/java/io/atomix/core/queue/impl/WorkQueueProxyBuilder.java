@@ -17,6 +17,7 @@ package io.atomix.core.queue.impl;
 
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueBuilder;
+import io.atomix.core.queue.WorkQueueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 
@@ -30,8 +31,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
   private final PrimitiveManagementService managementService;
 
-  public WorkQueueProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public WorkQueueProxyBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

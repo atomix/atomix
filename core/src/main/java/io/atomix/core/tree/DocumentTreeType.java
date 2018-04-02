@@ -27,7 +27,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Document tree primitive type.
  */
-public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>, DocumentTree<V>> {
+public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
   private static final String DEFAULT_NAME = "DOCUMENT_TREE";
 
   /**
@@ -70,7 +70,7 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
 
   @Override
   public DocumentTreeBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new DocumentTreeProxyBuilder<>(name, managementService);
+    return new DocumentTreeProxyBuilder<>(name, new DocumentTreeConfig(), managementService);
   }
 
   @Override

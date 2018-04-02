@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Atomic ID generator primitive type.
  */
-public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBuilder, AtomicIdGenerator> {
+public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBuilder, AtomicIdGeneratorConfig, AtomicIdGenerator> {
   private static final String NAME = "ID_GENERATOR";
 
   /**
@@ -53,7 +53,7 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
 
   @Override
   public AtomicIdGeneratorBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new DelegatingAtomicIdGeneratorBuilder(name, managementService);
+    return new DelegatingAtomicIdGeneratorBuilder(name, new AtomicIdGeneratorConfig(), managementService);
   }
 
   @Override

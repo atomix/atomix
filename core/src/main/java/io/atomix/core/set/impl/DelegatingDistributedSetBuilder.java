@@ -15,11 +15,12 @@
  */
 package io.atomix.core.set.impl;
 
-import io.atomix.core.map.ConsistentMapBuilder;
+import io.atomix.core.map.ConsistentMapConfig;
+import io.atomix.core.map.impl.ConsistentMapProxyBuilder;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
-import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.utils.serializer.Serializer;
+import io.atomix.core.set.DistributedSetConfig;
+import io.atomix.primitive.PrimitiveManagementService;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -29,76 +30,18 @@ import java.util.concurrent.CompletableFuture;
  * @param <E> type for set elements
  */
 public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
-  private ConsistentMapBuilder<E, Boolean> mapBuilder;
+  private final PrimitiveManagementService managementService;
 
-  public DelegatingDistributedSetBuilder(ConsistentMapBuilder<E, Boolean> mapBuilder) {
-    super(mapBuilder.name());
-    this.mapBuilder = mapBuilder;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withSerializer(Serializer serializer) {
-    mapBuilder.withSerializer(serializer);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withCacheEnabled(boolean cacheEnabled) {
-    mapBuilder.withCacheEnabled(cacheEnabled);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withCacheSize(int cacheSize) {
-    mapBuilder.withCacheSize(cacheSize);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withReadOnly(boolean readOnly) {
-    mapBuilder.withReadOnly(readOnly);
-    return this;
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withProtocol(PrimitiveProtocol protocol) {
-    mapBuilder.withProtocol(protocol);
-    return this;
-  }
-
-  @Override
-  public String name() {
-    return mapBuilder.name();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return mapBuilder.protocol();
-  }
-
-  @Override
-  public Serializer serializer() {
-    return mapBuilder.serializer();
-  }
-
-  @Override
-  public boolean readOnly() {
-    return mapBuilder.readOnly();
-  }
-
-  @Override
-  public boolean cacheEnabled() {
-    return mapBuilder.cacheEnabled();
-  }
-
-  @Override
-  public int cacheSize() {
-    return mapBuilder.cacheSize();
+  public DelegatingDistributedSetBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
+    this.managementService = managementService;
   }
 
   @Override
   public CompletableFuture<DistributedSet<E>> buildAsync() {
-    return mapBuilder.buildAsync()
+    ConsistentMapConfig mapConfig = new ConsistentMapConfig();
+    return new ConsistentMapProxyBuilder<E, Boolean>(name(), mapConfig, managementService)
+        .buildAsync()
         .thenApply(map -> new DelegatingAsyncDistributedSet<>(map.async()).sync());
   }
 }

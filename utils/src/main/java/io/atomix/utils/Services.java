@@ -17,6 +17,10 @@ package io.atomix.utils;
 
 import com.google.common.collect.Maps;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
@@ -38,7 +42,22 @@ public final class Services {
     return (T) services.computeIfAbsent(serviceClass, s -> ServiceLoader.load(serviceClass).iterator().next());
   }
 
-  private Services() {
+  /**
+   * Loads all services for the given service class.
+   *
+   * @param serviceClass the service class for which to load the services
+   * @param <T> the service type
+   * @return the registered services of the given type
+   */
+  public static <T> Collection<T> loadAll(Class<T> serviceClass) {
+    List<T> services = new ArrayList<>();
+    Iterator<T> iterator = ServiceLoader.load(serviceClass).iterator();
+    while (iterator.hasNext()) {
+      services.add(iterator.next());
+    }
+    return services;
   }
 
+  private Services() {
+  }
 }

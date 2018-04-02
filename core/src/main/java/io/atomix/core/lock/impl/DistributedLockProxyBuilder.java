@@ -17,6 +17,7 @@ package io.atomix.core.lock.impl;
 
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockBuilder;
+import io.atomix.core.lock.DistributedLockConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 
@@ -30,8 +31,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DistributedLockProxyBuilder extends DistributedLockBuilder {
   private final PrimitiveManagementService managementService;
 
-  public DistributedLockProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public DistributedLockProxyBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

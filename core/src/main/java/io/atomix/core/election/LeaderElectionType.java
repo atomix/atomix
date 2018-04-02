@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Leader elector primitive type.
  */
-public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilder<T>, LeaderElection<T>> {
+public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilder<T>, LeaderElectionConfig, LeaderElection<T>> {
   private static final String NAME = "LEADER_ELECTION";
 
   /**
@@ -54,7 +54,7 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
 
   @Override
   public LeaderElectionBuilder<T> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new LeaderElectionProxyBuilder<>(name, managementService);
+    return new LeaderElectionProxyBuilder<>(name, new LeaderElectionConfig(), managementService);
   }
 
   @Override

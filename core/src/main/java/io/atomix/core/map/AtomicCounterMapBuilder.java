@@ -22,8 +22,8 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  * Builder for AtomicCounterMap.
  */
 public abstract class AtomicCounterMapBuilder<K>
-    extends DistributedPrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMap<K>> {
-  public AtomicCounterMapBuilder(String name) {
-    super(PrimitiveTypes.counterMap(), name);
+    extends DistributedPrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMapConfig, AtomicCounterMap<K>> {
+  public AtomicCounterMapBuilder(String name, AtomicCounterMapConfig config) {
+    super(PrimitiveTypes.counterMap(), name, config);
   }
 }

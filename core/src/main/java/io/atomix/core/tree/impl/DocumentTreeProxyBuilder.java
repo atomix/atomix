@@ -23,6 +23,7 @@ import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeBuilder;
+import io.atomix.core.tree.DocumentTreeConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.partition.Partition;
@@ -46,8 +47,8 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
 
   private final PrimitiveManagementService managementService;
 
-  public DocumentTreeProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public DocumentTreeProxyBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

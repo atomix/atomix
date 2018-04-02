@@ -25,12 +25,12 @@ import io.atomix.primitive.PrimitiveType;
  * Builder for {@link DocumentTree}.
  */
 public abstract class DocumentTreeBuilder<V>
-    extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTree<V>> {
+    extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
 
   private Ordering ordering;
 
-  protected DocumentTreeBuilder(String name) {
-    super(PrimitiveTypes.tree(), name);
+  protected DocumentTreeBuilder(String name, DocumentTreeConfig config) {
+    super(PrimitiveTypes.tree(), name, config);
   }
 
   /**

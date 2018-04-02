@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Atomic value primitive type.
  */
-public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, AtomicValue<V>> {
+public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, AtomicValueConfig, AtomicValue<V>> {
   private static final String NAME = "VALUE";
 
   /**
@@ -54,7 +54,7 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
 
   @Override
   public AtomicValueBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new AtomicValueProxyBuilder<>(name, managementService);
+    return new AtomicValueProxyBuilder<>(name, new AtomicValueConfig(), managementService);
   }
 
   @Override

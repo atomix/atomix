@@ -24,8 +24,8 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  * @param <V> atomic value type
  */
 public abstract class AtomicValueBuilder<V>
-    extends DistributedPrimitiveBuilder<AtomicValueBuilder<V>, AtomicValue<V>> {
-  public AtomicValueBuilder(String name) {
-    super(PrimitiveTypes.value(), name);
+    extends DistributedPrimitiveBuilder<AtomicValueBuilder<V>, AtomicValueConfig, AtomicValue<V>> {
+  public AtomicValueBuilder(String name, AtomicValueConfig config) {
+    super(PrimitiveTypes.value(), name, config);
   }
 }

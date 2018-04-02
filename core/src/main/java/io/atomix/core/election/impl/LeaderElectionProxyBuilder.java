@@ -17,6 +17,7 @@ package io.atomix.core.election.impl;
 
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElectionBuilder;
+import io.atomix.core.election.LeaderElectionConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 
@@ -30,8 +31,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
   private final PrimitiveManagementService managementService;
 
-  public LeaderElectionProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public LeaderElectionProxyBuilder(String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

@@ -21,6 +21,7 @@ import com.google.common.io.BaseEncoding;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimapBuilder;
+import io.atomix.core.multimap.ConsistentMultimapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.utils.serializer.Serializer;
@@ -35,8 +36,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuilder<K, V> {
   private final PrimitiveManagementService managementService;
 
-  public ConsistentMultimapProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public ConsistentMultimapProxyBuilder(String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

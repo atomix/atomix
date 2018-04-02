@@ -22,8 +22,8 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  * Transactional map builder.
  */
 public abstract class TransactionalMapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<TransactionalMapBuilder<K, V>, TransactionalMap<K, V>> {
-  protected TransactionalMapBuilder(String name) {
-    super(ConsistentMapType.instance(), name);
+    extends DistributedPrimitiveBuilder<TransactionalMapBuilder<K, V>, TransactionalMapConfig, TransactionalMap<K, V>> {
+  protected TransactionalMapBuilder(String name, TransactionalMapConfig config) {
+    super(ConsistentMapType.instance(), name, config);
   }
 }

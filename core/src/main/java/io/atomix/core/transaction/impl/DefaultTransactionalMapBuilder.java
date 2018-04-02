@@ -19,6 +19,7 @@ import io.atomix.core.map.ConsistentMapBuilder;
 import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.transaction.TransactionalMap;
 import io.atomix.core.transaction.TransactionalMapBuilder;
+import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 
@@ -31,8 +32,8 @@ public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilde
   private final ConsistentMapBuilder<K, V> mapBuilder;
   private final DefaultTransaction transaction;
 
-  public DefaultTransactionalMapBuilder(String name, PrimitiveManagementService managementService, DefaultTransaction transaction) {
-    super(name);
+  public DefaultTransactionalMapBuilder(String name, TransactionalMapConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
+    super(name, config);
     this.mapBuilder = ConsistentMapType.<K, V>instance().newPrimitiveBuilder(name, managementService);
     this.transaction = transaction;
   }
