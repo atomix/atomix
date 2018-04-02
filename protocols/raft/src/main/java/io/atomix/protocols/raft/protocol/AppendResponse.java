@@ -39,12 +39,14 @@ public class AppendResponse extends AbstractRaftResponse {
   private final long term;
   private final boolean succeeded;
   private final long lastLogIndex;
+  private final long lastLogTerm;
 
-  public AppendResponse(Status status, RaftError error, long term, boolean succeeded, long lastLogIndex) {
+  public AppendResponse(Status status, RaftError error, long term, boolean succeeded, long lastLogIndex, long lastLogTerm) {
     super(status, error);
     this.term = term;
     this.succeeded = succeeded;
     this.lastLogIndex = lastLogIndex;
+    this.lastLogTerm = lastLogTerm;
   }
 
   /**
@@ -74,9 +76,18 @@ public class AppendResponse extends AbstractRaftResponse {
     return lastLogIndex;
   }
 
+  /**
+   * Returns the last term of the replica's log.
+   *
+   * @return The last term of the responding replica's log.
+   */
+  public long lastLogTerm() {
+    return lastLogTerm;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), status, term, succeeded, lastLogIndex);
+    return Objects.hash(getClass(), status, term, succeeded, lastLogIndex, lastLogTerm);
   }
 
   @Override
@@ -86,7 +97,8 @@ public class AppendResponse extends AbstractRaftResponse {
       return response.status == status
           && response.term == term
           && response.succeeded == succeeded
-          && response.lastLogIndex == lastLogIndex;
+          && response.lastLogIndex == lastLogIndex
+          && response.lastLogTerm == lastLogTerm;
     }
     return false;
   }
@@ -99,6 +111,7 @@ public class AppendResponse extends AbstractRaftResponse {
           .add("term", term)
           .add("succeeded", succeeded)
           .add("lastLogIndex", lastLogIndex)
+          .add("lastLogTerm", lastLogTerm)
           .toString();
     } else {
       return toStringHelper(this)
@@ -115,6 +128,7 @@ public class AppendResponse extends AbstractRaftResponse {
     private long term;
     private boolean succeeded;
     private long lastLogIndex;
+    private long lastLogTerm;
 
     /**
      * Sets the response term.
@@ -153,12 +167,26 @@ public class AppendResponse extends AbstractRaftResponse {
       return this;
     }
 
+    /**
+     * Sets the last term of the replica's log.
+     *
+     * @param lastLogTerm The last index of the replica's log.
+     * @return The append response builder.
+     * @throws IllegalArgumentException if {@code index} is negative
+     */
+    public Builder withLastLogTerm(long lastLogTerm) {
+      checkArgument(lastLogTerm >= 0, "lastLogTerm must be positive");
+      this.lastLogTerm = lastLogTerm;
+      return this;
+    }
+
     @Override
     protected void validate() {
       super.validate();
       if (status == Status.OK) {
         checkArgument(term > 0, "term must be positive");
         checkArgument(lastLogIndex >= 0, "lastLogIndex must be positive");
+        checkArgument(lastLogTerm >= 0, "lastLogTerm must be positive");
       }
     }
 
@@ -168,7 +196,7 @@ public class AppendResponse extends AbstractRaftResponse {
     @Override
     public AppendResponse build() {
       validate();
-      return new AppendResponse(status, error, term, succeeded, lastLogIndex);
+      return new AppendResponse(status, error, term, succeeded, lastLogIndex, lastLogTerm);
     }
   }
 }

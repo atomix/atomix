@@ -134,7 +134,7 @@ public class PassiveRole extends InactiveRole {
     RaftLogWriter writer = raft.getLogWriter();
     if (request.term() < raft.getTerm()) {
       log.debug("Rejected {}: request term is less than the current term ({})", request, raft.getTerm());
-      return failAppend(writer.getLastIndex(), future);
+      return failAppend(writer.getLastIndex(), writer.getLastEntry().entry().term(), future);
     }
     return true;
   }
@@ -160,7 +160,7 @@ public class PassiveRole extends InactiveRole {
         // If the previous log index is greater than the last entry index, fail the attempt.
         if (request.prevLogIndex() > lastEntry.index()) {
           log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index ({})", request, request.prevLogIndex(), lastEntry.index());
-          return failAppend(lastEntry.index(), future);
+          return failAppend(reader.getFirstIndex(lastEntry.entry().term()), lastEntry.entry().term(), future);
         }
 
         // If the previous log index is less than the last written entry index, look up the entry.
@@ -173,26 +173,26 @@ public class PassiveRole extends InactiveRole {
           // The previous entry should exist in the log if we've gotten this far.
           if (!reader.hasNext()) {
             log.debug("Rejected {}: Previous entry does not exist in the local log", request);
-            return failAppend(lastEntry.index(), future);
+            return failAppend(reader.getFirstIndex(lastEntry.entry().term()), 0, future);
           }
 
           // Read the previous entry and validate that the term matches the request previous log term.
           Indexed<RaftLogEntry> previousEntry = reader.next();
           if (request.prevLogTerm() != previousEntry.entry().term()) {
             log.debug("Rejected {}: Previous entry term ({}) does not match local log's term for the same entry ({})", request, request.prevLogTerm(), previousEntry.entry().term());
-            return failAppend(request.prevLogIndex() - 1, future);
+            return failAppend(reader.getFirstIndex(previousEntry.entry().term()), previousEntry.entry().term(), future);
           }
         }
         // If the previous log term doesn't equal the last entry term, fail the append, sending the prior entry.
         else if (request.prevLogTerm() != lastEntry.entry().term()) {
           log.debug("Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", request, request.prevLogTerm(), lastEntry.entry().term());
-          return failAppend(request.prevLogIndex() - 1, future);
+          return failAppend(reader.getFirstIndex(lastEntry.entry().term()), lastEntry.entry().term(), future);
         }
       } else {
         // If the previous log index is set and the last entry is null, fail the append.
         if (request.prevLogIndex() > 0) {
           log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index (0)", request, request.prevLogIndex());
-          return failAppend(0, future);
+          return failAppend(0, 0, future);
         }
       }
     }
@@ -211,6 +211,7 @@ public class PassiveRole extends InactiveRole {
 
     // Track the last log index while entries are appended.
     long lastLogIndex = request.prevLogIndex();
+    long lastLogTerm = request.prevLogTerm();
 
     if (!request.entries().isEmpty()) {
       final RaftLogWriter writer = raft.getLogWriter();
@@ -226,6 +227,7 @@ public class PassiveRole extends InactiveRole {
       // Iterate through entries and append them.
       for (RaftLogEntry entry : request.entries()) {
         long index = ++lastLogIndex;
+        lastLogTerm = entry.term();
 
         // Get the last entry written to the log by the writer.
         Indexed<RaftLogEntry> lastEntry = writer.getLastEntry();
@@ -306,7 +308,7 @@ public class PassiveRole extends InactiveRole {
     }
 
     // Return a successful append response.
-    succeedAppend(lastLogIndex, future);
+    succeedAppend(lastLogIndex, lastLogTerm, future);
   }
 
   /**
@@ -319,7 +321,7 @@ public class PassiveRole extends InactiveRole {
     } catch (StorageException.OutOfDiskSpace e) {
       log.trace("Append failed: {}", e);
       raft.getServiceManager().compact();
-      failAppend(index - 1, future);
+      failAppend(index - 1, 0, future);
       return false;
     }
     return true;
@@ -332,19 +334,20 @@ public class PassiveRole extends InactiveRole {
    * @param future       the append response future
    * @return the append response status
    */
-  protected boolean failAppend(long lastLogIndex, CompletableFuture<AppendResponse> future) {
-    return completeAppend(false, lastLogIndex, future);
+  protected boolean failAppend(long lastLogIndex, long lastLogTerm, CompletableFuture<AppendResponse> future) {
+    return completeAppend(false, lastLogIndex, lastLogTerm, future);
   }
 
   /**
    * Returns a successful append response.
    *
    * @param lastLogIndex the last log index
+   * @param lastLogTerm  the last log term
    * @param future       the append response future
    * @return the append response status
    */
-  protected boolean succeedAppend(long lastLogIndex, CompletableFuture<AppendResponse> future) {
-    return completeAppend(true, lastLogIndex, future);
+  protected boolean succeedAppend(long lastLogIndex, long lastLogTerm, CompletableFuture<AppendResponse> future) {
+    return completeAppend(true, lastLogIndex, lastLogTerm, future);
   }
 
   /**
@@ -352,15 +355,17 @@ public class PassiveRole extends InactiveRole {
    *
    * @param succeeded    whether the append succeeded
    * @param lastLogIndex the last log index
+   * @param lastLogTerm  the last log term
    * @param future       the append response future
    * @return the append response status
    */
-  protected boolean completeAppend(boolean succeeded, long lastLogIndex, CompletableFuture<AppendResponse> future) {
+  protected boolean completeAppend(boolean succeeded, long lastLogIndex, long lastLogTerm, CompletableFuture<AppendResponse> future) {
     future.complete(logResponse(AppendResponse.newBuilder()
         .withStatus(RaftResponse.Status.OK)
         .withTerm(raft.getTerm())
         .withSucceeded(succeeded)
         .withLastLogIndex(lastLogIndex)
+        .withLastLogTerm(lastLogTerm)
         .build()));
     return succeeded;
   }

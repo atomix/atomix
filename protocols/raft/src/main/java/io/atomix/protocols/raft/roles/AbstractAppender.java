@@ -236,8 +236,7 @@ abstract class AbstractAppender implements AutoCloseable {
     // If the response failed, the follower should have provided the correct last index in their log. This helps
     // us converge on the matchIndex faster than by simply decrementing nextIndex one index at a time.
     else {
-      resetMatchIndex(member, response);
-      resetNextIndex(member, response);
+      resetIndexes(member, request, response);
 
       // If there are more entries to send then attempt to send another commit.
       if (response.lastLogIndex() != request.prevLogIndex() && hasMoreEntries(member)) {
@@ -294,23 +293,25 @@ abstract class AbstractAppender implements AutoCloseable {
   }
 
   /**
-   * Resets the match index when a response fails.
-   */
-  protected void resetMatchIndex(RaftMemberContext member, AppendResponse response) {
-    if (response.lastLogIndex() < member.getMatchIndex()) {
-      member.setMatchIndex(response.lastLogIndex());
-      log.trace("Reset match index for {} to {}", member, member.getMatchIndex());
-    }
-  }
-
-  /**
    * Resets the next index when a response fails.
    */
-  protected void resetNextIndex(RaftMemberContext member, AppendResponse response) {
-    long nextIndex = response.lastLogIndex() + 1;
-    if (member.getLogReader().getNextIndex() != nextIndex) {
-      member.getLogReader().reset(nextIndex);
-      log.trace("Reset next index for {} to {}", member, nextIndex);
+  protected void resetIndexes(RaftMemberContext member, AppendRequest request, AppendResponse response) {
+    RaftLogReader reader = member.getLogReader();
+    if (response.lastLogTerm() > 0) {
+      reader.reset(response.lastLogIndex());
+      while (reader.hasNext() && reader.getNextIndex() < request.prevLogIndex()) {
+        Indexed<RaftLogEntry> entry = reader.next();
+        if (entry.entry().term() != response.lastLogTerm()) {
+          reader.reset(entry.index());
+          member.setMatchIndex(reader.getCurrentIndex());
+          log.trace("Reset match index for {} to {}", member, reader.getCurrentIndex());
+          log.trace("Reset next index for {} to {}", member, reader.getNextIndex());
+          break;
+        }
+      }
+    } else {
+      reader.reset(response.lastLogIndex() + 1);
+      log.trace("Reset next index for {} to {}", member, response.lastLogIndex() + 1);
     }
   }
 

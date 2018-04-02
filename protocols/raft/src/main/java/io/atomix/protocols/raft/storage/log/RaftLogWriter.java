@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.journal.DelegatingJournalWriter;
+import io.atomix.storage.journal.Indexed;
 import io.atomix.storage.journal.SegmentedJournalWriter;
 
 /**
@@ -56,10 +57,24 @@ public class RaftLogWriter extends DelegatingJournalWriter<RaftLogEntry> {
   }
 
   @Override
+  public <T extends RaftLogEntry> Indexed<T> append(T entry) {
+    Indexed<T> indexed = super.append(entry);
+    log.getTermIndex().index(indexed.entry().term(), indexed.index());
+    return indexed;
+  }
+
+  @Override
+  public void append(Indexed<RaftLogEntry> entry) {
+    super.append(entry);
+    log.getTermIndex().index(entry.entry().term(), entry.index());
+  }
+
+  @Override
   public void truncate(long index) {
     if (index < log.getCommitIndex()) {
       throw new IndexOutOfBoundsException("Cannot truncate committed index: " + index);
     }
     super.truncate(index);
+    log.getTermIndex().truncate(index);
   }
 }

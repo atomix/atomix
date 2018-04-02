@@ -60,6 +60,16 @@ public class RaftLogReader extends DelegatingJournalReader<RaftLogEntry> {
     return reader.getFirstIndex();
   }
 
+  /**
+   * Returns the first index with the given term.
+   *
+   * @param term the term for which to return the first index
+   * @return the first index for the given term
+   */
+  public long getFirstIndex(long term) {
+    return log.getTermIndex().lookup(term);
+  }
+
   @Override
   public boolean hasNext() {
     if (mode == Mode.ALL) {
