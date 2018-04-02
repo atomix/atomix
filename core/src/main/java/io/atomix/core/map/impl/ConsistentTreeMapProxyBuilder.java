@@ -18,6 +18,7 @@ package io.atomix.core.map.impl;
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMapBuilder;
+import io.atomix.core.map.ConsistentTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.utils.serializer.Serializer;
@@ -34,8 +35,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V> {
   private final PrimitiveManagementService managementService;
 
-  public ConsistentTreeMapProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public ConsistentTreeMapProxyBuilder(String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

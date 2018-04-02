@@ -24,9 +24,11 @@ import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionBuilder;
+import io.atomix.core.transaction.TransactionConfig;
 import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionService;
@@ -61,13 +63,13 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   @Override
   public TransactionBuilder transactionBuilder(String name) {
-    return new DefaultTransactionBuilder(name, managementService, transactionService);
+    return new DefaultTransactionBuilder(name, new TransactionConfig(), managementService, transactionService);
   }
 
   @Override
-  public <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(
+  public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, P> primitiveType) {
+      PrimitiveType<B, C, P> primitiveType) {
     return primitiveType.newPrimitiveBuilder(name, managementService);
   }
 

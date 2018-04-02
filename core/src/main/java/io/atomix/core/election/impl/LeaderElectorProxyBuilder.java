@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import io.atomix.core.election.AsyncLeaderElector;
 import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.LeaderElectorBuilder;
+import io.atomix.core.election.LeaderElectorConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.partition.Partition;
@@ -41,8 +42,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
   private final PrimitiveManagementService managementService;
 
-  public LeaderElectorProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public LeaderElectorProxyBuilder(String name, LeaderElectorConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

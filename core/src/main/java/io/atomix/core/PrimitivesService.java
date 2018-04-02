@@ -31,6 +31,7 @@ import io.atomix.core.tree.DocumentTreeBuilder;
 import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveType;
 
@@ -360,9 +361,9 @@ public interface PrimitivesService {
    * @param <P> the primitive type
    * @return the primitive builder
    */
-  <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(
+  <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, P> primitiveType);
+      PrimitiveType<B, C, P> primitiveType);
 
   /**
    * Returns a primitive builder of the given type.
@@ -374,9 +375,9 @@ public interface PrimitivesService {
    * @param <P> the primitive type
    * @return the primitive builder
    */
-  default <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(
+  default <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, P> primitiveType,
+      PrimitiveType<B, C, P> primitiveType,
       PrimitiveProtocol protocol) {
     return primitiveBuilder(name, primitiveType).withProtocol(protocol);
   }

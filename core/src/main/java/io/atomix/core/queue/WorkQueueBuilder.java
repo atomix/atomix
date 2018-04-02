@@ -21,8 +21,8 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
 /**
  * Work queue builder.
  */
-public abstract class WorkQueueBuilder<E> extends DistributedPrimitiveBuilder<WorkQueueBuilder<E>, WorkQueue<E>> {
-  public WorkQueueBuilder(String name) {
-    super(PrimitiveTypes.workQueue(), name);
+public abstract class WorkQueueBuilder<E> extends DistributedPrimitiveBuilder<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>> {
+  public WorkQueueBuilder(String name, WorkQueueConfig config) {
+    super(PrimitiveTypes.workQueue(), name, config);
   }
 }

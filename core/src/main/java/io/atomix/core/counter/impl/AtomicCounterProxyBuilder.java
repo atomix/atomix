@@ -17,6 +17,7 @@ package io.atomix.core.counter.impl;
 
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterBuilder;
+import io.atomix.core.counter.AtomicCounterConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 
@@ -30,8 +31,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
   private final PrimitiveManagementService managementService;
 
-  public AtomicCounterProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public AtomicCounterProxyBuilder(String name, AtomicCounterConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

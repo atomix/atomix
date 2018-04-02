@@ -17,6 +17,7 @@ package io.atomix.core.value.impl;
 
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueBuilder;
+import io.atomix.core.value.AtomicValueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveProtocol;
 
@@ -32,8 +33,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
   private final PrimitiveManagementService managementService;
 
-  public AtomicValueProxyBuilder(String name, PrimitiveManagementService managementService) {
-    super(name);
+  public AtomicValueProxyBuilder(String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
+    super(name, config);
     this.managementService = checkNotNull(managementService);
   }
 

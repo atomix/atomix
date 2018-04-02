@@ -43,6 +43,7 @@ import io.atomix.messaging.impl.NettyBroadcastService;
 import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.Recovery;
@@ -62,6 +63,7 @@ import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
+import io.atomix.utils.ConfigurationException;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -198,26 +200,13 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return primitives.transactionBuilder(name);
   }
 
-  /**
-   * Returns a primitive builder of the given type.
-   *
-   * @param name          the primitive name
-   * @param primitiveType the primitive type
-   * @param <B>           the primitive builder type
-   * @param <P>           the primitive type
-   * @return the primitive builder
-   */
-  public <B extends DistributedPrimitiveBuilder<B, P>, P extends DistributedPrimitive> B primitiveBuilder(
-      String name, PrimitiveType<B, P> primitiveType) {
+  @Override
+  public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> B primitiveBuilder(
+      String name, PrimitiveType<B, C, P> primitiveType) {
     return primitives.primitiveBuilder(name, primitiveType);
   }
 
-  /**
-   * Returns a set of all primitive names of the given type.
-   *
-   * @param primitiveType the primitive type
-   * @return a set of all primitive names of the given type
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public Set<String> getPrimitiveNames(PrimitiveType primitiveType) {
     return primitives.getPrimitiveNames(primitiveType);

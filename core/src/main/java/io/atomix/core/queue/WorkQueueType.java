@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Work queue primitive type.
  */
-public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, WorkQueue<E>> {
+public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>> {
   private static final String NAME = "WORK_QUEUE";
 
   /**
@@ -54,7 +54,7 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
 
   @Override
   public WorkQueueBuilder<E> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new WorkQueueProxyBuilder<>(name, managementService);
+    return new WorkQueueProxyBuilder<>(name, new WorkQueueConfig(), managementService);
   }
 
   @Override

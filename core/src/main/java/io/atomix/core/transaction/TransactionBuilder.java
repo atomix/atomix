@@ -22,11 +22,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Transaction builder.
  */
-public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<TransactionBuilder, Transaction> {
+public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<TransactionBuilder, TransactionConfig, Transaction> {
   private Isolation isolation = Isolation.READ_COMMITTED;
 
-  protected TransactionBuilder(String name) {
-    super(TransactionType.instance(), name);
+  protected TransactionBuilder(String name, TransactionConfig config) {
+    super(TransactionType.instance(), name, config);
   }
 
   /**

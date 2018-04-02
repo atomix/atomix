@@ -28,12 +28,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Builder for AtomicIdGenerator.
  */
 public abstract class DistributedLockBuilder
-    extends DistributedPrimitiveBuilder<DistributedLockBuilder, DistributedLock> {
+    extends DistributedPrimitiveBuilder<DistributedLockBuilder, DistributedLockConfig, DistributedLock> {
 
   private Duration lockTimeout = Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
 
-  public DistributedLockBuilder(String name) {
-    super(PrimitiveTypes.lock(), name);
+  public DistributedLockBuilder(String name, DistributedLockConfig config) {
+    super(PrimitiveTypes.lock(), name, config);
   }
 
   /**

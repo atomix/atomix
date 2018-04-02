@@ -22,8 +22,8 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  * Transactional set builder.
  */
 public abstract class TransactionalSetBuilder<E>
-    extends DistributedPrimitiveBuilder<TransactionalSetBuilder<E>, TransactionalSet<E>> {
-  protected TransactionalSetBuilder(String name) {
-    super(DistributedSetType.instance(), name);
+    extends DistributedPrimitiveBuilder<TransactionalSetBuilder<E>, TransactionalSetConfig, TransactionalSet<E>> {
+  protected TransactionalSetBuilder(String name, TransactionalSetConfig config) {
+    super(DistributedSetType.instance(), name, config);
   }
 }

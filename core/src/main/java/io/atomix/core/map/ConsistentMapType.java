@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Consistent map primitive type.
  */
-public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>> {
+public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuilder<K, V>, ConsistentMapConfig, ConsistentMap<K, V>> {
   private static final String NAME = "CONSISTENT_MAP";
 
   /**
@@ -55,7 +55,7 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
 
   @Override
   public ConsistentMapBuilder<K, V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new ConsistentMapProxyBuilder<>(name, managementService);
+    return new ConsistentMapProxyBuilder<>(name, new ConsistentMapConfig(), managementService);
   }
 
   @Override

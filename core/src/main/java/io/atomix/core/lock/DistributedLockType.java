@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Distributed lock primitive type.
  */
-public class DistributedLockType implements PrimitiveType<DistributedLockBuilder, DistributedLock> {
+public class DistributedLockType implements PrimitiveType<DistributedLockBuilder, DistributedLockConfig, DistributedLock> {
   private static final String NAME = "LOCK";
 
   /**
@@ -53,7 +53,7 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
 
   @Override
   public DistributedLockBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new DistributedLockProxyBuilder(name, managementService);
+    return new DistributedLockProxyBuilder(name, new DistributedLockConfig(), managementService);
   }
 
   @Override

@@ -26,7 +26,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Consistent multimap primitive type.
  */
-public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMultimapBuilder<K, V>, ConsistentMultimap<K, V>> {
+public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMultimapBuilder<K, V>, ConsistentMultimapConfig, ConsistentMultimap<K, V>> {
   private static final String NAME = "CONSISTENT_MULTIMAP";
 
   /**
@@ -55,7 +55,7 @@ public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMul
 
   @Override
   public ConsistentMultimapBuilder<K, V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new ConsistentMultimapProxyBuilder<>(name, managementService);
+    return new ConsistentMultimapProxyBuilder<>(name, new ConsistentMultimapConfig(), managementService);
   }
 
   @Override

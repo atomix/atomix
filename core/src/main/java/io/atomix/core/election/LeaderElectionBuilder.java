@@ -32,13 +32,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Builder for constructing new {@link AsyncLeaderElection} instances.
  */
 public abstract class LeaderElectionBuilder<T>
-    extends DistributedPrimitiveBuilder<LeaderElectionBuilder<T>, LeaderElection<T>> {
+    extends DistributedPrimitiveBuilder<LeaderElectionBuilder<T>, LeaderElectionConfig, LeaderElection<T>> {
 
   private Duration electionTimeout = Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
   private Serializer serializer;
 
-  public LeaderElectionBuilder(String name) {
-    super(PrimitiveTypes.leaderElection(), name);
+  public LeaderElectionBuilder(String name, LeaderElectionConfig config) {
+    super(PrimitiveTypes.leaderElection(), name, config);
   }
 
   /**

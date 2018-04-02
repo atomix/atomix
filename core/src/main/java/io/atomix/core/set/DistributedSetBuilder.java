@@ -23,8 +23,8 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  *
  * @param <E> type set elements.
  */
-public abstract class DistributedSetBuilder<E> extends DistributedPrimitiveBuilder<DistributedSetBuilder<E>, DistributedSet<E>> {
-  public DistributedSetBuilder(String name) {
-    super(PrimitiveTypes.set(), name);
+public abstract class DistributedSetBuilder<E> extends DistributedPrimitiveBuilder<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>> {
+  public DistributedSetBuilder(String name, DistributedSetConfig config) {
+    super(PrimitiveTypes.set(), name, config);
   }
 }
