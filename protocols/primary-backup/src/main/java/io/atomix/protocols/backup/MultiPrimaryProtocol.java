@@ -25,14 +25,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Multi-primary protocol.
  */
 public class MultiPrimaryProtocol implements PrimitiveProtocol {
-  public static final Type TYPE = new Type() {};
+  public static final Type TYPE = new Type() {
+  };
 
   /**
    * Returns a new multi-primary protocol builder.
@@ -40,7 +39,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return a new multi-primary protocol builder
    */
   public static Builder builder() {
-    return builder(null);
+    return new Builder(new MultiPrimaryProtocolConfig());
   }
 
   /**
@@ -50,35 +49,13 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return a new multi-primary protocol builder for the given group
    */
   public static Builder builder(String group) {
-    return new Builder(group);
+    return new Builder(new MultiPrimaryProtocolConfig().setGroup(group));
   }
 
-  private final String group;
-  private final Consistency consistency;
-  private final Replication replication;
-  private final Recovery recovery;
-  private final int backups;
-  private final int maxRetries;
-  private final Duration retryDelay;
-  private final Executor executor;
+  private final MultiPrimaryProtocolConfig config;
 
-  protected MultiPrimaryProtocol(
-      String group,
-      Consistency consistency,
-      Replication replication,
-      Recovery recovery,
-      int backups,
-      int maxRetries,
-      Duration retryDelay,
-      Executor executor) {
-    this.group = group;
-    this.consistency = consistency;
-    this.replication = replication;
-    this.recovery = recovery;
-    this.backups = backups;
-    this.maxRetries = maxRetries;
-    this.retryDelay = retryDelay;
-    this.executor = executor;
+  public MultiPrimaryProtocol(MultiPrimaryProtocolConfig config) {
+    this.config = config;
   }
 
   @Override
@@ -88,7 +65,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
 
   @Override
   public String group() {
-    return group;
+    return config.getGroup();
   }
 
   /**
@@ -97,7 +74,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return the protocol consistency model
    */
   public Consistency consistency() {
-    return consistency;
+    return config.getConsistency();
   }
 
   /**
@@ -106,7 +83,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return the protocol replication strategy
    */
   public Replication replication() {
-    return replication;
+    return config.getReplication();
   }
 
   /**
@@ -115,7 +92,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return the protocol recovery strategy
    */
   public Recovery recovery() {
-    return recovery;
+    return config.getRecovery();
   }
 
   /**
@@ -124,7 +101,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return the number of backups
    */
   public int backups() {
-    return backups;
+    return config.getNumBackups();
   }
 
   /**
@@ -133,7 +110,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return the maximum number of allowed retries
    */
   public int maxRetries() {
-    return maxRetries;
+    return config.getMaxRetries();
   }
 
   /**
@@ -142,7 +119,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return the retry delay
    */
   public Duration retryDelay() {
-    return retryDelay;
+    return config.getRetryDelay();
   }
 
   /**
@@ -151,7 +128,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    * @return the proxy executor
    */
   public Executor executor() {
-    return executor;
+    return config.getExecutor();
   }
 
   @Override
@@ -162,25 +139,17 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
         .add("consistency", consistency())
         .add("replication", replication())
         .add("backups", backups())
-        .add("maxRetries", maxRetries)
-        .add("retryDelay", retryDelay)
+        .add("maxRetries", maxRetries())
+        .add("retryDelay", retryDelay())
         .toString();
   }
 
   /**
    * Multi-primary protocol builder.
    */
-  public static class Builder extends PrimitiveProtocol.Builder {
-    private Consistency consistency = Consistency.SEQUENTIAL;
-    private Replication replication = Replication.ASYNCHRONOUS;
-    private Recovery recovery = Recovery.RECOVER;
-    private int numBackups = 1;
-    private int maxRetries = 0;
-    private Duration retryDelay = Duration.ofMillis(100);
-    private Executor executor;
-
-    protected Builder(String group) {
-      super(group);
+  public static class Builder extends PrimitiveProtocol.Builder<MultiPrimaryProtocolConfig, MultiPrimaryProtocol> {
+    protected Builder(MultiPrimaryProtocolConfig config) {
+      super(config);
     }
 
     /**
@@ -190,7 +159,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the protocol builder
      */
     public Builder withConsistency(Consistency consistency) {
-      this.consistency = checkNotNull(consistency, "consistency cannot be null");
+      config.setConsistency(consistency);
       return this;
     }
 
@@ -201,7 +170,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the protocol builder
      */
     public Builder withReplication(Replication replication) {
-      this.replication = checkNotNull(replication, "replication cannot be null");
+      config.setReplication(replication);
       return this;
     }
 
@@ -212,7 +181,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the protocol builder
      */
     public Builder withRecovery(Recovery recovery) {
-      this.recovery = checkNotNull(recovery, "recovery cannot be null");
+      config.setRecovery(recovery);
       return this;
     }
 
@@ -223,8 +192,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the protocol builder
      */
     public Builder withBackups(int numBackups) {
-      checkArgument(numBackups >= 0, "numBackups must be positive");
-      this.numBackups = numBackups;
+      config.setNumBackups(numBackups);
       return this;
     }
 
@@ -235,8 +203,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the proxy builder
      */
     public Builder withMaxRetries(int maxRetries) {
-      checkArgument(maxRetries >= 0, "maxRetries must be positive");
-      this.maxRetries = maxRetries;
+      config.setMaxRetries(maxRetries);
       return this;
     }
 
@@ -247,14 +214,15 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the proxy builder
      */
     public Builder withRetryDelayMillis(long retryDelayMillis) {
-      return withRetryDelay(Duration.ofMillis(retryDelayMillis));
+      config.setRetryDelayMillis(retryDelayMillis);
+      return this;
     }
 
     /**
      * Sets the operation retry delay.
      *
      * @param retryDelay the delay between operation retries
-     * @param timeUnit the delay time unit
+     * @param timeUnit   the delay time unit
      * @return the proxy builder
      * @throws NullPointerException if the time unit is null
      */
@@ -270,7 +238,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @throws NullPointerException if the delay is null
      */
     public Builder withRetryDelay(Duration retryDelay) {
-      this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
+      config.setRetryDelay(retryDelay);
       return this;
     }
 
@@ -282,21 +250,13 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @throws NullPointerException if the executor is null
      */
     public Builder withExecutor(Executor executor) {
-      this.executor = checkNotNull(executor, "executor cannot be null");
+      config.setExecutor(executor);
       return this;
     }
 
     @Override
     public MultiPrimaryProtocol build() {
-      return new MultiPrimaryProtocol(
-          group,
-          consistency,
-          replication,
-          recovery,
-          numBackups,
-          maxRetries,
-          retryDelay,
-          executor);
+      return new MultiPrimaryProtocol(config);
     }
   }
 }
