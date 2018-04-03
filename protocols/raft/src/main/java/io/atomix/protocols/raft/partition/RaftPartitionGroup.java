@@ -50,8 +50,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Raft partition group.
@@ -65,10 +63,19 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
    * @return a new partition group builder
    */
   public static Builder builder(String name) {
-    return new Builder(name);
+    return new Builder(new RaftPartitionGroupConfig().setName(name));
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftPartitionGroup.class);
+
+  private static Collection<RaftPartition> buildPartitions(RaftPartitionGroupConfig config) {
+    File partitionsDir = new File(config.getDataDirectory(), "partitions");
+    List<RaftPartition> partitions = new ArrayList<>(config.getNumPartitions());
+    for (int i = 0; i < config.getNumPartitions(); i++) {
+      partitions.add(new RaftPartition(PartitionId.from(config.getName(), i + 1), config.getStorageLevel(), new File(partitionsDir, String.valueOf(i + 1))));
+    }
+    return partitions;
+  }
 
   private final String name;
   private final int partitionSize;
@@ -79,7 +86,11 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   private Collection<PartitionMetadata> metadata;
   private CompletableFuture<Void> metadataChangeFuture = CompletableFuture.completedFuture(null);
 
-  public RaftPartitionGroup(String name, Collection<RaftPartition> partitions, int partitionSize) {
+  public RaftPartitionGroup(RaftPartitionGroupConfig config) {
+    this(config.getName(), buildPartitions(config), config.getPartitionSize());
+  }
+
+  private RaftPartitionGroup(String name, Collection<RaftPartition> partitions, int partitionSize) {
     this.name = name;
     this.partitionSize = partitionSize;
     partitions.forEach(p -> {
@@ -204,14 +215,9 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   /**
    * Raft partition group builder.
    */
-  public static class Builder extends PartitionGroup.Builder {
-    private int numPartitions;
-    private int partitionSize;
-    private StorageLevel storageLevel = StorageLevel.MAPPED;
-    private File dataDirectory = new File(System.getProperty("user.dir"), "data");
-
-    protected Builder(String name) {
-      super(name);
+  public static class Builder extends PartitionGroup.Builder<RaftPartitionGroupConfig> {
+    protected Builder(RaftPartitionGroupConfig config) {
+      super(config);
     }
 
     /**
@@ -222,8 +228,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
     public Builder withNumPartitions(int numPartitions) {
-      checkArgument(numPartitions > 0, "numPartitions must be positive");
-      this.numPartitions = numPartitions;
+      config.setNumPartitions(numPartitions);
       return this;
     }
 
@@ -235,8 +240,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @throws IllegalArgumentException if the partition size is not positive
      */
     public Builder withPartitionSize(int partitionSize) {
-      checkArgument(partitionSize > 0, "partitionSize must be positive");
-      this.partitionSize = partitionSize;
+      config.setPartitionSize(partitionSize);
       return this;
     }
 
@@ -247,7 +251,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the Raft partition group builder
      */
     public Builder withStorageLevel(StorageLevel storageLevel) {
-      this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
+      config.setStorageLevel(storageLevel);
       return this;
     }
 
@@ -258,18 +262,13 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the replica builder
      */
     public Builder withDataDirectory(File dataDir) {
-      this.dataDirectory = checkNotNull(dataDir, "dataDir cannot be null");
+      config.setDataDirectory(dataDir);
       return this;
     }
 
     @Override
     public ManagedPartitionGroup build() {
-      File partitionsDir = new File(dataDirectory, "partitions");
-      List<RaftPartition> partitions = new ArrayList<>(numPartitions);
-      for (int i = 0; i < numPartitions; i++) {
-        partitions.add(new RaftPartition(PartitionId.from(name, i + 1), storageLevel, new File(partitionsDir, String.valueOf(i + 1))));
-      }
-      return new RaftPartitionGroup(name, partitions, partitionSize);
+      return new RaftPartitionGroup(config);
     }
   }
 }

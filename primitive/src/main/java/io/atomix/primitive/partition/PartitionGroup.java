@@ -85,11 +85,11 @@ public interface PartitionGroup<P extends PrimitiveProtocol> {
   /**
    * Partition group builder.
    */
-  abstract class Builder implements io.atomix.utils.Builder<ManagedPartitionGroup> {
-    protected final String name;
+  abstract class Builder<C extends PartitionGroupConfig<C>> implements io.atomix.utils.Builder<ManagedPartitionGroup> {
+    protected final C config;
 
-    protected Builder(String name) {
-      this.name = name;
+    protected Builder(C config) {
+      this.config = config;
     }
   }
 }
