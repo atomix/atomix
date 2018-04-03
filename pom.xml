@@ -54,6 +54,7 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <netty.version>4.1.22.Final</netty.version>
     <vertx.version>3.5.0</vertx.version>
+    <jackson.version>2.9.5</jackson.version>
     <resteasy.version>3.1.4.Final</resteasy.version>
     <argparse4j.version>0.7.0</argparse4j.version>
 
@@ -99,6 +100,7 @@
   <modules>
     <module>agent</module>
     <module>cluster</module>
+    <module>config</module>
     <module>core</module>
     <module>messaging</module>
     <module>primitive</module>
