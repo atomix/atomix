@@ -15,7 +15,9 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.SerializerConfig;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -26,7 +28,9 @@ public class PrimitiveConfig<C extends PrimitiveConfig<C>> {
   private static final int DEFAULT_CACHE_SIZE = 1000;
 
   private Serializer serializer;
+  private SerializerConfig serializerConfig;
   private PrimitiveProtocol protocol;
+  private PrimitiveProtocolConfig protocolConfig;
   private boolean cacheEnabled = false;
   private int cacheSize = DEFAULT_CACHE_SIZE;
   private boolean readOnly = false;
@@ -49,7 +53,31 @@ public class PrimitiveConfig<C extends PrimitiveConfig<C>> {
    * @return the serializer
    */
   public Serializer getSerializer() {
+    Serializer serializer = this.serializer;
+    if (serializer == null) {
+      serializer = Serializer.using(new KryoNamespace(serializerConfig));
+    }
     return serializer;
+  }
+
+  /**
+   * Returns the serializer configuration.
+   *
+   * @return the serializer configuration
+   */
+  public SerializerConfig getSerializerConfig() {
+    return serializerConfig;
+  }
+
+  /**
+   * Sets the serializer configuration.
+   *
+   * @param serializerConfig the serializer configuration
+   * @return the primitive configuration
+   */
+  public PrimitiveConfig setSerializerConfig(SerializerConfig serializerConfig) {
+    this.serializerConfig = serializerConfig;
+    return this;
   }
 
   /**
@@ -70,7 +98,31 @@ public class PrimitiveConfig<C extends PrimitiveConfig<C>> {
    * @return the primitive protocol
    */
   public PrimitiveProtocol getProtocol() {
+    PrimitiveProtocol protocol = this.protocol;
+    if (protocol == null) {
+      protocol = PrimitiveProtocols.createProtocol(protocolConfig);
+    }
     return protocol;
+  }
+
+  /**
+   * Returns the protocol configuration.
+   *
+   * @return the protocol configuration
+   */
+  public PrimitiveProtocolConfig getProtocolConfig() {
+    return protocolConfig;
+  }
+
+  /**
+   * Sets the protocol configuration.
+   *
+   * @param protocolConfig the protocol configuration
+   * @return the primitive configuration
+   */
+  public PrimitiveConfig setProtocolConfig(PrimitiveProtocolConfig protocolConfig) {
+    this.protocolConfig = protocolConfig;
+    return this;
   }
 
   /**
