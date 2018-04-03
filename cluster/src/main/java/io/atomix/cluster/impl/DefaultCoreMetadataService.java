@@ -25,12 +25,13 @@ import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
 import io.atomix.cluster.ClusterMetadataService;
+import io.atomix.cluster.CoreConfig;
 import io.atomix.cluster.ManagedCoreMetadataService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.event.AbstractListenerManager;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -95,6 +96,10 @@ public class DefaultCoreMetadataService
   private final ExecutorService messageExecutor = Executors.newSingleThreadExecutor(
       namedThreads("atomix-cluster-metadata-receiver", log));
   private ScheduledFuture<?> metadataFuture;
+
+  public DefaultCoreMetadataService(CoreConfig config, MessagingService messagingService) {
+    this(ClusterMetadata.builder().withNodes(config.getNodes().stream().map(Node::new).collect(Collectors.toList())).build(), messagingService);
+  }
 
   public DefaultCoreMetadataService(ClusterMetadata metadata, MessagingService messagingService) {
     metadata.nodes().forEach(node -> nodes.put(node.id(), new ReplicatedNode(
