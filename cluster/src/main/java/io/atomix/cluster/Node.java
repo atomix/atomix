@@ -145,6 +145,10 @@ public class Node {
   private final String rack;
   private final String host;
 
+  public Node(NodeConfig config) {
+    this(config.getId(), config.getType(), config.getAddress(), config.getZone(), config.getRack(), config.getHost());
+  }
+
   protected Node(NodeId id, Type type, Address address, String zone, String rack, String host) {
     this.id = checkNotNull(id, "id cannot be null");
     this.type = checkNotNull(type, "type cannot be null");

@@ -40,6 +40,10 @@ public class ClusterMetadata {
 
   private final Collection<Node> nodes;
 
+  public ClusterMetadata(ClusterConfig config) {
+    this(config.getNodes().stream().map(Node::new).collect(Collectors.toList()));
+  }
+
   public ClusterMetadata(Collection<Node> nodes) {
     this.nodes = nodes.stream()
         .filter(node -> node.type() == Type.CORE)
