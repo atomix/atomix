@@ -45,7 +45,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -60,7 +59,15 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
    * @return a new partition group builder
    */
   public static Builder builder(String name) {
-    return new Builder(name);
+    return new Builder(new PrimaryBackupPartitionGroupConfig().setName(name));
+  }
+
+  private static Collection<PrimaryBackupPartition> buildPartitions(PrimaryBackupPartitionGroupConfig config) {
+    List<PrimaryBackupPartition> partitions = new ArrayList<>(config.getNumPartitions());
+    for (int i = 0; i < config.getNumPartitions(); i++) {
+      partitions.add(new PrimaryBackupPartition(PartitionId.from(config.getName(), i + 1), config.getMemberGroupProvider()));
+    }
+    return partitions;
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PrimaryBackupPartitionGroup.class);
@@ -70,7 +77,11 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
   private ThreadContextFactory threadFactory;
 
-  public PrimaryBackupPartitionGroup(String name, Collection<PrimaryBackupPartition> partitions) {
+  public PrimaryBackupPartitionGroup(PrimaryBackupPartitionGroupConfig config) {
+    this(config.getName(), buildPartitions(config));
+  }
+
+  private PrimaryBackupPartitionGroup(String name, Collection<PrimaryBackupPartition> partitions) {
     this.name = checkNotNull(name);
     partitions.forEach(p -> {
       this.partitions.put(p.id(), p);
@@ -148,12 +159,9 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   /**
    * Primary-backup partition group builder.
    */
-  public static class Builder extends PartitionGroup.Builder {
-    private int numPartitions;
-    private MemberGroupProvider memberGroupProvider = MemberGroupStrategy.NODE_AWARE;
-
-    protected Builder(String name) {
-      super(name);
+  public static class Builder extends PartitionGroup.Builder<PrimaryBackupPartitionGroupConfig> {
+    protected Builder(PrimaryBackupPartitionGroupConfig config) {
+      super(config);
     }
 
     /**
@@ -164,8 +172,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
     public Builder withNumPartitions(int numPartitions) {
-      checkArgument(numPartitions > 0, "numPartitions must be positive");
-      this.numPartitions = numPartitions;
+      config.setNumPartitions(numPartitions);
       return this;
     }
 
@@ -176,7 +183,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
      * @return the partition group builder
      */
     public Builder withMemberGroupProvider(MemberGroupProvider memberGroupProvider) {
-      this.memberGroupProvider = checkNotNull(memberGroupProvider, "memberGroupProvider cannot be null");
+      config.setMemberGroupProvider(memberGroupProvider);
       return this;
     }
 
@@ -212,11 +219,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
     @Override
     public ManagedPartitionGroup build() {
-      List<PrimaryBackupPartition> partitions = new ArrayList<>(numPartitions);
-      for (int i = 0; i < numPartitions; i++) {
-        partitions.add(new PrimaryBackupPartition(PartitionId.from(name, i + 1), memberGroupProvider));
-      }
-      return new PrimaryBackupPartitionGroup(name, partitions);
+      return new PrimaryBackupPartitionGroup(config);
     }
   }
 }
