@@ -20,5 +20,5 @@ import io.atomix.primitive.PrimitiveConfig;
 /**
  * Atomic counter configuration.
  */
-public class AtomicCounterConfig extends PrimitiveConfig {
+public class AtomicCounterConfig extends PrimitiveConfig<AtomicCounterConfig> {
 }

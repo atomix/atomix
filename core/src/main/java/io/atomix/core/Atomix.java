@@ -32,9 +32,22 @@ import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
+import io.atomix.core.counter.AtomicCounter;
+import io.atomix.core.election.LeaderElection;
+import io.atomix.core.election.LeaderElector;
+import io.atomix.core.generator.AtomicIdGenerator;
 import io.atomix.core.generator.impl.IdGeneratorSessionIdService;
 import io.atomix.core.impl.CorePrimitivesService;
+import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.map.AtomicCounterMap;
+import io.atomix.core.map.ConsistentMap;
+import io.atomix.core.map.ConsistentTreeMap;
+import io.atomix.core.multimap.ConsistentMultimap;
+import io.atomix.core.queue.WorkQueue;
+import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
+import io.atomix.core.tree.DocumentTree;
+import io.atomix.core.value.AtomicValue;
 import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.ManagedBroadcastService;
 import io.atomix.messaging.ManagedMessagingService;
@@ -44,6 +57,7 @@ import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveConfigs;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
@@ -168,9 +182,80 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   @Override
-  public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> B primitiveBuilder(
-      String name, PrimitiveType<B, C, P> primitiveType) {
+  public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
+      String name,
+      PrimitiveType<B, C, P> primitiveType) {
     return context.primitives.primitiveBuilder(name, primitiveType);
+  }
+
+  @Override
+  public <K, V> ConsistentMap<K, V> getConsistentMap(String name) {
+    return context.primitives.getConsistentMap(name);
+  }
+
+  @Override
+  public <V> DocumentTree<V> getDocumentTree(String name) {
+    return context.primitives.getDocumentTree(name);
+  }
+
+  @Override
+  public <V> ConsistentTreeMap<V> getTreeMap(String name) {
+    return context.primitives.getTreeMap(name);
+  }
+
+  @Override
+  public <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name) {
+    return context.primitives.getConsistentMultimap(name);
+  }
+
+  @Override
+  public <K> AtomicCounterMap<K> getAtomicCounterMap(String name) {
+    return context.primitives.getAtomicCounterMap(name);
+  }
+
+  @Override
+  public <E> DistributedSet<E> getSet(String name) {
+    return context.primitives.getSet(name);
+  }
+
+  @Override
+  public AtomicCounter getAtomicCounter(String name) {
+    return context.primitives.getAtomicCounter(name);
+  }
+
+  @Override
+  public AtomicIdGenerator getAtomicIdGenerator(String name) {
+    return context.primitives.getAtomicIdGenerator(name);
+  }
+
+  @Override
+  public <V> AtomicValue<V> getAtomicValue(String name) {
+    return context.primitives.getAtomicValue(name);
+  }
+
+  @Override
+  public <T> LeaderElection<T> getLeaderElection(String name) {
+    return context.primitives.getLeaderElection(name);
+  }
+
+  @Override
+  public <T> LeaderElector<T> getLeaderElector(String name) {
+    return context.primitives.getLeaderElector(name);
+  }
+
+  @Override
+  public DistributedLock getLock(String name) {
+    return context.primitives.getLock(name);
+  }
+
+  @Override
+  public <E> WorkQueue<E> getWorkQueue(String name) {
+    return context.primitives.getWorkQueue(name);
+  }
+
+  @Override
+  public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
+    return context.primitives.getPrimitive(name, primitiveType, primitiveConfig);
   }
 
   @Override
@@ -189,6 +274,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * @return a future to be completed once the instance has completed startup
    */
   @Override
+  @SuppressWarnings("unchecked")
   public synchronized CompletableFuture<Atomix> start() {
     if (closeFuture != null) {
       return Futures.exceptionalFuture(new IllegalStateException("Atomix instance " +
@@ -308,8 +394,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
     ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup(config);
     ManagedPartitionService partitions = buildPartitionService(config);
-    ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions);
-    PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitives());
+    ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions, config.getPrimitives());
+    PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
     return new Context(
         messagingService,
         broadcastService,
@@ -755,7 +841,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
       ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup();
       ManagedPartitionService partitions = buildPartitionService();
-      ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions);
+      ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions, new PrimitiveConfigs());
       return new Atomix(new Context(
           messagingService,
           broadcastService,

@@ -15,11 +15,11 @@
  */
 package io.atomix.core.generator;
 
+import io.atomix.core.counter.impl.AtomicCounterService;
+import io.atomix.core.generator.impl.DelegatingAtomicIdGeneratorBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
-import io.atomix.core.counter.impl.AtomicCounterService;
-import io.atomix.core.generator.impl.DelegatingAtomicIdGeneratorBuilder;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -53,7 +53,12 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
 
   @Override
   public AtomicIdGeneratorBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new DelegatingAtomicIdGeneratorBuilder(name, new AtomicIdGeneratorConfig(), managementService);
+    return newPrimitiveBuilder(name, new AtomicIdGeneratorConfig(), managementService);
+  }
+
+  @Override
+  public AtomicIdGeneratorBuilder newPrimitiveBuilder(String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
+    return new DelegatingAtomicIdGeneratorBuilder(name, config, managementService);
   }
 
   @Override

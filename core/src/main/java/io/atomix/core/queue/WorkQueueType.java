@@ -54,7 +54,12 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
 
   @Override
   public WorkQueueBuilder<E> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new WorkQueueProxyBuilder<>(name, new WorkQueueConfig(), managementService);
+    return newPrimitiveBuilder(name, new WorkQueueConfig(), managementService);
+  }
+
+  @Override
+  public WorkQueueBuilder<E> newPrimitiveBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
+    return new WorkQueueProxyBuilder<>(name, config, managementService);
   }
 
   @Override

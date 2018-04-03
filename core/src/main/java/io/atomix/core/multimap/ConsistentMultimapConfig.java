@@ -20,5 +20,5 @@ import io.atomix.primitive.PrimitiveConfig;
 /**
  * Consistent multimap configuration.
  */
-public class ConsistentMultimapConfig extends PrimitiveConfig {
+public class ConsistentMultimapConfig extends PrimitiveConfig<ConsistentMultimapConfig> {
 }

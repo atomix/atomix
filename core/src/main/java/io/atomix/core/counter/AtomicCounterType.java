@@ -53,7 +53,12 @@ public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, At
 
   @Override
   public AtomicCounterBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new AtomicCounterProxyBuilder(name, new AtomicCounterConfig(), managementService);
+    return newPrimitiveBuilder(name, new AtomicCounterConfig(), managementService);
+  }
+
+  @Override
+  public AtomicCounterBuilder newPrimitiveBuilder(String name, AtomicCounterConfig config, PrimitiveManagementService managementService) {
+    return new AtomicCounterProxyBuilder(name, config, managementService);
   }
 
   @Override

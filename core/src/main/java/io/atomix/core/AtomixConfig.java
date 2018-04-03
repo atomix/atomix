@@ -16,7 +16,8 @@
 package io.atomix.core;
 
 import io.atomix.cluster.ClusterConfig;
-import io.atomix.primitive.PrimitiveTypeConfig;
+import io.atomix.primitive.PrimitiveConfigs;
+import io.atomix.primitive.PrimitiveTypeConfigs;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.utils.Config;
 
@@ -32,7 +33,8 @@ public class AtomixConfig implements Config {
   private File dataDirectory = new File(System.getProperty("user.dir"), "data");
   private boolean enableShutdownHook;
   private Collection<PartitionGroupConfig> partitionGroups = new ArrayList<>();
-  private PrimitiveTypeConfig primitives = new PrimitiveTypeConfig();
+  private PrimitiveTypeConfigs primitiveTypes = new PrimitiveTypeConfigs();
+  private PrimitiveConfigs primitives = new PrimitiveConfigs();
 
   /**
    * Returns the cluster configuration.
@@ -130,17 +132,37 @@ public class AtomixConfig implements Config {
    *
    * @return the primitive type configuration
    */
-  public PrimitiveTypeConfig getPrimitives() {
-    return primitives;
+  public PrimitiveTypeConfigs getPrimitiveTypes() {
+    return primitiveTypes;
   }
 
   /**
    * Sets the primitive type configuration.
    *
-   * @param primitives the primitive type configuration
+   * @param primitiveTypes the primitive type configuration
    * @return the Atomix configuration
    */
-  public AtomixConfig setPrimitives(PrimitiveTypeConfig primitives) {
+  public AtomixConfig setPrimitiveTypes(PrimitiveTypeConfigs primitiveTypes) {
+    this.primitiveTypes = primitiveTypes;
+    return this;
+  }
+
+  /**
+   * Returns the primitive configurations.
+   *
+   * @return the primitive configurations
+   */
+  public PrimitiveConfigs getPrimitives() {
+    return primitives;
+  }
+
+  /**
+   * Sets the primitive configurations.
+   *
+   * @param primitives the primitive configurations
+   * @return the Atomix configuration
+   */
+  public AtomixConfig setPrimitives(PrimitiveConfigs primitives) {
     this.primitives = primitives;
     return this;
   }

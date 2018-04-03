@@ -55,7 +55,12 @@ public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMul
 
   @Override
   public ConsistentMultimapBuilder<K, V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new ConsistentMultimapProxyBuilder<>(name, new ConsistentMultimapConfig(), managementService);
+    return newPrimitiveBuilder(name, new ConsistentMultimapConfig(), managementService);
+  }
+
+  @Override
+  public ConsistentMultimapBuilder<K, V> newPrimitiveBuilder(String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
+    return new ConsistentMultimapProxyBuilder<>(name, config, managementService);
   }
 
   @Override

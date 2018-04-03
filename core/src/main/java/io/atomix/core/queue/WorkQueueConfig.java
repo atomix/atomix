@@ -20,5 +20,5 @@ import io.atomix.primitive.PrimitiveConfig;
 /**
  * Work queue configuration.
  */
-public class WorkQueueConfig extends PrimitiveConfig {
+public class WorkQueueConfig extends PrimitiveConfig<WorkQueueConfig> {
 }

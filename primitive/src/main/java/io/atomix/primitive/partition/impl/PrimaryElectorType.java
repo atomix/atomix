@@ -16,6 +16,7 @@
 package io.atomix.primitive.partition.impl;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -53,6 +54,11 @@ public class PrimaryElectorType implements PrimitiveType {
 
   @Override
   public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
     throw new UnsupportedOperationException();
   }
 

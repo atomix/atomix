@@ -35,4 +35,9 @@ public class TestPrimitiveType implements PrimitiveType {
   public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
+    throw new UnsupportedOperationException();
+  }
 }

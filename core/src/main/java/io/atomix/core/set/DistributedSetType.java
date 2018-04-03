@@ -55,7 +55,12 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
 
   @Override
   public DistributedSetBuilder<E> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new DelegatingDistributedSetBuilder<>(name, new DistributedSetConfig(), managementService);
+    return newPrimitiveBuilder(name, new DistributedSetConfig(), managementService);
+  }
+
+  @Override
+  public DistributedSetBuilder<E> newPrimitiveBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
+    return new DelegatingDistributedSetBuilder<>(name, config, managementService);
   }
 
   @Override

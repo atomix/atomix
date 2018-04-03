@@ -55,7 +55,12 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
 
   @Override
   public ConsistentMapBuilder<K, V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new ConsistentMapProxyBuilder<>(name, new ConsistentMapConfig(), managementService);
+    return newPrimitiveBuilder(name, new ConsistentMapConfig(), managementService);
+  }
+
+  @Override
+  public ConsistentMapBuilder<K, V> newPrimitiveBuilder(String name, ConsistentMapConfig config, PrimitiveManagementService managementService) {
+    return new ConsistentMapProxyBuilder<>(name, config, managementService);
   }
 
   @Override

@@ -20,5 +20,5 @@ import io.atomix.primitive.PrimitiveConfig;
 /**
  * Consistent tree-map configuration.
  */
-public class ConsistentTreeMapConfig extends PrimitiveConfig {
+public class ConsistentTreeMapConfig extends PrimitiveConfig<ConsistentTreeMapConfig> {
 }
