@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.config;
+package io.atomix.core.config.jackson;
+
+import io.atomix.core.config.ConfigProvider;
 
 /**
- * Atomix configuration provider.
+ * Jackson configuration provider.
  */
-public interface ConfigProvider {
+public class JacksonConfigProvider implements ConfigProvider {
+  private static final String YAML_EXT = ".yaml";
+  private static final String JSON_EXT = ".json";
 
-  /**
-   * Returns a boolean indicating whether the given file name matches this provider.
-   *
-   * @param fileName the file name string
-   * @return indicates whether the given file name matches this provider
-   */
-  boolean isConfigFile(String fileName);
-
+  @Override
+  public boolean isConfigFile(String fileName) {
+    return fileName.endsWith(YAML_EXT) || fileName.endsWith(JSON_EXT);
+  }
 }
