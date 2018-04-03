@@ -17,34 +17,94 @@ package io.atomix.cluster;
 
 import io.atomix.utils.Config;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Cluster configuration.
  */
 public class ClusterConfig implements Config {
-  private Collection<NodeConfig> nodes = new ArrayList<>();
+  private static final String DEFAULT_CLUSTER_NAME = "atomix";
+
+  private String name = DEFAULT_CLUSTER_NAME;
+  private NodeConfig localNode;
+  private CoreConfig core = new CoreConfig();
+  private BootstrapConfig bootstrap = new BootstrapConfig();
 
   /**
-   * Returns the collection of nodes.
+   * Returns the cluster name.
    *
-   * @return the collection of nodes
+   * @return the cluster name
    */
-  public Collection<NodeConfig> getNodes() {
-    return nodes;
+  public String getName() {
+    return name;
   }
 
   /**
-   * Sets the collection of nodes.
+   * Sets the cluster name.
    *
-   * @param nodes the collection of nodes
+   * @param name the cluster name
    * @return the cluster configuration
    */
-  public ClusterConfig setNodes(Collection<NodeConfig> nodes) {
-    this.nodes = checkNotNull(nodes, "nodes cannot be null");
+  public ClusterConfig setName(String name) {
+    this.name = name;
+    return this;
+  }
+
+  /**
+   * Returns the local node configuration.
+   *
+   * @return the local node configuration
+   */
+  public NodeConfig getLocalNode() {
+    return localNode;
+  }
+
+  /**
+   * Sets the local node configuration.
+   *
+   * @param localNode the local node configuration
+   * @return the cluster configuration
+   */
+  public ClusterConfig setLocalNode(NodeConfig localNode) {
+    this.localNode = localNode;
+    return this;
+  }
+
+  /**
+   * Returns the core configuration.
+   *
+   * @return the core configuration.
+   */
+  public CoreConfig getCoreConfig() {
+    return core;
+  }
+
+  /**
+   * Sets the core configuration.
+   *
+   * @param core the core configuration
+   * @return the cluster configuration
+   */
+  public ClusterConfig setCoreConfig(CoreConfig core) {
+    this.core = core;
+    return this;
+  }
+
+  /**
+   * Returns the bootstrap configuration.
+   *
+   * @return the bootstrap configuration.
+   */
+  public BootstrapConfig getBootstrapConfig() {
+    return bootstrap;
+  }
+
+  /**
+   * Sets the bootstrap configuration.
+   *
+   * @param bootstrap the bootstrap configuration
+   * @return the cluster configuration
+   */
+  public ClusterConfig setBootstrapConfig(BootstrapConfig bootstrap) {
+    this.bootstrap = bootstrap;
     return this;
   }
 }

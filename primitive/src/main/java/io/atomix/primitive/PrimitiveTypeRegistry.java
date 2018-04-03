@@ -16,6 +16,7 @@
 package io.atomix.primitive;
 
 import com.google.common.collect.Maps;
+import io.atomix.utils.ConfigurationException;
 
 import java.util.Map;
 
@@ -24,6 +25,20 @@ import java.util.Map;
  */
 public class PrimitiveTypeRegistry {
   private final Map<String, PrimitiveType> types = Maps.newConcurrentMap();
+
+  public PrimitiveTypeRegistry() {
+    this(new PrimitiveTypeConfig());
+  }
+
+  public PrimitiveTypeRegistry(PrimitiveTypeConfig config) {
+    for (Map.Entry<String, Class<? extends PrimitiveType>> type : config.getTypes().entrySet()) {
+      try {
+        types.put(type.getKey(), type.getValue().newInstance());
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ConfigurationException("Failed to instantiate primitive type", e);
+      }
+    }
+  }
 
   /**
    * Registers a primitive type.

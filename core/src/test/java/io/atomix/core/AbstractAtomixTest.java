@@ -15,21 +15,9 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.ManagedBootstrapMetadataService;
-import io.atomix.cluster.ManagedClusterService;
-import io.atomix.cluster.ManagedCoreMetadataService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.messaging.ManagedClusterEventingService;
-import io.atomix.cluster.messaging.ManagedClusterMessagingService;
-import io.atomix.messaging.ManagedBroadcastService;
-import io.atomix.messaging.ManagedMessagingService;
-import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.partition.ManagedPartitionGroup;
-import io.atomix.primitive.partition.ManagedPartitionService;
-import io.atomix.primitive.partition.impl.DefaultPartitionService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
-import io.atomix.storage.StorageLevel;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -82,14 +70,19 @@ public abstract class AbstractAtomixTest {
             .build())
         .collect(Collectors.toList());
 
-    return new TestAtomix.Builder()
+    return Atomix.builder()
         .withClusterName("test")
         .withDataDirectory(new File("target/test-logs/" + id))
         .withLocalNode(localNode)
         .withCoreNodes(coreNodes)
         .withBootstrapNodes(bootstrapNodes)
-        .withCorePartitions(3)
-        .withDataPartitions(3); // Lower number of partitions for faster testing
+        .addPartitionGroup(RaftPartitionGroup.builder("core")
+            .withPartitionSize(3)
+            .withNumPartitions(3)
+            .build())
+        .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
+            .withNumPartitions(3)
+            .build());
   }
 
   /**
@@ -130,77 +123,6 @@ public abstract class AbstractAtomixTest {
           return FileVisitResult.CONTINUE;
         }
       });
-    }
-  }
-
-  /**
-   * Atomix implementation used for testing.
-   */
-  static class TestAtomix extends Atomix {
-    TestAtomix(
-        ManagedMessagingService messagingService,
-        ManagedBroadcastService broadcastService,
-        ManagedBootstrapMetadataService bootstrapMetadataService,
-        ManagedCoreMetadataService coreMetadataService,
-        ManagedClusterService cluster,
-        ManagedClusterMessagingService clusterMessagingService,
-        ManagedClusterEventingService clusterEventingService,
-        ManagedPartitionGroup systemPartitionGroup,
-        ManagedPartitionService partitions,
-        PrimitiveTypeRegistry primitiveTypes,
-        boolean enableShutdownHook) {
-      super(
-          messagingService,
-          broadcastService,
-          bootstrapMetadataService,
-          coreMetadataService,
-          cluster,
-          clusterMessagingService,
-          clusterEventingService,
-          systemPartitionGroup,
-          partitions,
-          primitiveTypes,
-          enableShutdownHook);
-    }
-
-    static class Builder extends Atomix.Builder {
-      @Override
-      protected ManagedMessagingService buildMessagingService() {
-        return messagingServiceFactory.newMessagingService(localNode.address());
-      }
-
-      @Override
-      protected ManagedPartitionGroup buildSystemPartitionGroup() {
-        if (!coreNodes.isEmpty()) {
-          return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
-              .withStorageLevel(StorageLevel.MEMORY)
-              .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
-              .withNumPartitions(1)
-              .build();
-        } else {
-          return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
-              .withNumPartitions(1)
-              .build();
-        }
-      }
-
-      @Override
-      protected ManagedPartitionService buildPartitionService() {
-        if (partitionGroups.isEmpty()) {
-          if (!coreNodes.isEmpty()) {
-            partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
-                .withStorageLevel(StorageLevel.MEMORY)
-                .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
-                .withNumPartitions(numCorePartitions > 0 ? numCorePartitions : coreNodes.size())
-                .withPartitionSize(corePartitionSize)
-                .build());
-          }
-          partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
-              .withNumPartitions(numDataPartitions)
-              .build());
-        }
-        return new DefaultPartitionService(partitionGroups);
-      }
     }
   }
 }
