@@ -88,15 +88,15 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
               value -> value == null ? null : serializer.encode(value),
               bytes -> serializer.decode(bytes));
 
-          if (!nullValues()) {
+          if (!config.isNullValues()) {
             map = new NotNullAsyncConsistentMap<>(map);
           }
 
-          if (cacheEnabled()) {
-            map = new CachingAsyncConsistentMap<>(map, cacheSize());
+          if (config.isCacheEnabled()) {
+            map = new CachingAsyncConsistentMap<>(map, config.getCacheSize());
           }
 
-          if (readOnly()) {
+          if (config.isReadOnly()) {
             map = new UnmodifiableAsyncConsistentMap<>(map);
           }
           return map.sync();

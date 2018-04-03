@@ -20,5 +20,35 @@ import io.atomix.primitive.PrimitiveConfig;
 /**
  * Consistent map configuration.
  */
-public class ConsistentMapConfig extends PrimitiveConfig {
+public class ConsistentMapConfig extends PrimitiveConfig<ConsistentMapConfig> {
+  private boolean nullValues = false;
+
+  /**
+   * Enables null values in the map.
+   *
+   * @return the map configuration
+   */
+  public ConsistentMapConfig setNullValues() {
+    return setNullValues(true);
+  }
+
+  /**
+   * Enables null values in the map.
+   *
+   * @param nullValues whether null values are allowed
+   * @return the map configuration
+   */
+  public ConsistentMapConfig setNullValues(boolean nullValues) {
+    this.nullValues = nullValues;
+    return this;
+  }
+
+  /**
+   * Returns whether null values are supported by the map.
+   *
+   * @return {@code true} if null values are supported; {@code false} otherwise
+   */
+  public boolean isNullValues() {
+    return nullValues;
+  }
 }

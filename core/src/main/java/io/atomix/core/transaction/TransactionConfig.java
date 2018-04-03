@@ -17,8 +17,31 @@ package io.atomix.core.transaction;
 
 import io.atomix.primitive.PrimitiveConfig;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Transaction configuration.
  */
-public class TransactionConfig extends PrimitiveConfig {
+public class TransactionConfig extends PrimitiveConfig<TransactionConfig> {
+  private Isolation isolation = Isolation.READ_COMMITTED;
+
+  /**
+   * Sets the transaction isolation level.
+   *
+   * @param isolation the transaction isolation level
+   * @return the transaction configuration
+   */
+  public TransactionConfig setIsolation(Isolation isolation) {
+    this.isolation = checkNotNull(isolation, "isolation cannot be null");
+    return this;
+  }
+
+  /**
+   * Returns the transaction isolation level.
+   *
+   * @return the transaction isolation level
+   */
+  public Isolation getIsolation() {
+    return isolation;
+  }
 }

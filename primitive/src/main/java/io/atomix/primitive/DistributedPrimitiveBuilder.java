@@ -30,15 +30,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <P> primitive type
  */
 public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> implements Builder<P> {
-  private static final int DEFAULT_CACHE_SIZE = 1000;
   private final PrimitiveType type;
-  private final String name;
+  protected final String name;
   protected final C config;
-  private Serializer serializer;
-  private PrimitiveProtocol protocol;
-  private boolean cacheEnabled = false;
-  private int cacheSize = DEFAULT_CACHE_SIZE;
-  private boolean readOnly = false;
 
   public DistributedPrimitiveBuilder(PrimitiveType type, String name, C config) {
     this.type = checkNotNull(type, "type cannot be null");
@@ -54,7 +48,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    */
   @SuppressWarnings("unchecked")
   public B withSerializer(Serializer serializer) {
-    this.serializer = serializer;
+    config.setSerializer(serializer);
     return (B) this;
   }
 
@@ -66,7 +60,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    */
   @SuppressWarnings("unchecked")
   public B withProtocol(PrimitiveProtocol protocol) {
-    this.protocol = checkNotNull(protocol, "protocol cannot be null");
+    config.setProtocol(protocol);
     return (B) this;
   }
 
@@ -75,8 +69,10 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return the primitive builder
    */
+  @SuppressWarnings("unchecked")
   public B withCacheEnabled() {
-    return withCacheEnabled(true);
+    config.setCacheEnabled();
+    return (B) this;
   }
 
   /**
@@ -85,8 +81,9 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @param cacheEnabled whether caching is enabled
    * @return the primitive builder
    */
+  @SuppressWarnings("unchecked")
   public B withCacheEnabled(boolean cacheEnabled) {
-    this.cacheEnabled = cacheEnabled;
+    config.setCacheEnabled(cacheEnabled);
     return (B) this;
   }
 
@@ -96,8 +93,9 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @param cacheSize the cache size
    * @return the primitive builder
    */
+  @SuppressWarnings("unchecked")
   public B withCacheSize(int cacheSize) {
-    this.cacheSize = cacheSize;
+    config.setCacheSize(cacheSize);
     return (B) this;
   }
 
@@ -106,8 +104,10 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    *
    * @return the primitive builder
    */
+  @SuppressWarnings("unchecked")
   public B withReadOnly() {
-    return withReadOnly(true);
+    config.setReadOnly();
+    return (B) this;
   }
 
   /**
@@ -116,8 +116,9 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @param readOnly whether the primitive is read-only
    * @return the primitive builder
    */
+  @SuppressWarnings("unchecked")
   public B withReadOnly(boolean readOnly) {
-    this.readOnly = readOnly;
+    config.setReadOnly(readOnly);
     return (B) this;
   }
 
@@ -145,7 +146,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @return the primitive protocol
    */
   public PrimitiveProtocol protocol() {
-    return protocol;
+    return config.getProtocol();
   }
 
   /**
@@ -154,37 +155,11 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @return serializer
    */
   public Serializer serializer() {
+    Serializer serializer = config.getSerializer();
     if (serializer == null) {
       serializer = Serializer.using(KryoNamespaces.BASIC);
     }
     return serializer;
-  }
-
-  /**
-   * Returns whether caching is enabled.
-   *
-   * @return whether caching is enabled
-   */
-  public boolean cacheEnabled() {
-    return cacheEnabled;
-  }
-
-  /**
-   * Returns the cache size.
-   *
-   * @return the cache size
-   */
-  public int cacheSize() {
-    return cacheSize;
-  }
-
-  /**
-   * Returns whether the primitive is read-only.
-   *
-   * @return whether the primitive is read-only
-   */
-  public boolean readOnly() {
-    return readOnly;
   }
 
   /**

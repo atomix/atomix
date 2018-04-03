@@ -16,64 +16,14 @@
 package io.atomix.core.lock;
 
 import io.atomix.core.PrimitiveTypes;
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Builder for AtomicIdGenerator.
  */
 public abstract class DistributedLockBuilder
     extends DistributedPrimitiveBuilder<DistributedLockBuilder, DistributedLockConfig, DistributedLock> {
-
-  private Duration lockTimeout = Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
-
   public DistributedLockBuilder(String name, DistributedLockConfig config) {
     super(PrimitiveTypes.lock(), name, config);
-  }
-
-  /**
-   * Sets the lock timeout in milliseconds.
-   *
-   * @param lockTimeoutMillis the lock timeout in milliseconds
-   * @return leader elector builder
-   */
-  public DistributedLockBuilder withLockTimeout(long lockTimeoutMillis) {
-    return withLockTimeout(Duration.ofMillis(lockTimeoutMillis));
-  }
-
-  /**
-   * Sets the lock timeout.
-   *
-   * @param lockTimeout the lock timeout
-   * @param timeUnit    the timeout time unit
-   * @return leader elector builder
-   */
-  public DistributedLockBuilder withLockTimeout(long lockTimeout, TimeUnit timeUnit) {
-    return withLockTimeout(Duration.ofMillis(timeUnit.toMillis(lockTimeout)));
-  }
-
-  /**
-   * Sets the lock timeout.
-   *
-   * @param lockTimeout the lock timeout
-   * @return leader elector builder
-   */
-  public DistributedLockBuilder withLockTimeout(Duration lockTimeout) {
-    this.lockTimeout = checkNotNull(lockTimeout);
-    return this;
-  }
-
-  /**
-   * Returns the lock timeout.
-   *
-   * @return the lock timeout
-   */
-  public Duration lockTimeout() {
-    return lockTimeout;
   }
 }
