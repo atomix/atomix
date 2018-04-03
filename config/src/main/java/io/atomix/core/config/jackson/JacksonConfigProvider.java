@@ -16,6 +16,9 @@
 package io.atomix.core.config.jackson;
 
 import io.atomix.core.config.ConfigProvider;
+import io.atomix.utils.Config;
+
+import java.io.File;
 
 /**
  * Jackson configuration provider.
@@ -25,7 +28,12 @@ public class JacksonConfigProvider implements ConfigProvider {
   private static final String JSON_EXT = ".json";
 
   @Override
-  public boolean isConfigFile(String fileName) {
-    return fileName.endsWith(YAML_EXT) || fileName.endsWith(JSON_EXT);
+  public boolean isConfigFile(File file) {
+    return file.getName().endsWith(YAML_EXT) || file.getName().endsWith(JSON_EXT);
+  }
+
+  @Override
+  public <C extends Config> C load(File file, Class<C> type) {
+    return null;
   }
 }

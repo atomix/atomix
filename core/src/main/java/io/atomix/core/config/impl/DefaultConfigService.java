@@ -13,33 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.config;
+package io.atomix.core.config.impl;
 
+import io.atomix.core.config.ConfigProvider;
+import io.atomix.core.config.ConfigService;
 import io.atomix.utils.Config;
+import io.atomix.utils.ConfigurationException;
+import io.atomix.utils.Services;
 
 import java.io.File;
 
 /**
- * Atomix configuration provider.
+ * Default configuration service.
  */
-public interface ConfigProvider {
-
-  /**
-   * Returns a boolean indicating whether the given file matches this provider.
-   *
-   * @param file the file to check
-   * @return indicates whether the given file matches this provider
-   */
-  boolean isConfigFile(File file);
-
-  /**
-   * Loads the given configuration file using the given configuration type.
-   *
-   * @param file the file to load
-   * @param type the type with which to load the configuration
-   * @param <C> the configuration type
-   * @return the configuration instance
-   */
-  <C extends Config> C load(File file, Class<C> type);
-
+public class DefaultConfigService implements ConfigService {
+  @Override
+  public <C extends Config> C load(File file, Class<C> type) {
+    for (ConfigProvider provider : Services.loadAll(ConfigProvider.class)) {
+      if (provider.isConfigFile(file)) {
+        return provider.load(file, type);
+      }
+    }
+    throw new ConfigurationException("Unknown configuration type: " + file.getName());
+  }
 }

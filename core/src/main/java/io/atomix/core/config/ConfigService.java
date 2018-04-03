@@ -15,8 +15,23 @@
  */
 package io.atomix.core.config;
 
+import io.atomix.utils.Config;
+
+import java.io.File;
+
 /**
  * Atomix configuration service.
  */
 public interface ConfigService {
+
+  /**
+   * Loads the given configuration file using the given configuration type.
+   *
+   * @param file the file to load
+   * @param type the type with which to load the configuration
+   * @param <C> the configuration type
+   * @return the configuration instance
+   */
+  <C extends Config> C load(File file, Class<C> type);
+
 }

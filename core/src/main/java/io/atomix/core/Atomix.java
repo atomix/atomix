@@ -32,6 +32,8 @@ import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
+import io.atomix.core.config.ConfigService;
+import io.atomix.core.config.impl.DefaultConfigService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElector;
@@ -126,7 +128,19 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private volatile CompletableFuture<Atomix> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
 
-  public Atomix(Context context) {
+  public Atomix(String configFile) {
+    this(loadContext(new File(System.getProperty("user.dir"), configFile)));
+  }
+
+  public Atomix(File configFile) {
+    this(loadContext(configFile));
+  }
+
+  public Atomix(AtomixConfig config) {
+    this(buildContext(config));
+  }
+
+  private Atomix(Context context) {
     this.context = context;
     PrimitiveTypes.register(context.primitiveTypes);
   }
@@ -379,6 +393,14 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return toStringHelper(this)
         .add("partitions", partitionService())
         .toString();
+  }
+
+  /**
+   * Loads a context from the given configuration file.
+   */
+  private static Context loadContext(File config) {
+    ConfigService configService = new DefaultConfigService();
+    return buildContext(configService.load(config, AtomixConfig.class));
   }
 
   /**
