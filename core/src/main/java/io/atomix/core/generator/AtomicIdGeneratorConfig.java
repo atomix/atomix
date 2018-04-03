@@ -20,5 +20,5 @@ import io.atomix.primitive.PrimitiveConfig;
 /**
  * ID generator configuration.
  */
-public class AtomicIdGeneratorConfig extends PrimitiveConfig {
+public class AtomicIdGeneratorConfig extends PrimitiveConfig<AtomicIdGeneratorConfig> {
 }

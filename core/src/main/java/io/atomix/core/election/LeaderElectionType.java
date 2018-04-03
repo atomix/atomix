@@ -54,7 +54,12 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
 
   @Override
   public LeaderElectionBuilder<T> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new LeaderElectionProxyBuilder<>(name, new LeaderElectionConfig(), managementService);
+    return newPrimitiveBuilder(name, new LeaderElectionConfig(), managementService);
+  }
+
+  @Override
+  public LeaderElectionBuilder<T> newPrimitiveBuilder(String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
+    return new LeaderElectionProxyBuilder<>(name, config, managementService);
   }
 
   @Override

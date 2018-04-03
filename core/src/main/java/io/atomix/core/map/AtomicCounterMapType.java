@@ -54,7 +54,12 @@ public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBu
 
   @Override
   public AtomicCounterMapBuilder<K> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new AtomicCounterMapProxyBuilder<>(name, new AtomicCounterMapConfig(), managementService);
+    return newPrimitiveBuilder(name, new AtomicCounterMapConfig(), managementService);
+  }
+
+  @Override
+  public AtomicCounterMapBuilder<K> newPrimitiveBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
+    return new AtomicCounterMapProxyBuilder<>(name, config, managementService);
   }
 
   @Override

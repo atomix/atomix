@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Primitive type configuration.
  */
-public class PrimitiveTypeConfig implements Config {
+public class PrimitiveTypeConfigs implements Config {
   private Map<String, Class<? extends PrimitiveType>> types = new HashMap<>();
 
   /**
@@ -41,7 +41,7 @@ public class PrimitiveTypeConfig implements Config {
    * @param types the primitive types
    * @return the primitive type configuration
    */
-  public PrimitiveTypeConfig setTypes(Map<String, Class<? extends PrimitiveType>> types) {
+  public PrimitiveTypeConfigs setTypes(Map<String, Class<? extends PrimitiveType>> types) {
     this.types = types;
     return this;
   }
@@ -53,7 +53,7 @@ public class PrimitiveTypeConfig implements Config {
    * @param type the type class
    * @return the primitive type configuration
    */
-  public PrimitiveTypeConfig addType(String name, Class<? extends PrimitiveType> type) {
+  public PrimitiveTypeConfigs addType(String name, Class<? extends PrimitiveType> type) {
     types.put(name, type);
     return this;
   }

@@ -53,7 +53,12 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
 
   @Override
   public DistributedLockBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new DistributedLockProxyBuilder(name, new DistributedLockConfig(), managementService);
+    return newPrimitiveBuilder(name, new DistributedLockConfig(), managementService);
+  }
+
+  @Override
+  public DistributedLockBuilder newPrimitiveBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
+    return new DistributedLockProxyBuilder(name, config, managementService);
   }
 
   @Override

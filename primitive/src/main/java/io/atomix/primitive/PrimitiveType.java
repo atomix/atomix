@@ -47,4 +47,14 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
    */
   B newPrimitiveBuilder(String name, PrimitiveManagementService managementService);
 
+  /**
+   * Returns a new primitive builder for the given partition.
+   *
+   * @param name the primitive name
+   * @param config the primitive configuration
+   * @param managementService the primitive management service
+   * @return the primitive builder
+   */
+  B newPrimitiveBuilder(String name, C config, PrimitiveManagementService managementService);
+
 }

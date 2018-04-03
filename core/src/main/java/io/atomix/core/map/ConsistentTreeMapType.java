@@ -55,7 +55,12 @@ public class ConsistentTreeMapType<V>
 
   @Override
   public ConsistentTreeMapBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new ConsistentTreeMapProxyBuilder<>(name, new ConsistentTreeMapConfig(), managementService);
+    return newPrimitiveBuilder(name, new ConsistentTreeMapConfig(), managementService);
+  }
+
+  @Override
+  public ConsistentTreeMapBuilder<V> newPrimitiveBuilder(String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
+    return new ConsistentTreeMapProxyBuilder<>(name, config, managementService);
   }
 
   @Override

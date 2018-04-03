@@ -54,7 +54,12 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
 
   @Override
   public AtomicValueBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new AtomicValueProxyBuilder<>(name, new AtomicValueConfig(), managementService);
+    return newPrimitiveBuilder(name, new AtomicValueConfig(), managementService);
+  }
+
+  @Override
+  public AtomicValueBuilder<V> newPrimitiveBuilder(String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
+    return new AtomicValueProxyBuilder<>(name, config, managementService);
   }
 
   @Override

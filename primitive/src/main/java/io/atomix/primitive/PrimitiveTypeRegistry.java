@@ -27,10 +27,10 @@ public class PrimitiveTypeRegistry {
   private final Map<String, PrimitiveType> types = Maps.newConcurrentMap();
 
   public PrimitiveTypeRegistry() {
-    this(new PrimitiveTypeConfig());
+    this(new PrimitiveTypeConfigs());
   }
 
-  public PrimitiveTypeRegistry(PrimitiveTypeConfig config) {
+  public PrimitiveTypeRegistry(PrimitiveTypeConfigs config) {
     for (Map.Entry<String, Class<? extends PrimitiveType>> type : config.getTypes().entrySet()) {
       try {
         types.put(type.getKey(), type.getValue().newInstance());

@@ -54,7 +54,12 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
 
   @Override
   public LeaderElectorBuilder<T> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new LeaderElectorProxyBuilder<>(name, new LeaderElectorConfig(), managementService);
+    return newPrimitiveBuilder(name, new LeaderElectorConfig(), managementService);
+  }
+
+  @Override
+  public LeaderElectorBuilder<T> newPrimitiveBuilder(String name, LeaderElectorConfig config, PrimitiveManagementService managementService) {
+    return new LeaderElectorProxyBuilder<>(name, config, managementService);
   }
 
   @Override

@@ -70,7 +70,12 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
 
   @Override
   public DocumentTreeBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new DocumentTreeProxyBuilder<>(name, new DocumentTreeConfig(), managementService);
+    return newPrimitiveBuilder(name, new DocumentTreeConfig(), managementService);
+  }
+
+  @Override
+  public DocumentTreeBuilder<V> newPrimitiveBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
+    return new DocumentTreeProxyBuilder<>(name, config, managementService);
   }
 
   @Override

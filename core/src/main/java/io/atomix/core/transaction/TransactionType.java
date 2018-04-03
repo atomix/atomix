@@ -55,7 +55,12 @@ public class TransactionType implements PrimitiveType<TransactionBuilder, Transa
 
   @Override
   public TransactionBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return new DefaultTransactionBuilder(name, new TransactionConfig(), managementService, new CoreTransactionService(managementService));
+    return newPrimitiveBuilder(name, new TransactionConfig(), managementService);
+  }
+
+  @Override
+  public TransactionBuilder newPrimitiveBuilder(String name, TransactionConfig config, PrimitiveManagementService managementService) {
+    return new DefaultTransactionBuilder(name, config, managementService, new CoreTransactionService(managementService));
   }
 
   @Override
