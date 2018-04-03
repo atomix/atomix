@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.core.AtomixConfig;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
 import io.atomix.core.counter.AtomicCounter;
@@ -57,7 +58,6 @@ import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveConfigs;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionService;
@@ -65,6 +65,7 @@ import io.atomix.utils.AtomixRuntimeException;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -81,7 +82,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   private final PrimitiveManagementService managementService;
   private final ManagedTransactionService transactionService;
-  private final PrimitiveConfigs primitiveConfigs;
+  private final AtomixConfig config;
   private final Cache<String, DistributedPrimitive> cache = CacheBuilder.newBuilder()
       .maximumSize(CACHE_SIZE)
       .build();
@@ -92,14 +93,14 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterMessagingService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
-      PrimitiveConfigs primitiveConfigs) {
+      AtomixConfig config) {
     this.managementService = new CorePrimitiveManagementService(
         clusterService,
         communicationService,
         eventService,
         partitionService);
     this.transactionService = new CoreTransactionService(managementService);
-    this.primitiveConfigs = checkNotNull(primitiveConfigs);
+    this.config = checkNotNull(config);
   }
 
   @Override
@@ -109,67 +110,67 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   @Override
   public <K, V> ConsistentMap<K, V> getConsistentMap(String name) {
-    return getPrimitive(name, ConsistentMapType.<K, V>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, ConsistentMapType.<K, V>instance(), config.getPrimitive(name));
   }
 
   @Override
   public <V> DocumentTree<V> getDocumentTree(String name) {
-    return getPrimitive(name, DocumentTreeType.<V>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, DocumentTreeType.<V>instance(), config.getPrimitive(name));
   }
 
   @Override
   public <V> ConsistentTreeMap<V> getTreeMap(String name) {
-    return getPrimitive(name, ConsistentTreeMapType.<V>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, ConsistentTreeMapType.<V>instance(), config.getPrimitive(name));
   }
 
   @Override
   public <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name) {
-    return getPrimitive(name, ConsistentMultimapType.<K, V>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, ConsistentMultimapType.<K, V>instance(), config.getPrimitive(name));
   }
 
   @Override
   public <K> AtomicCounterMap<K> getAtomicCounterMap(String name) {
-    return getPrimitive(name, AtomicCounterMapType.<K>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, AtomicCounterMapType.<K>instance(), config.getPrimitive(name));
   }
 
   @Override
   public <E> DistributedSet<E> getSet(String name) {
-    return getPrimitive(name, DistributedSetType.<E>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, DistributedSetType.<E>instance(), config.getPrimitive(name));
   }
 
   @Override
   public AtomicCounter getAtomicCounter(String name) {
-    return getPrimitive(name, AtomicCounterType.instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, AtomicCounterType.instance(), config.getPrimitive(name));
   }
 
   @Override
   public AtomicIdGenerator getAtomicIdGenerator(String name) {
-    return getPrimitive(name, AtomicIdGeneratorType.instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, AtomicIdGeneratorType.instance(), config.getPrimitive(name));
   }
 
   @Override
   public <V> AtomicValue<V> getAtomicValue(String name) {
-    return getPrimitive(name, AtomicValueType.<V>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, AtomicValueType.<V>instance(), config.getPrimitive(name));
   }
 
   @Override
   public <T> LeaderElection<T> getLeaderElection(String name) {
-    return getPrimitive(name, LeaderElectionType.<T>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, LeaderElectionType.<T>instance(), config.getPrimitive(name));
   }
 
   @Override
   public <T> LeaderElector<T> getLeaderElector(String name) {
-    return getPrimitive(name, LeaderElectorType.<T>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, LeaderElectorType.<T>instance(), config.getPrimitive(name));
   }
 
   @Override
   public DistributedLock getLock(String name) {
-    return getPrimitive(name, DistributedLockType.instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, DistributedLockType.instance(), config.getPrimitive(name));
   }
 
   @Override
   public <E> WorkQueue<E> getWorkQueue(String name) {
-    return getPrimitive(name, WorkQueueType.<E>instance(), primitiveConfigs.getPrimitive(name));
+    return getPrimitive(name, WorkQueueType.<E>instance(), config.getPrimitive(name));
   }
 
   @Override

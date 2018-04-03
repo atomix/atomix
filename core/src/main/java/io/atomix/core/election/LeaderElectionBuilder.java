@@ -21,6 +21,7 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.SerializerConfig;
 
 /**
  * Builder for constructing new {@link AsyncLeaderElection} instances.
@@ -34,12 +35,21 @@ public abstract class LeaderElectionBuilder<T>
 
   @Override
   public Serializer serializer() {
-    Serializer serializer = config.getSerializer();
+    Serializer serializer = this.serializer;
     if (serializer == null) {
-      serializer = Serializer.using(KryoNamespace.builder()
-          .register(KryoNamespaces.BASIC)
-          .register(NodeId.class)
-          .build());
+      SerializerConfig config = this.config.getSerializerConfig();
+      if (config == null) {
+        serializer = Serializer.using(KryoNamespace.builder()
+            .register(KryoNamespaces.BASIC)
+            .register(NodeId.class)
+            .build());
+      } else {
+        serializer = Serializer.using(KryoNamespace.builder()
+            .register(KryoNamespaces.BASIC)
+            .register(NodeId.class)
+            .register(new KryoNamespace(config))
+            .build());
+      }
     }
     return serializer;
   }

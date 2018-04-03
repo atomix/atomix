@@ -1,0 +1,9 @@
+cluster:
+  name: test
+primitive-types:
+  - io.atomix.core.map.ConsistentMapType
+primitives:
+  foo:
+    serializer:
+      types:
+        - type: io.atomix.cluster.NodeId

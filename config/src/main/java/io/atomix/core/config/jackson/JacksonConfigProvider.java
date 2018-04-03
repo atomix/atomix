@@ -16,6 +16,7 @@
 package io.atomix.core.config.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.atomix.core.config.ConfigProvider;
 import io.atomix.utils.Config;
@@ -29,6 +30,7 @@ import java.io.IOException;
  */
 public class JacksonConfigProvider implements ConfigProvider {
   private static final String YAML_EXT = ".yaml";
+  private static final String YML_EXT = ".yml";
   private static final String JSON_EXT = ".json";
 
   @Override
@@ -37,7 +39,7 @@ public class JacksonConfigProvider implements ConfigProvider {
   }
 
   private boolean isYaml(File file) {
-    return file.getName().endsWith(YAML_EXT);
+    return file.getName().endsWith(YAML_EXT) || file.getName().endsWith(YML_EXT);
   }
 
   private boolean isJson(File file) {
@@ -57,6 +59,7 @@ public class JacksonConfigProvider implements ConfigProvider {
 
   private <C extends Config> C loadYaml(File file, Class<C> type) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
     try {
       return mapper.readValue(file, type);
     } catch (IOException e) {
@@ -66,10 +69,23 @@ public class JacksonConfigProvider implements ConfigProvider {
 
   private <C extends Config> C loadJson(File file, Class<C> type) {
     ObjectMapper mapper = new ObjectMapper();
+    mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
     try {
       return mapper.readValue(file, type);
     } catch (IOException e) {
       throw new ConfigurationException("Failed to parse JSON file", e);
+    }
+  }
+
+  private static class ConfigPropertyNamingStrategy extends PropertyNamingStrategy.KebabCaseStrategy {
+    private static final String CONFIG_SUFFIX = "Config";
+
+    @Override
+    public String translate(String input) {
+      if (input.endsWith(CONFIG_SUFFIX)) {
+        return super.translate(input.substring(0, input.length() - CONFIG_SUFFIX.length()));
+      }
+      return super.translate(input);
     }
   }
 }
