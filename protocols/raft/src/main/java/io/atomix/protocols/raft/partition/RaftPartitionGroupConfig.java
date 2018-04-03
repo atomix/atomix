@@ -104,6 +104,16 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    * @param dataDirectory the partition data directory
    * @return the Raft partition group configuration
    */
+  public RaftPartitionGroupConfig setDataDirectory(String dataDirectory) {
+    return setDataDirectory(new File(dataDirectory));
+  }
+
+  /**
+   * Sets the partition data directory.
+   *
+   * @param dataDirectory the partition data directory
+   * @return the Raft partition group configuration
+   */
   public RaftPartitionGroupConfig setDataDirectory(File dataDirectory) {
     this.dataDirectory = dataDirectory;
     return this;

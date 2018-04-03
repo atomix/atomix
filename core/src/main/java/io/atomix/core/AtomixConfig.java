@@ -71,6 +71,17 @@ public class AtomixConfig implements Config {
    * @param dataDirectory the data directory
    * @return the Atomix configuration
    */
+  public AtomixConfig setDataDirectory(String dataDirectory) {
+    this.dataDirectory = new File(dataDirectory);
+    return this;
+  }
+
+  /**
+   * Sets the data directory.
+   *
+   * @param dataDirectory the data directory
+   * @return the Atomix configuration
+   */
   public AtomixConfig setDataDirectory(File dataDirectory) {
     this.dataDirectory = dataDirectory;
     return this;

@@ -15,10 +15,14 @@
  */
 package io.atomix.core.config.jackson;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.atomix.core.config.ConfigProvider;
 import io.atomix.utils.Config;
+import io.atomix.utils.ConfigurationException;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Jackson configuration provider.
@@ -29,11 +33,43 @@ public class JacksonConfigProvider implements ConfigProvider {
 
   @Override
   public boolean isConfigFile(File file) {
-    return file.getName().endsWith(YAML_EXT) || file.getName().endsWith(JSON_EXT);
+    return isYaml(file) || isJson(file);
+  }
+
+  private boolean isYaml(File file) {
+    return file.getName().endsWith(YAML_EXT);
+  }
+
+  private boolean isJson(File file) {
+    return file.getName().endsWith(JSON_EXT);
   }
 
   @Override
   public <C extends Config> C load(File file, Class<C> type) {
-    return null;
+    if (isYaml(file)) {
+      return loadYaml(file, type);
+    } else if (isJson(file)) {
+      return loadJson(file, type);
+    } else {
+      throw new ConfigurationException("Unknown file type: " + file.getName());
+    }
+  }
+
+  private <C extends Config> C loadYaml(File file, Class<C> type) {
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    try {
+      return mapper.readValue(file, type);
+    } catch (IOException e) {
+      throw new ConfigurationException("Failed to parse YAML file", e);
+    }
+  }
+
+  private <C extends Config> C loadJson(File file, Class<C> type) {
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      return mapper.readValue(file, type);
+    } catch (IOException e) {
+      throw new ConfigurationException("Failed to parse JSON file", e);
+    }
   }
 }
