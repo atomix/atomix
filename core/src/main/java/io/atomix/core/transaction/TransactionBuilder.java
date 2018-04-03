@@ -17,14 +17,10 @@ package io.atomix.core.transaction;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Transaction builder.
  */
 public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<TransactionBuilder, TransactionConfig, Transaction> {
-  private Isolation isolation = Isolation.READ_COMMITTED;
-
   protected TransactionBuilder(String name, TransactionConfig config) {
     super(TransactionType.instance(), name, config);
   }
@@ -36,16 +32,7 @@ public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<Tra
    * @return the transaction builder
    */
   public TransactionBuilder withIsolation(Isolation isolation) {
-    this.isolation = checkNotNull(isolation, "isolation cannot be null");
+    config.setIsolation(isolation);
     return this;
-  }
-
-  /**
-   * Returns the transaction isolation level.
-   *
-   * @return the transaction isolation level
-   */
-  public Isolation isolation() {
-    return isolation;
   }
 }

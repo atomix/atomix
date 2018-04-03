@@ -83,8 +83,8 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
     return Futures.allOf(Lists.newArrayList(trees.values()))
         .thenApply(t -> {
           AsyncDocumentTree<V> tree = new PartitionedAsyncDocumentTree<>(name(), Maps.transformValues(trees, v -> v.getNow(null)), partitioner);
-          if (cacheEnabled()) {
-            tree = new CachingAsyncDocumentTree<>(tree, cacheSize());
+          if (config.isCacheEnabled()) {
+            tree = new CachingAsyncDocumentTree<>(tree, config.getCacheSize());
           }
           return tree.sync();
         });

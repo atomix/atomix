@@ -20,5 +20,5 @@ import io.atomix.primitive.PrimitiveConfig;
 /**
  * Leader election configuration.
  */
-public class LeaderElectionConfig extends PrimitiveConfig {
+public class LeaderElectionConfig extends PrimitiveConfig<LeaderElectionConfig> {
 }

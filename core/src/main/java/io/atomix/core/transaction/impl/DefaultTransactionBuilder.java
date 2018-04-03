@@ -44,6 +44,6 @@ public class DefaultTransactionBuilder extends TransactionBuilder {
 
   @Override
   public CompletableFuture<Transaction> buildAsync() {
-    return CompletableFuture.completedFuture(new DefaultTransaction(transactionService, managementService, isolation()).sync());
+    return CompletableFuture.completedFuture(new DefaultTransaction(transactionService, managementService, config.getIsolation()).sync());
   }
 }

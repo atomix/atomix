@@ -20,5 +20,5 @@ import io.atomix.primitive.PrimitiveConfig;
 /**
  * Distributed lock configuration.
  */
-public class DistributedLockConfig extends PrimitiveConfig {
+public class DistributedLockConfig extends PrimitiveConfig<DistributedLockConfig> {
 }

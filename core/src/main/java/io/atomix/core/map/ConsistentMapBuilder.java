@@ -27,8 +27,6 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
 public abstract class ConsistentMapBuilder<K, V>
     extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMapConfig, ConsistentMap<K, V>> {
 
-  private boolean nullValues = false;
-
   public ConsistentMapBuilder(String name, ConsistentMapConfig config) {
     super(PrimitiveTypes.map(), name, config);
   }
@@ -39,16 +37,18 @@ public abstract class ConsistentMapBuilder<K, V>
    * @return this builder
    */
   public ConsistentMapBuilder<K, V> withNullValues() {
-    nullValues = true;
+    config.setNullValues();
     return this;
   }
 
   /**
-   * Returns whether null values are supported by the map.
+   * Sets whether null values are allowed.
    *
-   * @return {@code true} if null values are supported; {@code false} otherwise
+   * @param nullValues whether null values are allowed
+   * @return this builder
    */
-  public boolean nullValues() {
-    return nullValues;
+  public ConsistentMapBuilder<K, V> withNullValues(boolean nullValues) {
+    config.setNullValues(nullValues);
+    return this;
   }
 }

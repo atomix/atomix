@@ -15,10 +15,35 @@
  */
 package io.atomix.core.tree;
 
+import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveConfig;
 
 /**
  * Document tree configuration.
  */
-public class DocumentTreeConfig extends PrimitiveConfig {
+public class DocumentTreeConfig extends PrimitiveConfig<DocumentTreeConfig> {
+  private Ordering ordering;
+
+  /**
+   * Sets the ordering of the tree nodes.
+   * <p>
+   * When {@link AsyncDocumentTree#getChildren(DocumentPath)} is called, children will be returned according to
+   * the specified sort order.
+   *
+   * @param ordering ordering of the tree nodes
+   * @return this builder
+   */
+  public DocumentTreeConfig setOrdering(Ordering ordering) {
+    this.ordering = ordering;
+    return this;
+  }
+
+  /**
+   * Returns the document tree ordering.
+   *
+   * @return the document tree ordering
+   */
+  public Ordering getOrdering() {
+    return ordering;
+  }
 }

@@ -26,9 +26,6 @@ import io.atomix.primitive.PrimitiveType;
  */
 public abstract class DocumentTreeBuilder<V>
     extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
-
-  private Ordering ordering;
-
   protected DocumentTreeBuilder(String name, DocumentTreeConfig config) {
     super(PrimitiveTypes.tree(), name, config);
   }
@@ -43,24 +40,13 @@ public abstract class DocumentTreeBuilder<V>
    * @return this builder
    */
   public DocumentTreeBuilder<V> withOrdering(Ordering ordering) {
-    this.ordering = ordering;
+    config.setOrdering(ordering);
     return this;
-  }
-
-  /**
-   * Returns the ordering of tree nodes.
-   * <p>
-   * When {@link AsyncDocumentTree#getChildren(DocumentPath)} is called, children will be returned according to
-   * the specified sort order.
-   *
-   * @return the ordering of tree nodes
-   */
-  public Ordering ordering() {
-    return ordering;
   }
 
   @Override
   public PrimitiveType primitiveType() {
+    Ordering ordering = config.getOrdering();
     if (ordering == null) {
       return DocumentTreeType.instance();
     } else {
