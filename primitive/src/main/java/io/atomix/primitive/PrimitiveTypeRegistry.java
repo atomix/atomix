@@ -18,6 +18,8 @@ package io.atomix.primitive;
 import com.google.common.collect.Maps;
 import io.atomix.utils.ConfigurationException;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -27,13 +29,14 @@ public class PrimitiveTypeRegistry {
   private final Map<String, PrimitiveType> types = Maps.newConcurrentMap();
 
   public PrimitiveTypeRegistry() {
-    this(new PrimitiveTypeConfigs());
+    this(new ArrayList<>());
   }
 
-  public PrimitiveTypeRegistry(PrimitiveTypeConfigs config) {
-    for (Map.Entry<String, Class<? extends PrimitiveType>> type : config.getTypes().entrySet()) {
+  public PrimitiveTypeRegistry(Collection<Class<? extends PrimitiveType>> types) {
+    for (Class<? extends PrimitiveType> typeClass : types) {
       try {
-        types.put(type.getKey(), type.getValue().newInstance());
+        PrimitiveType type = typeClass.newInstance();
+        this.types.put(type.id(), type);
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ConfigurationException("Failed to instantiate primitive type", e);
       }

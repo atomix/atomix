@@ -16,14 +16,18 @@
 package io.atomix.core;
 
 import io.atomix.cluster.ClusterConfig;
-import io.atomix.primitive.PrimitiveConfigs;
-import io.atomix.primitive.PrimitiveTypeConfigs;
+import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.utils.Config;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Atomix configuration.
@@ -33,8 +37,8 @@ public class AtomixConfig implements Config {
   private File dataDirectory = new File(System.getProperty("user.dir"), "data");
   private boolean enableShutdownHook;
   private Collection<PartitionGroupConfig> partitionGroups = new ArrayList<>();
-  private PrimitiveTypeConfigs primitiveTypes = new PrimitiveTypeConfigs();
-  private PrimitiveConfigs primitives = new PrimitiveConfigs();
+  private Collection<Class<? extends PrimitiveType>> types = new ArrayList<>();
+  private Map<String, PrimitiveConfig> primitives = new HashMap<>();
 
   /**
    * Returns the cluster configuration.
@@ -139,22 +143,33 @@ public class AtomixConfig implements Config {
   }
 
   /**
-   * Returns the primitive type configuration.
+   * Returns the primitive types.
    *
-   * @return the primitive type configuration
+   * @return the primitive types
    */
-  public PrimitiveTypeConfigs getPrimitiveTypes() {
-    return primitiveTypes;
+  public Collection<Class<? extends PrimitiveType>> getPrimitiveTypes() {
+    return types;
   }
 
   /**
-   * Sets the primitive type configuration.
+   * Sets the primitive types.
    *
-   * @param primitiveTypes the primitive type configuration
-   * @return the Atomix configuration
+   * @param types the primitive types
+   * @return the primitive type configuration
    */
-  public AtomixConfig setPrimitiveTypes(PrimitiveTypeConfigs primitiveTypes) {
-    this.primitiveTypes = primitiveTypes;
+  public AtomixConfig setPrimitiveTypes(Collection<Class<? extends PrimitiveType>> types) {
+    this.types = types;
+    return this;
+  }
+
+  /**
+   * Adds a primitive type.
+   *
+   * @param type the type class
+   * @return the primitive type configuration
+   */
+  public AtomixConfig addType(Class<? extends PrimitiveType> type) {
+    types.add(type);
     return this;
   }
 
@@ -163,7 +178,7 @@ public class AtomixConfig implements Config {
    *
    * @return the primitive configurations
    */
-  public PrimitiveConfigs getPrimitives() {
+  public Map<String, PrimitiveConfig> getPrimitives() {
     return primitives;
   }
 
@@ -171,10 +186,34 @@ public class AtomixConfig implements Config {
    * Sets the primitive configurations.
    *
    * @param primitives the primitive configurations
-   * @return the Atomix configuration
+   * @return the primitive configuration holder
    */
-  public AtomixConfig setPrimitives(PrimitiveConfigs primitives) {
-    this.primitives = primitives;
+  public AtomixConfig setPrimitives(Map<String, PrimitiveConfig> primitives) {
+    this.primitives = checkNotNull(primitives);
     return this;
+  }
+
+  /**
+   * Adds a primitive configuration.
+   *
+   * @param name   the primitive name
+   * @param config the primitive configuration
+   * @return the primitive configuration holder
+   */
+  public AtomixConfig addPrimitive(String name, PrimitiveConfig config) {
+    primitives.put(name, config);
+    return this;
+  }
+
+  /**
+   * Returns a primitive configuration.
+   *
+   * @param name the primitive name
+   * @param <C>  the configuration type
+   * @return the primitive configuration
+   */
+  @SuppressWarnings("unchecked")
+  public <C extends PrimitiveConfig<C>> C getPrimitive(String name) {
+    return (C) primitives.get(name);
   }
 }

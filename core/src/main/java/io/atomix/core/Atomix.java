@@ -59,7 +59,6 @@ import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveConfigs;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
@@ -416,7 +415,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
     ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup(config);
     ManagedPartitionService partitions = buildPartitionService(config);
-    ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions, config.getPrimitives());
+    ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions, config);
     PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
     return new Context(
         messagingService,
@@ -863,7 +862,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
       ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup();
       ManagedPartitionService partitions = buildPartitionService();
-      ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions, new PrimitiveConfigs());
+      ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions, new AtomixConfig());
       return new Atomix(new Context(
           messagingService,
           broadcastService,

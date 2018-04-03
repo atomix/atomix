@@ -15,11 +15,7 @@
  */
 package io.atomix.primitive;
 
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.serializer.SerializerConfig;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Primitive configuration.
@@ -27,38 +23,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class PrimitiveConfig<C extends PrimitiveConfig<C>> {
   private static final int DEFAULT_CACHE_SIZE = 1000;
 
-  private Serializer serializer;
   private SerializerConfig serializerConfig;
-  private PrimitiveProtocol protocol;
   private PrimitiveProtocolConfig protocolConfig;
   private boolean cacheEnabled = false;
   private int cacheSize = DEFAULT_CACHE_SIZE;
   private boolean readOnly = false;
-
-  /**
-   * Sets the serializer to use for transcoding info held in the primitive.
-   *
-   * @param serializer serializer
-   * @return this configuration
-   */
-  @SuppressWarnings("unchecked")
-  public C setSerializer(Serializer serializer) {
-    this.serializer = serializer;
-    return (C) this;
-  }
-
-  /**
-   * Returns the serializer.
-   *
-   * @return the serializer
-   */
-  public Serializer getSerializer() {
-    Serializer serializer = this.serializer;
-    if (serializer == null) {
-      serializer = Serializer.using(new KryoNamespace(serializerConfig));
-    }
-    return serializer;
-  }
 
   /**
    * Returns the serializer configuration.
@@ -78,31 +47,6 @@ public class PrimitiveConfig<C extends PrimitiveConfig<C>> {
   public PrimitiveConfig setSerializerConfig(SerializerConfig serializerConfig) {
     this.serializerConfig = serializerConfig;
     return this;
-  }
-
-  /**
-   * Sets the primitive protocol.
-   *
-   * @param protocol the primitive protocol
-   * @return the primitive configuration
-   */
-  @SuppressWarnings("unchecked")
-  public C setProtocol(PrimitiveProtocol protocol) {
-    this.protocol = checkNotNull(protocol, "protocol cannot be null");
-    return (C) this;
-  }
-
-  /**
-   * Returns the primitive protocol.
-   *
-   * @return the primitive protocol
-   */
-  public PrimitiveProtocol getProtocol() {
-    PrimitiveProtocol protocol = this.protocol;
-    if (protocol == null) {
-      protocol = PrimitiveProtocols.createProtocol(protocolConfig);
-    }
-    return protocol;
   }
 
   /**

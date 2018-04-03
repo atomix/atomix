@@ -16,8 +16,10 @@
 package io.atomix.primitive;
 
 import io.atomix.utils.Builder;
+import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.SerializerConfig;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -33,6 +35,8 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   private final PrimitiveType type;
   protected final String name;
   protected final C config;
+  protected Serializer serializer;
+  protected PrimitiveProtocol protocol;
 
   public DistributedPrimitiveBuilder(PrimitiveType type, String name, C config) {
     this.type = checkNotNull(type, "type cannot be null");
@@ -48,7 +52,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    */
   @SuppressWarnings("unchecked")
   public B withSerializer(Serializer serializer) {
-    config.setSerializer(serializer);
+    this.serializer = serializer;
     return (B) this;
   }
 
@@ -60,7 +64,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    */
   @SuppressWarnings("unchecked")
   public B withProtocol(PrimitiveProtocol protocol) {
-    config.setProtocol(protocol);
+    this.protocol = protocol;
     return (B) this;
   }
 
@@ -146,7 +150,11 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @return the primitive protocol
    */
   public PrimitiveProtocol protocol() {
-    return config.getProtocol();
+    PrimitiveProtocol protocol = this.protocol;
+    if (protocol == null) {
+      protocol = PrimitiveProtocols.createProtocol(config.getProtocolConfig());
+    }
+    return protocol;
   }
 
   /**
@@ -155,9 +163,17 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
    * @return serializer
    */
   public Serializer serializer() {
-    Serializer serializer = config.getSerializer();
+    Serializer serializer = this.serializer;
     if (serializer == null) {
-      serializer = Serializer.using(KryoNamespaces.BASIC);
+      SerializerConfig config = this.config.getSerializerConfig();
+      if (config == null) {
+        serializer = Serializer.using(KryoNamespaces.BASIC);
+      } else {
+        serializer = Serializer.using(KryoNamespace.builder()
+            .register(KryoNamespaces.BASIC)
+            .register(new KryoNamespace(config))
+            .build());
+      }
     }
     return serializer;
   }
