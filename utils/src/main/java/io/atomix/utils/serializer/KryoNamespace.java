@@ -26,6 +26,7 @@ import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import io.atomix.utils.ConfigurationException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -36,6 +37,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -65,7 +67,7 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
    */
   public static final int INITIAL_ID = 16;
 
-  private static final String NO_NAME = "(no name)";
+  static final String NO_NAME = "(no name)";
 
   private static final Logger log = getLogger(KryoNamespace.class);
 
@@ -241,6 +243,30 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
    */
   public static Builder builder() {
     return new Builder();
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<RegistrationBlock> buildRegistrationBlocks(SerializerConfig config) {
+    List<Pair<Class<?>[], Serializer<?>>> types = new ArrayList<>();
+    List<RegistrationBlock> blocks = new ArrayList<>();
+    blocks.addAll(KryoNamespaces.BASIC.registeredBlocks);
+    for (SerializableTypeConfig type : config.getTypes()) {
+      try {
+        if (type.getId() == null) {
+          types.add(Pair.of(new Class[]{type.getType()}, type.getSerializer().newInstance()));
+        } else {
+          blocks.add(new RegistrationBlock(type.getId(), Collections.singletonList(Pair.of(new Class[]{type.getType()}, type.getSerializer().newInstance()))));
+        }
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ConfigurationException("Failed to instantiate serializer from configuration", e);
+      }
+    }
+    blocks.add(new RegistrationBlock(KryoNamespaces.BEGIN_USER_CUSTOM_ID, types));
+    return blocks;
+  }
+
+  public KryoNamespace(SerializerConfig config) {
+    this(buildRegistrationBlocks(config), config.isRegistrationRequired(), config.isCompatible(), config.getName());
   }
 
   /**
