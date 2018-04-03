@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -39,7 +38,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return a new Raft protocol builder
    */
   public static Builder builder() {
-    return builder(null);
+    return new Builder(new RaftProtocolConfig());
   }
 
   /**
@@ -49,38 +48,13 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the Raft protocol builder
    */
   public static Builder builder(String group) {
-    return new Builder(group);
+    return new Builder(new RaftProtocolConfig().setGroup(group));
   }
 
-  private final String group;
-  private final Duration minTimeout;
-  private final Duration maxTimeout;
-  private final ReadConsistency readConsistency;
-  private final CommunicationStrategy communicationStrategy;
-  private final Recovery recoveryStrategy;
-  private final int maxRetries;
-  private final Duration retryDelay;
-  private final Executor executor;
+  private final RaftProtocolConfig config;
 
-  protected RaftProtocol(
-      String group,
-      Duration minTimeout,
-      Duration maxTimeout,
-      ReadConsistency readConsistency,
-      CommunicationStrategy communicationStrategy,
-      Recovery recoveryStrategy,
-      int maxRetries,
-      Duration retryDelay,
-      Executor executor) {
-    this.group = group;
-    this.minTimeout = minTimeout;
-    this.maxTimeout = maxTimeout;
-    this.readConsistency = readConsistency;
-    this.communicationStrategy = communicationStrategy;
-    this.recoveryStrategy = recoveryStrategy;
-    this.maxRetries = maxRetries;
-    this.retryDelay = retryDelay;
-    this.executor = executor;
+  protected RaftProtocol(RaftProtocolConfig config) {
+    this.config = checkNotNull(config, "config cannot be null");
   }
 
   @Override
@@ -90,7 +64,7 @@ public class RaftProtocol implements PrimitiveProtocol {
 
   @Override
   public String group() {
-    return group;
+    return config.getGroup();
   }
 
   /**
@@ -99,7 +73,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the minimum timeout
    */
   public Duration minTimeout() {
-    return minTimeout;
+    return config.getMinTimeout();
   }
 
   /**
@@ -108,7 +82,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the maximum timeout
    */
   public Duration maxTimeout() {
-    return maxTimeout;
+    return config.getMaxTimeout();
   }
 
   /**
@@ -117,7 +91,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the read consistency
    */
   public ReadConsistency readConsistency() {
-    return readConsistency;
+    return config.getReadConsistency();
   }
 
   /**
@@ -126,7 +100,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the communication strategy
    */
   public CommunicationStrategy communicationStrategy() {
-    return communicationStrategy;
+    return config.getCommunicationStrategy();
   }
 
   /**
@@ -135,7 +109,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the recovery strategy
    */
   public Recovery recoveryStrategy() {
-    return recoveryStrategy;
+    return config.getRecoveryStrategy();
   }
 
   /**
@@ -144,7 +118,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the maximum number of allowed retries
    */
   public int maxRetries() {
-    return maxRetries;
+    return config.getMaxRetries();
   }
 
   /**
@@ -153,7 +127,7 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the retry delay
    */
   public Duration retryDelay() {
-    return retryDelay;
+    return config.getRetryDelay();
   }
 
   /**
@@ -162,24 +136,15 @@ public class RaftProtocol implements PrimitiveProtocol {
    * @return the proxy executor
    */
   public Executor executor() {
-    return executor;
+    return config.getExecutor();
   }
 
   /**
    * Raft protocol builder.
    */
-  public static class Builder extends PrimitiveProtocol.Builder<RaftProtocol> {
-    private Duration minTimeout = Duration.ofMillis(250);
-    private Duration maxTimeout = Duration.ofSeconds(30);
-    private ReadConsistency readConsistency = ReadConsistency.SEQUENTIAL;
-    private CommunicationStrategy communicationStrategy = CommunicationStrategy.LEADER;
-    private Recovery recoveryStrategy = Recovery.RECOVER;
-    private int maxRetries = 0;
-    private Duration retryDelay = Duration.ofMillis(100);
-    private Executor executor;
-
-    protected Builder(String group) {
-      super(group);
+  public static class Builder extends PrimitiveProtocol.Builder<RaftProtocolConfig, RaftProtocol> {
+    protected Builder(RaftProtocolConfig config) {
+      super(config);
     }
 
     /**
@@ -189,7 +154,7 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @return the Raft protocol builder
      */
     public Builder withMinTimeout(Duration minTimeout) {
-      this.minTimeout = checkNotNull(minTimeout, "minTimeout cannot be null");
+      config.setMinTimeout(minTimeout);
       return this;
     }
 
@@ -200,7 +165,7 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @return the Raft protocol builder
      */
     public Builder withMaxTimeout(Duration maxTimeout) {
-      this.maxTimeout = checkNotNull(maxTimeout, "maxTimeout cannot be null");
+      config.setMaxTimeout(maxTimeout);
       return this;
     }
 
@@ -211,7 +176,7 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @return the Raft protocol builder
      */
     public Builder withReadConsistency(ReadConsistency readConsistency) {
-      this.readConsistency = checkNotNull(readConsistency, "readConsistency cannot be null");
+      config.setReadConsistency(readConsistency);
       return this;
     }
 
@@ -222,7 +187,7 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @return the Raft protocol builder
      */
     public Builder withCommunicationStrategy(CommunicationStrategy communicationStrategy) {
-      this.communicationStrategy = checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
+      config.setCommunicationStrategy(communicationStrategy);
       return this;
     }
 
@@ -233,7 +198,7 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @return the Raft protocol builder
      */
     public Builder withRecoveryStrategy(Recovery recoveryStrategy) {
-      this.recoveryStrategy = checkNotNull(recoveryStrategy, "recoveryStrategy cannot be null");
+      config.setRecoveryStrategy(recoveryStrategy);
       return this;
     }
 
@@ -244,8 +209,7 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @return the proxy builder
      */
     public Builder withMaxRetries(int maxRetries) {
-      checkArgument(maxRetries >= 0, "maxRetries must be positive");
-      this.maxRetries = maxRetries;
+      config.setMaxRetries(maxRetries);
       return this;
     }
 
@@ -279,7 +243,7 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @throws NullPointerException if the delay is null
      */
     public Builder withRetryDelay(Duration retryDelay) {
-      this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
+      config.setRetryDelay(retryDelay);
       return this;
     }
 
@@ -291,22 +255,13 @@ public class RaftProtocol implements PrimitiveProtocol {
      * @throws NullPointerException if the executor is null
      */
     public Builder withExecutor(Executor executor) {
-      this.executor = checkNotNull(executor, "executor cannot be null");
+      config.setExecutor(executor);
       return this;
     }
 
     @Override
     public RaftProtocol build() {
-      return new RaftProtocol(
-          group,
-          minTimeout,
-          maxTimeout,
-          readConsistency,
-          communicationStrategy,
-          recoveryStrategy,
-          maxRetries,
-          retryDelay,
-          executor);
+      return new RaftProtocol(config);
     }
   }
 }

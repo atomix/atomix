@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,39 +15,32 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.utils.Config;
+
 /**
- * Primitive protocol.
+ * Primitive protocol configuration.
  */
-public interface PrimitiveProtocol {
+public class PrimitiveProtocolConfig<C extends PrimitiveProtocolConfig<C>> implements Config {
+  private String group;
 
   /**
-   * Primitive protocol type.
+   * Returns the protocol group.
+   *
+   * @return the protocol group
    */
-  interface Type {
+  public String getGroup() {
+    return group;
   }
 
   /**
-   * Returns the protocol type.
+   * Sets the protocol group.
    *
-   * @return the protocol type
+   * @param group the protocol group
+   * @return the protocol configuration
    */
-  Type type();
-
-  /**
-   * Returns the protocol group name.
-   *
-   * @return the protocol group name
-   */
-  String group();
-
-  /**
-   * Primitive protocol.
-   */
-  abstract class Builder<C extends PrimitiveProtocolConfig<C>, P extends PrimitiveProtocol> implements io.atomix.utils.Builder<P> {
-    protected final C config;
-
-    protected Builder(C config) {
-      this.config = config;
-    }
+  @SuppressWarnings("unchecked")
+  public C setGroup(String group) {
+    this.group = group;
+    return (C) this;
   }
 }
