@@ -21,7 +21,7 @@ package io.atomix.protocols.raft.service;
 public enum PropagationStrategy {
 
   /**
-   * A session that does not propagate state changes across versions.
+   * A session that creates a new state for each revision.
    */
   NONE,
 
@@ -34,5 +34,10 @@ public enum PropagationStrategy {
    * A session that propagates older changes to newer versions.
    */
   PROPAGATE,
+
+  /**
+   * A session that copies and isolates state within each version.
+   */
+  ISOLATE,
 
 }
