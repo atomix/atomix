@@ -662,24 +662,27 @@ public class RaftServiceManager implements AutoCloseable {
       // Add a reference to the parent revision for write propagation.
       parent.setNextRevision(service);
 
-      // Create a snapshot descriptor.
-      SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
-          .withIndex(raft.getLastApplied())
-          .withTimestamp(parent.wallClock().getTime().unixTimestamp())
-          .build();
+      // If the propagation strategy is not NONE, create the new state machine from a snapshot of the old revision.
+      if (revision.propagationStrategy() != PropagationStrategy.NONE) {
+        // Create a snapshot descriptor.
+        SnapshotDescriptor descriptor = SnapshotDescriptor.newBuilder()
+            .withIndex(raft.getLastApplied())
+            .withTimestamp(parent.wallClock().getTime().unixTimestamp())
+            .build();
 
-      // Take a snapshot of the parent state machine.
-      Snapshot snapshot = new EphemeralSnapshot(descriptor);
-      try (SnapshotWriter writer = snapshot.openWriter()) {
-        parent.service().snapshot(writer);
-      }
+        // Take a snapshot of the parent state machine.
+        Snapshot snapshot = new EphemeralSnapshot(descriptor);
+        try (SnapshotWriter writer = snapshot.openWriter()) {
+          parent.service().snapshot(writer);
+        }
 
-      // Complete the snapshot to make it readable.
-      snapshot.complete();
+        // Complete the snapshot to make it readable.
+        snapshot.complete();
 
-      // Install the snapshot on the new state machine.
-      try (SnapshotReader reader = snapshot.openReader()) {
-        service.service().install(reader);
+        // Install the snapshot on the new state machine.
+        try (SnapshotReader reader = snapshot.openReader()) {
+          service.service().install(reader);
+        }
       }
     }
     return service;

@@ -930,7 +930,7 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
-   * Tests an isolated revision.
+   * Tests a new revision.
    */
   @Test
   public void testNoneRevision() throws Throwable {
@@ -954,6 +954,73 @@ public class RaftTest extends ConcurrentTestCase {
 
     RaftClient newClient = createClient();
     RaftProxy newProxy = createSession(newClient, "map", 2, PropagationStrategy.NONE);
+
+    assertEquals(2, newProxy.revision().revision());
+
+    newProxy.addEventListener(PUT_EVENT, e -> resume());
+
+    newProxy.invoke(GET, clientSerializer::encode, "foo", clientSerializer::decode).thenAccept(value -> {
+      threadAssertNull(value);
+      resume();
+    });
+    await(5000);
+
+    newProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("bar", "baz"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    newProxy.invoke(GET, clientSerializer::encode, "bar", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("baz", value);
+      resume();
+    });
+    await(5000);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "bar", clientSerializer::decode).thenAccept(value -> {
+      threadAssertNull(value);
+      resume();
+    });
+    await(5000);
+
+    oldProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("baz", "foo"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "baz", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("foo", value);
+      resume();
+    });
+    await(5000);
+
+    newProxy.invoke(GET, clientSerializer::encode, "baz", clientSerializer::decode).thenAccept(value -> {
+      threadAssertNull(value);
+      resume();
+    });
+    await(5000);
+  }
+
+  /**
+   * Tests an isolated revision.
+   */
+  @Test
+  public void testIsolateRevision() throws Throwable {
+    createServers(3);
+
+    RaftClient oldClient = createClient();
+    RaftProxy oldProxy = createSession(oldClient, "map");
+
+    assertEquals(1, oldProxy.revision().revision());
+
+    oldProxy.addEventListener(PUT_EVENT, e -> resume());
+
+    oldProxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry("foo", "bar"), clientSerializer::decode).thenRun(this::resume);
+    await(5000, 2);
+
+    oldProxy.invoke(GET, clientSerializer::encode, "foo", clientSerializer::decode).thenAccept(value -> {
+      threadAssertEquals("bar", value);
+      resume();
+    });
+    await(5000);
+
+    RaftClient newClient = createClient();
+    RaftProxy newProxy = createSession(newClient, "map", 2, PropagationStrategy.ISOLATE);
 
     assertEquals(2, newProxy.revision().revision());
 
