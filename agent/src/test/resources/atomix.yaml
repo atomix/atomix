@@ -1,0 +1,21 @@
+data-directory: target/test-logs/
+cluster:
+  name: test
+  core:
+    nodes:
+      - id: node1
+        type: CORE
+        address: localhost:5000
+      - id: node2
+        type: CORE
+        address: localhost:5001
+      - id: node3
+        type: CORE
+        address: localhost:5002
+partition-groups:
+  - type: raft
+    name: core
+    storage-level: MEMORY
+    partitions: 7
+    partition-size: 3
+    data-directory: target/test-logs/core

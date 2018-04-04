@@ -65,7 +65,6 @@ import io.atomix.utils.AtomixRuntimeException;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -184,7 +183,12 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(
       String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
     try {
-      return (P) cache.get(name, () -> primitiveType.newPrimitiveBuilder(name, primitiveConfig, managementService).build());
+      return (P) cache.get(name, () -> {
+        if (primitiveConfig == null) {
+          return primitiveType.newPrimitiveBuilder(name, managementService).build();
+        }
+        return primitiveType.newPrimitiveBuilder(name, primitiveConfig, managementService).build();
+      });
     } catch (ExecutionException e) {
       throw new AtomixRuntimeException(e);
     }

@@ -37,11 +37,13 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   protected final C config;
   protected Serializer serializer;
   protected PrimitiveProtocol protocol;
+  protected final PrimitiveManagementService managementService;
 
-  public DistributedPrimitiveBuilder(PrimitiveType type, String name, C config) {
+  public DistributedPrimitiveBuilder(PrimitiveType type, String name, C config, PrimitiveManagementService managementService) {
     this.type = checkNotNull(type, "type cannot be null");
     this.name = checkNotNull(name, "name cannot be null");
     this.config = checkNotNull(config, "config cannot be null");
+    this.managementService = checkNotNull(managementService, "managementService cannot be null");
   }
 
   /**
@@ -152,7 +154,12 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   public PrimitiveProtocol protocol() {
     PrimitiveProtocol protocol = this.protocol;
     if (protocol == null) {
-      protocol = PrimitiveProtocols.createProtocol(config.getProtocolConfig());
+      PrimitiveProtocolConfig protocolConfig = config.getProtocolConfig();
+      if (protocolConfig == null) {
+        protocol = managementService.getPartitionService().getDefaultPartitionGroup().newProtocol();
+      } else {
+        protocol = PrimitiveProtocols.createProtocol(protocolConfig);
+      }
     }
     return protocol;
   }

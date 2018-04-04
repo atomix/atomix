@@ -17,13 +17,14 @@ package io.atomix.core.transaction;
 
 import io.atomix.core.map.ConsistentMapType;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Transactional map builder.
  */
 public abstract class TransactionalMapBuilder<K, V>
     extends DistributedPrimitiveBuilder<TransactionalMapBuilder<K, V>, TransactionalMapConfig, TransactionalMap<K, V>> {
-  protected TransactionalMapBuilder(String name, TransactionalMapConfig config) {
-    super(ConsistentMapType.instance(), name, config);
+  protected TransactionalMapBuilder(String name, TransactionalMapConfig config, PrimitiveManagementService managementService) {
+    super(ConsistentMapType.instance(), name, config, managementService);
   }
 }

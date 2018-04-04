@@ -17,13 +17,14 @@ package io.atomix.core.lock;
 
 import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Builder for AtomicIdGenerator.
  */
 public abstract class DistributedLockBuilder
     extends DistributedPrimitiveBuilder<DistributedLockBuilder, DistributedLockConfig, DistributedLock> {
-  public DistributedLockBuilder(String name, DistributedLockConfig config) {
-    super(PrimitiveTypes.lock(), name, config);
+  public DistributedLockBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
+    super(PrimitiveTypes.lock(), name, config, managementService);
   }
 }

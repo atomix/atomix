@@ -25,19 +25,14 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default {@link AsyncConsistentTreeMap} builder.
  *
  * @param <V> type for map value
  */
 public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V> {
-  private final PrimitiveManagementService managementService;
-
   public ConsistentTreeMapProxyBuilder(String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

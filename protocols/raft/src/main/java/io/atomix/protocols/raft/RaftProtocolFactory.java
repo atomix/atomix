@@ -15,12 +15,18 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveProtocolFactory;
 
 /**
  * Raft protocol factory.
  */
 public class RaftProtocolFactory implements PrimitiveProtocolFactory<RaftProtocolConfig, RaftProtocol> {
+  @Override
+  public PrimitiveProtocol.Type type() {
+    return RaftProtocol.TYPE;
+  }
+
   @Override
   public RaftProtocol create(RaftProtocolConfig config) {
     return new RaftProtocol(config);

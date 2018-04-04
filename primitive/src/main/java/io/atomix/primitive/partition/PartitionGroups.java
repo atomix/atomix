@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive;
+package io.atomix.primitive.partition;
 
 import io.atomix.utils.ConfigurationException;
 import io.atomix.utils.Services;
 
 /**
- * Primitive protocols.
+ * Partition groups.
  */
-public class PrimitiveProtocols {
+public class PartitionGroups {
 
   /**
    * Creates a new protocol instance from the given configuration.
@@ -30,30 +30,30 @@ public class PrimitiveProtocols {
    * @return the protocol instance for the given configuration
    */
   @SuppressWarnings("unchecked")
-  public static PrimitiveProtocol createProtocol(PrimitiveProtocolConfig config) {
-    for (PrimitiveProtocolFactory factory : Services.loadAll(PrimitiveProtocolFactory.class)) {
+  public static ManagedPartitionGroup createGroup(PartitionGroupConfig config) {
+    for (PartitionGroupFactory factory : Services.loadAll(PartitionGroupFactory.class)) {
       if (factory.configClass().isAssignableFrom(config.getClass())) {
         return factory.create(config);
       }
     }
-    throw new ConfigurationException("Unknown protocol configuration type: " + config.getClass().getSimpleName());
+    throw new ConfigurationException("Unknown partition group configuration type: " + config.getClass().getSimpleName());
   }
 
   /**
-   * Returns the protocol factory for the given type.
+   * Returns the partition group factory for the given type.
    *
    * @param type the type for which to return the factory
-   * @return the protocol factory for the given type
+   * @return the partition group factory for the given type
    */
-  public static PrimitiveProtocolFactory getProtocolFactory(String type) {
-    for (PrimitiveProtocolFactory factory : Services.loadAll(PrimitiveProtocolFactory.class)) {
+  public static PartitionGroupFactory getGroupFactory(String type) {
+    for (PartitionGroupFactory factory : Services.loadAll(PartitionGroupFactory.class)) {
       if (factory.type().name().equals(type)) {
         return factory;
       }
     }
-    throw new ConfigurationException("Unknown protocol type: " + type);
+    throw new ConfigurationException("Unknown partition group type: " + type);
   }
 
-  private PrimitiveProtocols() {
+  private PartitionGroups() {
   }
 }

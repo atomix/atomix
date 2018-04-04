@@ -17,6 +17,7 @@ package io.atomix.core.value;
 
 import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Builder for constructing new AtomicValue instances.
@@ -25,7 +26,7 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
  */
 public abstract class AtomicValueBuilder<V>
     extends DistributedPrimitiveBuilder<AtomicValueBuilder<V>, AtomicValueConfig, AtomicValue<V>> {
-  public AtomicValueBuilder(String name, AtomicValueConfig config) {
-    super(PrimitiveTypes.value(), name, config);
+  public AtomicValueBuilder(String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
+    super(PrimitiveTypes.value(), name, config, managementService);
   }
 }

@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup;
+package io.atomix.protocols.backup.partition;
 
 import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.PrimitiveProtocolFactory;
+import io.atomix.primitive.partition.PartitionGroupFactory;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
- * Multi-primary protocol factory.
+ * Primary-backup partition group factory.
  */
-public class MultiPrimaryProtocolFactory implements PrimitiveProtocolFactory<MultiPrimaryProtocolConfig, MultiPrimaryProtocol> {
+public class PrimaryBackupPartitionGroupFactory implements PartitionGroupFactory<PrimaryBackupPartitionGroupConfig, PrimaryBackupPartitionGroup> {
   @Override
   public PrimitiveProtocol.Type type() {
     return MultiPrimaryProtocol.TYPE;
   }
 
   @Override
-  public MultiPrimaryProtocol create(MultiPrimaryProtocolConfig config) {
-    return new MultiPrimaryProtocol(config);
+  public PrimaryBackupPartitionGroup create(PrimaryBackupPartitionGroupConfig config) {
+    return new PrimaryBackupPartitionGroup(config);
   }
 }

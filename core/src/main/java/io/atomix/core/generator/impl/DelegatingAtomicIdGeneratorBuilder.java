@@ -24,17 +24,12 @@ import io.atomix.primitive.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default implementation of AtomicIdGeneratorBuilder.
  */
 public class DelegatingAtomicIdGeneratorBuilder extends AtomicIdGeneratorBuilder {
-  private final PrimitiveManagementService managementService;
-
   public DelegatingAtomicIdGeneratorBuilder(String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

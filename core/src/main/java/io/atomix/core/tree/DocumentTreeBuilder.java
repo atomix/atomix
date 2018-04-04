@@ -19,6 +19,7 @@ package io.atomix.core.tree;
 import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.Ordering;
+import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 
 /**
@@ -26,8 +27,8 @@ import io.atomix.primitive.PrimitiveType;
  */
 public abstract class DocumentTreeBuilder<V>
     extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
-  protected DocumentTreeBuilder(String name, DocumentTreeConfig config) {
-    super(PrimitiveTypes.tree(), name, config);
+  protected DocumentTreeBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
+    super(PrimitiveTypes.tree(), name, config, managementService);
   }
 
   /**

@@ -17,6 +17,7 @@ package io.atomix.core.map;
 
 import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Builder for {@link ConsistentMap} instances.
@@ -27,8 +28,8 @@ import io.atomix.primitive.DistributedPrimitiveBuilder;
 public abstract class ConsistentMapBuilder<K, V>
     extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMapConfig, ConsistentMap<K, V>> {
 
-  public ConsistentMapBuilder(String name, ConsistentMapConfig config) {
-    super(PrimitiveTypes.map(), name, config);
+  public ConsistentMapBuilder(String name, ConsistentMapConfig config, PrimitiveManagementService managementService) {
+    super(PrimitiveTypes.map(), name, config, managementService);
   }
 
   /**

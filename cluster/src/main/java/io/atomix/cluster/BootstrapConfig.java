@@ -17,6 +17,7 @@ package io.atomix.cluster;
 
 import io.atomix.utils.Config;
 import io.atomix.utils.net.Address;
+import io.atomix.utils.net.MalformedAddressException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +29,14 @@ public class BootstrapConfig implements Config {
   private boolean multicastEnabled = false;
   private Address multicastAddress;
   private Collection<NodeConfig> nodes = new ArrayList<>();
+
+  public BootstrapConfig() {
+    try {
+      multicastAddress = Address.from("230.0.0.1", 54321);
+    } catch (MalformedAddressException e) {
+      multicastAddress = Address.from(54321);
+    }
+  }
 
   /**
    * Returns whether multicast is enabled.

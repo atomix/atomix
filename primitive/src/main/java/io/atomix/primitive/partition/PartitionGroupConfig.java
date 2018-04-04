@@ -20,7 +20,7 @@ import io.atomix.utils.Config;
 /**
  * Partition group configuration.
  */
-public class PartitionGroupConfig<C extends PartitionGroupConfig<C>> implements Config {
+public abstract class PartitionGroupConfig<C extends PartitionGroupConfig<C>> implements Config {
   private String name;
 
   /**

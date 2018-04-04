@@ -32,7 +32,6 @@ import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
-import io.atomix.core.config.ConfigService;
 import io.atomix.core.config.impl.DefaultConfigService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.election.LeaderElection;
@@ -65,6 +64,7 @@ import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.PartitionGroupConfig;
+import io.atomix.primitive.partition.PartitionGroups;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionManagementService;
@@ -74,9 +74,7 @@ import io.atomix.primitive.partition.impl.HashBasedPrimaryElectionService;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.impl.DefaultSessionIdService;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroupConfig;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
-import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -95,6 +93,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -112,6 +111,26 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   public static Builder builder() {
     return new Builder();
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param configFile the configuration file with which to initialize the builder
+   * @return a new Atomix builder
+   */
+  public static Builder builder(String configFile) {
+    return new Builder(loadConfig(new File(System.getProperty("user.dir"), configFile)));
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param configFile the configuration file with which to initialize the builder
+   * @return a new Atomix builder
+   */
+  public static Builder builder(File configFile) {
+    return new Builder(loadConfig(configFile));
   }
 
   protected static final String SYSTEM_GROUP_NAME = "system";
@@ -398,8 +417,14 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Loads a context from the given configuration file.
    */
   private static Context loadContext(File config) {
-    ConfigService configService = new DefaultConfigService();
-    return buildContext(configService.load(config, AtomixConfig.class));
+    return buildContext(loadConfig(config));
+  }
+
+  /**
+   * Loads a configuration from the given file.
+   */
+  private static AtomixConfig loadConfig(File config) {
+    return new DefaultConfigService().load(config, AtomixConfig.class);
   }
 
   /**
@@ -528,11 +553,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private static ManagedPartitionService buildPartitionService(AtomixConfig config) {
     List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups()) {
-      if (partitionGroupConfig instanceof RaftPartitionGroupConfig) {
-        partitionGroups.add(new RaftPartitionGroup((RaftPartitionGroupConfig) partitionGroupConfig));
-      } else if (partitionGroupConfig instanceof PrimaryBackupPartitionGroupConfig) {
-        partitionGroups.add(new PrimaryBackupPartitionGroup((PrimaryBackupPartitionGroupConfig) partitionGroupConfig));
-      }
+      partitionGroups.add(PartitionGroups.createGroup(partitionGroupConfig));
     }
     return new DefaultPartitionService(partitionGroups);
   }
@@ -608,12 +629,27 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected boolean enableShutdownHook;
 
-    public Builder() {
+    private Builder() {
       try {
         multicastAddress = Address.from("230.0.0.1", 54321);
       } catch (MalformedAddressException e) {
         multicastAddress = Address.from(54321);
       }
+    }
+
+    private Builder(AtomixConfig config) {
+      this.name = config.getClusterConfig().getName();
+      if (config.getClusterConfig().getLocalNode() != null) {
+        this.localNode = new Node(config.getClusterConfig().getLocalNode());
+      }
+      this.coreNodes = config.getClusterConfig().getCoreConfig().getNodes().stream().map(Node::new).collect(Collectors.toList());
+      this.bootstrapNodes = config.getClusterConfig().getBootstrapConfig().getNodes().stream().map(Node::new).collect(Collectors.toList());
+      this.multicastEnabled = config.getClusterConfig().getBootstrapConfig().isMulticastEnabled();
+      this.multicastAddress = config.getClusterConfig().getBootstrapConfig().getMulticastAddress();
+      this.dataDirectory = config.getDataDirectory();
+      this.partitionGroups = config.getPartitionGroups().stream().map(PartitionGroups::createGroup).collect(Collectors.toList());
+      this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
+      this.enableShutdownHook = config.isEnableShutdownHook();
     }
 
     /**

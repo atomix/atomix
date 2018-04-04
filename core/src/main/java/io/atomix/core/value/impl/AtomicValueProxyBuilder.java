@@ -23,19 +23,14 @@ import io.atomix.primitive.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default implementation of AtomicValueBuilder.
  *
  * @param <V> value type
  */
 public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
-  private final PrimitiveManagementService managementService;
-
   public AtomicValueProxyBuilder(String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override
