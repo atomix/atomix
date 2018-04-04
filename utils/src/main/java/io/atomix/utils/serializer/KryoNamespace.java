@@ -20,7 +20,6 @@ import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
-import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.pool.KryoCallback;
 import com.esotericsoftware.kryo.pool.KryoFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
@@ -299,7 +298,8 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
     return kryoOutputPool.run(output -> {
       return kryoPool.run(kryo -> {
         kryo.writeClassAndObject(output, obj);
-        return output.toBytes();
+        output.flush();
+        return output.getByteArrayOutputStream().toByteArray();
       });
     }, bufferSize);
   }

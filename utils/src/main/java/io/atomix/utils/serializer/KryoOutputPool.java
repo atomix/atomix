@@ -15,21 +15,20 @@
  */
 package io.atomix.utils.serializer;
 
-import com.esotericsoftware.kryo.io.Output;
-
-class KryoOutputPool extends KryoIOPool<Output> {
+class KryoOutputPool extends KryoIOPool<ByteArrayOutput> {
 
     private static final int MAX_BUFFER_SIZE = 768 * 1024;
     static final int MAX_POOLED_BUFFER_SIZE = 512 * 1024;
 
     @Override
-    protected Output create(int bufferSize) {
-        return new Output(bufferSize, MAX_BUFFER_SIZE);
+    protected ByteArrayOutput create(int bufferSize) {
+        return new ByteArrayOutput(bufferSize, MAX_BUFFER_SIZE, new BufferAwareByteArrayOutputStream(bufferSize));
     }
 
     @Override
-    protected boolean recycle(Output output) {
-        if (output.getBuffer().length < MAX_POOLED_BUFFER_SIZE) {
+    protected boolean recycle(ByteArrayOutput output) {
+        if (output.getByteArrayOutputStream().getBufferSize() < MAX_POOLED_BUFFER_SIZE) {
+            output.getByteArrayOutputStream().reset();
             output.clear();
             return true;
         }
