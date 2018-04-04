@@ -33,7 +33,7 @@ public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilde
   private final DefaultTransaction transaction;
 
   public DefaultTransactionalMapBuilder(String name, TransactionalMapConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
-    super(name, config);
+    super(name, config, managementService);
     this.mapBuilder = ConsistentMapType.<K, V>instance().newPrimitiveBuilder(name, managementService);
     this.transaction = transaction;
   }

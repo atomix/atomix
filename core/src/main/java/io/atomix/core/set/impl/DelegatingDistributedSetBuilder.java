@@ -30,11 +30,8 @@ import java.util.concurrent.CompletableFuture;
  * @param <E> type for set elements
  */
 public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
-  private final PrimitiveManagementService managementService;
-
   public DelegatingDistributedSetBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = managementService;
+    super(name, config, managementService);
   }
 
   @Override

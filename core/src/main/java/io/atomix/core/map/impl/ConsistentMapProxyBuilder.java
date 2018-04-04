@@ -36,8 +36,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default {@link AsyncConsistentMap} builder.
  *
@@ -46,11 +44,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> {
   private static final int NUM_BUCKETS = 128;
-  private final PrimitiveManagementService managementService;
 
   public ConsistentMapProxyBuilder(String name, ConsistentMapConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

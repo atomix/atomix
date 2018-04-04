@@ -23,6 +23,13 @@ import io.atomix.utils.Generics;
 public interface PrimitiveProtocolFactory<C extends PrimitiveProtocolConfig<C>, P extends PrimitiveProtocol> {
 
   /**
+   * Returns the protocol type.
+   *
+   * @return the protocol type
+   */
+  PrimitiveProtocol.Type type();
+
+  /**
    * Returns the protocol configuration class.
    *
    * @return the protocol configuration class

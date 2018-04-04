@@ -31,6 +31,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class MultiPrimaryProtocol implements PrimitiveProtocol {
   public static final Type TYPE = new Type() {
+    @Override
+    public String name() {
+      return "multi-primary";
+    }
   };
 
   /**

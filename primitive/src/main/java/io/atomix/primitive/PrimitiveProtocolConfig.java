@@ -20,7 +20,7 @@ import io.atomix.utils.Config;
 /**
  * Primitive protocol configuration.
  */
-public class PrimitiveProtocolConfig<C extends PrimitiveProtocolConfig<C>> implements Config {
+public abstract class PrimitiveProtocolConfig<C extends PrimitiveProtocolConfig<C>> implements Config {
   private String group;
 
   /**

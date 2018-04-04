@@ -23,17 +23,12 @@ import io.atomix.primitive.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Atomic counter proxy builder.
  */
 public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
-  private final PrimitiveManagementService managementService;
-
   public AtomicCounterProxyBuilder(String name, AtomicCounterConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

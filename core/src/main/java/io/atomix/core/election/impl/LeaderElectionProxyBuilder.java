@@ -23,17 +23,12 @@ import io.atomix.primitive.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default implementation of {@code LeaderElectorBuilder}.
  */
 public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
-  private final PrimitiveManagementService managementService;
-
   public LeaderElectionProxyBuilder(String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

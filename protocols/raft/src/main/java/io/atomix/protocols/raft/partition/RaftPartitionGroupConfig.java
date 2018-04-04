@@ -24,7 +24,7 @@ import java.io.File;
  * Raft partition group configuration.
  */
 public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartitionGroupConfig> {
-  private int numPartitions;
+  private int partitions;
   private int partitionSize;
   private StorageLevel storageLevel = StorageLevel.MAPPED;
   private File dataDirectory = new File(System.getProperty("user.dir"), "data");
@@ -34,18 +34,18 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    *
    * @return the number of partitions in the group
    */
-  public int getNumPartitions() {
-    return numPartitions;
+  public int getPartitions() {
+    return partitions;
   }
 
   /**
    * Sets the number of partitions in the group.
    *
-   * @param numPartitions the number of partitions in the group
+   * @param partitions the number of partitions in the group
    * @return the Raft partition group configuration
    */
-  public RaftPartitionGroupConfig setNumPartitions(int numPartitions) {
-    this.numPartitions = numPartitions;
+  public RaftPartitionGroupConfig setPartitions(int partitions) {
+    this.partitions = partitions;
     return this;
   }
 

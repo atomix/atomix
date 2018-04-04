@@ -24,6 +24,12 @@ public interface PrimitiveProtocol {
    * Primitive protocol type.
    */
   interface Type {
+    /**
+     * Returns the protocol type name.
+     *
+     * @return the protocol type name
+     */
+    String name();
   }
 
   /**

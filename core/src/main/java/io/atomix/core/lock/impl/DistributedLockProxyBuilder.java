@@ -23,17 +23,12 @@ import io.atomix.primitive.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default distributed lock builder implementation.
  */
 public class DistributedLockProxyBuilder extends DistributedLockBuilder {
-  private final PrimitiveManagementService managementService;
-
   public DistributedLockProxyBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

@@ -27,12 +27,10 @@ import java.util.concurrent.CompletableFuture;
  * Default transactional set builder.
  */
 public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E> {
-  private final PrimitiveManagementService managementService;
   private final DefaultTransaction transaction;
 
   public DefaultTransactionalSetBuilder(String name, TransactionalSetConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
-    super(name, config);
-    this.managementService = managementService;
+    super(name, config, managementService);
     this.transaction = transaction;
   }
 

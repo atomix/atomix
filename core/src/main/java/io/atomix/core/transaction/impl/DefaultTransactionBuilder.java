@@ -29,7 +29,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Default transaction builder.
  */
 public class DefaultTransactionBuilder extends TransactionBuilder {
-  private final PrimitiveManagementService managementService;
   private final TransactionService transactionService;
 
   public DefaultTransactionBuilder(
@@ -37,8 +36,7 @@ public class DefaultTransactionBuilder extends TransactionBuilder {
       TransactionConfig config,
       PrimitiveManagementService managementService,
       TransactionService transactionService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
     this.transactionService = checkNotNull(transactionService);
   }
 

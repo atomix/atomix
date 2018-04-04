@@ -18,7 +18,6 @@ package io.atomix.core.tree.impl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.hash.Hashing;
-
 import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
@@ -35,8 +34,6 @@ import io.atomix.utils.concurrent.Futures;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default {@link AsyncDocumentTree} builder.
  *
@@ -45,11 +42,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
   private static final int NUM_BUCKETS = 128;
 
-  private final PrimitiveManagementService managementService;
-
   public DocumentTreeProxyBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

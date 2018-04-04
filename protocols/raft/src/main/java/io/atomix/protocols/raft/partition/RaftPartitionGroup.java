@@ -70,8 +70,8 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
 
   private static Collection<RaftPartition> buildPartitions(RaftPartitionGroupConfig config) {
     File partitionsDir = new File(config.getDataDirectory(), "partitions");
-    List<RaftPartition> partitions = new ArrayList<>(config.getNumPartitions());
-    for (int i = 0; i < config.getNumPartitions(); i++) {
+    List<RaftPartition> partitions = new ArrayList<>(config.getPartitions());
+    for (int i = 0; i < config.getPartitions(); i++) {
       partitions.add(new RaftPartition(PartitionId.from(config.getName(), i + 1), config.getStorageLevel(), new File(partitionsDir, String.valueOf(i + 1))));
     }
     return partitions;
@@ -228,7 +228,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
     public Builder withNumPartitions(int numPartitions) {
-      config.setNumPartitions(numPartitions);
+      config.setPartitions(numPartitions);
       return this;
     }
 

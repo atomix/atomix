@@ -16,13 +16,14 @@
 package io.atomix.core.transaction;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Transaction builder.
  */
 public abstract class TransactionBuilder extends DistributedPrimitiveBuilder<TransactionBuilder, TransactionConfig, Transaction> {
-  protected TransactionBuilder(String name, TransactionConfig config) {
-    super(TransactionType.instance(), name, config);
+  protected TransactionBuilder(String name, TransactionConfig config, PrimitiveManagementService managementService) {
+    super(TransactionType.instance(), name, config, managementService);
   }
 
   /**

@@ -16,7 +16,6 @@
 package io.atomix.core.election.impl;
 
 import com.google.common.collect.Maps;
-
 import io.atomix.core.election.AsyncLeaderElector;
 import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.LeaderElectorBuilder;
@@ -34,17 +33,12 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default implementation of {@code LeaderElectorBuilder}.
  */
 public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
-  private final PrimitiveManagementService managementService;
-
   public LeaderElectorProxyBuilder(String name, LeaderElectorConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   private CompletableFuture<AsyncLeaderElector<T>> newLeaderElector(PrimitiveProxy proxy) {

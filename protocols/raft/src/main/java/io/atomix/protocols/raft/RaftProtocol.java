@@ -30,6 +30,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class RaftProtocol implements PrimitiveProtocol {
   public static final Type TYPE = new Type() {
+    @Override
+    public String name() {
+      return "raft";
+    }
   };
 
   /**

@@ -17,7 +17,6 @@
 package io.atomix.core.multimap.impl;
 
 import com.google.common.io.BaseEncoding;
-
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimapBuilder;
@@ -28,17 +27,12 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default {@link AsyncConsistentMultimap} builder.
  */
 public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuilder<K, V> {
-  private final PrimitiveManagementService managementService;
-
   public ConsistentMultimapProxyBuilder(String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

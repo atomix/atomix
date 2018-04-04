@@ -16,7 +16,6 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.io.BaseEncoding;
-
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapBuilder;
 import io.atomix.core.map.AtomicCounterMapConfig;
@@ -26,17 +25,12 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default {@code AtomicCounterMapBuilder}.
  */
 public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> {
-  private final PrimitiveManagementService managementService;
-
   public AtomicCounterMapProxyBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

@@ -23,17 +23,12 @@ import io.atomix.primitive.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Default work queue builder implementation.
  */
 public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
-  private final PrimitiveManagementService managementService;
-
   public WorkQueueProxyBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
-    super(name, config);
-    this.managementService = checkNotNull(managementService);
+    super(name, config, managementService);
   }
 
   @Override

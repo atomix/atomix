@@ -15,15 +15,30 @@
  */
 package io.atomix.core.config.jackson;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.atomix.core.config.ConfigProvider;
+import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.PrimitiveProtocolConfig;
+import io.atomix.primitive.PrimitiveProtocols;
+import io.atomix.primitive.partition.PartitionGroup;
+import io.atomix.primitive.partition.PartitionGroupConfig;
+import io.atomix.primitive.partition.PartitionGroups;
 import io.atomix.utils.Config;
 import io.atomix.utils.ConfigurationException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Jackson configuration provider.
@@ -59,7 +74,7 @@ public class JacksonConfigProvider implements ConfigProvider {
 
   private <C extends Config> C loadYaml(File file, Class<C> type) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
+    setupObectMapper(mapper);
     try {
       return mapper.readValue(file, type);
     } catch (IOException e) {
@@ -69,12 +84,21 @@ public class JacksonConfigProvider implements ConfigProvider {
 
   private <C extends Config> C loadJson(File file, Class<C> type) {
     ObjectMapper mapper = new ObjectMapper();
-    mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
+    setupObectMapper(mapper);
     try {
       return mapper.readValue(file, type);
     } catch (IOException e) {
       throw new ConfigurationException("Failed to parse JSON file", e);
     }
+  }
+
+  private void setupObectMapper(ObjectMapper mapper) {
+    mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
+
+    SimpleModule module = new SimpleModule("PolymorphicTypes");
+    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
+    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
+    mapper.registerModule(module);
   }
 
   private static class ConfigPropertyNamingStrategy extends PropertyNamingStrategy.KebabCaseStrategy {
@@ -86,6 +110,62 @@ public class JacksonConfigProvider implements ConfigProvider {
         return super.translate(input.substring(0, input.length() - CONFIG_SUFFIX.length()));
       }
       return super.translate(input);
+    }
+  }
+
+  /**
+   * Partition group deserializer.
+   */
+  private static class PartitionGroupDeserializer extends StdDeserializer<PartitionGroupConfig> {
+    private static final String TYPE_KEY = "type";
+
+    public PartitionGroupDeserializer() {
+      super(PartitionGroup.class);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public PartitionGroupConfig deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      ObjectMapper mapper = (ObjectMapper) p.getCodec();
+      ObjectNode root = mapper.readTree(p);
+      Iterator<Map.Entry<String, JsonNode>> iterator = root.fields();
+      while (iterator.hasNext()) {
+        Map.Entry<String, JsonNode> entry = iterator.next();
+        if (entry.getKey().equals(TYPE_KEY)) {
+          Class<? extends PartitionGroupConfig> configClass = PartitionGroups.getGroupFactory(entry.getValue().asText()).configClass();
+          root.remove(TYPE_KEY);
+          return mapper.convertValue(root, configClass);
+        }
+      }
+      throw new ConfigurationException("Failed to deserialize partition group configuration");
+    }
+  }
+
+  /**
+   * Primitive protocol deserializer.
+   */
+  private static class PrimitiveProtocolDeserializer extends StdDeserializer<PrimitiveProtocolConfig> {
+    private static final String TYPE_KEY = "type";
+
+    public PrimitiveProtocolDeserializer() {
+      super(PrimitiveProtocol.class);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public PrimitiveProtocolConfig deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      ObjectMapper mapper = (ObjectMapper) p.getCodec();
+      ObjectNode root = mapper.readTree(p);
+      Iterator<Map.Entry<String, JsonNode>> iterator = root.fields();
+      while (iterator.hasNext()) {
+        Map.Entry<String, JsonNode> entry = iterator.next();
+        if (entry.getKey().equals(TYPE_KEY)) {
+          Class<? extends PrimitiveProtocolConfig> configClass = PrimitiveProtocols.getProtocolFactory(entry.getValue().asText()).configClass();
+          root.remove(TYPE_KEY);
+          return mapper.convertValue(root, configClass);
+        }
+      }
+      throw new ConfigurationException("Failed to deserialize protocol configuration");
     }
   }
 }
