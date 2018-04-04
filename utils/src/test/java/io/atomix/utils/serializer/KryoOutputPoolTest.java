@@ -47,7 +47,7 @@ public class KryoOutputPoolTest {
 
     @Test
     public void recycleOutput() {
-        final Output[] result = new Output[2];
+        final ByteArrayOutput[] result = new ByteArrayOutput[2];
         kryoOutputPool.run(output -> {
             output.writeInt(1);
             assertEquals(Integer.BYTES, output.position());
@@ -55,6 +55,7 @@ public class KryoOutputPoolTest {
             return null;
         }, 0);
         assertEquals(0, result[0].position());
+        assertEquals(0, result[0].getByteArrayOutputStream().size());
         kryoOutputPool.run(output -> {
             assertEquals(0, output.position());
             result[1] = output;
