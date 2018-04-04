@@ -99,7 +99,7 @@ public class VoteRequest extends AbstractRaftRequest {
     if (object instanceof VoteRequest) {
       VoteRequest request = (VoteRequest) object;
       return request.term == term
-          && request.candidate == candidate
+          && request.candidate.equals(candidate)
           && request.lastLogIndex == lastLogIndex
           && request.lastLogTerm == lastLogTerm;
     }
