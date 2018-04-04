@@ -54,13 +54,11 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
 
   protected final ClusterService cluster;
   protected final MessagingService messagingService;
-  private final NodeId localNodeId;
   private final AtomicBoolean started = new AtomicBoolean();
 
   public DefaultClusterMessagingService(ClusterService cluster, MessagingService messagingService) {
     this.cluster = checkNotNull(cluster, "clusterService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
-    this.localNodeId = cluster.getLocalNode().id();
   }
 
   @Override
@@ -93,12 +91,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       Function<M, byte[]> encoder,
       NodeId toNodeId) {
     try {
-      byte[] payload = new ClusterMessage(
-          localNodeId,
-          subject,
-          encoder.apply(message)
-      ).getBytes();
-      return doUnicast(subject, payload, toNodeId);
+      return doUnicast(subject, encoder.apply(message), toNodeId);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -110,11 +103,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       M message,
       Function<M, byte[]> encoder,
       Set<NodeId> nodes) {
-    byte[] payload = new ClusterMessage(
-        localNodeId,
-        subject,
-        encoder.apply(message))
-        .getBytes();
+    byte[] payload = encoder.apply(message);
     nodes.forEach(nodeId -> doUnicast(subject, payload, nodeId));
   }
 
@@ -126,11 +115,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       Function<byte[], R> decoder,
       NodeId toNodeId) {
     try {
-      ClusterMessage envelope = new ClusterMessage(
-          cluster.getLocalNode().id(),
-          subject,
-          encoder.apply(message));
-      return sendAndReceive(subject, envelope.getBytes(), toNodeId).thenApply(decoder);
+      return sendAndReceive(subject, encoder.apply(message), toNodeId).thenApply(decoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -242,7 +227,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
 
     @Override
     public CompletableFuture<byte[]> apply(Address sender, byte[] bytes) {
-      return handler.apply(decoder.apply(ClusterMessage.getPayload(bytes))).thenApply(encoder);
+      return handler.apply(decoder.apply(bytes)).thenApply(encoder);
     }
   }
 
@@ -257,7 +242,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
 
     @Override
     public void accept(Address sender, byte[] bytes) {
-      consumer.accept(sender, decoder.apply(ClusterMessage.getPayload(bytes)));
+      consumer.accept(sender, decoder.apply(bytes));
     }
   }
 
@@ -272,7 +257,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
 
     @Override
     public void accept(Address sender, byte[] bytes) {
-      consumer.accept(decoder.apply(ClusterMessage.getPayload(bytes)));
+      consumer.accept(decoder.apply(bytes));
     }
   }
 }
