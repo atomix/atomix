@@ -165,7 +165,7 @@ public abstract class ActiveRole extends PassiveRole {
       }
     }
     // If we already voted for the requesting server, respond successfully.
-    else if (raft.getLastVotedFor() == request.candidate()) {
+    else if (raft.getLastVotedFor().equals(request.candidate())) {
       log.debug("Accepted {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).nodeId());
       return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
