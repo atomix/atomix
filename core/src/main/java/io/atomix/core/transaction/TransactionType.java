@@ -40,9 +40,6 @@ public class TransactionType implements PrimitiveType<TransactionBuilder, Transa
     return INSTANCE;
   }
 
-  private TransactionType() {
-  }
-
   @Override
   public String id() {
     return NAME;

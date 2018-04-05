@@ -40,9 +40,6 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
     return new DistributedSetType<>();
   }
 
-  private DistributedSetType() {
-  }
-
   @Override
   public String id() {
     return NAME;

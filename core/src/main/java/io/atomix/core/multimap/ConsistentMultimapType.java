@@ -40,9 +40,6 @@ public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMul
     return new ConsistentMultimapType<>();
   }
 
-  private ConsistentMultimapType() {
-  }
-
   @Override
   public String id() {
     return NAME;

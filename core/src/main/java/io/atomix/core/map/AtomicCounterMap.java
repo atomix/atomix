@@ -15,7 +15,6 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 
@@ -26,7 +25,7 @@ public interface AtomicCounterMap<K> extends SyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.counterMap();
+    return AtomicCounterMapType.instance();
   }
 
   /**

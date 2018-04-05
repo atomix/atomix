@@ -33,6 +33,9 @@ public class PrimitiveTypeRegistry {
   }
 
   public PrimitiveTypeRegistry(Collection<Class<? extends PrimitiveType>> types) {
+    for (PrimitiveType type : PrimitiveTypes.getPrimitiveTypes()) {
+      this.types.put(type.id(), type);
+    }
     for (Class<? extends PrimitiveType> typeClass : types) {
       try {
         PrimitiveType type = typeClass.newInstance();

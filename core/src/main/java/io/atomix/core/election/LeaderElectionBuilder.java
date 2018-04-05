@@ -16,7 +16,6 @@
 package io.atomix.core.election;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -31,7 +30,7 @@ public abstract class LeaderElectionBuilder<T>
     extends DistributedPrimitiveBuilder<LeaderElectionBuilder<T>, LeaderElectionConfig, LeaderElection<T>> {
 
   public LeaderElectionBuilder(String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
-    super(PrimitiveTypes.leaderElection(), name, config, managementService);
+    super(LeaderElectionType.instance(), name, config, managementService);
   }
 
   @Override

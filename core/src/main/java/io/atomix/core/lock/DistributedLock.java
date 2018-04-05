@@ -15,7 +15,6 @@
  */
 package io.atomix.core.lock;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.time.Version;
@@ -30,7 +29,7 @@ public interface DistributedLock extends SyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.lock();
+    return DistributedLockType.instance();
   }
 
   /**

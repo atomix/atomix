@@ -16,7 +16,6 @@
 
 package io.atomix.core.map;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
@@ -26,6 +25,6 @@ import io.atomix.primitive.PrimitiveManagementService;
 public abstract class ConsistentTreeMapBuilder<V>
     extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<V>, ConsistentTreeMapConfig, ConsistentTreeMap<V>> {
   public ConsistentTreeMapBuilder(String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
-    super(PrimitiveTypes.treeMap(), name, config, managementService);
+    super(ConsistentTreeMapType.instance(), name, config, managementService);
   }
 }

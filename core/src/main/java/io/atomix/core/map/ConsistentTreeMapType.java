@@ -40,9 +40,6 @@ public class ConsistentTreeMapType<V>
     return new ConsistentTreeMapType<>();
   }
 
-  private ConsistentTreeMapType() {
-  }
-
   @Override
   public String id() {
     return NAME;

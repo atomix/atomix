@@ -38,9 +38,6 @@ public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, At
     return new AtomicCounterType();
   }
 
-  private AtomicCounterType() {
-  }
-
   @Override
   public String id() {
     return NAME;

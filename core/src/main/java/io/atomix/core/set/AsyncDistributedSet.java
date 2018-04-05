@@ -15,7 +15,6 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
@@ -39,7 +38,7 @@ public interface AsyncDistributedSet<E> extends AsyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.set();
+    return DistributedSetType.instance();
   }
 
   /**

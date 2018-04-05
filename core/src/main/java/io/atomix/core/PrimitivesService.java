@@ -17,31 +17,44 @@ package io.atomix.core;
 
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterBuilder;
+import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElectionBuilder;
+import io.atomix.core.election.LeaderElectionType;
 import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.LeaderElectorBuilder;
+import io.atomix.core.election.LeaderElectorType;
 import io.atomix.core.generator.AtomicIdGenerator;
 import io.atomix.core.generator.AtomicIdGeneratorBuilder;
+import io.atomix.core.generator.AtomicIdGeneratorType;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockBuilder;
+import io.atomix.core.lock.DistributedLockType;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapBuilder;
+import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapBuilder;
+import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMapBuilder;
+import io.atomix.core.map.ConsistentTreeMapType;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimapBuilder;
+import io.atomix.core.multimap.ConsistentMultimapType;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueBuilder;
+import io.atomix.core.queue.WorkQueueType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
+import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeBuilder;
+import io.atomix.core.tree.DocumentTreeType;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueBuilder;
+import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
@@ -64,7 +77,7 @@ public interface PrimitivesService {
    * @return builder for a consistent map
    */
   default <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.map());
+    return primitiveBuilder(name, ConsistentMapType.instance());
   }
 
   /**
@@ -77,7 +90,7 @@ public interface PrimitivesService {
    * @return builder for a consistent map
    */
   default <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.map(), protocol);
+    return primitiveBuilder(name, ConsistentMapType.instance(), protocol);
   }
 
   /**
@@ -88,7 +101,7 @@ public interface PrimitivesService {
    * @return builder for a consistent map
    */
   default <V> DocumentTreeBuilder<V> documentTreeBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.tree());
+    return primitiveBuilder(name, DocumentTreeType.instance());
   }
 
   /**
@@ -100,7 +113,7 @@ public interface PrimitivesService {
    * @return builder for a consistent map
    */
   default <V> DocumentTreeBuilder<V> documentTreeBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.tree(), protocol);
+    return primitiveBuilder(name, DocumentTreeType.instance(), protocol);
   }
 
   /**
@@ -111,7 +124,7 @@ public interface PrimitivesService {
    * @return builder for a async consistent tree map
    */
   default <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.treeMap());
+    return primitiveBuilder(name, ConsistentTreeMapType.instance());
   }
 
   /**
@@ -123,7 +136,7 @@ public interface PrimitivesService {
    * @return builder for a async consistent tree map
    */
   default <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.treeMap(), protocol);
+    return primitiveBuilder(name, ConsistentTreeMapType.instance(), protocol);
   }
 
   /**
@@ -135,7 +148,7 @@ public interface PrimitivesService {
    * @return builder for a set based async consistent multimap
    */
   default <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.multimap());
+    return primitiveBuilder(name, ConsistentMultimapType.instance());
   }
 
   /**
@@ -148,7 +161,7 @@ public interface PrimitivesService {
    * @return builder for a set based async consistent multimap
    */
   default <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.multimap(), protocol);
+    return primitiveBuilder(name, ConsistentMultimapType.instance(), protocol);
   }
 
   /**
@@ -159,7 +172,7 @@ public interface PrimitivesService {
    * @return builder for an atomic counter map
    */
   default <K> AtomicCounterMapBuilder<K> atomicCounterMapBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.counterMap());
+    return primitiveBuilder(name, AtomicCounterMapType.instance());
   }
 
   /**
@@ -171,7 +184,7 @@ public interface PrimitivesService {
    * @return builder for an atomic counter map
    */
   default <K> AtomicCounterMapBuilder<K> atomicCounterMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.counterMap(), protocol);
+    return primitiveBuilder(name, AtomicCounterMapType.instance(), protocol);
   }
 
   /**
@@ -182,7 +195,7 @@ public interface PrimitivesService {
    * @return builder for an distributed set
    */
   default <E> DistributedSetBuilder<E> setBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.set());
+    return primitiveBuilder(name, DistributedSetType.instance());
   }
 
   /**
@@ -194,7 +207,7 @@ public interface PrimitivesService {
    * @return builder for an distributed set
    */
   default <E> DistributedSetBuilder<E> setBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.set(), protocol);
+    return primitiveBuilder(name, DistributedSetType.instance(), protocol);
   }
 
   /**
@@ -204,7 +217,7 @@ public interface PrimitivesService {
    * @return atomic counter builder
    */
   default AtomicCounterBuilder atomicCounterBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.counter());
+    return primitiveBuilder(name, AtomicCounterType.instance());
   }
 
   /**
@@ -215,7 +228,7 @@ public interface PrimitivesService {
    * @return atomic counter builder
    */
   default AtomicCounterBuilder atomicCounterBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.counter(), protocol);
+    return primitiveBuilder(name, AtomicCounterType.instance(), protocol);
   }
 
   /**
@@ -225,7 +238,7 @@ public interface PrimitivesService {
    * @return atomic ID generator builder
    */
   default AtomicIdGeneratorBuilder atomicIdGeneratorBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.idGenerator());
+    return primitiveBuilder(name, AtomicIdGeneratorType.instance());
   }
 
   /**
@@ -236,7 +249,7 @@ public interface PrimitivesService {
    * @return atomic ID generator builder
    */
   default AtomicIdGeneratorBuilder atomicIdGeneratorBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.idGenerator(), protocol);
+    return primitiveBuilder(name, AtomicIdGeneratorType.instance(), protocol);
   }
 
   /**
@@ -247,7 +260,7 @@ public interface PrimitivesService {
    * @return atomic value builder
    */
   default <V> AtomicValueBuilder<V> atomicValueBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.value());
+    return primitiveBuilder(name, AtomicValueType.instance());
   }
 
   /**
@@ -259,7 +272,7 @@ public interface PrimitivesService {
    * @return atomic value builder
    */
   default <V> AtomicValueBuilder<V> atomicValueBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.value(), protocol);
+    return primitiveBuilder(name, AtomicValueType.instance(), protocol);
   }
 
   /**
@@ -269,7 +282,7 @@ public interface PrimitivesService {
    * @return leader election builder
    */
   default <T> LeaderElectionBuilder<T> leaderElectionBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.leaderElection());
+    return primitiveBuilder(name, LeaderElectionType.instance());
   }
 
   /**
@@ -280,7 +293,7 @@ public interface PrimitivesService {
    * @return leader election builder
    */
   default <T> LeaderElectionBuilder<T> leaderElectionBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.leaderElection(), protocol);
+    return primitiveBuilder(name, LeaderElectionType.instance(), protocol);
   }
 
   /**
@@ -290,7 +303,7 @@ public interface PrimitivesService {
    * @return leader elector builder
    */
   default <T> LeaderElectorBuilder<T> leaderElectorBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.leaderElector());
+    return primitiveBuilder(name, LeaderElectorType.instance());
   }
 
   /**
@@ -301,7 +314,7 @@ public interface PrimitivesService {
    * @return leader elector builder
    */
   default <T> LeaderElectorBuilder<T> leaderElectorBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.leaderElector(), protocol);
+    return primitiveBuilder(name, LeaderElectorType.instance(), protocol);
   }
 
   /**
@@ -311,7 +324,7 @@ public interface PrimitivesService {
    * @return distributed lock builder
    */
   default DistributedLockBuilder lockBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.lock());
+    return primitiveBuilder(name, DistributedLockType.instance());
   }
 
   /**
@@ -322,7 +335,7 @@ public interface PrimitivesService {
    * @return distributed lock builder
    */
   default DistributedLockBuilder lockBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.lock(), protocol);
+    return primitiveBuilder(name, DistributedLockType.instance(), protocol);
   }
 
   /**
@@ -333,7 +346,7 @@ public interface PrimitivesService {
    * @return work queue builder
    */
   default <E> WorkQueueBuilder<E> workQueueBuilder(String name) {
-    return primitiveBuilder(name, PrimitiveTypes.workQueue());
+    return primitiveBuilder(name, WorkQueueType.instance());
   }
 
   /**
@@ -345,7 +358,7 @@ public interface PrimitivesService {
    * @return work queue builder
    */
   default <E> WorkQueueBuilder<E> workQueueBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, PrimitiveTypes.workQueue(), protocol);
+    return primitiveBuilder(name, WorkQueueType.instance(), protocol);
   }
 
   /**
@@ -527,7 +540,7 @@ public interface PrimitivesService {
    * @return a list of map names
    */
   default Set<String> getConsistentMapNames() {
-    return getPrimitiveNames(PrimitiveTypes.map());
+    return getPrimitiveNames(ConsistentMapType.instance());
   }
 
   /**
@@ -536,7 +549,7 @@ public interface PrimitivesService {
    * @return a list of document tree names
    */
   default Set<String> getDocumentTreeNames() {
-    return getPrimitiveNames(PrimitiveTypes.tree());
+    return getPrimitiveNames(ConsistentTreeMapType.instance());
   }
 
   /**
@@ -545,7 +558,7 @@ public interface PrimitivesService {
    * @return a list of tree map names
    */
   default Set<String> getConsistentTreeMapNames() {
-    return getPrimitiveNames(PrimitiveTypes.treeMap());
+    return getPrimitiveNames(ConsistentTreeMapType.instance());
   }
 
   /**
@@ -554,7 +567,7 @@ public interface PrimitivesService {
    * @return a list of multimap names
    */
   default Set<String> getConsistentMultimapNames() {
-    return getPrimitiveNames(PrimitiveTypes.multimap());
+    return getPrimitiveNames(ConsistentMultimapType.instance());
   }
 
   /**
@@ -563,7 +576,7 @@ public interface PrimitivesService {
    * @return a list of counter map names
    */
   default Set<String> getAtomicCounterMapNames() {
-    return getPrimitiveNames(PrimitiveTypes.counterMap());
+    return getPrimitiveNames(AtomicCounterMapType.instance());
   }
 
   /**
@@ -572,7 +585,7 @@ public interface PrimitivesService {
    * @return a list of set names
    */
   default Set<String> getSetNames() {
-    return getPrimitiveNames(PrimitiveTypes.set());
+    return getPrimitiveNames(DistributedSetType.instance());
   }
 
   /**
@@ -581,7 +594,7 @@ public interface PrimitivesService {
    * @return a list of counter names
    */
   default Set<String> getAtomicCounterNames() {
-    return getPrimitiveNames(PrimitiveTypes.counter());
+    return getPrimitiveNames(AtomicCounterType.instance());
   }
 
   /**
@@ -590,7 +603,7 @@ public interface PrimitivesService {
    * @return a list of ID generator names
    */
   default Set<String> getAtomicIdGeneratorNames() {
-    return getPrimitiveNames(PrimitiveTypes.idGenerator());
+    return getPrimitiveNames(AtomicIdGeneratorType.instance());
   }
 
   /**
@@ -599,7 +612,7 @@ public interface PrimitivesService {
    * @return a list of atomic value names
    */
   default Set<String> getAtomicValueNames() {
-    return getPrimitiveNames(PrimitiveTypes.value());
+    return getPrimitiveNames(AtomicValueType.instance());
   }
 
   /**
@@ -608,7 +621,7 @@ public interface PrimitivesService {
    * @return a list of leader election names
    */
   default Set<String> getLeaderElectionNames() {
-    return getPrimitiveNames(PrimitiveTypes.leaderElection());
+    return getPrimitiveNames(LeaderElectionType.instance());
   }
 
   /**
@@ -617,7 +630,7 @@ public interface PrimitivesService {
    * @return a list of leader elector names
    */
   default Set<String> getLeaderElectorNames() {
-    return getPrimitiveNames(PrimitiveTypes.leaderElector());
+    return getPrimitiveNames(LeaderElectorType.instance());
   }
 
   /**
@@ -626,7 +639,7 @@ public interface PrimitivesService {
    * @return a list of lock names
    */
   default Set<String> getDistributedLockNames() {
-    return getPrimitiveNames(PrimitiveTypes.lock());
+    return getPrimitiveNames(DistributedLockType.instance());
   }
 
   /**
@@ -635,7 +648,7 @@ public interface PrimitivesService {
    * @return a list of work queue names
    */
   default Set<String> getWorkQueueNames() {
-    return getPrimitiveNames(PrimitiveTypes.workQueue());
+    return getPrimitiveNames(WorkQueueType.instance());
   }
 
   /**

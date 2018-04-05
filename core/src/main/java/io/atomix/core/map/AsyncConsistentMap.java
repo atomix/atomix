@@ -17,7 +17,6 @@
 package io.atomix.core.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.transaction.Transactional;
 import io.atomix.primitive.AsyncPrimitive;
@@ -65,7 +64,7 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.map();
+    return ConsistentMapType.instance();
   }
 
   @Override

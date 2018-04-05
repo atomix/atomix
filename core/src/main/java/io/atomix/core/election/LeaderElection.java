@@ -15,7 +15,6 @@
  */
 package io.atomix.core.election;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 
@@ -27,7 +26,7 @@ public interface LeaderElection<T> extends SyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.leaderElection();
+    return LeaderElectionType.instance();
   }
 
   /**

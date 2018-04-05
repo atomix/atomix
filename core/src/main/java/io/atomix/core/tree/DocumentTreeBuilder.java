@@ -16,11 +16,8 @@
 
 package io.atomix.core.tree;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 
 /**
  * Builder for {@link DocumentTree}.
@@ -28,30 +25,6 @@ import io.atomix.primitive.PrimitiveType;
 public abstract class DocumentTreeBuilder<V>
     extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
   protected DocumentTreeBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
-    super(PrimitiveTypes.tree(), name, config, managementService);
-  }
-
-  /**
-   * Sets the ordering of the tree nodes.
-   * <p>
-   * When {@link AsyncDocumentTree#getChildren(DocumentPath)} is called, children will be returned according to
-   * the specified sort order.
-   *
-   * @param ordering ordering of the tree nodes
-   * @return this builder
-   */
-  public DocumentTreeBuilder<V> withOrdering(Ordering ordering) {
-    config.setOrdering(ordering);
-    return this;
-  }
-
-  @Override
-  public PrimitiveType primitiveType() {
-    Ordering ordering = config.getOrdering();
-    if (ordering == null) {
-      return DocumentTreeType.instance();
-    } else {
-      return DocumentTreeType.ordered(ordering);
-    }
+    super(DocumentTreeType.instance(), name, config, managementService);
   }
 }

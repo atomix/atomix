@@ -39,9 +39,6 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
     return new LeaderElectionType<>();
   }
 
-  private LeaderElectionType() {
-  }
-
   @Override
   public String id() {
     return NAME;

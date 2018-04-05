@@ -160,7 +160,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
   private Atomix(Context context) {
     this.context = context;
-    PrimitiveTypes.register(context.primitiveTypes);
   }
 
   /**

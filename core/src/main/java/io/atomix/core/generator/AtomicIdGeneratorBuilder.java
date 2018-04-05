@@ -15,7 +15,6 @@
  */
 package io.atomix.core.generator;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
@@ -25,6 +24,6 @@ import io.atomix.primitive.PrimitiveManagementService;
 public abstract class AtomicIdGeneratorBuilder
     extends DistributedPrimitiveBuilder<AtomicIdGeneratorBuilder, AtomicIdGeneratorConfig, AtomicIdGenerator> {
   protected AtomicIdGeneratorBuilder(String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
-    super(PrimitiveTypes.idGenerator(), name, config, managementService);
+    super(AtomicIdGeneratorType.instance(), name, config, managementService);
   }
 }

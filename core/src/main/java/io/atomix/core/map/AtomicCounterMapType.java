@@ -39,9 +39,6 @@ public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBu
     return new AtomicCounterMapType<>();
   }
 
-  private AtomicCounterMapType() {
-  }
-
   @Override
   public String id() {
     return NAME;

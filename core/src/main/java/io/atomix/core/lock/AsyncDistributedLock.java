@@ -15,7 +15,6 @@
  */
 package io.atomix.core.lock;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
@@ -32,7 +31,7 @@ public interface AsyncDistributedLock extends AsyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.lock();
+    return DistributedLockType.instance();
   }
 
   /**

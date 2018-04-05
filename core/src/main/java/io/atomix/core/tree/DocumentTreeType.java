@@ -28,7 +28,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Document tree primitive type.
  */
 public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
-  private static final String DEFAULT_NAME = "DOCUMENT_TREE";
+  private static final String NAME = "DOCUMENT_TREE";
 
   /**
    * Returns a new document tree type.
@@ -37,35 +37,17 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
    * @return a new document tree type
    */
   public static <V> DocumentTreeType<V> instance() {
-    return new DocumentTreeType<>(DEFAULT_NAME, Ordering.NATURAL);
-  }
-
-  /**
-   * Returns a new ordered document tree type.
-   *
-   * @param <V> the tree value type
-   * @return a new ordered document tree type
-   */
-  public static <V> DocumentTreeType<V> ordered(Ordering ordering) {
-    return new DocumentTreeType<>(String.format("%s-%s", DEFAULT_NAME, ordering), ordering);
-  }
-
-  private final String id;
-  private final Ordering ordering;
-
-  private DocumentTreeType(String id, Ordering ordering) {
-    this.id = id;
-    this.ordering = ordering;
+    return new DocumentTreeType<>();
   }
 
   @Override
   public String id() {
-    return id;
+    return NAME;
   }
 
   @Override
   public PrimitiveService newService() {
-    return new DocumentTreeService(ordering);
+    return new DocumentTreeService(Ordering.NATURAL);
   }
 
   @Override

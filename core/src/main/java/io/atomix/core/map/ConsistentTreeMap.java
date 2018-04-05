@@ -16,7 +16,6 @@
 
 package io.atomix.core.map;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
@@ -31,7 +30,7 @@ public interface ConsistentTreeMap<V> extends ConsistentMap<String, V> {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.treeMap();
+    return ConsistentTreeMapType.instance();
   }
 
   /**

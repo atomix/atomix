@@ -39,9 +39,6 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
     return new AtomicValueType<>();
   }
 
-  private AtomicValueType() {
-  }
-
   @Override
   public String id() {
     return NAME;
