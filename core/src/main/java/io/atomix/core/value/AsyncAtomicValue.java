@@ -15,7 +15,6 @@
  */
 package io.atomix.core.value;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
@@ -37,7 +36,7 @@ public interface AsyncAtomicValue<V> extends AsyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.value();
+    return AtomicValueType.instance();
   }
 
   /**

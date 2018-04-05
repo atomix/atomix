@@ -16,7 +16,6 @@
 
 package io.atomix.core.tree;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.time.Versioned;
@@ -34,7 +33,7 @@ public interface DocumentTree<V> extends SyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.tree();
+    return DocumentTreeType.instance();
   }
 
   /**

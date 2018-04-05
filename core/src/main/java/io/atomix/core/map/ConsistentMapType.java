@@ -40,9 +40,6 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
     return new ConsistentMapType<>();
   }
 
-  private ConsistentMapType() {
-  }
-
   @Override
   public String id() {
     return NAME;

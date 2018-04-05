@@ -16,7 +16,6 @@
 
 package io.atomix.core.tree;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
@@ -37,7 +36,7 @@ public interface AsyncDocumentTree<V> extends AsyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.tree();
+    return DocumentTreeType.instance();
   }
 
   /**

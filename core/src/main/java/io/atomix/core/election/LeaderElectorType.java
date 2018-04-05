@@ -39,9 +39,6 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
     return new LeaderElectorType<>();
   }
 
-  private LeaderElectorType() {
-  }
-
   @Override
   public String id() {
     return NAME;

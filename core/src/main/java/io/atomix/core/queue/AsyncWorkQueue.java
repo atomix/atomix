@@ -16,8 +16,6 @@
 package io.atomix.core.queue;
 
 import com.google.common.collect.ImmutableList;
-
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
@@ -49,7 +47,7 @@ public interface AsyncWorkQueue<E> extends AsyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.workQueue();
+    return WorkQueueType.instance();
   }
 
   /**

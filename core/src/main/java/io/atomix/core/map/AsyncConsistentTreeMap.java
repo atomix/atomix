@@ -16,7 +16,6 @@
 
 package io.atomix.core.map;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
@@ -34,7 +33,7 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.treeMap();
+    return ConsistentTreeMapType.instance();
   }
 
   /**

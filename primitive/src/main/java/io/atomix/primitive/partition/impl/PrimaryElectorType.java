@@ -39,9 +39,6 @@ public class PrimaryElectorType implements PrimitiveType {
     return TYPE;
   }
 
-  private PrimaryElectorType() {
-  }
-
   @Override
   public String id() {
     return NAME;

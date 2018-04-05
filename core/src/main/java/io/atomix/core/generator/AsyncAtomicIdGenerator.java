@@ -15,7 +15,6 @@
  */
 package io.atomix.core.generator;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
@@ -30,7 +29,7 @@ public interface AsyncAtomicIdGenerator extends AsyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.idGenerator();
+    return AtomicIdGeneratorType.instance();
   }
 
   /**

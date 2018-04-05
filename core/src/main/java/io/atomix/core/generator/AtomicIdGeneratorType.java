@@ -38,9 +38,6 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
     return new AtomicIdGeneratorType();
   }
 
-  private AtomicIdGeneratorType() {
-  }
-
   @Override
   public String id() {
     return NAME;

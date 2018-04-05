@@ -38,9 +38,6 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
     return new DistributedLockType();
   }
 
-  private DistributedLockType() {
-  }
-
   @Override
   public String id() {
     return NAME;

@@ -18,8 +18,6 @@ package io.atomix.core.multimap;
 
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
-
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.time.Versioned;
@@ -38,7 +36,7 @@ public interface ConsistentMultimap<K, V> extends SyncPrimitive {
 
   @Override
   default PrimitiveType primitiveType() {
-    return PrimitiveTypes.multimap();
+    return ConsistentMultimapType.instance();
   }
 
   /**

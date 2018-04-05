@@ -16,6 +16,7 @@
 package io.atomix.primitive;
 
 import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.utils.Generics;
 import io.atomix.utils.Identifier;
 
 /**
@@ -32,6 +33,36 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
   String id();
 
   /**
+   * Returns the primitive type builder class.
+   *
+   * @return the primitive type builder class
+   */
+  @SuppressWarnings("unchecked")
+  default Class<? extends DistributedPrimitiveBuilder> builderClass() {
+    return (Class<? extends DistributedPrimitiveBuilder>) Generics.getGenericInterfaceType(this, PrimitiveType.class, 0);
+  }
+
+  /**
+   * Returns the primitive type configuration class.
+   *
+   * @return the primitive type configuration class
+   */
+  @SuppressWarnings("unchecked")
+  default Class<? extends PrimitiveConfig> configClass() {
+    return (Class<? extends PrimitiveConfig>) Generics.getGenericInterfaceType(this, PrimitiveType.class, 1);
+  }
+
+  /**
+   * Returns the primitive class.
+   *
+   * @return the primitive class
+   */
+  @SuppressWarnings("unchecked")
+  default Class<? extends DistributedPrimitive> primitiveClass() {
+    return (Class<? extends DistributedPrimitive>) Generics.getGenericInterfaceType(this, PrimitiveType.class, 2);
+  }
+
+  /**
    * Returns a new primitive service instance.
    *
    * @return a new primitive service instance
@@ -41,7 +72,7 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
   /**
    * Returns a new primitive builder for the given partition.
    *
-   * @param name the primitive name
+   * @param name              the primitive name
    * @param managementService the primitive management service
    * @return the primitive builder
    */
@@ -50,8 +81,8 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
   /**
    * Returns a new primitive builder for the given partition.
    *
-   * @param name the primitive name
-   * @param config the primitive configuration
+   * @param name              the primitive name
+   * @param config            the primitive configuration
    * @param managementService the primitive management service
    * @return the primitive builder
    */

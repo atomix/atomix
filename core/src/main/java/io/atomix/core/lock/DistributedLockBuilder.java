@@ -15,7 +15,6 @@
  */
 package io.atomix.core.lock;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
@@ -25,6 +24,6 @@ import io.atomix.primitive.PrimitiveManagementService;
 public abstract class DistributedLockBuilder
     extends DistributedPrimitiveBuilder<DistributedLockBuilder, DistributedLockConfig, DistributedLock> {
   public DistributedLockBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
-    super(PrimitiveTypes.lock(), name, config, managementService);
+    super(DistributedLockType.instance(), name, config, managementService);
   }
 }

@@ -15,15 +15,14 @@
  */
 package io.atomix.core.election.impl;
 
+import io.atomix.core.election.LeaderElectionType;
+import io.atomix.core.election.Leadership;
+import io.atomix.core.election.impl.LeaderElectionOperations.Run;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.core.PrimitiveTypes;
-import io.atomix.core.election.Leadership;
-import io.atomix.core.election.impl.LeaderElectionService;
-import io.atomix.core.election.impl.LeaderElectionOperations.Run;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.time.WallClock;
@@ -42,7 +41,7 @@ public class LeaderElectionServiceTest {
   @Test
   public void testSnapshot() throws Exception {
     ServiceContext context = mock(ServiceContext.class);
-    when(context.serviceType()).thenReturn(PrimitiveTypes.leaderElection());
+    when(context.serviceType()).thenReturn(LeaderElectionType.instance());
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
     when(context.wallClock()).thenReturn(new WallClock());

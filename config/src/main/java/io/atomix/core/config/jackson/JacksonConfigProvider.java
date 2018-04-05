@@ -17,7 +17,6 @@ package io.atomix.core.config.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -26,9 +25,10 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.atomix.core.config.ConfigProvider;
-import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveProtocolConfig;
 import io.atomix.primitive.PrimitiveProtocols;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionGroups;
@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Jackson configuration provider.
@@ -98,6 +99,7 @@ public class JacksonConfigProvider implements ConfigProvider {
     SimpleModule module = new SimpleModule("PolymorphicTypes");
     module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
     module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
+    module.addDeserializer(PrimitiveType.class, new PrimitiveTypeDeserializer());
     mapper.registerModule(module);
   }
 
@@ -114,58 +116,62 @@ public class JacksonConfigProvider implements ConfigProvider {
   }
 
   /**
-   * Partition group deserializer.
+   * Polymorphic type deserializer.
    */
-  private static class PartitionGroupDeserializer extends StdDeserializer<PartitionGroupConfig> {
+  private abstract static class PolymorphicTypeDeserializer<T> extends StdDeserializer<T> {
     private static final String TYPE_KEY = "type";
 
-    public PartitionGroupDeserializer() {
-      super(PartitionGroup.class);
+    private final Function<String, Class<? extends T>> concreteFactory;
+
+    protected PolymorphicTypeDeserializer(Class<?> type, Function<String, Class<? extends T>> concreteFactory) {
+      super(type);
+      this.concreteFactory = concreteFactory;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public PartitionGroupConfig deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       ObjectMapper mapper = (ObjectMapper) p.getCodec();
       ObjectNode root = mapper.readTree(p);
       Iterator<Map.Entry<String, JsonNode>> iterator = root.fields();
       while (iterator.hasNext()) {
         Map.Entry<String, JsonNode> entry = iterator.next();
         if (entry.getKey().equals(TYPE_KEY)) {
-          Class<? extends PartitionGroupConfig> configClass = PartitionGroups.getGroupFactory(entry.getValue().asText()).configClass();
+          Class<? extends T> configClass = concreteFactory.apply(entry.getValue().asText());
           root.remove(TYPE_KEY);
           return mapper.convertValue(root, configClass);
         }
       }
-      throw new ConfigurationException("Failed to deserialize partition group configuration");
+      throw new ConfigurationException("Failed to deserialize polymorphic " + _valueClass.getSimpleName() + " configuration");
+    }
+  }
+
+  /**
+   * Partition group deserializer.
+   */
+  private static class PartitionGroupDeserializer extends PolymorphicTypeDeserializer<PartitionGroupConfig> {
+    @SuppressWarnings("unchecked")
+    public PartitionGroupDeserializer() {
+      super(PartitionGroup.class, type -> PartitionGroups.getGroupFactory(type).configClass());
     }
   }
 
   /**
    * Primitive protocol deserializer.
    */
-  private static class PrimitiveProtocolDeserializer extends StdDeserializer<PrimitiveProtocolConfig> {
-    private static final String TYPE_KEY = "type";
-
-    public PrimitiveProtocolDeserializer() {
-      super(PrimitiveProtocol.class);
-    }
-
-    @Override
+  private static class PrimitiveProtocolDeserializer extends PolymorphicTypeDeserializer<PrimitiveProtocolConfig> {
     @SuppressWarnings("unchecked")
-    public PrimitiveProtocolConfig deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-      ObjectMapper mapper = (ObjectMapper) p.getCodec();
-      ObjectNode root = mapper.readTree(p);
-      Iterator<Map.Entry<String, JsonNode>> iterator = root.fields();
-      while (iterator.hasNext()) {
-        Map.Entry<String, JsonNode> entry = iterator.next();
-        if (entry.getKey().equals(TYPE_KEY)) {
-          Class<? extends PrimitiveProtocolConfig> configClass = PrimitiveProtocols.getProtocolFactory(entry.getValue().asText()).configClass();
-          root.remove(TYPE_KEY);
-          return mapper.convertValue(root, configClass);
-        }
-      }
-      throw new ConfigurationException("Failed to deserialize protocol configuration");
+    public PrimitiveProtocolDeserializer() {
+      super(PrimitiveProtocolConfig.class, type -> PrimitiveProtocols.getProtocolFactory(type).configClass());
+    }
+  }
+
+  /**
+   * Primitive type deserializer.
+   */
+  private static class PrimitiveTypeDeserializer extends PolymorphicTypeDeserializer<PrimitiveType> {
+    @SuppressWarnings("unchecked")
+    public PrimitiveTypeDeserializer() {
+      super(PrimitiveType.class, type -> PrimitiveTypes.getPrimitiveType(type).configClass());
     }
   }
 }

@@ -39,9 +39,6 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
     return new WorkQueueType<>();
   }
 
-  private WorkQueueType() {
-  }
-
   @Override
   public String id() {
     return NAME;

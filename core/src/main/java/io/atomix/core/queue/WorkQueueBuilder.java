@@ -15,7 +15,6 @@
  */
 package io.atomix.core.queue;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
@@ -24,6 +23,6 @@ import io.atomix.primitive.PrimitiveManagementService;
  */
 public abstract class WorkQueueBuilder<E> extends DistributedPrimitiveBuilder<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>> {
   public WorkQueueBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
-    super(PrimitiveTypes.workQueue(), name, config, managementService);
+    super(WorkQueueType.instance(), name, config, managementService);
   }
 }
