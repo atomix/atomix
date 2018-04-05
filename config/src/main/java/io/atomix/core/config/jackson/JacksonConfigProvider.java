@@ -18,6 +18,7 @@ package io.atomix.core.config.jackson;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
@@ -25,9 +26,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.atomix.core.config.ConfigProvider;
+import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveProtocolConfig;
 import io.atomix.primitive.PrimitiveProtocols;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
@@ -75,7 +76,7 @@ public class JacksonConfigProvider implements ConfigProvider {
 
   private <C extends Config> C loadYaml(File file, Class<C> type) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    setupObectMapper(mapper);
+    setupObjectMapper(mapper);
     try {
       return mapper.readValue(file, type);
     } catch (IOException e) {
@@ -85,7 +86,7 @@ public class JacksonConfigProvider implements ConfigProvider {
 
   private <C extends Config> C loadJson(File file, Class<C> type) {
     ObjectMapper mapper = new ObjectMapper();
-    setupObectMapper(mapper);
+    setupObjectMapper(mapper);
     try {
       return mapper.readValue(file, type);
     } catch (IOException e) {
@@ -93,13 +94,17 @@ public class JacksonConfigProvider implements ConfigProvider {
     }
   }
 
-  private void setupObectMapper(ObjectMapper mapper) {
+  private void setupObjectMapper(ObjectMapper mapper) {
     mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
+    mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+    mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
+    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
 
     SimpleModule module = new SimpleModule("PolymorphicTypes");
     module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
     module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
-    module.addDeserializer(PrimitiveType.class, new PrimitiveTypeDeserializer());
+    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
     mapper.registerModule(module);
   }
 
@@ -166,12 +171,12 @@ public class JacksonConfigProvider implements ConfigProvider {
   }
 
   /**
-   * Primitive type deserializer.
+   * Primitive configuration deserializer.
    */
-  private static class PrimitiveTypeDeserializer extends PolymorphicTypeDeserializer<PrimitiveType> {
+  private static class PrimitiveConfigDeserializer extends PolymorphicTypeDeserializer<PrimitiveConfig> {
     @SuppressWarnings("unchecked")
-    public PrimitiveTypeDeserializer() {
-      super(PrimitiveType.class, type -> PrimitiveTypes.getPrimitiveType(type).configClass());
+    public PrimitiveConfigDeserializer() {
+      super(PrimitiveConfig.class, type -> PrimitiveTypes.getPrimitiveType(type).configClass());
     }
   }
 }
