@@ -4,6 +4,7 @@ primitive-types:
   - io.atomix.core.map.ConsistentMapType
 primitives:
   foo:
+    type: consistent-map
     serializer:
       types:
         - type: io.atomix.cluster.NodeId

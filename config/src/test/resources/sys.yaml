@@ -1,0 +1,7 @@
+cluster:
+  name: test
+primitive-types:
+  - io.atomix.core.map.ConsistentMapType
+partition-groups:
+  - name: ${sys:group.name}
+    type: raft
