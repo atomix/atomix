@@ -17,6 +17,7 @@ package io.atomix.core.config.jackson;
 
 import io.atomix.core.AtomixConfig;
 import io.atomix.core.config.ConfigProvider;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -46,5 +47,25 @@ public class JacksonConfigProviderTest {
     AtomixConfig config = provider.load(file, AtomixConfig.class);
     assertEquals("test", config.getClusterConfig().getName());
     assertEquals(1, config.getPrimitives().get("foo").getSerializerConfig().getTypes().size());
+  }
+
+  @Test
+  @Ignore
+  public void testEnv() throws Exception {
+    ConfigProvider provider = new JacksonConfigProvider();
+    File file = new File(getClass().getClassLoader().getResource("env.yaml").getFile());
+    assertTrue(provider.isConfigFile(file));
+    AtomixConfig config = provider.load(file, AtomixConfig.class);
+    assertEquals("test", config.getPartitionGroups().iterator().next().getName());
+  }
+
+  @Test
+  @Ignore
+  public void testSystemProperty() throws Exception {
+    ConfigProvider provider = new JacksonConfigProvider();
+    File file = new File(getClass().getClassLoader().getResource("sys.yaml").getFile());
+    assertTrue(provider.isConfigFile(file));
+    AtomixConfig config = provider.load(file, AtomixConfig.class);
+    assertEquals("test", config.getPartitionGroups().iterator().next().getName());
   }
 }
