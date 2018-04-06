@@ -16,11 +16,10 @@
 package io.atomix.rest.impl;
 
 import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
-import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.utils.net.Address;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;
@@ -29,7 +28,7 @@ import io.atomix.rest.resources.MessagesResource;
 import io.atomix.rest.resources.PrimitivesResource;
 import io.atomix.rest.resources.StatusResource;
 import io.atomix.rest.utils.EventManager;
-import io.atomix.rest.utils.PrimitiveCache;
+import io.atomix.utils.net.Address;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import org.jboss.resteasy.plugins.server.vertx.VertxRequestHandler;
@@ -47,7 +46,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class VertxRestService implements ManagedRestService {
   private static final Logger LOGGER = LoggerFactory.getLogger(VertxRestService.class);
-  private static final int PRIMITIVE_CACHE_SIZE = 1000;
 
   private final Atomix atomix;
   private final Address address;
@@ -76,8 +74,6 @@ public class VertxRestService implements ManagedRestService {
         .put(ClusterEventingService.class, atomix.eventingService());
     deployment.getDispatcher().getDefaultContextObjects()
         .put(PrimitivesService.class, atomix.primitivesService());
-    deployment.getDispatcher().getDefaultContextObjects()
-        .put(PrimitiveCache.class, new PrimitiveCache(atomix.primitivesService(), PRIMITIVE_CACHE_SIZE));
     deployment.getDispatcher().getDefaultContextObjects()
         .put(EventManager.class, new EventManager());
 

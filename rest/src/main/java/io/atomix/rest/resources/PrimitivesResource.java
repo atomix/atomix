@@ -16,7 +16,6 @@
 package io.atomix.rest.resources;
 
 import io.atomix.core.PrimitivesService;
-import io.atomix.rest.utils.PrimitiveCache;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -36,9 +35,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a counter resource by name.
    */
   @Path("/counters/{name}")
-  public AtomicCounterResource getCounter(@PathParam("name") String counterName, @Context PrimitiveCache primitiveCache) {
-    return new AtomicCounterResource(primitiveCache.getPrimitive(counterName, primitives ->
-        primitives.atomicCounterBuilder(counterName).build().async()));
+  public AtomicCounterResource getCounter(@PathParam("name") String counterName, @Context PrimitivesService primitives) {
+    return new AtomicCounterResource(primitives.getAtomicCounter(counterName).async());
   }
 
   /**
@@ -55,9 +53,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a leader election resource by name.
    */
   @Path("/elections/{name}")
-  public LeaderElectorResource getElection(@PathParam("name") String electionName, @Context PrimitiveCache primitiveCache) {
-    return new LeaderElectorResource(primitiveCache.getPrimitive(electionName, primitives ->
-        primitives.<String>leaderElectionBuilder(electionName).build().async()));
+  public LeaderElectorResource getElection(@PathParam("name") String electionName, @Context PrimitivesService primitives) {
+    return new LeaderElectorResource(primitives.<String>getLeaderElection(electionName).async());
   }
 
   /**
@@ -74,9 +71,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns an ID generator resource by name.
    */
   @Path("/ids/{name}")
-  public AtomicIdGeneratorResource getIdGenerator(@PathParam("name") String generatorName, @Context PrimitiveCache primitiveCache) {
-    return new AtomicIdGeneratorResource(primitiveCache.getPrimitive(generatorName, primitives ->
-        primitives.<String>atomicIdGeneratorBuilder(generatorName).build().async()));
+  public AtomicIdGeneratorResource getIdGenerator(@PathParam("name") String generatorName, @Context PrimitivesService primitives) {
+    return new AtomicIdGeneratorResource(primitives.getAtomicIdGenerator(generatorName).async());
   }
 
   /**
@@ -93,9 +89,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a lock resource by name.
    */
   @Path("/locks/{name}")
-  public DistributedLockResource getLock(@PathParam("name") String lockName, @Context PrimitiveCache primitiveCache) {
-    return new DistributedLockResource(primitiveCache.getPrimitive(lockName, primitives ->
-        primitives.lockBuilder(lockName).build().async()));
+  public DistributedLockResource getLock(@PathParam("name") String lockName, @Context PrimitivesService primitives) {
+    return new DistributedLockResource(primitives.getLock(lockName).async());
   }
 
   /**
@@ -112,9 +107,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a map resource by name.
    */
   @Path("/maps/{name}")
-  public ConsistentMapResource getMap(@PathParam("name") String mapName, @Context PrimitiveCache primitiveCache) {
-    return new ConsistentMapResource(primitiveCache.getPrimitive(mapName, primitives ->
-        primitives.<String, String>consistentMapBuilder(mapName).build().async()));
+  public ConsistentMapResource getMap(@PathParam("name") String mapName, @Context PrimitivesService primitives) {
+    return new ConsistentMapResource(primitives.<String, String>getConsistentMap(mapName).async());
   }
 
   /**
@@ -131,9 +125,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a work queue resource by name.
    */
   @Path("/queues/{name}")
-  public WorkQueueResource getQueue(@PathParam("name") String queueName, @Context PrimitiveCache primitiveCache) {
-    return new WorkQueueResource(primitiveCache.getPrimitive(queueName, primitives ->
-        primitives.<String>workQueueBuilder(queueName).build().async()));
+  public WorkQueueResource getQueue(@PathParam("name") String queueName, @Context PrimitivesService primitives) {
+    return new WorkQueueResource(primitives.<String>getWorkQueue(queueName).async());
   }
 
   /**
@@ -150,9 +143,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a set resource by name.
    */
   @Path("/sets/{name}")
-  public DistributedSetResource getSet(@PathParam("name") String setName, @Context PrimitiveCache primitiveCache) {
-    return new DistributedSetResource(primitiveCache.getPrimitive(setName, primitives ->
-        primitives.<String>setBuilder(setName).build().async()));
+  public DistributedSetResource getSet(@PathParam("name") String setName, @Context PrimitivesService primitives) {
+    return new DistributedSetResource(primitives.<String>getSet(setName).async());
   }
 
   /**
@@ -169,9 +161,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a document tree resource by name.
    */
   @Path("/trees/{name}")
-  public DocumentTreeResource getTree(@PathParam("name") String treeName, @Context PrimitiveCache primitiveCache) {
-    return new DocumentTreeResource(primitiveCache.getPrimitive(treeName, primitives ->
-        primitives.<String>documentTreeBuilder(treeName).build().async()));
+  public DocumentTreeResource getTree(@PathParam("name") String treeName, @Context PrimitivesService primitives) {
+    return new DocumentTreeResource(primitives.<String>getDocumentTree(treeName).async());
   }
 
   /**
@@ -188,9 +179,8 @@ public class PrimitivesResource extends AbstractRestResource {
    * Returns a value by name.
    */
   @Path("/values/{name}")
-  public AtomicValueResource getValue(@PathParam("name") String valueName, @Context PrimitiveCache primitiveCache) {
-    return new AtomicValueResource(primitiveCache.getPrimitive(valueName, primitives ->
-        primitives.<String>atomicValueBuilder(valueName).build().async()));
+  public AtomicValueResource getValue(@PathParam("name") String valueName, @Context PrimitivesService primitives) {
+    return new AtomicValueResource(primitives.<String>getAtomicValue(valueName).async());
   }
 
   /**
