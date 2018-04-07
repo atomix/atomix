@@ -249,7 +249,7 @@ public class FileBytes extends AbstractBytes {
     if (bytes.hasArray()) {
       try {
         seekToOffset(position);
-        randomAccessFile.read(bytes.array(), (int) offset, (int) length);
+        randomAccessFile.readFully(bytes.array(), (int) offset, (int) length);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -257,7 +257,7 @@ public class FileBytes extends AbstractBytes {
       try {
         seekToOffset(position);
         byte[] readBytes = new byte[(int) length];
-        randomAccessFile.read(readBytes);
+        randomAccessFile.readFully(readBytes);
         bytes.write(offset, readBytes, 0, length);
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -271,7 +271,7 @@ public class FileBytes extends AbstractBytes {
     checkRead(position, length);
     try {
       seekToOffset(position);
-      randomAccessFile.read(bytes, (int) offset, (int) length);
+      randomAccessFile.readFully(bytes, (int) offset, (int) length);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

@@ -84,9 +84,9 @@ public class RetryingFunctionTest {
     }
   }
 
-  private class RetryableException extends RuntimeException {
+  private static class RetryableException extends RuntimeException {
   }
 
-  private class NonRetryableException extends RuntimeException {
+  private static class NonRetryableException extends RuntimeException {
   }
 }

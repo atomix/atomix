@@ -205,7 +205,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(term.primary())) {
+    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(term.primary().nodeId())) {
       threadContext.execute(() -> {
         state = State.SUSPENDED;
         stateChangeListeners.forEach(l -> l.accept(state));

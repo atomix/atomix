@@ -103,7 +103,7 @@ public class RaftSessionsTest {
         mock(ThreadContextFactory.class));
   }
 
-  private class TestSessionListener implements SessionListener {
+  private static class TestSessionListener implements SessionListener {
     private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
 
     @Override

@@ -300,7 +300,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   /**
    * Tests listeners.
    */
-  @Test
+  @Test(timeout = 45000)
   public void testNotifications() throws Exception {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
     TestEventListener listener = new TestEventListener();
@@ -334,7 +334,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
     assertEquals("xy", event.newValue().get().value());
   }
 
-  @Test
+  @Test(timeout = 45000)
   public void testFilteredNotifications() throws Throwable {
     String treeName = UUID.randomUUID().toString();
     AsyncDocumentTree<String> tree1 = newTree(treeName);
