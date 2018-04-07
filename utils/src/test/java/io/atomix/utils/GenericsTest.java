@@ -39,7 +39,7 @@ public class GenericsTest {
     T2 type2();
   }
 
-  public class ConcreteInterface implements GenericInterface<String, SomeClass> {
+  public static class ConcreteInterface implements GenericInterface<String, SomeClass> {
     @Override
     public String type1() {
       return null;

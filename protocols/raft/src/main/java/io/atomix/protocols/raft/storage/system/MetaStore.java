@@ -125,7 +125,11 @@ public class MetaStore implements AutoCloseable {
    */
   public synchronized Configuration loadConfiguration() {
     if (configurationBuffer.position(0).readByte() == 1) {
-      return serializer.decode(configurationBuffer.readBytes(configurationBuffer.readInt()));
+      int bytesLength = configurationBuffer.readInt();
+      if (bytesLength == 0) {
+        throw new IllegalStateException("Bytes length equal to zero");
+      }
+      return serializer.decode(configurationBuffer.readBytes(bytesLength));
     }
     return null;
   }

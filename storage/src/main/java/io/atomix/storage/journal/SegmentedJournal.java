@@ -539,8 +539,9 @@ public class SegmentedJournal<E> implements Journal<E> {
       }
     }
 
-    for (Long segmentId : segments.keySet()) {
-      JournalSegment<E> segment = segments.get(segmentId);
+    for (Map.Entry<Long, JournalSegment<E>> entry : segments.entrySet()) {
+      final Long segmentId = entry.getKey();
+      final JournalSegment<E> segment = entry.getValue();
       Map.Entry<Long, JournalSegment<E>> previousEntry = segments.floorEntry(segmentId - 1);
       if (previousEntry != null) {
         JournalSegment<E> previousSegment = previousEntry.getValue();

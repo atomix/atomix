@@ -411,7 +411,7 @@ public abstract class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
    * Entry comparator, uses both key and value to determine equality,
    * for comparison falls back to the default string comparator.
    */
-  private class EntryComparator implements Comparator<Map.Entry<String, String>> {
+  private static class EntryComparator implements Comparator<Map.Entry<String, String>> {
 
     @Override
     public int compare(Map.Entry<String, String> o1, Map.Entry<String, String> o2) {

@@ -146,7 +146,7 @@ public abstract class Snapshot implements AutoCloseable {
    * Closes the current snapshot reader.
    */
   protected void closeReader(SnapshotReader reader) {
-    reader = null;
+
   }
 
   /**
@@ -202,11 +202,9 @@ public abstract class Snapshot implements AutoCloseable {
 
   @Override
   public boolean equals(Object object) {
-    if (getClass() == object.getClass()) {
-      Snapshot snapshot = (Snapshot) object;
-      return snapshot.index() == index();
-    }
-    return false;
+    if (object == null || getClass() != object.getClass()) return false;
+    Snapshot snapshot = (Snapshot) object;
+    return snapshot.index() == index();
   }
 
   @Override
