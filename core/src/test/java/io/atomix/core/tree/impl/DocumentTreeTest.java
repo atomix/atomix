@@ -380,7 +380,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
       try {
         queue.put(event);
       } catch (InterruptedException e) {
-        Throwables.propagate(e);
+        Thread.currentThread().interrupt();
       }
     }
 
