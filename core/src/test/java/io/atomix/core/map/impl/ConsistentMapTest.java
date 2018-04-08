@@ -15,7 +15,6 @@
  */
 package io.atomix.core.map.impl;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.AsyncConsistentMap;
@@ -30,7 +29,6 @@ import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -444,7 +442,7 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
       try {
         queue.put(event);
       } catch (InterruptedException e) {
-        Throwables.propagate(e);
+        Thread.currentThread().interrupt();
       }
     }
 

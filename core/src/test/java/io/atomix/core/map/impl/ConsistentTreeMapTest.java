@@ -15,14 +15,11 @@
  */
 package io.atomix.core.map.impl;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
-
 import org.junit.Test;
 
 import java.util.Collection;
@@ -475,7 +472,7 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
       try {
         queue.put(event);
       } catch (InterruptedException e) {
-        Throwables.propagate(e);
+        Thread.currentThread().interrupt();
       }
     }
 

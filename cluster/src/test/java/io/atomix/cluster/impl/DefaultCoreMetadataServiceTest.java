@@ -15,7 +15,6 @@
  */
 package io.atomix.cluster.impl;
 
-import com.google.common.base.Throwables;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
@@ -152,7 +151,7 @@ public class DefaultCoreMetadataServiceTest {
       try {
         queue.put(event);
       } catch (InterruptedException e) {
-        Throwables.propagate(e);
+        Thread.currentThread().interrupt();
       }
     }
 

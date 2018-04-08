@@ -15,7 +15,6 @@
  */
 package io.atomix.core;
 
-import com.google.common.base.Throwables;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.Node;
@@ -231,7 +230,7 @@ public class AtomixTest extends AbstractAtomixTest {
       try {
         queue.put(event);
       } catch (InterruptedException e) {
-        Throwables.propagate(e);
+        Thread.currentThread().interrupt();
       }
     }
 
