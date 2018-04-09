@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -144,6 +145,20 @@ public class NettyMessagingServiceTest {
 
   @Test
   public void testSendTimeout() {
+    String subject = nextSubject();
+    BiFunction<Address, byte[], CompletableFuture<byte[]>> handler = (ep, payload) -> new CompletableFuture<>();
+    netty2.registerHandler(subject, handler);
+
+    try {
+      netty1.sendAndReceive(ep2, subject, "hello world".getBytes(), Duration.ofSeconds(1)).join();
+      fail();
+    } catch (CompletionException e) {
+      assertTrue(e.getCause() instanceof TimeoutException);
+    }
+  }
+
+  @Test
+  public void testSendAutoTimeout() {
     String subject = nextSubject();
     BiFunction<Address, byte[], CompletableFuture<byte[]>> handler = (ep, payload) -> new CompletableFuture<>();
     netty2.registerHandler(subject, handler);

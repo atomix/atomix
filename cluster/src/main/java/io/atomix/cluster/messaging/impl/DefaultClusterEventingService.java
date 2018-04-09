@@ -36,6 +36,7 @@ import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -120,13 +121,13 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   }
 
   @Override
-  public <M, R> CompletableFuture<R> send(String topic, M message, Function<M, byte[]> encoder, Function<byte[], R> decoder) {
+  public <M, R> CompletableFuture<R> send(String topic, M message, Function<M, byte[]> encoder, Function<byte[], R> decoder, Duration timeout) {
     NodeId nodeId = getNextNodeId(topic);
     if (nodeId != null) {
       Node node = clusterService.getNode(nodeId);
       if (node != null && node.getState() == Node.State.ACTIVE) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
-        return messagingService.sendAndReceive(node.address(), topic, payload).thenApply(decoder);
+        return messagingService.sendAndReceive(node.address(), topic, payload, timeout).thenApply(decoder);
       }
     }
     return Futures.exceptionalFuture(new MessagingException.NoRemoteHandler());

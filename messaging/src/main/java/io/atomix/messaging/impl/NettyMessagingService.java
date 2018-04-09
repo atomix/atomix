@@ -335,29 +335,39 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<Void> sendAsync(Address ep, String type, byte[] payload) {
+  public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
     InternalRequest message = new InternalRequest(preamble,
         messageIdGenerator.incrementAndGet(),
         localAddress,
         type,
         payload);
-    return executeOnPooledConnection(ep, type, c -> c.sendAsync(message), MoreExecutors.directExecutor());
+    return executeOnPooledConnection(address, type, c -> c.sendAsync(message), MoreExecutors.directExecutor());
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address ep, String type, byte[] payload) {
-    return sendAndReceive(ep, type, payload, MoreExecutors.directExecutor());
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload) {
+    return sendAndReceive(address, type, payload, null, MoreExecutors.directExecutor());
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address ep, String type, byte[] payload, Executor executor) {
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Executor executor) {
+    return sendAndReceive(address, type, payload, null, executor);
+  }
+
+  @Override
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout) {
+    return sendAndReceive(address, type, payload, timeout, MoreExecutors.directExecutor());
+  }
+
+  @Override
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor) {
     long messageId = messageIdGenerator.incrementAndGet();
     InternalRequest message = new InternalRequest(preamble,
         messageId,
         localAddress,
         type,
         payload);
-    return executeOnPooledConnection(ep, type, c -> c.sendAndReceive(message), executor);
+    return executeOnPooledConnection(address, type, c -> c.sendAndReceive(message, timeout), executor);
   }
 
   private List<CompletableFuture<Channel>> getChannelPool(Address address) {
@@ -596,8 +606,8 @@ public class NettyMessagingService implements ManagedMessagingService {
     return future;
   }
 
-  private CompletableFuture<Channel> openChannel(Address ep) {
-    Bootstrap bootstrap = bootstrapClient(ep);
+  private CompletableFuture<Channel> openChannel(Address address) {
+    Bootstrap bootstrap = bootstrapClient(address);
     CompletableFuture<Channel> retFuture = new CompletableFuture<>();
     ChannelFuture f = bootstrap.connect();
 
@@ -608,7 +618,7 @@ public class NettyMessagingService implements ManagedMessagingService {
         retFuture.completeExceptionally(future.cause());
       }
     });
-    log.debug("Established a new connection to {}", ep);
+    log.debug("Established a new connection to {}", address);
     return retFuture;
   }
 
@@ -766,11 +776,13 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   private static final class Callback {
     private final String type;
+    private final long timeout;
     private final CompletableFuture<byte[]> future;
     private final long time = System.currentTimeMillis();
 
-    Callback(String type, CompletableFuture<byte[]> future) {
+    Callback(String type, Duration timeout, CompletableFuture<byte[]> future) {
       this.type = type;
+      this.timeout = timeout != null ? timeout.toMillis() : 0;
       this.future = future;
     }
 
@@ -800,9 +812,10 @@ public class NettyMessagingService implements ManagedMessagingService {
      * Sends a message to the other side of the connection, awaiting a reply.
      *
      * @param message the message to send
+     * @param timeout the response timeout
      * @return a completable future to be completed once a reply is received or the request times out
      */
-    CompletableFuture<byte[]> sendAndReceive(InternalRequest message);
+    CompletableFuture<byte[]> sendAndReceive(InternalRequest message, Duration timeout);
 
     /**
      * Closes the connection.
@@ -857,8 +870,8 @@ public class NettyMessagingService implements ManagedMessagingService {
         try {
           RequestMonitor requestMonitor = requestMonitors.get(callback.type, RequestMonitor::new);
           long elapsedTime = currentTime - callback.time;
-          if (elapsedTime > MAX_TIMEOUT_MILLIS ||
-              (elapsedTime > MIN_TIMEOUT_MILLIS && requestMonitor.isTimedOut(elapsedTime))) {
+          if ((callback.timeout > 0 && elapsedTime > callback.timeout)
+              || (callback.timeout == 0 && (elapsedTime > MAX_TIMEOUT_MILLIS || (elapsedTime > MIN_TIMEOUT_MILLIS && requestMonitor.isTimedOut(elapsedTime))))) {
             iterator.remove();
             requestMonitor.addReplyTime(elapsedTime);
             callback.completeExceptionally(
@@ -870,8 +883,8 @@ public class NettyMessagingService implements ManagedMessagingService {
       }
     }
 
-    protected void registerCallback(long id, String subject, CompletableFuture<byte[]> future) {
-      futures.put(id, new Callback(subject, future));
+    protected void registerCallback(long id, String subject, Duration timeout, CompletableFuture<byte[]> future) {
+      futures.put(id, new Callback(subject, timeout, future));
     }
 
     protected Callback completeCallback(long id) {
@@ -918,10 +931,10 @@ public class NettyMessagingService implements ManagedMessagingService {
     }
 
     @Override
-    public CompletableFuture<byte[]> sendAndReceive(InternalRequest message) {
+    public CompletableFuture<byte[]> sendAndReceive(InternalRequest message, Duration timeout) {
       CompletableFuture<byte[]> future = new CompletableFuture<>();
       future.whenComplete((r, e) -> completeCallback(message.id()));
-      registerCallback(message.id(), message.subject(), future);
+      registerCallback(message.id(), message.subject(), timeout, future);
       BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
         log.trace("{} - Received message type {} from {}", localAddress, message.subject(), message.sender());
@@ -985,9 +998,9 @@ public class NettyMessagingService implements ManagedMessagingService {
     }
 
     @Override
-    public CompletableFuture<byte[]> sendAndReceive(InternalRequest message) {
+    public CompletableFuture<byte[]> sendAndReceive(InternalRequest message, Duration timeout) {
       CompletableFuture<byte[]> future = new CompletableFuture<>();
-      registerCallback(message.id(), message.subject(), future);
+      registerCallback(message.id(), message.subject(), timeout, future);
       channel.writeAndFlush(message).addListener(channelFuture -> {
         if (!channelFuture.isSuccess()) {
           Callback callback = failCallback(message.id());

@@ -15,6 +15,7 @@
  */
 package io.atomix.cluster.messaging;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -94,7 +95,24 @@ public interface ClusterEventingService {
   default <M, R> CompletableFuture<R> send(
       String topic,
       M message) {
-    return send(topic, message, BASIC::encode, BASIC::decode);
+    return send(topic, message, BASIC::encode, BASIC::decode, null);
+  }
+
+  /**
+   * Sends a message and expects a reply.
+   *
+   * @param topic   message topic
+   * @param message message to send
+   * @param timeout reply timeout
+   * @param <M>     request type
+   * @param <R>     reply type
+   * @return reply future
+   */
+  default <M, R> CompletableFuture<R> send(
+      String topic,
+      M message,
+      Duration timeout) {
+    return send(topic, message, BASIC::encode, BASIC::decode, timeout);
   }
 
   /**
@@ -108,11 +126,32 @@ public interface ClusterEventingService {
    * @param <R>     reply type
    * @return reply future
    */
+  default <M, R> CompletableFuture<R> send(
+      String topic,
+      M message,
+      Function<M, byte[]> encoder,
+      Function<byte[], R> decoder) {
+    return send(topic, message, encoder, decoder, null);
+  }
+
+  /**
+   * Sends a message and expects a reply.
+   *
+   * @param topic   message topic
+   * @param message message to send
+   * @param encoder function for encoding request to byte[]
+   * @param decoder function for decoding response from byte[]
+   * @param timeout reply timeout
+   * @param <M>     request type
+   * @param <R>     reply type
+   * @return reply future
+   */
   <M, R> CompletableFuture<R> send(
       String topic,
       M message,
       Function<M, byte[]> encoder,
-      Function<byte[], R> decoder);
+      Function<byte[], R> decoder,
+      Duration timeout);
 
   /**
    * Adds a new subscriber for the specified message topic.

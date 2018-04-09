@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -113,9 +114,10 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       M message,
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder,
-      NodeId toNodeId) {
+      NodeId toNodeId,
+      Duration timeout) {
     try {
-      return sendAndReceive(subject, encoder.apply(message), toNodeId).thenApply(decoder);
+      return sendAndReceive(subject, encoder.apply(message), toNodeId, timeout).thenApply(decoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -129,12 +131,12 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     return messagingService.sendAsync(node.address(), subject, payload);
   }
 
-  private CompletableFuture<byte[]> sendAndReceive(String subject, byte[] payload, NodeId toNodeId) {
+  private CompletableFuture<byte[]> sendAndReceive(String subject, byte[] payload, NodeId toNodeId, Duration timeout) {
     Node node = cluster.getNode(toNodeId);
     if (node == null) {
       return Futures.exceptionalFuture(CONNECT_EXCEPTION);
     }
-    return messagingService.sendAndReceive(node.address(), subject, payload);
+    return messagingService.sendAndReceive(node.address(), subject, payload, timeout);
   }
 
   @Override

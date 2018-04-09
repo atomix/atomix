@@ -22,6 +22,7 @@ import io.atomix.messaging.MessagingService;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,19 +77,31 @@ public class TestMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<Void> sendAsync(Address ep, String type, byte[] payload) {
-    return getHandler(ep, type).apply(address, payload).thenApply(v -> null);
+  public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
+    return getHandler(address, type).apply(address, payload).thenApply(v -> null);
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address ep, String type, byte[] payload) {
-    return getHandler(ep, type).apply(address, payload);
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload) {
+    return getHandler(address, type).apply(address, payload);
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address ep, String type, byte[] payload, Executor executor) {
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Executor executor) {
     ComposableFuture<byte[]> future = new ComposableFuture<>();
-    sendAndReceive(ep, type, payload).whenCompleteAsync(future, executor);
+    sendAndReceive(address, type, payload).whenCompleteAsync(future, executor);
+    return future;
+  }
+
+  @Override
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout) {
+    return getHandler(address, type).apply(address, payload);
+  }
+
+  @Override
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor) {
+    ComposableFuture<byte[]> future = new ComposableFuture<>();
+    sendAndReceive(address, type, payload).whenCompleteAsync(future, executor);
     return future;
   }
 

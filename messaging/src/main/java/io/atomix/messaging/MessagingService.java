@@ -17,6 +17,7 @@ package io.atomix.messaging;
 
 import io.atomix.utils.net.Address;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
@@ -65,6 +66,29 @@ public interface MessagingService {
    * @return a response future
    */
   CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Executor executor);
+
+  /**
+   * Sends a message asynchronously and expects a response.
+   *
+   * @param address address to send the message to.
+   * @param type    type of message.
+   * @param payload message payload.
+   * @param timeout response timeout
+   * @return a response future
+   */
+  CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout);
+
+  /**
+   * Sends a message synchronously and expects a response.
+   *
+   * @param address  address to send the message to.
+   * @param type     type of message.
+   * @param payload  message payload.
+   * @param timeout response timeout
+   * @param executor executor over which any follow up actions after completion will be executed.
+   * @return a response future
+   */
+  CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor);
 
   /**
    * Registers a new message handler for message type.

@@ -18,6 +18,7 @@ package io.atomix.cluster.messaging;
 import io.atomix.cluster.NodeId;
 import io.atomix.utils.net.Address;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -136,7 +137,26 @@ public interface ClusterMessagingService {
       String subject,
       M message,
       NodeId toNodeId) {
-    return send(subject, message, BASIC::encode, BASIC::decode, toNodeId);
+    return send(subject, message, BASIC::encode, BASIC::decode, toNodeId, null);
+  }
+
+  /**
+   * Sends a message and expects a reply.
+   *
+   * @param subject  message subject
+   * @param message  message to send
+   * @param toNodeId recipient node identifier
+   * @param timeout  response timeout
+   * @param <M>      request type
+   * @param <R>      reply type
+   * @return reply future
+   */
+  default <M, R> CompletableFuture<R> send(
+      String subject,
+      M message,
+      NodeId toNodeId,
+      Duration timeout) {
+    return send(subject, message, BASIC::encode, BASIC::decode, toNodeId, timeout);
   }
 
   /**
@@ -151,12 +171,35 @@ public interface ClusterMessagingService {
    * @param <R>      reply type
    * @return reply future
    */
+  default <M, R> CompletableFuture<R> send(
+      String subject,
+      M message,
+      Function<M, byte[]> encoder,
+      Function<byte[], R> decoder,
+      NodeId toNodeId) {
+    return send(subject, message, encoder, decoder, toNodeId, null);
+  }
+
+  /**
+   * Sends a message and expects a reply.
+   *
+   * @param subject  message subject
+   * @param message  message to send
+   * @param encoder  function for encoding request to byte[]
+   * @param decoder  function for decoding response from byte[]
+   * @param toNodeId recipient node identifier
+   * @param timeout  response timeout
+   * @param <M>      request type
+   * @param <R>      reply type
+   * @return reply future
+   */
   <M, R> CompletableFuture<R> send(
       String subject,
       M message,
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder,
-      NodeId toNodeId);
+      NodeId toNodeId,
+      Duration timeout);
 
   /**
    * Adds a new subscriber for the specified message subject.
