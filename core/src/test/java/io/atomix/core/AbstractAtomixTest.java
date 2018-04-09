@@ -52,13 +52,13 @@ public abstract class AbstractAtomixTest {
   protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
-        .withAddress("localhost", findAvailablePort(BASE_PORT + id))
+        .withAddress("localhost", coreIds.contains(id) ? BASE_PORT + id : findAvailablePort(BASE_PORT + id))
         .build();
 
     Collection<Node> coreNodes = coreIds.stream()
         .map(nodeId -> Node.builder(String.valueOf(nodeId))
             .withType(Node.Type.CORE)
-            .withAddress("localhost", findAvailablePort(BASE_PORT + nodeId))
+            .withAddress("localhost", BASE_PORT)
             .build())
         .collect(Collectors.toList());
 
