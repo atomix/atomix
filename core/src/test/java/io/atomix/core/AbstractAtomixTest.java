@@ -23,6 +23,7 @@ import org.junit.BeforeClass;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,12 +40,10 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractAtomixTest {
   private static final int BASE_PORT = 5000;
-  private static TestMessagingServiceFactory messagingServiceFactory;
 
   @BeforeClass
   public static void setupAtomix() throws Exception {
     deleteData();
-    messagingServiceFactory = new TestMessagingServiceFactory();
   }
 
   /**
@@ -53,20 +52,20 @@ public abstract class AbstractAtomixTest {
   protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
-        .withAddress("localhost", BASE_PORT + id)
+        .withAddress("localhost", findAvailablePort(BASE_PORT + id))
         .build();
 
     Collection<Node> coreNodes = coreIds.stream()
         .map(nodeId -> Node.builder(String.valueOf(nodeId))
             .withType(Node.Type.CORE)
-            .withAddress("localhost", BASE_PORT + nodeId)
+            .withAddress("localhost", findAvailablePort(BASE_PORT + nodeId))
             .build())
         .collect(Collectors.toList());
 
     Collection<Node> bootstrapNodes = bootstrapIds.stream()
         .map(nodeId -> Node.builder(String.valueOf(nodeId))
             .withType(Node.Type.CORE)
-            .withAddress("localhost", BASE_PORT + nodeId)
+            .withAddress("localhost", findAvailablePort(BASE_PORT + nodeId))
             .build())
         .collect(Collectors.toList());
 
@@ -106,6 +105,18 @@ public abstract class AbstractAtomixTest {
   @AfterClass
   public static void teardownAtomix() throws Exception {
     deleteData();
+  }
+
+  protected static int findAvailablePort(int defaultPort) {
+    try {
+      ServerSocket socket = new ServerSocket(0);
+      socket.setReuseAddress(true);
+      int port = socket.getLocalPort();
+      socket.close();
+      return port;
+    } catch (IOException ex) {
+      return defaultPort;
+    }
   }
 
   /**

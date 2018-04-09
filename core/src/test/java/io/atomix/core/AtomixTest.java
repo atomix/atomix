@@ -24,8 +24,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -207,18 +205,6 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals(ClusterEvent.Type.NODE_DEACTIVATED, event1.type());
     event1 = clientListener.event();
     assertEquals(ClusterEvent.Type.NODE_REMOVED, event1.type());
-  }
-
-  private static int findAvailablePort(int defaultPort) {
-    try {
-      ServerSocket socket = new ServerSocket(0);
-      socket.setReuseAddress(true);
-      int port = socket.getLocalPort();
-      socket.close();
-      return port;
-    } catch (IOException ex) {
-      return defaultPort;
-    }
   }
 
   private static class TestClusterEventListener implements ClusterEventListener {
