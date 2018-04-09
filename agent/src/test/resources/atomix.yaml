@@ -2,17 +2,16 @@ data-directory: target/test-logs/
 # Cluster configuration
 cluster:
   name: test
-  core:
-    nodes:
-      - id: node1
-        type: core
-        address: localhost:5000
-      - id: node2
-        type: core
-        address: localhost:5001
-      - id: node3
-        type: core
-        address: localhost:5002
+  nodes:
+    - id: node1
+      type: core
+      address: localhost:5000
+    - id: node2
+      type: core
+      address: localhost:5001
+    - id: node3
+      type: core
+      address: localhost:5002
 # A list of partition groups
 partition-groups:
   - type: raft

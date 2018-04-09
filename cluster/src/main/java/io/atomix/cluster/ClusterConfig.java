@@ -16,17 +16,33 @@
 package io.atomix.cluster;
 
 import io.atomix.utils.Config;
+import io.atomix.utils.net.Address;
+import io.atomix.utils.net.MalformedAddressException;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Cluster configuration.
  */
 public class ClusterConfig implements Config {
   private static final String DEFAULT_CLUSTER_NAME = "atomix";
+  private static final String DEFAULT_MULTICAST_IP = "230.0.0.1";
+  private static final int DEFAULT_MULTICAST_PORT = 54321;
 
   private String name = DEFAULT_CLUSTER_NAME;
   private NodeConfig localNode;
-  private CoreConfig core = new CoreConfig();
-  private BootstrapConfig bootstrap = new BootstrapConfig();
+  private Collection<NodeConfig> nodes = new ArrayList<>();
+  private boolean multicastEnabled = false;
+  private Address multicastAddress;
+
+  public ClusterConfig() {
+    try {
+      multicastAddress = Address.from(DEFAULT_MULTICAST_IP, DEFAULT_MULTICAST_PORT);
+    } catch (MalformedAddressException e) {
+      multicastAddress = Address.from(DEFAULT_MULTICAST_PORT);
+    }
+  }
 
   /**
    * Returns the cluster name.
@@ -69,42 +85,62 @@ public class ClusterConfig implements Config {
   }
 
   /**
-   * Returns the core configuration.
+   * Returns the cluster nodes.
    *
-   * @return the core configuration.
+   * @return the cluster nodes
    */
-  public CoreConfig getCoreConfig() {
-    return core;
+  public Collection<NodeConfig> getNodes() {
+    return nodes;
   }
 
   /**
-   * Sets the core configuration.
+   * Sets the cluster nodes.
    *
-   * @param core the core configuration
+   * @param nodes the cluster nodes
    * @return the cluster configuration
    */
-  public ClusterConfig setCoreConfig(CoreConfig core) {
-    this.core = core;
+  public ClusterConfig setNodes(Collection<NodeConfig> nodes) {
+    this.nodes = nodes;
     return this;
   }
 
   /**
-   * Returns the bootstrap configuration.
+   * Returns whether multicast is enabled.
    *
-   * @return the bootstrap configuration.
+   * @return whether multicast is enabled
    */
-  public BootstrapConfig getBootstrapConfig() {
-    return bootstrap;
+  public boolean isMulticastEnabled() {
+    return multicastEnabled;
   }
 
   /**
-   * Sets the bootstrap configuration.
+   * Sets whether multicast is enabled.
    *
-   * @param bootstrap the bootstrap configuration
+   * @param multicastEnabled whether multicast is enabled
    * @return the cluster configuration
    */
-  public ClusterConfig setBootstrapConfig(BootstrapConfig bootstrap) {
-    this.bootstrap = bootstrap;
+  public ClusterConfig setMulticastEnabled(boolean multicastEnabled) {
+    this.multicastEnabled = multicastEnabled;
+    return this;
+  }
+
+  /**
+   * Returns the multicast address.
+   *
+   * @return the multicast address
+   */
+  public Address getMulticastAddress() {
+    return multicastAddress;
+  }
+
+  /**
+   * Sets the multicast address.
+   *
+   * @param multicastAddress the multicast address
+   * @return the cluster configuration
+   */
+  public ClusterConfig setMulticastAddress(Address multicastAddress) {
+    this.multicastAddress = multicastAddress;
     return this;
   }
 }
