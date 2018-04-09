@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Base Atomix test.
@@ -49,36 +50,35 @@ public abstract class AbstractAtomixTest {
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
+  protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> nodeIds, List<Integer> bootstrapIds) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
-        .withAddress("localhost", coreIds.contains(id) ? BASE_PORT + id : findAvailablePort(BASE_PORT + id))
+        .withAddress("localhost", nodeIds.contains(id) ? BASE_PORT + id : findAvailablePort(BASE_PORT + id))
         .build();
 
-    Collection<Node> coreNodes = coreIds.stream()
-        .map(nodeId -> Node.builder(String.valueOf(nodeId))
-            .withType(Node.Type.CORE)
-            .withAddress("localhost", BASE_PORT)
-            .build())
-        .collect(Collectors.toList());
-
-    Collection<Node> bootstrapNodes = bootstrapIds.stream()
-        .map(nodeId -> Node.builder(String.valueOf(nodeId))
-            .withType(Node.Type.CORE)
-            .withAddress("localhost", findAvailablePort(BASE_PORT + nodeId))
-            .build())
+    Collection<Node> nodes = Stream.concat(
+        nodeIds.stream()
+            .map(nodeId -> Node.builder(String.valueOf(nodeId))
+                .withType(Node.Type.CORE)
+                .withAddress("localhost", BASE_PORT + nodeId)
+                .build()),
+        bootstrapIds.stream()
+            .filter(nodeId -> !nodeIds.contains(nodeId))
+            .map(nodeId -> Node.builder(String.valueOf(nodeId))
+                .withType(Node.Type.DATA)
+                .withAddress("localhost", findAvailablePort(BASE_PORT + nodeId))
+                .build()))
         .collect(Collectors.toList());
 
     Atomix.Builder builder = Atomix.builder()
         .withClusterName("test")
         .withDataDirectory(new File("target/test-logs/" + id))
         .withLocalNode(localNode)
-        .withCoreNodes(coreNodes)
-        .withBootstrapNodes(bootstrapNodes)
+        .withNodes(nodes)
         .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
             .withNumPartitions(3)
             .build());
-    if (!coreNodes.isEmpty()) {
+    if (!nodeIds.isEmpty()) {
       builder.addPartitionGroup(RaftPartitionGroup.builder("core")
           .withPartitionSize(3)
           .withNumPartitions(3)

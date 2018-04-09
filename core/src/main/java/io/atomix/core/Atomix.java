@@ -88,7 +88,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -472,8 +471,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private static ManagedBroadcastService buildBroadcastService(AtomixConfig config) {
     return NettyBroadcastService.builder()
         .withLocalAddress(config.getClusterConfig().getLocalNode().getAddress())
-        .withGroupAddress(config.getClusterConfig().getBootstrapConfig().getMulticastAddress())
-        .withEnabled(config.getClusterConfig().getBootstrapConfig().isMulticastEnabled())
+        .withGroupAddress(config.getClusterConfig().getMulticastAddress())
+        .withEnabled(config.getClusterConfig().isMulticastEnabled())
         .build();
   }
 
@@ -481,14 +480,29 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Builds a bootstrap metadata service.
    */
   private static ManagedBootstrapMetadataService buildBootstrapMetadataService(AtomixConfig config) {
-    return new DefaultBootstrapMetadataService(config.getClusterConfig().getBootstrapConfig());
+    boolean hasCoreNodes = config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.CORE);
+    ClusterMetadata metadata = ClusterMetadata.builder()
+        .withNodes(config.getClusterConfig().getNodes()
+            .stream()
+            .filter(node -> (!hasCoreNodes && node.getType() == Node.Type.DATA) || (hasCoreNodes && node.getType() == Node.Type.CORE))
+            .map(Node::new)
+            .collect(Collectors.toList()))
+        .build();
+    return new DefaultBootstrapMetadataService(metadata);
   }
 
   /**
    * Builds a core metadata service.
    */
   private static ManagedCoreMetadataService buildCoreMetadataService(AtomixConfig config, MessagingService messagingService) {
-    return new DefaultCoreMetadataService(config.getClusterConfig().getCoreConfig(), messagingService);
+    ClusterMetadata metadata = ClusterMetadata.builder()
+        .withNodes(config.getClusterConfig().getNodes()
+            .stream()
+            .filter(node -> node.getType() == Node.Type.CORE)
+            .map(Node::new)
+            .collect(Collectors.toList()))
+        .build();
+    return new DefaultCoreMetadataService(metadata, messagingService);
   }
 
   /**
@@ -534,7 +548,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Builds the core partition group.
    */
   private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
-    if (!config.getClusterConfig().getCoreConfig().getNodes().isEmpty()) {
+    if (config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.CORE)) {
       return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
           .withNumPartitions(1)
           .withDataDirectory(new File(config.getDataDirectory(), SYSTEM_GROUP_NAME))
@@ -616,8 +630,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
     protected String name = DEFAULT_CLUSTER_NAME;
     protected Node localNode;
-    protected Collection<Node> coreNodes = Collections.emptyList();
-    protected Collection<Node> bootstrapNodes = Collections.emptyList();
+    protected Collection<Node> nodes = new ArrayList<>();
     protected boolean multicastEnabled = false;
     protected Address multicastAddress;
     protected File dataDirectory = new File(System.getProperty("user.dir"), "data");
@@ -641,10 +654,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       if (config.getClusterConfig().getLocalNode() != null) {
         this.localNode = new Node(config.getClusterConfig().getLocalNode());
       }
-      this.coreNodes = config.getClusterConfig().getCoreConfig().getNodes().stream().map(Node::new).collect(Collectors.toList());
-      this.bootstrapNodes = config.getClusterConfig().getBootstrapConfig().getNodes().stream().map(Node::new).collect(Collectors.toList());
-      this.multicastEnabled = config.getClusterConfig().getBootstrapConfig().isMulticastEnabled();
-      this.multicastAddress = config.getClusterConfig().getBootstrapConfig().getMulticastAddress();
+      this.nodes = config.getClusterConfig().getNodes().stream().map(Node::new).collect(Collectors.toList());
+      this.multicastEnabled = config.getClusterConfig().isMulticastEnabled();
+      this.multicastAddress = config.getClusterConfig().getMulticastAddress();
       this.dataDirectory = config.getDataDirectory();
       this.partitionGroups = config.getPartitionGroups().stream().map(PartitionGroups::createGroup).collect(Collectors.toList());
       this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
@@ -686,25 +698,23 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     /**
-     * Sets the bootstrap nodes.
+     * Sets the core nodes.
      *
-     * @param bootstrapNodes the nodes from which to bootstrap the cluster
-     * @return the cluster metadata builder
-     * @throws NullPointerException if the bootstrap nodes are {@code null}
+     * @param coreNodes the core nodes
+     * @return the Atomix builder
      */
-    public Builder withBootstrapNodes(Node... bootstrapNodes) {
-      return withBootstrapNodes(Arrays.asList(checkNotNull(bootstrapNodes)));
+    public Builder withNodes(Node... coreNodes) {
+      return withNodes(Arrays.asList(checkNotNull(coreNodes)));
     }
 
     /**
-     * Sets the bootstrap nodes.
+     * Sets the core nodes.
      *
-     * @param bootstrapNodes the nodes from which to bootstrap the cluster
-     * @return the cluster metadata builder
-     * @throws NullPointerException if the bootstrap nodes are {@code null}
+     * @param coreNodes the core nodes
+     * @return the Atomix builder
      */
-    public Builder withBootstrapNodes(Collection<Node> bootstrapNodes) {
-      this.bootstrapNodes = checkNotNull(bootstrapNodes, "bootstrapNodes cannot be null");
+    public Builder withNodes(Collection<Node> coreNodes) {
+      this.nodes = checkNotNull(coreNodes, "coreNodes cannot be null");
       return this;
     }
 
@@ -736,27 +746,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     public Builder withMulticastAddress(Address address) {
       this.multicastAddress = checkNotNull(address, "address cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the core nodes.
-     *
-     * @param coreNodes the core nodes
-     * @return the Atomix builder
-     */
-    public Builder withCoreNodes(Node... coreNodes) {
-      return withCoreNodes(Arrays.asList(checkNotNull(coreNodes)));
-    }
-
-    /**
-     * Sets the core nodes.
-     *
-     * @param coreNodes the core nodes
-     * @return the Atomix builder
-     */
-    public Builder withCoreNodes(Collection<Node> coreNodes) {
-      this.coreNodes = checkNotNull(coreNodes, "coreNodes cannot be null");
       return this;
     }
 
@@ -938,14 +927,14 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds a bootstrap metadata service.
      */
     protected ManagedBootstrapMetadataService buildBootstrapMetadataService() {
-      return new DefaultBootstrapMetadataService(ClusterMetadata.builder().withNodes(bootstrapNodes).build());
+      return new DefaultBootstrapMetadataService(ClusterMetadata.builder().withNodes(nodes).build());
     }
 
     /**
      * Builds a core metadata service.
      */
     protected ManagedCoreMetadataService buildCoreMetadataService(MessagingService messagingService) {
-      return new DefaultCoreMetadataService(ClusterMetadata.builder().withNodes(coreNodes).build(), messagingService);
+      return new DefaultCoreMetadataService(ClusterMetadata.builder().withNodes(nodes).build(), messagingService);
     }
 
     /**
@@ -979,7 +968,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds the core partition group.
      */
     protected ManagedPartitionGroup buildSystemPartitionGroup() {
-      if (!coreNodes.isEmpty()) {
+      if (nodes.stream().anyMatch(node -> node.type() == Node.Type.CORE)) {
         return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
             .withNumPartitions(1)
             .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
@@ -996,7 +985,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     protected ManagedPartitionService buildPartitionService() {
       if (partitionGroups.isEmpty()) {
-        if (!coreNodes.isEmpty()) {
+        if (nodes.stream().anyMatch(node -> node.type() == Node.Type.CORE)) {
           partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
               .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
               .withNumPartitions(numCorePartitions)

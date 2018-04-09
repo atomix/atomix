@@ -15,16 +15,13 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.cluster.BootstrapConfig;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMetadataEventListener;
 import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ManagedBootstrapMetadataService;
-import io.atomix.cluster.Node;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -34,10 +31,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public class DefaultBootstrapMetadataService implements ManagedBootstrapMetadataService {
   private final ClusterMetadata metadata;
   private final AtomicBoolean started = new AtomicBoolean();
-
-  public DefaultBootstrapMetadataService(BootstrapConfig config) {
-    this(new ClusterMetadata(config.getNodes().stream().map(Node::new).collect(Collectors.toList())));
-  }
 
   public DefaultBootstrapMetadataService(ClusterMetadata metadata) {
     this.metadata = metadata;
