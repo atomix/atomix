@@ -15,3 +15,7 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 *.pyc
+core/data/
+agent/data/
+data/
+.data/
