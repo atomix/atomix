@@ -25,12 +25,17 @@ import java.util.Collection;
 public interface PartitionService {
 
   /**
+   * Returns the system partition group name.
+   */
+  String SYSTEM_GROUP = "system";
+
+  /**
    * Returns a partition group by name.
    *
    * @param name the name of the partition group
    * @return the partition group
    */
-  PartitionGroup getPartitionGroup(String name);
+  <P extends PrimitiveProtocol> PartitionGroup<P> getPartitionGroup(String name);
 
   /**
    * Returns the first partition group that matches the given primitive type.
@@ -38,8 +43,8 @@ public interface PartitionService {
    * @param type the primitive type
    * @return the first partition group that matches the given primitive type
    */
-  default PartitionGroup getPartitionGroup(PrimitiveProtocol.Type type) {
-    return getPartitionGroups().stream()
+  default <P extends PrimitiveProtocol> PartitionGroup<P> getPartitionGroup(PrimitiveProtocol.Type type) {
+    return (PartitionGroup<P>) getPartitionGroups().stream()
         .filter(group -> group.type().equals(type))
         .findFirst()
         .orElse(null);
@@ -65,8 +70,18 @@ public interface PartitionService {
    *
    * @return the default partition group
    */
-  default PartitionGroup getDefaultPartitionGroup() {
-    return getPartitionGroups().iterator().next();
+  @SuppressWarnings("unchecked")
+  default <P extends PrimitiveProtocol> PartitionGroup<P> getDefaultPartitionGroup() {
+    return (PartitionGroup<P>) getPartitionGroups().iterator().next();
+  }
+
+  /**
+   * Returns the system partition group.
+   *
+   * @return the system partition group
+   */
+  default <P extends PrimitiveProtocol> PartitionGroup<P> getSystemPartitionGroup() {
+    return getPartitionGroup(SYSTEM_GROUP);
   }
 
   /**
