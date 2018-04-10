@@ -35,12 +35,14 @@ public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicCounter> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return managementService.getPartitionService()
-        .getPartitionGroup(protocol)
-        .getPartition(name())
-        .getPrimitiveClient()
-        .newProxy(name(), primitiveType(), protocol)
-        .connect()
-        .thenApply(proxy -> new AtomicCounterProxy(proxy).sync());
+    return managementService.getPrimitiveRegistry()
+        .createPrimitive(name(), primitiveType())
+        .thenCompose(info -> managementService.getPartitionService()
+            .getPartitionGroup(protocol)
+            .getPartition(name())
+            .getPrimitiveClient()
+            .newProxy(name(), primitiveType(), protocol)
+            .connect()
+            .thenApply(proxy -> new AtomicCounterProxy(proxy).sync()));
   }
 }

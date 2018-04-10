@@ -37,19 +37,20 @@ public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicValue<V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return managementService.getPartitionService()
-        .getPartitionGroup(protocol)
-        .getPartition(name())
-        .getPrimitiveClient()
-        .newProxy(name(), primitiveType(), protocol)
-        .connect()
-        .thenApply(proxy -> {
-          AtomicValueProxy value = new AtomicValueProxy(proxy);
-          return new TranscodingAsyncAtomicValue<V, byte[]>(
-              value,
-              serializer()::encode,
-              serializer()::decode)
-              .sync();
-        });
+    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
+        .thenCompose(info -> managementService.getPartitionService()
+            .getPartitionGroup(protocol)
+            .getPartition(name())
+            .getPrimitiveClient()
+            .newProxy(name(), primitiveType(), protocol)
+            .connect()
+            .thenApply(proxy -> {
+              AtomicValueProxy value = new AtomicValueProxy(proxy);
+              return new TranscodingAsyncAtomicValue<V, byte[]>(
+                  value,
+                  serializer()::encode,
+                  serializer()::decode)
+                  .sync();
+            }));
   }
 }

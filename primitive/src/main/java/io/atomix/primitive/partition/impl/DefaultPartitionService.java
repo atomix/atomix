@@ -38,25 +38,17 @@ public class DefaultPartitionService implements ManagedPartitionService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionService.class);
 
   private final ManagedPartitionGroup<?> defaultGroup;
-  private final ManagedPartitionGroup<?> systemGroup;
   private final Map<String, ManagedPartitionGroup<?>> groups = Maps.newConcurrentMap();
 
   public DefaultPartitionService(Collection<ManagedPartitionGroup> groups) {
-    defaultGroup = groups.stream().filter(group -> !group.name().equals(SYSTEM_GROUP)).findFirst().orElse(null);
-    systemGroup = groups.stream().filter(group -> group.name().equals(SYSTEM_GROUP)).findAny().orElse(null);
-    groups.stream().filter(group -> !group.name().equals(SYSTEM_GROUP)).forEach(g -> this.groups.put(g.name(), g));
+    defaultGroup = groups.iterator().next();
+    groups.forEach(g -> this.groups.put(g.name(), g));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <P extends PrimitiveProtocol> PartitionGroup<P> getDefaultPartitionGroup() {
     return (PartitionGroup<P>) defaultGroup;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <P extends PrimitiveProtocol> PartitionGroup<P> getSystemPartitionGroup() {
-    return (PartitionGroup<P>) systemGroup;
   }
 
   @Override
@@ -68,7 +60,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
   @Override
   @SuppressWarnings("unchecked")
   public Collection<PartitionGroup<?>> getPartitionGroups() {
-    return groups.values().stream().filter(group -> !group.name().equals(SYSTEM_GROUP)).collect(Collectors.toList());
+    return (Collection) groups.values();
   }
 
   @Override

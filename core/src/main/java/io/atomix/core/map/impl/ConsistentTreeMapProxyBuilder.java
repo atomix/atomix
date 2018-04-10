@@ -39,20 +39,21 @@ public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentTreeMap<V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return managementService.getPartitionService()
-        .getPartitionGroup(protocol)
-        .getPartition(name())
-        .getPrimitiveClient()
-        .newProxy(name(), primitiveType(), protocol)
-        .connect()
-        .thenApply(proxy -> {
-          ConsistentTreeMapProxy rawMap = new ConsistentTreeMapProxy(proxy);
-          Serializer serializer = serializer();
-          return new TranscodingAsyncConsistentTreeMap<V, byte[]>(
-              rawMap,
-              value -> value == null ? null : serializer.encode(value),
-              bytes -> serializer.decode(bytes))
-              .sync();
-        });
+    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
+        .thenCompose(info -> managementService.getPartitionService()
+            .getPartitionGroup(protocol)
+            .getPartition(name())
+            .getPrimitiveClient()
+            .newProxy(name(), primitiveType(), protocol)
+            .connect()
+            .thenApply(proxy -> {
+              ConsistentTreeMapProxy rawMap = new ConsistentTreeMapProxy(proxy);
+              Serializer serializer = serializer();
+              return new TranscodingAsyncConsistentTreeMap<V, byte[]>(
+                  rawMap,
+                  value -> value == null ? null : serializer.encode(value),
+                  bytes -> serializer.decode(bytes))
+                  .sync();
+            }));
   }
 }

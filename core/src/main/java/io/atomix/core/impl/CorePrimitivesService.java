@@ -33,15 +33,12 @@ import io.atomix.core.generator.AtomicIdGenerator;
 import io.atomix.core.generator.AtomicIdGeneratorType;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockType;
-import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMapType;
-import io.atomix.core.map.impl.ConsistentMapProxy;
-import io.atomix.core.map.impl.TranscodingAsyncConsistentMap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimapType;
 import io.atomix.core.queue.WorkQueue;
@@ -58,25 +55,19 @@ import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.ManagedPrimitiveRegistry;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.utils.AtomixRuntimeException;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -85,18 +76,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class CorePrimitivesService implements ManagedPrimitivesService {
   private static final int CACHE_SIZE = 1000;
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .register(PrimitiveInfo.class)
-      .build());
 
   private final PrimitiveManagementService managementService;
+  private final ManagedPrimitiveRegistry primitiveRegistry;
   private final ManagedTransactionService transactionService;
   private final AtomixConfig config;
   private final Cache<String, DistributedPrimitive> cache = CacheBuilder.newBuilder()
       .maximumSize(CACHE_SIZE)
       .build();
-  private AsyncConsistentMap<String, PrimitiveInfo> primitives;
   private final AtomicBoolean started = new AtomicBoolean();
 
   public CorePrimitivesService(
@@ -104,12 +91,15 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterMessagingService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
+      PartitionGroup systemPartitionGroup,
       AtomixConfig config) {
+    this.primitiveRegistry = new CorePrimitiveRegistry(systemPartitionGroup);
     this.managementService = new CorePrimitiveManagementService(
         clusterService,
         communicationService,
         eventService,
-        partitionService);
+        partitionService,
+        primitiveRegistry);
     this.transactionService = new CoreTransactionService(managementService);
     this.config = checkNotNull(config);
   }
@@ -208,50 +198,19 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives() {
-    try {
-      return primitives.values()
-          .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
-          .stream()
-          .map(Versioned::valueOrNull)
-          .collect(Collectors.toList());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new PrimitiveException.Interrupted();
-    } catch (TimeoutException e) {
-      throw new PrimitiveException.Timeout();
-    } catch (ExecutionException e) {
-      throw new PrimitiveException(e.getCause());
-    }
+    return managementService.getPrimitiveRegistry().getPrimitives();
   }
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType) {
-    return getPrimitives()
-        .stream()
-        .filter(primitive -> primitive.type().equals(primitiveType))
-        .collect(Collectors.toList());
+    return managementService.getPrimitiveRegistry().getPrimitives(primitiveType);
   }
 
   @Override
   public CompletableFuture<PrimitivesService> start() {
-    return transactionService.start()
-        .thenCompose(v -> managementService.getPartitionService()
-            .getSystemPartitionGroup()
-            .getPartitions()
-            .iterator()
-            .next()
-            .getPrimitiveClient()
-            .newProxy("primitives", ConsistentMapType.instance())
-            .connect())
-        .thenAccept(proxy -> {
-          this.primitives = new TranscodingAsyncConsistentMap<>(
-              new ConsistentMapProxy(proxy),
-              key -> key,
-              key -> key,
-              value -> value != null ? SERIALIZER.encode(value) : null,
-              value -> value != null ? SERIALIZER.decode(value) : null);
-          started.set(true);
-        })
+    return primitiveRegistry.start()
+        .thenCompose(v -> transactionService.start())
+        .thenRun(() -> started.set(true))
         .thenApply(v -> this);
   }
 
@@ -263,6 +222,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public CompletableFuture<Void> stop() {
     return transactionService.stop()
+        .thenCompose(v -> primitiveRegistry.stop())
         .whenComplete((r, e) -> started.set(false));
   }
 }

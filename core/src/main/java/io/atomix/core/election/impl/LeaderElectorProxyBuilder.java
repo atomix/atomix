@@ -51,16 +51,19 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<LeaderElector<T>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
+    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
+        .thenCompose(info -> {
+          PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
-    Map<PartitionId, CompletableFuture<AsyncLeaderElector<T>>> electors = Maps.newConcurrentMap();
-    for (Partition partition : partitions.getPartitions()) {
-      electors.put(partition.id(),
-          newLeaderElector(partition.getPrimitiveClient().newProxy(name(), primitiveType(), protocol)));
-    }
+          Map<PartitionId, CompletableFuture<AsyncLeaderElector<T>>> electors = Maps.newConcurrentMap();
+          for (Partition partition : partitions.getPartitions()) {
+            electors.put(partition.id(),
+                newLeaderElector(partition.getPrimitiveClient().newProxy(name(), primitiveType(), protocol)));
+          }
 
-    Partitioner<String> partitioner = topic -> partitions.getPartition(topic).id();
-    return Futures.allOf(new ArrayList<>(electors.values()))
-        .thenApply(e -> new PartitionedAsyncLeaderElector<T>(name(), Maps.transformValues(electors, v -> v.getNow(null)), partitioner).sync());
+          Partitioner<String> partitioner = topic -> partitions.getPartition(topic).id();
+          return Futures.allOf(new ArrayList<>(electors.values()))
+              .thenApply(e -> new PartitionedAsyncLeaderElector<T>(name(), Maps.transformValues(electors, v -> v.getNow(null)), partitioner).sync());
+        });
   }
 }

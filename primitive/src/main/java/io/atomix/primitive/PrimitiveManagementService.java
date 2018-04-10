@@ -53,4 +53,11 @@ public interface PrimitiveManagementService {
    */
   PartitionService getPartitionService();
 
+  /**
+   * Returns the primitive registry.
+   *
+   * @return the primitive registry
+   */
+  PrimitiveRegistry getPrimitiveRegistry();
+
 }
