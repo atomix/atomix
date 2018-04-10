@@ -244,7 +244,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
             .newProxy("primitives", ConsistentMapType.instance())
             .connect())
         .thenAccept(proxy -> {
-          this.primitives = new TranscodingAsyncConsistentMap<String, PrimitiveInfo, String, byte[]>(
+          this.primitives = new TranscodingAsyncConsistentMap<>(
               new ConsistentMapProxy(proxy),
               key -> key,
               key -> key,
