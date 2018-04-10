@@ -58,6 +58,7 @@ import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
@@ -89,7 +90,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -97,6 +97,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.primitive.partition.PartitionService.SYSTEM_GROUP;
 
 /**
  * Atomix!
@@ -132,7 +133,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return new Builder(loadConfig(configFile));
   }
 
-  protected static final String SYSTEM_GROUP_NAME = "system";
   protected static final String CORE_GROUP_NAME = "core";
   protected static final String DATA_GROUP_NAME = "data";
 
@@ -289,9 +289,13 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public Set<String> getPrimitiveNames(PrimitiveType primitiveType) {
-    return context.primitives.getPrimitiveNames(primitiveType);
+  public Collection<PrimitiveInfo> getPrimitives() {
+    return context.primitives.getPrimitives();
+  }
+
+  @Override
+  public Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType) {
+    return context.primitives.getPrimitives(primitiveType);
   }
 
   /**
@@ -549,12 +553,12 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
     if (config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.CORE)) {
-      return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
+      return RaftPartitionGroup.builder(SYSTEM_GROUP)
           .withNumPartitions(1)
-          .withDataDirectory(new File(config.getDataDirectory(), SYSTEM_GROUP_NAME))
+          .withDataDirectory(new File(config.getDataDirectory(), SYSTEM_GROUP))
           .build();
     } else {
-      return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
+      return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP)
           .withNumPartitions(1)
           .build();
     }
@@ -969,12 +973,12 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     protected ManagedPartitionGroup buildSystemPartitionGroup() {
       if (nodes.stream().anyMatch(node -> node.type() == Node.Type.CORE)) {
-        return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
+        return RaftPartitionGroup.builder(SYSTEM_GROUP)
             .withNumPartitions(1)
-            .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
+            .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP))
             .build();
       } else {
-        return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
+        return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP)
             .withNumPartitions(1)
             .build();
       }
