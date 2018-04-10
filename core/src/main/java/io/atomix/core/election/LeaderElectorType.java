@@ -21,6 +21,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Supplier;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
@@ -45,8 +47,8 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new LeaderElectorService();
+  public Supplier<PrimitiveService> serviceFactory() {
+    return LeaderElectorService::new;
   }
 
   @Override

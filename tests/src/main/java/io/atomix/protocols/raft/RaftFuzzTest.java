@@ -27,13 +27,13 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
+import io.atomix.primitive.partition.impl.PrimaryElectorService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.protocols.raft.RaftPerformanceTest.PerformanceService;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.protocol.AppendRequest;
@@ -118,6 +118,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -636,8 +637,8 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public PrimitiveService newService() {
-      return new PerformanceService();
+    public Supplier<PrimitiveService> serviceFactory() {
+      return PrimaryElectorService::new;
     }
 
     @Override

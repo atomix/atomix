@@ -15,9 +15,12 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.utils.Generics;
 import io.atomix.utils.Identifier;
+
+import java.util.function.Supplier;
 
 /**
  * Raft service type.
@@ -63,11 +66,20 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
   }
 
   /**
-   * Returns a new primitive service instance.
+   * Returns the primitive service factory.
    *
-   * @return a new primitive service instance
+   * @return the primitive service factory.
    */
-  PrimitiveService newService();
+  Supplier<PrimitiveService> serviceFactory();
+
+  /**
+   * Returns the primitive resource factory.
+   *
+   * @return the primitive resource factory
+   */
+  default Supplier<PrimitiveResource> resourceFactory() {
+    return null;
+  }
 
   /**
    * Returns a new primitive builder for the given partition.

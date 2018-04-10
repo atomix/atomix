@@ -605,13 +605,13 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Initializes a new service.
    */
-  private RaftServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName) {
+  private RaftServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType<?, ?, ?> primitiveType, String serviceName) {
     RaftServiceContext oldService = raft.getServices().getService(serviceName);
     RaftServiceContext service = new RaftServiceContext(
         primitiveId,
         serviceName,
         primitiveType,
-        primitiveType.newService(),
+        primitiveType.serviceFactory().get(),
         raft,
         threadContextFactory);
     raft.getServices().registerService(service);
@@ -629,7 +629,7 @@ public class RaftServiceManager implements AutoCloseable {
   private long applyOpenSession(Indexed<OpenSessionEntry> entry) {
     PrimitiveType primitiveType = raft.getPrimitiveTypes().get(entry.entry().serviceType());
     if (primitiveType == null) {
-        throw new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType());
+      throw new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType());
     }
     // Get the state machine executor or create one if it doesn't already exist.
     RaftServiceContext service = getOrInitializeService(

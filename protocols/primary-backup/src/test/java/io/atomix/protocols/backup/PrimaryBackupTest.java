@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 
@@ -482,8 +483,8 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     }
 
     @Override
-    public PrimitiveService newService() {
-      return new TestPrimitiveService();
+    public Supplier<PrimitiveService> serviceFactory() {
+      return TestPrimitiveService::new;
     }
 
     @Override
