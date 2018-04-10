@@ -22,6 +22,8 @@ import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.impl.ConsistentMapService;
 import io.atomix.core.set.impl.DelegatingDistributedSetBuilder;
 
+import java.util.function.Supplier;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
@@ -46,8 +48,8 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new ConsistentMapService();
+  public Supplier<PrimitiveService> serviceFactory() {
+    return ConsistentMapService::new;
   }
 
   @Override

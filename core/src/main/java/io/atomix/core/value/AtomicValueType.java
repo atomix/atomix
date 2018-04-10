@@ -21,6 +21,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Supplier;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
@@ -45,8 +47,8 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
   }
 
   @Override
-  public PrimitiveService newService() {
-    return new AtomicValueService();
+  public Supplier<PrimitiveService> serviceFactory() {
+    return AtomicValueService::new;
   }
 
   @Override

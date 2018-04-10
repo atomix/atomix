@@ -123,6 +123,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -552,8 +553,8 @@ public class RaftPerformanceTest implements Runnable {
     }
 
     @Override
-    public PrimitiveService newService() {
-      return new PerformanceService();
+    public Supplier<PrimitiveService> serviceFactory() {
+      return PerformanceService::new;
     }
 
     @Override

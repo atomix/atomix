@@ -81,6 +81,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -1334,8 +1335,8 @@ public class RaftTest extends ConcurrentTestCase {
     }
 
     @Override
-    public PrimitiveService newService() {
-      return new TestPrimitiveService();
+    public Supplier<PrimitiveService> serviceFactory() {
+      return TestPrimitiveService::new;
     }
 
     @Override

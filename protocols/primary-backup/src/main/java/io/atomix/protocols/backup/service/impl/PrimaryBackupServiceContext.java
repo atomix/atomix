@@ -110,7 +110,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public PrimaryBackupServiceContext(
       String serverName,
       PrimitiveId primitiveId,
-      PrimitiveType primitiveType,
+      PrimitiveType<?, ?, ?> primitiveType,
       PrimitiveDescriptor descriptor,
       ThreadContext threadContext,
       ClusterService clusterService,
@@ -122,7 +122,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     this.primitiveId = checkNotNull(primitiveId);
     this.primitiveType = checkNotNull(primitiveType);
     this.descriptor = checkNotNull(descriptor);
-    this.service = primitiveType.newService();
+    this.service = primitiveType.serviceFactory().get();
     this.threadContext = checkNotNull(threadContext);
     this.clusterService = checkNotNull(clusterService);
     this.memberGroupService = checkNotNull(memberGroupService);
