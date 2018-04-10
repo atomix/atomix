@@ -16,11 +16,14 @@
 package io.atomix.core.value;
 
 import io.atomix.core.value.impl.AtomicValueProxyBuilder;
+import io.atomix.core.value.impl.AtomicValueResource;
 import io.atomix.core.value.impl.AtomicValueService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -49,6 +52,12 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return AtomicValueService::new;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Function<AtomicValue<V>, PrimitiveResource> resourceFactory() {
+    return value -> new AtomicValueResource((AtomicValue<String>) value);
   }
 
   @Override
