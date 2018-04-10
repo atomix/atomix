@@ -61,6 +61,11 @@ public class VertxRestService implements ManagedRestService {
   }
 
   @Override
+  public Address address() {
+    return address;
+  }
+
+  @Override
   public CompletableFuture<RestService> start() {
     server = vertx.createHttpServer();
     deployment = new VertxResteasyDeployment();
