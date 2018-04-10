@@ -16,11 +16,14 @@
 package io.atomix.core.election;
 
 import io.atomix.core.election.impl.LeaderElectionProxyBuilder;
+import io.atomix.core.election.impl.LeaderElectionResource;
 import io.atomix.core.election.impl.LeaderElectionService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -49,6 +52,12 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return LeaderElectionService::new;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Function<LeaderElection<T>, PrimitiveResource> resourceFactory() {
+    return election -> new LeaderElectionResource((LeaderElection<String>) election);
   }
 
   @Override

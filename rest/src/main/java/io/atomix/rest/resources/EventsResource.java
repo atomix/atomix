@@ -18,8 +18,8 @@ package io.atomix.rest.resources;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.Subscription;
-import io.atomix.rest.utils.EventLog;
-import io.atomix.rest.utils.EventManager;
+import io.atomix.core.utils.EventLog;
+import io.atomix.core.utils.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

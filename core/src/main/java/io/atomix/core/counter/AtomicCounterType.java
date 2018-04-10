@@ -16,11 +16,14 @@
 package io.atomix.core.counter;
 
 import io.atomix.core.counter.impl.AtomicCounterProxyBuilder;
+import io.atomix.core.counter.impl.AtomicCounterResource;
 import io.atomix.core.counter.impl.AtomicCounterService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -48,6 +51,11 @@ public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, At
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return AtomicCounterService::new;
+  }
+
+  @Override
+  public Function<AtomicCounter, PrimitiveResource> resourceFactory() {
+    return AtomicCounterResource::new;
   }
 
   @Override

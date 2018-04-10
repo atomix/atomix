@@ -21,8 +21,8 @@ import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
-import io.atomix.rest.utils.EventLog;
-import io.atomix.rest.utils.EventManager;
+import io.atomix.core.utils.EventLog;
+import io.atomix.core.utils.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

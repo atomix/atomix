@@ -16,11 +16,14 @@
 package io.atomix.core.queue;
 
 import io.atomix.core.queue.impl.WorkQueueProxyBuilder;
+import io.atomix.core.queue.impl.WorkQueueResource;
 import io.atomix.core.queue.impl.WorkQueueService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -49,6 +52,12 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return WorkQueueService::new;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Function<WorkQueue<E>, PrimitiveResource> resourceFactory() {
+    return queue -> new WorkQueueResource((WorkQueue<String>) queue);
   }
 
   @Override

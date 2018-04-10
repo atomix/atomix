@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.resources;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package io.atomix.core.lock.impl;
 
 import io.atomix.core.lock.AsyncDistributedLock;
+import io.atomix.core.lock.DistributedLock;
+import io.atomix.primitive.resource.PrimitiveResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
@@ -31,19 +32,26 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed lock resource.
  */
-public class DistributedLockResource {
+public class DistributedLockResource extends PrimitiveResource<DistributedLock> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributedLockResource.class);
 
-  private final AsyncDistributedLock lock;
+  public DistributedLockResource(DistributedLock lock) {
+    super(lock);
+  }
 
-  public DistributedLockResource(AsyncDistributedLock lock) {
-    this.lock = lock;
+  /**
+   * Returns the lock primitive.
+   *
+   * @return the lock primitive
+   */
+  private AsyncDistributedLock lock() {
+    return primitive.async();
   }
 
   @POST
   @Produces(MediaType.APPLICATION_JSON)
   public void lock(@Suspended AsyncResponse response) {
-    lock.lock().whenComplete((result, error) -> {
+    lock().lock().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result.value()).build());
       } else {
@@ -55,7 +63,7 @@ public class DistributedLockResource {
 
   @DELETE
   public void unlock(@Suspended AsyncResponse response) {
-    lock.unlock().whenComplete((result, error) -> {
+    lock().unlock().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
