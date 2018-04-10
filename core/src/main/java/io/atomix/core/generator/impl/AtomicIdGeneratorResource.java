@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.resources;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package io.atomix.core.generator.impl;
 
 import io.atomix.core.generator.AsyncAtomicIdGenerator;
+import io.atomix.core.generator.AtomicIdGenerator;
+import io.atomix.primitive.resource.PrimitiveResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
@@ -30,19 +31,26 @@ import javax.ws.rs.core.Response;
 /**
  * Unique ID generator resource.
  */
-public class AtomicIdGeneratorResource {
+public class AtomicIdGeneratorResource extends PrimitiveResource<AtomicIdGenerator> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicIdGeneratorResource.class);
 
-  private final AsyncAtomicIdGenerator idGenerator;
+  public AtomicIdGeneratorResource(AtomicIdGenerator idGenerator) {
+    super(idGenerator);
+  }
 
-  public AtomicIdGeneratorResource(AsyncAtomicIdGenerator idGenerator) {
-    this.idGenerator = idGenerator;
+  /**
+   * Returns the ID generator primitive.
+   *
+   * @return the ID generator primitive
+   */
+  private AsyncAtomicIdGenerator idGenerator() {
+    return primitive.async();
   }
 
   @PUT
   @Produces(MediaType.APPLICATION_JSON)
   public void next(@Suspended AsyncResponse response) {
-    idGenerator.nextId().whenComplete((result, error) -> {
+    idGenerator().nextId().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {

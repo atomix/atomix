@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.resources;
+package io.atomix.core.election.impl;
 
 import io.atomix.core.election.AsyncLeaderElection;
+import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
-import io.atomix.rest.utils.EventLog;
-import io.atomix.rest.utils.EventManager;
+import io.atomix.core.utils.EventLog;
+import io.atomix.core.utils.EventManager;
+import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,22 +42,29 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Leader elector resource.
+ * Leader election resource.
  */
-public class LeaderElectorResource {
-  private static final Logger LOGGER = LoggerFactory.getLogger(LeaderElectorResource.class);
+public class LeaderElectionResource extends PrimitiveResource<LeaderElection<String>> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(LeaderElectionResource.class);
 
-  private final AsyncLeaderElection<String> leaderElector;
+  public LeaderElectionResource(LeaderElection<String> leaderElection) {
+    super(leaderElection);
+  }
 
-  public LeaderElectorResource(AsyncLeaderElection<String> leaderElector) {
-    this.leaderElector = leaderElector;
+  /**
+   * Returns the election primitive.
+   *
+   * @return the election primitive
+   */
+  private AsyncLeaderElection<String> election() {
+    return primitive.async();
   }
 
   /**
    * Returns an event log name for the given identifier.
    */
   private String getEventLogName(String id) {
-    return String.format("%s-%s", leaderElector.name(), id);
+    return String.format("%s-%s", election().name(), id);
   }
 
   @POST
@@ -65,9 +74,9 @@ public class LeaderElectorResource {
     EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog = events.getOrCreateEventLog(
         AsyncLeaderElection.class, getEventLogName(id), l -> e -> l.addEvent(e));
 
-    leaderElector.addListener(eventLog.listener()).whenComplete((listenResult, listenError) -> {
+    election().addListener(eventLog.listener()).whenComplete((listenResult, listenError) -> {
       if (listenError == null) {
-        leaderElector.run(id).whenComplete((runResult, runError) -> {
+        election().run(id).whenComplete((runResult, runError) -> {
           if (runError == null) {
             response.resume(Response.ok(id).build());
           } else {
@@ -85,7 +94,7 @@ public class LeaderElectorResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public void getLeadership(@Suspended AsyncResponse response) {
-    leaderElector.getLeadership().whenComplete((result, error) -> {
+    election().getLeadership().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new LeadershipResponse(result)).build());
       } else {
@@ -112,7 +121,7 @@ public class LeaderElectorResource {
         if (event.newLeadership().leader() != null && event.newLeadership().leader().id().equals(id)) {
           response.resume(Response.ok(new LeadershipResponse(event.newLeadership())).build());
         } else if (event.newLeadership().candidates().stream().noneMatch(c -> c.equals(id))) {
-          leaderElector.removeListener(eventLog.listener()).whenComplete((removeResult, removeError) -> {
+          election().removeListener(eventLog.listener()).whenComplete((removeResult, removeError) -> {
             response.resume(Response.status(Status.NOT_FOUND).build());
           });
         }
@@ -128,8 +137,8 @@ public class LeaderElectorResource {
     EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog = events.removeEventLog(
         AsyncLeaderElection.class, getEventLogName(id));
     if (eventLog != null && eventLog.close()) {
-      leaderElector.removeListener(eventLog.listener()).whenComplete((removeResult, removeError) -> {
-        leaderElector.withdraw(id).whenComplete((withdrawResult, withdrawError) -> {
+      election().removeListener(eventLog.listener()).whenComplete((removeResult, removeError) -> {
+        election().withdraw(id).whenComplete((withdrawResult, withdrawError) -> {
           if (withdrawError == null) {
             response.resume(Response.ok().build());
           } else {
@@ -146,7 +155,7 @@ public class LeaderElectorResource {
   @POST
   @Path("/{id}/anoint")
   public void anoint(@PathParam("id") String id, @Suspended AsyncResponse response) {
-    leaderElector.anoint(id).whenComplete((result, error) -> {
+    election().anoint(id).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -159,7 +168,7 @@ public class LeaderElectorResource {
   @POST
   @Path("/{id}/promote")
   public void promote(@PathParam("id") String id, @Suspended AsyncResponse response) {
-    leaderElector.promote(id).whenComplete((result, error) -> {
+    election().promote(id).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -172,7 +181,7 @@ public class LeaderElectorResource {
   @POST
   @Path("/{id}/evict")
   public void evict(@PathParam("id") String id, @Suspended AsyncResponse response) {
-    leaderElector.evict(id).whenComplete((result, error) -> {
+    election().evict(id).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

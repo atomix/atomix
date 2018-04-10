@@ -16,11 +16,14 @@
 package io.atomix.core.generator;
 
 import io.atomix.core.counter.impl.AtomicCounterService;
+import io.atomix.core.generator.impl.AtomicIdGeneratorResource;
 import io.atomix.core.generator.impl.DelegatingAtomicIdGeneratorBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -48,6 +51,11 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return AtomicCounterService::new;
+  }
+
+  @Override
+  public Function<AtomicIdGenerator, PrimitiveResource> resourceFactory() {
+    return AtomicIdGeneratorResource::new;
   }
 
   @Override

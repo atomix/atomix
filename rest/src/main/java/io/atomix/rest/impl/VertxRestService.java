@@ -27,7 +27,7 @@ import io.atomix.rest.resources.EventsResource;
 import io.atomix.rest.resources.MessagesResource;
 import io.atomix.rest.resources.PrimitivesResource;
 import io.atomix.rest.resources.StatusResource;
-import io.atomix.rest.utils.EventManager;
+import io.atomix.core.utils.EventManager;
 import io.atomix.utils.net.Address;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;

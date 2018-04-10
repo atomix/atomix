@@ -15,13 +15,16 @@
  */
 package io.atomix.core.set;
 
+import io.atomix.core.set.impl.DistributedSetResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.impl.ConsistentMapService;
 import io.atomix.core.set.impl.DelegatingDistributedSetBuilder;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -50,6 +53,12 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return ConsistentMapService::new;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Function<DistributedSet<E>, PrimitiveResource> resourceFactory() {
+    return set -> new DistributedSetResource((DistributedSet<String>) set);
   }
 
   @Override

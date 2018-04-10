@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.resources;
+package io.atomix.core.tree.impl;
 
 import com.google.common.collect.Maps;
 
 import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
+import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,13 +49,20 @@ import java.util.stream.Collectors;
 /**
  * Document tree resource.
  */
-public class DocumentTreeResource {
+public class DocumentTreeResource extends PrimitiveResource<DocumentTree<String>> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DocumentTreeResource.class);
 
-  private final AsyncDocumentTree<String> documentTree;
+  public DocumentTreeResource(DocumentTree<String> tree) {
+    super(tree);
+  }
 
-  public DocumentTreeResource(AsyncDocumentTree<String> documentTree) {
-    this.documentTree = documentTree;
+  /**
+   * Returns the document tree.
+   *
+   * @return the document tree
+   */
+  private AsyncDocumentTree<String> tree() {
+    return primitive.async();
   }
 
   /**
@@ -61,9 +70,9 @@ public class DocumentTreeResource {
    */
   private DocumentPath getDocumentPath(List<PathSegment> params) {
     if (params.isEmpty()) {
-      return documentTree.root();
+      return primitive.async().root();
     } else {
-      List<String> path = new ArrayList<>(documentTree.root().pathElements());
+      List<String> path = new ArrayList<>(tree().root().pathElements());
       path.addAll(params.stream().map(PathSegment::getPath).collect(Collectors.toList()));
       return DocumentPath.from(path);
     }
@@ -73,7 +82,7 @@ public class DocumentTreeResource {
   @Path("/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
   public void get(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
-    documentTree.get(getDocumentPath(path)).whenComplete((result, error) -> {
+    tree().get(getDocumentPath(path)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new VersionedResult(result)).build());
       } else {
@@ -88,7 +97,7 @@ public class DocumentTreeResource {
   @Consumes(MediaType.TEXT_PLAIN)
   @Produces(MediaType.APPLICATION_JSON)
   public void create(@PathParam("path") List<PathSegment> path, String value, @Suspended AsyncResponse response) {
-    documentTree.createRecursive(getDocumentPath(path), value).whenComplete((result, error) -> {
+    tree().createRecursive(getDocumentPath(path), value).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -105,9 +114,9 @@ public class DocumentTreeResource {
   public void set(@PathParam("path") List<PathSegment> path, String value, @QueryParam("version") Long version, @Suspended AsyncResponse response) {
     CompletableFuture<Boolean> future;
     if (version != null) {
-      future = documentTree.replace(getDocumentPath(path), value, version);
+      future = tree().replace(getDocumentPath(path), value, version);
     } else {
-      future = documentTree.set(getDocumentPath(path), value).thenApply(v -> Boolean.TRUE);
+      future = tree().set(getDocumentPath(path), value).thenApply(v -> Boolean.TRUE);
     }
 
     future.whenComplete((result, error) -> {
@@ -131,7 +140,7 @@ public class DocumentTreeResource {
   @Path("/children")
   @Produces(MediaType.APPLICATION_JSON)
   public void getRootChildren(@Suspended AsyncResponse response) {
-    documentTree.getChildren(documentTree.root()).whenComplete((result, error) -> {
+    tree().getChildren(tree().root()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(Maps.transformValues(result, VersionedResult::new)).build());
       } else {
@@ -145,7 +154,7 @@ public class DocumentTreeResource {
   @Path("/children/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
   public void getChildren(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
-    documentTree.getChildren(getDocumentPath(path)).whenComplete((result, error) -> {
+    tree().getChildren(getDocumentPath(path)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(Maps.transformValues(result, VersionedResult::new)).build());
       } else {
@@ -159,7 +168,7 @@ public class DocumentTreeResource {
   @Path("/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
   public void removeNode(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
-    documentTree.removeNode(getDocumentPath(path)).whenComplete((result, error) -> {
+    tree().removeNode(getDocumentPath(path)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new VersionedResult(result)).build());
       } else {

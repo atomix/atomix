@@ -16,12 +16,15 @@
 package io.atomix.core.tree;
 
 import io.atomix.core.tree.impl.DocumentTreeProxyBuilder;
+import io.atomix.core.tree.impl.DocumentTreeResource;
 import io.atomix.core.tree.impl.DocumentTreeService;
 import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -50,6 +53,12 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return () -> new DocumentTreeService(Ordering.NATURAL);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Function<DocumentTree<V>, PrimitiveResource> resourceFactory() {
+    return tree -> new DocumentTreeResource((DocumentTree<String>) tree);
   }
 
   @Override

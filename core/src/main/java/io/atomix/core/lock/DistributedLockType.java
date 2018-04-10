@@ -16,11 +16,14 @@
 package io.atomix.core.lock;
 
 import io.atomix.core.lock.impl.DistributedLockProxyBuilder;
+import io.atomix.core.lock.impl.DistributedLockResource;
 import io.atomix.core.lock.impl.DistributedLockService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -48,6 +51,11 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return DistributedLockService::new;
+  }
+
+  @Override
+  public Function<DistributedLock, PrimitiveResource> resourceFactory() {
+    return DistributedLockResource::new;
   }
 
   @Override

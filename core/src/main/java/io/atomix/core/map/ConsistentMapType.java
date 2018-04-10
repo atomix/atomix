@@ -16,11 +16,14 @@
 package io.atomix.core.map;
 
 import io.atomix.core.map.impl.ConsistentMapProxyBuilder;
+import io.atomix.core.map.impl.ConsistentMapResource;
 import io.atomix.core.map.impl.ConsistentMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -50,6 +53,12 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
     return ConsistentMapService::new;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Function<ConsistentMap<K, V>, PrimitiveResource> resourceFactory() {
+    return map -> new ConsistentMapResource((ConsistentMap<String, String>) map);
   }
 
   @Override

@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.resources;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package io.atomix.core.counter.impl;
 
 import io.atomix.core.counter.AsyncAtomicCounter;
+import io.atomix.core.counter.AtomicCounter;
+import io.atomix.primitive.resource.PrimitiveResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -34,20 +35,27 @@ import javax.ws.rs.core.Response;
 /**
  * Atomic counter resource.
  */
-public class AtomicCounterResource extends AbstractRestResource {
+public class AtomicCounterResource extends PrimitiveResource<AtomicCounter> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicCounterResource.class);
 
-  private final AsyncAtomicCounter counter;
+  public AtomicCounterResource(AtomicCounter primitive) {
+    super(primitive);
+  }
 
-  public AtomicCounterResource(AsyncAtomicCounter counter) {
-    this.counter = counter;
+  /**
+   * Returns the counter primitive.
+   *
+   * @return the counter primitive
+   */
+  private AsyncAtomicCounter counter() {
+    return primitive.async();
   }
 
   @GET
   @Path("/")
   @Produces(MediaType.APPLICATION_JSON)
   public void get(@Suspended AsyncResponse response) {
-    counter.get().whenComplete((result, error) -> {
+    counter().get().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -61,7 +69,7 @@ public class AtomicCounterResource extends AbstractRestResource {
   @Path("/")
   @Consumes(MediaType.TEXT_PLAIN)
   public void set(Long value, @Suspended AsyncResponse response) {
-    counter.set(value).whenComplete((result, error) -> {
+    counter().set(value).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -75,7 +83,7 @@ public class AtomicCounterResource extends AbstractRestResource {
   @Path("/inc")
   @Produces(MediaType.APPLICATION_JSON)
   public void incrementAndGet(@Suspended AsyncResponse response) {
-    counter.incrementAndGet().whenComplete((result, error) -> {
+    counter().incrementAndGet().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
