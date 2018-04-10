@@ -182,6 +182,22 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   @Override
   @SuppressWarnings("unchecked")
+  public <P extends DistributedPrimitive> P getPrimitive(String name) {
+    try {
+      return (P) cache.get(name, () -> {
+        PrimitiveInfo info = primitiveRegistry.getPrimitive(name);
+        if (info == null) {
+          return null;
+        }
+        return info.type().newPrimitiveBuilder(name, (PrimitiveConfig) config.getPrimitive(name), managementService).build();
+      });
+    } catch (ExecutionException e) {
+      throw new AtomixRuntimeException(e);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
   public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(
       String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
     try {

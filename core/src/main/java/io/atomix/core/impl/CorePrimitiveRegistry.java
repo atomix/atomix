@@ -95,6 +95,22 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   }
 
   @Override
+  public PrimitiveInfo getPrimitive(String name) {
+    try {
+      return primitives.get(name)
+          .thenApply(value -> value == null ? null : value.map(type -> new PrimitiveInfo(name, PrimitiveTypes.getPrimitiveType(type))).value())
+          .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new PrimitiveException.Interrupted();
+    } catch (TimeoutException e) {
+      throw new PrimitiveException.Timeout();
+    } catch (ExecutionException e) {
+      throw new PrimitiveException(e.getCause());
+    }
+  }
+
+  @Override
   public CompletableFuture<PrimitiveRegistry> start() {
     return partitionGroup.getPartitions()
         .iterator()

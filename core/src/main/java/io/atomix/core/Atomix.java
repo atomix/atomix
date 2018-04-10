@@ -298,6 +298,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return context.primitives.getPrimitives(primitiveType);
   }
 
+  @Override
+  public <P extends DistributedPrimitive> P getPrimitive(String name) {
+    return context.primitives.getPrimitive(name);
+  }
+
   /**
    * Starts the Atomix instance.
    * <p>

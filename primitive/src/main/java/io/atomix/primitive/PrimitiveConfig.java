@@ -23,11 +23,25 @@ import io.atomix.utils.serializer.SerializerConfig;
 public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> {
   private static final int DEFAULT_CACHE_SIZE = 1000;
 
+  private final PrimitiveType primitiveType;
   private SerializerConfig serializerConfig;
   private PrimitiveProtocolConfig protocolConfig;
   private boolean cacheEnabled = false;
   private int cacheSize = DEFAULT_CACHE_SIZE;
   private boolean readOnly = false;
+
+  protected PrimitiveConfig(PrimitiveType primitiveType) {
+    this.primitiveType = primitiveType;
+  }
+
+  /**
+   * Returns the primitive type.
+   *
+   * @return the primitive type
+   */
+  public PrimitiveType getType() {
+    return primitiveType;
+  }
 
   /**
    * Returns the serializer configuration.

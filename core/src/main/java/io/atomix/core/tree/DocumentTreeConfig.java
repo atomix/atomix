@@ -24,6 +24,10 @@ import io.atomix.primitive.PrimitiveConfig;
 public class DocumentTreeConfig extends PrimitiveConfig<DocumentTreeConfig> {
   private Ordering ordering;
 
+  public DocumentTreeConfig() {
+    super(DocumentTreeType.instance());
+  }
+
   /**
    * Sets the ordering of the tree nodes.
    * <p>

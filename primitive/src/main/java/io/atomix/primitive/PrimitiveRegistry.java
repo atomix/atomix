@@ -47,4 +47,12 @@ public interface PrimitiveRegistry {
    */
   Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType);
 
+  /**
+   * Returns the info for a single primitive.
+   *
+   * @param name the primitive name
+   * @return the primitive info
+   */
+  PrimitiveInfo getPrimitive(String name);
+
 }
