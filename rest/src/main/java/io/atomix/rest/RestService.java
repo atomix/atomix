@@ -36,6 +36,13 @@ public interface RestService {
   }
 
   /**
+   * Returns the REST service address.
+   *
+   * @return the REST service address
+   */
+  Address address();
+
+  /**
    * REST service builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<ManagedRestService> {
