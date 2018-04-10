@@ -19,6 +19,7 @@ import io.atomix.cluster.Node;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.rest.ManagedRestService;
+import io.atomix.rest.RestService;
 import io.atomix.utils.net.Address;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
@@ -38,9 +39,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -51,14 +56,14 @@ import static org.hamcrest.Matchers.equalTo;
 public class VertxRestServiceTest {
   private static final int BASE_PORT = 5000;
 
-  private Atomix atomix;
-  private ManagedRestService restService;
-  private RequestSpecification spec;
+  private List<Atomix> instances;
+  private List<RestService> services;
+  private List<RequestSpecification> specs;
 
   @Test
   public void testCluster() throws Exception {
     given()
-        .spec(spec)
+        .spec(specs.get(0))
         .when()
         .get("cluster/node")
         .then()
@@ -66,12 +71,12 @@ public class VertxRestServiceTest {
         .assertThat()
         .body("id", equalTo("1"))
         .body("type", equalTo("DATA"))
-        .body("host", equalTo(atomix.clusterService().getLocalNode().address().host()))
-        .body("port", equalTo(atomix.clusterService().getLocalNode().address().port()))
+        .body("host", equalTo(instances.get(0).clusterService().getLocalNode().address().host()))
+        .body("port", equalTo(instances.get(0).clusterService().getLocalNode().address().port()))
         .body("status", equalTo("ACTIVE"));
 
     given()
-        .spec(spec)
+        .spec(specs.get(0))
         .when()
         .get("cluster/nodes")
         .then()
@@ -83,32 +88,61 @@ public class VertxRestServiceTest {
   @Before
   public void beforeTest() throws Exception {
     deleteData();
-    atomix = buildAtomix();
-    atomix.start().get(30, TimeUnit.SECONDS);
-    restService = new VertxRestService(atomix, Address.from("localhost", findAvailablePort(BASE_PORT + 1)));
-    restService.start().get(30, TimeUnit.SECONDS);
-    spec = new RequestSpecBuilder()
-        .setContentType(ContentType.JSON)
-        .setBaseUri(String.format("http://%s/v1/", restService.address().toString()))
-        .addFilter(new ResponseLoggingFilter())
-        .addFilter(new RequestLoggingFilter())
-        .build();
+
+    List<CompletableFuture<Atomix>> instanceFutures = new ArrayList<>(3);
+    instances = new ArrayList<>(3);
+    for (int i = 1; i <= 3; i++) {
+      Atomix atomix = buildAtomix(i);
+      instanceFutures.add(atomix.start());
+      instances.add(atomix);
+    }
+    CompletableFuture.allOf(instanceFutures.toArray(new CompletableFuture[instanceFutures.size()])).get(30, TimeUnit.SECONDS);
+
+    List<CompletableFuture<RestService>> serviceFutures = new ArrayList<>(3);
+    services = new ArrayList<>(3);
+    for (int i = 0; i < 3; i++) {
+      ManagedRestService restService = new VertxRestService(instances.get(i), Address.from("localhost", findAvailablePort(BASE_PORT)));
+      serviceFutures.add(restService.start());
+      services.add(restService);
+    }
+    CompletableFuture.allOf(serviceFutures.toArray(new CompletableFuture[serviceFutures.size()])).get(30, TimeUnit.SECONDS);
+
+    specs = new ArrayList<>(3);
+    for (int i = 0; i < 3; i++) {
+      RequestSpecification spec = new RequestSpecBuilder()
+          .setContentType(ContentType.JSON)
+          .setBaseUri(String.format("http://%s/v1/", services.get(i).address().toString()))
+          .addFilter(new ResponseLoggingFilter())
+          .addFilter(new RequestLoggingFilter())
+          .build();
+      specs.add(spec);
+    }
   }
 
   @After
   public void afterTest() throws Exception {
-    restService.stop().get(30, TimeUnit.SECONDS);
-    atomix.stop().get(30, TimeUnit.SECONDS);
+    List<CompletableFuture<Void>> serviceFutures = new ArrayList<>(3);
+    for (RestService service : services) {
+      serviceFutures.add(((ManagedRestService) service).stop());
+    }
+    CompletableFuture.allOf(serviceFutures.toArray(new CompletableFuture[serviceFutures.size()])).get(30, TimeUnit.SECONDS);
+
+    List<CompletableFuture<Void>> instanceFutures = new ArrayList<>(3);
+    for (Atomix instance : instances) {
+      instanceFutures.add(instance.stop());
+    }
+    CompletableFuture.allOf(instanceFutures.toArray(new CompletableFuture[instanceFutures.size()])).get(30, TimeUnit.SECONDS);
     deleteData();
   }
 
-  protected static Atomix buildAtomix() {
-    Node localNode = Node.builder(String.valueOf(1))
+  protected Atomix buildAtomix(int nodeId) {
+    Node localNode = Node.builder(String.valueOf(nodeId))
         .withType(Node.Type.DATA)
         .withAddress("localhost", findAvailablePort(BASE_PORT))
         .build();
 
-    Collection<Node> nodes = Collections.singletonList(localNode);
+    Collection<Node> nodes = Stream.concat(Stream.of(localNode), instances.stream().map(instance -> instance.clusterService().getLocalNode()))
+        .collect(Collectors.toList());
 
     return Atomix.builder()
         .withClusterName("test")
