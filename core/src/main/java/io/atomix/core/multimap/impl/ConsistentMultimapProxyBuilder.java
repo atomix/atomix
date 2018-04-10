@@ -39,22 +39,23 @@ public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuil
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentMultimap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return managementService.getPartitionService()
-        .getPartitionGroup(protocol)
-        .getPartition(name())
-        .getPrimitiveClient()
-        .newProxy(name(), primitiveType(), protocol)
-        .connect()
-        .thenApply(proxy -> {
-          AsyncConsistentMultimap<String, byte[]> rawMap = new ConsistentSetMultimapProxy(proxy);
-          Serializer serializer = serializer();
-          return new TranscodingAsyncConsistentMultimap<K, V, String, byte[]>(
-              rawMap,
-              key -> BaseEncoding.base16().encode(serializer.encode(key)),
-              string -> serializer.decode(BaseEncoding.base16().decode(string)),
-              value -> serializer.encode(value),
-              bytes -> serializer.decode(bytes))
-              .sync();
-        });
+    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
+        .thenCompose(info -> managementService.getPartitionService()
+            .getPartitionGroup(protocol)
+            .getPartition(name())
+            .getPrimitiveClient()
+            .newProxy(name(), primitiveType(), protocol)
+            .connect()
+            .thenApply(proxy -> {
+              AsyncConsistentMultimap<String, byte[]> rawMap = new ConsistentSetMultimapProxy(proxy);
+              Serializer serializer = serializer();
+              return new TranscodingAsyncConsistentMultimap<K, V, String, byte[]>(
+                  rawMap,
+                  key -> BaseEncoding.base16().encode(serializer.encode(key)),
+                  string -> serializer.decode(BaseEncoding.base16().decode(string)),
+                  value -> serializer.encode(value),
+                  bytes -> serializer.decode(bytes))
+                  .sync();
+            }));
   }
 }

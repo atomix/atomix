@@ -97,7 +97,6 @@ import java.util.stream.Collectors;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static io.atomix.primitive.partition.PartitionService.SYSTEM_GROUP;
 
 /**
  * Atomix!
@@ -133,6 +132,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return new Builder(loadConfig(configFile));
   }
 
+  protected static final String SYSTEM_GROUP_NAME = "system";
   protected static final String CORE_GROUP_NAME = "core";
   protected static final String DATA_GROUP_NAME = "data";
 
@@ -442,7 +442,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
     ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup(config);
     ManagedPartitionService partitions = buildPartitionService(config);
-    ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions, config);
+    ManagedPrimitivesService primitives = new CorePrimitivesService(
+        clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, config);
     PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
     return new Context(
         messagingService,
@@ -553,12 +554,12 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
     if (config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.CORE)) {
-      return RaftPartitionGroup.builder(SYSTEM_GROUP)
+      return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
           .withNumPartitions(1)
-          .withDataDirectory(new File(config.getDataDirectory(), SYSTEM_GROUP))
+          .withDataDirectory(new File(config.getDataDirectory(), SYSTEM_GROUP_NAME))
           .build();
     } else {
-      return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP)
+      return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
           .withNumPartitions(1)
           .build();
     }
@@ -890,7 +891,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
       ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup();
       ManagedPartitionService partitions = buildPartitionService();
-      ManagedPrimitivesService primitives = new CorePrimitivesService(clusterService, clusterMessagingService, clusterEventingService, partitions, new AtomixConfig());
+      ManagedPrimitivesService primitives = new CorePrimitivesService(
+          clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, new AtomixConfig());
       return new Atomix(new Context(
           messagingService,
           broadcastService,
@@ -973,12 +975,12 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     protected ManagedPartitionGroup buildSystemPartitionGroup() {
       if (nodes.stream().anyMatch(node -> node.type() == Node.Type.CORE)) {
-        return RaftPartitionGroup.builder(SYSTEM_GROUP)
+        return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
             .withNumPartitions(1)
-            .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP))
+            .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
             .build();
       } else {
-        return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP)
+        return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
             .withNumPartitions(1)
             .build();
       }

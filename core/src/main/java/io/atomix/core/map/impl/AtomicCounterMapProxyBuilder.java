@@ -37,20 +37,21 @@ public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> 
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicCounterMap<K>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return managementService.getPartitionService()
-        .getPartitionGroup(protocol)
-        .getPartition(name())
-        .getPrimitiveClient()
-        .newProxy(name(), primitiveType(), protocol)
-        .connect()
-        .thenApply(proxy -> {
-          AtomicCounterMapProxy rawMap = new AtomicCounterMapProxy(proxy);
-          Serializer serializer = serializer();
-          return new TranscodingAsyncAtomicCounterMap<K, String>(
-              rawMap,
-              key -> BaseEncoding.base16().encode(serializer.encode(key)),
-              string -> serializer.decode(BaseEncoding.base16().decode(string)))
-              .sync();
-        });
+    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
+        .thenCompose(info -> managementService.getPartitionService()
+            .getPartitionGroup(protocol)
+            .getPartition(name())
+            .getPrimitiveClient()
+            .newProxy(name(), primitiveType(), protocol)
+            .connect()
+            .thenApply(proxy -> {
+              AtomicCounterMapProxy rawMap = new AtomicCounterMapProxy(proxy);
+              Serializer serializer = serializer();
+              return new TranscodingAsyncAtomicCounterMap<K, String>(
+                  rawMap,
+                  key -> BaseEncoding.base16().encode(serializer.encode(key)),
+                  string -> serializer.decode(BaseEncoding.base16().decode(string)))
+                  .sync();
+            }));
   }
 }

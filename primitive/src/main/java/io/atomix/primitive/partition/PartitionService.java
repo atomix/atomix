@@ -25,11 +25,6 @@ import java.util.Collection;
 public interface PartitionService {
 
   /**
-   * Returns the system partition group name.
-   */
-  String SYSTEM_GROUP = "system";
-
-  /**
    * Returns a partition group by name.
    *
    * @param name the name of the partition group
@@ -73,15 +68,6 @@ public interface PartitionService {
   @SuppressWarnings("unchecked")
   default <P extends PrimitiveProtocol> PartitionGroup<P> getDefaultPartitionGroup() {
     return (PartitionGroup<P>) getPartitionGroups().iterator().next();
-  }
-
-  /**
-   * Returns the system partition group.
-   *
-   * @return the system partition group
-   */
-  default <P extends PrimitiveProtocol> PartitionGroup<P> getSystemPartitionGroup() {
-    return getPartitionGroup(SYSTEM_GROUP);
   }
 
   /**

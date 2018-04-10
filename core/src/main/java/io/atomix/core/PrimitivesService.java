@@ -543,7 +543,7 @@ public interface PrimitivesService {
   Collection<PrimitiveInfo> getPrimitives();
 
   /**
-   * Returns a colleciton of open primitives of the given type.
+   * Returns a collection of open primitives of the given type.
    *
    * @param primitiveType the primitive type
    * @return a collection of open primitives of the given type
