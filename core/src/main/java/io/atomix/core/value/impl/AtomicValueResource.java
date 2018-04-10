@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.resources;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package io.atomix.core.value.impl;
 
 import io.atomix.core.value.AsyncAtomicValue;
+import io.atomix.core.value.AtomicValue;
+import io.atomix.primitive.resource.PrimitiveResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -34,19 +35,26 @@ import javax.ws.rs.core.Response;
 /**
  * Atomic value resource.
  */
-public class AtomicValueResource extends AbstractRestResource {
+public class AtomicValueResource extends PrimitiveResource<AtomicValue<String>> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicValueResource.class);
 
-  private final AsyncAtomicValue<String> value;
+  public AtomicValueResource(AtomicValue<String> value) {
+    super(value);
+  }
 
-  public AtomicValueResource(AsyncAtomicValue<String> value) {
-    this.value = value;
+  /**
+   * Returns the atomic value primitive.
+   *
+   * @return the atomic value primitive
+   */
+  private AsyncAtomicValue<String> value() {
+    return primitive.async();
   }
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public void get(@Suspended AsyncResponse response) {
-    value.get().whenComplete((result, error) -> {
+    value().get().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -59,7 +67,7 @@ public class AtomicValueResource extends AbstractRestResource {
   @PUT
   @Consumes(MediaType.TEXT_PLAIN)
   public void set(String body, @Suspended AsyncResponse response) {
-    value.set(body).whenComplete((result, error) -> {
+    value().set(body).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -73,7 +81,7 @@ public class AtomicValueResource extends AbstractRestResource {
   @Path("/cas")
   @Produces(MediaType.APPLICATION_JSON)
   public void compareAndSet(CompareAndSetRequest request, @Suspended AsyncResponse response) {
-    value.compareAndSet(request.getExpect(), request.getUpdate()).whenComplete((result, error) -> {
+    value().compareAndSet(request.getExpect(), request.getUpdate()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
