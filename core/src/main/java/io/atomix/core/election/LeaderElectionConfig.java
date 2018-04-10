@@ -21,4 +21,7 @@ import io.atomix.primitive.PrimitiveConfig;
  * Leader election configuration.
  */
 public class LeaderElectionConfig extends PrimitiveConfig<LeaderElectionConfig> {
+  public LeaderElectionConfig() {
+    super(LeaderElectionType.instance());
+  }
 }

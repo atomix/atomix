@@ -25,6 +25,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class TransactionConfig extends PrimitiveConfig<TransactionConfig> {
   private Isolation isolation = Isolation.READ_COMMITTED;
 
+  public TransactionConfig() {
+    super(TransactionType.instance());
+  }
+
   /**
    * Sets the transaction isolation level.
    *

@@ -23,6 +23,10 @@ import io.atomix.primitive.PrimitiveConfig;
 public class ConsistentMapConfig extends PrimitiveConfig<ConsistentMapConfig> {
   private boolean nullValues = false;
 
+  public ConsistentMapConfig() {
+    super(ConsistentMapType.instance());
+  }
+
   /**
    * Enables null values in the map.
    *

@@ -15,10 +15,14 @@
  */
 package io.atomix.core.transaction;
 
+import io.atomix.core.set.DistributedSetType;
 import io.atomix.primitive.PrimitiveConfig;
 
 /**
  * Transactional set configuration.
  */
 public class TransactionalSetConfig extends PrimitiveConfig {
+  public TransactionalSetConfig() {
+    super(DistributedSetType.instance());
+  }
 }

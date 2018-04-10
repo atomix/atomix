@@ -21,4 +21,7 @@ import io.atomix.primitive.PrimitiveConfig;
  * Atomic value configuration.
  */
 public class AtomicValueConfig extends PrimitiveConfig<AtomicValueConfig> {
+  public AtomicValueConfig() {
+    super(AtomicValueType.instance());
+  }
 }

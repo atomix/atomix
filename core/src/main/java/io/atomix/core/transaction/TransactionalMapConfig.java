@@ -15,10 +15,14 @@
  */
 package io.atomix.core.transaction;
 
+import io.atomix.core.map.ConsistentMapType;
 import io.atomix.primitive.PrimitiveConfig;
 
 /**
  * Transactional map configuration.
  */
 public class TransactionalMapConfig extends PrimitiveConfig {
+  public TransactionalMapConfig() {
+    super(ConsistentMapType.instance());
+  }
 }

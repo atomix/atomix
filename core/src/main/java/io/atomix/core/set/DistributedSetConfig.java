@@ -21,4 +21,7 @@ import io.atomix.primitive.PrimitiveConfig;
  * Distributed set configuration.
  */
 public class DistributedSetConfig extends PrimitiveConfig<DistributedSetConfig> {
+  public DistributedSetConfig() {
+    super(DistributedSetType.instance());
+  }
 }

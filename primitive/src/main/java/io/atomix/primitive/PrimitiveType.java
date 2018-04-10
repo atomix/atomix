@@ -20,6 +20,7 @@ import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.utils.Generics;
 import io.atomix.utils.Identifier;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -77,7 +78,7 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
    *
    * @return the primitive resource factory
    */
-  default Supplier<PrimitiveResource> resourceFactory() {
+  default Function<P, PrimitiveResource> resourceFactory() {
     return null;
   }
 

@@ -494,6 +494,15 @@ public interface PrimitivesService {
   <E> WorkQueue<E> getWorkQueue(String name);
 
   /**
+   * Returns a registered primitive.
+   *
+   * @param name the primitive name
+   * @param <P>  the primitive type
+   * @return the primitive instance
+   */
+  <P extends DistributedPrimitive> P getPrimitive(String name);
+
+  /**
    * Returns a cached primitive.
    *
    * @param name            the primitive name
