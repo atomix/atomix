@@ -16,6 +16,7 @@
 package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
+import io.atomix.primitive.PrimitiveProtocol;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.PartitionGroup;
@@ -36,21 +37,38 @@ import java.util.stream.Collectors;
 public class DefaultPartitionService implements ManagedPartitionService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionService.class);
 
+  private final ManagedPartitionGroup<?> defaultGroup;
+  private final ManagedPartitionGroup<?> systemGroup;
   private final Map<String, ManagedPartitionGroup<?>> groups = Maps.newConcurrentMap();
 
   public DefaultPartitionService(Collection<ManagedPartitionGroup> groups) {
-    groups.forEach(g -> this.groups.put(g.name(), g));
+    defaultGroup = groups.stream().filter(group -> !group.name().equals(SYSTEM_GROUP)).findFirst().orElse(null);
+    systemGroup = groups.stream().filter(group -> group.name().equals(SYSTEM_GROUP)).findAny().orElse(null);
+    groups.stream().filter(group -> !group.name().equals(SYSTEM_GROUP)).forEach(g -> this.groups.put(g.name(), g));
   }
 
   @Override
-  public PartitionGroup getPartitionGroup(String name) {
-    return groups.get(name);
+  @SuppressWarnings("unchecked")
+  public <P extends PrimitiveProtocol> PartitionGroup<P> getDefaultPartitionGroup() {
+    return (PartitionGroup<P>) defaultGroup;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <P extends PrimitiveProtocol> PartitionGroup<P> getSystemPartitionGroup() {
+    return (PartitionGroup<P>) systemGroup;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <P extends PrimitiveProtocol> PartitionGroup<P> getPartitionGroup(String name) {
+    return (PartitionGroup<P>) groups.get(name);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Collection<PartitionGroup<?>> getPartitionGroups() {
-    return (Collection) groups.values();
+    return groups.values().stream().filter(group -> !group.name().equals(SYSTEM_GROUP)).collect(Collectors.toList());
   }
 
   @Override
