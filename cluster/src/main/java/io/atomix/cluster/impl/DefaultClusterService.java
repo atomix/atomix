@@ -166,22 +166,26 @@ public class DefaultClusterService
    * Sends heartbeats to all peers.
    */
   private CompletableFuture<Void> sendHeartbeats() {
-    Set<Node> peers = Stream.concat(
-        nodes.values()
-            .stream()
-            .filter(node -> !node.id().equals(getLocalNode().id())),
-        bootstrapMetadataService.getMetadata()
-            .nodes()
-            .stream()
-            .filter(node -> !node.id().equals(getLocalNode().id())))
-        .map(node -> new StatefulNode(
-            localNode.id(),
-            localNode.type(),
-            localNode.address(),
-            localNode.zone(),
-            localNode.rack(),
-            localNode.host()))
+    Set<Node> nodes = this.nodes.values()
+        .stream()
+        .filter(node -> !node.id().equals(getLocalNode().id()))
         .collect(Collectors.toSet());
+    Set<Node> bootstrapNodes = bootstrapMetadataService.getMetadata()
+        .nodes()
+        .stream()
+        .filter(node -> !node.id().equals(getLocalNode().id()) && !nodes.contains(node))
+        .collect(Collectors.toSet());
+
+    Set<Node> peers = Stream.concat(nodes.stream(), bootstrapNodes.stream())
+        .map(node -> new StatefulNode(
+            node.id(),
+            node.type(),
+            node.address(),
+            node.zone(),
+            node.rack(),
+            node.host()))
+        .collect(Collectors.toSet());
+
     byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
         localNode.id(),
         localNode.type(),
@@ -201,7 +205,7 @@ public class DefaultClusterService
           activateNode(node);
         }
       }
-      return future;
+      return future.exceptionally(v -> null);
     }).collect(Collectors.toList()))
         .thenApply(v -> null);
   }
