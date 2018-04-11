@@ -53,7 +53,7 @@ public abstract class AbstractAtomixTest {
   protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> nodeIds, List<Integer> bootstrapIds) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
-        .withAddress("localhost", nodeIds.contains(id) ? BASE_PORT + id : findAvailablePort(BASE_PORT + id))
+        .withAddress("localhost", BASE_PORT + id)
         .build();
 
     Collection<Node> nodes = Stream.concat(
@@ -66,7 +66,7 @@ public abstract class AbstractAtomixTest {
             .filter(nodeId -> !nodeIds.contains(nodeId))
             .map(nodeId -> Node.builder(String.valueOf(nodeId))
                 .withType(Node.Type.DATA)
-                .withAddress("localhost", findAvailablePort(BASE_PORT + nodeId))
+                .withAddress("localhost", BASE_PORT + nodeId)
                 .build()))
         .collect(Collectors.toList());
 
