@@ -46,7 +46,7 @@ public class AtomixTest extends AbstractAtomixTest {
 
   @Before
   public void setupInstances() throws Exception {
-    AbstractAtomixTest.setupAtomix();
+    setupAtomix();
     instances = new ArrayList<>();
   }
 
@@ -58,7 +58,7 @@ public class AtomixTest extends AbstractAtomixTest {
     } catch (Exception e) {
       // Do nothing
     }
-    AbstractAtomixTest.teardownAtomix();
+    teardownAtomix();
   }
 
   /**

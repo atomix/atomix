@@ -82,7 +82,7 @@ public abstract class AbstractAtomixTest {
       builder.addPartitionGroup(RaftPartitionGroup.builder("core")
           .withPartitionSize(3)
           .withNumPartitions(3)
-          .withDataDirectory(new File("target/test-logs/core/"))
+          .withDataDirectory(new File("target/test-logs/core/" + id))
           .build());
     }
     return builder;

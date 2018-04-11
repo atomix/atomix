@@ -174,6 +174,13 @@ public class DefaultClusterService
             .nodes()
             .stream()
             .filter(node -> !node.id().equals(getLocalNode().id())))
+        .map(node -> new StatefulNode(
+            localNode.id(),
+            localNode.type(),
+            localNode.address(),
+            localNode.zone(),
+            localNode.rack(),
+            localNode.host()))
         .collect(Collectors.toSet());
     byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
         localNode.id(),
@@ -181,7 +188,7 @@ public class DefaultClusterService
         localNode.zone(),
         localNode.rack(),
         localNode.host()));
-    return Futures.allOf(peers.stream().map((node) -> {
+    return Futures.allOf(peers.stream().map(node -> {
       CompletableFuture<Void> future = sendHeartbeat(node.address(), payload);
       PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
       double phi = failureDetector.phi();
@@ -337,7 +344,7 @@ public class DefaultClusterService
   @Override
   public CompletableFuture<ClusterService> start() {
     if (started.compareAndSet(false, true)) {
-      bootstrapMetadataService.addListener(metadataEventListener);
+      coreMetadataService.addListener(metadataEventListener);
       broadcastService.addListener(broadcastListener);
       localNode.setState(State.ACTIVE);
       nodes.put(localNode.id(), localNode);
@@ -378,7 +385,7 @@ public class DefaultClusterService
       nodes.clear();
       heartbeatFuture.cancel(true);
       messagingService.unregisterHandler(HEARTBEAT_MESSAGE);
-      bootstrapMetadataService.removeListener(metadataEventListener);
+      coreMetadataService.removeListener(metadataEventListener);
       LOGGER.info("Stopped");
     }
     return CompletableFuture.completedFuture(null);
