@@ -65,6 +65,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
   @Override
   public void tick(WallClockTimestamp timestamp) {
     long unixTimestamp = timestamp.unixTimestamp();
+    this.operationType = OperationType.COMMAND;
     if (!scheduledTasks.isEmpty()) {
       // Iterate through scheduled tasks until we reach a task that has not met its scheduled time.
       // The tasks list is sorted by time on insertion.
