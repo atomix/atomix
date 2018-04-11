@@ -31,6 +31,8 @@ import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.MessagingService;
+import io.atomix.utils.concurrent.ComposableFuture;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -163,7 +165,7 @@ public class DefaultClusterService
   /**
    * Sends heartbeats to all peers.
    */
-  private void sendHeartbeats() {
+  private CompletableFuture<Void> sendHeartbeats() {
     Set<Node> peers = Stream.concat(
         nodes.values()
             .stream()
@@ -179,8 +181,8 @@ public class DefaultClusterService
         localNode.zone(),
         localNode.rack(),
         localNode.host()));
-    peers.forEach((node) -> {
-      sendHeartbeat(node.address(), payload);
+    return Futures.allOf(peers.stream().map((node) -> {
+      CompletableFuture<Void> future = sendHeartbeat(node.address(), payload);
       PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
       double phi = failureDetector.phi();
       if (phi > 0 && (phi >= phiFailureThreshold || System.currentTimeMillis() - failureDetector.lastUpdated() > DEFAULT_FAILURE_TIME)) {
@@ -192,14 +194,16 @@ public class DefaultClusterService
           activateNode(node);
         }
       }
-    });
+      return future;
+    }).collect(Collectors.toList()))
+        .thenApply(v -> null);
   }
 
   /**
    * Sends a heartbeat to the given peer.
    */
-  private void sendHeartbeat(Address address, byte[] payload) {
-    messagingService.sendAndReceive(address, HEARTBEAT_MESSAGE, payload).whenComplete((response, error) -> {
+  private CompletableFuture<Void> sendHeartbeat(Address address, byte[] payload) {
+    return messagingService.sendAndReceive(address, HEARTBEAT_MESSAGE, payload).whenComplete((response, error) -> {
       if (error == null) {
         Collection<StatefulNode> nodes = SERIALIZER.decode(response);
         boolean sendHeartbeats = false;
@@ -216,7 +220,7 @@ public class DefaultClusterService
       } else {
         LOGGER.trace("Sending heartbeat to {} failed", address, error);
       }
-    });
+    }).thenApply(v -> null);
   }
 
   /**
@@ -345,13 +349,18 @@ public class DefaultClusterService
               node.rack(),
               node.host())));
       messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
+
+      ComposableFuture<Void> future = new ComposableFuture<>();
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(() -> {
         broadcastIdentity();
-        sendHeartbeats();
+        sendHeartbeats().whenComplete(future);
       }, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
-      LOGGER.info("Started");
+      return future.thenApply(v -> {
+        LOGGER.info("Started");
+        return this;
+      });
     }
-    return CompletableFuture.completedFuture(this);
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
