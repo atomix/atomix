@@ -396,15 +396,25 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
 
     context.coreMetadataService.removeNode(context.clusterService.getLocalNode());
     closeFuture = context.primitives.stop()
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.partitions.close(), threadContext)
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.systemPartitionGroup.close(), threadContext)
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.clusterMessagingService.stop(), threadContext)
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.clusterEventingService.stop(), threadContext)
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.clusterService.stop(), threadContext)
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.coreMetadataService.stop(), threadContext)
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.bootstrapMetadataService.stop(), threadContext)
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.broadcastService.stop(), threadContext)
+        .exceptionally(e -> null)
         .thenComposeAsync(v -> context.messagingService.stop(), threadContext)
+        .exceptionally(e -> null)
         .thenRunAsync(() -> {
           threadContext.close();
           started.set(false);
