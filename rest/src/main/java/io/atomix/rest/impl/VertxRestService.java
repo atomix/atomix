@@ -15,11 +15,23 @@
  */
 package io.atomix.rest.impl;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
+import io.atomix.core.config.jackson.impl.ConfigPropertyNamingStrategy;
+import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
+import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
+import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
+import io.atomix.core.utils.EventManager;
+import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveProtocolConfig;
+import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;
@@ -27,7 +39,6 @@ import io.atomix.rest.resources.EventsResource;
 import io.atomix.rest.resources.MessagesResource;
 import io.atomix.rest.resources.PrimitivesResource;
 import io.atomix.rest.resources.StatusResource;
-import io.atomix.core.utils.EventManager;
 import io.atomix.utils.net.Address;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
@@ -36,6 +47,11 @@ import org.jboss.resteasy.plugins.server.vertx.VertxResteasyDeployment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -88,6 +104,8 @@ public class VertxRestService implements ManagedRestService {
     deployment.getRegistry().addPerInstanceResource(MessagesResource.class);
     deployment.getRegistry().addPerInstanceResource(PrimitivesResource.class);
 
+    deployment.getDispatcher().getProviderFactory().register(new JacksonProvider(createObjectMapper()));
+
     server.requestHandler(new VertxRequestHandler(vertx, deployment));
 
     CompletableFuture<RestService> future = new CompletableFuture<>();
@@ -123,6 +141,24 @@ public class VertxRestService implements ManagedRestService {
     return CompletableFuture.completedFuture(null);
   }
 
+  private ObjectMapper createObjectMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+
+    mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
+    mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+    mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
+    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
+
+    SimpleModule module = new SimpleModule("PolymorphicTypes");
+    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
+    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
+    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
+    mapper.registerModule(module);
+
+    return mapper;
+  }
+
   /**
    * Vert.x REST service builder.
    */
@@ -136,6 +172,22 @@ public class VertxRestService implements ManagedRestService {
         address = Address.from(DEFAULT_HOST, DEFAULT_PORT);
       }
       return new VertxRestService(atomix, address);
+    }
+  }
+
+  @Provider
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  private static class JacksonProvider implements ContextResolver<ObjectMapper> {
+    private final ObjectMapper mapper;
+
+    JacksonProvider(ObjectMapper mapper) {
+      this.mapper = mapper;
+    }
+
+    @Override
+    public ObjectMapper getContext(Class<?> type) {
+      return mapper;
     }
   }
 }
