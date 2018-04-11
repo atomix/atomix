@@ -61,7 +61,7 @@ public class RestoreResponse extends PrimaryBackupResponse {
         .add("status", status())
         .add("index", index())
         .add("timestamp", timestamp())
-        .add("data", ArraySizeHashPrinter.of(data))
+        .add("data", data != null ? ArraySizeHashPrinter.of(data) : null)
         .toString();
   }
 }
