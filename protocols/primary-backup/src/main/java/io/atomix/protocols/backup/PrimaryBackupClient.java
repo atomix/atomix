@@ -21,6 +21,7 @@ import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveException.Unavailable;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
+import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.Member;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.proxy.PrimitiveProxy;
@@ -42,6 +43,7 @@ import io.atomix.utils.logging.LoggerContext;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -92,7 +94,12 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
 
   @Override
   public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
-    return newProxy(primitiveName, primitiveType, MultiPrimaryProtocol.builder().build());
+    return newProxy(primitiveName, primitiveType, MultiPrimaryProtocol.builder()
+        .withMaxRetries(5)
+        .withRetryDelay(Duration.ofMillis(100))
+        .withBackups(2)
+        .withReplication(Replication.ASYNCHRONOUS)
+        .build());
   }
 
   @Override

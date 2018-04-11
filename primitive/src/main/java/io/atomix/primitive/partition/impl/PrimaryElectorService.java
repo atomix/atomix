@@ -151,24 +151,6 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   }
 
   /**
-   * Applies listen commits.
-   *
-   * @param commit listen commit
-   */
-  protected void listen(Commit<Void> commit) {
-    listeners.put(commit.session().sessionId().id(), commit.session());
-  }
-
-  /**
-   * Applies unlisten commits.
-   *
-   * @param commit unlisten commit
-   */
-  protected void unlisten(Commit<Void> commit) {
-    listeners.remove(commit.session().sessionId().id());
-  }
-
-  /**
    * Applies an {@link PrimaryElectorOperations.Enter} commit.
    *
    * @param commit commit entry

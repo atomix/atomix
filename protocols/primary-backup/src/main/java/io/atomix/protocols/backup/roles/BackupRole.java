@@ -27,6 +27,7 @@ import io.atomix.protocols.backup.protocol.CloseOperation;
 import io.atomix.protocols.backup.protocol.ExecuteOperation;
 import io.atomix.protocols.backup.protocol.ExpireOperation;
 import io.atomix.protocols.backup.protocol.HeartbeatOperation;
+import io.atomix.protocols.backup.protocol.PrimaryBackupResponse;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 import io.atomix.storage.buffer.HeapBuffer;
@@ -154,7 +155,7 @@ public class BackupRole extends PrimaryBackupRole {
   private void requestRestore(NodeId primary) {
     context.protocol().restore(primary, RestoreRequest.request(context.descriptor(), context.currentTerm()))
         .whenCompleteAsync((response, error) -> {
-          if (error == null) {
+          if (error == null && response.status() == PrimaryBackupResponse.Status.OK) {
             context.resetIndex(response.index(), response.timestamp());
             context.service().restore(HeapBuffer.wrap(response.data()));
             operations.clear();

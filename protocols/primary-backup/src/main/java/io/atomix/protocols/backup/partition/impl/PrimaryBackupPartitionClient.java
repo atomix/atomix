@@ -17,6 +17,7 @@ package io.atomix.protocols.backup.partition.impl;
 
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
@@ -29,6 +30,7 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -53,7 +55,12 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
 
   @Override
   public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
-    return newProxy(primitiveName, primitiveType, MultiPrimaryProtocol.builder().build());
+    return newProxy(primitiveName, primitiveType, MultiPrimaryProtocol.builder()
+        .withMaxRetries(5)
+        .withRetryDelay(Duration.ofMillis(100))
+        .withBackups(2)
+        .withReplication(Replication.ASYNCHRONOUS)
+        .build());
   }
 
   @Override
