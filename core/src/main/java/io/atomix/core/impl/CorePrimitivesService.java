@@ -189,7 +189,12 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         if (info == null) {
           return null;
         }
-        return info.type().newPrimitiveBuilder(name, (PrimitiveConfig) config.getPrimitive(name), managementService).build();
+
+        PrimitiveConfig primitiveConfig = config.getPrimitive(name);
+        if (primitiveConfig == null) {
+          primitiveConfig = (PrimitiveConfig) info.type().configClass().newInstance();
+        }
+        return info.type().newPrimitiveBuilder(name, primitiveConfig, managementService).build();
       });
     } catch (ExecutionException e) {
       throw new AtomixRuntimeException(e);
