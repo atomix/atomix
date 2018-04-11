@@ -945,7 +945,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds a core metadata service.
      */
     protected ManagedCoreMetadataService buildCoreMetadataService(MessagingService messagingService) {
-      return new DefaultCoreMetadataService(ClusterMetadata.builder().withNodes(nodes).build(), messagingService);
+      return new DefaultCoreMetadataService(ClusterMetadata.builder()
+          .withNodes(nodes.stream()
+              .filter(node -> node.type() == Node.Type.CORE)
+              .collect(Collectors.toList()))
+          .build(), messagingService);
     }
 
     /**

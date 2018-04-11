@@ -119,7 +119,7 @@ public class DefaultCoreMetadataService
 
   @Override
   public void addNode(Node node) {
-    if (node.type() != Node.Type.CLIENT) {
+    if (node.type() == Node.Type.CORE) {
       ReplicatedNode replicatedNode = nodes.get(node.id());
       if (replicatedNode == null) {
         LogicalTimestamp timestamp = clock.increment();
@@ -329,7 +329,7 @@ public class DefaultCoreMetadataService
   public CompletableFuture<ClusterMetadataService> start() {
     if (started.compareAndSet(false, true)) {
       registerMessageHandlers();
-      return bootstrap().handle((result, error) -> {
+      return bootstrap().exceptionally(e -> null).thenApply(result -> {
         metadataFuture = messageScheduler.scheduleWithFixedDelay(this::sendAdvertisement, 0, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
         log.info("Started");
         return this;
