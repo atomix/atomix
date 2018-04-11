@@ -220,7 +220,8 @@ public class DefaultClusterService
       } else {
         LOGGER.trace("Sending heartbeat to {} failed", address, error);
       }
-    }).thenApply(v -> null);
+    }).exceptionally(e -> null)
+        .thenApply(v -> null);
   }
 
   /**
