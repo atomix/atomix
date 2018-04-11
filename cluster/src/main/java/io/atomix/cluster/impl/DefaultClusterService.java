@@ -166,25 +166,21 @@ public class DefaultClusterService
    * Sends heartbeats to all peers.
    */
   private CompletableFuture<Void> sendHeartbeats() {
-    Set<Node> nodes = this.nodes.values()
+    Stream<StatefulNode> clusterNodes = this.nodes.values()
         .stream()
-        .filter(node -> !node.id().equals(getLocalNode().id()))
-        .collect(Collectors.toSet());
-    Set<Node> bootstrapNodes = bootstrapMetadataService.getMetadata()
+        .filter(node -> !node.id().equals(getLocalNode().id()));
+
+    Stream<StatefulNode> bootstrapNodes = bootstrapMetadataService.getMetadata()
         .nodes()
         .stream()
-        .filter(node -> !node.id().equals(getLocalNode().id()) && !nodes.contains(node))
-        .collect(Collectors.toSet());
-
-    Set<Node> peers = Stream.concat(nodes.stream(), bootstrapNodes.stream())
+        .filter(node -> !node.id().equals(getLocalNode().id()) && !nodes.containsKey(node.id()))
         .map(node -> new StatefulNode(
             node.id(),
             node.type(),
             node.address(),
             node.zone(),
             node.rack(),
-            node.host()))
-        .collect(Collectors.toSet());
+            node.host()));
 
     byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
         localNode.id(),
@@ -192,7 +188,7 @@ public class DefaultClusterService
         localNode.zone(),
         localNode.rack(),
         localNode.host()));
-    return Futures.allOf(peers.stream().map(node -> {
+    return Futures.allOf(Stream.concat(clusterNodes, bootstrapNodes).map(node -> {
       CompletableFuture<Void> future = sendHeartbeat(node.address(), payload);
       PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
       double phi = failureDetector.phi();
@@ -266,6 +262,7 @@ public class DefaultClusterService
           node.zone(),
           node.rack(),
           node.host());
+      LOGGER.info("Node activated: {}", statefulNode);
       statefulNode.setState(State.ACTIVE);
       nodes.put(statefulNode.id(), statefulNode);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, statefulNode));
@@ -277,6 +274,7 @@ public class DefaultClusterService
           localNode.rack(),
           localNode.host())));
     } else if (existingNode.getState() == State.INACTIVE) {
+      LOGGER.info("Node activated: {}", existingNode);
       existingNode.setState(State.ACTIVE);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, existingNode));
     }
@@ -288,6 +286,7 @@ public class DefaultClusterService
   private void deactivateNode(Node node) {
     StatefulNode existingNode = nodes.get(node.id());
     if (existingNode != null && existingNode.getState() == State.ACTIVE) {
+      LOGGER.info("Node deactivated: {}", existingNode);
       existingNode.setState(State.INACTIVE);
       switch (existingNode.type()) {
         case CORE:
@@ -350,6 +349,7 @@ public class DefaultClusterService
     if (started.compareAndSet(false, true)) {
       coreMetadataService.addListener(metadataEventListener);
       broadcastService.addListener(broadcastListener);
+      LOGGER.info("Node activated: {}", localNode);
       localNode.setState(State.ACTIVE);
       nodes.put(localNode.id(), localNode);
       coreMetadataService.getMetadata().nodes()
@@ -390,6 +390,7 @@ public class DefaultClusterService
     if (started.compareAndSet(true, false)) {
       heartbeatScheduler.shutdownNow();
       heartbeatExecutor.shutdownNow();
+      LOGGER.info("Node deactivated: {}", localNode);
       localNode.setState(State.INACTIVE);
       nodes.clear();
       heartbeatFuture.cancel(true);
