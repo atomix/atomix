@@ -363,9 +363,14 @@ public class DefaultClusterService
       messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
 
       ComposableFuture<Void> future = new ComposableFuture<>();
+      broadcastIdentity();
+      sendHeartbeats().whenComplete((r, e) -> {
+        future.complete(null);
+      });
+
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(() -> {
         broadcastIdentity();
-        sendHeartbeats().whenComplete(future);
+        sendHeartbeats();
       }, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
       return future.thenApply(v -> {
         LOGGER.info("Started");
