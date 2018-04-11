@@ -44,7 +44,7 @@ public class PrimitiveTypes {
    */
   public static PrimitiveType getPrimitiveType(String typeName) {
     for (PrimitiveType type : Services.loadAll(PrimitiveType.class)) {
-      if (type.id().toLowerCase().replace("_", "-").equals(typeName.replace("_", "-"))) {
+      if (type.id().toLowerCase().replace("_", "-").equals(typeName.toLowerCase().replace("_", "-"))) {
         return type;
       }
     }

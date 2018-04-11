@@ -20,10 +20,12 @@ import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.resource.PrimitiveResource;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
@@ -47,6 +49,7 @@ public class PrimitivesResource extends AbstractRestResource {
    */
   @POST
   @Path("/{name}")
+  @Consumes(MediaType.APPLICATION_JSON)
   @SuppressWarnings("unchecked")
   public Response createPrimitive(@PathParam("name") String name, PrimitiveConfig config, @Context PrimitivesService primitives) {
     try {
