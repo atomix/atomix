@@ -85,6 +85,36 @@ public class VertxRestServiceTest {
         .body("[0].id", equalTo("1"));
   }
 
+  @Test
+  public void testEvents() throws Exception {
+    String id = given()
+        .spec(specs.get(0))
+        .when()
+        .post("events/test/subscribers")
+        .then()
+        .statusCode(200)
+        .extract()
+        .body()
+        .asString();
+
+    given()
+        .spec(specs.get(1))
+        .body("Hello world!")
+        .when()
+        .post("events/test")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("events/test/subscribers/" + id)
+        .then()
+        .statusCode(200)
+        .assertThat()
+        .body(equalTo("Hello world!"));
+  }
+
   @Before
   public void beforeTest() throws Exception {
     deleteData();
@@ -110,7 +140,7 @@ public class VertxRestServiceTest {
     specs = new ArrayList<>(3);
     for (int i = 0; i < 3; i++) {
       RequestSpecification spec = new RequestSpecBuilder()
-          .setContentType(ContentType.JSON)
+          .setContentType(ContentType.TEXT)
           .setBaseUri(String.format("http://%s/v1/", services.get(i).address().toString()))
           .addFilter(new ResponseLoggingFilter())
           .addFilter(new RequestLoggingFilter())
