@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  */
 @Path("/v1/messages")
 public class MessagesResource {
-  private static final Logger LOGGER = LoggerFactory.getLogger(EventsResource.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MessagesResource.class);
   private static final int UUID_STRING_LENGTH = UUID.randomUUID().toString().length();
 
   /**
@@ -130,6 +130,7 @@ public class MessagesResource {
 
   @POST
   @Path("/{subject}/subscribers")
+  @Consumes(MediaType.TEXT_PLAIN)
   @Produces(MediaType.TEXT_PLAIN)
   public void subscribe(@PathParam("subject") String subject, @Context ClusterMessagingService communicationService, @Context EventManager events, @Suspended AsyncResponse response) {
     String id = UUID.randomUUID().toString();
