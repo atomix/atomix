@@ -15,11 +15,8 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.cluster.Node.Type;
-
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,9 +38,7 @@ public class ClusterMetadata {
   private final Collection<Node> nodes;
 
   public ClusterMetadata(Collection<Node> nodes) {
-    this.nodes = nodes.stream()
-        .filter(node -> node.type() == Type.CORE)
-        .collect(Collectors.toSet());
+    this.nodes = nodes;
   }
 
   /**
