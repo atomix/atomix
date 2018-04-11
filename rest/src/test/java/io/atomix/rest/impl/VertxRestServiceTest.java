@@ -115,6 +115,53 @@ public class VertxRestServiceTest {
         .body(equalTo("Hello world!"));
   }
 
+  @Test
+  public void testMessages() throws Exception {
+    String id = given()
+        .spec(specs.get(0))
+        .when()
+        .post("messages/test/subscribers")
+        .then()
+        .statusCode(200)
+        .extract()
+        .body()
+        .asString();
+
+    given()
+        .spec(specs.get(1))
+        .body("Hello world!")
+        .when()
+        .post("messages/test")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("messages/test/subscribers/" + id)
+        .then()
+        .statusCode(200)
+        .assertThat()
+        .body(equalTo("Hello world!"));
+
+    given()
+        .spec(specs.get(1))
+        .body("Hello world again!")
+        .when()
+        .post("messages/test/" + instances.get(0).clusterService().getLocalNode().id())
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("messages/test/subscribers/" + id)
+        .then()
+        .statusCode(200)
+        .assertThat()
+        .body(equalTo("Hello world again!"));
+  }
+
   @Before
   public void beforeTest() throws Exception {
     deleteData();
