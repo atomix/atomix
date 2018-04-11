@@ -15,6 +15,8 @@
  */
 package io.atomix.rest.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.atomix.cluster.Node;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
@@ -49,6 +51,7 @@ import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.isA;
 
 /**
  * Vert.x REST service test.
@@ -175,6 +178,47 @@ public class VertxRestServiceTest {
         .statusCode(200)
         .assertThat()
         .body(equalTo("Hello world again!"));
+  }
+
+  @Test
+  public void testMap() throws Exception {
+    JsonNode json = JsonNodeFactory.withExactBigDecimals(true).objectNode()
+        .put("type", "consistent-map")
+        .put("cache-enabled", true)
+        .put("null-values", false);
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test/foo")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .body("Hello world!")
+        .when()
+        .put("primitives/test/foo")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test/foo")
+        .then()
+        .statusCode(200)
+        .assertThat()
+        .body("value", equalTo("Hello world!"));
   }
 
   @Before
