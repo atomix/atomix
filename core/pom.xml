@@ -51,6 +51,7 @@
       <groupId>javax.ws.rs</groupId>
       <artifactId>javax.ws.rs-api</artifactId>
       <version>${jaxrs.version}</version>
+      <scope>optional</scope>
     </dependency>
   </dependencies>
 
