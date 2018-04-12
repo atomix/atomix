@@ -27,10 +27,10 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -165,7 +165,7 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterEventListener dataListener = new TestClusterEventListener();
     instances.get(0).clusterService().addListener(dataListener);
 
-    Atomix client1 = startAtomix(Node.Type.CLIENT, 4, Arrays.asList(1, 2, 3), Arrays.asList()).join();
+    Atomix client1 = startAtomix(Node.Type.DATA, 4, Arrays.asList(1, 2, 3), Arrays.asList()).join();
 
     // client1 added to data node
     ClusterEvent event1 = dataListener.event();
@@ -208,8 +208,7 @@ public class AtomixTest extends AbstractAtomixTest {
   }
 
   private static class TestClusterEventListener implements ClusterEventListener {
-
-    private final BlockingQueue<ClusterEvent> queue = new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<ClusterEvent> queue = new LinkedBlockingQueue<>();
 
     @Override
     public void onEvent(ClusterEvent event) {
