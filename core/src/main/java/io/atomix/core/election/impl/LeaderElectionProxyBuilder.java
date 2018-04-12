@@ -19,7 +19,7 @@ import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElectionBuilder;
 import io.atomix.core.election.LeaderElectionConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 

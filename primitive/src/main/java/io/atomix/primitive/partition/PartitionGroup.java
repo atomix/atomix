@@ -16,7 +16,7 @@
 package io.atomix.primitive.partition;
 
 import com.google.common.hash.Hashing;
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;

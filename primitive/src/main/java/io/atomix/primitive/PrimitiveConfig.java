@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.serializer.SerializerConfig;
 
 /**

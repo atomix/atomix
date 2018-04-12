@@ -17,8 +17,8 @@ package io.atomix.protocols.backup.partition;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.PrimitiveProtocol.Type;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.ManagedPartitionGroup;

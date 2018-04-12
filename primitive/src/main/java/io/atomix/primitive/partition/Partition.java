@@ -17,7 +17,7 @@ package io.atomix.primitive.partition;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.Collection;
 

@@ -17,7 +17,7 @@ package io.atomix.core.transaction;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;

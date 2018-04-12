@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.primitive.PrimitiveProtocol;
-import io.atomix.primitive.PrimitiveProtocolFactory;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolFactory;
 
 /**
  * Raft protocol factory.

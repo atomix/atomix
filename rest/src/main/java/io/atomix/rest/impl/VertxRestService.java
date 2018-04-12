@@ -30,7 +30,7 @@ import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
 import io.atomix.core.utils.EventManager;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveProtocolConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;

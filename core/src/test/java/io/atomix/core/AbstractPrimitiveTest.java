@@ -16,7 +16,7 @@
 package io.atomix.core;
 
 import io.atomix.cluster.Node;
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
