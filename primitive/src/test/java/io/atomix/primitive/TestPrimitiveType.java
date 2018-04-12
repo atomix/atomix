@@ -30,7 +30,7 @@ public class TestPrimitiveType implements PrimitiveType {
 
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override

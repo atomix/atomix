@@ -48,7 +48,7 @@ public class TransactionType implements PrimitiveType<TransactionBuilder, Transa
 
   @Override
   public Supplier<PrimitiveService> serviceFactory() {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
