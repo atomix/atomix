@@ -29,8 +29,8 @@ import org.junit.Test;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -340,9 +340,9 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
     AsyncDocumentTree<String> tree1 = newTree(treeName);
     AsyncDocumentTree<String> tree2 = newTree(treeName);
 
-    TestEventListener listener1a = new TestEventListener(3);
-    TestEventListener listener1ab = new TestEventListener(2);
-    TestEventListener listener2abc = new TestEventListener(1);
+    TestEventListener listener1a = new TestEventListener();
+    TestEventListener listener1ab = new TestEventListener();
+    TestEventListener listener2abc = new TestEventListener();
 
     tree1.addListener(path("root.a"), listener1a).join();
     tree1.addListener(path("root.a.b"), listener1ab).join();
@@ -364,16 +364,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   }
 
   private static class TestEventListener implements DocumentTreeListener<String> {
-
-    private final BlockingQueue<DocumentTreeEvent<String>> queue;
-
-    public TestEventListener() {
-      this(1);
-    }
-
-    public TestEventListener(int maxEvents) {
-      queue = new ArrayBlockingQueue<>(maxEvents);
-    }
+    private final BlockingQueue<DocumentTreeEvent<String>> queue = new LinkedBlockingQueue<>();
 
     @Override
     public void event(DocumentTreeEvent<String> event) {
