@@ -15,7 +15,7 @@
  */
 package io.atomix.core.multimap.impl;
 
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.primitive.PrimitiveProtocolConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.Recovery;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 

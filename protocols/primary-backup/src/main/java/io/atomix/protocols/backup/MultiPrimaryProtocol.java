@@ -16,7 +16,7 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.primitive.Consistency;
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
 

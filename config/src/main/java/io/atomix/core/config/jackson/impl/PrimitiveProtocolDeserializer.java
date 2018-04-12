@@ -15,8 +15,8 @@
  */
 package io.atomix.core.config.jackson.impl;
 
-import io.atomix.primitive.PrimitiveProtocolConfig;
-import io.atomix.primitive.PrimitiveProtocols;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocols;
 
 /**
  * Primitive protocol deserializer.

@@ -15,7 +15,7 @@
  */
 package io.atomix.core.election.impl;
 
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.partition;
 
-import io.atomix.primitive.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.partition.PartitionGroupFactory;
 import io.atomix.protocols.raft.RaftProtocol;
 

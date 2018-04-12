@@ -30,7 +30,7 @@ import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveProtocolConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.utils.Config;
 import io.atomix.utils.ConfigurationException;
