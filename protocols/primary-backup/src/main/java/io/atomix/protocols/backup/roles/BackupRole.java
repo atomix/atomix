@@ -30,6 +30,7 @@ import io.atomix.protocols.backup.protocol.HeartbeatOperation;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
+import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 
 import java.util.LinkedList;
@@ -157,7 +158,14 @@ public class BackupRole extends PrimaryBackupRole {
         .whenCompleteAsync((response, error) -> {
           if (error == null && response.status() == PrimaryBackupResponse.Status.OK) {
             context.resetIndex(response.index(), response.timestamp());
-            context.service().restore(HeapBuffer.wrap(response.data()));
+
+            Buffer buffer = HeapBuffer.wrap(response.data());
+            int sessions = buffer.readInt();
+            for (int i = 0; i < sessions; i++) {
+              context.getOrCreateSession(buffer.readLong(), NodeId.from(buffer.readString()));
+            }
+
+            context.service().restore(buffer);
             operations.clear();
           }
         }, context.threadContext());

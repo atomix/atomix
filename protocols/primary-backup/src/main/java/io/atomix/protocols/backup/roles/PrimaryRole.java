@@ -15,9 +15,11 @@
  */
 package io.atomix.protocols.backup.roles;
 
+import com.google.common.collect.Lists;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.Sessions;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.CloseOperation;
@@ -34,6 +36,7 @@ import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -158,6 +161,13 @@ public class PrimaryRole extends PrimaryBackupRole {
     }
 
     HeapBuffer buffer = HeapBuffer.allocate();
+    List<Session> sessions = Lists.newArrayList(context.sessions());
+    buffer.writeInt(sessions.size());
+    for (Session session : sessions) {
+      buffer.writeLong(session.sessionId().id());
+      buffer.writeString(session.nodeId().id());
+    }
+
     context.service().backup(buffer);
     buffer.flip();
     byte[] bytes = buffer.readBytes(buffer.remaining());
