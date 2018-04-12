@@ -160,7 +160,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
   }
 
   private void releaseSession(Session session) {
-    if (lock.session == session.sessionId().id()) {
+    if (lock != null && lock.session == session.sessionId().id()) {
       lock = queue.poll();
       while (lock != null) {
         if (lock.session == session.sessionId().id()) {
