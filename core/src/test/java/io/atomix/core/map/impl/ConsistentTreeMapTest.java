@@ -25,8 +25,8 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -309,11 +309,9 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     //Tests on empty map
     map.firstKey().thenAccept(result -> assertNull(result)).join();
     map.lastKey().thenAccept(result -> assertNull(result)).join();
-    map.ceilingEntry(one).thenAccept(result -> assertNull(result))
-        .join();
+    map.ceilingEntry(one).thenAccept(result -> assertNull(result)).join();
     map.floorEntry(one).thenAccept(result -> assertNull(result)).join();
-    map.higherEntry(one).thenAccept(result -> assertNull(result))
-        .join();
+    map.higherEntry(one).thenAccept(result -> assertNull(result)).join();
     map.lowerEntry(one).thenAccept(result -> assertNull(result)).join();
     map.firstEntry().thenAccept(result -> assertNull(result)).join();
     map.lastEntry().thenAccept(result -> assertNull(result)).join();
@@ -321,133 +319,111 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     map.pollLastEntry().thenAccept(result -> assertNull(result)).join();
     map.lowerKey(one).thenAccept(result -> assertNull(result)).join();
     map.floorKey(one).thenAccept(result -> assertNull(result)).join();
-    map.ceilingKey(one).thenAccept(result -> assertNull(result))
-        .join();
+    map.ceilingKey(one).thenAccept(result -> assertNull(result)).join();
     map.higherKey(one).thenAccept(result -> assertNull(result)).join();
 
     // TODO: delete() is not supported
     //map.delete().join();
 
-    all.forEach(key -> map.put(
-        key, all.get(all.indexOf(key)))
-        .thenAccept(result -> assertNull(result)).join());
+    all.forEach(key -> map.put(key, key).thenAccept(result -> assertNull(result)).join());
     //Note ordering keys are in their proper ordering in ascending order
     //both in naming and in the allKeys list.
 
-    map.firstKey().thenAccept(result -> assertEquals(one, result))
-        .join();
-    map.lastKey().thenAccept(result -> assertEquals(four, result))
-        .join();
-    map.ceilingEntry(one)
-        .thenAccept(result -> {
-          assertEquals(one, result.getKey());
-          assertEquals(one, result.getValue().value());
-        })
-        .join();
+    map.firstKey().thenAccept(result -> assertEquals(one, result)).join();
+
+    map.lastKey().thenAccept(result -> assertEquals(four, result)).join();
+
+    map.ceilingEntry(one).thenAccept(result -> {
+      assertEquals(one, result.getKey());
+      assertEquals(one, result.getValue().value());
+    }).join();
+
     //adding an additional letter to make keyOne an unacceptable response
-    map.ceilingEntry(one + "a")
-        .thenAccept(result -> {
-          assertEquals(two, result.getKey());
-          assertEquals(two, result.getValue().value());
-        })
-        .join();
+    map.ceilingEntry(one + "a").thenAccept(result -> {
+      assertEquals(two, result.getKey());
+      assertEquals(two, result.getValue().value());
+    }).join();
+
     map.ceilingEntry(four + "a")
         .thenAccept(result -> {
           assertNull(result);
-        })
-        .join();
+        }).join();
+
     map.floorEntry(two).thenAccept(result -> {
       assertEquals(two, result.getKey());
       assertEquals(two, result.getValue().value());
-    })
-        .join();
+    }).join();
+
     //shorten the key so it itself is not an acceptable reply
     map.floorEntry(two.substring(0, 2)).thenAccept(result -> {
       assertEquals(one, result.getKey());
       assertEquals(one, result.getValue().value());
-    })
-        .join();
+    }).join();
+
     // shorten least key so no acceptable response exists
-    map.floorEntry(one.substring(0, 1)).thenAccept(
-        result -> assertNull(result))
-        .join();
+    map.floorEntry(one.substring(0, 1)).thenAccept(result -> assertNull(result)).join();
 
     map.higherEntry(two).thenAccept(result -> {
       assertEquals(three, result.getKey());
       assertEquals(three, result.getValue().value());
-    })
-        .join();
-    map.higherEntry(four).thenAccept(result -> assertNull(result))
-        .join();
+    }).join();
+
+    map.higherEntry(four).thenAccept(result -> assertNull(result)).join();
 
     map.lowerEntry(four).thenAccept(result -> {
       assertEquals(three, result.getKey());
       assertEquals(three, result.getValue().value());
-    })
-        .join();
-    map.lowerEntry(one).thenAccept(result -> assertNull(result))
-        .join();
+    }).join();
+
+    map.lowerEntry(one).thenAccept(result -> assertNull(result)).join();
+
     map.firstEntry().thenAccept(result -> {
       assertEquals(one, result.getKey());
       assertEquals(one, result.getValue().value());
-    })
-        .join();
+    }).join();
+
     map.lastEntry().thenAccept(result -> {
       assertEquals(four, result.getKey());
       assertEquals(four, result.getValue().value());
-    })
-        .join();
+    }).join();
+
     map.pollFirstEntry().thenAccept(result -> {
       assertEquals(one, result.getKey());
       assertEquals(one, result.getValue().value());
-    });
-    map.containsKey(one).thenAccept(result -> assertFalse(result))
-        .join();
+    }).join();
+
+    map.containsKey(one).thenAccept(result -> assertFalse(result)).join();
     map.size().thenAccept(result -> assertEquals(3, (int) result)).join();
+
     map.pollLastEntry().thenAccept(result -> {
       assertEquals(four, result.getKey());
       assertEquals(four, result.getValue().value());
-    });
-    map.containsKey(four).thenAccept(result -> assertFalse(result))
-        .join();
+    }).join();
+
+    map.containsKey(four).thenAccept(result -> assertFalse(result)).join();
     map.size().thenAccept(result -> assertEquals(2, (int) result)).join();
 
     //repopulate the missing entries
-    all.forEach(key -> map.put(
-        key, all.get(all.indexOf(key)))
-        .thenAccept(result -> {
-          if (key.equals(one) || key.equals(four)) {
-            assertNull(result);
-          } else {
-            assertEquals(all.get(all.indexOf(key)),
-                result.value());
-          }
-        })
-        .join());
+    all.forEach(key -> map.put(key, key).thenAccept(result -> {
+      if (key.equals(one) || key.equals(four)) {
+        assertNull(result);
+      } else {
+        assertEquals(key, result.value());
+      }
+    }).join());
+
     map.lowerKey(one).thenAccept(result -> assertNull(result)).join();
-    map.lowerKey(three).thenAccept(
-        result -> assertEquals(two, result))
-        .join();
-    map.floorKey(three).thenAccept(
-        result -> assertEquals(three, result))
-        .join();
+    map.lowerKey(three).thenAccept(result -> assertEquals(two, result)).join();
+    map.floorKey(three).thenAccept(result -> assertEquals(three, result)).join();
+
     //shortening the key so there is no acceptable response
-    map.floorKey(one.substring(0, 1)).thenAccept(
-        result -> assertNull(result))
-        .join();
-    map.ceilingKey(two).thenAccept(
-        result -> assertEquals(two, result))
-        .join();
+    map.floorKey(one.substring(0, 1)).thenAccept(result -> assertNull(result)).join();
+    map.ceilingKey(two).thenAccept(result -> assertEquals(two, result)).join();
+
     //adding to highest key so there is no acceptable response
-    map.ceilingKey(four + "a")
-        .thenAccept(reslt -> assertNull(reslt))
-        .join();
-    map.higherKey(three).thenAccept(
-        result -> assertEquals(four, result))
-        .join();
-    map.higherKey(four).thenAccept(
-        result -> assertNull(result))
-        .join();
+    map.ceilingKey(four + "a").thenAccept(reslt -> assertNull(reslt)).join();
+    map.higherKey(three).thenAccept(result -> assertEquals(four, result)).join();
+    map.higherKey(four).thenAccept(result -> assertNull(result)).join();
 
     // TODO: delete() is not supported
     //map.delete().join();
@@ -461,11 +437,9 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     }
   }
 
-  private static class TestMapEventListener
-      implements MapEventListener<String, String> {
+  private static class TestMapEventListener implements MapEventListener<String, String> {
 
-    private final BlockingQueue<MapEvent<String, String>> queue =
-        new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<MapEvent<String, String>> queue = new LinkedBlockingQueue<>();
 
     @Override
     public void event(MapEvent<String, String> event) {
