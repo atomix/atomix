@@ -69,7 +69,7 @@ public class AtomixAgent {
     parser.addArgument("--type", "-t")
         .type(typeArgumentType)
         .metavar("TYPE")
-        .choices("core", "data", "client")
+        .choices(Node.Type.CORE, Node.Type.DATA, Node.Type.CLIENT)
         .setDefault(Node.Type.CORE)
         .help("Indicates the local node type");
     parser.addArgument("--config", "-c")
