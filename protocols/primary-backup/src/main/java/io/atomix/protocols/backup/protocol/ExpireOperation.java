@@ -24,7 +24,7 @@ public class ExpireOperation extends BackupOperation {
   private final long session;
 
   public ExpireOperation(long index, long timestamp, long session) {
-    super(Type.CLOSE, index, timestamp);
+    super(Type.EXPIRE, index, timestamp);
     this.session = session;
   }
 
