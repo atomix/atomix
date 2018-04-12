@@ -69,7 +69,7 @@ public class DefaultClusterService
 
   private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
-  private static final long DEFAULT_FAILURE_TIME = 1000;
+  private static final long DEFAULT_FAILURE_TIME = 10000;
   private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
 
   private int heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
@@ -189,10 +189,11 @@ public class DefaultClusterService
         localNode.rack(),
         localNode.host()));
     return Futures.allOf(Stream.concat(clusterNodes, bootstrapNodes).map(node -> {
+      LOGGER.trace("{} - Sending heartbeat: {}", localNode.id(), node.id());
       CompletableFuture<Void> future = sendHeartbeat(node.address(), payload);
       PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
       double phi = failureDetector.phi();
-      if (phi > 0 && (phi >= phiFailureThreshold || System.currentTimeMillis() - failureDetector.lastUpdated() > DEFAULT_FAILURE_TIME)) {
+      if ((phi > 0 && phi >= phiFailureThreshold) || System.currentTimeMillis() - failureDetector.lastUpdated() > DEFAULT_FAILURE_TIME) {
         if (node.getState() == State.ACTIVE) {
           deactivateNode(node);
         }
@@ -225,7 +226,7 @@ public class DefaultClusterService
           sendHeartbeats();
         }
       } else {
-        LOGGER.trace("Sending heartbeat to {} failed", address, error);
+        LOGGER.debug("{} - Sending heartbeat to {} failed", localNode.id(), address, error);
       }
     }).exceptionally(e -> null)
         .thenApply(v -> null);
@@ -236,6 +237,7 @@ public class DefaultClusterService
    */
   private byte[] handleHeartbeat(Address address, byte[] message) {
     ClusterHeartbeat heartbeat = SERIALIZER.decode(message);
+    LOGGER.trace("{} - Received heartbeat: {}", localNode.id(), heartbeat.nodeId());
     failureDetectors.computeIfAbsent(heartbeat.nodeId(), n -> new PhiAccrualFailureDetector()).report();
     activateNode(new StatefulNode(
         heartbeat.nodeId(),
@@ -262,7 +264,7 @@ public class DefaultClusterService
           node.zone(),
           node.rack(),
           node.host());
-      LOGGER.info("Node activated: {}", statefulNode);
+      LOGGER.info("{} - Node activated: {}", localNode.id(), statefulNode);
       statefulNode.setState(State.ACTIVE);
       nodes.put(statefulNode.id(), statefulNode);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, statefulNode));
@@ -274,7 +276,7 @@ public class DefaultClusterService
           localNode.rack(),
           localNode.host())));
     } else if (existingNode.getState() == State.INACTIVE) {
-      LOGGER.info("Node activated: {}", existingNode);
+      LOGGER.info("{} - Node activated: {}", localNode.id(), existingNode);
       existingNode.setState(State.ACTIVE);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, existingNode));
     }
@@ -286,7 +288,7 @@ public class DefaultClusterService
   private void deactivateNode(Node node) {
     StatefulNode existingNode = nodes.get(node.id());
     if (existingNode != null && existingNode.getState() == State.ACTIVE) {
-      LOGGER.info("Node deactivated: {}", existingNode);
+      LOGGER.info("{} - Node deactivated: {}", localNode.id(), existingNode);
       existingNode.setState(State.INACTIVE);
       switch (existingNode.type()) {
         case CORE:
@@ -326,7 +328,7 @@ public class DefaultClusterService
           return node.id();
         }).collect(Collectors.toSet());
 
-    // Filter the set of data node IDs from the local node information.
+    // Filter the set of core node IDs from the local node information.
     Set<NodeId> dataNodes = nodes.entrySet().stream()
         .filter(entry -> entry.getValue().type() == Node.Type.CORE)
         .map(entry -> entry.getKey())
@@ -349,7 +351,7 @@ public class DefaultClusterService
     if (started.compareAndSet(false, true)) {
       coreMetadataService.addListener(metadataEventListener);
       broadcastService.addListener(broadcastListener);
-      LOGGER.info("Node activated: {}", localNode);
+      LOGGER.info("{} - Node activated: {}", localNode.id(), localNode);
       localNode.setState(State.ACTIVE);
       nodes.put(localNode.id(), localNode);
       coreMetadataService.getMetadata().nodes()
@@ -372,6 +374,7 @@ public class DefaultClusterService
         broadcastIdentity();
         sendHeartbeats();
       }, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
+
       return future.thenApply(v -> {
         LOGGER.info("Started");
         return this;
@@ -390,7 +393,7 @@ public class DefaultClusterService
     if (started.compareAndSet(true, false)) {
       heartbeatScheduler.shutdownNow();
       heartbeatExecutor.shutdownNow();
-      LOGGER.info("Node deactivated: {}", localNode);
+      LOGGER.info("{} - Node deactivated: {}", localNode.id(), localNode);
       localNode.setState(State.INACTIVE);
       nodes.clear();
       heartbeatFuture.cancel(true);
