@@ -147,6 +147,11 @@ public class JacksonConfigProvider implements ConfigProvider {
     protected YAMLParser _createParser(InputStream in, IOContext ctxt) throws IOException {
       return new InterpolatingYamlParser(ctxt, _getBufferRecycler(), _parserFeatures, _yamlParserFeatures, _objectCodec, _createReader(in, null, ctxt));
     }
+
+    @Override
+    protected YAMLParser _createParser(Reader r, IOContext ctxt) throws IOException {
+      return new InterpolatingYamlParser(ctxt, _getBufferRecycler(), _parserFeatures, _yamlParserFeatures, _objectCodec, r);
+    }
   }
 
   private static class InterpolatingYamlParser extends YAMLParser {
@@ -175,20 +180,28 @@ public class JacksonConfigProvider implements ConfigProvider {
     }
 
     private String interpolateString(String value) {
-      value = interpolate(value, sysPattern, name -> System.getProperty(name, ""));
+      value = interpolate(value, sysPattern, name -> System.getProperty(name));
       value = interpolate(value, envPattern, name -> System.getenv(name));
       return value;
     }
 
     private String interpolate(String value, Pattern pattern, Function<String, String> supplier) {
+      if (value == null) {
+        return null;
+      }
+
       Matcher matcher = pattern.matcher(value);
       while (matcher.find()) {
         String name = matcher.group(1);
         String replace = supplier.apply(name);
-        if (replace == null) {
-          replace = "null";
+        String group = matcher.group(0);
+        if (group.equals(value)) {
+          return replace;
         }
-        Pattern subPattern = Pattern.compile(Pattern.quote(matcher.group(0)));
+        if (replace == null) {
+          replace = "";
+        }
+        Pattern subPattern = Pattern.compile(Pattern.quote(group));
         value = subPattern.matcher(value).replaceAll(replace);
       }
       return value;
