@@ -30,8 +30,8 @@ import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.Config;
 import io.atomix.utils.ConfigurationException;
 
@@ -64,6 +64,19 @@ public class JacksonConfigProvider implements ConfigProvider {
     return file.getName().endsWith(JSON_EXT);
   }
 
+  private boolean isJson(String config) {
+    return config.trim().startsWith("{") && config.trim().endsWith("}");
+  }
+
+  @Override
+  public <C extends Config> C load(String config, Class<C> type) {
+    if (isJson(config)) {
+      return loadJson(config, type);
+    } else {
+      return loadYaml(config, type);
+    }
+  }
+
   @Override
   public <C extends Config> C load(File file, Class<C> type) {
     if (isYaml(file)) {
@@ -90,6 +103,26 @@ public class JacksonConfigProvider implements ConfigProvider {
     setupObjectMapper(mapper);
     try {
       return mapper.readValue(file, type);
+    } catch (IOException e) {
+      throw new ConfigurationException("Failed to parse JSON file", e);
+    }
+  }
+
+  private <C extends Config> C loadYaml(String config, Class<C> type) {
+    ObjectMapper mapper = new ObjectMapper(new InterpolatingYamlFactory());
+    setupObjectMapper(mapper);
+    try {
+      return mapper.readValue(config, type);
+    } catch (IOException e) {
+      throw new ConfigurationException("Failed to parse YAML file", e);
+    }
+  }
+
+  private <C extends Config> C loadJson(String config, Class<C> type) {
+    ObjectMapper mapper = new ObjectMapper();
+    setupObjectMapper(mapper);
+    try {
+      return mapper.readValue(config, type);
     } catch (IOException e) {
       throw new ConfigurationException("Failed to parse JSON file", e);
     }
@@ -152,6 +185,9 @@ public class JacksonConfigProvider implements ConfigProvider {
       while (matcher.find()) {
         String name = matcher.group(1);
         String replace = supplier.apply(name);
+        if (replace == null) {
+          replace = "null";
+        }
         Pattern subPattern = Pattern.compile(Pattern.quote(matcher.group(0)));
         value = subPattern.matcher(value).replaceAll(replace);
       }
