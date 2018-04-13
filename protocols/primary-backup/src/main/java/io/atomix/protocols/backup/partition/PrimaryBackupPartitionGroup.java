@@ -63,8 +63,8 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   }
 
   private static Collection<PrimaryBackupPartition> buildPartitions(PrimaryBackupPartitionGroupConfig config) {
-    List<PrimaryBackupPartition> partitions = new ArrayList<>(config.getNumPartitions());
-    for (int i = 0; i < config.getNumPartitions(); i++) {
+    List<PrimaryBackupPartition> partitions = new ArrayList<>(config.getPartitions());
+    for (int i = 0; i < config.getPartitions(); i++) {
       partitions.add(new PrimaryBackupPartition(PartitionId.from(config.getName(), i + 1), config.getMemberGroupProvider()));
     }
     return partitions;
@@ -172,7 +172,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
     public Builder withNumPartitions(int numPartitions) {
-      config.setNumPartitions(numPartitions);
+      config.setPartitions(numPartitions);
       return this;
     }
 
