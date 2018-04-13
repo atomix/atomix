@@ -556,7 +556,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     // If the local node has not be configured, create a default node.
     Node localNode;
     if (config.getClusterConfig().getLocalNode() == null) {
-      Address address = Address.from(NettyMessagingService.DEFAULT_PORT);
+      Address address = Address.empty();
       localNode = Node.builder(address.toString())
           .withType(Node.Type.CORE)
           .withAddress(address)
