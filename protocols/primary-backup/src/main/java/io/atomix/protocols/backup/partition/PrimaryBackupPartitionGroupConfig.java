@@ -23,7 +23,7 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
  * Primary-backup partition group configuration.
  */
 public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<PrimaryBackupPartitionGroupConfig> {
-  private int numPartitions;
+  private int partitions;
   private MemberGroupProvider memberGroupProvider = MemberGroupStrategy.NODE_AWARE;
 
   /**
@@ -31,18 +31,18 @@ public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<Prim
    *
    * @return the number of partitions in the group.
    */
-  public int getNumPartitions() {
-    return numPartitions;
+  public int getPartitions() {
+    return partitions;
   }
 
   /**
    * Sets the number of partitions in the group.
    *
-   * @param numPartitions the number of partitions in the group
+   * @param partitions the number of partitions in the group
    * @return the partition group configuration
    */
-  public PrimaryBackupPartitionGroupConfig setNumPartitions(int numPartitions) {
-    this.numPartitions = numPartitions;
+  public PrimaryBackupPartitionGroupConfig setPartitions(int partitions) {
+    this.partitions = partitions;
     return this;
   }
 
