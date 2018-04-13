@@ -115,11 +115,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   /**
    * Returns a new Atomix builder.
    *
-   * @param configFile the configuration file with which to initialize the builder
+   * @param config the Atomix configuration
    * @return a new Atomix builder
    */
-  public static Builder builder(String configFile) {
-    return new Builder(loadConfig(new File(System.getProperty("user.dir"), configFile)));
+  public static Builder builder(String config) {
+    return new Builder(loadConfig(config));
   }
 
   /**
@@ -433,8 +433,27 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   /**
    * Loads a context from the given configuration file.
    */
+  private static Context loadContext(String config) {
+    return buildContext(loadConfig(config));
+  }
+
+  /**
+   * Loads a context from the given configuration file.
+   */
   private static Context loadContext(File config) {
     return buildContext(loadConfig(config));
+  }
+
+  /**
+   * Loads a configuration from the given file.
+   */
+  private static AtomixConfig loadConfig(String config) {
+    File configFile = new File(config);
+    if (configFile.exists()) {
+      return new DefaultConfigService().load(configFile, AtomixConfig.class);
+    } else {
+      return new DefaultConfigService().load(config, AtomixConfig.class);
+    }
   }
 
   /**

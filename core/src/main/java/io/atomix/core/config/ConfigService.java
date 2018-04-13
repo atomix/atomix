@@ -25,6 +25,16 @@ import java.io.File;
 public interface ConfigService {
 
   /**
+   * Loads the given configuration string using the given configuration type.
+   *
+   * @param config the configurations string
+   * @param type the type with which to load the configuration
+   * @param <C> the configuration type
+   * @return the configuration instance
+   */
+  <C extends Config> C load(String config, Class<C> type);
+
+  /**
    * Loads the given configuration file using the given configuration type.
    *
    * @param file the file to load
