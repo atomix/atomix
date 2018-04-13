@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,10 +45,10 @@ public class AtomixAgent {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
-    ArgumentType<NodeConfig> nodeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> {
+    Function<Node.Type, ArgumentType<NodeConfig>> nodeArgumentType = (type) -> (ArgumentParser argumentParser, Argument argument, String value) -> {
       return new NodeConfig()
           .setId(parseNodeId(value))
-          .setType(Node.Type.CORE)
+          .setType(type)
           .setAddress(parseAddress(value));
     };
 
@@ -58,7 +59,7 @@ public class AtomixAgent {
         .defaultHelp(true)
         .description("Atomix server");
     parser.addArgument("node")
-        .type(nodeArgumentType)
+        .type(nodeArgumentType.apply(Node.Type.CORE))
         .nargs("?")
         .metavar("NAME:HOST:PORT")
         .required(false)
@@ -75,13 +76,13 @@ public class AtomixAgent {
         .help("The Atomix configuration file");
     parser.addArgument("--core-nodes", "-n")
         .nargs("*")
-        .type(nodeArgumentType)
+        .type(nodeArgumentType.apply(Node.Type.CORE))
         .metavar("NAME:HOST:PORT")
         .required(false)
         .help("Sets the core cluster configuration");
     parser.addArgument("--bootstrap-nodes", "-b")
         .nargs("*")
-        .type(nodeArgumentType)
+        .type(nodeArgumentType.apply(Node.Type.DATA))
         .metavar("NAME:HOST:PORT")
         .required(false)
         .help("Sets the bootstrap nodes");
