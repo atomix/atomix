@@ -20,6 +20,7 @@ import io.atomix.cluster.NodeId;
 import io.atomix.core.Atomix;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.messaging.impl.NettyMessagingService;
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,12 +75,21 @@ public class AtomixAgentTest {
   }
 
   @Test
-  public void testFormCluster() throws Exception {
+  public void testFormClusterFromFile() throws Exception {
     File configFile = new File(getClass().getClassLoader().getResource("atomix.yaml").getFile());
+    testFormCluster(configFile.getPath());
+  }
 
+  @Test
+  public void testFormClusterFromString() throws Exception {
+    String config = IOUtils.toString(new File(getClass().getClassLoader().getResource("atomix.yaml").getFile()).toURI(), StandardCharsets.UTF_8);
+    testFormCluster(config);
+  }
+
+  private void testFormCluster(String path) throws Exception {
     Thread thread1 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node1:localhost:5000", "-c", configFile.getPath()});
+        AtomixAgent.main(new String[]{"node1:localhost:5000", "-c", path});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -87,7 +98,7 @@ public class AtomixAgentTest {
 
     Thread thread2 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node2:localhost:5001", "-c", configFile.getPath()});
+        AtomixAgent.main(new String[]{"node2:localhost:5001", "-c", path});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -96,7 +107,7 @@ public class AtomixAgentTest {
 
     Thread thread3 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node3:localhost:5002", "-c", configFile.getPath()});
+        AtomixAgent.main(new String[]{"node3:localhost:5002", "-c", path});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -109,7 +120,7 @@ public class AtomixAgentTest {
 
     Thread.sleep(5000);
 
-    Atomix client1 = Atomix.builder(configFile)
+    Atomix client1 = Atomix.builder(path)
         .withLocalNode(Node.builder("client1")
             .withType(Node.Type.CLIENT)
             .withAddress("localhost:5003")
@@ -117,7 +128,7 @@ public class AtomixAgentTest {
         .build();
     client1.start().join();
 
-    Atomix client2 = Atomix.builder(configFile)
+    Atomix client2 = Atomix.builder(path)
         .withLocalNode(Node.builder("client2")
             .withType(Node.Type.CLIENT)
             .withAddress("localhost:5004")

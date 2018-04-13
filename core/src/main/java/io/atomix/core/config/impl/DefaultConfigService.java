@@ -28,6 +28,19 @@ import java.io.File;
  */
 public class DefaultConfigService implements ConfigService {
   @Override
+  public <C extends Config> C load(String config, Class<C> type) {
+    Exception error = null;
+    for (ConfigProvider provider : Services.loadAll(ConfigProvider.class)) {
+      try {
+        return provider.load(config, type);
+      } catch (Exception e) {
+        error = e;
+      }
+    }
+    throw new ConfigurationException("Unknown configuration format", error);
+  }
+
+  @Override
   public <C extends Config> C load(File file, Class<C> type) {
     for (ConfigProvider provider : Services.loadAll(ConfigProvider.class)) {
       if (provider.isConfigFile(file)) {

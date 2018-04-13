@@ -73,8 +73,7 @@ public class AtomixAgent {
         .setDefault(Node.Type.CORE)
         .help("Indicates the local node type");
     parser.addArgument("--config", "-c")
-        .type(fileArgumentType)
-        .metavar("FILE")
+        .metavar("FILE|JSON|YAML")
         .required(false)
         .help("The Atomix configuration file");
     parser.addArgument("--core-nodes", "-n")
@@ -110,9 +109,14 @@ public class AtomixAgent {
     }
 
     AtomixConfig config;
-    File configFile = namespace.get("config");
-    if (configFile != null) {
-      config = new DefaultConfigService().load(configFile, AtomixConfig.class);
+    String configString = namespace.get("config");
+    if (configString != null) {
+      File configFile = new File(configString);
+      if (configFile.exists()) {
+        config = new DefaultConfigService().load(configFile, AtomixConfig.class);
+      } else {
+        config = new DefaultConfigService().load(configString, AtomixConfig.class);
+      }
     } else {
       config = new AtomixConfig();
     }
