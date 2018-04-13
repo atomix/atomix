@@ -24,6 +24,7 @@ import io.atomix.rest.RestService;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -52,8 +53,9 @@ public class AtomixAgent {
           .setAddress(parseAddress(value));
     };
 
-    ArgumentType<Node.Type> typeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> Node.Type.valueOf(value.toUpperCase());
-    ArgumentType<File> fileArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> new File(value);
+    ArgumentType<Node.Type> typeArgumentType = (argumentParser, argument, value) -> Node.Type.valueOf(value.toUpperCase());
+    ArgumentType<Address> addressArgumentType = (argumentParser, argument, value) -> Address.from(value);
+    ArgumentType<File> fileArgumentType = (argumentParser, argument, value) -> new File(value);
 
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
@@ -86,6 +88,14 @@ public class AtomixAgent {
         .metavar("NAME:HOST:PORT")
         .required(false)
         .help("Sets the bootstrap nodes");
+    parser.addArgument("--multicast", "-m")
+        .action(new StoreTrueArgumentAction())
+        .setDefault(false)
+        .help("Whether to use multicast node discovery");
+    parser.addArgument("--multicast-address", "-a")
+        .type(addressArgumentType)
+        .metavar("HOST:PORT")
+        .help("The multicast discovery address");
     parser.addArgument("--data-dir", "-d")
         .type(fileArgumentType)
         .metavar("FILE")
@@ -133,6 +143,14 @@ public class AtomixAgent {
               .build())
           .collect(Collectors.toList());
       builder.withNodes(nodes);
+    }
+
+    if (namespace.getBoolean("multicast")) {
+      builder.withMulticastEnabled();
+      Address multicastAddress = namespace.get("multicast_address");
+      if (multicastAddress != null) {
+        builder.withMulticastAddress(multicastAddress);
+      }
     }
 
     File dataDir = namespace.get("data_dir");
