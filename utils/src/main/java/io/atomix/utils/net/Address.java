@@ -24,6 +24,7 @@ import java.util.Objects;
  * Representation of a network address.
  */
 public final class Address {
+  private static final int DEFAULT_PORT = 5679;
 
   /**
    * Address type.
@@ -34,6 +35,15 @@ public final class Address {
   }
 
   /**
+   * Returns an empty address.
+   *
+   * @return the address
+   */
+  public static Address empty() {
+    return from("0.0.0.0", DEFAULT_PORT);
+  }
+
+  /**
    * Returns the address from the given host:port string.
    *
    * @param address the address string
@@ -41,25 +51,27 @@ public final class Address {
    */
   public static Address from(String address) {
     int lastColon = address.lastIndexOf(':');
-    if (lastColon == -1) {
-      throw new MalformedAddressException(address);
-    }
-
     int openBracket = address.indexOf('[');
     int closeBracket = address.indexOf(']');
 
     String host;
     if (openBracket != -1 && closeBracket != -1) {
       host = address.substring(openBracket + 1, closeBracket);
-    } else {
+    } else if (lastColon != -1) {
       host = address.substring(0, lastColon);
+    } else {
+      host = address;
     }
 
     int port;
-    try {
-      port = Integer.parseInt(address.substring(lastColon + 1));
-    } catch (NumberFormatException e) {
-      throw new MalformedAddressException(address, e);
+    if (lastColon != -1) {
+      try {
+        port = Integer.parseInt(address.substring(lastColon + 1));
+      } catch (NumberFormatException e) {
+        throw new MalformedAddressException(address, e);
+      }
+    } else {
+      port = DEFAULT_PORT;
     }
 
     try {

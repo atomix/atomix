@@ -20,6 +20,9 @@ partition-groups:
     partitions: 7
     partition-size: 3
     data-directory: target/test-logs/core
+  - type: multi-primary
+    name: data
+    partitions: 7
 # Distributed primitive configurations
 primitives:
   test:

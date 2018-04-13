@@ -19,12 +19,10 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeConfig;
 import io.atomix.cluster.NodeId;
 import io.atomix.core.Atomix;
-import io.atomix.core.AtomixConfig;
-import io.atomix.core.config.impl.DefaultConfigService;
-import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.utils.net.Address;
+import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -35,9 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Atomix agent runner.
@@ -47,11 +45,10 @@ public class AtomixAgent {
 
   public static void main(String[] args) throws Exception {
     ArgumentType<NodeConfig> nodeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> {
-      String[] address = parseInfo(value);
       return new NodeConfig()
-          .setId(parseNodeId(address))
+          .setId(parseNodeId(value))
           .setType(Node.Type.CORE)
-          .setAddress(parseAddress(address));
+          .setAddress(parseAddress(value));
     };
 
     ArgumentType<Node.Type> typeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> Node.Type.valueOf(value.toUpperCase());
@@ -108,50 +105,51 @@ public class AtomixAgent {
       System.exit(1);
     }
 
-    AtomixConfig config;
     String configString = namespace.get("config");
-    if (configString != null) {
-      File configFile = new File(configString);
-      if (configFile.exists()) {
-        config = new DefaultConfigService().load(configFile, AtomixConfig.class);
-      } else {
-        config = new DefaultConfigService().load(configString, AtomixConfig.class);
-      }
-    } else {
-      config = new AtomixConfig();
-    }
+
+    Atomix.Builder builder = Atomix.builder(configString)
+        .withShutdownHook(true);
 
     NodeConfig localNode = namespace.get("node");
-
     if (localNode != null) {
       Node.Type type = namespace.get("type");
       localNode.setType(type);
-      config.getClusterConfig().setLocalNode(localNode);
+      Node node = new Node(localNode);
+      builder.withLocalNode(node);
+      LOGGER.info("node: {}", node);
     }
 
-    List<Node> coreNodes = namespace.getList("core_nodes");
-    List<Node> bootstrapNodes = namespace.getList("bootstrap_nodes");
+    List<NodeConfig> coreNodes = namespace.getList("core_nodes");
+    List<NodeConfig> bootstrapNodes = namespace.getList("bootstrap_nodes");
+
+    if (coreNodes != null || bootstrapNodes != null) {
+      List<Node> nodes = Stream.concat(
+          coreNodes != null ? coreNodes.stream() : Stream.empty(),
+          bootstrapNodes != null ? bootstrapNodes.stream() : Stream.empty())
+          .map(node -> Node.builder(node.getId())
+              .withType(node.getType())
+              .withAddress(node.getAddress())
+              .build())
+          .collect(Collectors.toList());
+      builder.withNodes(nodes);
+    }
 
     File dataDir = namespace.get("data_dir");
     Integer httpPort = namespace.getInt("http_port");
 
-    config.setEnableShutdownHook(true)
-        .setDataDirectory(dataDir);
+    if (dataDir != null) {
+      builder.withDataDirectory(dataDir);
+    }
 
-    LOGGER.info("node: {}", localNode);
-    LOGGER.info("core-nodes: {}", coreNodes);
-    LOGGER.info("bootstrap: {}", bootstrapNodes);
-    LOGGER.info("data-dir: {}", dataDir);
-
-    Atomix atomix = new Atomix(config);
+    Atomix atomix = builder.build();
 
     atomix.start().join();
 
-    LOGGER.info("Atomix listening at {}:{}", atomix.clusterService().getLocalNode().address().address().getHostAddress(), atomix.clusterService().getLocalNode().address().port());
+    LOGGER.info("Atomix listening at {}:{}", atomix.clusterService().getLocalNode().address().host(), atomix.clusterService().getLocalNode().address().port());
 
     ManagedRestService rest = RestService.builder()
         .withAtomix(atomix)
-        .withAddress(Address.from(atomix.clusterService().getLocalNode().address().address().getHostAddress(), httpPort))
+        .withAddress(Address.from(atomix.clusterService().getLocalNode().address().host(), httpPort))
         .build();
 
     rest.start().join();
@@ -165,57 +163,29 @@ public class AtomixAgent {
     }
   }
 
-  static String[] parseInfo(String address) {
-    String[] parsed = address.split(":");
-    if (parsed.length > 3) {
-      throw new IllegalArgumentException("Malformed address " + address);
-    }
-    return parsed;
-  }
-
-  static NodeId parseNodeId(String[] address) {
-    if (address.length == 3) {
-      return NodeId.from(address[0]);
-    } else if (address.length == 2) {
-      try {
-        InetAddress.getByName(address[0]);
-      } catch (UnknownHostException e) {
-        return NodeId.from(address[0]);
-      }
-      return NodeId.from(parseAddress(address).address().getHostName());
+  static NodeId parseNodeId(String address) {
+    int endIndex = address.indexOf('@');
+    if (endIndex > 0) {
+      return NodeId.from(address.substring(0, endIndex));
     } else {
       try {
-        InetAddress.getByName(address[0]);
-        return NodeId.from(parseAddress(address).address().getHostName());
-      } catch (UnknownHostException e) {
-        return NodeId.from(address[0]);
+        return NodeId.from(Address.from(address).host());
+      } catch (MalformedAddressException e) {
+        return NodeId.from(address);
       }
     }
   }
 
-  static Address parseAddress(String[] address) {
-    String host;
-    int port;
-    if (address.length == 3) {
-      host = address[1];
-      port = Integer.parseInt(address[2]);
-    } else if (address.length == 2) {
+  static Address parseAddress(String address) {
+    int startIndex = address.indexOf('@');
+    if (startIndex == -1) {
       try {
-        host = address[0];
-        port = Integer.parseInt(address[1]);
-      } catch (NumberFormatException e) {
-        host = address[1];
-        port = NettyMessagingService.DEFAULT_PORT;
+        return Address.from(address);
+      } catch (MalformedAddressException e) {
+        return Address.from("0.0.0.0");
       }
     } else {
-      try {
-        InetAddress.getByName(address[0]);
-        host = address[0];
-      } catch (UnknownHostException e) {
-        host = "0.0.0.0";
-      }
-      port = NettyMessagingService.DEFAULT_PORT;
+      return Address.from(address.substring(startIndex + 1));
     }
-    return Address.from(host, port);
   }
 }
