@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.backup.proxy;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
@@ -41,6 +42,7 @@ import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -51,6 +53,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Primary-backup proxy.
  */
 public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
+  private static final int RETRY_DELAY = 100;
   private Logger log;
   private final PrimitiveType primitiveType;
   private final PrimitiveDescriptor descriptor;
@@ -172,7 +175,12 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
             }
           }
         } else {
-          future.completeExceptionally(error);
+          Throwable cause = Throwables.getRootCause(error);
+          if (cause instanceof PrimitiveException.Unavailable) {
+            threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, future));
+          } else {
+            future.completeExceptionally(error);
+          }
         }
       }, threadContext);
     } else {
