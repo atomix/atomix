@@ -91,6 +91,18 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests scaling up a cluster.
    */
   @Test
+  public void testBootstrapData() throws Exception {
+    List<CompletableFuture<Atomix>> futures = new ArrayList<>(3);
+    futures.add(startAtomix(Node.Type.DATA, 1, Arrays.asList(), Arrays.asList()));
+    futures.add(startAtomix(Node.Type.DATA, 2, Arrays.asList(), Arrays.asList(1)));
+    futures.add(startAtomix(Node.Type.DATA, 3, Arrays.asList(), Arrays.asList(1)));
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+  }
+
+  /**
+   * Tests scaling up a cluster.
+   */
+  @Test
   public void testScaleUpData() throws Exception {
     Atomix atomix1 = startAtomix(Node.Type.DATA, 1, Arrays.asList(), Arrays.asList()).join();
     Atomix atomix2 = startAtomix(Node.Type.DATA, 2, Arrays.asList(), Arrays.asList(1)).join();

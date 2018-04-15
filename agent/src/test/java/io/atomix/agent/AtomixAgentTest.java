@@ -15,6 +15,7 @@
  */
 package io.atomix.agent;
 
+import com.google.common.base.Joiner;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.core.Atomix;
@@ -34,6 +35,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -118,6 +121,86 @@ public class AtomixAgentTest {
     client1.start().join();
 
     Atomix client2 = Atomix.builder(path)
+        .withLocalNode(Node.builder("client2")
+            .withType(Node.Type.CLIENT)
+            .withAddress("localhost:5004")
+            .build())
+        .build();
+    client2.start().join();
+
+    ConsistentMap<String, String> map1 = client1.getConsistentMap("test");
+    ConsistentMap<String, String> map2 = client2.getConsistentMap("test");
+
+    map1.put("foo", "bar");
+    assertEquals("bar", map2.get("foo").value());
+
+    thread1.interrupt();
+    thread2.interrupt();
+    thread3.interrupt();
+  }
+
+  @Test
+  @Ignore
+  public void testFormDataCluster() throws Exception {
+    List<String> config = new ArrayList<>();
+    config.add("cluster:");
+    config.add("  name: test");
+    config.add("  nodes:");
+    config.add("    - id: node1");
+    config.add("      type: data");
+    config.add("      address: localhost:5000");
+    config.add("    - id: node2");
+    config.add("      type: data");
+    config.add("      address: localhost:5001");
+    config.add("    - id: node3");
+    config.add("      type: data");
+    config.add("      address: localhost:5002");
+    config.add("partition-groups:");
+    config.add("  - type: multi-primary");
+    config.add("    name: data");
+
+    Thread thread1 = new Thread(() -> {
+      try {
+        AtomixAgent.main(new String[]{"node1@localhost:5000", "-c", Joiner.on('\n').join(config)});
+      } catch (Exception e) {
+        e.printStackTrace();
+        Thread.currentThread().interrupt();
+      }
+    });
+
+    Thread thread2 = new Thread(() -> {
+      try {
+        AtomixAgent.main(new String[]{"node2@localhost:5001", "-c", Joiner.on('\n').join(config)});
+      } catch (Exception e) {
+        e.printStackTrace();
+        Thread.currentThread().interrupt();
+      }
+    });
+
+    Thread thread3 = new Thread(() -> {
+      try {
+        AtomixAgent.main(new String[]{"node3@localhost:5002", "-c", Joiner.on('\n').join(config)});
+      } catch (Exception e) {
+        e.printStackTrace();
+        Thread.currentThread().interrupt();
+      }
+    });
+
+    thread1.start();
+    thread2.start();
+    thread3.start();
+
+    Thread.sleep(10000);
+
+    Atomix client1 = Atomix.builder(Joiner.on('\n').join(config))
+        .withLocalNode(Node.builder("client1")
+            .withType(Node.Type.CLIENT)
+            .withAddress("localhost:5003")
+            .build())
+        .build();
+    client1.start().join();
+
+    Atomix client2 = Atomix.builder(Joiner.on('\n').join(config))
         .withLocalNode(Node.builder("client2")
             .withType(Node.Type.CLIENT)
             .withAddress("localhost:5004")
