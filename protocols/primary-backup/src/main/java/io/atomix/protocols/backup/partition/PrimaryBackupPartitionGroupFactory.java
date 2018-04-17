@@ -19,17 +19,28 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.partition.PartitionGroupFactory;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
+import java.io.File;
+
 /**
  * Primary-backup partition group factory.
  */
 public class PrimaryBackupPartitionGroupFactory implements PartitionGroupFactory<PrimaryBackupPartitionGroupConfig, PrimaryBackupPartitionGroup> {
+  private static final String SYSTEM_GROUP_NAME = "system";
+
   @Override
   public PrimitiveProtocol.Type type() {
     return MultiPrimaryProtocol.TYPE;
   }
 
   @Override
-  public PrimaryBackupPartitionGroup create(PrimaryBackupPartitionGroupConfig config) {
+  public PrimaryBackupPartitionGroup createGroup(PrimaryBackupPartitionGroupConfig config) {
     return new PrimaryBackupPartitionGroup(config);
+  }
+
+  @Override
+  public PrimaryBackupPartitionGroup createSystemGroup(int size, File dataDirectory) {
+    return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
+        .withNumPartitions(1)
+        .build();
   }
 }

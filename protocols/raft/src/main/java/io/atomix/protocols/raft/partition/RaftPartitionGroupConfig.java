@@ -24,29 +24,15 @@ import java.io.File;
  * Raft partition group configuration.
  */
 public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartitionGroupConfig> {
-  private int partitions;
+  private static final int DEFAULT_PARTITIONS = 7;
+
   private int partitionSize;
   private StorageLevel storageLevel = StorageLevel.MAPPED;
   private File dataDirectory = new File(System.getProperty("user.dir"), "data");
 
-  /**
-   * Returns the number of partitions in the group.
-   *
-   * @return the number of partitions in the group
-   */
-  public int getPartitions() {
-    return partitions;
-  }
-
-  /**
-   * Sets the number of partitions in the group.
-   *
-   * @param partitions the number of partitions in the group
-   * @return the Raft partition group configuration
-   */
-  public RaftPartitionGroupConfig setPartitions(int partitions) {
-    this.partitions = partitions;
-    return this;
+  @Override
+  protected int getDefaultPartitions() {
+    return DEFAULT_PARTITIONS;
   }
 
   /**

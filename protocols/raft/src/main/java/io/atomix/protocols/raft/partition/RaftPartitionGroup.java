@@ -23,8 +23,6 @@ import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.Partition;
@@ -32,6 +30,8 @@ import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.Futures;
@@ -267,7 +267,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     }
 
     @Override
-    public ManagedPartitionGroup build() {
+    public RaftPartitionGroup build() {
       return new RaftPartitionGroup(config);
     }
   }
