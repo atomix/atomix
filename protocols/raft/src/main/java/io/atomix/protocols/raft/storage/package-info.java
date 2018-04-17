@@ -15,6 +15,6 @@
  */
 
 /**
- * Standalone segmented log for Raft's <a href="https://raftconsensus.github.io/">Raft</a> implementation.
+ * Provides various classes and interfaces for storing logs and snapshots in the Raft consensus protocol.
  */
 package io.atomix.protocols.raft.storage;

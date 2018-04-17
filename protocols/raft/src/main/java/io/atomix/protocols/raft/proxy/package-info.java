@@ -15,6 +15,6 @@
  */
 
 /**
- * Facilitates modification of a Raft state machine via proxy.
+ * Provides a {@link io.atomix.primitive.proxy.PrimitiveProxy} implementation for the Raft consensus protocol.
  */
 package io.atomix.protocols.raft.proxy;

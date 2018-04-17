@@ -15,8 +15,6 @@
  */
 
 /**
- * Generic utilities for managing object lifecycles.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * Provides classes and interfaces for managing concurrency.
  */
 package io.atomix.utils.concurrent;
