@@ -22,6 +22,8 @@ import io.atomix.utils.Services;
  * Partition groups.
  */
 public class PartitionGroups {
+  private static final String RAFT = "raft";
+  private static final String PRIMARY_BACKUP = "multi-primary";
 
   /**
    * Creates a new protocol instance from the given configuration.
@@ -33,7 +35,7 @@ public class PartitionGroups {
   public static ManagedPartitionGroup createGroup(PartitionGroupConfig config) {
     for (PartitionGroupFactory factory : Services.loadAll(PartitionGroupFactory.class)) {
       if (factory.configClass().isAssignableFrom(config.getClass())) {
-        return factory.create(config);
+        return factory.createGroup(config);
       }
     }
     throw new ConfigurationException("Unknown partition group configuration type: " + config.getClass().getSimpleName());
@@ -52,6 +54,26 @@ public class PartitionGroups {
       }
     }
     throw new ConfigurationException("Unknown partition group type: " + type);
+  }
+
+  /**
+   * Returns the Raft partition group factory if it's available on the class path.
+   *
+   * @return the Raft partition group factory
+   * @throws ConfigurationException if the Raft partition group factory is not on the classpath
+   */
+  public static PartitionGroupFactory getRaftGroupFactory() {
+    return getGroupFactory(RAFT);
+  }
+
+  /**
+   * Returns the primary-backup partition group factory if it's available on the class path.
+   *
+   * @return the primary-backup partition group factory
+   * @throws ConfigurationException if the primary-backup partition group factory is not on the classpath
+   */
+  public static PartitionGroupFactory getPrimaryBackupGroupFactory() {
+    return getGroupFactory(PRIMARY_BACKUP);
   }
 
   private PartitionGroups() {

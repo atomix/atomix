@@ -17,7 +17,6 @@ package io.atomix.core.config.jackson;
 
 import io.atomix.core.AtomixConfig;
 import io.atomix.core.config.ConfigProvider;
-import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -69,7 +68,7 @@ public class JacksonConfigProviderTest {
     File file = new File(getClass().getClassLoader().getResource("env.yaml").getFile());
     AtomixConfig config = provider.load(IOUtils.toString(file.toURI(), StandardCharsets.UTF_8), AtomixConfig.class);
     assertEquals("test", config.getPartitionGroups().iterator().next().getName());
-    assertEquals(3, ((RaftPartitionGroupConfig) config.getPartitionGroups().iterator().next()).getPartitions());
+    assertEquals(3, config.getPartitionGroups().iterator().next().getPartitions());
   }
 
   @Test

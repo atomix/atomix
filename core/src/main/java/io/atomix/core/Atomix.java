@@ -74,8 +74,6 @@ import io.atomix.primitive.partition.impl.DefaultPrimaryElectionService;
 import io.atomix.primitive.partition.impl.HashBasedPrimaryElectionService;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.impl.DefaultSessionIdService;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
-import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -95,7 +93,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -588,14 +585,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
     if (config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.CORE)) {
-      return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
-          .withNumPartitions(1)
-          .withDataDirectory(new File(config.getDataDirectory(), SYSTEM_GROUP_NAME))
-          .build();
+      return PartitionGroups.getRaftGroupFactory()
+          .createSystemGroup((int) config.getClusterConfig().getNodes().stream().filter(node -> node.getType() == Node.Type.CORE).count(), config.getDataDirectory());
     } else {
-      return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
-          .withNumPartitions(1)
-          .build();
+      return PartitionGroups.getPrimaryBackupGroupFactory()
+          .createSystemGroup((int) config.getClusterConfig().getNodes().stream().filter(node -> node.getType() != Node.Type.CLIENT).count(), config.getDataDirectory());
     }
   }
 
@@ -660,12 +654,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    */
   public static class Builder implements io.atomix.utils.Builder<Atomix> {
     protected static final String DEFAULT_CLUSTER_NAME = "atomix";
-    // Default to 7 Raft partitions to allow a leader per node in 7 node clusters
-    protected static final int DEFAULT_CORE_PARTITIONS = 7;
-    // Default to 3-node partitions for the best latency/throughput per Raft partition
-    protected static final int DEFAULT_CORE_PARTITION_SIZE = 3;
-    // Default to 71 primary-backup partitions - a prime number that creates about 10 partitions per node in a 7-node cluster
-    protected static final int DEFAULT_DATA_PARTITIONS = 71;
 
     protected String name = DEFAULT_CLUSTER_NAME;
     protected Node localNode;
@@ -673,9 +661,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     protected boolean multicastEnabled = false;
     protected Address multicastAddress;
     protected File dataDirectory = new File(System.getProperty("user.dir"), "data");
-    protected int numCorePartitions = DEFAULT_CORE_PARTITIONS;
-    protected int corePartitionSize = DEFAULT_CORE_PARTITION_SIZE;
-    protected int numDataPartitions = DEFAULT_DATA_PARTITIONS;
     protected Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected boolean enableShutdownHook;
@@ -797,45 +782,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     public Builder withDataDirectory(File dataDirectory) {
       this.dataDirectory = checkNotNull(dataDirectory, "dataDirectory cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the number of core (Raft) partitions.
-     *
-     * @param corePartitions the number of core partitions
-     * @return the Atomix builder
-     * @throws IllegalArgumentException if the number of partitions is not positive
-     */
-    public Builder withCorePartitions(int corePartitions) {
-      checkArgument(corePartitions > 0, "corePartitions must be positive");
-      this.numCorePartitions = corePartitions;
-      return this;
-    }
-
-    /**
-     * Sets the core (Raft) partition size.
-     *
-     * @param partitionSize the core partition size
-     * @return the Atomix builder
-     * @throws IllegalArgumentException if the partition size is not positive
-     */
-    public Builder withCorePartitionSize(int partitionSize) {
-      checkArgument(partitionSize > 0, "partitionSize must be positive");
-      this.corePartitionSize = partitionSize;
-      return this;
-    }
-
-    /**
-     * Sets the number of data partitions.
-     *
-     * @param dataPartitions the number of data partitions
-     * @return the Atomix builder
-     * @throws IllegalArgumentException if the number of data partitions is not positive
-     */
-    public Builder withDataPartitions(int dataPartitions) {
-      checkArgument(dataPartitions > 0, "dataPartitions must be positive");
-      this.numDataPartitions = dataPartitions;
       return this;
     }
 
@@ -1013,14 +959,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     protected ManagedPartitionGroup buildSystemPartitionGroup() {
       if (nodes.stream().anyMatch(node -> node.type() == Node.Type.CORE)) {
-        return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
-            .withNumPartitions(1)
-            .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
-            .build();
+        return PartitionGroups.getRaftGroupFactory()
+            .createSystemGroup((int) nodes.stream().filter(node -> node.type() == Node.Type.CORE).count(), dataDirectory);
       } else {
-        return PrimaryBackupPartitionGroup.builder(SYSTEM_GROUP_NAME)
-            .withNumPartitions(1)
-            .build();
+        return PartitionGroups.getPrimaryBackupGroupFactory()
+            .createSystemGroup((int) nodes.stream().filter(node -> node.type() != Node.Type.CLIENT).count(), dataDirectory);
       }
     }
 
@@ -1028,18 +971,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds a partition service.
      */
     protected ManagedPartitionService buildPartitionService() {
-      if (partitionGroups.isEmpty()) {
-        if (nodes.stream().anyMatch(node -> node.type() == Node.Type.CORE)) {
-          partitionGroups.add(RaftPartitionGroup.builder(CORE_GROUP_NAME)
-              .withDataDirectory(new File(dataDirectory, CORE_GROUP_NAME))
-              .withNumPartitions(numCorePartitions)
-              .withPartitionSize(corePartitionSize)
-              .build());
-        }
-        partitionGroups.add(PrimaryBackupPartitionGroup.builder(DATA_GROUP_NAME)
-            .withNumPartitions(numDataPartitions)
-            .build());
-      }
       return new DefaultPartitionService(partitionGroups);
     }
   }
