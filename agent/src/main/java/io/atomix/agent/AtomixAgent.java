@@ -63,50 +63,55 @@ public class AtomixAgent {
     parser.addArgument("node")
         .type(nodeArgumentType.apply(Node.Type.CORE))
         .nargs("?")
-        .metavar("NAME:HOST:PORT")
+        .metavar("NAME@HOST:PORT")
         .required(false)
-        .help("The local node info");
+        .help("The node info for the local node. This should be in the format [NAME@]HOST[:PORT]. " +
+            "If no name is provided, the node name will default to the host. " +
+            "If no port is provided, the port will default to 5679.");
     parser.addArgument("--type", "-t")
         .type(typeArgumentType)
         .metavar("TYPE")
         .choices(Node.Type.CORE, Node.Type.DATA, Node.Type.CLIENT)
         .setDefault(Node.Type.CORE)
-        .help("Indicates the local node type");
+        .help("Indicates the local node type.");
     parser.addArgument("--config", "-c")
         .metavar("FILE|JSON|YAML")
         .required(false)
-        .help("The Atomix configuration file");
+        .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
     parser.addArgument("--core-nodes", "-n")
         .nargs("*")
         .type(nodeArgumentType.apply(Node.Type.CORE))
-        .metavar("NAME:HOST:PORT")
+        .metavar("NAME@HOST:PORT")
         .required(false)
-        .help("Sets the core cluster configuration");
+        .help("The set of core nodes, if any. When bootstrapping a new cluster, if the local node is a core node " +
+            "then it should be present in the core configuration as well.");
     parser.addArgument("--bootstrap-nodes", "-b")
         .nargs("*")
         .type(nodeArgumentType.apply(Node.Type.DATA))
-        .metavar("NAME:HOST:PORT")
+        .metavar("NAME@HOST:PORT")
         .required(false)
-        .help("Sets the bootstrap nodes");
+        .help("The set of bootstrap nodes. If core nodes are provided, the cluster will be bootstrapped from the " +
+            "core nodes. For clusters without core nodes, at least one bootstrap node must be provided unless " +
+            "using multicast discovery or bootstrapping a new cluster.");
     parser.addArgument("--multicast", "-m")
         .action(new StoreTrueArgumentAction())
         .setDefault(false)
-        .help("Whether to use multicast node discovery");
+        .help("Enables multicast discovery. Note that the network must support multicast for this feature to work.");
     parser.addArgument("--multicast-address", "-a")
         .type(addressArgumentType)
         .metavar("HOST:PORT")
-        .help("The multicast discovery address");
+        .help("Sets the multicast discovery address. Defaults to 230.0.0.1:54321");
     parser.addArgument("--data-dir", "-d")
         .type(fileArgumentType)
         .metavar("FILE")
         .required(false)
-        .help("The data directory");
+        .help("Sets the global Atomix data directory used for storing system data.");
     parser.addArgument("--http-port", "-p")
         .type(Integer.class)
         .metavar("PORT")
         .required(false)
         .setDefault(5678)
-        .help("An optional HTTP server port");
+        .help("Sets the port on which to run the HTTP server. Defaults to 5678");
 
     Namespace namespace = null;
     try {
@@ -116,11 +121,19 @@ public class AtomixAgent {
       System.exit(1);
     }
 
-    String configString = namespace.get("config");
+    final String configString = namespace.get("config");
+    final List<NodeConfig> coreNodes = namespace.getList("core_nodes");
+    final List<NodeConfig> bootstrapNodes = namespace.getList("bootstrap_nodes");
+    final boolean multicastEnabled = namespace.getBoolean("multicast");
+    final Address multicastAddress = namespace.get("multicast_address");
+    final File dataDir = namespace.get("data_dir");
+    final Integer httpPort = namespace.getInt("http_port");
 
-    Atomix.Builder builder = Atomix.builder(configString)
-        .withShutdownHook(true);
+    // Create an Atomix builder and register a shutdown hook.
+    final Atomix.Builder builder = configString != null ? Atomix.builder(configString) : Atomix.builder();
+    builder.withShutdownHook(true);
 
+    // If a local node was provided, add the local node to the builder.
     NodeConfig localNode = namespace.get("node");
     if (localNode != null) {
       Node.Type type = namespace.get("type");
@@ -130,9 +143,7 @@ public class AtomixAgent {
       LOGGER.info("node: {}", node);
     }
 
-    List<NodeConfig> coreNodes = namespace.getList("core_nodes");
-    List<NodeConfig> bootstrapNodes = namespace.getList("bootstrap_nodes");
-
+    // If a cluster configuration was provided, add all the cluster nodes to the builder.
     if (coreNodes != null || bootstrapNodes != null) {
       List<Node> nodes = Stream.concat(
           coreNodes != null ? coreNodes.stream() : Stream.empty(),
@@ -145,16 +156,13 @@ public class AtomixAgent {
       builder.withNodes(nodes);
     }
 
-    if (namespace.getBoolean("multicast")) {
+    // Enable multicast if provided.
+    if (multicastEnabled) {
       builder.withMulticastEnabled();
-      Address multicastAddress = namespace.get("multicast_address");
       if (multicastAddress != null) {
         builder.withMulticastAddress(multicastAddress);
       }
     }
-
-    File dataDir = namespace.get("data_dir");
-    Integer httpPort = namespace.getInt("http_port");
 
     if (dataDir != null) {
       builder.withDataDirectory(dataDir);
