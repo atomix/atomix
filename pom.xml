@@ -226,19 +226,21 @@
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
-          <excludePackageNames>io.atomix.examples*:*.impl*</excludePackageNames>
+          <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest.resources:io.atomix.utils.serializer.serializers:io.atomix.protocols.raft.utils</excludePackageNames>
           <additionalparam>
             -Xdoclint:none
             -notimestamp
             -link http://docs.oracle.com/javase/8/docs/api/
-            -group "Atomix core" io.atomix
-            -group "Cluster" io.atomix.cluster*
+            -group "Core" io.atomix.core*
+            -group "Primitives" io.atomix.core.counter:io.atomix.core.election:io.atomix.core.generator:io.atomix.core.lock:io.atomix.core.map:io.atomix.core.multimap:io.atomix.core.queue:io.atomix.core.set:io.atomix.core.transaction:io.atomix.core.tree:io.atomix.core.value
+            -group "Cluster Management" io.atomix.cluster*:io.atomix.messaging*:io.atomix.cluster.messaging*
+            -group "Primitive API" io.atomix.primitive*
+            -group "Raft Protocol" io.atomix.protocols.raft*
+            -group "Primary-Backup Protocol" io.atomix.protocols.backup*
+            -group "REST API" io.atomix.rest*
+            -group "Agent" io.atomix.agent*
             -group "Storage" io.atomix.storage*
-            -group "Time" io.atomix.time*
-            -group "Distributed primitives" io.atomix.primitives*
-            -group "Raft protocol" io.atomix.protocols.raft*
-            -group "Gossip protocol" io.atomix.protocols.gossip*
-            -group "Utilities" io.atomix.logging:io.atomix.serializer*:io.atomix.time:io.atomix.storage:io.atomix.buffer
+            -group "Utilities" io.atomix.utils*
           </additionalparam>
         </configuration>
       </plugin>

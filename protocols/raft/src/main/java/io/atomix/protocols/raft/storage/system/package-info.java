@@ -15,6 +15,6 @@
  */
 
 /**
- * Classes and interfaces that aid in storing and loading persistent cluster and server configurations.
+ * Provides classes and interfaces that aid in storing and loading persistent cluster and server configurations.
  */
 package io.atomix.protocols.raft.storage.system;

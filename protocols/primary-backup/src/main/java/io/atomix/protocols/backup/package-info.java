@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 /**
- * Provides classes and interfaces for creating and handling generic events.
+ * Provides a {@link io.atomix.primitive.protocol.PrimitiveProtocol} implementation for multi-primary replication and
+ * classes for managing primary-backup clients/servers.
  */
-package io.atomix.utils.event;
+package io.atomix.protocols.backup;

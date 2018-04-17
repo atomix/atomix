@@ -15,6 +15,6 @@
  */
 
 /**
- * Classes and interfaces that aid in storing, loading, and installing on-disk state machine snapshots.
+ * Provides classes and interfaces that aid in storing, loading, and installing on-disk state machine snapshots.
  */
 package io.atomix.protocols.raft.storage.snapshot;

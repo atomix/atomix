@@ -15,6 +15,6 @@
  */
 
 /**
- * Interfaces for managing and interacting with the Raft cluster.
+ * Provides interfaces for managing and interacting with the Raft cluster.
  */
 package io.atomix.protocols.raft.cluster;
