@@ -41,9 +41,22 @@ public interface ClusterService extends ListenerService<ClusterEvent, ClusterEve
 
   /**
    * Returns the specified controller node.
+   * <p>
+   * This is a convenience method that wraps the given {@link String} in a {@link NodeId}. To avoid unnecessary
+   * object allocation, repeated invocations of this method should instead use {@link #getNode(NodeId)}.
    *
-   * @param nodeId controller node identifier
-   * @return controller node
+   * @param nodeId the controller node identifier
+   * @return the controller node or {@code null} if no node with the given identifier exists
+   */
+  default Node getNode(String nodeId) {
+    return getNode(NodeId.from(nodeId));
+  }
+
+  /**
+   * Returns the specified controller node.
+   *
+   * @param nodeId the controller node identifier
+   * @return the controller node or {@code null} if no node with the given identifier exists
    */
   Node getNode(NodeId nodeId);
 
