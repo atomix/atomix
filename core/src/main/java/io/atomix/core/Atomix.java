@@ -132,6 +132,16 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return new Builder(loadConfig(configFile));
   }
 
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param config the Atomix configuration
+   * @return a new Atomix builder
+   */
+  public static Builder builder(AtomixConfig config) {
+    return new Builder(config);
+  }
+
   protected static final String SYSTEM_GROUP_NAME = "system";
   protected static final String CORE_GROUP_NAME = "core";
   protected static final String DATA_GROUP_NAME = "data";

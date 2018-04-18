@@ -148,20 +148,20 @@ public class AtomixAgentTest {
     config.add("  nodes:");
     config.add("    - id: node1");
     config.add("      type: data");
-    config.add("      address: localhost:5000");
+    config.add("      address: localhost:5001");
     config.add("    - id: node2");
     config.add("      type: data");
-    config.add("      address: localhost:5001");
+    config.add("      address: localhost:5002");
     config.add("    - id: node3");
     config.add("      type: data");
-    config.add("      address: localhost:5002");
+    config.add("      address: localhost:5003");
     config.add("partition-groups:");
     config.add("  - type: multi-primary");
     config.add("    name: data");
 
     Thread thread1 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node1@localhost:5000", "-c", Joiner.on('\n').join(config)});
+        AtomixAgent.main(new String[]{"node1", "-c", Joiner.on('\n').join(config), "-p", "6001"});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -170,7 +170,7 @@ public class AtomixAgentTest {
 
     Thread thread2 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node2@localhost:5001", "-c", Joiner.on('\n').join(config)});
+        AtomixAgent.main(new String[]{"node2", "-c", Joiner.on('\n').join(config), "-p", "6002"});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -179,7 +179,7 @@ public class AtomixAgentTest {
 
     Thread thread3 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node3@localhost:5002", "-c", Joiner.on('\n').join(config)});
+        AtomixAgent.main(new String[]{"node3", "-c", Joiner.on('\n').join(config), "-p", "6003"});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();

@@ -19,6 +19,8 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeConfig;
 import io.atomix.cluster.NodeId;
 import io.atomix.core.Atomix;
+import io.atomix.core.AtomixConfig;
+import io.atomix.core.config.impl.DefaultConfigService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.utils.net.Address;
@@ -122,6 +124,8 @@ public class AtomixAgent {
     }
 
     final String configString = namespace.get("config");
+    final NodeConfig localNode = namespace.get("node");
+    final Node.Type localNodeType = namespace.get("type");
     final List<NodeConfig> coreNodes = namespace.getList("core_nodes");
     final List<NodeConfig> bootstrapNodes = namespace.getList("bootstrap_nodes");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
@@ -129,15 +133,34 @@ public class AtomixAgent {
     final File dataDir = namespace.get("data_dir");
     final Integer httpPort = namespace.getInt("http_port");
 
-    // Create an Atomix builder and register a shutdown hook.
-    final Atomix.Builder builder = configString != null ? Atomix.builder(configString) : Atomix.builder();
+    // If a configuration was provided, merge the configuration's node information with the provided command line arguments.
+    final Atomix.Builder builder;
+    if (configString != null) {
+      AtomixConfig config = loadConfig(configString);
+      if (localNode != null) {
+        config.getClusterConfig().getNodes().stream()
+            .filter(node -> node.getId().equals(localNode.getId()))
+            .findAny()
+            .ifPresent(localNodeConfig -> {
+              if (localNodeType == null) {
+                localNode.setType(localNodeConfig.getType());
+              }
+              localNode.setAddress(localNodeConfig.getAddress());
+              localNode.setZone(localNodeConfig.getZone());
+              localNode.setRack(localNodeConfig.getRack());
+              localNode.setHost(localNodeConfig.getHost());
+            });
+      }
+      builder = Atomix.builder(config);
+    } else {
+      builder = Atomix.builder();
+    }
+
     builder.withShutdownHook(true);
 
     // If a local node was provided, add the local node to the builder.
-    NodeConfig localNode = namespace.get("node");
     if (localNode != null) {
-      Node.Type type = namespace.get("type");
-      localNode.setType(type);
+      localNode.setType(localNodeType);
       Node node = new Node(localNode);
       builder.withLocalNode(node);
       LOGGER.info("node: {}", node);
@@ -187,6 +210,18 @@ public class AtomixAgent {
       while (atomix.isRunning()) {
         Atomix.class.wait();
       }
+    }
+  }
+
+  /**
+   * Loads a configuration from the given file.
+   */
+  private static AtomixConfig loadConfig(String config) {
+    File configFile = new File(config);
+    if (configFile.exists()) {
+      return new DefaultConfigService().load(configFile, AtomixConfig.class);
+    } else {
+      return new DefaultConfigService().load(config, AtomixConfig.class);
     }
   }
 
