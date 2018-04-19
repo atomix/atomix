@@ -234,6 +234,12 @@ public abstract class AbstractLogTest {
     RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
     assertEquals(0, writer.getLastIndex());
+    writer.append(new InitializeEntry(1, System.currentTimeMillis()));
+    writer.append(new InitializeEntry(1, System.currentTimeMillis()));
+    writer.reset(1);
+    assertEquals(0, writer.getLastIndex());
+    writer.append(new InitializeEntry(2, System.currentTimeMillis()));
+    assertEquals(2, reader.next().entry().term());
     writer.reset(1);
     assertEquals(0, writer.getLastIndex());
     writer.append(new InitializeEntry(1, System.currentTimeMillis()));
