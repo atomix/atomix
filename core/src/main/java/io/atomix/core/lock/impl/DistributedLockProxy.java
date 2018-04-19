@@ -22,7 +22,6 @@ import io.atomix.core.lock.impl.DistributedLockOperations.Lock;
 import io.atomix.core.lock.impl.DistributedLockOperations.Unlock;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.utils.concurrent.OrderedExecutor;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -115,8 +114,8 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
   @Override
   public CompletableFuture<Optional<Version>> tryLock() {
     // If the proxy is currently disconnected from the cluster, we can just fail the lock attempt here.
-    RaftProxy.State state = proxy.getState();
-    if (state != RaftProxy.State.CONNECTED) {
+    PrimitiveProxy.State state = proxy.getState();
+    if (state != PrimitiveProxy.State.CONNECTED) {
       return CompletableFuture.completedFuture(Optional.empty());
     }
 
