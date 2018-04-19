@@ -54,10 +54,14 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
    * @param index the index to which to reset the head of the journal
    */
   public void reset(long index) {
-    currentWriter.close();
-    currentSegment = journal.resetSegments(index);
-    currentWriter = currentSegment.writer();
-    journal.resetHead(index);
+    if (index > currentWriter.firstIndex()) {
+      currentWriter.close();
+      currentSegment = journal.resetSegments(index);
+      currentWriter = currentSegment.writer();
+      journal.resetHead(index);
+    } else {
+      truncate(index - 1);
+    }
   }
 
   @Override
