@@ -38,8 +38,11 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
   @Test
   public void testLockUnlock() throws Throwable {
     AsyncDistributedLock lock = atomix().lockBuilder("test-lock-unlock", protocol()).build().async();
+    assertFalse(lock.isLocked().get());
     lock.lock().join();
+    assertTrue(lock.isLocked().get());
     lock.unlock().join();
+    assertFalse(lock.isLocked().get());
   }
 
   /**

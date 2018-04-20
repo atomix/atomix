@@ -59,6 +59,13 @@ public interface DistributedLock extends SyncPrimitive {
    */
   void unlock();
 
+  /**
+   * Query whether this lock is locked or not.
+   *
+   * @return {@code true} if this lock is locked, {@code false} otherwise
+   */
+  boolean isLocked();
+
   @Override
   AsyncDistributedLock async();
 

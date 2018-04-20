@@ -50,4 +50,11 @@ public interface DistributedLockService {
   @Operation(value = "unlock", type = OperationType.COMMAND)
   void unlock(int lockId);
 
+  /**
+   * Query whether the lock state.
+   *
+   * @return {@code true} if this lock is locked, {@code false} otherwise
+   */
+  @Operation(value = "isLocked", type = OperationType.QUERY)
+  boolean isLocked();
 }
