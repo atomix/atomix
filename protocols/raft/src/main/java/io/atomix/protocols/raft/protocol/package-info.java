@@ -15,7 +15,7 @@
  */
 
 /**
- * {@link io.atomix.protocols.raft.protocol.RaftRequest} and {@link io.atomix.protocols.raft.protocol.RaftResponse}
- * implementations for all client-server communication.
+ * Provides {@link io.atomix.protocols.raft.protocol.RaftRequest} and {@link io.atomix.protocols.raft.protocol.RaftResponse}
+ * implementations for all internal Raft protocol communication.
  */
 package io.atomix.protocols.raft.protocol;

@@ -16,8 +16,11 @@
 package io.atomix.protocols.backup.partition.impl;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.messaging.MessagingException;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.CloseRequest;
@@ -48,7 +51,20 @@ public class PrimaryBackupClientCommunicator implements PrimaryBackupClientProto
   }
 
   private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, NodeId nodeId) {
-    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, nodeId);
+    CompletableFuture<U> future = new CompletableFuture<>();
+    clusterCommunicator.<T, U>send(subject, request, serializer::encode, serializer::decode, nodeId).whenComplete((result, error) -> {
+      if (error == null) {
+        future.complete(result);
+      } else {
+        Throwable cause = Throwables.getRootCause(error);
+        if (cause instanceof MessagingException.NoRemoteHandler) {
+          future.completeExceptionally(new PrimitiveException.Unavailable());
+        } else {
+          future.completeExceptionally(error);
+        }
+      }
+    });
+    return future;
   }
 
   @Override

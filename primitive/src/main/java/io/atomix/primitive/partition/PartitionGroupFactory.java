@@ -18,6 +18,8 @@ package io.atomix.primitive.partition;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.Generics;
 
+import java.io.File;
+
 /**
  * Partition group factory.
  */
@@ -56,6 +58,15 @@ public interface PartitionGroupFactory<C extends PartitionGroupConfig<C>, P exte
    * @param config the partition group configuration
    * @return the partition group
    */
-  P create(C config);
+  P createGroup(C config);
+
+  /**
+   * Creates a system group.
+   *
+   * @param size the group size
+   * @param dataDirectory the default group data directory
+   * @return a system group
+   */
+  P createSystemGroup(int size, File dataDirectory);
 
 }

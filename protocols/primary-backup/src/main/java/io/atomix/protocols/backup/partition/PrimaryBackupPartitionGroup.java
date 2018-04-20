@@ -17,8 +17,6 @@ package io.atomix.protocols.backup.partition;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
@@ -29,6 +27,8 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadPoolContextFactory;
@@ -218,7 +218,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
     }
 
     @Override
-    public ManagedPartitionGroup build() {
+    public PrimaryBackupPartitionGroup build() {
       return new PrimaryBackupPartitionGroup(config);
     }
   }

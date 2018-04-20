@@ -20,10 +20,19 @@ import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.primitive.partition.PartitionService;
 
+import java.util.concurrent.ScheduledExecutorService;
+
 /**
  * Primitive management service.
  */
 public interface PrimitiveManagementService {
+
+  /**
+   * Returns the primitive thread pool.
+   *
+   * @return the primitive thread pool
+   */
+  ScheduledExecutorService getExecutorService();
 
   /**
    * Returns the cluster service.

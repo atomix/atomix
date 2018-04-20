@@ -15,6 +15,6 @@
  */
 
 /**
- * Atomix messaging service.
+ * Provides low-level interfaces for point-to-point and broadcast messaging.
  */
 package io.atomix.messaging;

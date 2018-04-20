@@ -15,6 +15,6 @@
  */
 
 /**
- * Interfaces for managing client sessions on a Raft server.
+ * Provides classes and interfaces for managing primitive sessions.
  */
 package io.atomix.primitive.session;

@@ -15,6 +15,6 @@
  */
 
 /**
- * Atomix event services.
+ * Provides classes and interfaces for creating and handling generic events.
  */
 package io.atomix.utils.event;

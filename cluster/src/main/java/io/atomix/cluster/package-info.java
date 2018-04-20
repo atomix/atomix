@@ -15,6 +15,6 @@
  */
 
 /**
- * Atomix cluster service.
+ * Provides classes and interfaces for cluster management.
  */
 package io.atomix.cluster;
