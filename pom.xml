@@ -226,6 +226,7 @@
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
+          <stylesheetfile>${basedir}/docs/style.css</stylesheetfile>
           <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest.resources:io.atomix.utils.serializer.serializers:io.atomix.protocols.raft.utils</excludePackageNames>
           <additionalparam>
             -Xdoclint:none
