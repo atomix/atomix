@@ -152,7 +152,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   }
 
   private synchronized void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_ADDED && event.subject().type() == Node.Type.CORE) {
+    if (event.type() == ClusterEvent.Type.NODE_ADDED && event.subject().type() == Node.Type.PERSISTENT) {
       metadataChangeFuture = metadataChangeFuture.thenCompose(v -> {
         Collection<PartitionMetadata> partitions = buildPartitions(managementService.getClusterService());
         if (!this.metadata.equals(partitions)) {
@@ -174,7 +174,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     }
 
     List<NodeId> sorted = new ArrayList<>(clusterService.getNodes().stream()
-        .filter(node -> node.type() == Node.Type.CORE)
+        .filter(node -> node.type() == Node.Type.PERSISTENT)
         .map(Node::id)
         .collect(Collectors.toSet()));
     Collections.sort(sorted);

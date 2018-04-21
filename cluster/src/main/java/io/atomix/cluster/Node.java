@@ -59,29 +59,29 @@ public class Node {
   }
 
   /**
-   * Returns a new core node.
+   * Returns a new persistent node.
    *
-   * @param nodeId   the core node ID
-   * @param address the core node address
-   * @return a new core node
+   * @param nodeId  the persistent node ID
+   * @param address the persistent node address
+   * @return a new persistent node
    */
-  public static Node core(NodeId nodeId, Address address) {
+  public static Node persistent(NodeId nodeId, Address address) {
     return builder(nodeId)
-        .withType(Type.CORE)
+        .withType(Type.PERSISTENT)
         .withAddress(address)
         .build();
   }
 
   /**
-   * Returns a new data node.
+   * Returns a new ephemeral node.
    *
-   * @param nodeId   the data node ID
-   * @param address the data node address
-   * @return a new data node
+   * @param nodeId  the ephemeral node ID
+   * @param address the ephemeral node address
+   * @return a new ephemeral node
    */
-  public static Node data(NodeId nodeId, Address address) {
+  public static Node ephemeral(NodeId nodeId, Address address) {
     return builder(nodeId)
-        .withType(Type.DATA)
+        .withType(Type.EPHEMERAL)
         .withAddress(address)
         .build();
   }
@@ -89,7 +89,7 @@ public class Node {
   /**
    * Returns a new client node.
    *
-   * @param nodeId   the client node ID
+   * @param nodeId  the client node ID
    * @param address the client node address
    * @return a new client node
    */
@@ -106,14 +106,14 @@ public class Node {
   public enum Type {
 
     /**
-     * Represents a core node.
+     * Represents a persistent node.
      */
-    CORE,
+    PERSISTENT,
 
     /**
-     * Represents a data node.
+     * Represents an ephemeral node.
      */
-    DATA,
+    EPHEMERAL,
 
     /**
      * Represents a client node.

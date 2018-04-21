@@ -51,7 +51,6 @@ import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isA;
 
 /**
  * Vert.x REST service test.
@@ -273,7 +272,7 @@ public class VertxRestServiceTest {
 
   protected Atomix buildAtomix(int nodeId) {
     Node localNode = Node.builder(String.valueOf(nodeId))
-        .withType(Node.Type.DATA)
+        .withType(Node.Type.EPHEMERAL)
         .withAddress("localhost", findAvailablePort(BASE_PORT))
         .build();
 
