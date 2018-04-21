@@ -133,14 +133,14 @@ public class DefaultClusterService
   public Set<Node> getNodes() {
     return ImmutableSet.copyOf(nodes.values()
         .stream()
-        .filter(node -> node.type() == Node.Type.CORE || node.getState() == State.ACTIVE)
+        .filter(node -> node.type() == Node.Type.PERSISTENT || node.getState() == State.ACTIVE)
         .collect(Collectors.toList()));
   }
 
   @Override
   public Node getNode(NodeId nodeId) {
     Node node = nodes.get(nodeId);
-    return node != null && (node.type() == Node.Type.CORE || node.getState() == State.ACTIVE) ? node : null;
+    return node != null && (node.type() == Node.Type.PERSISTENT || node.getState() == State.ACTIVE) ? node : null;
   }
 
   /**
@@ -291,10 +291,10 @@ public class DefaultClusterService
       LOGGER.info("{} - Node deactivated: {}", localNode.id(), existingNode);
       existingNode.setState(State.INACTIVE);
       switch (existingNode.type()) {
-        case CORE:
+        case PERSISTENT:
           post(new ClusterEvent(ClusterEvent.Type.NODE_DEACTIVATED, existingNode));
           break;
-        case DATA:
+        case EPHEMERAL:
         case CLIENT:
           post(new ClusterEvent(ClusterEvent.Type.NODE_DEACTIVATED, existingNode));
           post(new ClusterEvent(ClusterEvent.Type.NODE_REMOVED, existingNode));
@@ -330,7 +330,7 @@ public class DefaultClusterService
 
     // Filter the set of core node IDs from the local node information.
     Set<NodeId> dataNodes = nodes.entrySet().stream()
-        .filter(entry -> entry.getValue().type() == Node.Type.CORE)
+        .filter(entry -> entry.getValue().type() == Node.Type.PERSISTENT)
         .map(entry -> entry.getKey())
         .collect(Collectors.toSet());
 

@@ -56,9 +56,9 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   public static void setupAtomix() throws Exception {
     AbstractAtomixTest.setupAtomix();
     instances = new ArrayList<>();
-    instances.add(createAtomix(Node.Type.CORE, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
-    instances.add(createAtomix(Node.Type.CORE, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
-    instances.add(createAtomix(Node.Type.CORE, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Node.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Node.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
     List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::start).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }

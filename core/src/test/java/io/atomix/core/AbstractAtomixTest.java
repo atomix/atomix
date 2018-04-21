@@ -59,13 +59,13 @@ public abstract class AbstractAtomixTest {
     Collection<Node> nodes = Stream.concat(
         nodeIds.stream()
             .map(nodeId -> Node.builder(String.valueOf(nodeId))
-                .withType(Node.Type.CORE)
+                .withType(Node.Type.PERSISTENT)
                 .withAddress("localhost", BASE_PORT + nodeId)
                 .build()),
         bootstrapIds.stream()
             .filter(nodeId -> !nodeIds.contains(nodeId))
             .map(nodeId -> Node.builder(String.valueOf(nodeId))
-                .withType(Node.Type.DATA)
+                .withType(Node.Type.EPHEMERAL)
                 .withAddress("localhost", BASE_PORT + nodeId)
                 .build()))
         .collect(Collectors.toList());

@@ -54,7 +54,7 @@ public class DefaultClusterEventingServiceTest {
     List<Node> bootstrap = new ArrayList<>();
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
-          .withType(Node.Type.CORE)
+          .withType(Node.Type.PERSISTENT)
           .withAddress("localhost", bootstrapNode)
           .build());
     }
@@ -68,7 +68,7 @@ public class DefaultClusterEventingServiceTest {
 
     ClusterMetadata clusterMetadata = buildClusterMetadata(1, 1, 2, 3);
 
-    Node localNode1 = buildNode(1, Node.Type.CORE);
+    Node localNode1 = buildNode(1, Node.Type.PERSISTENT);
     MessagingService messagingService1 = messagingServiceFactory.newMessagingService(localNode1.address()).start().join();
     ClusterService clusterService1 = new DefaultClusterService(
         localNode1,
@@ -80,7 +80,7 @@ public class DefaultClusterEventingServiceTest {
         .join();
     ClusterEventingService eventService1 = new DefaultClusterEventingService(clusterService1, messagingService1).start().join();
 
-    Node localNode2 = buildNode(2, Node.Type.CORE);
+    Node localNode2 = buildNode(2, Node.Type.PERSISTENT);
     MessagingService messagingService2 = messagingServiceFactory.newMessagingService(localNode2.address()).start().join();
     ClusterService clusterService2 = new DefaultClusterService(
         localNode2,
@@ -92,7 +92,7 @@ public class DefaultClusterEventingServiceTest {
         .join();
     ClusterEventingService eventService2 = new DefaultClusterEventingService(clusterService2, messagingService2).start().join();
 
-    Node localNode3 = buildNode(3, Node.Type.CORE);
+    Node localNode3 = buildNode(3, Node.Type.PERSISTENT);
     MessagingService messagingService3 = messagingServiceFactory.newMessagingService(localNode3.address()).start().join();
     ClusterService clusterService3 = new DefaultClusterService(
         localNode3,

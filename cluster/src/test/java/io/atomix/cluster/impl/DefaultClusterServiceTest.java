@@ -49,7 +49,7 @@ public class DefaultClusterServiceTest {
     List<Node> bootstrap = new ArrayList<>();
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
-          .withType(Node.Type.CORE)
+          .withType(Node.Type.PERSISTENT)
           .withAddress("localhost", bootstrapNode)
           .build());
     }
@@ -63,7 +63,7 @@ public class DefaultClusterServiceTest {
 
     ClusterMetadata clusterMetadata = buildClusterMetadata(1, 2, 3);
 
-    Node localNode1 = buildNode(1, Node.Type.CORE);
+    Node localNode1 = buildNode(1, Node.Type.PERSISTENT);
     ManagedClusterService clusterService1 = new DefaultClusterService(
         localNode1,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
@@ -71,7 +71,7 @@ public class DefaultClusterServiceTest {
         messagingServiceFactory.newMessagingService(localNode1.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
 
-    Node localNode2 = buildNode(2, Node.Type.CORE);
+    Node localNode2 = buildNode(2, Node.Type.PERSISTENT);
     ManagedClusterService clusterService2 = new DefaultClusterService(
         localNode2,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
@@ -79,7 +79,7 @@ public class DefaultClusterServiceTest {
         messagingServiceFactory.newMessagingService(localNode2.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
 
-    Node localNode3 = buildNode(3, Node.Type.CORE);
+    Node localNode3 = buildNode(3, Node.Type.PERSISTENT);
     ManagedClusterService clusterService3 = new DefaultClusterService(
         localNode3,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
@@ -104,17 +104,17 @@ public class DefaultClusterServiceTest {
     assertEquals(3, clusterService2.getNodes().size());
     assertEquals(3, clusterService3.getNodes().size());
 
-    assertEquals(Node.Type.CORE, clusterService1.getLocalNode().type());
-    assertEquals(Node.Type.CORE, clusterService1.getNode(NodeId.from("1")).type());
-    assertEquals(Node.Type.CORE, clusterService1.getNode(NodeId.from("2")).type());
-    assertEquals(Node.Type.CORE, clusterService1.getNode(NodeId.from("3")).type());
+    assertEquals(Node.Type.PERSISTENT, clusterService1.getLocalNode().type());
+    assertEquals(Node.Type.PERSISTENT, clusterService1.getNode(NodeId.from("1")).type());
+    assertEquals(Node.Type.PERSISTENT, clusterService1.getNode(NodeId.from("2")).type());
+    assertEquals(Node.Type.PERSISTENT, clusterService1.getNode(NodeId.from("3")).type());
 
     assertEquals(State.ACTIVE, clusterService1.getLocalNode().getState());
     assertEquals(State.ACTIVE, clusterService1.getNode(NodeId.from("1")).getState());
     assertEquals(State.ACTIVE, clusterService1.getNode(NodeId.from("2")).getState());
     assertEquals(State.ACTIVE, clusterService1.getNode(NodeId.from("3")).getState());
 
-    Node dataNode = buildNode(4, Node.Type.DATA);
+    Node dataNode = buildNode(4, Node.Type.EPHEMERAL);
 
     ManagedClusterService dataClusterService = new DefaultClusterService(
         dataNode,
@@ -169,10 +169,10 @@ public class DefaultClusterServiceTest {
 
     assertEquals(Node.Type.CLIENT, clientClusterService.getLocalNode().type());
 
-    assertEquals(Node.Type.CORE, clientClusterService.getNode(NodeId.from("1")).type());
-    assertEquals(Node.Type.CORE, clientClusterService.getNode(NodeId.from("2")).type());
-    assertEquals(Node.Type.CORE, clientClusterService.getNode(NodeId.from("3")).type());
-    assertEquals(Node.Type.DATA, clientClusterService.getNode(NodeId.from("4")).type());
+    assertEquals(Node.Type.PERSISTENT, clientClusterService.getNode(NodeId.from("1")).type());
+    assertEquals(Node.Type.PERSISTENT, clientClusterService.getNode(NodeId.from("2")).type());
+    assertEquals(Node.Type.PERSISTENT, clientClusterService.getNode(NodeId.from("3")).type());
+    assertEquals(Node.Type.EPHEMERAL, clientClusterService.getNode(NodeId.from("4")).type());
     assertEquals(Node.Type.CLIENT, clientClusterService.getNode(NodeId.from("5")).type());
 
     assertEquals(State.ACTIVE, clientClusterService.getLocalNode().getState());
@@ -190,7 +190,7 @@ public class DefaultClusterServiceTest {
     Thread.sleep(2500);
 
     assertEquals(5, clusterService2.getNodes().size());
-    assertEquals(Node.Type.CORE, clusterService2.getNode(NodeId.from("1")).type());
+    assertEquals(Node.Type.PERSISTENT, clusterService2.getNode(NodeId.from("1")).type());
 
     assertEquals(State.INACTIVE, clusterService2.getNode(NodeId.from("1")).getState());
     assertEquals(State.ACTIVE, clusterService2.getNode(NodeId.from("2")).getState());

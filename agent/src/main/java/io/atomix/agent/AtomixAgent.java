@@ -63,7 +63,7 @@ public class AtomixAgent {
         .defaultHelp(true)
         .description("Atomix server");
     parser.addArgument("node")
-        .type(nodeArgumentType.apply(Node.Type.CORE))
+        .type(nodeArgumentType.apply(Node.Type.PERSISTENT))
         .nargs("?")
         .metavar("NAME@HOST:PORT")
         .required(false)
@@ -73,8 +73,8 @@ public class AtomixAgent {
     parser.addArgument("--type", "-t")
         .type(typeArgumentType)
         .metavar("TYPE")
-        .choices(Node.Type.CORE, Node.Type.DATA, Node.Type.CLIENT)
-        .setDefault(Node.Type.CORE)
+        .choices(Node.Type.PERSISTENT, Node.Type.EPHEMERAL, Node.Type.CLIENT)
+        .setDefault(Node.Type.PERSISTENT)
         .help("Indicates the local node type.");
     parser.addArgument("--config", "-c")
         .metavar("FILE|JSON|YAML")
@@ -82,14 +82,14 @@ public class AtomixAgent {
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
     parser.addArgument("--core-nodes", "-n")
         .nargs("*")
-        .type(nodeArgumentType.apply(Node.Type.CORE))
+        .type(nodeArgumentType.apply(Node.Type.PERSISTENT))
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The set of core nodes, if any. When bootstrapping a new cluster, if the local node is a core node " +
             "then it should be present in the core configuration as well.");
     parser.addArgument("--bootstrap-nodes", "-b")
         .nargs("*")
-        .type(nodeArgumentType.apply(Node.Type.DATA))
+        .type(nodeArgumentType.apply(Node.Type.EPHEMERAL))
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The set of bootstrap nodes. If core nodes are provided, the cluster will be bootstrapped from the " +

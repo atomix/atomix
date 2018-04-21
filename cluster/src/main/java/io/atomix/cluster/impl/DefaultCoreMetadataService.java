@@ -119,7 +119,7 @@ public class DefaultCoreMetadataService
 
   @Override
   public void addNode(Node node) {
-    if (node.type() == Node.Type.CORE) {
+    if (node.type() == Node.Type.PERSISTENT) {
       ReplicatedNode replicatedNode = nodes.get(node.id());
       if (replicatedNode == null) {
         LogicalTimestamp timestamp = clock.increment();

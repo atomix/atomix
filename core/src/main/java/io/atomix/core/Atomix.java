@@ -532,11 +532,11 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Builds a bootstrap metadata service.
    */
   private static ManagedBootstrapMetadataService buildBootstrapMetadataService(AtomixConfig config) {
-    boolean hasCoreNodes = config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.CORE);
+    boolean hasCoreNodes = config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.PERSISTENT);
     ClusterMetadata metadata = ClusterMetadata.builder()
         .withNodes(config.getClusterConfig().getNodes()
             .stream()
-            .filter(node -> (!hasCoreNodes && node.getType() == Node.Type.DATA) || (hasCoreNodes && node.getType() == Node.Type.CORE))
+            .filter(node -> (!hasCoreNodes && node.getType() == Node.Type.EPHEMERAL) || (hasCoreNodes && node.getType() == Node.Type.PERSISTENT))
             .map(Node::new)
             .collect(Collectors.toList()))
         .build();
@@ -550,7 +550,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     ClusterMetadata metadata = ClusterMetadata.builder()
         .withNodes(config.getClusterConfig().getNodes()
             .stream()
-            .filter(node -> node.getType() == Node.Type.CORE)
+            .filter(node -> node.getType() == Node.Type.PERSISTENT)
             .map(Node::new)
             .collect(Collectors.toList()))
         .build();
@@ -571,7 +571,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     if (config.getClusterConfig().getLocalNode() == null) {
       Address address = Address.empty();
       localNode = Node.builder(address.toString())
-          .withType(Node.Type.CORE)
+          .withType(Node.Type.PERSISTENT)
           .withAddress(address)
           .build();
     } else {
@@ -600,9 +600,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Builds the core partition group.
    */
   private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
-    if (config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.CORE)) {
+    if (config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.PERSISTENT)) {
       return PartitionGroups.getRaftGroupFactory()
-          .createSystemGroup((int) config.getClusterConfig().getNodes().stream().filter(node -> node.getType() == Node.Type.CORE).count(), config.getDataDirectory());
+          .createSystemGroup((int) config.getClusterConfig().getNodes().stream().filter(node -> node.getType() == Node.Type.PERSISTENT).count(), config.getDataDirectory());
     } else {
       return PartitionGroups.getPrimaryBackupGroupFactory()
           .createSystemGroup((int) config.getClusterConfig().getNodes().stream().filter(node -> node.getType() != Node.Type.CLIENT).count(), config.getDataDirectory());
@@ -943,7 +943,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     protected ManagedCoreMetadataService buildCoreMetadataService(MessagingService messagingService) {
       return new DefaultCoreMetadataService(ClusterMetadata.builder()
           .withNodes(nodes.stream()
-              .filter(node -> node.type() == Node.Type.CORE)
+              .filter(node -> node.type() == Node.Type.PERSISTENT)
               .collect(Collectors.toList()))
           .build(), messagingService);
     }
@@ -979,9 +979,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds the core partition group.
      */
     protected ManagedPartitionGroup buildSystemPartitionGroup() {
-      if (nodes.stream().anyMatch(node -> node.type() == Node.Type.CORE)) {
+      if (nodes.stream().anyMatch(node -> node.type() == Node.Type.PERSISTENT)) {
         return PartitionGroups.getRaftGroupFactory()
-            .createSystemGroup((int) nodes.stream().filter(node -> node.type() == Node.Type.CORE).count(), dataDirectory);
+            .createSystemGroup((int) nodes.stream().filter(node -> node.type() == Node.Type.PERSISTENT).count(), dataDirectory);
       } else {
         return PartitionGroups.getPrimaryBackupGroupFactory()
             .createSystemGroup((int) nodes.stream().filter(node -> node.type() != Node.Type.CLIENT).count(), dataDirectory);
