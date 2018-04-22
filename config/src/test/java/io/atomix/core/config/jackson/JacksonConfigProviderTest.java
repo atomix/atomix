@@ -16,10 +16,9 @@
 package io.atomix.core.config.jackson;
 
 import io.atomix.core.AtomixConfig;
-import io.atomix.core.config.ConfigProvider;
 import io.atomix.primitive.partition.TagMemberFilter;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroupConfig;
+import io.atomix.utils.config.ConfigProvider;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;

@@ -15,6 +15,7 @@
  */
 package io.atomix.cluster;
 
+import io.atomix.cluster.profile.NodeProfile;
 import io.atomix.utils.net.Address;
 
 import java.util.HashSet;
@@ -31,6 +32,8 @@ public class NodeConfig {
   private String rack;
   private String host;
   private Set<String> tags = new HashSet<>();
+  private NodeProfile profile = c -> {
+  };
 
   /**
    * Returns the node identifier.
@@ -38,6 +41,9 @@ public class NodeConfig {
    * @return the node identifier
    */
   public NodeId getId() {
+    if (id == null) {
+      id = NodeId.from(address.address().getHostName());
+    }
     return id;
   }
 
@@ -189,6 +195,37 @@ public class NodeConfig {
    */
   public NodeConfig setTags(Set<String> tags) {
     this.tags = tags;
+    return this;
+  }
+
+  /**
+   * Adds a node tag.
+   *
+   * @param tag the tag to add
+   * @return the node configuration
+   */
+  public NodeConfig addTag(String tag) {
+    tags.add(tag);
+    return this;
+  }
+
+  /**
+   * Returns the node profile.
+   *
+   * @return the node profile
+   */
+  public NodeProfile getProfile() {
+    return profile;
+  }
+
+  /**
+   * Sets the node profile.
+   *
+   * @param profile the node profile
+   * @return the node configuration
+   */
+  public NodeConfig setProfile(NodeProfile profile) {
+    this.profile = profile;
     return this;
   }
 }

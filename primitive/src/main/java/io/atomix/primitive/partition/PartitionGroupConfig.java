@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.utils.Config;
+import io.atomix.utils.config.Config;
 
 /**
  * Partition group configuration.

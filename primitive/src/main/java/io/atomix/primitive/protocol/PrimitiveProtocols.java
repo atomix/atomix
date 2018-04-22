@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.protocol;
 
-import io.atomix.utils.ConfigurationException;
+import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.Services;
 
 /**

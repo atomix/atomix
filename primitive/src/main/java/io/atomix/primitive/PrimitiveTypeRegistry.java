@@ -16,7 +16,7 @@
 package io.atomix.primitive;
 
 import com.google.common.collect.Maps;
-import io.atomix.utils.ConfigurationException;
+import io.atomix.utils.config.ConfigurationException;
 
 import java.util.ArrayList;
 import java.util.Collection;

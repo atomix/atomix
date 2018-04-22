@@ -18,9 +18,8 @@ package io.atomix.core;
 import io.atomix.cluster.ClusterConfig;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.utils.Config;
+import io.atomix.utils.config.Config;
 
 import java.util.ArrayList;
 import java.util.Collection;

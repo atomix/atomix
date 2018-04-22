@@ -15,12 +15,15 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.utils.Config;
+import io.atomix.cluster.profile.ClusterProfile;
+import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Cluster configuration.
@@ -35,6 +38,7 @@ public class ClusterConfig implements Config {
   private Collection<NodeConfig> nodes = new ArrayList<>();
   private boolean multicastEnabled = false;
   private Address multicastAddress;
+  private ClusterProfile profile = c -> {};
 
   public ClusterConfig() {
     try {
@@ -141,6 +145,26 @@ public class ClusterConfig implements Config {
    */
   public ClusterConfig setMulticastAddress(Address multicastAddress) {
     this.multicastAddress = multicastAddress;
+    return this;
+  }
+
+  /**
+   * Returns the cluster profile.
+   *
+   * @return the cluster profile
+   */
+  public ClusterProfile getProfile() {
+    return profile;
+  }
+
+  /**
+   * Sets the cluster profile.
+   *
+   * @param profile the cluster profile
+   * @return the cluster configuration
+   */
+  public ClusterConfig setProfile(ClusterProfile profile) {
+    this.profile = checkNotNull(profile);
     return this;
   }
 }

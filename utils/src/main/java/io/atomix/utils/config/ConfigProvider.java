@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.config;
-
-import io.atomix.utils.Config;
+package io.atomix.utils.config;
 
 import java.io.File;
 
