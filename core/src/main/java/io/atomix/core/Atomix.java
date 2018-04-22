@@ -18,14 +18,14 @@ package io.atomix.core;
 import io.atomix.cluster.BootstrapMetadataService;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.CoreMetadataService;
+import io.atomix.cluster.PersistentMetadataService;
 import io.atomix.cluster.ManagedBootstrapMetadataService;
 import io.atomix.cluster.ManagedClusterService;
-import io.atomix.cluster.ManagedCoreMetadataService;
+import io.atomix.cluster.ManagedPersistentMetadataService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
-import io.atomix.cluster.impl.DefaultCoreMetadataService;
+import io.atomix.cluster.impl.DefaultPersistentMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
@@ -482,7 +482,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     ManagedMessagingService messagingService = buildMessagingService(config);
     ManagedBroadcastService broadcastService = buildBroadcastService(config);
     ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config);
-    ManagedCoreMetadataService coreMetadataService = buildCoreMetadataService(config, messagingService);
+    ManagedPersistentMetadataService coreMetadataService = buildCoreMetadataService(config, messagingService);
     ManagedClusterService clusterService = buildClusterService(config, bootstrapMetadataService, coreMetadataService, messagingService, broadcastService);
     ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
     ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
@@ -546,7 +546,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   /**
    * Builds a core metadata service.
    */
-  private static ManagedCoreMetadataService buildCoreMetadataService(AtomixConfig config, MessagingService messagingService) {
+  private static ManagedPersistentMetadataService buildCoreMetadataService(AtomixConfig config, MessagingService messagingService) {
     ClusterMetadata metadata = ClusterMetadata.builder()
         .withNodes(config.getClusterConfig().getNodes()
             .stream()
@@ -554,7 +554,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
             .map(Node::new)
             .collect(Collectors.toList()))
         .build();
-    return new DefaultCoreMetadataService(metadata, messagingService);
+    return new DefaultPersistentMetadataService(metadata, messagingService);
   }
 
   /**
@@ -563,7 +563,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private static ManagedClusterService buildClusterService(
       AtomixConfig config,
       BootstrapMetadataService bootstrapMetadataService,
-      CoreMetadataService coreMetadataService,
+      PersistentMetadataService persistentMetadataService,
       MessagingService messagingService,
       BroadcastService broadcastService) {
     // If the local node has not be configured, create a default node.
@@ -577,7 +577,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     } else {
       localNode = new Node(config.getClusterConfig().getLocalNode());
     }
-    return new DefaultClusterService(localNode, bootstrapMetadataService, coreMetadataService, messagingService, broadcastService);
+    return new DefaultClusterService(localNode, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
   }
 
   /**
@@ -628,7 +628,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     private final ManagedMessagingService messagingService;
     private final ManagedBroadcastService broadcastService;
     private final ManagedBootstrapMetadataService bootstrapMetadataService;
-    private final ManagedCoreMetadataService coreMetadataService;
+    private final ManagedPersistentMetadataService coreMetadataService;
     private final ManagedClusterService clusterService;
     private final ManagedClusterMessagingService clusterMessagingService;
     private final ManagedClusterEventingService clusterEventingService;
@@ -643,7 +643,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         ManagedMessagingService messagingService,
         ManagedBroadcastService broadcastService,
         ManagedBootstrapMetadataService bootstrapMetadataService,
-        ManagedCoreMetadataService coreMetadataService,
+        ManagedPersistentMetadataService coreMetadataService,
         ManagedClusterService clusterService,
         ManagedClusterMessagingService clusterMessagingService,
         ManagedClusterEventingService clusterEventingService,
@@ -885,7 +885,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedMessagingService messagingService = buildMessagingService();
       ManagedBroadcastService broadcastService = buildBroadcastService();
       ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService();
-      ManagedCoreMetadataService coreMetadataService = buildCoreMetadataService(messagingService);
+      ManagedPersistentMetadataService coreMetadataService = buildCoreMetadataService(messagingService);
       ManagedClusterService clusterService = buildClusterService(bootstrapMetadataService, coreMetadataService, messagingService, broadcastService);
       ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
       ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
@@ -940,8 +940,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     /**
      * Builds a core metadata service.
      */
-    protected ManagedCoreMetadataService buildCoreMetadataService(MessagingService messagingService) {
-      return new DefaultCoreMetadataService(ClusterMetadata.builder()
+    protected ManagedPersistentMetadataService buildCoreMetadataService(MessagingService messagingService) {
+      return new DefaultPersistentMetadataService(ClusterMetadata.builder()
           .withNodes(nodes.stream()
               .filter(node -> node.type() == Node.Type.PERSISTENT)
               .collect(Collectors.toList()))
@@ -953,10 +953,10 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     protected ManagedClusterService buildClusterService(
         BootstrapMetadataService bootstrapMetadataService,
-        CoreMetadataService coreMetadataService,
+        PersistentMetadataService persistentMetadataService,
         MessagingService messagingService,
         BroadcastService broadcastService) {
-      return new DefaultClusterService(localNode, bootstrapMetadataService, coreMetadataService, messagingService, broadcastService);
+      return new DefaultClusterService(localNode, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
     }
 
     /**

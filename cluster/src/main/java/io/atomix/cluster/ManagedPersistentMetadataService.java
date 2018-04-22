@@ -16,7 +16,22 @@
 package io.atomix.cluster;
 
 /**
- * Core metadata service.
+ * Managed core metadata service.
  */
-public interface CoreMetadataService extends ClusterMetadataService {
+public interface ManagedPersistentMetadataService extends PersistentMetadataService, ManagedClusterMetadataService {
+
+  /**
+   * Adds the given node to the cluster metadata.
+   *
+   * @param node the node to add to the cluster metadata
+   */
+  void addNode(Node node);
+
+  /**
+   * Removes the given node from the cluster metadata.
+   *
+   * @param node the node to remove from the cluster metadata
+   */
+  void removeNode(Node node);
+
 }
