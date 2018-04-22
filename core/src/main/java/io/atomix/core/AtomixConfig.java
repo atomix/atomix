@@ -18,10 +18,10 @@ package io.atomix.core;
 import io.atomix.cluster.ClusterConfig;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.utils.Config;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,8 +34,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class AtomixConfig implements Config {
   private ClusterConfig cluster = new ClusterConfig();
-  private File dataDirectory = new File(System.getProperty("user.dir"), "data");
   private boolean enableShutdownHook;
+  private PartitionGroupConfig systemPartitionGroup;
   private Collection<PartitionGroupConfig> partitionGroups = new ArrayList<>();
   private Collection<Class<? extends PrimitiveType>> types = new ArrayList<>();
   private Map<String, PrimitiveConfig> primitives = new HashMap<>();
@@ -61,37 +61,6 @@ public class AtomixConfig implements Config {
   }
 
   /**
-   * Returns the data directory.
-   *
-   * @return the data directory
-   */
-  public File getDataDirectory() {
-    return dataDirectory;
-  }
-
-  /**
-   * Sets the data directory.
-   *
-   * @param dataDirectory the data directory
-   * @return the Atomix configuration
-   */
-  public AtomixConfig setDataDirectory(String dataDirectory) {
-    this.dataDirectory = new File(dataDirectory);
-    return this;
-  }
-
-  /**
-   * Sets the data directory.
-   *
-   * @param dataDirectory the data directory
-   * @return the Atomix configuration
-   */
-  public AtomixConfig setDataDirectory(File dataDirectory) {
-    this.dataDirectory = dataDirectory;
-    return this;
-  }
-
-  /**
    * Returns whether to enable the shutdown hook.
    *
    * @return whether to enable the shutdown hook
@@ -108,6 +77,26 @@ public class AtomixConfig implements Config {
    */
   public AtomixConfig setEnableShutdownHook(boolean enableShutdownHook) {
     this.enableShutdownHook = enableShutdownHook;
+    return this;
+  }
+
+  /**
+   * Returns the system partition group.
+   *
+   * @return the system partition group
+   */
+  public PartitionGroupConfig getSystemPartitionGroup() {
+    return systemPartitionGroup;
+  }
+
+  /**
+   * Sets the system partition group.
+   *
+   * @param systemPartitionGroup the system partition group
+   * @return the Atomix configuration
+   */
+  public AtomixConfig setSystemPartitionGroup(PartitionGroupConfig systemPartitionGroup) {
+    this.systemPartitionGroup = systemPartitionGroup;
     return this;
   }
 

@@ -32,7 +32,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.file.FileVisitResult;
@@ -281,9 +280,11 @@ public class VertxRestServiceTest {
 
     return Atomix.builder()
         .withClusterName("test")
-        .withDataDirectory(new File("target/test-logs/1"))
         .withLocalNode(localNode)
         .withNodes(nodes)
+        .withSystemPartitionGroup(PrimaryBackupPartitionGroup.builder("system")
+            .withNumPartitions(1)
+            .build())
         .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
             .withNumPartitions(3)
             .build())
