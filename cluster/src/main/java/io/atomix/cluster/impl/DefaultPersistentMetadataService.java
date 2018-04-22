@@ -104,6 +104,7 @@ public class DefaultPersistentMetadataService
         node.zone(),
         node.rack(),
         node.host(),
+        node.tags(),
         new LogicalTimestamp(0),
         false)));
     this.messagingService = messagingService;
@@ -130,6 +131,7 @@ public class DefaultPersistentMetadataService
             node.zone(),
             node.rack(),
             node.host(),
+            node.tags(),
             timestamp,
             false);
         nodes.put(replicatedNode.id(), replicatedNode);
@@ -151,6 +153,7 @@ public class DefaultPersistentMetadataService
           node.zone(),
           node.rack(),
           node.host(),
+          node.tags(),
           timestamp,
           true);
       nodes.put(replicatedNode.id(), replicatedNode);
@@ -312,6 +315,7 @@ public class DefaultPersistentMetadataService
                 node.zone(),
                 node.rack(),
                 node.host(),
+                node.tags(),
                 digest.timestamp(),
                 true));
             post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));

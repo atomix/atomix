@@ -17,6 +17,9 @@ package io.atomix.cluster;
 
 import io.atomix.utils.net.Address;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Node configuration.
  */
@@ -27,6 +30,7 @@ public class NodeConfig {
   private String zone;
   private String rack;
   private String host;
+  private Set<String> tags = new HashSet<>();
 
   /**
    * Returns the node identifier.
@@ -165,6 +169,26 @@ public class NodeConfig {
    */
   public NodeConfig setHost(String host) {
     this.host = host;
+    return this;
+  }
+
+  /**
+   * Returns the node tags.
+   *
+   * @return the node tags
+   */
+  public Set<String> getTags() {
+    return tags;
+  }
+
+  /**
+   * Sets the node tags.
+   *
+   * @param tags the node tags
+   * @return the node configuration
+   */
+  public NodeConfig setTags(Set<String> tags) {
+    this.tags = tags;
     return this;
   }
 }
