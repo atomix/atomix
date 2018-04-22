@@ -18,11 +18,11 @@ package io.atomix.core;
 import io.atomix.cluster.BootstrapMetadataService;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.PersistentMetadataService;
 import io.atomix.cluster.ManagedBootstrapMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.ManagedPersistentMetadataService;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.PersistentMetadataService;
 import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
 import io.atomix.cluster.impl.DefaultPersistentMetadataService;
@@ -74,6 +74,7 @@ import io.atomix.primitive.partition.impl.DefaultPrimaryElectionService;
 import io.atomix.primitive.partition.impl.HashBasedPrimaryElectionService;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.impl.DefaultSessionIdService;
+import io.atomix.utils.ConfigurationException;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -141,10 +142,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   public static Builder builder(AtomixConfig config) {
     return new Builder(config);
   }
-
-  protected static final String SYSTEM_GROUP_NAME = "system";
-  protected static final String CORE_GROUP_NAME = "core";
-  protected static final String DATA_GROUP_NAME = "data";
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
 
@@ -600,13 +597,10 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Builds the core partition group.
    */
   private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
-    if (config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.PERSISTENT)) {
-      return PartitionGroups.getRaftGroupFactory()
-          .createSystemGroup((int) config.getClusterConfig().getNodes().stream().filter(node -> node.getType() == Node.Type.PERSISTENT).count(), config.getDataDirectory());
-    } else {
-      return PartitionGroups.getPrimaryBackupGroupFactory()
-          .createSystemGroup((int) config.getClusterConfig().getNodes().stream().filter(node -> node.getType() != Node.Type.CLIENT).count(), config.getDataDirectory());
+    if (config.getSystemPartitionGroup() == null) {
+      throw new ConfigurationException("No system partition group provided");
     }
+    return PartitionGroups.createGroup(config.getSystemPartitionGroup());
   }
 
   /**
@@ -616,6 +610,10 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups()) {
       partitionGroups.add(PartitionGroups.createGroup(partitionGroupConfig));
+    }
+
+    if (partitionGroups.isEmpty() && config.getSystemPartitionGroup() == null) {
+      throw new ConfigurationException("Cannot form data cluster: no system partition group provided");
     }
     return new DefaultPartitionService(partitionGroups);
   }
@@ -679,7 +677,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     protected Collection<Node> nodes = new ArrayList<>();
     protected boolean multicastEnabled = false;
     protected Address multicastAddress;
-    protected File dataDirectory = new File(System.getProperty("user.dir"), "data");
+    protected ManagedPartitionGroup systemPartitionGroup;
     protected Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected boolean enableShutdownHook;
@@ -700,7 +698,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       this.nodes = config.getClusterConfig().getNodes().stream().map(Node::new).collect(Collectors.toList());
       this.multicastEnabled = config.getClusterConfig().isMulticastEnabled();
       this.multicastAddress = config.getClusterConfig().getMulticastAddress();
-      this.dataDirectory = config.getDataDirectory();
+      this.systemPartitionGroup = PartitionGroups.createGroup(config.getSystemPartitionGroup());
       this.partitionGroups = config.getPartitionGroups().stream().map(PartitionGroups::createGroup).collect(Collectors.toList());
       this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
       this.enableShutdownHook = config.isEnableShutdownHook();
@@ -793,14 +791,14 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     /**
-     * Sets the partition data directory.
+     * Sets the system partition group.
      *
-     * @param dataDirectory the partition data directory
+     * @param systemPartitionGroup the system partition group
      * @return the Atomix builder
-     * @throws NullPointerException if the data directory is null
+     * @throws NullPointerException if the partition group is {@code null}
      */
-    public Builder withDataDirectory(File dataDirectory) {
-      this.dataDirectory = checkNotNull(dataDirectory, "dataDirectory cannot be null");
+    public Builder withSystemPartitionGroup(ManagedPartitionGroup systemPartitionGroup) {
+      this.systemPartitionGroup = checkNotNull(systemPartitionGroup, "systemPartitionGroup cannot be null");
       return this;
     }
 
@@ -979,19 +977,19 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds the core partition group.
      */
     protected ManagedPartitionGroup buildSystemPartitionGroup() {
-      if (nodes.stream().anyMatch(node -> node.type() == Node.Type.PERSISTENT)) {
-        return PartitionGroups.getRaftGroupFactory()
-            .createSystemGroup((int) nodes.stream().filter(node -> node.type() == Node.Type.PERSISTENT).count(), dataDirectory);
-      } else {
-        return PartitionGroups.getPrimaryBackupGroupFactory()
-            .createSystemGroup((int) nodes.stream().filter(node -> node.type() != Node.Type.CLIENT).count(), dataDirectory);
+      if (systemPartitionGroup == null) {
+        throw new ConfigurationException("No system partition group provided");
       }
+      return systemPartitionGroup;
     }
 
     /**
      * Builds a partition service.
      */
     protected ManagedPartitionService buildPartitionService() {
+      if (!partitionGroups.isEmpty() && systemPartitionGroup == null) {
+        throw new ConfigurationException("Cannot form data cluster: no system partition group provided");
+      }
       return new DefaultPartitionService(partitionGroups);
     }
   }

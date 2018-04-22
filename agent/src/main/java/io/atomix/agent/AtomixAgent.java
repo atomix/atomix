@@ -103,11 +103,6 @@ public class AtomixAgent {
         .type(addressArgumentType)
         .metavar("HOST:PORT")
         .help("Sets the multicast discovery address. Defaults to 230.0.0.1:54321");
-    parser.addArgument("--data-dir", "-d")
-        .type(fileArgumentType)
-        .metavar("FILE")
-        .required(false)
-        .help("Sets the global Atomix data directory used for storing system data.");
     parser.addArgument("--http-port", "-p")
         .type(Integer.class)
         .metavar("PORT")
@@ -130,7 +125,6 @@ public class AtomixAgent {
     final List<NodeConfig> bootstrapNodes = namespace.getList("bootstrap_nodes");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
     final Address multicastAddress = namespace.get("multicast_address");
-    final File dataDir = namespace.get("data_dir");
     final Integer httpPort = namespace.getInt("http_port");
 
     // If a configuration was provided, merge the configuration's node information with the provided command line arguments.
@@ -185,10 +179,6 @@ public class AtomixAgent {
       if (multicastAddress != null) {
         builder.withMulticastAddress(multicastAddress);
       }
-    }
-
-    if (dataDir != null) {
-      builder.withDataDirectory(dataDir);
     }
 
     Atomix atomix = builder.build();
