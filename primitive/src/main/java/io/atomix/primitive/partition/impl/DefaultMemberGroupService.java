@@ -18,6 +18,7 @@ package io.atomix.primitive.partition.impl;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
 import io.atomix.primitive.partition.ManagedMemberGroupService;
+import io.atomix.primitive.partition.MemberFilter;
 import io.atomix.primitive.partition.MemberGroup;
 import io.atomix.primitive.partition.MemberGroupEvent;
 import io.atomix.primitive.partition.MemberGroupEventListener;
@@ -28,6 +29,7 @@ import io.atomix.utils.event.AbstractListenerManager;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Default member group service.
@@ -38,12 +40,14 @@ public class DefaultMemberGroupService
 
   private final AtomicBoolean started = new AtomicBoolean();
   private final ClusterService clusterService;
+  private final MemberFilter memberFilter;
   private final MemberGroupProvider memberGroupProvider;
   private final ClusterEventListener clusterEventListener = event -> recomputeGroups();
   private volatile Collection<MemberGroup> memberGroups;
 
-  public DefaultMemberGroupService(ClusterService clusterService, MemberGroupProvider memberGroupProvider) {
+  public DefaultMemberGroupService(ClusterService clusterService, MemberFilter memberFilter, MemberGroupProvider memberGroupProvider) {
     this.clusterService = clusterService;
+    this.memberFilter = memberFilter;
     this.memberGroupProvider = memberGroupProvider;
   }
 
@@ -59,7 +63,10 @@ public class DefaultMemberGroupService
   @Override
   public CompletableFuture<MemberGroupService> start() {
     if (started.compareAndSet(false, true)) {
-      memberGroups = memberGroupProvider.getMemberGroups(clusterService.getNodes());
+      memberGroups = memberGroupProvider.getMemberGroups(clusterService.getNodes()
+          .stream()
+          .filter(memberFilter::isMember)
+          .collect(Collectors.toList()));
       clusterService.addListener(clusterEventListener);
     }
     return CompletableFuture.completedFuture(this);

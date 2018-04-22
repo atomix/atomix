@@ -16,6 +16,7 @@
 package io.atomix.protocols.backup.partition.impl;
 
 import io.atomix.cluster.Node;
+import io.atomix.primitive.partition.MemberFilter;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.backup.PrimaryBackupServer;
@@ -37,6 +38,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
+  private final MemberFilter memberFilter;
   private final MemberGroupProvider memberGroupProvider;
   private final ThreadContextFactory threadFactory;
   private PrimaryBackupServer server;
@@ -45,10 +47,12 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   public PrimaryBackupPartitionServer(
       PrimaryBackupPartition partition,
       PartitionManagementService managementService,
+      MemberFilter memberFilter,
       MemberGroupProvider memberGroupProvider,
       ThreadContextFactory threadFactory) {
     this.partition = partition;
     this.managementService = managementService;
+    this.memberFilter = memberFilter;
     this.memberGroupProvider = memberGroupProvider;
     this.threadFactory = threadFactory;
   }
@@ -79,6 +83,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
     return PrimaryBackupServer.builder()
         .withServerName(partition.name())
         .withClusterService(managementService.getClusterService())
+        .withMemberFilter(memberFilter)
         .withMemberGroupProvider(memberGroupProvider)
         .withProtocol(new PrimaryBackupServerCommunicator(
             partition.name(),
