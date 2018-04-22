@@ -21,6 +21,8 @@ import io.atomix.utils.net.Address;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.Timestamp;
 
+import java.util.Set;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -37,9 +39,10 @@ public class ReplicatedNode extends Node {
       String zone,
       String rack,
       String host,
+      Set<String> tags,
       LogicalTimestamp timestamp,
       boolean tombstone) {
-    super(id, type, address, zone, rack, host);
+    super(id, type, address, zone, rack, host, tags);
     this.timestamp = checkNotNull(timestamp, "timestamp cannot be null");
     this.tombstone = tombstone;
   }

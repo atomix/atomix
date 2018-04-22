@@ -18,6 +18,8 @@ package io.atomix.cluster.impl;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 
+import java.util.Set;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
@@ -29,13 +31,15 @@ final class ClusterHeartbeat {
   private final String zone;
   private final String rack;
   private final String host;
+  private final Set<String> tags;
 
-  ClusterHeartbeat(NodeId nodeId, Node.Type type, String zone, String rack, String host) {
+  ClusterHeartbeat(NodeId nodeId, Node.Type type, String zone, String rack, String host, Set<String> tags) {
     this.nodeId = nodeId;
     this.type = type;
     this.zone = zone;
     this.rack = rack;
     this.host = host;
+    this.tags = tags;
   }
 
   /**
@@ -81,6 +85,15 @@ final class ClusterHeartbeat {
    */
   public String host() {
     return host;
+  }
+
+  /**
+   * Returns the node tags.
+   *
+   * @return the node tags
+   */
+  public Set<String> tags() {
+    return tags;
   }
 
   @Override

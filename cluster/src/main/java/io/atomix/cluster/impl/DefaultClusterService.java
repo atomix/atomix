@@ -121,7 +121,8 @@ public class DefaultClusterService
         localNode.address(),
         localNode.zone(),
         localNode.rack(),
-        localNode.host());
+        localNode.host(),
+        localNode.tags());
   }
 
   @Override
@@ -180,14 +181,16 @@ public class DefaultClusterService
             node.address(),
             node.zone(),
             node.rack(),
-            node.host()));
+            node.host(),
+            node.tags()));
 
     byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
         localNode.id(),
         localNode.type(),
         localNode.zone(),
         localNode.rack(),
-        localNode.host()));
+        localNode.host(),
+        localNode.tags()));
     return Futures.allOf(Stream.concat(clusterNodes, bootstrapNodes).map(node -> {
       LOGGER.trace("{} - Sending heartbeat: {}", localNode.id(), node.id());
       CompletableFuture<Void> future = sendHeartbeat(node.address(), payload);
@@ -245,7 +248,8 @@ public class DefaultClusterService
         address,
         heartbeat.zone(),
         heartbeat.rack(),
-        heartbeat.host()));
+        heartbeat.host(),
+        heartbeat.tags()));
     return SERIALIZER.encode(nodes.values().stream()
         .filter(node -> node.type() == Node.Type.CLIENT)
         .collect(Collectors.toList()));
@@ -263,7 +267,8 @@ public class DefaultClusterService
           node.address(),
           node.zone(),
           node.rack(),
-          node.host());
+          node.host(),
+          node.tags());
       LOGGER.info("{} - Node activated: {}", localNode.id(), statefulNode);
       statefulNode.setState(State.ACTIVE);
       nodes.put(statefulNode.id(), statefulNode);
@@ -274,7 +279,8 @@ public class DefaultClusterService
           localNode.type(),
           localNode.zone(),
           localNode.rack(),
-          localNode.host())));
+          localNode.host(),
+          localNode.tags())));
     } else if (existingNode.getState() == State.INACTIVE) {
       LOGGER.info("{} - Node activated: {}", localNode.id(), existingNode);
       existingNode.setState(State.ACTIVE);
@@ -321,7 +327,8 @@ public class DefaultClusterService
                 node.address(),
                 node.zone(),
                 node.rack(),
-                node.host());
+                node.host(),
+                node.tags());
             nodes.put(newNode.id(), newNode);
             post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, newNode));
           }
@@ -361,7 +368,8 @@ public class DefaultClusterService
               node.address(),
               node.zone(),
               node.rack(),
-              node.host())));
+              node.host(),
+              node.tags())));
       messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
 
       ComposableFuture<Void> future = new ComposableFuture<>();

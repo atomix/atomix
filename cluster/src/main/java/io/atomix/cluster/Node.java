@@ -15,9 +15,12 @@
  */
 package io.atomix.cluster;
 
+import com.google.common.collect.ImmutableSet;
 import io.atomix.utils.net.Address;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -144,18 +147,20 @@ public class Node {
   private final String zone;
   private final String rack;
   private final String host;
+  private final Set<String> tags;
 
   public Node(NodeConfig config) {
-    this(config.getId(), config.getType(), config.getAddress(), config.getZone(), config.getRack(), config.getHost());
+    this(config.getId(), config.getType(), config.getAddress(), config.getZone(), config.getRack(), config.getHost(), config.getTags());
   }
 
-  protected Node(NodeId id, Type type, Address address, String zone, String rack, String host) {
+  protected Node(NodeId id, Type type, Address address, String zone, String rack, String host, Set<String> tags) {
     this.id = checkNotNull(id, "id cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
     this.address = checkNotNull(address, "address cannot be null");
     this.zone = zone;
     this.rack = rack;
     this.host = host;
+    this.tags = ImmutableSet.copyOf(tags);
   }
 
   /**
@@ -221,6 +226,15 @@ public class Node {
     return host;
   }
 
+  /**
+   * Returns the node tags.
+   *
+   * @return the node tags
+   */
+  public Set<String> tags() {
+    return tags;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(id);
@@ -254,6 +268,7 @@ public class Node {
     protected String zone;
     protected String rack;
     protected String host;
+    protected Set<String> tags = new HashSet<>();
 
     protected Builder(NodeId id) {
       this.id = id;
@@ -360,12 +375,36 @@ public class Node {
       return this;
     }
 
+    /**
+     * Sets the node tags.
+     *
+     * @param tags the node tags
+     * @return the node builder
+     * @throws NullPointerException if the tags are null
+     */
+    public Builder withTags(Set<String> tags) {
+      this.tags = checkNotNull(tags, "tags cannot be null");
+      return this;
+    }
+
+    /**
+     * Adds a tag to the node.
+     *
+     * @param tag the tag to add
+     * @return the node builder
+     * @throws NullPointerException if the tag is null
+     */
+    public Builder addTag(String tag) {
+      tags.add(checkNotNull(tag, "tag cannot be null"));
+      return this;
+    }
+
     @Override
     public Node build() {
       if (id == null) {
         id = NodeId.from(address.address().getHostName());
       }
-      return new Node(id, type, address, zone, rack, host);
+      return new Node(id, type, address, zone, rack, host, tags);
     }
   }
 }

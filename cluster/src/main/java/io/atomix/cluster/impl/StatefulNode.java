@@ -19,6 +19,8 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.utils.net.Address;
 
+import java.util.Set;
+
 /**
  * Default cluster node.
  */
@@ -31,8 +33,9 @@ public class StatefulNode extends Node {
       Address address,
       String zone,
       String rack,
-      String host) {
-    super(id, type, address, zone, rack, host);
+      String host,
+      Set<String> tags) {
+    super(id, type, address, zone, rack, host, tags);
   }
 
   /**
