@@ -337,7 +337,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         .thenComposeAsync(v -> context.clusterService.start(), threadContext)
         .thenComposeAsync(v -> context.clusterMessagingService.start(), threadContext)
         .thenComposeAsync(v -> context.clusterEventingService.start(), threadContext)
-        .thenComposeAsync(v -> context.systemPartitionGroup.open(
+        .thenComposeAsync(v -> context.systemPartitionGroup == null
+                ? CompletableFuture.completedFuture(null)
+                : context.systemPartitionGroup.open(
             new DefaultPartitionManagementService(
                 context.coreMetadataService,
                 context.clusterService,
@@ -347,20 +349,27 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
                 new DefaultSessionIdService())),
             threadContext)
         .thenComposeAsync(v -> {
-          ManagedPrimaryElectionService systemElectionService = new DefaultPrimaryElectionService(context.systemPartitionGroup);
-          ManagedSessionIdService systemSessionIdService = new IdGeneratorSessionIdService(context.systemPartitionGroup);
-          return systemElectionService.start()
-              .thenComposeAsync(v2 -> systemSessionIdService.start(), threadContext)
-              .thenApply(v2 -> new DefaultPartitionManagementService(
-                  context.coreMetadataService,
-                  context.clusterService,
-                  context.clusterMessagingService,
-                  context.primitiveTypes,
-                  systemElectionService,
-                  systemSessionIdService));
+          if (context.systemPartitionGroup != null) {
+            ManagedPrimaryElectionService systemElectionService = new DefaultPrimaryElectionService(context.systemPartitionGroup);
+            ManagedSessionIdService systemSessionIdService = new IdGeneratorSessionIdService(context.systemPartitionGroup);
+            return systemElectionService.start()
+                .thenComposeAsync(v2 -> systemSessionIdService.start(), threadContext)
+                .thenApply(v2 -> new DefaultPartitionManagementService(
+                    context.coreMetadataService,
+                    context.clusterService,
+                    context.clusterMessagingService,
+                    context.primitiveTypes,
+                    systemElectionService,
+                    systemSessionIdService));
+          }
+          return CompletableFuture.completedFuture(null);
         }, threadContext)
-        .thenComposeAsync(partitionManagementService -> context.partitions.open((PartitionManagementService) partitionManagementService), threadContext)
-        .thenComposeAsync(v -> context.primitives.start(), threadContext)
+        .thenComposeAsync(partitionManagementService -> partitionManagementService != null
+            ? context.partitions.open((PartitionManagementService) partitionManagementService)
+            : CompletableFuture.completedFuture(null), threadContext)
+        .thenComposeAsync(v -> context.primitives != null
+            ? context.primitives.start()
+            : CompletableFuture.completedFuture(null), threadContext)
         .thenApplyAsync(v -> {
           context.coreMetadataService.addNode(context.clusterService.getLocalNode());
           started.set(true);
@@ -402,11 +411,15 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     context.coreMetadataService.removeNode(context.clusterService.getLocalNode());
-    closeFuture = context.primitives.stop()
+    closeFuture = (context.primitives != null ? context.primitives.stop() : CompletableFuture.completedFuture(null))
         .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.partitions.close(), threadContext)
+        .thenComposeAsync(v -> context.partitions == null
+            ? CompletableFuture.completedFuture(null)
+            : context.partitions.close(), threadContext)
         .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.systemPartitionGroup.close(), threadContext)
+        .thenComposeAsync(v -> context.systemPartitionGroup == null
+            ? CompletableFuture.completedFuture(null)
+            : context.systemPartitionGroup.close(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> context.clusterMessagingService.stop(), threadContext)
         .exceptionally(e -> null)
@@ -436,13 +449,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     return toStringHelper(this)
         .add("partitions", partitionService())
         .toString();
-  }
-
-  /**
-   * Loads a context from the given configuration file.
-   */
-  private static Context loadContext(String config) {
-    return buildContext(loadConfig(config));
   }
 
   /**
@@ -485,8 +491,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
     ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup(config);
     ManagedPartitionService partitions = buildPartitionService(config);
-    ManagedPrimitivesService primitives = new CorePrimitivesService(
-        executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, config);
+    ManagedPrimitivesService primitives = partitions != null
+        ? new CorePrimitivesService(executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, config) : null;
     PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
     return new Context(
         executorService,
@@ -597,10 +603,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Builds the core partition group.
    */
   private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
-    if (config.getSystemPartitionGroup() == null) {
-      throw new ConfigurationException("No system partition group provided");
-    }
-    return PartitionGroups.createGroup(config.getSystemPartitionGroup());
+    return config.getSystemPartitionGroup() != null ? PartitionGroups.createGroup(config.getSystemPartitionGroup()) : null;
   }
 
   /**
@@ -615,7 +618,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     if (partitionGroups.isEmpty() && config.getSystemPartitionGroup() == null) {
       throw new ConfigurationException("Cannot form data cluster: no system partition group provided");
     }
-    return new DefaultPartitionService(partitionGroups);
+    return !partitionGroups.isEmpty() ? new DefaultPartitionService(partitionGroups) : null;
   }
 
   /**
@@ -698,7 +701,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       this.nodes = config.getClusterConfig().getNodes().stream().map(Node::new).collect(Collectors.toList());
       this.multicastEnabled = config.getClusterConfig().isMulticastEnabled();
       this.multicastAddress = config.getClusterConfig().getMulticastAddress();
-      this.systemPartitionGroup = PartitionGroups.createGroup(config.getSystemPartitionGroup());
+      this.systemPartitionGroup = config.getSystemPartitionGroup() != null ? PartitionGroups.createGroup(config.getSystemPartitionGroup()) : null;
       this.partitionGroups = config.getPartitionGroups().stream().map(PartitionGroups::createGroup).collect(Collectors.toList());
       this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
       this.enableShutdownHook = config.isEnableShutdownHook();
@@ -795,10 +798,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      *
      * @param systemPartitionGroup the system partition group
      * @return the Atomix builder
-     * @throws NullPointerException if the partition group is {@code null}
      */
     public Builder withSystemPartitionGroup(ManagedPartitionGroup systemPartitionGroup) {
-      this.systemPartitionGroup = checkNotNull(systemPartitionGroup, "systemPartitionGroup cannot be null");
+      this.systemPartitionGroup = systemPartitionGroup;
       return this;
     }
 
@@ -889,8 +891,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
       ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup();
       ManagedPartitionService partitions = buildPartitionService();
-      ManagedPrimitivesService primitives = new CorePrimitivesService(
-          executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, new AtomixConfig());
+      ManagedPrimitivesService primitives = partitions != null
+          ? new CorePrimitivesService(executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, new AtomixConfig())
+          : null;
       return new Atomix(new Context(
           executorService,
           messagingService,
@@ -977,9 +980,6 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      * Builds the core partition group.
      */
     protected ManagedPartitionGroup buildSystemPartitionGroup() {
-      if (systemPartitionGroup == null) {
-        throw new ConfigurationException("No system partition group provided");
-      }
       return systemPartitionGroup;
     }
 
@@ -990,7 +990,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       if (!partitionGroups.isEmpty() && systemPartitionGroup == null) {
         throw new ConfigurationException("Cannot form data cluster: no system partition group provided");
       }
-      return new DefaultPartitionService(partitionGroups);
+      return !partitionGroups.isEmpty() ? new DefaultPartitionService(partitionGroups) : null;
     }
   }
 }

@@ -74,19 +74,23 @@ public abstract class AbstractAtomixTest {
         .withClusterName("test")
         .withLocalNode(localNode)
         .withNodes(nodes)
-        .withSystemPartitionGroup(RaftPartitionGroup.builder("system")
-            .withPartitionSize(3)
-            .withNumPartitions(1)
-            .withDataDirectory(new File("target/test-logs/" + id + "/system"))
-            .build())
         .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
             .withNumPartitions(3)
             .build());
     if (!nodeIds.isEmpty()) {
+      builder.withSystemPartitionGroup(RaftPartitionGroup.builder("system")
+          .withPartitionSize(3)
+          .withNumPartitions(1)
+          .withDataDirectory(new File("target/test-logs/" + id + "/system"))
+          .build());
       builder.addPartitionGroup(RaftPartitionGroup.builder("core")
           .withPartitionSize(3)
           .withNumPartitions(3)
           .withDataDirectory(new File("target/test-logs/" + id + "/core"))
+          .build());
+    } else {
+      builder.withSystemPartitionGroup(PrimaryBackupPartitionGroup.builder("system")
+          .withNumPartitions(1)
           .build());
     }
     return builder;
