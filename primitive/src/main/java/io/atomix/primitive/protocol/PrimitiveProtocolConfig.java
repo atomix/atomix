@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.protocol;
 
-import io.atomix.utils.Config;
+import io.atomix.utils.config.Config;
 
 /**
  * Primitive protocol configuration.

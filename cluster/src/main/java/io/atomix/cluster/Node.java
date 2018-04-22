@@ -16,9 +16,9 @@
 package io.atomix.cluster;
 
 import com.google.common.collect.ImmutableSet;
+import io.atomix.cluster.profile.NodeProfile;
 import io.atomix.utils.net.Address;
 
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -148,6 +148,7 @@ public class Node {
   private final String rack;
   private final String host;
   private final Set<String> tags;
+  final NodeConfig config;
 
   public Node(NodeConfig config) {
     this(config.getId(), config.getType(), config.getAddress(), config.getZone(), config.getRack(), config.getHost(), config.getTags());
@@ -161,6 +162,14 @@ public class Node {
     this.rack = rack;
     this.host = host;
     this.tags = ImmutableSet.copyOf(tags);
+    this.config = new NodeConfig()
+        .setId(id)
+        .setType(type)
+        .setAddress(address)
+        .setZone(zone)
+        .setRack(rack)
+        .setHost(host)
+        .setTags(tags);
   }
 
   /**
@@ -262,16 +271,10 @@ public class Node {
    * Node builder.
    */
   public static class Builder implements io.atomix.utils.Builder<Node> {
-    protected NodeId id;
-    protected Type type;
-    protected Address address;
-    protected String zone;
-    protected String rack;
-    protected String host;
-    protected Set<String> tags = new HashSet<>();
+    protected final NodeConfig config = new NodeConfig();
 
     protected Builder(NodeId id) {
-      this.id = id;
+      config.setId(id);
     }
 
     /**
@@ -281,7 +284,7 @@ public class Node {
      * @return the node builder
      */
     public Builder withId(NodeId id) {
-      this.id = checkNotNull(id, "id cannot be null");
+      config.setId(id);
       return this;
     }
 
@@ -293,7 +296,7 @@ public class Node {
      * @throws NullPointerException if the node type is null
      */
     public Builder withType(Type type) {
-      this.type = checkNotNull(type, "type cannot be null");
+      config.setType(type);
       return this;
     }
 
@@ -338,7 +341,7 @@ public class Node {
      * @return the node builder
      */
     public Builder withAddress(Address address) {
-      this.address = checkNotNull(address, "address cannot be null");
+      config.setAddress(address);
       return this;
     }
 
@@ -349,7 +352,7 @@ public class Node {
      * @return the node builder
      */
     public Builder withZone(String zone) {
-      this.zone = zone;
+      config.setZone(zone);
       return this;
     }
 
@@ -360,7 +363,7 @@ public class Node {
      * @return the node builder
      */
     public Builder withRack(String rack) {
-      this.rack = rack;
+      config.setRack(rack);
       return this;
     }
 
@@ -371,7 +374,7 @@ public class Node {
      * @return the node builder
      */
     public Builder withHost(String host) {
-      this.host = host;
+      config.setHost(host);
       return this;
     }
 
@@ -383,7 +386,7 @@ public class Node {
      * @throws NullPointerException if the tags are null
      */
     public Builder withTags(Set<String> tags) {
-      this.tags = checkNotNull(tags, "tags cannot be null");
+      config.setTags(tags);
       return this;
     }
 
@@ -395,16 +398,24 @@ public class Node {
      * @throws NullPointerException if the tag is null
      */
     public Builder addTag(String tag) {
-      tags.add(checkNotNull(tag, "tag cannot be null"));
+      config.addTag(tag);
+      return this;
+    }
+
+    /**
+     * Configures the node with the given profile.
+     *
+     * @param profile the node profile
+     * @return the node builder
+     */
+    public Builder withProfile(NodeProfile profile) {
+      config.setProfile(profile);
       return this;
     }
 
     @Override
     public Node build() {
-      if (id == null) {
-        id = NodeId.from(address.address().getHostName());
-      }
-      return new Node(id, type, address, zone, rack, host, tags);
+      return new Node(config);
     }
   }
 }

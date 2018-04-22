@@ -15,12 +15,35 @@
  */
 package io.atomix.cluster;
 
+import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
+import io.atomix.cluster.impl.DefaultClusterService;
+import io.atomix.cluster.impl.DefaultPersistentMetadataService;
+import io.atomix.cluster.messaging.ClusterEventingService;
+import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ManagedClusterEventingService;
+import io.atomix.cluster.messaging.ManagedClusterMessagingService;
+import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
+import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
+import io.atomix.messaging.BroadcastService;
+import io.atomix.messaging.ManagedBroadcastService;
+import io.atomix.messaging.ManagedMessagingService;
+import io.atomix.messaging.MessagingService;
+import io.atomix.messaging.impl.NettyBroadcastService;
+import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.SingleThreadContext;
+import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.config.Configs;
 import io.atomix.utils.net.Address;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -29,71 +52,385 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster configuration.
  */
-public class AtomixCluster implements Managed<AtomixCluster> {
+public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
 
   /**
-   * Returns a new cluster builder.
+   * Returns a new Atomix cluster builder.
    *
-   * @return a new cluster builder
+   * @return a new Atomix cluster builder
    */
-  public Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 
-  private final String name;
-  private final Node localNode;
-  private final Collection<Node> nodes;
-  private final boolean multicastEnabled;
-  private final Address multicastAddress;
-
-  public AtomixCluster(ClusterConfig config) {
-    this(
-        config.getName(),
-        new Node(config.getLocalNode()),
-        config.getNodes().stream().map(Node::new).collect(Collectors.toList()),
-        config.isMulticastEnabled(),
-        config.getMulticastAddress());
+  /**
+   * Returns a new Atomix cluster builder.
+   *
+   * @param configFile the configuration file with which to initialize the builder
+   * @return a new Atomix cluster builder
+   */
+  public static Builder builder(File configFile) {
+    return new Builder(loadConfig(configFile));
   }
 
-  public AtomixCluster(String name, Node localNode, Collection<Node> nodes, boolean multicastEnabled, Address multicastAddress) {
-    this.name = name;
-    this.localNode = localNode;
-    this.nodes = nodes;
-    this.multicastEnabled = multicastEnabled;
-    this.multicastAddress = multicastAddress;
+  /**
+   * Returns a new Atomix cluster builder.
+   *
+   * @param config the Atomix cluster configuration
+   * @return a new Atomix cluster builder
+   */
+  public static Builder builder(ClusterConfig config) {
+    return new Builder(config);
+  }
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AtomixCluster.class);
+
+  private final Context context;
+  protected volatile CompletableFuture openFuture;
+  protected volatile CompletableFuture<Void> closeFuture;
+
+  public AtomixCluster(String configFile) {
+    this(loadContext(new File(System.getProperty("user.dir"), configFile)));
+  }
+
+  public AtomixCluster(File configFile) {
+    this(loadContext(configFile));
+  }
+
+  public AtomixCluster(ClusterConfig config) {
+    this(buildContext(config));
+  }
+
+  protected AtomixCluster(Context context) {
+    this.context = context;
+  }
+
+  public ClusterService clusterService() {
+    return context.clusterService();
+  }
+
+  public ClusterMessagingService messagingService() {
+    return context.clusterMessagingService();
+  }
+
+  public ClusterEventingService eventingService() {
+    return context.clusterEventingService();
   }
 
   @Override
-  public CompletableFuture<AtomixCluster> start() {
-    return null;
+  @SuppressWarnings("unchecked")
+  public synchronized CompletableFuture<T> start() {
+    if (closeFuture != null) {
+      return Futures.exceptionalFuture(new IllegalStateException("AtomixCluster instance " +
+          (closeFuture.isDone() ? "shutdown" : "shutting down")));
+    }
+
+    if (openFuture != null) {
+      return openFuture;
+    }
+
+    openFuture = context.start();
+
+    return openFuture;
   }
 
   @Override
   public boolean isRunning() {
-    return false;
+    return context.isRunning();
   }
 
   @Override
-  public CompletableFuture<Void> stop() {
-    return null;
+  public synchronized CompletableFuture<Void> stop() {
+    if (closeFuture != null) {
+      return closeFuture;
+    }
+
+    closeFuture = context.stop();
+    return closeFuture;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("name", name())
-        .add("localNode", localNode())
-        .add("nodes", nodes())
-        .add("multicastEnabled", multicastEnabled())
-        .add("multicastAddress", multicastAddress())
         .toString();
+  }
+
+  /**
+   * Atomix cluster context.
+   */
+  protected static class Context implements Managed<Void> {
+    private final ManagedMessagingService messagingService;
+    private final ManagedBroadcastService broadcastService;
+    private final ManagedBootstrapMetadataService bootstrapMetadataService;
+    private final ManagedPersistentMetadataService persistentMetadataService;
+    private final ManagedClusterService clusterService;
+    private final ManagedClusterMessagingService clusterMessagingService;
+    private final ManagedClusterEventingService clusterEventingService;
+    private final ThreadContext threadContext = new SingleThreadContext("atomix-%d");
+    private final AtomicBoolean started = new AtomicBoolean();
+
+    public Context(
+        ManagedMessagingService messagingService,
+        ManagedBroadcastService broadcastService,
+        ManagedBootstrapMetadataService bootstrapMetadataService,
+        ManagedPersistentMetadataService persistentMetadataService,
+        ManagedClusterService clusterService,
+        ManagedClusterMessagingService clusterMessagingService,
+        ManagedClusterEventingService clusterEventingService) {
+      this.messagingService = messagingService;
+      this.broadcastService = broadcastService;
+      this.bootstrapMetadataService = bootstrapMetadataService;
+      this.persistentMetadataService = persistentMetadataService;
+      this.clusterService = clusterService;
+      this.clusterMessagingService = clusterMessagingService;
+      this.clusterEventingService = clusterEventingService;
+    }
+
+    public ManagedMessagingService messagingService() {
+      return messagingService;
+    }
+
+    public ManagedBroadcastService broadcastService() {
+      return broadcastService;
+    }
+
+    public ManagedBootstrapMetadataService bootstrapMetadataService() {
+      return bootstrapMetadataService;
+    }
+
+    public ManagedPersistentMetadataService persistentMetadataService() {
+      return persistentMetadataService;
+    }
+
+    public ManagedClusterService clusterService() {
+      return clusterService;
+    }
+
+    public ManagedClusterMessagingService clusterMessagingService() {
+      return clusterMessagingService;
+    }
+
+    public ManagedClusterEventingService clusterEventingService() {
+      return clusterEventingService;
+    }
+
+    public ThreadContext threadContext() {
+      return threadContext;
+    }
+
+    @Override
+    public CompletableFuture<Void> start() {
+      return startServices()
+          .thenComposeAsync(v -> joinCluster(), threadContext())
+          .thenComposeAsync(v -> completeStartup(), threadContext());
+    }
+
+    protected CompletableFuture<Void> startServices() {
+      return messagingService().start()
+          .thenComposeAsync(v -> broadcastService().start(), threadContext())
+          .thenComposeAsync(v -> bootstrapMetadataService().start(), threadContext())
+          .thenComposeAsync(v -> persistentMetadataService().start(), threadContext())
+          .thenComposeAsync(v -> clusterService().start(), threadContext())
+          .thenComposeAsync(v -> clusterMessagingService().start(), threadContext())
+          .thenComposeAsync(v -> clusterEventingService().start(), threadContext())
+          .thenApply(v -> null);
+    }
+
+    protected CompletableFuture<Void> joinCluster() {
+      persistentMetadataService().addNode(clusterService().getLocalNode());
+      return CompletableFuture.completedFuture(null);
+    }
+
+    protected CompletableFuture<Void> completeStartup() {
+      started.set(true);
+      LOGGER.info("Started");
+      return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public boolean isRunning() {
+      return started.get();
+    }
+
+    @Override
+    public CompletableFuture<Void> stop() {
+      return leaveCluster()
+          .thenComposeAsync(v -> stopServices(), threadContext())
+          .thenComposeAsync(v -> completeShutdown(), threadContext());
+    }
+
+    protected CompletableFuture<Void> leaveCluster() {
+      persistentMetadataService().removeNode(clusterService().getLocalNode());
+      return CompletableFuture.completedFuture(null);
+    }
+
+    protected CompletableFuture<Void> stopServices() {
+      return clusterMessagingService().stop()
+          .exceptionally(e -> null)
+          .thenComposeAsync(v -> clusterEventingService().stop(), threadContext())
+          .exceptionally(e -> null)
+          .thenComposeAsync(v -> clusterService().stop(), threadContext())
+          .exceptionally(e -> null)
+          .thenComposeAsync(v -> persistentMetadataService().stop(), threadContext())
+          .exceptionally(e -> null)
+          .thenComposeAsync(v -> bootstrapMetadataService().stop(), threadContext())
+          .exceptionally(e -> null)
+          .thenComposeAsync(v -> broadcastService().stop(), threadContext())
+          .exceptionally(e -> null)
+          .thenComposeAsync(v -> messagingService().stop(), threadContext())
+          .exceptionally(e -> null);
+    }
+
+    protected CompletableFuture<Void> completeShutdown() {
+      threadContext().close();
+      started.set(false);
+      LOGGER.info("Stopped");
+      return CompletableFuture.completedFuture(null);
+    }
+  }
+
+  /**
+   * Loads a context from the given configuration file.
+   */
+  private static Context loadContext(File config) {
+    return buildContext(loadConfig(config));
+  }
+
+  /**
+   * Loads a configuration from the given file.
+   */
+  private static ClusterConfig loadConfig(File config) {
+    return Configs.load(config, ClusterConfig.class);
+  }
+
+  /**
+   * Builds a context from the given configuration.
+   */
+  private static Context buildContext(ClusterConfig config) {
+    // Apply profiles to all configurations.
+    config.getProfile().configure(config);
+    config.getLocalNode().getProfile().configure(config.getLocalNode());
+    config.getNodes().forEach(node -> node.getProfile().configure(node));
+
+    ManagedMessagingService messagingService = buildMessagingService(config);
+    ManagedBroadcastService broadcastService = buildBroadcastService(config);
+    ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config);
+    ManagedPersistentMetadataService persistentMetadataService = buildPersistentMetadataService(config, messagingService);
+    ManagedClusterService clusterService = buildClusterService(config, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
+    ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
+    ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
+    return new Context(
+        messagingService,
+        broadcastService,
+        bootstrapMetadataService,
+        persistentMetadataService,
+        clusterService,
+        clusterMessagingService,
+        clusterEventingService);
+  }
+
+  /**
+   * Builds a default messaging service.
+   */
+  protected static ManagedMessagingService buildMessagingService(ClusterConfig config) {
+    return NettyMessagingService.builder()
+        .withName(config.getName())
+        .withAddress(config.getLocalNode().getAddress())
+        .build();
+  }
+
+  /**
+   * Builds a default broadcast service.
+   */
+  protected static ManagedBroadcastService buildBroadcastService(ClusterConfig config) {
+    return NettyBroadcastService.builder()
+        .withLocalAddress(config.getLocalNode().getAddress())
+        .withGroupAddress(config.getMulticastAddress())
+        .withEnabled(config.isMulticastEnabled())
+        .build();
+  }
+
+  /**
+   * Builds a bootstrap metadata service.
+   */
+  protected static ManagedBootstrapMetadataService buildBootstrapMetadataService(ClusterConfig config) {
+    boolean hasCoreNodes = config.getNodes().stream().anyMatch(node -> node.getType() == Node.Type.PERSISTENT);
+    ClusterMetadata metadata = ClusterMetadata.builder()
+        .withNodes(config.getNodes()
+            .stream()
+            .filter(node -> (!hasCoreNodes && node.getType() == Node.Type.EPHEMERAL) || (hasCoreNodes && node.getType() == Node.Type.PERSISTENT))
+            .map(Node::new)
+            .collect(Collectors.toList()))
+        .build();
+    return new DefaultBootstrapMetadataService(metadata);
+  }
+
+  /**
+   * Builds a core metadata service.
+   */
+  protected static ManagedPersistentMetadataService buildPersistentMetadataService(ClusterConfig config, MessagingService messagingService) {
+    ClusterMetadata metadata = ClusterMetadata.builder()
+        .withNodes(config.getNodes()
+            .stream()
+            .filter(node -> node.getType() == Node.Type.PERSISTENT)
+            .map(Node::new)
+            .collect(Collectors.toList()))
+        .build();
+    return new DefaultPersistentMetadataService(metadata, messagingService);
+  }
+
+  /**
+   * Builds a cluster service.
+   */
+  protected static ManagedClusterService buildClusterService(
+      ClusterConfig config,
+      BootstrapMetadataService bootstrapMetadataService,
+      PersistentMetadataService persistentMetadataService,
+      MessagingService messagingService,
+      BroadcastService broadcastService) {
+    // If the local node has not be configured, create a default node.
+    Node localNode;
+    if (config.getLocalNode() == null) {
+      Address address = Address.empty();
+      localNode = Node.builder(address.toString())
+          .withType(Node.Type.PERSISTENT)
+          .withAddress(address)
+          .build();
+    } else {
+      localNode = new Node(config.getLocalNode());
+    }
+    return new DefaultClusterService(localNode, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
+  }
+
+  /**
+   * Builds a cluster messaging service.
+   */
+  protected static ManagedClusterMessagingService buildClusterMessagingService(
+      ClusterService clusterService, MessagingService messagingService) {
+    return new DefaultClusterMessagingService(clusterService, messagingService);
+  }
+
+  /**
+   * Builds a cluster event service.
+   */
+  protected static ManagedClusterEventingService buildClusterEventService(
+      ClusterService clusterService, MessagingService messagingService) {
+    return new DefaultClusterEventingService(clusterService, messagingService);
   }
 
   /**
    * Cluster builder.
    */
-  public static class Builder implements io.atomix.utils.Builder<AtomixCluster> {
-    private final ClusterConfig config = new ClusterConfig();
+  public static class Builder<T extends AtomixCluster<T>> implements io.atomix.utils.Builder<AtomixCluster<T>> {
+    protected final ClusterConfig config;
+
+    protected Builder() {
+      this(new ClusterConfig());
+    }
+
+    protected Builder(ClusterConfig config) {
+      this.config = checkNotNull(config);
+    }
 
     /**
      * Sets the cluster name.
@@ -101,7 +438,7 @@ public class AtomixCluster implements Managed<AtomixCluster> {
      * @param clusterName the cluster name
      * @return the cluster builder
      */
-    public Builder withName(String clusterName) {
+    public Builder withClusterName(String clusterName) {
       config.setName(clusterName);
       return this;
     }
@@ -170,8 +507,8 @@ public class AtomixCluster implements Managed<AtomixCluster> {
     }
 
     @Override
-    public AtomixCluster build() {
-      return new AtomixCluster(config);
+    public AtomixCluster<T> build() {
+      return new AtomixCluster<>(config);
     }
   }
 }

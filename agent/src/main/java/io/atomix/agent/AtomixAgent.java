@@ -20,9 +20,9 @@ import io.atomix.cluster.NodeConfig;
 import io.atomix.cluster.NodeId;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
-import io.atomix.core.config.impl.DefaultConfigService;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
+import io.atomix.utils.config.Configs;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -209,9 +209,9 @@ public class AtomixAgent {
   private static AtomixConfig loadConfig(String config) {
     File configFile = new File(config);
     if (configFile.exists()) {
-      return new DefaultConfigService().load(configFile, AtomixConfig.class);
+      return Configs.load(configFile, AtomixConfig.class);
     } else {
-      return new DefaultConfigService().load(config, AtomixConfig.class);
+      return Configs.load(config, AtomixConfig.class);
     }
   }
 

@@ -15,24 +15,16 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.BootstrapMetadataService;
-import io.atomix.cluster.ClusterMetadata;
+import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.ManagedBootstrapMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.ManagedPersistentMetadataService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.PersistentMetadataService;
-import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
-import io.atomix.cluster.impl.DefaultClusterService;
-import io.atomix.cluster.impl.DefaultPersistentMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
-import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
-import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
-import io.atomix.core.config.impl.DefaultConfigService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElector;
@@ -49,12 +41,8 @@ import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.value.AtomicValue;
-import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.ManagedBroadcastService;
 import io.atomix.messaging.ManagedMessagingService;
-import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.impl.NettyBroadcastService;
-import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
@@ -74,14 +62,11 @@ import io.atomix.primitive.partition.impl.DefaultPrimaryElectionService;
 import io.atomix.primitive.partition.impl.HashBasedPrimaryElectionService;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.impl.DefaultSessionIdService;
-import io.atomix.utils.ConfigurationException;
 import io.atomix.utils.Managed;
-import io.atomix.utils.concurrent.Futures;
-import io.atomix.utils.concurrent.SingleThreadContext;
-import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.Threads;
+import io.atomix.utils.config.Configs;
+import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.net.MalformedAddressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +78,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -102,7 +86,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Atomix!
  */
-public class Atomix implements PrimitivesService, Managed<Atomix> {
+public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, Managed<Atomix> {
 
   /**
    * Returns a new Atomix builder.
@@ -146,11 +130,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
 
   private final Context context;
-  private final AtomicBoolean started = new AtomicBoolean();
-  private final ThreadContext threadContext = new SingleThreadContext("atomix-%d");
   private Thread shutdownHook = null;
-  private volatile CompletableFuture<Atomix> openFuture;
-  private volatile CompletableFuture<Void> closeFuture;
 
   public Atomix(String configFile) {
     this(loadContext(new File(System.getProperty("user.dir"), configFile)));
@@ -165,6 +145,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   }
 
   private Atomix(Context context) {
+    super(context);
     this.context = context;
   }
 
@@ -174,7 +155,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * @return the cluster service
    */
   public ClusterService clusterService() {
-    return context.clusterService;
+    return context.clusterService();
   }
 
   /**
@@ -183,7 +164,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * @return the cluster communication service
    */
   public ClusterMessagingService messagingService() {
-    return context.clusterMessagingService;
+    return context.clusterMessagingService();
   }
 
   /**
@@ -192,7 +173,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * @return the cluster event service
    */
   public ClusterEventingService eventingService() {
-    return context.clusterEventingService;
+    return context.clusterEventingService();
   }
 
   /**
@@ -201,7 +182,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * @return the partition service
    */
   public PartitionService partitionService() {
-    return context.partitions;
+    return context.partitionService();
   }
 
   /**
@@ -210,104 +191,104 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * @return the primitives service
    */
   public PrimitivesService primitivesService() {
-    return context.primitives;
+    return context.primitivesService();
   }
 
   @Override
   public TransactionBuilder transactionBuilder(String name) {
-    return context.primitives.transactionBuilder(name);
+    return context.primitivesService().transactionBuilder(name);
   }
 
   @Override
   public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
       PrimitiveType<B, C, P> primitiveType) {
-    return context.primitives.primitiveBuilder(name, primitiveType);
+    return context.primitivesService().primitiveBuilder(name, primitiveType);
   }
 
   @Override
   public <K, V> ConsistentMap<K, V> getConsistentMap(String name) {
-    return context.primitives.getConsistentMap(name);
+    return context.primitivesService().getConsistentMap(name);
   }
 
   @Override
   public <V> DocumentTree<V> getDocumentTree(String name) {
-    return context.primitives.getDocumentTree(name);
+    return context.primitivesService().getDocumentTree(name);
   }
 
   @Override
   public <V> ConsistentTreeMap<V> getTreeMap(String name) {
-    return context.primitives.getTreeMap(name);
+    return context.primitivesService().getTreeMap(name);
   }
 
   @Override
   public <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name) {
-    return context.primitives.getConsistentMultimap(name);
+    return context.primitivesService().getConsistentMultimap(name);
   }
 
   @Override
   public <K> AtomicCounterMap<K> getAtomicCounterMap(String name) {
-    return context.primitives.getAtomicCounterMap(name);
+    return context.primitivesService().getAtomicCounterMap(name);
   }
 
   @Override
   public <E> DistributedSet<E> getSet(String name) {
-    return context.primitives.getSet(name);
+    return context.primitivesService().getSet(name);
   }
 
   @Override
   public AtomicCounter getAtomicCounter(String name) {
-    return context.primitives.getAtomicCounter(name);
+    return context.primitivesService().getAtomicCounter(name);
   }
 
   @Override
   public AtomicIdGenerator getAtomicIdGenerator(String name) {
-    return context.primitives.getAtomicIdGenerator(name);
+    return context.primitivesService().getAtomicIdGenerator(name);
   }
 
   @Override
   public <V> AtomicValue<V> getAtomicValue(String name) {
-    return context.primitives.getAtomicValue(name);
+    return context.primitivesService().getAtomicValue(name);
   }
 
   @Override
   public <T> LeaderElection<T> getLeaderElection(String name) {
-    return context.primitives.getLeaderElection(name);
+    return context.primitivesService().getLeaderElection(name);
   }
 
   @Override
   public <T> LeaderElector<T> getLeaderElector(String name) {
-    return context.primitives.getLeaderElector(name);
+    return context.primitivesService().getLeaderElector(name);
   }
 
   @Override
   public DistributedLock getLock(String name) {
-    return context.primitives.getLock(name);
+    return context.primitivesService().getLock(name);
   }
 
   @Override
   public <E> WorkQueue<E> getWorkQueue(String name) {
-    return context.primitives.getWorkQueue(name);
+    return context.primitivesService().getWorkQueue(name);
   }
 
   @Override
   public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
-    return context.primitives.getPrimitive(name, primitiveType, primitiveConfig);
+    return context.primitivesService().getPrimitive(name, primitiveType, primitiveConfig);
   }
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives() {
-    return context.primitives.getPrimitives();
+    return context.primitivesService().getPrimitives();
   }
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType) {
-    return context.primitives.getPrimitives(primitiveType);
+    return context.primitivesService().getPrimitives(primitiveType);
   }
 
   @Override
   public <P extends DistributedPrimitive> P getPrimitive(String name) {
-    return context.primitives.getPrimitive(name);
+    return context.primitivesService().getPrimitive(name);
   }
 
   /**
@@ -322,74 +303,15 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized CompletableFuture<Atomix> start() {
-    if (closeFuture != null) {
-      return Futures.exceptionalFuture(new IllegalStateException("Atomix instance " +
-          (closeFuture.isDone() ? "shutdown" : "shutting down")));
-    }
-    if (openFuture != null) {
-      return openFuture;
-    }
-
-    openFuture = context.messagingService.start()
-        .thenComposeAsync(v -> context.broadcastService.start(), threadContext)
-        .thenComposeAsync(v -> context.bootstrapMetadataService.start(), threadContext)
-        .thenComposeAsync(v -> context.coreMetadataService.start(), threadContext)
-        .thenComposeAsync(v -> context.clusterService.start(), threadContext)
-        .thenComposeAsync(v -> context.clusterMessagingService.start(), threadContext)
-        .thenComposeAsync(v -> context.clusterEventingService.start(), threadContext)
-        .thenComposeAsync(v -> context.systemPartitionGroup == null
-                ? CompletableFuture.completedFuture(null)
-                : context.systemPartitionGroup.open(
-            new DefaultPartitionManagementService(
-                context.coreMetadataService,
-                context.clusterService,
-                context.clusterMessagingService,
-                context.primitiveTypes,
-                new HashBasedPrimaryElectionService(context.clusterService, context.clusterMessagingService),
-                new DefaultSessionIdService())),
-            threadContext)
-        .thenComposeAsync(v -> {
-          if (context.systemPartitionGroup != null) {
-            ManagedPrimaryElectionService systemElectionService = new DefaultPrimaryElectionService(context.systemPartitionGroup);
-            ManagedSessionIdService systemSessionIdService = new IdGeneratorSessionIdService(context.systemPartitionGroup);
-            return systemElectionService.start()
-                .thenComposeAsync(v2 -> systemSessionIdService.start(), threadContext)
-                .thenApply(v2 -> new DefaultPartitionManagementService(
-                    context.coreMetadataService,
-                    context.clusterService,
-                    context.clusterMessagingService,
-                    context.primitiveTypes,
-                    systemElectionService,
-                    systemSessionIdService));
-          }
-          return CompletableFuture.completedFuture(null);
-        }, threadContext)
-        .thenComposeAsync(partitionManagementService -> partitionManagementService != null
-            ? context.partitions.open((PartitionManagementService) partitionManagementService)
-            : CompletableFuture.completedFuture(null), threadContext)
-        .thenComposeAsync(v -> context.primitives != null
-            ? context.primitives.start()
-            : CompletableFuture.completedFuture(null), threadContext)
-        .thenApplyAsync(v -> {
-          context.coreMetadataService.addNode(context.clusterService.getLocalNode());
-          started.set(true);
-          LOGGER.info("Started");
-          return this;
-        }, threadContext);
-
-    if (context.enableShutdownHook) {
-      if (shutdownHook == null) {
-        shutdownHook = new Thread(() -> this.doStop().join());
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
+    return super.start().thenApply(atomix -> {
+      if (context.enableShutdownHook()) {
+        if (shutdownHook == null) {
+          shutdownHook = new Thread(() -> super.stop().join());
+          Runtime.getRuntime().addShutdownHook(shutdownHook);
+        }
       }
-    }
-
-    return openFuture;
-  }
-
-  @Override
-  public boolean isRunning() {
-    return started.get();
+      return atomix;
+    });
   }
 
   @Override
@@ -402,46 +324,7 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
         // JVM shutting down
       }
     }
-    return doStop();
-  }
-
-  private synchronized CompletableFuture<Void> doStop() {
-    if (closeFuture != null) {
-      return closeFuture;
-    }
-
-    context.coreMetadataService.removeNode(context.clusterService.getLocalNode());
-    closeFuture = (context.primitives != null ? context.primitives.stop() : CompletableFuture.completedFuture(null))
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.partitions == null
-            ? CompletableFuture.completedFuture(null)
-            : context.partitions.close(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.systemPartitionGroup == null
-            ? CompletableFuture.completedFuture(null)
-            : context.systemPartitionGroup.close(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.clusterMessagingService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.clusterEventingService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.clusterService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.coreMetadataService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.bootstrapMetadataService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.broadcastService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> context.messagingService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenRunAsync(() -> {
-          context.executorService.shutdownNow();
-          threadContext.close();
-          started.set(false);
-          LOGGER.info("Stopped");
-        });
-    return closeFuture;
+    return super.stop();
   }
 
   @Override
@@ -464,9 +347,9 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   private static AtomixConfig loadConfig(String config) {
     File configFile = new File(config);
     if (configFile.exists()) {
-      return new DefaultConfigService().load(configFile, AtomixConfig.class);
+      return Configs.load(configFile, AtomixConfig.class);
     } else {
-      return new DefaultConfigService().load(config, AtomixConfig.class);
+      return Configs.load(config, AtomixConfig.class);
     }
   }
 
@@ -474,129 +357,40 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
    * Loads a configuration from the given file.
    */
   private static AtomixConfig loadConfig(File config) {
-    return new DefaultConfigService().load(config, AtomixConfig.class);
+    return Configs.load(config, AtomixConfig.class);
   }
 
   /**
    * Builds a context from the given configuration.
    */
   private static Context buildContext(AtomixConfig config) {
-    ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), Threads.namedThreads("atomix-primitive-%d", LOGGER));
-    ManagedMessagingService messagingService = buildMessagingService(config);
-    ManagedBroadcastService broadcastService = buildBroadcastService(config);
-    ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config);
-    ManagedPersistentMetadataService coreMetadataService = buildCoreMetadataService(config, messagingService);
-    ManagedClusterService clusterService = buildClusterService(config, bootstrapMetadataService, coreMetadataService, messagingService, broadcastService);
+    ManagedMessagingService messagingService = buildMessagingService(config.getClusterConfig());
+    ManagedBroadcastService broadcastService = buildBroadcastService(config.getClusterConfig());
+    ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config.getClusterConfig());
+    ManagedPersistentMetadataService persistentMetadataService = buildPersistentMetadataService(config.getClusterConfig(), messagingService);
+    ManagedClusterService clusterService = buildClusterService(config.getClusterConfig(), bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
     ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
     ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
+    ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), Threads.namedThreads("atomix-primitive-%d", LOGGER));
     ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup(config);
     ManagedPartitionService partitions = buildPartitionService(config);
-    ManagedPrimitivesService primitives = partitions != null
-        ? new CorePrimitivesService(executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, config) : null;
+    ManagedPrimitivesService primitives = new CorePrimitivesService(
+        executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, config);
     PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
     return new Context(
-        executorService,
         messagingService,
         broadcastService,
         bootstrapMetadataService,
-        coreMetadataService,
+        persistentMetadataService,
         clusterService,
         clusterMessagingService,
         clusterEventingService,
+        executorService,
         systemPartitionGroup,
         partitions,
         primitives,
         primitiveTypes,
         config.isEnableShutdownHook());
-  }
-
-  /**
-   * Builds a default messaging service.
-   */
-  private static ManagedMessagingService buildMessagingService(AtomixConfig config) {
-    return NettyMessagingService.builder()
-        .withName(config.getClusterConfig().getName())
-        .withAddress(config.getClusterConfig().getLocalNode().getAddress())
-        .build();
-  }
-
-  /**
-   * Builds a default broadcast service.
-   */
-  private static ManagedBroadcastService buildBroadcastService(AtomixConfig config) {
-    return NettyBroadcastService.builder()
-        .withLocalAddress(config.getClusterConfig().getLocalNode().getAddress())
-        .withGroupAddress(config.getClusterConfig().getMulticastAddress())
-        .withEnabled(config.getClusterConfig().isMulticastEnabled())
-        .build();
-  }
-
-  /**
-   * Builds a bootstrap metadata service.
-   */
-  private static ManagedBootstrapMetadataService buildBootstrapMetadataService(AtomixConfig config) {
-    boolean hasCoreNodes = config.getClusterConfig().getNodes().stream().anyMatch(node -> node.getType() == Node.Type.PERSISTENT);
-    ClusterMetadata metadata = ClusterMetadata.builder()
-        .withNodes(config.getClusterConfig().getNodes()
-            .stream()
-            .filter(node -> (!hasCoreNodes && node.getType() == Node.Type.EPHEMERAL) || (hasCoreNodes && node.getType() == Node.Type.PERSISTENT))
-            .map(Node::new)
-            .collect(Collectors.toList()))
-        .build();
-    return new DefaultBootstrapMetadataService(metadata);
-  }
-
-  /**
-   * Builds a core metadata service.
-   */
-  private static ManagedPersistentMetadataService buildCoreMetadataService(AtomixConfig config, MessagingService messagingService) {
-    ClusterMetadata metadata = ClusterMetadata.builder()
-        .withNodes(config.getClusterConfig().getNodes()
-            .stream()
-            .filter(node -> node.getType() == Node.Type.PERSISTENT)
-            .map(Node::new)
-            .collect(Collectors.toList()))
-        .build();
-    return new DefaultPersistentMetadataService(metadata, messagingService);
-  }
-
-  /**
-   * Builds a cluster service.
-   */
-  private static ManagedClusterService buildClusterService(
-      AtomixConfig config,
-      BootstrapMetadataService bootstrapMetadataService,
-      PersistentMetadataService persistentMetadataService,
-      MessagingService messagingService,
-      BroadcastService broadcastService) {
-    // If the local node has not be configured, create a default node.
-    Node localNode;
-    if (config.getClusterConfig().getLocalNode() == null) {
-      Address address = Address.empty();
-      localNode = Node.builder(address.toString())
-          .withType(Node.Type.PERSISTENT)
-          .withAddress(address)
-          .build();
-    } else {
-      localNode = new Node(config.getClusterConfig().getLocalNode());
-    }
-    return new DefaultClusterService(localNode, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
-  }
-
-  /**
-   * Builds a cluster messaging service.
-   */
-  private static ManagedClusterMessagingService buildClusterMessagingService(
-      ClusterService clusterService, MessagingService messagingService) {
-    return new DefaultClusterMessagingService(clusterService, messagingService);
-  }
-
-  /**
-   * Builds a cluster event service.
-   */
-  private static ManagedClusterEventingService buildClusterEventService(
-      ClusterService clusterService, MessagingService messagingService) {
-    return new DefaultClusterEventingService(clusterService, messagingService);
   }
 
   /**
@@ -624,15 +418,8 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
   /**
    * Atomix instance context.
    */
-  private static class Context {
+  private static class Context extends AtomixCluster.Context {
     private final ScheduledExecutorService executorService;
-    private final ManagedMessagingService messagingService;
-    private final ManagedBroadcastService broadcastService;
-    private final ManagedBootstrapMetadataService bootstrapMetadataService;
-    private final ManagedPersistentMetadataService coreMetadataService;
-    private final ManagedClusterService clusterService;
-    private final ManagedClusterMessagingService clusterMessagingService;
-    private final ManagedClusterEventingService clusterEventingService;
     private final ManagedPartitionGroup systemPartitionGroup;
     private final ManagedPartitionService partitions;
     private final ManagedPrimitivesService primitives;
@@ -640,67 +427,121 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     private final boolean enableShutdownHook;
 
     public Context(
-        ScheduledExecutorService executorService,
         ManagedMessagingService messagingService,
         ManagedBroadcastService broadcastService,
         ManagedBootstrapMetadataService bootstrapMetadataService,
-        ManagedPersistentMetadataService coreMetadataService,
+        ManagedPersistentMetadataService persistentMetadataService,
         ManagedClusterService clusterService,
         ManagedClusterMessagingService clusterMessagingService,
         ManagedClusterEventingService clusterEventingService,
+        ScheduledExecutorService executorService,
         ManagedPartitionGroup systemPartitionGroup,
         ManagedPartitionService partitions,
         ManagedPrimitivesService primitives,
         PrimitiveTypeRegistry primitiveTypes,
         boolean enableShutdownHook) {
+      super(
+          messagingService,
+          broadcastService,
+          bootstrapMetadataService,
+          persistentMetadataService,
+          clusterService,
+          clusterMessagingService,
+          clusterEventingService);
       this.executorService = executorService;
-      this.messagingService = messagingService;
-      this.broadcastService = broadcastService;
-      this.bootstrapMetadataService = bootstrapMetadataService;
-      this.coreMetadataService = coreMetadataService;
-      this.clusterService = clusterService;
-      this.clusterMessagingService = clusterMessagingService;
-      this.clusterEventingService = clusterEventingService;
       this.systemPartitionGroup = systemPartitionGroup;
       this.partitions = partitions;
       this.primitives = primitives;
       this.primitiveTypes = primitiveTypes;
       this.enableShutdownHook = enableShutdownHook;
     }
+
+    ScheduledExecutorService executorService() {
+      return executorService;
+    }
+
+    ManagedPartitionGroup systemPartitionGroup() {
+      return systemPartitionGroup;
+    }
+
+    ManagedPartitionService partitionService() {
+      return partitions;
+    }
+
+    ManagedPrimitivesService primitivesService() {
+      return primitives;
+    }
+
+    PrimitiveTypeRegistry primitiveTypes() {
+      return primitiveTypes;
+    }
+
+    protected boolean enableShutdownHook() {
+      return enableShutdownHook;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected CompletableFuture<Void> startServices() {
+      return super.startServices()
+          .thenComposeAsync(v -> systemPartitionGroup().open(
+              new DefaultPartitionManagementService(
+                  persistentMetadataService(),
+                  clusterService(),
+                  clusterMessagingService(),
+                  primitiveTypes(),
+                  new HashBasedPrimaryElectionService(clusterService(), clusterMessagingService()),
+                  new DefaultSessionIdService())),
+              threadContext())
+          .thenComposeAsync(v -> {
+            ManagedPrimaryElectionService systemElectionService = new DefaultPrimaryElectionService(systemPartitionGroup());
+            ManagedSessionIdService systemSessionIdService = new IdGeneratorSessionIdService(systemPartitionGroup());
+            return systemElectionService.start()
+                .thenComposeAsync(v2 -> systemSessionIdService.start(), threadContext())
+                .thenApply(v2 -> new DefaultPartitionManagementService(
+                    persistentMetadataService(),
+                    clusterService(),
+                    clusterMessagingService(),
+                    primitiveTypes(),
+                    systemElectionService,
+                    systemSessionIdService));
+          }, threadContext())
+          .thenComposeAsync(partitionManagementService -> partitionService().open((PartitionManagementService) partitionManagementService), threadContext())
+          .thenComposeAsync(v -> primitivesService().start(), threadContext())
+          .thenApply(v -> null);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected CompletableFuture<Void> stopServices() {
+      return partitionService().close()
+          .exceptionally(e -> null)
+          .thenComposeAsync(v -> systemPartitionGroup().close(), threadContext())
+          .exceptionally(e -> null)
+          .thenComposeAsync(v -> super.stopServices(), threadContext());
+    }
+
+    @Override
+    protected CompletableFuture<Void> completeShutdown() {
+      executorService().shutdownNow();
+      return super.completeShutdown();
+    }
   }
 
   /**
    * Atomix builder.
    */
-  public static class Builder implements io.atomix.utils.Builder<Atomix> {
-    protected static final String DEFAULT_CLUSTER_NAME = "atomix";
-
-    protected String name = DEFAULT_CLUSTER_NAME;
-    protected Node localNode;
-    protected Collection<Node> nodes = new ArrayList<>();
-    protected boolean multicastEnabled = false;
-    protected Address multicastAddress;
+  public static class Builder extends AtomixCluster.Builder<Atomix> {
     protected ManagedPartitionGroup systemPartitionGroup;
     protected Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
     protected boolean enableShutdownHook;
 
     private Builder() {
-      try {
-        multicastAddress = Address.from("230.0.0.1", 54321);
-      } catch (MalformedAddressException e) {
-        multicastAddress = Address.from(54321);
-      }
     }
 
     private Builder(AtomixConfig config) {
-      this.name = config.getClusterConfig().getName();
-      if (config.getClusterConfig().getLocalNode() != null) {
-        this.localNode = new Node(config.getClusterConfig().getLocalNode());
-      }
-      this.nodes = config.getClusterConfig().getNodes().stream().map(Node::new).collect(Collectors.toList());
-      this.multicastEnabled = config.getClusterConfig().isMulticastEnabled();
-      this.multicastAddress = config.getClusterConfig().getMulticastAddress();
+      super(config.getClusterConfig());
       this.systemPartitionGroup = config.getSystemPartitionGroup() != null ? PartitionGroups.createGroup(config.getSystemPartitionGroup()) : null;
       this.partitionGroups = config.getPartitionGroups().stream().map(PartitionGroups::createGroup).collect(Collectors.toList());
       this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
@@ -708,88 +549,22 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
     }
 
     /**
-     * Sets the cluster name.
+     * Enables the shutdown hook.
      *
-     * @param name the cluster name
-     * @return the cluster metadata builder
-     * @throws NullPointerException if the name is null
+     * @return the Atomix builder
      */
-    public Builder withClusterName(String name) {
-      this.name = checkNotNull(name, "name cannot be null");
-      return this;
+    public Builder withShutdownHookEnabled() {
+      return withShutdownHook(true);
     }
 
     /**
      * Enables the shutdown hook.
      *
-     * @param enable if <code>true</code> a shutdown hook will be registered
-     * @return the cluster metadata builder
-     */
-    public Builder withShutdownHook(boolean enable) {
-      this.enableShutdownHook = enable;
-      return this;
-    }
-
-    /**
-     * Sets the local node metadata.
-     *
-     * @param localNode the local node metadata
-     * @return the cluster metadata builder
-     */
-    public Builder withLocalNode(Node localNode) {
-      this.localNode = checkNotNull(localNode, "localNode cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the core nodes.
-     *
-     * @param coreNodes the core nodes
+     * @param enabled if <code>true</code> a shutdown hook will be registered
      * @return the Atomix builder
      */
-    public Builder withNodes(Node... coreNodes) {
-      return withNodes(Arrays.asList(checkNotNull(coreNodes)));
-    }
-
-    /**
-     * Sets the core nodes.
-     *
-     * @param coreNodes the core nodes
-     * @return the Atomix builder
-     */
-    public Builder withNodes(Collection<Node> coreNodes) {
-      this.nodes = checkNotNull(coreNodes, "coreNodes cannot be null");
-      return this;
-    }
-
-    /**
-     * Enables multicast node discovery.
-     *
-     * @return the Atomix builder
-     */
-    public Builder withMulticastEnabled() {
-      return withMulticastEnabled(true);
-    }
-
-    /**
-     * Sets whether multicast node discovery is enabled.
-     *
-     * @param multicastEnabled whether to enable multicast node discovery
-     * @return the Atomix builder
-     */
-    public Builder withMulticastEnabled(boolean multicastEnabled) {
-      this.multicastEnabled = multicastEnabled;
-      return this;
-    }
-
-    /**
-     * Sets the multicast address.
-     *
-     * @param address the multicast address
-     * @return the Atomix builder
-     */
-    public Builder withMulticastAddress(Address address) {
-      this.multicastAddress = checkNotNull(address, "address cannot be null");
+    public Builder withShutdownHook(boolean enabled) {
+      this.enableShutdownHook = enabled;
       return this;
     }
 
@@ -874,6 +649,48 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
       return this;
     }
 
+    @Override
+    public Builder withClusterName(String clusterName) {
+      super.withClusterName(clusterName);
+      return this;
+    }
+
+    @Override
+    public Builder withLocalNode(Node localNode) {
+      super.withLocalNode(localNode);
+      return this;
+    }
+
+    @Override
+    public Builder withNodes(Node... coreNodes) {
+      super.withNodes(coreNodes);
+      return this;
+    }
+
+    @Override
+    public Builder withNodes(Collection<Node> nodes) {
+      super.withNodes(nodes);
+      return this;
+    }
+
+    @Override
+    public Builder withMulticastEnabled() {
+      super.withMulticastEnabled();
+      return this;
+    }
+
+    @Override
+    public Builder withMulticastEnabled(boolean multicastEnabled) {
+      super.withMulticastEnabled(multicastEnabled);
+      return this;
+    }
+
+    @Override
+    public Builder withMulticastAddress(Address address) {
+      super.withMulticastAddress(address);
+      return this;
+    }
+
     /**
      * Builds a new Atomix instance.
      *
@@ -881,99 +698,41 @@ public class Atomix implements PrimitivesService, Managed<Atomix> {
      */
     @Override
     public Atomix build() {
-      ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), Threads.namedThreads("atomix-primitive-%d", LOGGER));
-      ManagedMessagingService messagingService = buildMessagingService();
-      ManagedBroadcastService broadcastService = buildBroadcastService();
-      ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService();
-      ManagedPersistentMetadataService coreMetadataService = buildCoreMetadataService(messagingService);
-      ManagedClusterService clusterService = buildClusterService(bootstrapMetadataService, coreMetadataService, messagingService, broadcastService);
+      ManagedMessagingService messagingService = buildMessagingService(config);
+      ManagedBroadcastService broadcastService = buildBroadcastService(config);
+      ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config);
+      ManagedPersistentMetadataService persistentMetadataService = buildPersistentMetadataService(config, messagingService);
+      ManagedClusterService clusterService = buildClusterService(config, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
       ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
       ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
+      ScheduledExecutorService executorService = Executors.newScheduledThreadPool(
+          Runtime.getRuntime().availableProcessors(), Threads.namedThreads("atomix-primitive-%d", LOGGER));
       ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup();
       ManagedPartitionService partitions = buildPartitionService();
       ManagedPrimitivesService primitives = partitions != null
-          ? new CorePrimitivesService(executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, new AtomixConfig())
-          : null;
-      return new Atomix(new Context(
+          ? new CorePrimitivesService(
           executorService,
-          messagingService,
-          broadcastService,
-          bootstrapMetadataService,
-          coreMetadataService,
           clusterService,
           clusterMessagingService,
           clusterEventingService,
+          partitions,
+          systemPartitionGroup,
+          new AtomixConfig())
+          : null;
+      return new Atomix(new Context(
+          messagingService,
+          broadcastService,
+          bootstrapMetadataService,
+          persistentMetadataService,
+          clusterService,
+          clusterMessagingService,
+          clusterEventingService,
+          executorService,
           systemPartitionGroup,
           partitions,
           primitives,
           primitiveTypes,
           enableShutdownHook));
-    }
-
-    /**
-     * Builds a default messaging service.
-     */
-    protected ManagedMessagingService buildMessagingService() {
-      return NettyMessagingService.builder()
-          .withName(name)
-          .withAddress(localNode.address())
-          .build();
-    }
-
-    /**
-     * Builds a default broadcast service.
-     */
-    protected ManagedBroadcastService buildBroadcastService() {
-      return NettyBroadcastService.builder()
-          .withLocalAddress(localNode.address())
-          .withGroupAddress(multicastAddress)
-          .withEnabled(multicastEnabled)
-          .build();
-    }
-
-    /**
-     * Builds a bootstrap metadata service.
-     */
-    protected ManagedBootstrapMetadataService buildBootstrapMetadataService() {
-      return new DefaultBootstrapMetadataService(ClusterMetadata.builder().withNodes(nodes).build());
-    }
-
-    /**
-     * Builds a core metadata service.
-     */
-    protected ManagedPersistentMetadataService buildCoreMetadataService(MessagingService messagingService) {
-      return new DefaultPersistentMetadataService(ClusterMetadata.builder()
-          .withNodes(nodes.stream()
-              .filter(node -> node.type() == Node.Type.PERSISTENT)
-              .collect(Collectors.toList()))
-          .build(), messagingService);
-    }
-
-    /**
-     * Builds a cluster service.
-     */
-    protected ManagedClusterService buildClusterService(
-        BootstrapMetadataService bootstrapMetadataService,
-        PersistentMetadataService persistentMetadataService,
-        MessagingService messagingService,
-        BroadcastService broadcastService) {
-      return new DefaultClusterService(localNode, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
-    }
-
-    /**
-     * Builds a cluster messaging service.
-     */
-    protected ManagedClusterMessagingService buildClusterMessagingService(
-        ClusterService clusterService, MessagingService messagingService) {
-      return new DefaultClusterMessagingService(clusterService, messagingService);
-    }
-
-    /**
-     * Builds a cluster event service.
-     */
-    protected ManagedClusterEventingService buildClusterEventService(
-        ClusterService clusterService, MessagingService messagingService) {
-      return new DefaultClusterEventingService(clusterService, messagingService);
     }
 
     /**

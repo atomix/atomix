@@ -26,7 +26,7 @@ import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
-import io.atomix.utils.ConfigurationException;
+import io.atomix.utils.config.ConfigurationException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
