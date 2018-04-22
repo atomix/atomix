@@ -21,7 +21,7 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
-import io.atomix.cluster.impl.DefaultCoreMetadataService;
+import io.atomix.cluster.impl.DefaultPersistentMetadataService;
 import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
@@ -484,7 +484,7 @@ public class RaftPerformanceTest implements Runnable {
         .withClusterService(new DefaultClusterService(
             node,
             new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-            new DefaultCoreMetadataService(new ClusterMetadata(members), messagingService),
+            new DefaultPersistentMetadataService(new ClusterMetadata(members), messagingService),
             messagingService,
             new BroadcastServiceAdapter()))
         .withStorage(RaftStorage.builder()

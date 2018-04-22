@@ -25,7 +25,7 @@ import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
 import io.atomix.cluster.ClusterMetadataService;
-import io.atomix.cluster.ManagedCoreMetadataService;
+import io.atomix.cluster.ManagedPersistentMetadataService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.MessagingService;
@@ -61,9 +61,9 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Default cluster metadata service.
  */
-public class DefaultCoreMetadataService
+public class DefaultPersistentMetadataService
     extends AbstractListenerManager<ClusterMetadataEvent, ClusterMetadataEventListener>
-    implements ManagedCoreMetadataService {
+    implements ManagedPersistentMetadataService {
 
   private static final String BOOTSTRAP_MESSAGE = "atomix-cluster-metadata-bootstrap";
   private static final String UPDATE_MESSAGE = "atomix-cluster-metadata-update";
@@ -96,7 +96,7 @@ public class DefaultCoreMetadataService
       namedThreads("atomix-cluster-metadata-receiver", log));
   private ScheduledFuture<?> metadataFuture;
 
-  public DefaultCoreMetadataService(ClusterMetadata metadata, MessagingService messagingService) {
+  public DefaultPersistentMetadataService(ClusterMetadata metadata, MessagingService messagingService) {
     metadata.nodes().forEach(node -> nodes.put(node.id(), new ReplicatedNode(
         node.id(),
         node.type(),

@@ -21,7 +21,7 @@ import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterService;
-import io.atomix.cluster.impl.TestCoreMetadataService;
+import io.atomix.cluster.impl.TestPersistentMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -73,7 +73,7 @@ public class DefaultClusterEventingServiceTest {
     ClusterService clusterService1 = new DefaultClusterService(
         localNode1,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestCoreMetadataService(clusterMetadata),
+        new TestPersistentMetadataService(clusterMetadata),
         messagingService1,
         broadcastServiceFactory.newBroadcastService().start().join())
         .start()
@@ -85,7 +85,7 @@ public class DefaultClusterEventingServiceTest {
     ClusterService clusterService2 = new DefaultClusterService(
         localNode2,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestCoreMetadataService(clusterMetadata),
+        new TestPersistentMetadataService(clusterMetadata),
         messagingService2,
         broadcastServiceFactory.newBroadcastService().start().join())
         .start()
@@ -97,7 +97,7 @@ public class DefaultClusterEventingServiceTest {
     ClusterService clusterService3 = new DefaultClusterService(
         localNode3,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestCoreMetadataService(clusterMetadata),
+        new TestPersistentMetadataService(clusterMetadata),
         messagingService3,
         broadcastServiceFactory.newBroadcastService().start().join())
         .start()

@@ -67,7 +67,7 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clusterService1 = new DefaultClusterService(
         localNode1,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestCoreMetadataService(clusterMetadata),
+        new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(localNode1.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
 
@@ -75,7 +75,7 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clusterService2 = new DefaultClusterService(
         localNode2,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestCoreMetadataService(clusterMetadata),
+        new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(localNode2.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
 
@@ -83,7 +83,7 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clusterService3 = new DefaultClusterService(
         localNode3,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestCoreMetadataService(clusterMetadata),
+        new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(localNode3.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
 
@@ -119,7 +119,7 @@ public class DefaultClusterServiceTest {
     ManagedClusterService dataClusterService = new DefaultClusterService(
         dataNode,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestCoreMetadataService(clusterMetadata),
+        new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(dataNode.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
 
@@ -145,7 +145,7 @@ public class DefaultClusterServiceTest {
     ManagedClusterService clientClusterService = new DefaultClusterService(
         clientNode,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestCoreMetadataService(clusterMetadata),
+        new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(clientNode.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
 

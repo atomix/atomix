@@ -24,7 +24,7 @@ import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.CoreMetadataService;
+import io.atomix.cluster.PersistentMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
@@ -85,13 +85,13 @@ public class DefaultClusterService
           .register(Node.State.class)
           .register(ClusterHeartbeat.class)
           .register(StatefulNode.class)
-          .register(new DefaultCoreMetadataService.AddressSerializer(), Address.class)
+          .register(new DefaultPersistentMetadataService.AddressSerializer(), Address.class)
           .build("ClusterService"));
 
   private final MessagingService messagingService;
   private final BroadcastService broadcastService;
   private final BootstrapMetadataService bootstrapMetadataService;
-  private final CoreMetadataService coreMetadataService;
+  private final PersistentMetadataService persistentMetadataService;
   private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulNode localNode;
   private final Map<NodeId, StatefulNode> nodes = Maps.newConcurrentMap();
@@ -108,11 +108,11 @@ public class DefaultClusterService
   public DefaultClusterService(
       Node localNode,
       BootstrapMetadataService bootstrapMetadataService,
-      CoreMetadataService coreMetadataService,
+      PersistentMetadataService persistentMetadataService,
       MessagingService messagingService,
       BroadcastService broadcastService) {
     this.bootstrapMetadataService = checkNotNull(bootstrapMetadataService, "bootstrapMetadataService cannot be null");
-    this.coreMetadataService = checkNotNull(coreMetadataService, "coreMetadataService cannot be null");
+    this.persistentMetadataService = checkNotNull(persistentMetadataService, "coreMetadataService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.broadcastService = checkNotNull(broadcastService, "broadcastService cannot be null");
     this.localNode = new StatefulNode(
@@ -349,12 +349,12 @@ public class DefaultClusterService
   @Override
   public CompletableFuture<ClusterService> start() {
     if (started.compareAndSet(false, true)) {
-      coreMetadataService.addListener(metadataEventListener);
+      persistentMetadataService.addListener(metadataEventListener);
       broadcastService.addListener(broadcastListener);
       LOGGER.info("{} - Node activated: {}", localNode.id(), localNode);
       localNode.setState(State.ACTIVE);
       nodes.put(localNode.id(), localNode);
-      coreMetadataService.getMetadata().nodes()
+      persistentMetadataService.getMetadata().nodes()
           .forEach(node -> nodes.putIfAbsent(node.id(), new StatefulNode(
               node.id(),
               node.type(),
@@ -398,7 +398,7 @@ public class DefaultClusterService
       nodes.clear();
       heartbeatFuture.cancel(true);
       messagingService.unregisterHandler(HEARTBEAT_MESSAGE);
-      coreMetadataService.removeListener(metadataEventListener);
+      persistentMetadataService.removeListener(metadataEventListener);
       LOGGER.info("Stopped");
     }
     return CompletableFuture.completedFuture(null);
