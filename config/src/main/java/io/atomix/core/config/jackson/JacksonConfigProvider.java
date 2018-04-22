@@ -25,8 +25,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
+import io.atomix.cluster.profile.ClusterProfile;
+import io.atomix.cluster.profile.NodeProfile;
+import io.atomix.core.config.jackson.impl.ClusterProfileDeserializer;
 import io.atomix.core.config.jackson.impl.ConfigPropertyNamingStrategy;
 import io.atomix.core.config.jackson.impl.MemberFilterDeserializer;
+import io.atomix.core.config.jackson.impl.NodeProfileDeserializer;
 import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
@@ -147,6 +151,8 @@ public class JacksonConfigProvider implements ConfigProvider {
     module.addDeserializer(MemberFilter.class, new MemberFilterDeserializer());
     module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
     module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
+    module.addDeserializer(ClusterProfile.class, new ClusterProfileDeserializer());
+    module.addDeserializer(NodeProfile.class, new NodeProfileDeserializer());
     mapper.registerModule(module);
   }
 
