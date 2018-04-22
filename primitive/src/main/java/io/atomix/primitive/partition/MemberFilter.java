@@ -13,10 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.utils.config;
+package io.atomix.primitive.partition;
+
+import io.atomix.cluster.Node;
 
 /**
- * Atomix configuration.
+ * Partition group member filter.
  */
-public interface Config {
+public interface MemberFilter {
+
+  /**
+   * Returns a boolean indicating whether the given node is a member of the partition group.
+   *
+   * @param node the node to check
+   * @return indicates whether the given node is a member of the partition group
+   */
+  boolean isMember(Node node);
+
 }

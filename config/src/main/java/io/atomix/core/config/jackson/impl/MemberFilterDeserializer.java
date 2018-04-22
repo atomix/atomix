@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.utils.config;
+package io.atomix.core.config.jackson.impl;
+
+import io.atomix.primitive.partition.MemberFilter;
+import io.atomix.primitive.partition.MemberFilters;
 
 /**
- * Atomix configuration.
+ * Member filter deserializer.
  */
-public interface Config {
+public class MemberFilterDeserializer extends PolymorphicTypeDeserializer<MemberFilter> {
+  @SuppressWarnings("unchecked")
+  public MemberFilterDeserializer() {
+    super(MemberFilter.class, type -> MemberFilters.getTypedFilter(type).getClass());
+  }
 }

@@ -2,6 +2,12 @@ cluster:
   name: test
 primitive-types:
   - io.atomix.core.map.ConsistentMapType
+partition-groups:
+  - name: foo
+    type: multi-primary
+    member-filter:
+      type: tag
+      tag: test
 primitives:
   foo:
     type: consistent-map
