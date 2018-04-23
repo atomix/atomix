@@ -42,6 +42,13 @@ public interface PartitionGroup<P extends PrimitiveProtocol> {
   PrimitiveProtocol.Type type();
 
   /**
+   * Returns the partition group configuration.
+   *
+   * @return the partition group configuration
+   */
+  PartitionGroupConfig config();
+
+  /**
    * Returns a new primitive protocol.
    *
    * @return a new primitive protocol

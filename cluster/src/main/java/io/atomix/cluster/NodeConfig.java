@@ -16,6 +16,7 @@
 package io.atomix.cluster;
 
 import io.atomix.cluster.profile.NodeProfile;
+import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 
 import java.util.HashSet;
@@ -24,7 +25,7 @@ import java.util.Set;
 /**
  * Node configuration.
  */
-public class NodeConfig {
+public class NodeConfig implements Config {
   private NodeId id;
   private Node.Type type;
   private Address address;

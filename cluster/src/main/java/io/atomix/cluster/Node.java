@@ -17,6 +17,7 @@ package io.atomix.cluster;
 
 import com.google.common.collect.ImmutableSet;
 import io.atomix.cluster.profile.NodeProfile;
+import io.atomix.utils.config.Configured;
 import io.atomix.utils.net.Address;
 
 import java.util.Objects;
@@ -28,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Represents a controller instance as a member in a cluster.
  */
-public class Node {
+public class Node implements Configured<NodeConfig> {
 
   /**
    * Returns a new node builder with no ID.
@@ -148,10 +149,16 @@ public class Node {
   private final String rack;
   private final String host;
   private final Set<String> tags;
-  final NodeConfig config;
 
   public Node(NodeConfig config) {
-    this(config.getId(), config.getType(), config.getAddress(), config.getZone(), config.getRack(), config.getHost(), config.getTags());
+    config.getProfile().configure(config);
+    this.id = checkNotNull(config.getId(), "id cannot be null");
+    this.type = checkNotNull(config.getType(), "type cannot be null");
+    this.address = checkNotNull(config.getAddress(), "address cannot be null");
+    this.zone = config.getZone();
+    this.rack = config.getRack();
+    this.host = config.getHost();
+    this.tags = ImmutableSet.copyOf(config.getTags());
   }
 
   protected Node(NodeId id, Type type, Address address, String zone, String rack, String host, Set<String> tags) {
@@ -162,14 +169,6 @@ public class Node {
     this.rack = rack;
     this.host = host;
     this.tags = ImmutableSet.copyOf(tags);
-    this.config = new NodeConfig()
-        .setId(id)
-        .setType(type)
-        .setAddress(address)
-        .setZone(zone)
-        .setRack(rack)
-        .setHost(host)
-        .setTags(tags);
   }
 
   /**
@@ -242,6 +241,18 @@ public class Node {
    */
   public Set<String> tags() {
     return tags;
+  }
+
+  @Override
+  public NodeConfig config() {
+    return new NodeConfig()
+        .setId(id)
+        .setType(type)
+        .setAddress(address)
+        .setZone(zone)
+        .setRack(rack)
+        .setHost(host)
+        .setTags(tags);
   }
 
   @Override

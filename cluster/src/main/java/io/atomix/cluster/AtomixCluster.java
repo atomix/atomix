@@ -85,36 +85,66 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixCluster.class);
 
-  private final Context context;
+  protected final ManagedMessagingService messagingService;
+  protected final ManagedBroadcastService broadcastService;
+  protected final ManagedBootstrapMetadataService bootstrapMetadataService;
+  protected final ManagedPersistentMetadataService persistentMetadataService;
+  protected final ManagedClusterService clusterService;
+  protected final ManagedClusterMessagingService clusterMessagingService;
+  protected final ManagedClusterEventingService clusterEventingService;
   protected volatile CompletableFuture openFuture;
   protected volatile CompletableFuture<Void> closeFuture;
+  private final ThreadContext threadContext = new SingleThreadContext("atomix-cluster-%d");
+  private final AtomicBoolean started = new AtomicBoolean();
 
   public AtomixCluster(String configFile) {
-    this(loadContext(new File(System.getProperty("user.dir"), configFile)));
+    this(loadConfig(new File(System.getProperty("user.dir"), configFile)));
   }
 
   public AtomixCluster(File configFile) {
-    this(loadContext(configFile));
+    this(loadConfig(configFile));
   }
 
   public AtomixCluster(ClusterConfig config) {
-    this(buildContext(config));
+    // Apply profiles to all configurations.
+    config.getProfile().configure(config);
+    config.getLocalNode().getProfile().configure(config.getLocalNode());
+    config.getNodes().forEach(node -> node.getProfile().configure(node));
+
+    this.messagingService = buildMessagingService(config);
+    this.broadcastService = buildBroadcastService(config);
+    this.bootstrapMetadataService = buildBootstrapMetadataService(config);
+    this.persistentMetadataService = buildPersistentMetadataService(config, messagingService);
+    this.clusterService = buildClusterService(config, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
+    this.clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
+    this.clusterEventingService = buildClusterEventService(clusterService, messagingService);
   }
 
-  protected AtomixCluster(Context context) {
-    this.context = context;
-  }
-
+  /**
+   * Returns the cluster service.
+   *
+   * @return the cluster service
+   */
   public ClusterService clusterService() {
-    return context.clusterService();
+    return clusterService;
   }
 
+  /**
+   * Returns the cluster messaging service.
+   *
+   * @return the cluster messaging service
+   */
   public ClusterMessagingService messagingService() {
-    return context.clusterMessagingService();
+    return clusterMessagingService;
   }
 
+  /**
+   * Returns the cluster event service.
+   *
+   * @return the cluster event service
+   */
   public ClusterEventingService eventingService() {
-    return context.clusterEventingService();
+    return clusterEventingService;
   }
 
   @Override
@@ -129,14 +159,39 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
       return openFuture;
     }
 
-    openFuture = context.start();
+    openFuture = startServices()
+        .thenComposeAsync(v -> joinCluster(), threadContext)
+        .thenComposeAsync(v -> completeStartup(), threadContext)
+        .thenApply(v -> this);
 
     return openFuture;
   }
 
+  protected CompletableFuture<Void> startServices() {
+    return messagingService.start()
+        .thenComposeAsync(v -> broadcastService.start(), threadContext)
+        .thenComposeAsync(v -> bootstrapMetadataService.start(), threadContext)
+        .thenComposeAsync(v -> persistentMetadataService.start(), threadContext)
+        .thenComposeAsync(v -> clusterService.start(), threadContext)
+        .thenComposeAsync(v -> clusterMessagingService.start(), threadContext)
+        .thenComposeAsync(v -> clusterEventingService.start(), threadContext)
+        .thenApply(v -> null);
+  }
+
+  protected CompletableFuture<Void> joinCluster() {
+    persistentMetadataService.addNode(clusterService().getLocalNode());
+    return CompletableFuture.completedFuture(null);
+  }
+
+  protected CompletableFuture<Void> completeStartup() {
+    started.set(true);
+    LOGGER.info("Started");
+    return CompletableFuture.completedFuture(null);
+  }
+
   @Override
   public boolean isRunning() {
-    return context.isRunning();
+    return started.get();
   }
 
   @Override
@@ -145,8 +200,39 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
       return closeFuture;
     }
 
-    closeFuture = context.stop();
+    closeFuture = leaveCluster()
+        .thenComposeAsync(v -> stopServices(), threadContext)
+        .thenComposeAsync(v -> completeShutdown(), threadContext);
     return closeFuture;
+  }
+
+  protected CompletableFuture<Void> leaveCluster() {
+    persistentMetadataService.removeNode(clusterService().getLocalNode());
+    return CompletableFuture.completedFuture(null);
+  }
+
+  protected CompletableFuture<Void> stopServices() {
+    return clusterMessagingService.stop()
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> clusterEventingService.stop(), threadContext)
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> clusterService.stop(), threadContext)
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> persistentMetadataService.stop(), threadContext)
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> bootstrapMetadataService.stop(), threadContext)
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> broadcastService.stop(), threadContext)
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> messagingService.stop(), threadContext)
+        .exceptionally(e -> null);
+  }
+
+  protected CompletableFuture<Void> completeShutdown() {
+    threadContext.close();
+    started.set(false);
+    LOGGER.info("Stopped");
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -156,177 +242,10 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   }
 
   /**
-   * Atomix cluster context.
-   */
-  protected static class Context implements Managed<Void> {
-    private final ManagedMessagingService messagingService;
-    private final ManagedBroadcastService broadcastService;
-    private final ManagedBootstrapMetadataService bootstrapMetadataService;
-    private final ManagedPersistentMetadataService persistentMetadataService;
-    private final ManagedClusterService clusterService;
-    private final ManagedClusterMessagingService clusterMessagingService;
-    private final ManagedClusterEventingService clusterEventingService;
-    private final ThreadContext threadContext = new SingleThreadContext("atomix-%d");
-    private final AtomicBoolean started = new AtomicBoolean();
-
-    public Context(
-        ManagedMessagingService messagingService,
-        ManagedBroadcastService broadcastService,
-        ManagedBootstrapMetadataService bootstrapMetadataService,
-        ManagedPersistentMetadataService persistentMetadataService,
-        ManagedClusterService clusterService,
-        ManagedClusterMessagingService clusterMessagingService,
-        ManagedClusterEventingService clusterEventingService) {
-      this.messagingService = messagingService;
-      this.broadcastService = broadcastService;
-      this.bootstrapMetadataService = bootstrapMetadataService;
-      this.persistentMetadataService = persistentMetadataService;
-      this.clusterService = clusterService;
-      this.clusterMessagingService = clusterMessagingService;
-      this.clusterEventingService = clusterEventingService;
-    }
-
-    public ManagedMessagingService messagingService() {
-      return messagingService;
-    }
-
-    public ManagedBroadcastService broadcastService() {
-      return broadcastService;
-    }
-
-    public ManagedBootstrapMetadataService bootstrapMetadataService() {
-      return bootstrapMetadataService;
-    }
-
-    public ManagedPersistentMetadataService persistentMetadataService() {
-      return persistentMetadataService;
-    }
-
-    public ManagedClusterService clusterService() {
-      return clusterService;
-    }
-
-    public ManagedClusterMessagingService clusterMessagingService() {
-      return clusterMessagingService;
-    }
-
-    public ManagedClusterEventingService clusterEventingService() {
-      return clusterEventingService;
-    }
-
-    public ThreadContext threadContext() {
-      return threadContext;
-    }
-
-    @Override
-    public CompletableFuture<Void> start() {
-      return startServices()
-          .thenComposeAsync(v -> joinCluster(), threadContext())
-          .thenComposeAsync(v -> completeStartup(), threadContext());
-    }
-
-    protected CompletableFuture<Void> startServices() {
-      return messagingService().start()
-          .thenComposeAsync(v -> broadcastService().start(), threadContext())
-          .thenComposeAsync(v -> bootstrapMetadataService().start(), threadContext())
-          .thenComposeAsync(v -> persistentMetadataService().start(), threadContext())
-          .thenComposeAsync(v -> clusterService().start(), threadContext())
-          .thenComposeAsync(v -> clusterMessagingService().start(), threadContext())
-          .thenComposeAsync(v -> clusterEventingService().start(), threadContext())
-          .thenApply(v -> null);
-    }
-
-    protected CompletableFuture<Void> joinCluster() {
-      persistentMetadataService().addNode(clusterService().getLocalNode());
-      return CompletableFuture.completedFuture(null);
-    }
-
-    protected CompletableFuture<Void> completeStartup() {
-      started.set(true);
-      LOGGER.info("Started");
-      return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public boolean isRunning() {
-      return started.get();
-    }
-
-    @Override
-    public CompletableFuture<Void> stop() {
-      return leaveCluster()
-          .thenComposeAsync(v -> stopServices(), threadContext())
-          .thenComposeAsync(v -> completeShutdown(), threadContext());
-    }
-
-    protected CompletableFuture<Void> leaveCluster() {
-      persistentMetadataService().removeNode(clusterService().getLocalNode());
-      return CompletableFuture.completedFuture(null);
-    }
-
-    protected CompletableFuture<Void> stopServices() {
-      return clusterMessagingService().stop()
-          .exceptionally(e -> null)
-          .thenComposeAsync(v -> clusterEventingService().stop(), threadContext())
-          .exceptionally(e -> null)
-          .thenComposeAsync(v -> clusterService().stop(), threadContext())
-          .exceptionally(e -> null)
-          .thenComposeAsync(v -> persistentMetadataService().stop(), threadContext())
-          .exceptionally(e -> null)
-          .thenComposeAsync(v -> bootstrapMetadataService().stop(), threadContext())
-          .exceptionally(e -> null)
-          .thenComposeAsync(v -> broadcastService().stop(), threadContext())
-          .exceptionally(e -> null)
-          .thenComposeAsync(v -> messagingService().stop(), threadContext())
-          .exceptionally(e -> null);
-    }
-
-    protected CompletableFuture<Void> completeShutdown() {
-      threadContext().close();
-      started.set(false);
-      LOGGER.info("Stopped");
-      return CompletableFuture.completedFuture(null);
-    }
-  }
-
-  /**
-   * Loads a context from the given configuration file.
-   */
-  private static Context loadContext(File config) {
-    return buildContext(loadConfig(config));
-  }
-
-  /**
    * Loads a configuration from the given file.
    */
   private static ClusterConfig loadConfig(File config) {
     return Configs.load(config, ClusterConfig.class);
-  }
-
-  /**
-   * Builds a context from the given configuration.
-   */
-  private static Context buildContext(ClusterConfig config) {
-    // Apply profiles to all configurations.
-    config.getProfile().configure(config);
-    config.getLocalNode().getProfile().configure(config.getLocalNode());
-    config.getNodes().forEach(node -> node.getProfile().configure(node));
-
-    ManagedMessagingService messagingService = buildMessagingService(config);
-    ManagedBroadcastService broadcastService = buildBroadcastService(config);
-    ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config);
-    ManagedPersistentMetadataService persistentMetadataService = buildPersistentMetadataService(config, messagingService);
-    ManagedClusterService clusterService = buildClusterService(config, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
-    ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
-    ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
-    return new Context(
-        messagingService,
-        broadcastService,
-        bootstrapMetadataService,
-        persistentMetadataService,
-        clusterService,
-        clusterMessagingService,
-        clusterEventingService);
   }
 
   /**
@@ -450,7 +369,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
      * @return the cluster metadata builder
      */
     public Builder withLocalNode(Node localNode) {
-      config.setLocalNode(localNode.config);
+      config.setLocalNode(localNode.config());
       return this;
     }
 
@@ -471,7 +390,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
      * @return the Atomix builder
      */
     public Builder withNodes(Collection<Node> nodes) {
-      config.setNodes(nodes.stream().map(n -> n.config).collect(Collectors.toList()));
+      config.setNodes(nodes.stream().map(n -> n.config()).collect(Collectors.toList()));
       return this;
     }
 

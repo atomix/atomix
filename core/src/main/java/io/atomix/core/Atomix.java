@@ -16,15 +16,7 @@
 package io.atomix.core;
 
 import io.atomix.cluster.AtomixCluster;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.ManagedBootstrapMetadataService;
-import io.atomix.cluster.ManagedClusterService;
-import io.atomix.cluster.ManagedPersistentMetadataService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
-import io.atomix.cluster.messaging.ManagedClusterEventingService;
-import io.atomix.cluster.messaging.ManagedClusterMessagingService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElector;
@@ -41,8 +33,6 @@ import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.value.AtomicValue;
-import io.atomix.messaging.ManagedBroadcastService;
-import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
@@ -52,6 +42,7 @@ import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionGroups;
 import io.atomix.primitive.partition.PartitionManagementService;
@@ -63,6 +54,9 @@ import io.atomix.primitive.partition.impl.HashBasedPrimaryElectionService;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.impl.DefaultSessionIdService;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.SingleThreadContext;
+import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.Threads;
 import io.atomix.utils.config.Configs;
 import io.atomix.utils.config.ConfigurationException;
@@ -129,51 +123,40 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
 
-  private final Context context;
+  private final ScheduledExecutorService executorService;
+  private final ManagedPartitionGroup systemPartitionGroup;
+  private final ManagedPartitionService partitions;
+  private final ManagedPrimitivesService primitives;
+  private final PrimitiveTypeRegistry primitiveTypes;
+  private final boolean enableShutdownHook;
+  private final ThreadContext threadContext = new SingleThreadContext("atomix-%d");
   private Thread shutdownHook = null;
 
   public Atomix(String configFile) {
-    this(loadContext(new File(System.getProperty("user.dir"), configFile)));
+    this(loadConfig(new File(System.getProperty("user.dir"), configFile)));
   }
 
   public Atomix(File configFile) {
-    this(loadContext(configFile));
+    this(loadConfig(configFile));
   }
 
   public Atomix(AtomixConfig config) {
-    this(buildContext(config));
-  }
-
-  private Atomix(Context context) {
-    super(context);
-    this.context = context;
-  }
-
-  /**
-   * Returns the cluster service.
-   *
-   * @return the cluster service
-   */
-  public ClusterService clusterService() {
-    return context.clusterService();
-  }
-
-  /**
-   * Returns the cluster communication service.
-   *
-   * @return the cluster communication service
-   */
-  public ClusterMessagingService messagingService() {
-    return context.clusterMessagingService();
-  }
-
-  /**
-   * Returns the cluster event service.
-   *
-   * @return the cluster event service
-   */
-  public ClusterEventingService eventingService() {
-    return context.clusterEventingService();
+    super(config.getClusterConfig());
+    this.executorService = Executors.newScheduledThreadPool(
+        Runtime.getRuntime().availableProcessors(),
+        Threads.namedThreads("atomix-primitive-%d", LOGGER));
+    this.systemPartitionGroup = buildSystemPartitionGroup(config);
+    this.partitions = buildPartitionService(config);
+    this.primitives = new CorePrimitivesService(
+        executorService,
+        clusterService(),
+        messagingService(),
+        eventingService(),
+        partitions,
+        systemPartitionGroup,
+        config);
+    this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
+    this.enableShutdownHook = config.isEnableShutdownHook();
   }
 
   /**
@@ -182,7 +165,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
    * @return the partition service
    */
   public PartitionService partitionService() {
-    return context.partitionService();
+    return partitions;
   }
 
   /**
@@ -191,104 +174,104 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
    * @return the primitives service
    */
   public PrimitivesService primitivesService() {
-    return context.primitivesService();
+    return primitives;
   }
 
   @Override
   public TransactionBuilder transactionBuilder(String name) {
-    return context.primitivesService().transactionBuilder(name);
+    return primitives.transactionBuilder(name);
   }
 
   @Override
   public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
       PrimitiveType<B, C, P> primitiveType) {
-    return context.primitivesService().primitiveBuilder(name, primitiveType);
+    return primitives.primitiveBuilder(name, primitiveType);
   }
 
   @Override
   public <K, V> ConsistentMap<K, V> getConsistentMap(String name) {
-    return context.primitivesService().getConsistentMap(name);
+    return primitives.getConsistentMap(name);
   }
 
   @Override
   public <V> DocumentTree<V> getDocumentTree(String name) {
-    return context.primitivesService().getDocumentTree(name);
+    return primitives.getDocumentTree(name);
   }
 
   @Override
   public <V> ConsistentTreeMap<V> getTreeMap(String name) {
-    return context.primitivesService().getTreeMap(name);
+    return primitives.getTreeMap(name);
   }
 
   @Override
   public <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name) {
-    return context.primitivesService().getConsistentMultimap(name);
+    return primitives.getConsistentMultimap(name);
   }
 
   @Override
   public <K> AtomicCounterMap<K> getAtomicCounterMap(String name) {
-    return context.primitivesService().getAtomicCounterMap(name);
+    return primitives.getAtomicCounterMap(name);
   }
 
   @Override
   public <E> DistributedSet<E> getSet(String name) {
-    return context.primitivesService().getSet(name);
+    return primitives.getSet(name);
   }
 
   @Override
   public AtomicCounter getAtomicCounter(String name) {
-    return context.primitivesService().getAtomicCounter(name);
+    return primitives.getAtomicCounter(name);
   }
 
   @Override
   public AtomicIdGenerator getAtomicIdGenerator(String name) {
-    return context.primitivesService().getAtomicIdGenerator(name);
+    return primitives.getAtomicIdGenerator(name);
   }
 
   @Override
   public <V> AtomicValue<V> getAtomicValue(String name) {
-    return context.primitivesService().getAtomicValue(name);
+    return primitives.getAtomicValue(name);
   }
 
   @Override
   public <T> LeaderElection<T> getLeaderElection(String name) {
-    return context.primitivesService().getLeaderElection(name);
+    return primitives.getLeaderElection(name);
   }
 
   @Override
   public <T> LeaderElector<T> getLeaderElector(String name) {
-    return context.primitivesService().getLeaderElector(name);
+    return primitives.getLeaderElector(name);
   }
 
   @Override
   public DistributedLock getLock(String name) {
-    return context.primitivesService().getLock(name);
+    return primitives.getLock(name);
   }
 
   @Override
   public <E> WorkQueue<E> getWorkQueue(String name) {
-    return context.primitivesService().getWorkQueue(name);
+    return primitives.getWorkQueue(name);
   }
 
   @Override
   public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
-    return context.primitivesService().getPrimitive(name, primitiveType, primitiveConfig);
+    return primitives.getPrimitive(name, primitiveType, primitiveConfig);
   }
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives() {
-    return context.primitivesService().getPrimitives();
+    return primitives.getPrimitives();
   }
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType) {
-    return context.primitivesService().getPrimitives(primitiveType);
+    return primitives.getPrimitives(primitiveType);
   }
 
   @Override
   public <P extends DistributedPrimitive> P getPrimitive(String name) {
-    return context.primitivesService().getPrimitive(name);
+    return primitives.getPrimitive(name);
   }
 
   /**
@@ -303,8 +286,13 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   @Override
   @SuppressWarnings("unchecked")
   public synchronized CompletableFuture<Atomix> start() {
+    if (closeFuture != null) {
+      return Futures.exceptionalFuture(new IllegalStateException("Atomix instance " +
+          (closeFuture.isDone() ? "shutdown" : "shutting down")));
+    }
+
     return super.start().thenApply(atomix -> {
-      if (context.enableShutdownHook()) {
+      if (enableShutdownHook) {
         if (shutdownHook == null) {
           shutdownHook = new Thread(() -> super.stop().join());
           Runtime.getRuntime().addShutdownHook(shutdownHook);
@@ -312,6 +300,37 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
       }
       return atomix;
     });
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  protected CompletableFuture<Void> startServices() {
+    return super.startServices()
+        .thenComposeAsync(v -> systemPartitionGroup.open(
+            new DefaultPartitionManagementService(
+                persistentMetadataService,
+                clusterService(),
+                messagingService(),
+                primitiveTypes,
+                new HashBasedPrimaryElectionService(clusterService(), messagingService()),
+                new DefaultSessionIdService())),
+            threadContext)
+        .thenComposeAsync(v -> {
+          ManagedPrimaryElectionService systemElectionService = new DefaultPrimaryElectionService(systemPartitionGroup);
+          ManagedSessionIdService systemSessionIdService = new IdGeneratorSessionIdService(systemPartitionGroup);
+          return systemElectionService.start()
+              .thenComposeAsync(v2 -> systemSessionIdService.start(), threadContext)
+              .thenApply(v2 -> new DefaultPartitionManagementService(
+                  persistentMetadataService,
+                  clusterService(),
+                  messagingService(),
+                  primitiveTypes,
+                  systemElectionService,
+                  systemSessionIdService));
+        }, threadContext)
+        .thenComposeAsync(partitionManagementService -> partitions.open((PartitionManagementService) partitionManagementService), threadContext)
+        .thenComposeAsync(v -> primitives.start(), threadContext)
+        .thenApply(v -> null);
   }
 
   @Override
@@ -328,17 +347,26 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  protected CompletableFuture<Void> stopServices() {
+    return partitions.close()
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> systemPartitionGroup.close(), threadContext)
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> super.stopServices(), threadContext);
+  }
+
+  @Override
+  protected CompletableFuture<Void> completeShutdown() {
+    executorService.shutdownNow();
+    return super.completeShutdown();
+  }
+
+  @Override
   public String toString() {
     return toStringHelper(this)
         .add("partitions", partitionService())
         .toString();
-  }
-
-  /**
-   * Loads a context from the given configuration file.
-   */
-  private static Context loadContext(File config) {
-    return buildContext(loadConfig(config));
   }
 
   /**
@@ -358,39 +386,6 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
    */
   private static AtomixConfig loadConfig(File config) {
     return Configs.load(config, AtomixConfig.class);
-  }
-
-  /**
-   * Builds a context from the given configuration.
-   */
-  private static Context buildContext(AtomixConfig config) {
-    ManagedMessagingService messagingService = buildMessagingService(config.getClusterConfig());
-    ManagedBroadcastService broadcastService = buildBroadcastService(config.getClusterConfig());
-    ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config.getClusterConfig());
-    ManagedPersistentMetadataService persistentMetadataService = buildPersistentMetadataService(config.getClusterConfig(), messagingService);
-    ManagedClusterService clusterService = buildClusterService(config.getClusterConfig(), bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
-    ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
-    ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
-    ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), Threads.namedThreads("atomix-primitive-%d", LOGGER));
-    ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup(config);
-    ManagedPartitionService partitions = buildPartitionService(config);
-    ManagedPrimitivesService primitives = new CorePrimitivesService(
-        executorService, clusterService, clusterMessagingService, clusterEventingService, partitions, systemPartitionGroup, config);
-    PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
-    return new Context(
-        messagingService,
-        broadcastService,
-        bootstrapMetadataService,
-        persistentMetadataService,
-        clusterService,
-        clusterMessagingService,
-        clusterEventingService,
-        executorService,
-        systemPartitionGroup,
-        partitions,
-        primitives,
-        primitiveTypes,
-        config.isEnableShutdownHook());
   }
 
   /**
@@ -416,136 +411,18 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   }
 
   /**
-   * Atomix instance context.
-   */
-  private static class Context extends AtomixCluster.Context {
-    private final ScheduledExecutorService executorService;
-    private final ManagedPartitionGroup systemPartitionGroup;
-    private final ManagedPartitionService partitions;
-    private final ManagedPrimitivesService primitives;
-    private final PrimitiveTypeRegistry primitiveTypes;
-    private final boolean enableShutdownHook;
-
-    public Context(
-        ManagedMessagingService messagingService,
-        ManagedBroadcastService broadcastService,
-        ManagedBootstrapMetadataService bootstrapMetadataService,
-        ManagedPersistentMetadataService persistentMetadataService,
-        ManagedClusterService clusterService,
-        ManagedClusterMessagingService clusterMessagingService,
-        ManagedClusterEventingService clusterEventingService,
-        ScheduledExecutorService executorService,
-        ManagedPartitionGroup systemPartitionGroup,
-        ManagedPartitionService partitions,
-        ManagedPrimitivesService primitives,
-        PrimitiveTypeRegistry primitiveTypes,
-        boolean enableShutdownHook) {
-      super(
-          messagingService,
-          broadcastService,
-          bootstrapMetadataService,
-          persistentMetadataService,
-          clusterService,
-          clusterMessagingService,
-          clusterEventingService);
-      this.executorService = executorService;
-      this.systemPartitionGroup = systemPartitionGroup;
-      this.partitions = partitions;
-      this.primitives = primitives;
-      this.primitiveTypes = primitiveTypes;
-      this.enableShutdownHook = enableShutdownHook;
-    }
-
-    ScheduledExecutorService executorService() {
-      return executorService;
-    }
-
-    ManagedPartitionGroup systemPartitionGroup() {
-      return systemPartitionGroup;
-    }
-
-    ManagedPartitionService partitionService() {
-      return partitions;
-    }
-
-    ManagedPrimitivesService primitivesService() {
-      return primitives;
-    }
-
-    PrimitiveTypeRegistry primitiveTypes() {
-      return primitiveTypes;
-    }
-
-    protected boolean enableShutdownHook() {
-      return enableShutdownHook;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected CompletableFuture<Void> startServices() {
-      return super.startServices()
-          .thenComposeAsync(v -> systemPartitionGroup().open(
-              new DefaultPartitionManagementService(
-                  persistentMetadataService(),
-                  clusterService(),
-                  clusterMessagingService(),
-                  primitiveTypes(),
-                  new HashBasedPrimaryElectionService(clusterService(), clusterMessagingService()),
-                  new DefaultSessionIdService())),
-              threadContext())
-          .thenComposeAsync(v -> {
-            ManagedPrimaryElectionService systemElectionService = new DefaultPrimaryElectionService(systemPartitionGroup());
-            ManagedSessionIdService systemSessionIdService = new IdGeneratorSessionIdService(systemPartitionGroup());
-            return systemElectionService.start()
-                .thenComposeAsync(v2 -> systemSessionIdService.start(), threadContext())
-                .thenApply(v2 -> new DefaultPartitionManagementService(
-                    persistentMetadataService(),
-                    clusterService(),
-                    clusterMessagingService(),
-                    primitiveTypes(),
-                    systemElectionService,
-                    systemSessionIdService));
-          }, threadContext())
-          .thenComposeAsync(partitionManagementService -> partitionService().open((PartitionManagementService) partitionManagementService), threadContext())
-          .thenComposeAsync(v -> primitivesService().start(), threadContext())
-          .thenApply(v -> null);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected CompletableFuture<Void> stopServices() {
-      return partitionService().close()
-          .exceptionally(e -> null)
-          .thenComposeAsync(v -> systemPartitionGroup().close(), threadContext())
-          .exceptionally(e -> null)
-          .thenComposeAsync(v -> super.stopServices(), threadContext());
-    }
-
-    @Override
-    protected CompletableFuture<Void> completeShutdown() {
-      executorService().shutdownNow();
-      return super.completeShutdown();
-    }
-  }
-
-  /**
    * Atomix builder.
    */
   public static class Builder extends AtomixCluster.Builder<Atomix> {
-    protected ManagedPartitionGroup systemPartitionGroup;
-    protected Collection<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
-    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
-    protected boolean enableShutdownHook;
+    private final AtomixConfig config;
 
     private Builder() {
+      this(new AtomixConfig());
     }
 
     private Builder(AtomixConfig config) {
       super(config.getClusterConfig());
-      this.systemPartitionGroup = config.getSystemPartitionGroup() != null ? PartitionGroups.createGroup(config.getSystemPartitionGroup()) : null;
-      this.partitionGroups = config.getPartitionGroups().stream().map(PartitionGroups::createGroup).collect(Collectors.toList());
-      this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
-      this.enableShutdownHook = config.isEnableShutdownHook();
+      this.config = checkNotNull(config);
     }
 
     /**
@@ -564,7 +441,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @return the Atomix builder
      */
     public Builder withShutdownHook(boolean enabled) {
-      this.enableShutdownHook = enabled;
+      config.setEnableShutdownHook(enabled);
       return this;
     }
 
@@ -575,7 +452,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @return the Atomix builder
      */
     public Builder withSystemPartitionGroup(ManagedPartitionGroup systemPartitionGroup) {
-      this.systemPartitionGroup = systemPartitionGroup;
+      config.setSystemPartitionGroup(systemPartitionGroup.config());
       return this;
     }
 
@@ -598,7 +475,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @throws NullPointerException if the partition groups are null
      */
     public Builder withPartitionGroups(Collection<ManagedPartitionGroup> partitionGroups) {
-      this.partitionGroups = checkNotNull(partitionGroups, "partitionGroups cannot be null");
+      config.setPartitionGroups(partitionGroups.stream().map(PartitionGroup::config).collect(Collectors.toList()));
       return this;
     }
 
@@ -610,7 +487,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @throws NullPointerException if the partition group is null
      */
     public Builder addPartitionGroup(ManagedPartitionGroup partitionGroup) {
-      partitionGroups.add(partitionGroup);
+      config.addPartitionGroup(partitionGroup.config());
       return this;
     }
 
@@ -633,7 +510,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @throws NullPointerException if the primitive types is {@code null}
      */
     public Builder withPrimitiveTypes(Collection<PrimitiveType> primitiveTypes) {
-      primitiveTypes.forEach(type -> this.primitiveTypes.register(type));
+      primitiveTypes.forEach(type -> config.addType(type.getClass()));
       return this;
     }
 
@@ -645,7 +522,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @throws NullPointerException if the primitive type is {@code null}
      */
     public Builder addPrimitiveType(PrimitiveType primitiveType) {
-      primitiveTypes.register(primitiveType);
+      config.addType(primitiveType.getClass());
       return this;
     }
 
@@ -698,58 +575,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      */
     @Override
     public Atomix build() {
-      ManagedMessagingService messagingService = buildMessagingService(config);
-      ManagedBroadcastService broadcastService = buildBroadcastService(config);
-      ManagedBootstrapMetadataService bootstrapMetadataService = buildBootstrapMetadataService(config);
-      ManagedPersistentMetadataService persistentMetadataService = buildPersistentMetadataService(config, messagingService);
-      ManagedClusterService clusterService = buildClusterService(config, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
-      ManagedClusterMessagingService clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
-      ManagedClusterEventingService clusterEventingService = buildClusterEventService(clusterService, messagingService);
-      ScheduledExecutorService executorService = Executors.newScheduledThreadPool(
-          Runtime.getRuntime().availableProcessors(), Threads.namedThreads("atomix-primitive-%d", LOGGER));
-      ManagedPartitionGroup systemPartitionGroup = buildSystemPartitionGroup();
-      ManagedPartitionService partitions = buildPartitionService();
-      ManagedPrimitivesService primitives = partitions != null
-          ? new CorePrimitivesService(
-          executorService,
-          clusterService,
-          clusterMessagingService,
-          clusterEventingService,
-          partitions,
-          systemPartitionGroup,
-          new AtomixConfig())
-          : null;
-      return new Atomix(new Context(
-          messagingService,
-          broadcastService,
-          bootstrapMetadataService,
-          persistentMetadataService,
-          clusterService,
-          clusterMessagingService,
-          clusterEventingService,
-          executorService,
-          systemPartitionGroup,
-          partitions,
-          primitives,
-          primitiveTypes,
-          enableShutdownHook));
-    }
-
-    /**
-     * Builds the core partition group.
-     */
-    protected ManagedPartitionGroup buildSystemPartitionGroup() {
-      return systemPartitionGroup;
-    }
-
-    /**
-     * Builds a partition service.
-     */
-    protected ManagedPartitionService buildPartitionService() {
-      if (!partitionGroups.isEmpty() && systemPartitionGroup == null) {
-        throw new ConfigurationException("Cannot form data cluster: no system partition group provided");
-      }
-      return !partitionGroups.isEmpty() ? new DefaultPartitionService(partitionGroups) : null;
+      return new Atomix(config);
     }
   }
 }
