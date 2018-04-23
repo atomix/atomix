@@ -15,8 +15,10 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.Services;
+import io.atomix.utils.config.ConfigurationException;
+
+import java.util.Collection;
 
 /**
  * Partition groups.
@@ -52,6 +54,15 @@ public class PartitionGroups {
       }
     }
     throw new ConfigurationException("Unknown partition group type: " + type);
+  }
+
+  /**
+   * Returns the partition group factories.
+   *
+   * @return the partition group factories
+   */
+  public static Collection<PartitionGroupFactory> getGroupFactories() {
+    return Services.loadAll(PartitionGroupFactory.class);
   }
 
   private PartitionGroups() {

@@ -89,7 +89,7 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
         .withProtocol(new PrimaryBackupClientCommunicator(
             partition.name(),
             Serializer.using(PrimaryBackupNamespaces.PROTOCOL),
-            managementService.getCommunicationService()))
+            managementService.getMessagingService()))
         .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
         .withSessionIdProvider(managementService.getSessionIdService())
         .withThreadContextFactory(threadFactory)

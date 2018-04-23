@@ -25,6 +25,14 @@ import java.util.Collection;
 public interface PartitionService {
 
   /**
+   * Returns the system partition group.
+   *
+   * @param <P> the group protocol type
+   * @return the system partition group
+   */
+  <P extends PrimitiveProtocol> PartitionGroup<P> getSystemPartitionGroup();
+
+  /**
    * Returns a partition group by name.
    *
    * @param name the name of the partition group

@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.config.Config;
 
 /**
@@ -23,6 +24,13 @@ import io.atomix.utils.config.Config;
 public abstract class PartitionGroupConfig<C extends PartitionGroupConfig<C>> implements Config {
   private String name;
   private int partitions = getDefaultPartitions();
+
+  /**
+   * Returns the primitive protocol type supported by the partition group.
+   *
+   * @return the primitive protocol type supported by the partition group
+   */
+  public abstract PrimitiveProtocol.Type getType();
 
   /**
    * Returns the partition group name.

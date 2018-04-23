@@ -147,7 +147,10 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
         .map(PrimaryBackupPartition::close)
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
-      threadFactory.close();
+      ThreadContextFactory threadFactory = this.threadFactory;
+      if (threadFactory != null) {
+        threadFactory.close();
+      }
       LOGGER.info("Stopped");
     });
   }

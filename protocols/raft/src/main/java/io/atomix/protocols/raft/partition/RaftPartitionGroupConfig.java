@@ -16,6 +16,8 @@
 package io.atomix.protocols.raft.partition;
 
 import io.atomix.primitive.partition.PartitionGroupConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.storage.StorageLevel;
 
 import java.io.File;
@@ -29,6 +31,11 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   private int partitionSize;
   private StorageLevel storageLevel = StorageLevel.MAPPED;
   private File dataDirectory = new File(System.getProperty("user.dir"), "data");
+
+  @Override
+  public PrimitiveProtocol.Type getType() {
+    return RaftProtocol.TYPE;
+  }
 
   @Override
   protected int getDefaultPartitions() {
