@@ -78,18 +78,6 @@ public class AtomixTest extends AbstractAtomixTest {
   }
 
   /**
-   * Tests forming a cluster without partition groups.
-   */
-  @Test
-  public void testNoPartitionGroups() throws Exception {
-    List<CompletableFuture<Atomix>> futures = new ArrayList<>(3);
-    futures.add(startAtomix(Node.Type.EPHEMERAL, 1, Arrays.asList(), Arrays.asList(), b -> b.withSystemPartitionGroup(null).withPartitionGroups(Arrays.asList()).build()));
-    futures.add(startAtomix(Node.Type.EPHEMERAL, 2, Arrays.asList(), Arrays.asList(1), b -> b.withSystemPartitionGroup(null).withPartitionGroups(Arrays.asList()).build()));
-    futures.add(startAtomix(Node.Type.EPHEMERAL, 3, Arrays.asList(), Arrays.asList(1), b -> b.withSystemPartitionGroup(null).withPartitionGroups(Arrays.asList()).build()));
-    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
-  }
-
-  /**
    * Tests scaling up a cluster.
    */
   @Test

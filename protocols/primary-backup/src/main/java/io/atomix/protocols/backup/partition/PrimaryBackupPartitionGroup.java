@@ -26,6 +26,7 @@ import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
+import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
@@ -74,17 +75,15 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   private static final Logger LOGGER = LoggerFactory.getLogger(PrimaryBackupPartitionGroup.class);
 
   private final String name;
+  private final PrimaryBackupPartitionGroupConfig config;
   private final Map<PartitionId, PrimaryBackupPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
   private ThreadContextFactory threadFactory;
 
   public PrimaryBackupPartitionGroup(PrimaryBackupPartitionGroupConfig config) {
-    this(config.getName(), buildPartitions(config));
-  }
-
-  private PrimaryBackupPartitionGroup(String name, Collection<PrimaryBackupPartition> partitions) {
-    this.name = checkNotNull(name);
-    partitions.forEach(p -> {
+    this.config = config;
+    this.name = checkNotNull(config.getName());
+    buildPartitions(config).forEach(p -> {
       this.partitions.put(p.id(), p);
       this.sortedPartitionIds.add(p.id());
     });
@@ -99,6 +98,11 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   @Override
   public Type type() {
     return MultiPrimaryProtocol.TYPE;
+  }
+
+  @Override
+  public PartitionGroupConfig config() {
+    return config;
   }
 
   @Override

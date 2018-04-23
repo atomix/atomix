@@ -27,6 +27,7 @@ import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
+import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
@@ -78,6 +79,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   }
 
   private final String name;
+  private final RaftPartitionGroupConfig config;
   private final int partitionSize;
   private final Map<PartitionId, RaftPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
@@ -87,13 +89,10 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   private CompletableFuture<Void> metadataChangeFuture = CompletableFuture.completedFuture(null);
 
   public RaftPartitionGroup(RaftPartitionGroupConfig config) {
-    this(config.getName(), buildPartitions(config), config.getPartitionSize());
-  }
-
-  private RaftPartitionGroup(String name, Collection<RaftPartition> partitions, int partitionSize) {
-    this.name = name;
-    this.partitionSize = partitionSize;
-    partitions.forEach(p -> {
+    this.name = config.getName();
+    this.config = config;
+    this.partitionSize = config.getPartitionSize();
+    buildPartitions(config).forEach(p -> {
       this.partitions.put(p.id(), p);
       this.sortedPartitionIds.add(p.id());
     });
@@ -108,6 +107,11 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   @Override
   public Type type() {
     return RaftProtocol.TYPE;
+  }
+
+  @Override
+  public PartitionGroupConfig config() {
+    return config;
   }
 
   @Override
