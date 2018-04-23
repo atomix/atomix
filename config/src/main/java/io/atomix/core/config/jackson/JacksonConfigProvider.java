@@ -34,6 +34,8 @@ import io.atomix.core.config.jackson.impl.NodeProfileDeserializer;
 import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
+import io.atomix.core.config.jackson.impl.ProfileDeserializer;
+import io.atomix.core.profile.Profile;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.partition.MemberFilter;
 import io.atomix.primitive.partition.PartitionGroupConfig;
@@ -151,6 +153,7 @@ public class JacksonConfigProvider implements ConfigProvider {
     module.addDeserializer(MemberFilter.class, new MemberFilterDeserializer());
     module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
     module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
+    module.addDeserializer(Profile.class, new ProfileDeserializer());
     module.addDeserializer(ClusterProfile.class, new ClusterProfileDeserializer());
     module.addDeserializer(NodeProfile.class, new NodeProfileDeserializer());
     mapper.registerModule(module);

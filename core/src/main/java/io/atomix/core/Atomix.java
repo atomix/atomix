@@ -28,6 +28,7 @@ import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.multimap.ConsistentMultimap;
+import io.atomix.core.profile.Profile;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
@@ -142,6 +143,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
 
   public Atomix(AtomixConfig config) {
     super(config.getClusterConfig());
+    config.getProfiles().forEach(profile -> profile.configure(config));
     this.executorService = Executors.newScheduledThreadPool(
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
@@ -442,6 +444,38 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      */
     public Builder withShutdownHook(boolean enabled) {
       config.setEnableShutdownHook(enabled);
+      return this;
+    }
+
+    /**
+     * Sets the Atomix profiles.
+     *
+     * @param profiles the profiles
+     * @return the Atomix builder
+     */
+    public Builder withProfiles(Profile... profiles) {
+      return withProfiles(Arrays.asList(checkNotNull(profiles)));
+    }
+
+    /**
+     * Sets the Atomix profiles.
+     *
+     * @param profiles the profiles
+     * @return the Atomix builder
+     */
+    public Builder withProfiles(Collection<Profile> profiles) {
+      profiles.forEach(config::addProfile);
+      return this;
+    }
+
+    /**
+     * Adds an Atomix profile.
+     *
+     * @param profile the profile to add
+     * @return the Atomix builder
+     */
+    public Builder addProfile(Profile profile) {
+      config.addProfile(profile);
       return this;
     }
 
