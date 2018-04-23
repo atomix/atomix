@@ -451,7 +451,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @param systemPartitionGroup the system partition group
      * @return the Atomix builder
      */
-    public Builder withSystemPartitionGroup(ManagedPartitionGroup systemPartitionGroup) {
+    public Builder withSystemPartitionGroup(ManagedPartitionGroup<?> systemPartitionGroup) {
       config.setSystemPartitionGroup(systemPartitionGroup.config());
       return this;
     }
@@ -474,7 +474,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @return the Atomix builder
      * @throws NullPointerException if the partition groups are null
      */
-    public Builder withPartitionGroups(Collection<ManagedPartitionGroup> partitionGroups) {
+    public Builder withPartitionGroups(Collection<ManagedPartitionGroup<?>> partitionGroups) {
       config.setPartitionGroups(partitionGroups.stream().map(PartitionGroup::config).collect(Collectors.toList()));
       return this;
     }
@@ -486,7 +486,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @return the Atomix builder
      * @throws NullPointerException if the partition group is null
      */
-    public Builder addPartitionGroup(ManagedPartitionGroup partitionGroup) {
+    public Builder addPartitionGroup(ManagedPartitionGroup<?> partitionGroup) {
       config.addPartitionGroup(partitionGroup.config());
       return this;
     }

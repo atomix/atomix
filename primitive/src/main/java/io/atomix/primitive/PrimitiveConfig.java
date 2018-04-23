@@ -16,7 +16,6 @@
 package io.atomix.primitive;
 
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
-import io.atomix.primitive.prototype.PrimitivePrototype;
 import io.atomix.utils.serializer.SerializerConfig;
 
 /**
@@ -26,7 +25,6 @@ public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> {
   private static final int DEFAULT_CACHE_SIZE = 1000;
 
   private final PrimitiveType primitiveType;
-  private PrimitivePrototype prototype;
   private SerializerConfig serializerConfig;
   private PrimitiveProtocolConfig protocolConfig;
   private boolean cacheEnabled = false;
@@ -44,27 +42,6 @@ public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> {
    */
   public PrimitiveType getType() {
     return primitiveType;
-  }
-
-  /**
-   * Returns the primitive prototype.
-   *
-   * @return the primitive prototype
-   */
-  public PrimitivePrototype getPrototype() {
-    return prototype;
-  }
-
-  /**
-   * Sets the primitive prototype.
-   *
-   * @param prototype the primitive prototype
-   * @return the primitive configuration
-   */
-  @SuppressWarnings("unchecked")
-  public C setPrototype(PrimitivePrototype prototype) {
-    this.prototype = prototype;
-    return (C) this;
   }
 
   /**
