@@ -41,13 +41,11 @@
       <groupId>io.atomix</groupId>
       <artifactId>atomix-raft</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
       <artifactId>atomix-primary-backup</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
