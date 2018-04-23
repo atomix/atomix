@@ -28,3 +28,4 @@ io.atomix.core.transaction.TransactionType
 io.atomix.core.tree.DocumentTreeType
 io.atomix.core.value.AtomicValueType
 io.atomix.primitive.partition.impl.PrimaryElectorType
+io.atomix.primitive.session.impl.SessionIdGeneratorType

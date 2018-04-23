@@ -60,7 +60,6 @@ import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.utils.AtomixRuntimeException;
 
@@ -93,9 +92,8 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterMessagingService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
-      PartitionGroup systemPartitionGroup,
       AtomixConfig config) {
-    this.primitiveRegistry = new CorePrimitiveRegistry(systemPartitionGroup);
+    this.primitiveRegistry = new CorePrimitiveRegistry(partitionService);
     this.managementService = new CorePrimitiveManagementService(
         executorService,
         clusterService,

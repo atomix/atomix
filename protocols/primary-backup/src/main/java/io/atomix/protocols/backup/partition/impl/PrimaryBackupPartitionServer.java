@@ -83,7 +83,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
         .withProtocol(new PrimaryBackupServerCommunicator(
             partition.name(),
             Serializer.using(PrimaryBackupNamespaces.PROTOCOL),
-            managementService.getCommunicationService()))
+            managementService.getMessagingService()))
         .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
         .withPrimitiveTypes(managementService.getPrimitiveTypes())
         .withThreadContextFactory(threadFactory)

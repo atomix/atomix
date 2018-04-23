@@ -179,7 +179,7 @@ public class RaftPartition implements Partition<RaftProtocol> {
         this,
         managementService.getClusterService().getLocalNode().id(),
         managementService.getClusterService(),
-        managementService.getCommunicationService(),
+        managementService.getMessagingService(),
         managementService.getPrimitiveTypes());
   }
 
@@ -193,7 +193,7 @@ public class RaftPartition implements Partition<RaftProtocol> {
         new RaftClientCommunicator(
             name(),
             Serializer.using(RaftNamespaces.RAFT_PROTOCOL),
-            managementService.getCommunicationService()));
+            managementService.getMessagingService()));
   }
 
   /**

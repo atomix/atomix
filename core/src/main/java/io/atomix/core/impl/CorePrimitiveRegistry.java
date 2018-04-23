@@ -26,7 +26,7 @@ import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
-import io.atomix.primitive.partition.PartitionGroup;
+import io.atomix.primitive.partition.PartitionService;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
@@ -38,18 +38,20 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Core primitive registry.
  */
 public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
-  private final PartitionGroup<?> partitionGroup;
+  private final PartitionService partitionService;
   private final AtomicBoolean started = new AtomicBoolean();
   private AsyncConsistentMap<String, String> primitives;
 
-  public CorePrimitiveRegistry(PartitionGroup partitionGroup) {
-    this.partitionGroup = partitionGroup;
+  public CorePrimitiveRegistry(PartitionService partitionService) {
+    this.partitionService = checkNotNull(partitionService);
   }
 
   @Override
@@ -112,7 +114,8 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
 
   @Override
   public CompletableFuture<PrimitiveRegistry> start() {
-    return partitionGroup.getPartitions()
+    return partitionService.getSystemPartitionGroup()
+        .getPartitions()
         .iterator()
         .next()
         .getPrimitiveClient()
