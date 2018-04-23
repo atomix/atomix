@@ -20,6 +20,7 @@ import io.atomix.core.AtomixConfig;
 import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 
 import java.io.File;
+import java.util.stream.Collectors;
 
 /**
  * Consensus profile.
@@ -28,7 +29,7 @@ public class ConsensusProfile implements NamedProfile {
   private static final String NAME = "consensus";
 
   private static final String SYSTEM_GROUP_NAME = "system";
-  private static final String GROUP_NAME = "consensus";
+  private static final String GROUP_NAME = "raft";
   private static final int PARTITION_SIZE = 3;
   private static final int NUM_PARTITIONS = 7;
 
@@ -46,6 +47,11 @@ public class ConsensusProfile implements NamedProfile {
             .filter(node -> node.getType() == Node.Type.PERSISTENT)
             .count())
         .setPartitions(1)
+        .setMembers(config.getClusterConfig().getNodes()
+            .stream()
+            .filter(node -> node.getType() == Node.Type.PERSISTENT)
+            .map(node -> node.getId().id())
+            .collect(Collectors.toSet()))
         .setDataDirectory(new File(System.getProperty("user.dir", SYSTEM_GROUP_NAME))));
     config.addPartitionGroup(new RaftPartitionGroupConfig()
         .setName(GROUP_NAME)
