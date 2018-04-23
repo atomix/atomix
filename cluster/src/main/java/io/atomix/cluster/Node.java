@@ -91,20 +91,6 @@ public class Node implements Configured<NodeConfig> {
   }
 
   /**
-   * Returns a new client node.
-   *
-   * @param nodeId  the client node ID
-   * @param address the client node address
-   * @return a new client node
-   */
-  public static Node client(NodeId nodeId, Address address) {
-    return builder(nodeId)
-        .withType(Type.CLIENT)
-        .withAddress(address)
-        .build();
-  }
-
-  /**
    * Node type.
    */
   public enum Type {
@@ -118,11 +104,6 @@ public class Node implements Configured<NodeConfig> {
      * Represents an ephemeral node.
      */
     EPHEMERAL,
-
-    /**
-     * Represents a client node.
-     */
-    CLIENT,
   }
 
   /**

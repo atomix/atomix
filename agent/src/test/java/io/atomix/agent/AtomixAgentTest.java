@@ -114,7 +114,7 @@ public class AtomixAgentTest {
 
     Atomix client1 = Atomix.builder(path)
         .withLocalNode(Node.builder("client1")
-            .withType(Node.Type.CLIENT)
+            .withType(Node.Type.EPHEMERAL)
             .withAddress("localhost:5003")
             .build())
         .build();
@@ -122,7 +122,7 @@ public class AtomixAgentTest {
 
     Atomix client2 = Atomix.builder(path)
         .withLocalNode(Node.builder("client2")
-            .withType(Node.Type.CLIENT)
+            .withType(Node.Type.EPHEMERAL)
             .withAddress("localhost:5004")
             .build())
         .build();
@@ -194,7 +194,7 @@ public class AtomixAgentTest {
 
     Atomix client1 = Atomix.builder(Joiner.on('\n').join(config))
         .withLocalNode(Node.builder("client1")
-            .withType(Node.Type.CLIENT)
+            .withType(Node.Type.EPHEMERAL)
             .withAddress("localhost:5003")
             .build())
         .build();
@@ -202,7 +202,7 @@ public class AtomixAgentTest {
 
     Atomix client2 = Atomix.builder(Joiner.on('\n').join(config))
         .withLocalNode(Node.builder("client2")
-            .withType(Node.Type.CLIENT)
+            .withType(Node.Type.EPHEMERAL)
             .withAddress("localhost:5004")
             .build())
         .build();

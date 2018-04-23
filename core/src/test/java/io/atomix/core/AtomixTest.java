@@ -190,7 +190,7 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterEventListener clientListener = new TestClusterEventListener();
     client1.clusterService().addListener(clientListener);
 
-    Atomix client2 = startAtomix(Node.Type.CLIENT, 5, Arrays.asList(1, 2, 3), Arrays.asList()).join();
+    Atomix client2 = startAtomix(Node.Type.EPHEMERAL, 5, Arrays.asList(1, 2, 3), Arrays.asList()).join();
 
     // client2 added to data node
     ClusterEvent event2 = dataListener.event();

@@ -47,7 +47,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
    * @return a new Atomix instance.
    */
   protected Atomix atomix() throws Exception {
-    Atomix instance = createAtomix(Node.Type.CLIENT, id++, Arrays.asList(1, 2, 3), Arrays.asList()).start().get(10, TimeUnit.SECONDS);
+    Atomix instance = createAtomix(Node.Type.EPHEMERAL, id++, Arrays.asList(1, 2, 3), Arrays.asList()).start().get(10, TimeUnit.SECONDS);
     instances.add(instance);
     return instance;
   }
