@@ -17,6 +17,7 @@ package io.atomix.primitive.partition;
 
 import com.google.common.hash.Hashing;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.utils.config.Configured;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -25,7 +26,7 @@ import java.util.List;
 /**
  * Primitive partition group.
  */
-public interface PartitionGroup<P extends PrimitiveProtocol> {
+public interface PartitionGroup<P extends PrimitiveProtocol> extends Configured<PartitionGroupConfig> {
 
   /**
    * Returns the partition group name.
@@ -40,13 +41,6 @@ public interface PartitionGroup<P extends PrimitiveProtocol> {
    * @return the primitive protocol type supported by the partition group
    */
   PrimitiveProtocol.Type type();
-
-  /**
-   * Returns the partition group configuration.
-   *
-   * @return the partition group configuration
-   */
-  PartitionGroupConfig config();
 
   /**
    * Returns a new primitive protocol.
