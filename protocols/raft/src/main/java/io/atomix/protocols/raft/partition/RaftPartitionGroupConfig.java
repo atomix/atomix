@@ -21,6 +21,7 @@ import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.storage.StorageLevel;
 
 import java.io.File;
+import java.util.Set;
 
 /**
  * Raft partition group configuration.
@@ -28,6 +29,7 @@ import java.io.File;
 public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartitionGroupConfig> {
   private static final int DEFAULT_PARTITIONS = 7;
 
+  private Set<String> members;
   private int partitionSize;
   private StorageLevel storageLevel = StorageLevel.MAPPED;
   private File dataDirectory = new File(System.getProperty("user.dir"), "data");
@@ -40,6 +42,26 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   @Override
   protected int getDefaultPartitions() {
     return DEFAULT_PARTITIONS;
+  }
+
+  /**
+   * Returns the set of members in the partition group.
+   *
+   * @return the set of members in the partition group
+   */
+  public Set<String> getMembers() {
+    return members;
+  }
+
+  /**
+   * Sets the set of members in the partition group.
+   *
+   * @param members the set of members in the partition group
+   * @return the Raft partition group configuration
+   */
+  public RaftPartitionGroupConfig setMembers(Set<String> members) {
+    this.members = members;
+    return this;
   }
 
   /**

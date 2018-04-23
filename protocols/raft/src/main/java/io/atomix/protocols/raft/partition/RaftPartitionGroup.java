@@ -18,8 +18,6 @@ package io.atomix.protocols.raft.partition;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
@@ -36,11 +34,13 @@ import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
 import io.atomix.protocols.raft.RaftProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.config.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -49,8 +49,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Raft partition group.
@@ -83,7 +85,6 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   private final int partitionSize;
   private final Map<PartitionId, RaftPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
-  private final ClusterEventListener clusterEventListener = this::handleClusterEvent;
   private PartitionManagementService managementService;
   private Collection<PartitionMetadata> metadata;
   private CompletableFuture<Void> metadataChangeFuture = CompletableFuture.completedFuture(null);
@@ -141,7 +142,12 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   @Override
   public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
     this.managementService = managementService;
-    managementService.getClusterService().addListener(clusterEventListener);
+
+    // Ensure the Raft group membership intersects with persistent cluster membership.
+    if (!validateMembership(managementService.getClusterService())) {
+      return Futures.exceptionalFuture(new ConfigurationException("Raft partition group must be configured with persistent membership"));
+    }
+
     this.metadata = buildPartitions(managementService.getClusterService());
     List<CompletableFuture<Partition>> futures = metadata.stream()
         .map(metadata -> {
@@ -160,20 +166,18 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     return join(managementService);
   }
 
-  private synchronized void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_ADDED && event.subject().type() == Node.Type.PERSISTENT) {
-      metadataChangeFuture = metadataChangeFuture.thenCompose(v -> {
-        Collection<PartitionMetadata> partitions = buildPartitions(managementService.getClusterService());
-        if (!this.metadata.equals(partitions)) {
-          this.metadata = partitions;
-          return Futures.allOf(partitions.stream().map(partitionMetadata -> {
-            RaftPartition partition = this.partitions.get(partitionMetadata.id());
-            return partition.update(partitionMetadata, managementService);
-          }).collect(Collectors.toList())).thenApply(l -> null);
-        }
-        return CompletableFuture.completedFuture(null);
-      });
+  private boolean validateMembership(ClusterService clusterService) {
+    if (config.getMembers().isEmpty()) {
+      return false;
     }
+
+    for (String member : config.getMembers()) {
+      Node node = clusterService.getNode(member);
+      if (node == null || node.type() != Node.Type.PERSISTENT) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private Collection<PartitionMetadata> buildPartitions(ClusterService clusterService) {
@@ -184,6 +188,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
 
     List<NodeId> sorted = new ArrayList<>(clusterService.getNodes().stream()
         .filter(node -> node.type() == Node.Type.PERSISTENT)
+        .filter(node -> config.getMembers().contains(node.id().id()))
         .map(Node::id)
         .collect(Collectors.toSet()));
     Collections.sort(sorted);
@@ -227,6 +232,51 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   public static class Builder extends PartitionGroup.Builder<RaftPartitionGroupConfig> {
     protected Builder(RaftPartitionGroupConfig config) {
       super(config);
+    }
+
+    /**
+     * Sets the Raft partition group members.
+     *
+     * @param members the Raft partition group members
+     * @return the Raft partition group builder
+     * @throws NullPointerException if the members are null
+     */
+    public Builder withMembers(String... members) {
+      return withMembers(Arrays.asList(members));
+    }
+
+    /**
+     * Sets the Raft partition group members.
+     *
+     * @param members the Raft partition group members
+     * @return the Raft partition group builder
+     * @throws NullPointerException if the members are null
+     */
+    public Builder withMembers(NodeId... members) {
+      return withMembers(Stream.of(members).map(nodeId -> nodeId.id()).collect(Collectors.toList()));
+    }
+
+    /**
+     * Sets the Raft partition group members.
+     *
+     * @param members the Raft partition group members
+     * @return the Raft partition group builder
+     * @throws NullPointerException if the members are null
+     */
+    public Builder withMembers(Node... members) {
+      return withMembers(Stream.of(members).map(node -> node.id().id()).collect(Collectors.toList()));
+    }
+
+    /**
+     * Sets the Raft partition group members.
+     *
+     * @param members the Raft partition group members
+     * @return the Raft partition group builder
+     * @throws NullPointerException if the members are null
+     */
+    public Builder withMembers(Collection<String> members) {
+      config.setMembers(Sets.newHashSet(checkNotNull(members, "members cannot be null")));
+      return this;
     }
 
     /**
