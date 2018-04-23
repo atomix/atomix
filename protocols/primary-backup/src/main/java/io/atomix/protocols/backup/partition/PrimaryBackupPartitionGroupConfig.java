@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.backup.partition;
 
-import io.atomix.primitive.partition.MemberFilter;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionGroupConfig;
@@ -26,32 +25,11 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
 public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<PrimaryBackupPartitionGroupConfig> {
   private static final int DEFAULT_PARTITIONS = 71;
 
-  private MemberFilter memberFilter = node -> true;
   private MemberGroupProvider memberGroupProvider = MemberGroupStrategy.NODE_AWARE;
 
   @Override
   protected int getDefaultPartitions() {
     return DEFAULT_PARTITIONS;
-  }
-
-  /**
-   * Returns the member filter.
-   *
-   * @return the member filter
-   */
-  public MemberFilter getMemberFilter() {
-    return memberFilter;
-  }
-
-  /**
-   * Sets the member filter.
-   *
-   * @param memberFilter the member filter
-   * @return the primary backup partition group configuration
-   */
-  public PrimaryBackupPartitionGroupConfig setMemberFilter(MemberFilter memberFilter) {
-    this.memberFilter = memberFilter;
-    return this;
   }
 
   /**

@@ -20,7 +20,6 @@ import com.google.common.collect.Maps;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
-import io.atomix.primitive.partition.MemberFilter;
 import io.atomix.primitive.partition.MemberGroup;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.MemberGroupStrategy;
@@ -67,7 +66,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   private static Collection<PrimaryBackupPartition> buildPartitions(PrimaryBackupPartitionGroupConfig config) {
     List<PrimaryBackupPartition> partitions = new ArrayList<>(config.getPartitions());
     for (int i = 0; i < config.getPartitions(); i++) {
-      partitions.add(new PrimaryBackupPartition(PartitionId.from(config.getName(), i + 1), config.getMemberFilter(), config.getMemberGroupProvider()));
+      partitions.add(new PrimaryBackupPartition(PartitionId.from(config.getName(), i + 1), config.getMemberGroupProvider()));
     }
     return partitions;
   }
@@ -178,17 +177,6 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
      */
     public Builder withNumPartitions(int numPartitions) {
       config.setPartitions(numPartitions);
-      return this;
-    }
-
-    /**
-     * Sets the member filter.
-     *
-     * @param memberFilter the partition group member filter
-     * @return the partition group builder
-     */
-    public Builder withMemberFilter(MemberFilter memberFilter) {
-      config.setMemberFilter(memberFilter);
       return this;
     }
 

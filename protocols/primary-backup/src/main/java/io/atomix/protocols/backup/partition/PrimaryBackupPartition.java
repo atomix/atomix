@@ -18,7 +18,6 @@ package io.atomix.protocols.backup.partition;
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.partition.Member;
-import io.atomix.primitive.partition.MemberFilter;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
@@ -40,7 +39,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
   private final PartitionId partitionId;
-  private final MemberFilter memberFilter;
   private final MemberGroupProvider memberGroupProvider;
   private PrimaryElection election;
   private PrimaryBackupPartitionServer server;
@@ -48,10 +46,8 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
 
   public PrimaryBackupPartition(
       PartitionId partitionId,
-      MemberFilter memberFilter,
       MemberGroupProvider memberGroupProvider) {
     this.partitionId = partitionId;
-    this.memberFilter = memberFilter;
     this.memberGroupProvider = memberGroupProvider;
   }
 
@@ -107,7 +103,6 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
     server = new PrimaryBackupPartitionServer(
         this,
         managementService,
-        memberFilter,
         memberGroupProvider,
         threadFactory);
     client = new PrimaryBackupPartitionClient(this, managementService, threadFactory);
