@@ -130,10 +130,22 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup> open(PartitionManagementService managementService) {
+  public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
     threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
-        .map(p -> p.open(managementService, threadFactory))
+        .map(p -> p.join(managementService, threadFactory))
+        .collect(Collectors.toList());
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
+      LOGGER.info("Started");
+      return this;
+    });
+  }
+
+  @Override
+  public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
+    threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
+    List<CompletableFuture<Partition>> futures = partitions.values().stream()
+        .map(p -> p.connect(managementService, threadFactory))
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
       LOGGER.info("Started");

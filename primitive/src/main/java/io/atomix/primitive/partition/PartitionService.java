@@ -27,10 +27,9 @@ public interface PartitionService {
   /**
    * Returns the system partition group.
    *
-   * @param <P> the group protocol type
    * @return the system partition group
    */
-  <P extends PrimitiveProtocol> PartitionGroup<P> getSystemPartitionGroup();
+  PartitionGroup getSystemPartitionGroup();
 
   /**
    * Returns a partition group by name.
@@ -38,7 +37,7 @@ public interface PartitionService {
    * @param name the name of the partition group
    * @return the partition group
    */
-  <P extends PrimitiveProtocol> PartitionGroup<P> getPartitionGroup(String name);
+  PartitionGroup getPartitionGroup(String name);
 
   /**
    * Returns the first partition group that matches the given primitive type.
@@ -46,8 +45,8 @@ public interface PartitionService {
    * @param type the primitive type
    * @return the first partition group that matches the given primitive type
    */
-  default <P extends PrimitiveProtocol> PartitionGroup<P> getPartitionGroup(PrimitiveProtocol.Type type) {
-    return (PartitionGroup<P>) getPartitionGroups().stream()
+  default PartitionGroup getPartitionGroup(PrimitiveProtocol.Type type) {
+    return getPartitionGroups().stream()
         .filter(group -> group.type().equals(type))
         .findFirst()
         .orElse(null);
@@ -74,8 +73,8 @@ public interface PartitionService {
    * @return the default partition group
    */
   @SuppressWarnings("unchecked")
-  default <P extends PrimitiveProtocol> PartitionGroup<P> getDefaultPartitionGroup() {
-    return (PartitionGroup<P>) getPartitionGroups().iterator().next();
+  default PartitionGroup getDefaultPartitionGroup() {
+    return getPartitionGroups().iterator().next();
   }
 
   /**
@@ -83,6 +82,6 @@ public interface PartitionService {
    *
    * @return a collection of all partition groups
    */
-  Collection<PartitionGroup<?>> getPartitionGroups();
+  Collection<PartitionGroup> getPartitionGroups();
 
 }

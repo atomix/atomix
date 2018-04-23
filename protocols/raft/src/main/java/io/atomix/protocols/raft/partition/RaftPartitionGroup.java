@@ -139,7 +139,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup> open(PartitionManagementService managementService) {
+  public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
     this.managementService = managementService;
     managementService.getClusterService().addListener(clusterEventListener);
     this.metadata = buildPartitions(managementService.getClusterService());
@@ -153,6 +153,11 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
       LOGGER.info("Started");
       return this;
     });
+  }
+
+  @Override
+  public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
+    return join(managementService);
   }
 
   private synchronized void handleClusterEvent(ClusterEvent event) {

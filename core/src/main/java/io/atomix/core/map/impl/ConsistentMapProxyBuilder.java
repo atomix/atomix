@@ -55,7 +55,7 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
     PrimitiveProtocol protocol = protocol();
     return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
         .thenCompose(info -> {
-          PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
+          PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
           Map<PartitionId, CompletableFuture<AsyncConsistentMap<byte[], byte[]>>> maps = Maps.newConcurrentMap();
           for (Partition partition : partitions.getPartitions()) {

@@ -52,7 +52,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
     PrimitiveProtocol protocol = protocol();
     return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
         .thenCompose(info -> {
-          PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
+          PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
           Map<PartitionId, CompletableFuture<AsyncDocumentTree<V>>> trees = Maps.newConcurrentMap();
           for (Partition partition : partitions.getPartitions()) {
