@@ -40,7 +40,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Abstract partition.
  */
-public class RaftPartition implements Partition<RaftProtocol> {
+public class RaftPartition implements Partition {
   private final PartitionId partitionId;
   private final StorageLevel storageLevel;
   private final File dataDirectory;

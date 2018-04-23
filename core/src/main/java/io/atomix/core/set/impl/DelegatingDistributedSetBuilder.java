@@ -57,7 +57,7 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   public CompletableFuture<DistributedSet<E>> buildAsync() {
     return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
         .thenCompose(info -> {
-          PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
+          PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
           Map<PartitionId, CompletableFuture<AsyncConsistentMap<byte[], byte[]>>> maps = Maps.newConcurrentMap();
           for (Partition partition : partitions.getPartitions()) {

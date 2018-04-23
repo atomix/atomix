@@ -17,14 +17,13 @@ package io.atomix.primitive.partition;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.Collection;
 
 /**
  * Atomix partition.
  */
-public interface Partition<P extends PrimitiveProtocol> {
+public interface Partition {
 
   /**
    * Returns the partition identifier.
@@ -59,6 +58,6 @@ public interface Partition<P extends PrimitiveProtocol> {
    *
    * @return the primitive client for the partition
    */
-  PrimitiveClient<P> getPrimitiveClient();
+  PrimitiveClient getPrimitiveClient();
 
 }

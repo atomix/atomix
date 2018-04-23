@@ -52,14 +52,14 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
       .register(PrimaryElectorEvents.NAMESPACE)
       .build());
 
-  private final PartitionGroup<?> partitions;
+  private final PartitionGroup partitions;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private final Consumer<PrimaryElectionEvent> eventListener = event -> listeners.forEach(l -> l.onEvent(event));
   private final Map<PartitionId, ManagedPrimaryElection> elections = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
   private PrimitiveProxy proxy;
 
-  public DefaultPrimaryElectionService(PartitionGroup<?> partitionGroup) {
+  public DefaultPrimaryElectionService(PartitionGroup partitionGroup) {
     this.partitions = checkNotNull(partitionGroup);
   }
 

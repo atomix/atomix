@@ -37,7 +37,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Primary-backup partition.
  */
-public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
+public class PrimaryBackupPartition implements Partition {
   private final PartitionId partitionId;
   private final MemberGroupProvider memberGroupProvider;
   private PrimaryElection election;
@@ -94,9 +94,9 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
   }
 
   /**
-   * Opens the primary-backup partition.
+   * Joins the primary-backup partition.
    */
-  CompletableFuture<Partition> open(
+  CompletableFuture<Partition> join(
       PartitionManagementService managementService,
       ThreadContextFactory threadFactory) {
     election = managementService.getElectionService().getElectionFor(partitionId);
@@ -105,6 +105,17 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
         managementService,
         memberGroupProvider,
         threadFactory);
+    client = new PrimaryBackupPartitionClient(this, managementService, threadFactory);
+    return server.start().thenCompose(v -> client.start()).thenApply(v -> this);
+  }
+
+  /**
+   * Connects to the primary-backup partition.
+   */
+  CompletableFuture<Partition> connect(
+      PartitionManagementService managementService,
+      ThreadContextFactory threadFactory) {
+    election = managementService.getElectionService().getElectionFor(partitionId);
     client = new PrimaryBackupPartitionClient(this, managementService, threadFactory);
     return server.start().thenCompose(v -> client.start()).thenApply(v -> this);
   }
@@ -119,9 +130,13 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     client.stop().whenComplete((clientResult, clientError) -> {
-      server.stop().whenComplete((serverResult, serverError) -> {
+      if (server != null) {
+        server.stop().whenComplete((serverResult, serverError) -> {
+          future.complete(null);
+        });
+      } else {
         future.complete(null);
-      });
+      }
     });
     return future;
   }

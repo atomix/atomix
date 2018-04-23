@@ -24,10 +24,13 @@ import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
+import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionGroupFactory;
 import io.atomix.primitive.partition.PartitionGroups;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.session.ManagedSessionIdService;
@@ -59,11 +62,12 @@ public class DefaultPartitionService implements ManagedPartitionService {
   private final ClusterMessagingService messagingService;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
   private final Serializer serializer;
-  private ManagedPartitionGroup<?> systemGroup;
-  private ManagedPartitionGroup<?> defaultGroup;
-  private final Map<String, ManagedPartitionGroup<?>> groups = Maps.newConcurrentMap();
+  private WrappedPartitionGroup systemGroup;
+  private WrappedPartitionGroup defaultGroup;
+  private final Map<String, WrappedPartitionGroup> groups = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
 
+  @SuppressWarnings("unchecked")
   public DefaultPartitionService(
       ClusterService clusterService,
       ClusterMessagingService messagingService,
@@ -73,9 +77,14 @@ public class DefaultPartitionService implements ManagedPartitionService {
     this.clusterService = clusterService;
     this.messagingService = messagingService;
     this.primitiveTypeRegistry = primitiveTypeRegistry;
-    this.systemGroup = systemGroup;
-    this.defaultGroup = groups.iterator().next();
-    groups.forEach(g -> this.groups.put(g.name(), g));
+    this.systemGroup = systemGroup != null ? new WrappedPartitionGroup(systemGroup, true) : null;
+    groups.forEach(group -> {
+      WrappedPartitionGroup wrappedGroup = new WrappedPartitionGroup(group, true);
+      this.groups.put(group.name(), wrappedGroup);
+      if (defaultGroup == null) {
+        defaultGroup = wrappedGroup;
+      }
+    });
 
     KryoNamespace.Builder builder = KryoNamespace.builder()
         .register(KryoNamespaces.BASIC)
@@ -90,25 +99,25 @@ public class DefaultPartitionService implements ManagedPartitionService {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <P extends PrimitiveProtocol> PartitionGroup<P> getSystemPartitionGroup() {
-    return (PartitionGroup<P>) systemGroup;
+  public PartitionGroup getSystemPartitionGroup() {
+    return systemGroup;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <P extends PrimitiveProtocol> PartitionGroup<P> getDefaultPartitionGroup() {
-    return (PartitionGroup<P>) defaultGroup;
+  public PartitionGroup getDefaultPartitionGroup() {
+    return defaultGroup;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <P extends PrimitiveProtocol> PartitionGroup<P> getPartitionGroup(String name) {
-    return (PartitionGroup<P>) groups.get(name);
+  public PartitionGroup getPartitionGroup(String name) {
+    return groups.get(name);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Collection<PartitionGroup<?>> getPartitionGroups() {
+  public Collection<PartitionGroup> getPartitionGroups() {
     return (Collection) groups.values();
   }
 
@@ -139,22 +148,32 @@ public class DefaultPartitionService implements ManagedPartitionService {
   /**
    * Bootstraps the service from the given node.
    */
+  @SuppressWarnings("unchecked")
   private CompletableFuture<Void> bootstrap(Node node) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    messagingService.<NodeId, PartitionGroupInfo>send(BOOTSTRAP_SUBJECT, clusterService.getLocalNode().id(), serializer::encode, serializer::decode, node.id())
+    messagingService.<NodeId, PartitionGroupInfo>send(
+        BOOTSTRAP_SUBJECT,
+        clusterService.getLocalNode().id(),
+        serializer::encode,
+        serializer::decode,
+        node.id())
         .whenComplete((info, error) -> {
           if (error == null) {
             if (systemGroup != null && info.systemGroup != null &&
                 (!systemGroup.name().equals(info.systemGroup.getName()) || !systemGroup.type().equals(info.systemGroup.getType()))) {
               future.completeExceptionally(new ConfigurationException("Duplicate system group detected"));
             } else if (systemGroup == null && info.systemGroup != null) {
-              systemGroup = PartitionGroups.createGroup(info.systemGroup);
+              systemGroup = new WrappedPartitionGroup(PartitionGroups.createGroup(info.systemGroup), false);
             }
 
             for (PartitionGroupConfig groupConfig : info.groups) {
-              PartitionGroup group = groups.get(groupConfig.getName());
+              ManagedPartitionGroup group = groups.get(groupConfig.getName());
               if (group == null) {
-                groups.put(groupConfig.getName(), PartitionGroups.createGroup(groupConfig));
+                WrappedPartitionGroup wrappedGroup = new WrappedPartitionGroup(PartitionGroups.createGroup(groupConfig), false);
+                groups.put(groupConfig.getName(), wrappedGroup);
+                if (defaultGroup == null) {
+                  defaultGroup = wrappedGroup;
+                }
               } else if (!group.type().equals(groupConfig.getType())) {
                 future.completeExceptionally(new ConfigurationException("Duplicate partition group " + groupConfig.getName() + " detected"));
               }
@@ -169,12 +188,19 @@ public class DefaultPartitionService implements ManagedPartitionService {
   @Override
   public CompletableFuture<PartitionService> start() {
     return bootstrap()
-        .thenCompose(v -> systemGroup.open(new DefaultPartitionManagementService(
-            clusterService,
-            messagingService,
-            primitiveTypeRegistry,
-            new HashBasedPrimaryElectionService(clusterService, messagingService),
-            new DefaultSessionIdService())))
+        .thenCompose(v -> {
+          PartitionManagementService managementService = new DefaultPartitionManagementService(
+              clusterService,
+              messagingService,
+              primitiveTypeRegistry,
+              new HashBasedPrimaryElectionService(clusterService, messagingService),
+              new DefaultSessionIdService());
+          if (systemGroup.isMember()) {
+            return systemGroup.join(managementService);
+          } else {
+            return systemGroup.connect(managementService);
+          }
+        })
         .thenCompose(v -> {
           ManagedPrimaryElectionService systemElectionService = new DefaultPrimaryElectionService(systemGroup);
           ManagedSessionIdService systemSessionIdService = new ReplicatedSessionIdService(systemGroup);
@@ -189,7 +215,13 @@ public class DefaultPartitionService implements ManagedPartitionService {
         })
         .thenCompose(managementService -> {
           List<CompletableFuture> futures = groups.values().stream()
-              .map(g -> g.open(managementService))
+              .map(group -> {
+                if (group.isMember()) {
+                  return group.join(managementService);
+                } else {
+                  return group.connect(managementService);
+                }
+              })
               .collect(Collectors.toList());
           return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
             LOGGER.info("Started");
@@ -220,6 +252,70 @@ public class DefaultPartitionService implements ManagedPartitionService {
     PartitionGroupInfo(PartitionGroupConfig systemGroup, Collection<PartitionGroupConfig> groups) {
       this.systemGroup = systemGroup;
       this.groups = groups;
+    }
+  }
+
+  private static class WrappedPartitionGroup implements ManagedPartitionGroup {
+    private final ManagedPartitionGroup group;
+    private final boolean member;
+
+    public WrappedPartitionGroup(ManagedPartitionGroup group, boolean member) {
+      this.group = group;
+      this.member = member;
+    }
+
+    public boolean isMember() {
+      return member;
+    }
+
+    @Override
+    public PartitionGroupConfig config() {
+      return group.config();
+    }
+
+    @Override
+    public String name() {
+      return group.name();
+    }
+
+    @Override
+    public PrimitiveProtocol.Type type() {
+      return group.type();
+    }
+
+    @Override
+    public PrimitiveProtocol newProtocol() {
+      return group.newProtocol();
+    }
+
+    @Override
+    public Partition getPartition(PartitionId partitionId) {
+      return group.getPartition(partitionId);
+    }
+
+    @Override
+    public Collection<Partition> getPartitions() {
+      return group.getPartitions();
+    }
+
+    @Override
+    public List<PartitionId> getPartitionIds() {
+      return group.getPartitionIds();
+    }
+
+    @Override
+    public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
+      return group.join(managementService);
+    }
+
+    @Override
+    public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
+      return group.connect(managementService);
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return group.close();
     }
   }
 }

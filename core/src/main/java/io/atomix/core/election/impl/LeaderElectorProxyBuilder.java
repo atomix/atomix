@@ -21,11 +21,11 @@ import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.LeaderElectorBuilder;
 import io.atomix.core.election.LeaderElectorConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.concurrent.Futures;
 
@@ -53,7 +53,7 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
     PrimitiveProtocol protocol = protocol();
     return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
         .thenCompose(info -> {
-          PartitionGroup<?> partitions = managementService.getPartitionService().getPartitionGroup(protocol);
+          PartitionGroup partitions = managementService.getPartitionService().getPartitionGroup(protocol);
 
           Map<PartitionId, CompletableFuture<AsyncLeaderElector<T>>> electors = Maps.newConcurrentMap();
           for (Partition partition : partitions.getPartitions()) {

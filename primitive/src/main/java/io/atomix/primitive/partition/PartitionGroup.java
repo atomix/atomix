@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Primitive partition group.
  */
-public interface PartitionGroup<P extends PrimitiveProtocol> extends Configured<PartitionGroupConfig> {
+public interface PartitionGroup extends Configured<PartitionGroupConfig> {
 
   /**
    * Returns the partition group name.
@@ -47,7 +47,7 @@ public interface PartitionGroup<P extends PrimitiveProtocol> extends Configured<
    *
    * @return a new primitive protocol
    */
-  P newProtocol();
+  PrimitiveProtocol newProtocol();
 
   /**
    * Returns a partition by ID.
@@ -74,7 +74,7 @@ public interface PartitionGroup<P extends PrimitiveProtocol> extends Configured<
    *
    * @return a collection of all partitions
    */
-  Collection<Partition<P>> getPartitions();
+  Collection<Partition> getPartitions();
 
   /**
    * Returns a sorted list of partition IDs.
