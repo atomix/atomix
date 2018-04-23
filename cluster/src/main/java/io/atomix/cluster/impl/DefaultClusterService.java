@@ -24,11 +24,11 @@ import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.PersistentMetadataService;
 import io.atomix.cluster.ManagedClusterService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.Node.State;
 import io.atomix.cluster.NodeId;
+import io.atomix.cluster.PersistentMetadataService;
 import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.concurrent.ComposableFuture;
@@ -251,7 +251,7 @@ public class DefaultClusterService
         heartbeat.host(),
         heartbeat.tags()));
     return SERIALIZER.encode(nodes.values().stream()
-        .filter(node -> node.type() == Node.Type.CLIENT)
+        .filter(node -> node.type() == Node.Type.EPHEMERAL)
         .collect(Collectors.toList()));
   }
 
@@ -301,7 +301,6 @@ public class DefaultClusterService
           post(new ClusterEvent(ClusterEvent.Type.NODE_DEACTIVATED, existingNode));
           break;
         case EPHEMERAL:
-        case CLIENT:
           post(new ClusterEvent(ClusterEvent.Type.NODE_DEACTIVATED, existingNode));
           post(new ClusterEvent(ClusterEvent.Type.NODE_REMOVED, existingNode));
           break;

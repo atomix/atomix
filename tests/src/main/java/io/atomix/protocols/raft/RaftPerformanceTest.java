@@ -505,7 +505,7 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a Raft client.
    */
   private RaftClient createClient() throws Exception {
-    Node node = nextNode(Node.Type.CLIENT);
+    Node node = nextNode(Node.Type.EPHEMERAL);
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
@@ -518,7 +518,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftClient client = RaftClient.builder()
         .withNodeId(node.id())
         .withProtocol(protocol)
-        .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
+        .withThreadModel(ThreadModel.SHARED_THREAD_POOL)
         .build();
 
     client.connect(members.stream().map(Node::id).collect(Collectors.toList())).join();
