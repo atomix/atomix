@@ -16,8 +16,6 @@
 package io.atomix.core.config.jackson;
 
 import io.atomix.core.AtomixConfig;
-import io.atomix.primitive.partition.TagMemberFilter;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroupConfig;
 import io.atomix.utils.config.ConfigProvider;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
@@ -51,7 +49,6 @@ public class JacksonConfigProviderTest {
     AtomixConfig config = provider.load(file, AtomixConfig.class);
     assertEquals("test", config.getClusterConfig().getName());
     assertEquals(1, config.getPrimitives().get("foo").getSerializerConfig().getTypes().size());
-    assertEquals("test", ((TagMemberFilter) ((PrimaryBackupPartitionGroupConfig) config.getPartitionGroups().iterator().next()).getMemberFilter()).tag());
   }
 
   @Test

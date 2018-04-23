@@ -18,7 +18,6 @@ package io.atomix.protocols.backup;
 import io.atomix.cluster.ClusterService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.partition.MemberFilter;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.impl.DefaultMemberGroupService;
@@ -110,7 +109,6 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     protected PrimaryBackupServerProtocol protocol;
     protected PrimaryElection primaryElection;
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
-    protected MemberFilter memberFilter;
     protected MemberGroupProvider memberGroupProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
@@ -186,17 +184,6 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     }
 
     /**
-     * Sets the member filter.
-     *
-     * @param memberFilter the member filter
-     * @return the server builder
-     */
-    public Builder withMemberFilter(MemberFilter memberFilter) {
-      this.memberFilter = checkNotNull(memberFilter);
-      return this;
-    }
-
-    /**
      * Sets the member group provider.
      *
      * @param memberGroupProvider the member group provider
@@ -255,7 +242,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
       return new PrimaryBackupServer(new PrimaryBackupServerContext(
           serverName,
           clusterService,
-          new DefaultMemberGroupService(clusterService, memberFilter, memberGroupProvider),
+          new DefaultMemberGroupService(clusterService, memberGroupProvider),
           protocol,
           threadContextFactory,
           primitiveTypes,

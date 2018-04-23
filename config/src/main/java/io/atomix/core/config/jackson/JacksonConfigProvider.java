@@ -29,7 +29,6 @@ import io.atomix.cluster.profile.ClusterProfile;
 import io.atomix.cluster.profile.NodeProfile;
 import io.atomix.core.config.jackson.impl.ClusterProfileDeserializer;
 import io.atomix.core.config.jackson.impl.ConfigPropertyNamingStrategy;
-import io.atomix.core.config.jackson.impl.MemberFilterDeserializer;
 import io.atomix.core.config.jackson.impl.NodeProfileDeserializer;
 import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
@@ -37,7 +36,6 @@ import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
 import io.atomix.core.config.jackson.impl.ProfileDeserializer;
 import io.atomix.core.profile.Profile;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.partition.MemberFilter;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.config.Config;
@@ -150,7 +148,6 @@ public class JacksonConfigProvider implements ConfigProvider {
 
     SimpleModule module = new SimpleModule("PolymorphicTypes");
     module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
-    module.addDeserializer(MemberFilter.class, new MemberFilterDeserializer());
     module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
     module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
     module.addDeserializer(Profile.class, new ProfileDeserializer());
