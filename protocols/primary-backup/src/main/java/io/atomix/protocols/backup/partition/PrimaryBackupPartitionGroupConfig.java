@@ -19,7 +19,7 @@ import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.protocols.backup.PrimaryBackupProtocol;
 
 /**
  * Primary-backup partition group configuration.
@@ -31,7 +31,7 @@ public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<Prim
 
   @Override
   public PrimitiveProtocol.Type getType() {
-    return MultiPrimaryProtocol.TYPE;
+    return PrimaryBackupProtocol.TYPE;
   }
 
   @Override

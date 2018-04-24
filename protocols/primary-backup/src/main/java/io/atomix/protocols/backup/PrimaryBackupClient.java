@@ -55,7 +55,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup client.
  */
-public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol> {
+public class PrimaryBackupClient implements PrimitiveClient<PrimaryBackupProtocol> {
 
   /**
    * Returns a new primary-backup client builder.
@@ -94,7 +94,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
 
   @Override
   public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
-    return newProxy(primitiveName, primitiveType, MultiPrimaryProtocol.builder()
+    return newProxy(primitiveName, primitiveType, PrimaryBackupProtocol.builder()
         .withMaxRetries(5)
         .withRetryDelay(Duration.ofMillis(100))
         .withBackups(2)
@@ -104,7 +104,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
 
   @Override
   @SuppressWarnings("unchecked")
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, MultiPrimaryProtocol primitiveProtocol) {
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PrimaryBackupProtocol primitiveProtocol) {
     Supplier<PrimitiveProxy> proxyBuilder = () -> new PrimaryBackupProxy(
         clientName,
         sessionIdService.nextSessionId().join(),

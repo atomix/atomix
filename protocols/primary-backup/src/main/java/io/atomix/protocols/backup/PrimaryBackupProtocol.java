@@ -27,38 +27,45 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Multi-primary protocol.
+ * Primary-backup protocol.
  */
-public class MultiPrimaryProtocol implements PrimitiveProtocol {
-  public static final Type TYPE = new Type() {
+public class PrimaryBackupProtocol implements PrimitiveProtocol {
+  public static final Type TYPE = new Type();
+
+  /**
+   * The primary-backup protocol type.
+   */
+  public static class Type implements PrimitiveProtocol.Type {
+    private static final String NAME = "primary-backup";
+
     @Override
     public String name() {
-      return "multi-primary";
+      return NAME;
     }
-  };
+  }
 
   /**
-   * Returns a new multi-primary protocol builder.
+   * Returns a new primary-backup protocol builder.
    *
-   * @return a new multi-primary protocol builder
+   * @return a new primary-backup protocol builder
    */
   public static Builder builder() {
-    return new Builder(new MultiPrimaryProtocolConfig());
+    return new Builder(new PrimaryBackupProtocolConfig());
   }
 
   /**
-   * Returns a new multi-primary protocol builder for the given group.
+   * Returns a new primary-backup protocol builder for the given group.
    *
    * @param group the partition group
-   * @return a new multi-primary protocol builder for the given group
+   * @return a new primary-backup protocol builder for the given group
    */
   public static Builder builder(String group) {
-    return new Builder(new MultiPrimaryProtocolConfig().setGroup(group));
+    return new Builder(new PrimaryBackupProtocolConfig().setGroup(group));
   }
 
-  private final MultiPrimaryProtocolConfig config;
+  private final PrimaryBackupProtocolConfig config;
 
-  public MultiPrimaryProtocol(MultiPrimaryProtocolConfig config) {
+  public PrimaryBackupProtocol(PrimaryBackupProtocolConfig config) {
     this.config = config;
   }
 
@@ -149,10 +156,10 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
   }
 
   /**
-   * Multi-primary protocol builder.
+   * Primary-backup protocol builder.
    */
-  public static class Builder extends PrimitiveProtocol.Builder<MultiPrimaryProtocolConfig, MultiPrimaryProtocol> {
-    protected Builder(MultiPrimaryProtocolConfig config) {
+  public static class Builder extends PrimitiveProtocol.Builder<PrimaryBackupProtocolConfig, PrimaryBackupProtocol> {
+    protected Builder(PrimaryBackupProtocolConfig config) {
       super(config);
     }
 
@@ -259,8 +266,8 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     }
 
     @Override
-    public MultiPrimaryProtocol build() {
-      return new MultiPrimaryProtocol(config);
+    public PrimaryBackupProtocol build() {
+      return new PrimaryBackupProtocol(config);
     }
   }
 }

@@ -439,7 +439,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    * Creates a new primary-backup proxy.
    */
   private PrimitiveProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
-    return client.newProxy("test", TestPrimitiveType.INSTANCE, MultiPrimaryProtocol.builder()
+    return client.newProxy("test", TestPrimitiveType.INSTANCE, PrimaryBackupProtocol.builder()
         .withBackups(backups)
         .withReplication(replication)
         .build())

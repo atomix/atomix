@@ -30,7 +30,7 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.protocols.backup.PrimaryBackupProtocol;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadPoolContextFactory;
 import org.slf4j.Logger;
@@ -96,7 +96,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public Type type() {
-    return MultiPrimaryProtocol.TYPE;
+    return PrimaryBackupProtocol.TYPE;
   }
 
   @Override
@@ -106,7 +106,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public PrimitiveProtocol newProtocol() {
-    return MultiPrimaryProtocol.builder(name)
+    return PrimaryBackupProtocol.builder(name)
         .withRecovery(Recovery.RECOVER)
         .withBackups(2)
         .withReplication(Replication.SYNCHRONOUS)

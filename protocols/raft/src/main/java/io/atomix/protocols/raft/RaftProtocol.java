@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.Recovery;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
@@ -29,12 +29,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft protocol.
  */
 public class RaftProtocol implements PrimitiveProtocol {
-  public static final Type TYPE = new Type() {
+  public static final Type TYPE = new Type();
+
+  /**
+   * The primary-backup protocol type.
+   */
+  public static class Type implements PrimitiveProtocol.Type {
+    private static final String NAME = "raft";
+
     @Override
     public String name() {
-      return "raft";
+      return NAME;
     }
-  };
+  }
 
   /**
    * Returns a new Raft protocol builder.
