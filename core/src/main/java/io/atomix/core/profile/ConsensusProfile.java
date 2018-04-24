@@ -40,14 +40,16 @@ public class ConsensusProfile implements NamedProfile {
 
   @Override
   public void configure(AtomixConfig config) {
-    config.setSystemPartitionGroup(new RaftPartitionGroupConfig()
+    config.setManagementGroup(new RaftPartitionGroupConfig()
         .setName(SYSTEM_GROUP_NAME)
         .setPartitionSize((int) config.getClusterConfig().getMembers()
+            .values()
             .stream()
             .filter(node -> node.getType() == Member.Type.PERSISTENT)
             .count())
         .setPartitions(1)
         .setMembers(config.getClusterConfig().getMembers()
+            .values()
             .stream()
             .filter(node -> node.getType() == Member.Type.PERSISTENT)
             .map(node -> node.getId().id())
@@ -58,6 +60,7 @@ public class ConsensusProfile implements NamedProfile {
         .setPartitionSize(PARTITION_SIZE)
         .setPartitions(NUM_PARTITIONS)
         .setMembers(config.getClusterConfig().getMembers()
+            .values()
             .stream()
             .filter(node -> node.getType() == Member.Type.PERSISTENT)
             .map(node -> node.getId().id())
