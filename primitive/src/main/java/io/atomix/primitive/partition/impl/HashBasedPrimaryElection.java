@@ -16,7 +16,7 @@
 package io.atomix.primitive.partition.impl;
 
 import com.google.common.hash.Hashing;
-import io.atomix.cluster.ClusterEventListener;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.primitive.partition.GroupMember;
@@ -43,7 +43,7 @@ public class HashBasedPrimaryElection
   private final PartitionId partitionId;
   private final ClusterMembershipService clusterMembershipService;
   private final HashBasedPrimaryElectionService electionService;
-  private final ClusterEventListener clusterEventListener = e -> recomputeTerm();
+  private final ClusterMembershipEventListener membershipEventListener = e -> recomputeTerm();
   private volatile PrimaryTerm currentTerm;
 
   public HashBasedPrimaryElection(PartitionId partitionId, ClusterMembershipService clusterMembershipService, HashBasedPrimaryElectionService electionService) {
@@ -51,7 +51,7 @@ public class HashBasedPrimaryElection
     this.clusterMembershipService = clusterMembershipService;
     this.electionService = electionService;
     recomputeTerm();
-    clusterMembershipService.addListener(clusterEventListener);
+    clusterMembershipService.addListener(membershipEventListener);
   }
 
   @Override

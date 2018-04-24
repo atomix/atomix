@@ -23,7 +23,7 @@ import java.util.Set;
  * Service for obtaining information about the individual members within
  * the cluster.
  */
-public interface ClusterMembershipService extends ListenerService<ClusterEvent, ClusterEventListener> {
+public interface ClusterMembershipService extends ListenerService<ClusterMembershipEvent, ClusterMembershipEventListener> {
 
   /**
    * Returns the local member.

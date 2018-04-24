@@ -57,12 +57,12 @@ public class TestClusterMembershipService implements ClusterMembershipService {
   }
 
   @Override
-  public void addListener(ClusterEventListener listener) {
+  public void addListener(ClusterMembershipEventListener listener) {
 
   }
 
   @Override
-  public void removeListener(ClusterEventListener listener) {
+  public void removeListener(ClusterMembershipEventListener listener) {
 
   }
 }

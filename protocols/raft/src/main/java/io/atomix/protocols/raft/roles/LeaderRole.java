@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.roles;
 
 import com.google.common.collect.Sets;
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEventListener;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
@@ -87,7 +87,7 @@ public final class LeaderRole extends ActiveRole {
   private static final int MAX_PENDING_COMMANDS = 1000;
   private static final int MAX_APPEND_ATTEMPTS = 5;
 
-  private final ClusterEventListener clusterListener = this::handleClusterEvent;
+  private final ClusterMembershipEventListener clusterListener = this::handleClusterEvent;
   private final LeaderAppender appender;
   private Scheduled appendTimer;
   private final Set<SessionId> expiring = Sets.newHashSet();
@@ -188,8 +188,8 @@ public final class LeaderRole extends ActiveRole {
   /**
    * Handles a cluster event.
    */
-  private void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
+  private void handleClusterEvent(ClusterMembershipEvent event) {
+    if (event.type() == ClusterMembershipEvent.Type.NODE_DEACTIVATED) {
       log.debug("Node {} deactivated", event.subject().id());
       raft.getSessions().getSessions().stream()
           .filter(session -> session.memberId().equals(event.subject().id()))

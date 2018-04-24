@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEventListener;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  * Follower state.
  */
 public final class FollowerRole extends ActiveRole {
-  private final ClusterEventListener clusterListener = this::handleClusterEvent;
+  private final ClusterMembershipEventListener clusterListener = this::handleClusterEvent;
   private final Random random = new Random();
   private Scheduled heartbeatTimer;
 
@@ -69,9 +69,9 @@ public final class FollowerRole extends ActiveRole {
   /**
    * Handles a cluster event.
    */
-  private void handleClusterEvent(ClusterEvent event) {
+  private void handleClusterEvent(ClusterMembershipEvent event) {
     RaftMember leader = raft.getLeader();
-    if (leader != null && event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(leader.memberId())) {
+    if (leader != null && event.type() == ClusterMembershipEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(leader.memberId())) {
       sendPollRequests();
     }
   }
