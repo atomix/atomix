@@ -41,7 +41,7 @@ public enum MemberGroupStrategy implements MemberGroupProvider {
   ZONE_AWARE {
     @Override
     public Collection<MemberGroup> getMemberGroups(Collection<Node> nodes) {
-      return groupNodes(nodes, Node::zone);
+      return groupNodes(nodes, node -> node.zone() != null ? node.zone() : node.id().id());
     }
   },
 
@@ -53,7 +53,7 @@ public enum MemberGroupStrategy implements MemberGroupProvider {
   RACK_AWARE {
     @Override
     public Collection<MemberGroup> getMemberGroups(Collection<Node> nodes) {
-      return groupNodes(nodes, Node::rack);
+      return groupNodes(nodes, node -> node.rack() != null ? node.rack() : node.id().id());
     }
   },
 
@@ -65,7 +65,7 @@ public enum MemberGroupStrategy implements MemberGroupProvider {
   HOST_AWARE {
     @Override
     public Collection<MemberGroup> getMemberGroups(Collection<Node> nodes) {
-      return groupNodes(nodes, Node::host);
+      return groupNodes(nodes, node -> node.host() != null ? node.host() : node.id().id());
     }
   },
 
