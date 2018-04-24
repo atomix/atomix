@@ -15,7 +15,6 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.cluster.profile.NodeProfile;
 import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 
@@ -33,8 +32,6 @@ public class NodeConfig implements Config {
   private String rack;
   private String host;
   private Set<String> tags = new HashSet<>();
-  private NodeProfile profile = c -> {
-  };
 
   /**
    * Returns the node identifier.
@@ -207,26 +204,6 @@ public class NodeConfig implements Config {
    */
   public NodeConfig addTag(String tag) {
     tags.add(tag);
-    return this;
-  }
-
-  /**
-   * Returns the node profile.
-   *
-   * @return the node profile
-   */
-  public NodeProfile getProfile() {
-    return profile;
-  }
-
-  /**
-   * Sets the node profile.
-   *
-   * @param profile the node profile
-   * @return the node configuration
-   */
-  public NodeConfig setProfile(NodeProfile profile) {
-    this.profile = profile;
     return this;
   }
 }
