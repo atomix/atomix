@@ -54,7 +54,6 @@ import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.Threads;
 import io.atomix.utils.config.Configs;
-import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,7 +118,6 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
 
   private final ScheduledExecutorService executorService;
-  private final ManagedPartitionGroup systemPartitionGroup;
   private final ManagedPartitionService partitions;
   private final ManagedPrimitivesService primitives;
   private final PrimitiveTypeRegistry primitiveTypes;
@@ -141,7 +139,6 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
     this.executorService = Executors.newScheduledThreadPool(
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
-    this.systemPartitionGroup = buildSystemPartitionGroup(config);
     this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
     this.partitions = buildPartitionService(config, clusterService(), messagingService(), primitiveTypes);
     this.primitives = new CorePrimitivesService(
@@ -322,9 +319,9 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   @Override
   @SuppressWarnings("unchecked")
   protected CompletableFuture<Void> stopServices() {
-    return partitions.stop()
+    return primitives.stop()
         .exceptionally(e -> null)
-        .thenComposeAsync(v -> systemPartitionGroup.close(), threadContext)
+        .thenComposeAsync(v -> partitions.stop(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> super.stopServices(), threadContext);
   }
@@ -379,10 +376,6 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
     List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups()) {
       partitionGroups.add(PartitionGroups.createGroup(partitionGroupConfig));
-    }
-
-    if (partitionGroups.isEmpty() && config.getSystemPartitionGroup() == null) {
-      throw new ConfigurationException("Cannot form data cluster: no system partition group provided");
     }
     return new DefaultPartitionService(clusterService, messagingService, primitiveTypeRegistry, buildSystemPartitionGroup(config), partitionGroups);
   }

@@ -75,7 +75,10 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     File partitionsDir = new File(config.getDataDirectory(), "partitions");
     List<RaftPartition> partitions = new ArrayList<>(config.getPartitions());
     for (int i = 0; i < config.getPartitions(); i++) {
-      partitions.add(new RaftPartition(PartitionId.from(config.getName(), i + 1), config.getStorageLevel(), new File(partitionsDir, String.valueOf(i + 1))));
+      partitions.add(new RaftPartition(
+          PartitionId.from(config.getName(), i + 1),
+          StorageLevel.valueOf(config.getStorageLevel().toUpperCase()),
+          new File(partitionsDir, String.valueOf(i + 1))));
     }
     return partitions;
   }
@@ -181,17 +184,17 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   }
 
   private Collection<PartitionMetadata> buildPartitions(ClusterService clusterService) {
-    int partitionSize = this.partitionSize;
-    if (partitionSize == 0) {
-      partitionSize = clusterService.getNodes().size();
-    }
-
     List<NodeId> sorted = new ArrayList<>(clusterService.getNodes().stream()
         .filter(node -> node.type() == Node.Type.PERSISTENT)
         .filter(node -> config.getMembers().contains(node.id().id()))
         .map(Node::id)
         .collect(Collectors.toSet()));
     Collections.sort(sorted);
+
+    int partitionSize = this.partitionSize;
+    if (partitionSize == 0) {
+      partitionSize = sorted.size();
+    }
 
     int length = sorted.size();
     int count = Math.min(partitionSize, length);
@@ -310,7 +313,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the Raft partition group builder
      */
     public Builder withStorageLevel(StorageLevel storageLevel) {
-      config.setStorageLevel(storageLevel);
+      config.setStorageLevel(storageLevel.name());
       return this;
     }
 
@@ -321,7 +324,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the replica builder
      */
     public Builder withDataDirectory(File dataDir) {
-      config.setDataDirectory(dataDir);
+      config.setDataDirectory(new File("user.dir").toURI().relativize(dataDir.toURI()).getPath());
       return this;
     }
 
