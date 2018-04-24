@@ -16,8 +16,7 @@
 package io.atomix.core;
 
 import io.atomix.cluster.Node;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
-import io.atomix.protocols.raft.partition.RaftPartitionGroup;
+import io.atomix.core.profile.Profile;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -27,7 +26,6 @@ import java.net.ServerSocket;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
@@ -50,64 +48,44 @@ public abstract class AbstractAtomixTest {
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> nodeIds, List<Integer> bootstrapIds) {
+  protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes) {
     Node localNode = Node.builder(String.valueOf(id))
         .withType(type)
         .withAddress("localhost", BASE_PORT + id)
         .build();
 
     Collection<Node> nodes = Stream.concat(
-        nodeIds.stream()
+        persistentNodes.stream()
             .map(nodeId -> Node.builder(String.valueOf(nodeId))
                 .withType(Node.Type.PERSISTENT)
                 .withAddress("localhost", BASE_PORT + nodeId)
                 .build()),
-        bootstrapIds.stream()
-            .filter(nodeId -> !nodeIds.contains(nodeId))
+        ephemeralNodes.stream()
+            .filter(nodeId -> !persistentNodes.contains(nodeId))
             .map(nodeId -> Node.builder(String.valueOf(nodeId))
                 .withType(Node.Type.EPHEMERAL)
                 .withAddress("localhost", BASE_PORT + nodeId)
                 .build()))
         .collect(Collectors.toList());
 
-    Atomix.Builder builder = Atomix.builder()
+    return Atomix.builder()
         .withClusterName("test")
         .withLocalNode(localNode)
-        .withNodes(nodes)
-        .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
-            .withNumPartitions(3)
-            .build());
-    if (!nodeIds.isEmpty()) {
-      builder.withSystemPartitionGroup(RaftPartitionGroup.builder("system")
-          .withPartitionSize(3)
-          .withNumPartitions(1)
-          .withDataDirectory(new File("target/test-logs/" + id + "/system"))
-          .build());
-      builder.addPartitionGroup(RaftPartitionGroup.builder("core")
-          .withPartitionSize(3)
-          .withNumPartitions(3)
-          .withDataDirectory(new File("target/test-logs/" + id + "/core"))
-          .build());
-    } else {
-      builder.withSystemPartitionGroup(PrimaryBackupPartitionGroup.builder("system")
-          .withNumPartitions(1)
-          .build());
-    }
-    return builder;
+        .withNodes(nodes);
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
-    return createAtomix(type, id, coreIds, bootstrapIds, b -> b.build());
+  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Profile... profiles) {
+    return createAtomix(type, id, persistentIds, ephemeralIds, b -> b.withProfiles(profiles).build());
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds, Function<Atomix.Builder, Atomix> builderFunction) {
-    return builderFunction.apply(buildAtomix(type, id, coreIds, bootstrapIds));
+  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
+    return builderFunction.apply(buildAtomix(type, id, persistentIds, ephemeralIds));
   }
 
   @AfterClass
@@ -131,7 +109,7 @@ public abstract class AbstractAtomixTest {
    * Deletes data from the test data directory.
    */
   protected static void deleteData() throws Exception {
-    Path directory = Paths.get("target/test-logs/");
+    Path directory = new File(System.getProperty("user.dir"), ".data").toPath();
     if (Files.exists(directory)) {
       Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
         @Override

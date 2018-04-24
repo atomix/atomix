@@ -18,6 +18,8 @@ package io.atomix.core;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.Node;
+import io.atomix.core.profile.Profile;
+import io.atomix.core.profile.Profiles;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import org.junit.After;
@@ -61,18 +63,26 @@ public class AtomixTest extends AbstractAtomixTest {
     teardownAtomix();
   }
 
-  /**
-   * Creates and starts a new test Atomix instance.
-   */
-  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
-    return startAtomix(type, id, coreIds, bootstrapIds, b -> b.build());
+  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> persistentNodes, Profile... profiles) {
+    return startAtomix(type, id, persistentNodes, Arrays.asList(), profiles);
+  }
+
+  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes, Profile... profiles) {
+    return startAtomix(type, id, persistentNodes, ephemeralNodes, b -> b.withProfiles(profiles).build());
   }
 
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds, Function<Atomix.Builder, Atomix> builderFunction) {
-    Atomix atomix = createAtomix(type, id, coreIds, bootstrapIds, builderFunction);
+  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds) {
+    return startAtomix(type, id, persistentIds, ephemeralIds, b -> b.build());
+  }
+
+  /**
+   * Creates and starts a new test Atomix instance.
+   */
+  protected CompletableFuture<Atomix> startAtomix(Node.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
+    Atomix atomix = createAtomix(type, id, persistentIds, ephemeralIds, builderFunction);
     instances.add(atomix);
     return atomix.start();
   }
@@ -81,21 +91,21 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests scaling up a cluster.
    */
   @Test
-  public void testScaleUpCore() throws Exception {
-    Atomix atomix1 = startAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1), Arrays.asList()).join();
-    Atomix atomix2 = startAtomix(Node.Type.PERSISTENT, 2, Arrays.asList(1, 2), Arrays.asList()).join();
-    Atomix atomix3 = startAtomix(Node.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList()).join();
+  public void testScaleUpPersistent() throws Exception {
+    Atomix atomix1 = startAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1), Arrays.asList(), Profiles.CONSENSUS).join();
+    Atomix atomix2 = startAtomix(Node.Type.PERSISTENT, 2, Arrays.asList(1, 2), Arrays.asList(), Profiles.CLIENT).join();
+    Atomix atomix3 = startAtomix(Node.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), Profiles.CLIENT).join();
   }
 
   /**
    * Tests scaling up a cluster.
    */
   @Test
-  public void testBootstrapData() throws Exception {
+  public void testBootstrapEphemeral() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>(3);
-    futures.add(startAtomix(Node.Type.EPHEMERAL, 1, Arrays.asList(), Arrays.asList()));
-    futures.add(startAtomix(Node.Type.EPHEMERAL, 2, Arrays.asList(), Arrays.asList(1)));
-    futures.add(startAtomix(Node.Type.EPHEMERAL, 3, Arrays.asList(), Arrays.asList(1)));
+    futures.add(startAtomix(Node.Type.EPHEMERAL, 1, Arrays.asList(), Arrays.asList(), Profiles.DATA_GRID));
+    futures.add(startAtomix(Node.Type.EPHEMERAL, 2, Arrays.asList(), Arrays.asList(1), Profiles.DATA_GRID));
+    futures.add(startAtomix(Node.Type.EPHEMERAL, 3, Arrays.asList(), Arrays.asList(1), Profiles.DATA_GRID));
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
   }
 
@@ -103,27 +113,30 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests scaling up a cluster.
    */
   @Test
-  public void testScaleUpData() throws Exception {
-    Atomix atomix1 = startAtomix(Node.Type.EPHEMERAL, 1, Arrays.asList(), Arrays.asList()).join();
-    Atomix atomix2 = startAtomix(Node.Type.EPHEMERAL, 2, Arrays.asList(), Arrays.asList(1)).join();
-    Atomix atomix3 = startAtomix(Node.Type.EPHEMERAL, 3, Arrays.asList(), Arrays.asList(1)).join();
+  public void testScaleUpEphemeral() throws Exception {
+    Atomix atomix1 = startAtomix(Node.Type.EPHEMERAL, 1, Arrays.asList(), Arrays.asList(), Profiles.DATA_GRID).join();
+    Atomix atomix2 = startAtomix(Node.Type.EPHEMERAL, 2, Arrays.asList(), Arrays.asList(1), Profiles.DATA_GRID).join();
+    Atomix atomix3 = startAtomix(Node.Type.EPHEMERAL, 3, Arrays.asList(), Arrays.asList(1), Profiles.DATA_GRID).join();
   }
 
   @Test
   public void testDiscoverData() throws Exception {
     Address multicastAddress = Address.from("230.0.0.1", findAvailablePort(1234));
     Atomix atomix1 = startAtomix(Node.Type.EPHEMERAL, 1, Arrays.asList(), Arrays.asList(), builder ->
-        builder.withMulticastEnabled()
+        builder.withProfiles(Profiles.DATA_GRID)
+            .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .join();
     Atomix atomix2 = startAtomix(Node.Type.EPHEMERAL, 2, Arrays.asList(), Arrays.asList(), builder ->
-        builder.withMulticastEnabled()
+        builder.withProfiles(Profiles.DATA_GRID)
+            .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .join();
     Atomix atomix3 = startAtomix(Node.Type.EPHEMERAL, 3, Arrays.asList(), Arrays.asList(), builder ->
-        builder.withMulticastEnabled()
+        builder.withProfiles(Profiles.DATA_GRID)
+            .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .join();
@@ -136,8 +149,8 @@ public class AtomixTest extends AbstractAtomixTest {
   }
 
   @Test
-  public void testStopStartCore() throws Exception {
-    Atomix atomix1 = startAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1), Arrays.asList()).join();
+  public void testStopStartConsensus() throws Exception {
+    Atomix atomix1 = startAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1), Arrays.asList(), Profiles.CONSENSUS).join();
     atomix1.stop().join();
     try {
       atomix1.start().join();
@@ -152,11 +165,11 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests scaling down a cluster.
    */
   @Test
-  public void testScaleDownCore() throws Exception {
+  public void testScaleDownPersistent() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
-    futures.add(startAtomix(Node.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
-    futures.add(startAtomix(Node.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
+    futures.add(startAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), Profiles.DATA_GRID));
+    futures.add(startAtomix(Node.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), Profiles.DATA_GRID));
+    futures.add(startAtomix(Node.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), Profiles.DATA_GRID));
     Futures.allOf(futures).join();
     instances.get(0).stop().join();
     instances.get(1).stop().join();
@@ -169,15 +182,16 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testClientJoinLeaveCore() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
-    futures.add(startAtomix(Node.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
-    futures.add(startAtomix(Node.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
+    futures.add(startAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Profiles.CONSENSUS));
+    futures.add(startAtomix(Node.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Profiles.CONSENSUS));
+    futures.add(startAtomix(Node.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Profiles.CONSENSUS));
     Futures.allOf(futures).join();
 
     TestClusterEventListener dataListener = new TestClusterEventListener();
     instances.get(0).clusterService().addListener(dataListener);
 
-    Atomix client1 = startAtomix(Node.Type.EPHEMERAL, 4, Arrays.asList(1, 2, 3), Arrays.asList()).join();
+    Atomix client1 = startAtomix(Node.Type.EPHEMERAL, 4, Arrays.asList(1, 2, 3), Profiles.CLIENT).join();
+    assertEquals(1, client1.partitionService().getPartitionGroups().size());
 
     // client1 added to data node
     ClusterEvent event1 = dataListener.event();
@@ -190,7 +204,8 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterEventListener clientListener = new TestClusterEventListener();
     client1.clusterService().addListener(clientListener);
 
-    Atomix client2 = startAtomix(Node.Type.EPHEMERAL, 5, Arrays.asList(1, 2, 3), Arrays.asList()).join();
+    Atomix client2 = startAtomix(Node.Type.EPHEMERAL, 5, Arrays.asList(1, 2, 3), Profiles.CLIENT).join();
+    assertEquals(1, client2.partitionService().getPartitionGroups().size());
 
     // client2 added to data node
     ClusterEvent event2 = dataListener.event();
