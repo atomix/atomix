@@ -45,6 +45,9 @@ import io.atomix.core.multimap.ConsistentMultimapType;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueBuilder;
 import io.atomix.core.queue.WorkQueueType;
+import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetType;
@@ -340,6 +343,27 @@ public interface PrimitivesService {
   }
 
   /**
+   * Creates a new DistributedSemaphoreBuilder.
+   *
+   * @param name the primitive name
+   * @param protocol the primitive protocol
+   * @return distributed semaphore builder
+   */
+  default DistributedSemaphoreBuilder semaphoreBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedSemaphoreType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedSemaphoreBuilder.
+   *
+   * @param name the primitive name
+   * @return distributed semaphore builder
+   */
+  default DistributedSemaphoreBuilder semaphoreBuilder(String name) {
+    return primitiveBuilder(name, DistributedSemaphoreType.instance());
+  }
+
+  /**
    * Creates a new WorkQueueBuilder.
    *
    * @param name the primitive name
@@ -483,6 +507,14 @@ public interface PrimitivesService {
    * @return distributed lock builder
    */
   DistributedLock getLock(String name);
+
+  /**
+   * Creates a new DistributedSemaphore.
+   *
+   * @param name the primitive name
+   * @return DistributedSemaphore
+   */
+  DistributedSemaphore getSemaphore(String name);
 
   /**
    * Creates a new WorkQueueBuilder.

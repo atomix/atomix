@@ -43,6 +43,8 @@ import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimapType;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueType;
+import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.transaction.ManagedTransactionService;
@@ -171,6 +173,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public DistributedLock getLock(String name) {
     return getPrimitive(name, DistributedLockType.instance(), config.getPrimitive(name));
+  }
+
+  @Override
+  public DistributedSemaphore getSemaphore(String name) {
+    return getPrimitive(name, DistributedSemaphoreType.instance(), config.getPrimitive(name));
   }
 
   @Override
