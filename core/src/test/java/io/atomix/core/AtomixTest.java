@@ -15,8 +15,8 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEventListener;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.Member;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.profile.Profiles;
@@ -187,58 +187,58 @@ public class AtomixTest extends AbstractAtomixTest {
     futures.add(startAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Profiles.CONSENSUS));
     Futures.allOf(futures).join();
 
-    TestClusterEventListener dataListener = new TestClusterEventListener();
+    TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
     instances.get(0).membershipService().addListener(dataListener);
 
     Atomix client1 = startAtomix(Member.Type.EPHEMERAL, 4, Arrays.asList(1, 2, 3), Profiles.CLIENT).join();
     assertEquals(1, client1.partitionService().getPartitionGroups().size());
 
     // client1 added to data node
-    ClusterEvent event1 = dataListener.event();
-    assertEquals(ClusterEvent.Type.NODE_ADDED, event1.type());
+    ClusterMembershipEvent event1 = dataListener.event();
+    assertEquals(ClusterMembershipEvent.Type.NODE_ADDED, event1.type());
     event1 = dataListener.event();
-    assertEquals(ClusterEvent.Type.NODE_ACTIVATED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.NODE_ACTIVATED, event1.type());
 
     Thread.sleep(1000);
 
-    TestClusterEventListener clientListener = new TestClusterEventListener();
+    TestClusterMembershipEventListener clientListener = new TestClusterMembershipEventListener();
     client1.membershipService().addListener(clientListener);
 
     Atomix client2 = startAtomix(Member.Type.EPHEMERAL, 5, Arrays.asList(1, 2, 3), Profiles.CLIENT).join();
     assertEquals(1, client2.partitionService().getPartitionGroups().size());
 
     // client2 added to data node
-    ClusterEvent event2 = dataListener.event();
-    assertEquals(ClusterEvent.Type.NODE_ADDED, event2.type());
+    ClusterMembershipEvent event2 = dataListener.event();
+    assertEquals(ClusterMembershipEvent.Type.NODE_ADDED, event2.type());
     event2 = dataListener.event();
-    assertEquals(ClusterEvent.Type.NODE_ACTIVATED, event2.type());
+    assertEquals(ClusterMembershipEvent.Type.NODE_ACTIVATED, event2.type());
 
     // client2 added to client node
     event1 = clientListener.event();
-    assertEquals(ClusterEvent.Type.NODE_ADDED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.NODE_ADDED, event1.type());
     event1 = clientListener.event();
-    assertEquals(ClusterEvent.Type.NODE_ACTIVATED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.NODE_ACTIVATED, event1.type());
 
     client2.stop().join();
 
     // client2 removed from data node
     event1 = dataListener.event();
-    assertEquals(ClusterEvent.Type.NODE_DEACTIVATED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.NODE_DEACTIVATED, event1.type());
     event1 = dataListener.event();
-    assertEquals(ClusterEvent.Type.NODE_REMOVED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.NODE_REMOVED, event1.type());
 
     // client2 removed from client node
     event1 = clientListener.event();
-    assertEquals(ClusterEvent.Type.NODE_DEACTIVATED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.NODE_DEACTIVATED, event1.type());
     event1 = clientListener.event();
-    assertEquals(ClusterEvent.Type.NODE_REMOVED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.NODE_REMOVED, event1.type());
   }
 
-  private static class TestClusterEventListener implements ClusterEventListener {
-    private final BlockingQueue<ClusterEvent> queue = new LinkedBlockingQueue<>();
+  private static class TestClusterMembershipEventListener implements ClusterMembershipEventListener {
+    private final BlockingQueue<ClusterMembershipEvent> queue = new LinkedBlockingQueue<>();
 
     @Override
-    public void onEvent(ClusterEvent event) {
+    public void onEvent(ClusterMembershipEvent event) {
       try {
         queue.put(event);
       } catch (InterruptedException e) {
@@ -250,7 +250,7 @@ public class AtomixTest extends AbstractAtomixTest {
       return !queue.isEmpty();
     }
 
-    public ClusterEvent event() throws InterruptedException {
+    public ClusterMembershipEvent event() throws InterruptedException {
       return queue.take();
     }
   }

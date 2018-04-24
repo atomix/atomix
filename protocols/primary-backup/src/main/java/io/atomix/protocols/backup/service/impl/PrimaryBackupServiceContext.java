@@ -16,8 +16,8 @@
 
 package io.atomix.protocols.backup.service.impl;
 
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEventListener;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
@@ -104,7 +104,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     }
   };
   private PrimaryBackupRole role;
-  private final ClusterEventListener clusterEventListener = this::handleClusterEvent;
+  private final ClusterMembershipEventListener membershipEventListener = this::handleClusterEvent;
   private final PrimaryElectionEventListener primaryElectionListener = event -> changeRole(event.term());
 
   public PrimaryBackupServiceContext(
@@ -133,7 +133,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
         .add("type", descriptor.type())
         .add("name", descriptor.name())
         .build());
-    clusterMembershipService.addListener(clusterEventListener);
+    clusterMembershipService.addListener(membershipEventListener);
     primaryElection.addListener(primaryElectionListener);
   }
 
@@ -517,8 +517,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   /**
    * Handles a cluster event.
    */
-  private void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
+  private void handleClusterEvent(ClusterMembershipEvent event) {
+    if (event.type() == ClusterMembershipEvent.Type.NODE_DEACTIVATED) {
       for (Session session : sessions) {
         if (session.memberId().equals(event.subject().id())) {
           role.expire((PrimaryBackupSession) session);
@@ -575,7 +575,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Closes the service.
    */
   public CompletableFuture<Void> close() {
-    clusterMembershipService.removeListener(clusterEventListener);
+    clusterMembershipService.removeListener(membershipEventListener);
     primaryElection.removeListener(primaryElectionListener);
     return CompletableFuture.completedFuture(null);
   }

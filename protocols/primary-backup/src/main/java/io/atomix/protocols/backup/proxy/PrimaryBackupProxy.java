@@ -17,8 +17,8 @@ package io.atomix.protocols.backup.proxy;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEventListener;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveType;
@@ -65,7 +65,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   private final Set<Consumer<State>> stateChangeListeners = Sets.newIdentityHashSet();
   private final Set<Consumer<PrimitiveEvent>> eventListeners = Sets.newIdentityHashSet();
   private final PrimaryElectionEventListener primaryElectionListener = event -> changeReplicas(event.term());
-  private final ClusterEventListener clusterEventListener = this::handleClusterEvent;
+  private final ClusterMembershipEventListener membershipEventListener = this::handleClusterEvent;
   private PrimaryTerm term;
   private volatile State state = State.CLOSED;
 
@@ -212,8 +212,8 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   /**
    * Handles a cluster event.
    */
-  private void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(term.primary().memberId())) {
+  private void handleClusterEvent(ClusterMembershipEvent event) {
+    if (event.type() == ClusterMembershipEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(term.primary().memberId())) {
       threadContext.execute(() -> {
         state = State.SUSPENDED;
         stateChangeListeners.forEach(l -> l.accept(state));
@@ -257,7 +257,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
       protocol.close(term.primary().memberId(), new CloseRequest(descriptor, sessionId.id()))
           .whenCompleteAsync((response, error) -> {
             protocol.unregisterEventListener(sessionId);
-            clusterMembershipService.removeListener(clusterEventListener);
+            clusterMembershipService.removeListener(membershipEventListener);
             primaryElection.removeListener(primaryElectionListener);
             future.complete(null);
           }, threadContext);

@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * Describes cluster-related event.
  */
-public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Member> {
+public class ClusterMembershipEvent extends AbstractEvent<ClusterMembershipEvent.Type, Member> {
 
   /**
    * Type of cluster-related events.
@@ -57,7 +57,7 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Member> {
    * @param type     cluster event type
    * @param instance cluster device subject
    */
-  public ClusterEvent(Type type, Member instance) {
+  public ClusterMembershipEvent(Type type, Member instance) {
     super(type, instance);
   }
 
@@ -68,7 +68,7 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Member> {
    * @param instance event device subject
    * @param time     occurrence time
    */
-  public ClusterEvent(Type type, Member instance, long time) {
+  public ClusterMembershipEvent(Type type, Member instance, long time) {
     super(type, instance, time);
   }
 
@@ -82,8 +82,8 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Member> {
     if (this == obj) {
       return true;
     }
-    if (obj instanceof ClusterEvent) {
-      final ClusterEvent other = (ClusterEvent) obj;
+    if (obj instanceof ClusterMembershipEvent) {
+      final ClusterMembershipEvent other = (ClusterMembershipEvent) obj;
       return Objects.equals(this.type(), other.type()) &&
           Objects.equals(this.subject(), other.subject()) &&
           Objects.equals(this.time(), other.time());
