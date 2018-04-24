@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -109,7 +109,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(ArrayList.class)
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
-      .register(NodeId.class)
+      .register(MemberId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -1144,8 +1144,8 @@ public class RaftTest extends ConcurrentTestCase {
    *
    * @return The next unique member identifier.
    */
-  private NodeId nextNodeId() {
-    return NodeId.from(String.valueOf(++nextId));
+  private MemberId nextNodeId() {
+    return MemberId.from(String.valueOf(++nextId));
   }
 
   /**
@@ -1211,13 +1211,13 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Creates a Raft server.
    */
-  private RaftServer createServer(NodeId nodeId) {
-    RaftServer.Builder builder = RaftServer.builder(nodeId)
-        .withClusterService(mock(ClusterService.class))
-        .withProtocol(protocolFactory.newServerProtocol(nodeId))
+  private RaftServer createServer(MemberId memberId) {
+    RaftServer.Builder builder = RaftServer.builder(memberId)
+        .withMembershipService(mock(ClusterMembershipService.class))
+        .withProtocol(protocolFactory.newServerProtocol(memberId))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
-            .withDirectory(new File(String.format("target/test-logs/%s", nodeId)))
+            .withDirectory(new File(String.format("target/test-logs/%s", memberId)))
             .withSerializer(storageSerializer)
             .withMaxSegmentSize(1024 * 10)
             .withMaxEntriesPerSegment(10)
@@ -1233,10 +1233,10 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a Raft client.
    */
   private RaftClient createClient() throws Throwable {
-    NodeId nodeId = nextNodeId();
+    MemberId memberId = nextNodeId();
     RaftClient client = RaftClient.builder()
-        .withNodeId(nodeId)
-        .withProtocol(protocolFactory.newClientProtocol(nodeId))
+        .withNodeId(memberId)
+        .withProtocol(protocolFactory.newClientProtocol(memberId))
         .build();
     client.connect(members.stream().map(RaftMember::nodeId).collect(Collectors.toList())).thenRun(this::resume);
     await(30000);
@@ -1422,17 +1422,17 @@ public class RaftTest extends ConcurrentTestCase {
    * Test member.
    */
   public static class TestMember implements RaftMember {
-    private final NodeId nodeId;
+    private final MemberId memberId;
     private final Type type;
 
-    TestMember(NodeId nodeId, Type type) {
-      this.nodeId = nodeId;
+    TestMember(MemberId memberId, Type type) {
+      this.memberId = memberId;
       this.type = type;
     }
 
     @Override
-    public NodeId nodeId() {
-      return nodeId;
+    public MemberId nodeId() {
+      return memberId;
     }
 
     @Override

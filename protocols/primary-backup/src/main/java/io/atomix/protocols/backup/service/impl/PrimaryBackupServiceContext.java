@@ -18,12 +18,12 @@ package io.atomix.protocols.backup.service.impl;
 
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroupService;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
@@ -70,7 +70,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class PrimaryBackupServiceContext implements ServiceContext {
   private final Logger log;
-  private final NodeId localNodeId;
+  private final MemberId localMemberId;
   private final String serverName;
   private final PrimitiveId primitiveId;
   private final PrimitiveType primitiveType;
@@ -78,12 +78,12 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private final PrimitiveService service;
   private final PrimaryBackupServiceSessions sessions = new PrimaryBackupServiceSessions();
   private final ThreadContext threadContext;
-  private final ClusterService clusterService;
+  private final ClusterMembershipService clusterMembershipService;
   private final MemberGroupService memberGroupService;
   private final PrimaryBackupServerProtocol protocol;
   private final PrimaryElection primaryElection;
-  private NodeId primary;
-  private List<NodeId> backups;
+  private MemberId primary;
+  private List<MemberId> backups;
   private long currentTerm;
   private long currentIndex;
   private Session currentSession;
@@ -113,18 +113,18 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       PrimitiveType<?, ?, ?> primitiveType,
       PrimitiveDescriptor descriptor,
       ThreadContext threadContext,
-      ClusterService clusterService,
+      ClusterMembershipService clusterMembershipService,
       MemberGroupService memberGroupService,
       PrimaryBackupServerProtocol protocol,
       PrimaryElection primaryElection) {
-    this.localNodeId = clusterService.getLocalNode().id();
+    this.localMemberId = clusterMembershipService.getLocalMember().id();
     this.serverName = checkNotNull(serverName);
     this.primitiveId = checkNotNull(primitiveId);
     this.primitiveType = checkNotNull(primitiveType);
     this.descriptor = checkNotNull(descriptor);
     this.service = primitiveType.serviceFactory().get();
     this.threadContext = checkNotNull(threadContext);
-    this.clusterService = checkNotNull(clusterService);
+    this.clusterMembershipService = checkNotNull(clusterMembershipService);
     this.memberGroupService = checkNotNull(memberGroupService);
     this.protocol = checkNotNull(protocol);
     this.primaryElection = checkNotNull(primaryElection);
@@ -133,7 +133,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
         .add("type", descriptor.type())
         .add("name", descriptor.name())
         .build());
-    clusterService.addListener(clusterEventListener);
+    clusterMembershipService.addListener(clusterEventListener);
     primaryElection.addListener(primaryElectionListener);
   }
 
@@ -179,8 +179,8 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    *
    * @return the local node ID
    */
-  public NodeId nodeId() {
-    return localNodeId;
+  public MemberId nodeId() {
+    return localMemberId;
   }
 
   /**
@@ -248,7 +248,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * @param term    the term to which to reset the current term
    * @param primary the primary for the given term
    */
-  public void resetTerm(long term, NodeId primary) {
+  public void resetTerm(long term, MemberId primary) {
     this.currentTerm = term;
     this.primary = primary;
   }
@@ -369,7 +369,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    *
    * @return the primary node
    */
-  public NodeId primary() {
+  public MemberId primary() {
     return primary;
   }
 
@@ -378,7 +378,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    *
    * @return the backup nodes
    */
-  public List<NodeId> backups() {
+  public List<MemberId> backups() {
     return backups;
   }
 
@@ -490,11 +490,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Creates a service session.
    *
    * @param sessionId the session to create
-   * @param nodeId    the owning node ID
+   * @param memberId    the owning node ID
    * @return the service session
    */
-  public PrimaryBackupSession createSession(long sessionId, NodeId nodeId) {
-    PrimaryBackupSession session = new PrimaryBackupSession(SessionId.from(sessionId), nodeId, this);
+  public PrimaryBackupSession createSession(long sessionId, MemberId memberId) {
+    PrimaryBackupSession session = new PrimaryBackupSession(SessionId.from(sessionId), memberId, this);
     sessions.openSession(session);
     return session;
   }
@@ -503,13 +503,13 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Gets or creates a service session.
    *
    * @param sessionId the session to create
-   * @param nodeId    the owning node ID
+   * @param memberId    the owning node ID
    * @return the service session
    */
-  public PrimaryBackupSession getOrCreateSession(long sessionId, NodeId nodeId) {
+  public PrimaryBackupSession getOrCreateSession(long sessionId, MemberId memberId) {
     PrimaryBackupSession session = sessions.getSession(sessionId);
     if (session == null) {
-      session = createSession(sessionId, nodeId);
+      session = createSession(sessionId, memberId);
     }
     return session;
   }
@@ -537,35 +537,35 @@ public class PrimaryBackupServiceContext implements ServiceContext {
       primary = term.primary() != null ? term.primary().nodeId() : null;
       backups = term.backups(descriptor.backups())
           .stream()
-          .map(Member::nodeId)
+          .map(GroupMember::nodeId)
           .collect(Collectors.toList());
 
-      if (Objects.equals(primary, clusterService.getLocalNode().id())) {
+      if (Objects.equals(primary, clusterMembershipService.getLocalMember().id())) {
         if (this.role == null) {
           this.role = new PrimaryRole(this);
-          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
+          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.PRIMARY);
         } else if (this.role.role() != Role.PRIMARY) {
           this.role.close();
           this.role = new PrimaryRole(this);
-          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.PRIMARY);
+          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.PRIMARY);
         }
-      } else if (backups.contains(clusterService.getLocalNode().id())) {
+      } else if (backups.contains(clusterMembershipService.getLocalMember().id())) {
         if (this.role == null) {
           this.role = new BackupRole(this);
-          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
+          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.BACKUP);
         } else if (this.role.role() != Role.BACKUP) {
           this.role.close();
           this.role = new BackupRole(this);
-          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.BACKUP);
+          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.BACKUP);
         }
       } else {
         if (this.role == null) {
           this.role = new NoneRole(this);
-          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.NONE);
         } else if (this.role.role() != Role.NONE) {
           this.role.close();
           this.role = new NoneRole(this);
-          log.debug("{} transitioning to {}", clusterService.getLocalNode().id(), Role.NONE);
+          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.NONE);
         }
       }
     }
@@ -575,7 +575,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Closes the service.
    */
   public CompletableFuture<Void> close() {
-    clusterService.removeListener(clusterEventListener);
+    clusterMembershipService.removeListener(clusterEventListener);
     primaryElection.removeListener(primaryElectionListener);
     return CompletableFuture.completedFuture(null);
   }

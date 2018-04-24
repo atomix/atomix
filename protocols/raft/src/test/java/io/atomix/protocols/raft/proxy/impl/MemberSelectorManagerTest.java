@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -39,8 +39,8 @@ public class MemberSelectorManagerTest {
     selectorManager.resetAll();
     assertNull(selectorManager.leader());
     assertEquals(0, selectorManager.members().size());
-    selectorManager.resetAll(NodeId.from("a"), Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
-    assertEquals(NodeId.from("a"), selectorManager.leader());
+    selectorManager.resetAll(MemberId.from("a"), Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
+    assertEquals(MemberId.from("a"), selectorManager.leader());
     assertEquals(3, selectorManager.members().size());
   }
 

@@ -17,9 +17,9 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.hash.Hashing;
 import io.atomix.cluster.ClusterEventListener;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.Node;
-import io.atomix.primitive.partition.Member;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroupId;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
@@ -41,21 +41,21 @@ public class HashBasedPrimaryElection
     implements PrimaryElection {
 
   private final PartitionId partitionId;
-  private final ClusterService clusterService;
+  private final ClusterMembershipService clusterMembershipService;
   private final HashBasedPrimaryElectionService electionService;
   private final ClusterEventListener clusterEventListener = e -> recomputeTerm();
   private volatile PrimaryTerm currentTerm;
 
-  public HashBasedPrimaryElection(PartitionId partitionId, ClusterService clusterService, HashBasedPrimaryElectionService electionService) {
+  public HashBasedPrimaryElection(PartitionId partitionId, ClusterMembershipService clusterMembershipService, HashBasedPrimaryElectionService electionService) {
     this.partitionId = partitionId;
-    this.clusterService = clusterService;
+    this.clusterMembershipService = clusterMembershipService;
     this.electionService = electionService;
     recomputeTerm();
-    clusterService.addListener(clusterEventListener);
+    clusterMembershipService.addListener(clusterEventListener);
   }
 
   @Override
-  public CompletableFuture<PrimaryTerm> enter(Member member) {
+  public CompletableFuture<PrimaryTerm> enter(GroupMember member) {
     return CompletableFuture.completedFuture(currentTerm);
   }
 
@@ -68,10 +68,10 @@ public class HashBasedPrimaryElection
    * Recomputes the current term.
    */
   private void recomputeTerm() {
-    List<Member> candidates = new ArrayList<>();
-    for (Node node : clusterService.getNodes()) {
-      if (node.getState() == Node.State.ACTIVE) {
-        candidates.add(new Member(node.id(), MemberGroupId.from(node.id().id())));
+    List<GroupMember> candidates = new ArrayList<>();
+    for (Member member : clusterMembershipService.getMembers()) {
+      if (member.getState() == Member.State.ACTIVE) {
+        candidates.add(new GroupMember(member.id(), MemberGroupId.from(member.id().id())));
       }
     }
     candidates.sort((a, b) -> {

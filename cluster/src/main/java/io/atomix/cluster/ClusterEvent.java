@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * Describes cluster-related event.
  */
-public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Node> {
+public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Member> {
 
   /**
    * Type of cluster-related events.
@@ -57,7 +57,7 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Node> {
    * @param type     cluster event type
    * @param instance cluster device subject
    */
-  public ClusterEvent(Type type, Node instance) {
+  public ClusterEvent(Type type, Member instance) {
     super(type, instance);
   }
 
@@ -68,7 +68,7 @@ public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Node> {
    * @param instance event device subject
    * @param time     occurrence time
    */
-  public ClusterEvent(Type type, Node instance, long time) {
+  public ClusterEvent(Type type, Member instance, long time) {
     super(type, instance, time);
   }
 

@@ -62,7 +62,7 @@ public final class FollowerRole extends ActiveRole {
 
   @Override
   public synchronized CompletableFuture<RaftRole> start() {
-    raft.getClusterService().addListener(clusterListener);
+    raft.getMembershipService().addListener(clusterListener);
     return super.start().thenRun(this::resetHeartbeatTimeout).thenApply(v -> this);
   }
 
@@ -231,7 +231,7 @@ public final class FollowerRole extends ActiveRole {
 
   @Override
   public synchronized CompletableFuture<Void> stop() {
-    raft.getClusterService().removeListener(clusterListener);
+    raft.getMembershipService().removeListener(clusterListener);
     return super.stop().thenRun(this::cancelHeartbeatTimers);
   }
 

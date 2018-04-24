@@ -26,8 +26,8 @@ import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
 import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ManagedPersistentMetadataService;
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.net.Address;
@@ -74,9 +74,9 @@ public class DefaultPersistentMetadataService
       KryoNamespace.builder()
           .register(KryoNamespaces.BASIC)
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
-          .register(ReplicatedNode.class)
-          .register(NodeId.class)
-          .register(Node.Type.class)
+          .register(ReplicatedMember.class)
+          .register(MemberId.class)
+          .register(Member.Type.class)
           .register(new AddressSerializer(), Address.class)
           .register(LogicalTimestamp.class)
           .register(NodeUpdate.class)
@@ -85,7 +85,7 @@ public class DefaultPersistentMetadataService
           .build("ClusterMetadataService"));
 
   private final Logger log = LoggerFactory.getLogger(getClass());
-  private final Map<NodeId, ReplicatedNode> nodes = Maps.newConcurrentMap();
+  private final Map<MemberId, ReplicatedMember> nodes = Maps.newConcurrentMap();
   private final MessagingService messagingService;
   private final LogicalClock clock = new LogicalClock();
   private final AtomicBoolean started = new AtomicBoolean();
@@ -97,7 +97,7 @@ public class DefaultPersistentMetadataService
   private ScheduledFuture<?> metadataFuture;
 
   public DefaultPersistentMetadataService(ClusterMetadata metadata, MessagingService messagingService) {
-    metadata.nodes().forEach(node -> nodes.put(node.id(), new ReplicatedNode(
+    metadata.nodes().forEach(node -> nodes.put(node.id(), new ReplicatedMember(
         node.id(),
         node.type(),
         node.address(),
@@ -119,19 +119,19 @@ public class DefaultPersistentMetadataService
   }
 
   @Override
-  public void addNode(Node node) {
-    if (node.type() == Node.Type.PERSISTENT) {
-      ReplicatedNode replicatedNode = nodes.get(node.id());
+  public void addNode(Member member) {
+    if (member.type() == Member.Type.PERSISTENT) {
+      ReplicatedMember replicatedNode = nodes.get(member.id());
       if (replicatedNode == null) {
         LogicalTimestamp timestamp = clock.increment();
-        replicatedNode = new ReplicatedNode(
-            node.id(),
-            node.type(),
-            node.address(),
-            node.zone(),
-            node.rack(),
-            node.host(),
-            node.tags(),
+        replicatedNode = new ReplicatedMember(
+            member.id(),
+            member.type(),
+            member.address(),
+            member.zone(),
+            member.rack(),
+            member.host(),
+            member.tags(),
             timestamp,
             false);
         nodes.put(replicatedNode.id(), replicatedNode);
@@ -142,18 +142,18 @@ public class DefaultPersistentMetadataService
   }
 
   @Override
-  public void removeNode(Node node) {
-    ReplicatedNode replicatedNode = nodes.get(node.id());
+  public void removeNode(Member member) {
+    ReplicatedMember replicatedNode = nodes.get(member.id());
     if (replicatedNode != null) {
       LogicalTimestamp timestamp = clock.increment();
-      replicatedNode = new ReplicatedNode(
-          node.id(),
-          node.type(),
-          node.address(),
-          node.zone(),
-          node.rack(),
-          node.host(),
-          node.tags(),
+      replicatedNode = new ReplicatedMember(
+          member.id(),
+          member.type(),
+          member.address(),
+          member.zone(),
+          member.rack(),
+          member.host(),
+          member.tags(),
           timestamp,
           true);
       nodes.put(replicatedNode.id(), replicatedNode);
@@ -167,7 +167,7 @@ public class DefaultPersistentMetadataService
    */
   private CompletableFuture<Void> bootstrap() {
     Set<Address> peers = nodes.values().stream()
-        .map(Node::address)
+        .map(Member::address)
         .filter(address -> !address.equals(messagingService.address()))
         .collect(Collectors.toSet());
     final int totalPeers = peers.size();
@@ -226,7 +226,7 @@ public class DefaultPersistentMetadataService
    */
   private void broadcastUpdate(NodeUpdate update) {
     nodes.values().stream()
-        .map(Node::address)
+        .map(Member::address)
         .filter(address -> !address.equals(messagingService.address()))
         .forEach(address -> sendUpdate(address, update));
   }
@@ -244,7 +244,7 @@ public class DefaultPersistentMetadataService
   private void handleUpdate(Address address, byte[] payload) {
     NodeUpdate update = SERIALIZER.decode(payload);
     clock.incrementAndUpdate(update.timestamp());
-    ReplicatedNode node = nodes.get(update.node().id());
+    ReplicatedMember node = nodes.get(update.node().id());
     if (node == null || node.timestamp().isOlderThan(update.timestamp())) {
       nodes.put(update.node().id(), update.node());
       post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
@@ -268,9 +268,9 @@ public class DefaultPersistentMetadataService
     messagingService.sendAndReceive(address, ADVERTISEMENT_MESSAGE, SERIALIZER.encode(advertisement))
         .whenComplete((response, error) -> {
           if (error == null) {
-            Set<NodeId> nodes = SERIALIZER.decode(response);
-            for (NodeId nodeId : nodes) {
-              ReplicatedNode node = this.nodes.get(nodeId);
+            Set<MemberId> nodes = SERIALIZER.decode(response);
+            for (MemberId memberId : nodes) {
+              ReplicatedMember node = this.nodes.get(memberId);
               if (node != null) {
                 sendUpdate(address, new NodeUpdate(node, clock.increment()));
               }
@@ -289,7 +289,7 @@ public class DefaultPersistentMetadataService
         .stream()
         .filter(replicatedNode -> !replicatedNode.tombstone() &&
             !replicatedNode.address().equals(messagingService.address()))
-        .map(Node::address)
+        .map(Member::address)
         .collect(Collectors.toList());
     Collections.shuffle(nodes);
     return nodes.stream().findFirst();
@@ -301,14 +301,14 @@ public class DefaultPersistentMetadataService
   private byte[] handleAdvertisement(Address address, byte[] payload) {
     LogicalTimestamp timestamp = clock.increment();
     ClusterMetadataAdvertisement advertisement = SERIALIZER.decode(payload);
-    Set<NodeId> staleNodes = nodes.values().stream().map(node -> {
+    Set<MemberId> staleNodes = nodes.values().stream().map(node -> {
       NodeDigest digest = advertisement.digest(node.id());
       if (digest == null || node.isNewerThan(digest.timestamp())) {
         sendUpdate(address, new NodeUpdate(node, timestamp));
       } else if (digest.isNewerThan(node.timestamp())) {
         if (digest.tombstone()) {
           if (!node.tombstone()) {
-            nodes.put(node.id(), new ReplicatedNode(
+            nodes.put(node.id(), new ReplicatedMember(
                 node.id(),
                 node.type(),
                 node.address(),

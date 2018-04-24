@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.proxy.PrimitiveProxy;
@@ -53,7 +53,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DefaultRaftClient implements RaftClient {
   private final String clientId;
-  private final Collection<NodeId> cluster;
+  private final Collection<MemberId> cluster;
   private final RaftClientProtocol protocol;
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext threadContext;
@@ -63,8 +63,8 @@ public class DefaultRaftClient implements RaftClient {
 
   public DefaultRaftClient(
       String clientId,
-      NodeId nodeId,
-      Collection<NodeId> cluster,
+      MemberId memberId,
+      Collection<MemberId> cluster,
       RaftClientProtocol protocol,
       ThreadContextFactory threadContextFactory) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
@@ -73,7 +73,7 @@ public class DefaultRaftClient implements RaftClient {
     this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
     this.threadContext = threadContextFactory.createContext();
     this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager, threadContextFactory.createContext());
-    this.sessionManager = new RaftProxyManager(clientId, nodeId, protocol, selectorManager, threadContextFactory);
+    this.sessionManager = new RaftProxyManager(clientId, memberId, protocol, selectorManager, threadContextFactory);
   }
 
   @Override
@@ -87,7 +87,7 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public NodeId leader() {
+  public MemberId leader() {
     return sessionManager.leader();
   }
 
@@ -97,7 +97,7 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public synchronized CompletableFuture<RaftClient> connect(Collection<NodeId> cluster) {
+  public synchronized CompletableFuture<RaftClient> connect(Collection<MemberId> cluster) {
     CompletableFuture<RaftClient> future = new CompletableFuture<>();
 
     // If the provided cluster list is null or empty, use the default list.
@@ -204,18 +204,18 @@ public class DefaultRaftClient implements RaftClient {
    * Default Raft client builder.
    */
   public static class Builder extends RaftClient.Builder {
-    public Builder(Collection<NodeId> cluster) {
+    public Builder(Collection<MemberId> cluster) {
       super(cluster);
     }
 
     @Override
     public RaftClient build() {
-      checkNotNull(nodeId, "nodeId cannot be null");
+      checkNotNull(memberId, "nodeId cannot be null");
       Logger log = ContextualLoggerFactory.getLogger(DefaultRaftClient.class, LoggerContext.builder(RaftClient.class)
           .addValue(clientId)
           .build());
       ThreadContextFactory threadContextFactory = threadModel.factory("raft-client-" + clientId + "-%d", threadPoolSize, log);
-      return new DefaultRaftClient(clientId, nodeId, cluster, protocol, threadContextFactory);
+      return new DefaultRaftClient(clientId, memberId, cluster, protocol, threadContextFactory);
     }
   }
 }

@@ -16,7 +16,7 @@
 package io.atomix.cluster;
 
 import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
-import io.atomix.cluster.impl.DefaultClusterService;
+import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.DefaultPersistentMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
@@ -89,7 +89,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   protected final ManagedBroadcastService broadcastService;
   protected final ManagedBootstrapMetadataService bootstrapMetadataService;
   protected final ManagedPersistentMetadataService persistentMetadataService;
-  protected final ManagedClusterService clusterService;
+  protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterMessagingService clusterMessagingService;
   protected final ManagedClusterEventingService clusterEventingService;
   protected volatile CompletableFuture openFuture;
@@ -110,9 +110,9 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
     this.broadcastService = buildBroadcastService(config);
     this.bootstrapMetadataService = buildBootstrapMetadataService(config);
     this.persistentMetadataService = buildPersistentMetadataService(config, messagingService);
-    this.clusterService = buildClusterService(config, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
-    this.clusterMessagingService = buildClusterMessagingService(clusterService, messagingService);
-    this.clusterEventingService = buildClusterEventService(clusterService, messagingService);
+    this.membershipService = buildClusterMembershipService(config, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
+    this.clusterMessagingService = buildClusterMessagingService(membershipService, messagingService);
+    this.clusterEventingService = buildClusterEventService(membershipService, messagingService);
   }
 
   /**
@@ -120,8 +120,8 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
    *
    * @return the cluster service
    */
-  public ClusterService clusterService() {
-    return clusterService;
+  public ClusterMembershipService membershipService() {
+    return membershipService;
   }
 
   /**
@@ -167,14 +167,14 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
         .thenComposeAsync(v -> broadcastService.start(), threadContext)
         .thenComposeAsync(v -> bootstrapMetadataService.start(), threadContext)
         .thenComposeAsync(v -> persistentMetadataService.start(), threadContext)
-        .thenComposeAsync(v -> clusterService.start(), threadContext)
+        .thenComposeAsync(v -> membershipService.start(), threadContext)
         .thenComposeAsync(v -> clusterMessagingService.start(), threadContext)
         .thenComposeAsync(v -> clusterEventingService.start(), threadContext)
         .thenApply(v -> null);
   }
 
   protected CompletableFuture<Void> joinCluster() {
-    persistentMetadataService.addNode(clusterService().getLocalNode());
+    persistentMetadataService.addNode(membershipService().getLocalMember());
     return CompletableFuture.completedFuture(null);
   }
 
@@ -202,7 +202,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   }
 
   protected CompletableFuture<Void> leaveCluster() {
-    persistentMetadataService.removeNode(clusterService().getLocalNode());
+    persistentMetadataService.removeNode(membershipService().getLocalMember());
     return CompletableFuture.completedFuture(null);
   }
 
@@ -211,7 +211,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
         .exceptionally(e -> null)
         .thenComposeAsync(v -> clusterEventingService.stop(), threadContext)
         .exceptionally(e -> null)
-        .thenComposeAsync(v -> clusterService.stop(), threadContext)
+        .thenComposeAsync(v -> membershipService.stop(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> persistentMetadataService.stop(), threadContext)
         .exceptionally(e -> null)
@@ -268,12 +268,12 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
    * Builds a bootstrap metadata service.
    */
   protected static ManagedBootstrapMetadataService buildBootstrapMetadataService(ClusterConfig config) {
-    boolean hasCoreNodes = config.getNodes().stream().anyMatch(node -> node.getType() == Node.Type.PERSISTENT);
+    boolean hasCoreNodes = config.getNodes().stream().anyMatch(node -> node.getType() == Member.Type.PERSISTENT);
     ClusterMetadata metadata = ClusterMetadata.builder()
         .withNodes(config.getNodes()
             .stream()
-            .filter(node -> (!hasCoreNodes && node.getType() == Node.Type.EPHEMERAL) || (hasCoreNodes && node.getType() == Node.Type.PERSISTENT))
-            .map(Node::new)
+            .filter(node -> (!hasCoreNodes && node.getType() == Member.Type.EPHEMERAL) || (hasCoreNodes && node.getType() == Member.Type.PERSISTENT))
+            .map(Member::new)
             .collect(Collectors.toList()))
         .build();
     return new DefaultBootstrapMetadataService(metadata);
@@ -286,8 +286,8 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
     ClusterMetadata metadata = ClusterMetadata.builder()
         .withNodes(config.getNodes()
             .stream()
-            .filter(node -> node.getType() == Node.Type.PERSISTENT)
-            .map(Node::new)
+            .filter(node -> node.getType() == Member.Type.PERSISTENT)
+            .map(Member::new)
             .collect(Collectors.toList()))
         .build();
     return new DefaultPersistentMetadataService(metadata, messagingService);
@@ -296,40 +296,40 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   /**
    * Builds a cluster service.
    */
-  protected static ManagedClusterService buildClusterService(
+  protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
       BootstrapMetadataService bootstrapMetadataService,
       PersistentMetadataService persistentMetadataService,
       MessagingService messagingService,
       BroadcastService broadcastService) {
     // If the local node has not be configured, create a default node.
-    Node localNode;
+    Member localMember;
     if (config.getLocalNode() == null) {
       Address address = Address.empty();
-      localNode = Node.builder(address.toString())
-          .withType(Node.Type.PERSISTENT)
+      localMember = Member.builder(address.toString())
+          .withType(Member.Type.PERSISTENT)
           .withAddress(address)
           .build();
     } else {
-      localNode = new Node(config.getLocalNode());
+      localMember = new Member(config.getLocalNode());
     }
-    return new DefaultClusterService(localNode, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
+    return new DefaultClusterMembershipService(localMember, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
   }
 
   /**
    * Builds a cluster messaging service.
    */
   protected static ManagedClusterMessagingService buildClusterMessagingService(
-      ClusterService clusterService, MessagingService messagingService) {
-    return new DefaultClusterMessagingService(clusterService, messagingService);
+      ClusterMembershipService membershipService, MessagingService messagingService) {
+    return new DefaultClusterMessagingService(membershipService, messagingService);
   }
 
   /**
    * Builds a cluster event service.
    */
   protected static ManagedClusterEventingService buildClusterEventService(
-      ClusterService clusterService, MessagingService messagingService) {
-    return new DefaultClusterEventingService(clusterService, messagingService);
+      ClusterMembershipService membershipService, MessagingService messagingService) {
+    return new DefaultClusterEventingService(membershipService, messagingService);
   }
 
   /**
@@ -360,32 +360,32 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
     /**
      * Sets the local node metadata.
      *
-     * @param localNode the local node metadata
+     * @param localMember the local node metadata
      * @return the cluster metadata builder
      */
-    public Builder withLocalNode(Node localNode) {
-      config.setLocalNode(localNode.config());
+    public Builder withLocalNode(Member localMember) {
+      config.setLocalNode(localMember.config());
       return this;
     }
 
     /**
      * Sets the core nodes.
      *
-     * @param coreNodes the core nodes
+     * @param coreMembers the core nodes
      * @return the Atomix builder
      */
-    public Builder withNodes(Node... coreNodes) {
-      return withNodes(Arrays.asList(checkNotNull(coreNodes)));
+    public Builder withNodes(Member... coreMembers) {
+      return withNodes(Arrays.asList(checkNotNull(coreMembers)));
     }
 
     /**
      * Sets the core nodes.
      *
-     * @param nodes the core nodes
+     * @param members the core nodes
      * @return the Atomix builder
      */
-    public Builder withNodes(Collection<Node> nodes) {
-      config.setNodes(nodes.stream().map(n -> n.config()).collect(Collectors.toList()));
+    public Builder withNodes(Collection<Member> members) {
+      config.setNodes(members.stream().map(n -> n.config()).collect(Collectors.toList()));
       return this;
     }
 

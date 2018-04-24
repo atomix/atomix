@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.partition.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
@@ -43,13 +43,13 @@ public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Manag
   private final Logger log = getLogger(getClass());
 
   private final RaftPartition partition;
-  private final NodeId localNodeId;
+  private final MemberId localMemberId;
   private final RaftClientProtocol protocol;
   private RaftClient client;
 
-  public RaftPartitionClient(RaftPartition partition, NodeId localNodeId, RaftClientProtocol protocol) {
+  public RaftPartitionClient(RaftPartition partition, MemberId localMemberId, RaftClientProtocol protocol) {
     this.partition = partition;
-    this.localNodeId = localNodeId;
+    this.localMemberId = localMemberId;
     this.protocol = protocol;
   }
 
@@ -67,7 +67,7 @@ public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Manag
    *
    * @return the partition leader
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return client != null ? client.leader() : null;
   }
 
@@ -120,7 +120,7 @@ public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Manag
   private RaftClient newRaftClient(RaftClientProtocol protocol) {
     return RaftClient.builder()
         .withClientId(partition.name())
-        .withNodeId(localNodeId)
+        .withNodeId(localMemberId)
         .withProtocol(protocol)
         .build();
   }

@@ -28,7 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Represents a controller instance as a member in a cluster.
  */
-public class Node implements Configured<NodeConfig> {
+public class Member implements Configured<MemberConfig> {
 
   /**
    * Returns a new node builder with no ID.
@@ -47,29 +47,29 @@ public class Node implements Configured<NodeConfig> {
    * @throws NullPointerException if the node ID is null
    */
   public static Builder builder(String nodeId) {
-    return builder(NodeId.from(nodeId));
+    return builder(MemberId.from(nodeId));
   }
 
   /**
    * Returns a new node builder.
    *
-   * @param nodeId the node identifier
+   * @param memberId the node identifier
    * @return the node builder
    * @throws NullPointerException if the node ID is null
    */
-  public static Builder builder(NodeId nodeId) {
-    return new Builder(checkNotNull(nodeId, "nodeId cannot be null"));
+  public static Builder builder(MemberId memberId) {
+    return new Builder(checkNotNull(memberId, "nodeId cannot be null"));
   }
 
   /**
    * Returns a new persistent node.
    *
-   * @param nodeId  the persistent node ID
+   * @param memberId  the persistent node ID
    * @param address the persistent node address
    * @return a new persistent node
    */
-  public static Node persistent(NodeId nodeId, Address address) {
-    return builder(nodeId)
+  public static Member persistent(MemberId memberId, Address address) {
+    return builder(memberId)
         .withType(Type.PERSISTENT)
         .withAddress(address)
         .build();
@@ -78,12 +78,12 @@ public class Node implements Configured<NodeConfig> {
   /**
    * Returns a new ephemeral node.
    *
-   * @param nodeId  the ephemeral node ID
+   * @param memberId  the ephemeral node ID
    * @param address the ephemeral node address
    * @return a new ephemeral node
    */
-  public static Node ephemeral(NodeId nodeId, Address address) {
-    return builder(nodeId)
+  public static Member ephemeral(MemberId memberId, Address address) {
+    return builder(memberId)
         .withType(Type.EPHEMERAL)
         .withAddress(address)
         .build();
@@ -122,7 +122,7 @@ public class Node implements Configured<NodeConfig> {
     INACTIVE,
   }
 
-  private final NodeId id;
+  private final MemberId id;
   private final Type type;
   private final Address address;
   private final String zone;
@@ -130,7 +130,7 @@ public class Node implements Configured<NodeConfig> {
   private final String host;
   private final Set<String> tags;
 
-  public Node(NodeConfig config) {
+  public Member(MemberConfig config) {
     this.id = checkNotNull(config.getId(), "id cannot be null");
     this.type = checkNotNull(config.getType(), "type cannot be null");
     this.address = checkNotNull(config.getAddress(), "address cannot be null");
@@ -140,7 +140,7 @@ public class Node implements Configured<NodeConfig> {
     this.tags = ImmutableSet.copyOf(config.getTags());
   }
 
-  protected Node(NodeId id, Type type, Address address, String zone, String rack, String host, Set<String> tags) {
+  protected Member(MemberId id, Type type, Address address, String zone, String rack, String host, Set<String> tags) {
     this.id = checkNotNull(id, "id cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
     this.address = checkNotNull(address, "address cannot be null");
@@ -155,7 +155,7 @@ public class Node implements Configured<NodeConfig> {
    *
    * @return instance identifier
    */
-  public NodeId id() {
+  public MemberId id() {
     return id;
   }
 
@@ -223,8 +223,8 @@ public class Node implements Configured<NodeConfig> {
   }
 
   @Override
-  public NodeConfig config() {
-    return new NodeConfig()
+  public MemberConfig config() {
+    return new MemberConfig()
         .setId(id)
         .setType(type)
         .setAddress(address)
@@ -241,7 +241,7 @@ public class Node implements Configured<NodeConfig> {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof Node && ((Node) object).id.equals(id);
+    return object instanceof Member && ((Member) object).id.equals(id);
   }
 
   @Override
@@ -260,10 +260,10 @@ public class Node implements Configured<NodeConfig> {
   /**
    * Node builder.
    */
-  public static class Builder implements io.atomix.utils.Builder<Node> {
-    protected final NodeConfig config = new NodeConfig();
+  public static class Builder implements io.atomix.utils.Builder<Member> {
+    protected final MemberConfig config = new MemberConfig();
 
-    protected Builder(NodeId id) {
+    protected Builder(MemberId id) {
       config.setId(id);
     }
 
@@ -273,7 +273,7 @@ public class Node implements Configured<NodeConfig> {
      * @param id the node identifier
      * @return the node builder
      */
-    public Builder withId(NodeId id) {
+    public Builder withId(MemberId id) {
       config.setId(id);
       return this;
     }
@@ -393,8 +393,8 @@ public class Node implements Configured<NodeConfig> {
     }
 
     @Override
-    public Node build() {
-      return new Node(config);
+    public Member build() {
+      return new Member(config);
     }
   }
 }

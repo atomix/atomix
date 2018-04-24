@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.serializer.Serializer;
@@ -31,20 +31,20 @@ import java.util.function.Function;
 public abstract class RaftMessagingProtocol {
   protected final MessagingService messagingService;
   protected final Serializer serializer;
-  private final Function<NodeId, Address> addressProvider;
+  private final Function<MemberId, Address> addressProvider;
 
-  public RaftMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<NodeId, Address> addressProvider) {
+  public RaftMessagingProtocol(MessagingService messagingService, Serializer serializer, Function<MemberId, Address> addressProvider) {
     this.messagingService = messagingService;
     this.serializer = serializer;
     this.addressProvider = addressProvider;
   }
 
-  protected Address address(NodeId nodeId) {
-    return addressProvider.apply(nodeId);
+  protected Address address(MemberId memberId) {
+    return addressProvider.apply(memberId);
   }
 
-  protected <T, U> CompletableFuture<U> sendAndReceive(NodeId nodeId, String type, T request) {
-    Address address = address(nodeId);
+  protected <T, U> CompletableFuture<U> sendAndReceive(MemberId memberId, String type, T request) {
+    Address address = address(memberId);
     if (address == null) {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -52,10 +52,10 @@ public abstract class RaftMessagingProtocol {
         .thenApply(serializer::decode);
   }
 
-  protected CompletableFuture<Void> sendAsync(NodeId nodeId, String type, Object request) {
-    Address address = address(nodeId);
+  protected CompletableFuture<Void> sendAsync(MemberId memberId, String type, Object request) {
+    Address address = address(memberId);
     if (address != null) {
-      return messagingService.sendAsync(address(nodeId), type, serializer.encode(request));
+      return messagingService.sendAsync(address(memberId), type, serializer.encode(request));
     }
     return CompletableFuture.completedFuture(null);
   }

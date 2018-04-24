@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.primitives.Longs;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -643,7 +643,7 @@ public class RaftServiceManager implements AutoCloseable {
     SessionId sessionId = SessionId.from(entry.index());
     RaftSession session = raft.getSessions().addSession(new RaftSession(
         sessionId,
-        NodeId.from(entry.entry().memberId()),
+        MemberId.from(entry.entry().memberId()),
         entry.entry().serviceName(),
         primitiveType,
         entry.entry().readConsistency(),

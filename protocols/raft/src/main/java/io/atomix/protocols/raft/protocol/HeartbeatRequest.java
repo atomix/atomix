@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -37,10 +37,10 @@ public class HeartbeatRequest extends AbstractRaftRequest {
     return new Builder();
   }
 
-  private final NodeId leader;
-  private final Collection<NodeId> members;
+  private final MemberId leader;
+  private final Collection<MemberId> members;
 
-  public HeartbeatRequest(NodeId leader, Collection<NodeId> members) {
+  public HeartbeatRequest(MemberId leader, Collection<MemberId> members) {
     this.leader = leader;
     this.members = members;
   }
@@ -50,7 +50,7 @@ public class HeartbeatRequest extends AbstractRaftRequest {
    *
    * @return The cluster leader.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -59,7 +59,7 @@ public class HeartbeatRequest extends AbstractRaftRequest {
    *
    * @return The cluster members.
    */
-  public Collection<NodeId> members() {
+  public Collection<MemberId> members() {
     return members;
   }
 
@@ -89,8 +89,8 @@ public class HeartbeatRequest extends AbstractRaftRequest {
    * Heartbeat request builder.
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, HeartbeatRequest> {
-    private NodeId leader;
-    private Collection<NodeId> members;
+    private MemberId leader;
+    private Collection<MemberId> members;
 
     /**
      * Sets the request leader.
@@ -98,7 +98,7 @@ public class HeartbeatRequest extends AbstractRaftRequest {
      * @param leader The request leader.
      * @return The request builder.
      */
-    public Builder withLeader(NodeId leader) {
+    public Builder withLeader(MemberId leader) {
       this.leader = leader;
       return this;
     }
@@ -110,7 +110,7 @@ public class HeartbeatRequest extends AbstractRaftRequest {
      * @return The request builder.
      * @throws NullPointerException if {@code members} is null
      */
-    public Builder withMembers(Collection<NodeId> members) {
+    public Builder withMembers(Collection<MemberId> members) {
       this.members = checkNotNull(members, "members cannot be null");
       return this;
     }

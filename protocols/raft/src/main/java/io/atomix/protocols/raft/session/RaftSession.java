@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.session;
 
 import com.google.common.collect.Lists;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationType;
@@ -57,7 +57,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class RaftSession implements Session {
   private final Logger log;
   private final SessionId sessionId;
-  private final NodeId member;
+  private final MemberId member;
   private final String name;
   private final PrimitiveType primitiveType;
   private final ReadConsistency readConsistency;
@@ -85,7 +85,7 @@ public class RaftSession implements Session {
 
   public RaftSession(
       SessionId sessionId,
-      NodeId member,
+      MemberId member,
       String name,
       PrimitiveType primitiveType,
       ReadConsistency readConsistency,
@@ -133,7 +133,7 @@ public class RaftSession implements Session {
   }
 
   @Override
-  public NodeId nodeId() {
+  public MemberId nodeId() {
     return member;
   }
 

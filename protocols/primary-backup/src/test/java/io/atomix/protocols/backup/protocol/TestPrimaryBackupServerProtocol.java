@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.backup.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
@@ -35,12 +35,12 @@ public class TestPrimaryBackupServerProtocol extends TestPrimaryBackupProtocol i
   private Function<RestoreRequest, CompletableFuture<RestoreResponse>> restoreHandler;
   private Function<MetadataRequest, CompletableFuture<MetadataResponse>> metadataHandler;
 
-  public TestPrimaryBackupServerProtocol(NodeId memberId, Map<NodeId, TestPrimaryBackupServerProtocol> servers, Map<NodeId, TestPrimaryBackupClientProtocol> clients) {
+  public TestPrimaryBackupServerProtocol(MemberId memberId, Map<MemberId, TestPrimaryBackupServerProtocol> servers, Map<MemberId, TestPrimaryBackupClientProtocol> clients) {
     super(servers, clients);
     servers.put(memberId, this);
   }
 
-  private CompletableFuture<TestPrimaryBackupServerProtocol> getServer(NodeId memberId) {
+  private CompletableFuture<TestPrimaryBackupServerProtocol> getServer(MemberId memberId) {
     TestPrimaryBackupServerProtocol server = server(memberId);
     if (server != null) {
       return Futures.completedFuture(server);
@@ -49,7 +49,7 @@ public class TestPrimaryBackupServerProtocol extends TestPrimaryBackupProtocol i
     }
   }
 
-  private CompletableFuture<TestPrimaryBackupClientProtocol> getClient(NodeId memberId) {
+  private CompletableFuture<TestPrimaryBackupClientProtocol> getClient(MemberId memberId) {
     TestPrimaryBackupClientProtocol client = client(memberId);
     if (client != null) {
       return Futures.completedFuture(client);
@@ -59,18 +59,18 @@ public class TestPrimaryBackupServerProtocol extends TestPrimaryBackupProtocol i
   }
 
   @Override
-  public CompletableFuture<BackupResponse> backup(NodeId nodeId, BackupRequest request) {
-    return getServer(nodeId).thenCompose(server -> server.backup(request));
+  public CompletableFuture<BackupResponse> backup(MemberId memberId, BackupRequest request) {
+    return getServer(memberId).thenCompose(server -> server.backup(request));
   }
 
   @Override
-  public CompletableFuture<RestoreResponse> restore(NodeId nodeId, RestoreRequest request) {
-    return getServer(nodeId).thenCompose(server -> server.restore(request));
+  public CompletableFuture<RestoreResponse> restore(MemberId memberId, RestoreRequest request) {
+    return getServer(memberId).thenCompose(server -> server.restore(request));
   }
 
   @Override
-  public void event(NodeId nodeId, SessionId session, PrimitiveEvent event) {
-    getClient(nodeId).thenAccept(client -> client.event(session, event));
+  public void event(MemberId memberId, SessionId session, PrimitiveEvent event) {
+    getClient(memberId).thenAccept(client -> client.event(session, event));
   }
 
   CompletableFuture<ExecuteResponse> execute(ExecuteRequest request) {

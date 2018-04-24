@@ -15,7 +15,7 @@
  */
 package io.atomix.core.election;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -40,12 +40,12 @@ public abstract class LeaderElectorBuilder<T>
       if (config == null) {
         serializer = Serializer.using(KryoNamespace.builder()
             .register(KryoNamespaces.BASIC)
-            .register(NodeId.class)
+            .register(MemberId.class)
             .build());
       } else {
         serializer = Serializer.using(KryoNamespace.builder()
             .register(KryoNamespaces.BASIC)
-            .register(NodeId.class)
+            .register(MemberId.class)
             .register(new KryoNamespace(config))
             .build());
       }

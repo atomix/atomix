@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.proxy.impl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.session.SessionId;
@@ -64,7 +64,7 @@ public class RaftProxyManager {
 
   private final Logger log;
   private final String clientId;
-  private final NodeId nodeId;
+  private final MemberId memberId;
   private final RaftClientProtocol protocol;
   private final RaftProxyConnection connection;
   private final ThreadContextFactory threadContextFactory;
@@ -74,9 +74,9 @@ public class RaftProxyManager {
   private final Map<Long, Scheduled> keepAliveTimers = new ConcurrentHashMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
 
-  public RaftProxyManager(String clientId, NodeId nodeId, RaftClientProtocol protocol, MemberSelectorManager selectorManager, ThreadContextFactory threadContextFactory) {
+  public RaftProxyManager(String clientId, MemberId memberId, RaftClientProtocol protocol, MemberSelectorManager selectorManager, ThreadContextFactory threadContextFactory) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
-    this.nodeId = checkNotNull(nodeId, "memberId cannot be null");
+    this.memberId = checkNotNull(memberId, "memberId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
     this.threadContext = threadContextFactory.createContext();
@@ -109,7 +109,7 @@ public class RaftProxyManager {
    *
    * @return the current leader
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return selectorManager.leader();
   }
 
@@ -126,7 +126,7 @@ public class RaftProxyManager {
    * @param leader  The leader address.
    * @param servers The collection of servers.
    */
-  public void resetConnections(NodeId leader, Collection<NodeId> servers) {
+  public void resetConnections(MemberId leader, Collection<MemberId> servers) {
     selectorManager.resetAll(leader, servers);
   }
 
@@ -164,7 +164,7 @@ public class RaftProxyManager {
 
     log.debug("Opening session; name: {}, type: {}", serviceName, primitiveType);
     OpenSessionRequest request = OpenSessionRequest.builder()
-        .withNodeId(nodeId)
+        .withNodeId(memberId)
         .withServiceName(serviceName)
         .withServiceType(primitiveType)
         .withReadConsistency(readConsistency)

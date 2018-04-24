@@ -15,9 +15,9 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeConfig;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberConfig;
+import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
@@ -48,14 +48,14 @@ public class AtomixAgent {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
-    Function<Node.Type, ArgumentType<NodeConfig>> nodeArgumentType = (type) -> (ArgumentParser argumentParser, Argument argument, String value) -> {
-      return new NodeConfig()
+    Function<Member.Type, ArgumentType<MemberConfig>> nodeArgumentType = (type) -> (ArgumentParser argumentParser, Argument argument, String value) -> {
+      return new MemberConfig()
           .setId(parseNodeId(value))
           .setType(type)
           .setAddress(parseAddress(value));
     };
 
-    ArgumentType<Node.Type> typeArgumentType = (argumentParser, argument, value) -> Node.Type.valueOf(value.toUpperCase());
+    ArgumentType<Member.Type> typeArgumentType = (argumentParser, argument, value) -> Member.Type.valueOf(value.toUpperCase());
     ArgumentType<Address> addressArgumentType = (argumentParser, argument, value) -> Address.from(value);
     ArgumentType<File> fileArgumentType = (argumentParser, argument, value) -> new File(value);
 
@@ -63,7 +63,7 @@ public class AtomixAgent {
         .defaultHelp(true)
         .description("Atomix server");
     parser.addArgument("node")
-        .type(nodeArgumentType.apply(Node.Type.PERSISTENT))
+        .type(nodeArgumentType.apply(Member.Type.PERSISTENT))
         .nargs("?")
         .metavar("NAME@HOST:PORT")
         .required(false)
@@ -73,8 +73,8 @@ public class AtomixAgent {
     parser.addArgument("--type", "-t")
         .type(typeArgumentType)
         .metavar("TYPE")
-        .choices(Node.Type.PERSISTENT, Node.Type.EPHEMERAL)
-        .setDefault(Node.Type.PERSISTENT)
+        .choices(Member.Type.PERSISTENT, Member.Type.EPHEMERAL)
+        .setDefault(Member.Type.PERSISTENT)
         .help("Indicates the local node type.");
     parser.addArgument("--config", "-c")
         .metavar("FILE|JSON|YAML")
@@ -82,14 +82,14 @@ public class AtomixAgent {
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
     parser.addArgument("--core-nodes", "-n")
         .nargs("*")
-        .type(nodeArgumentType.apply(Node.Type.PERSISTENT))
+        .type(nodeArgumentType.apply(Member.Type.PERSISTENT))
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The set of core nodes, if any. When bootstrapping a new cluster, if the local node is a core node " +
             "then it should be present in the core configuration as well.");
     parser.addArgument("--bootstrap-nodes", "-b")
         .nargs("*")
-        .type(nodeArgumentType.apply(Node.Type.EPHEMERAL))
+        .type(nodeArgumentType.apply(Member.Type.EPHEMERAL))
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The set of bootstrap nodes. If core nodes are provided, the cluster will be bootstrapped from the " +
@@ -119,10 +119,10 @@ public class AtomixAgent {
     }
 
     final String configString = namespace.get("config");
-    final NodeConfig localNode = namespace.get("node");
-    final Node.Type localNodeType = namespace.get("type");
-    final List<NodeConfig> coreNodes = namespace.getList("core_nodes");
-    final List<NodeConfig> bootstrapNodes = namespace.getList("bootstrap_nodes");
+    final MemberConfig localNode = namespace.get("node");
+    final Member.Type localNodeType = namespace.get("type");
+    final List<MemberConfig> coreNodes = namespace.getList("core_nodes");
+    final List<MemberConfig> bootstrapNodes = namespace.getList("bootstrap_nodes");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
     final Address multicastAddress = namespace.get("multicast_address");
     final Integer httpPort = namespace.getInt("http_port");
@@ -135,14 +135,14 @@ public class AtomixAgent {
         config.getClusterConfig().getNodes().stream()
             .filter(node -> node.getId().equals(localNode.getId()))
             .findAny()
-            .ifPresent(localNodeConfig -> {
+            .ifPresent(localMemberConfig -> {
               if (localNodeType == null) {
-                localNode.setType(localNodeConfig.getType());
+                localNode.setType(localMemberConfig.getType());
               }
-              localNode.setAddress(localNodeConfig.getAddress());
-              localNode.setZone(localNodeConfig.getZone());
-              localNode.setRack(localNodeConfig.getRack());
-              localNode.setHost(localNodeConfig.getHost());
+              localNode.setAddress(localMemberConfig.getAddress());
+              localNode.setZone(localMemberConfig.getZone());
+              localNode.setRack(localMemberConfig.getRack());
+              localNode.setHost(localMemberConfig.getHost());
             });
       }
       builder = Atomix.builder(config);
@@ -155,22 +155,22 @@ public class AtomixAgent {
     // If a local node was provided, add the local node to the builder.
     if (localNode != null) {
       localNode.setType(localNodeType);
-      Node node = new Node(localNode);
-      builder.withLocalNode(node);
-      LOGGER.info("node: {}", node);
+      Member member = new Member(localNode);
+      builder.withLocalNode(member);
+      LOGGER.info("node: {}", member);
     }
 
     // If a cluster configuration was provided, add all the cluster nodes to the builder.
     if (coreNodes != null || bootstrapNodes != null) {
-      List<Node> nodes = Stream.concat(
+      List<Member> members = Stream.concat(
           coreNodes != null ? coreNodes.stream() : Stream.empty(),
           bootstrapNodes != null ? bootstrapNodes.stream() : Stream.empty())
-          .map(node -> Node.builder(node.getId())
+          .map(node -> Member.builder(node.getId())
               .withType(node.getType())
               .withAddress(node.getAddress())
               .build())
           .collect(Collectors.toList());
-      builder.withNodes(nodes);
+      builder.withNodes(members);
     }
 
     // Enable multicast if provided.
@@ -185,16 +185,16 @@ public class AtomixAgent {
 
     atomix.start().join();
 
-    LOGGER.info("Atomix listening at {}:{}", atomix.clusterService().getLocalNode().address().host(), atomix.clusterService().getLocalNode().address().port());
+    LOGGER.info("Atomix listening at {}:{}", atomix.membershipService().getLocalMember().address().host(), atomix.membershipService().getLocalMember().address().port());
 
     ManagedRestService rest = RestService.builder()
         .withAtomix(atomix)
-        .withAddress(Address.from(atomix.clusterService().getLocalNode().address().host(), httpPort))
+        .withAddress(Address.from(atomix.membershipService().getLocalMember().address().host(), httpPort))
         .build();
 
     rest.start().join();
 
-    LOGGER.info("HTTP server listening at {}:{}", atomix.clusterService().getLocalNode().address().address().getHostAddress(), httpPort);
+    LOGGER.info("HTTP server listening at {}:{}", atomix.membershipService().getLocalMember().address().address().getHostAddress(), httpPort);
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {
@@ -215,15 +215,15 @@ public class AtomixAgent {
     }
   }
 
-  static NodeId parseNodeId(String address) {
+  static MemberId parseNodeId(String address) {
     int endIndex = address.indexOf('@');
     if (endIndex > 0) {
-      return NodeId.from(address.substring(0, endIndex));
+      return MemberId.from(address.substring(0, endIndex));
     } else {
       try {
-        return NodeId.from(Address.from(address).host());
+        return MemberId.from(Address.from(address).host());
       } catch (MalformedAddressException e) {
-        return NodeId.from(address);
+        return MemberId.from(address);
       }
     }
   }

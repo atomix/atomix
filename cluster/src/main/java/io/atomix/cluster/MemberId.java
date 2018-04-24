@@ -20,12 +20,12 @@ import io.atomix.utils.AbstractIdentifier;
 /**
  * Controller cluster identity.
  */
-public final class NodeId extends AbstractIdentifier<String> implements Comparable<NodeId> {
+public final class MemberId extends AbstractIdentifier<String> implements Comparable<MemberId> {
 
   /**
    * Constructor for serialization.
    */
-  private NodeId() {
+  private MemberId() {
     super("");
   }
 
@@ -34,7 +34,7 @@ public final class NodeId extends AbstractIdentifier<String> implements Comparab
    *
    * @param id string identifier
    */
-  public NodeId(String id) {
+  public MemberId(String id) {
     super(id);
   }
 
@@ -44,12 +44,12 @@ public final class NodeId extends AbstractIdentifier<String> implements Comparab
    * @param id string identifier
    * @return node id
    */
-  public static NodeId from(String id) {
-    return new NodeId(id);
+  public static MemberId from(String id) {
+    return new MemberId(id);
   }
 
   @Override
-  public int compareTo(NodeId that) {
+  public int compareTo(MemberId that) {
     return identifier.compareTo(that.identifier);
   }
 }

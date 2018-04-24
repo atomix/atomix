@@ -20,7 +20,7 @@ import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
 import io.atomix.cluster.ClusterMetadataService;
 import io.atomix.cluster.ManagedPersistentMetadataService;
-import io.atomix.cluster.Node;
+import io.atomix.cluster.Member;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
 import io.atomix.utils.concurrent.Futures;
 import org.junit.Test;
@@ -43,19 +43,19 @@ public class DefaultPersistentMetadataServiceTest {
 
     ClusterMetadata clusterMetadata = buildClusterMetadata(1);
 
-    Node localNode1 = buildNode(1, Node.Type.PERSISTENT);
+    Member localMember1 = buildNode(1, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService1 = new DefaultPersistentMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode1.address()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localMember1.address()).start().join());
 
     metadataService1.start().join();
 
     assertEquals(1, metadataService1.getMetadata().nodes().size());
 
-    Node localNode2 = buildNode(2, Node.Type.PERSISTENT);
+    Member localMember2 = buildNode(2, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService2 = new DefaultPersistentMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode2.address()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localMember2.address()).start().join());
     metadataService2.start().join();
-    metadataService2.addNode(localNode2);
+    metadataService2.addNode(localMember2);
 
     assertEquals(2, metadataService2.getMetadata().nodes().size());
   }
@@ -66,17 +66,17 @@ public class DefaultPersistentMetadataServiceTest {
 
     ClusterMetadata clusterMetadata = buildClusterMetadata(1, 2, 3);
 
-    Node localNode1 = buildNode(1, Node.Type.PERSISTENT);
+    Member localMember1 = buildNode(1, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService1 = new DefaultPersistentMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode1.address()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localMember1.address()).start().join());
 
-    Node localNode2 = buildNode(2, Node.Type.PERSISTENT);
+    Member localMember2 = buildNode(2, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService2 = new DefaultPersistentMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode2.address()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localMember2.address()).start().join());
 
-    Node localNode3 = buildNode(3, Node.Type.PERSISTENT);
+    Member localMember3 = buildNode(3, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService3 = new DefaultPersistentMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode3.address()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localMember3.address()).start().join());
 
     List<CompletableFuture<ClusterMetadataService>> futures = new ArrayList<>();
     futures.add(metadataService1.start());
@@ -88,9 +88,9 @@ public class DefaultPersistentMetadataServiceTest {
     assertEquals(3, metadataService2.getMetadata().nodes().size());
     assertEquals(3, metadataService3.getMetadata().nodes().size());
 
-    Node localNode4 = buildNode(4, Node.Type.PERSISTENT);
+    Member localMember4 = buildNode(4, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService4 = new DefaultPersistentMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode4.address()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localMember4.address()).start().join());
     metadataService4.start().join();
 
     assertEquals(3, metadataService4.getMetadata().nodes().size());
@@ -105,7 +105,7 @@ public class DefaultPersistentMetadataServiceTest {
     TestClusterMetadataEventListener remoteEventListener3 = new TestClusterMetadataEventListener();
     metadataService3.addListener(remoteEventListener3);
 
-    metadataService4.addNode(localNode4);
+    metadataService4.addNode(localMember4);
     assertEquals(4, metadataService4.getMetadata().nodes().size());
     assertEquals(4, localEventListener.event().subject().nodes().size());
 
@@ -118,25 +118,25 @@ public class DefaultPersistentMetadataServiceTest {
     assertEquals(4, remoteEventListener3.event().subject().nodes().size());
     assertEquals(4, metadataService3.getMetadata().nodes().size());
 
-    Node localNode5 = buildNode(5, Node.Type.PERSISTENT);
+    Member localMember5 = buildNode(5, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService5 = new DefaultPersistentMetadataService(
-        clusterMetadata, messagingServiceFactory.newMessagingService(localNode5.address()).start().join());
+        clusterMetadata, messagingServiceFactory.newMessagingService(localMember5.address()).start().join());
     metadataService5.start().join();
     assertEquals(4, metadataService5.getMetadata().nodes().size());
   }
 
-  private Node buildNode(int nodeId, Node.Type type) {
-    return Node.builder(String.valueOf(nodeId))
+  private Member buildNode(int nodeId, Member.Type type) {
+    return Member.builder(String.valueOf(nodeId))
         .withType(type)
         .withAddress("localhost", nodeId)
         .build();
   }
 
   private ClusterMetadata buildClusterMetadata(Integer... bootstrapNodes) {
-    List<Node> bootstrap = new ArrayList<>();
+    List<Member> bootstrap = new ArrayList<>();
     for (int bootstrapNode : bootstrapNodes) {
-      bootstrap.add(Node.builder(String.valueOf(bootstrapNode))
-          .withType(Node.Type.PERSISTENT)
+      bootstrap.add(Member.builder(String.valueOf(bootstrapNode))
+          .withType(Member.Type.PERSISTENT)
           .withAddress("localhost", bootstrapNode)
           .build());
     }

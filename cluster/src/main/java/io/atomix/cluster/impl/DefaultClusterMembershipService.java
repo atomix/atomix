@@ -23,11 +23,11 @@ import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
 import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.ManagedClusterService;
-import io.atomix.cluster.Node;
-import io.atomix.cluster.Node.State;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.ManagedClusterMembershipService;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.Member.State;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.PersistentMetadataService;
 import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.MessagingService;
@@ -61,11 +61,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Default cluster implementation.
  */
-public class DefaultClusterService
+public class DefaultClusterMembershipService
     extends AbstractListenerManager<ClusterEvent, ClusterEventListener>
-    implements ManagedClusterService {
+    implements ManagedClusterMembershipService {
 
-  private static final Logger LOGGER = getLogger(DefaultClusterService.class);
+  private static final Logger LOGGER = getLogger(DefaultClusterMembershipService.class);
 
   private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
@@ -80,22 +80,22 @@ public class DefaultClusterService
       KryoNamespace.builder()
           .register(KryoNamespaces.BASIC)
           .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
-          .register(NodeId.class)
-          .register(Node.Type.class)
-          .register(Node.State.class)
+          .register(MemberId.class)
+          .register(Member.Type.class)
+          .register(Member.State.class)
           .register(ClusterHeartbeat.class)
-          .register(StatefulNode.class)
+          .register(StatefulMember.class)
           .register(new DefaultPersistentMetadataService.AddressSerializer(), Address.class)
-          .build("ClusterService"));
+          .build("ClusterMembershipService"));
 
   private final MessagingService messagingService;
   private final BroadcastService broadcastService;
   private final BootstrapMetadataService bootstrapMetadataService;
   private final PersistentMetadataService persistentMetadataService;
   private final AtomicBoolean started = new AtomicBoolean();
-  private final StatefulNode localNode;
-  private final Map<NodeId, StatefulNode> nodes = Maps.newConcurrentMap();
-  private final Map<NodeId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
+  private final StatefulMember localNode;
+  private final Map<MemberId, StatefulMember> nodes = Maps.newConcurrentMap();
+  private final Map<MemberId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
   private final ClusterMetadataEventListener metadataEventListener = this::handleMetadataEvent;
   private final Consumer<byte[]> broadcastListener = this::handleBroadcastMessage;
 
@@ -105,8 +105,8 @@ public class DefaultClusterService
       namedThreads("atomix-cluster-heartbeat-receiver", LOGGER));
   private ScheduledFuture<?> heartbeatFuture;
 
-  public DefaultClusterService(
-      Node localNode,
+  public DefaultClusterMembershipService(
+      Member localMember,
       BootstrapMetadataService bootstrapMetadataService,
       PersistentMetadataService persistentMetadataService,
       MessagingService messagingService,
@@ -115,33 +115,33 @@ public class DefaultClusterService
     this.persistentMetadataService = checkNotNull(persistentMetadataService, "coreMetadataService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
     this.broadcastService = checkNotNull(broadcastService, "broadcastService cannot be null");
-    this.localNode = new StatefulNode(
-        localNode.id(),
-        localNode.type(),
-        localNode.address(),
-        localNode.zone(),
-        localNode.rack(),
-        localNode.host(),
-        localNode.tags());
+    this.localNode = new StatefulMember(
+        localMember.id(),
+        localMember.type(),
+        localMember.address(),
+        localMember.zone(),
+        localMember.rack(),
+        localMember.host(),
+        localMember.tags());
   }
 
   @Override
-  public Node getLocalNode() {
+  public Member getLocalMember() {
     return localNode;
   }
 
   @Override
-  public Set<Node> getNodes() {
+  public Set<Member> getMembers() {
     return ImmutableSet.copyOf(nodes.values()
         .stream()
-        .filter(node -> node.type() == Node.Type.PERSISTENT || node.getState() == State.ACTIVE)
+        .filter(node -> node.type() == Member.Type.PERSISTENT || node.getState() == State.ACTIVE)
         .collect(Collectors.toList()));
   }
 
   @Override
-  public Node getNode(NodeId nodeId) {
-    Node node = nodes.get(nodeId);
-    return node != null && (node.type() == Node.Type.PERSISTENT || node.getState() == State.ACTIVE) ? node : null;
+  public Member getMember(MemberId memberId) {
+    Member member = nodes.get(memberId);
+    return member != null && (member.type() == Member.Type.PERSISTENT || member.getState() == State.ACTIVE) ? member : null;
   }
 
   /**
@@ -155,7 +155,7 @@ public class DefaultClusterService
    * Handles a broadcast message.
    */
   private void handleBroadcastMessage(byte[] message) {
-    StatefulNode node = SERIALIZER.decode(message);
+    StatefulMember node = SERIALIZER.decode(message);
     if (nodes.putIfAbsent(node.id(), node) == null) {
       post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
       post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, node));
@@ -167,15 +167,15 @@ public class DefaultClusterService
    * Sends heartbeats to all peers.
    */
   private CompletableFuture<Void> sendHeartbeats() {
-    Stream<StatefulNode> clusterNodes = this.nodes.values()
+    Stream<StatefulMember> clusterNodes = this.nodes.values()
         .stream()
-        .filter(node -> !node.id().equals(getLocalNode().id()));
+        .filter(node -> !node.id().equals(getLocalMember().id()));
 
-    Stream<StatefulNode> bootstrapNodes = bootstrapMetadataService.getMetadata()
+    Stream<StatefulMember> bootstrapNodes = bootstrapMetadataService.getMetadata()
         .nodes()
         .stream()
-        .filter(node -> !node.id().equals(getLocalNode().id()) && !nodes.containsKey(node.id()))
-        .map(node -> new StatefulNode(
+        .filter(node -> !node.id().equals(getLocalMember().id()) && !nodes.containsKey(node.id()))
+        .map(node -> new StatefulMember(
             node.id(),
             node.type(),
             node.address(),
@@ -216,9 +216,9 @@ public class DefaultClusterService
   private CompletableFuture<Void> sendHeartbeat(Address address, byte[] payload) {
     return messagingService.sendAndReceive(address, HEARTBEAT_MESSAGE, payload).whenComplete((response, error) -> {
       if (error == null) {
-        Collection<StatefulNode> nodes = SERIALIZER.decode(response);
+        Collection<StatefulMember> nodes = SERIALIZER.decode(response);
         boolean sendHeartbeats = false;
-        for (StatefulNode node : nodes) {
+        for (StatefulMember node : nodes) {
           if (this.nodes.putIfAbsent(node.id(), node) == null) {
             post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, node));
             post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, node));
@@ -242,7 +242,7 @@ public class DefaultClusterService
     ClusterHeartbeat heartbeat = SERIALIZER.decode(message);
     LOGGER.trace("{} - Received heartbeat: {}", localNode.id(), heartbeat.nodeId());
     failureDetectors.computeIfAbsent(heartbeat.nodeId(), n -> new PhiAccrualFailureDetector()).report();
-    activateNode(new StatefulNode(
+    activateNode(new StatefulMember(
         heartbeat.nodeId(),
         heartbeat.nodeType(),
         address,
@@ -251,30 +251,30 @@ public class DefaultClusterService
         heartbeat.host(),
         heartbeat.tags()));
     return SERIALIZER.encode(nodes.values().stream()
-        .filter(node -> node.type() == Node.Type.EPHEMERAL)
+        .filter(node -> node.type() == Member.Type.EPHEMERAL)
         .collect(Collectors.toList()));
   }
 
   /**
    * Activates the given node.
    */
-  private void activateNode(Node node) {
-    StatefulNode existingNode = nodes.get(node.id());
+  private void activateNode(Member member) {
+    StatefulMember existingNode = nodes.get(member.id());
     if (existingNode == null) {
-      StatefulNode statefulNode = new StatefulNode(
-          node.id(),
-          node.type(),
-          node.address(),
-          node.zone(),
-          node.rack(),
-          node.host(),
-          node.tags());
+      StatefulMember statefulNode = new StatefulMember(
+          member.id(),
+          member.type(),
+          member.address(),
+          member.zone(),
+          member.rack(),
+          member.host(),
+          member.tags());
       LOGGER.info("{} - Node activated: {}", localNode.id(), statefulNode);
       statefulNode.setState(State.ACTIVE);
       nodes.put(statefulNode.id(), statefulNode);
       post(new ClusterEvent(ClusterEvent.Type.NODE_ADDED, statefulNode));
       post(new ClusterEvent(ClusterEvent.Type.NODE_ACTIVATED, statefulNode));
-      sendHeartbeat(node.address(), SERIALIZER.encode(new ClusterHeartbeat(
+      sendHeartbeat(member.address(), SERIALIZER.encode(new ClusterHeartbeat(
           localNode.id(),
           localNode.type(),
           localNode.zone(),
@@ -291,8 +291,8 @@ public class DefaultClusterService
   /**
    * Deactivates the given node.
    */
-  private void deactivateNode(Node node) {
-    StatefulNode existingNode = nodes.get(node.id());
+  private void deactivateNode(Member member) {
+    StatefulMember existingNode = nodes.get(member.id());
     if (existingNode != null && existingNode.getState() == State.ACTIVE) {
       LOGGER.info("{} - Node deactivated: {}", localNode.id(), existingNode);
       existingNode.setState(State.INACTIVE);
@@ -316,11 +316,11 @@ public class DefaultClusterService
   private void handleMetadataEvent(ClusterMetadataEvent event) {
     // Iterate through all bootstrap nodes and add any missing data nodes, triggering NODE_ADDED events.
     // Collect the bootstrap node IDs into a set.
-    Set<NodeId> bootstrapNodes = event.subject().nodes().stream()
+    Set<MemberId> bootstrapNodes = event.subject().nodes().stream()
         .map(node -> {
-          StatefulNode existingNode = nodes.get(node.id());
+          StatefulMember existingNode = nodes.get(node.id());
           if (existingNode == null) {
-            StatefulNode newNode = new StatefulNode(
+            StatefulMember newNode = new StatefulMember(
                 node.id(),
                 node.type(),
                 node.address(),
@@ -335,17 +335,17 @@ public class DefaultClusterService
         }).collect(Collectors.toSet());
 
     // Filter the set of core node IDs from the local node information.
-    Set<NodeId> dataNodes = nodes.entrySet().stream()
-        .filter(entry -> entry.getValue().type() == Node.Type.PERSISTENT)
+    Set<MemberId> dataNodes = nodes.entrySet().stream()
+        .filter(entry -> entry.getValue().type() == Member.Type.PERSISTENT)
         .map(entry -> entry.getKey())
         .collect(Collectors.toSet());
 
     // Compute the set of local data nodes missing in the set of bootstrap nodes.
-    Set<NodeId> missingNodes = Sets.difference(dataNodes, bootstrapNodes);
+    Set<MemberId> missingNodes = Sets.difference(dataNodes, bootstrapNodes);
 
     // For each missing data node, remove the node and trigger a NODE_REMOVED event.
-    for (NodeId nodeId : missingNodes) {
-      StatefulNode existingNode = nodes.remove(nodeId);
+    for (MemberId memberId : missingNodes) {
+      StatefulMember existingNode = nodes.remove(memberId);
       if (existingNode != null) {
         post(new ClusterEvent(ClusterEvent.Type.NODE_REMOVED, existingNode));
       }
@@ -353,7 +353,7 @@ public class DefaultClusterService
   }
 
   @Override
-  public CompletableFuture<ClusterService> start() {
+  public CompletableFuture<ClusterMembershipService> start() {
     if (started.compareAndSet(false, true)) {
       persistentMetadataService.addListener(metadataEventListener);
       broadcastService.addListener(broadcastListener);
@@ -361,7 +361,7 @@ public class DefaultClusterService
       localNode.setState(State.ACTIVE);
       nodes.put(localNode.id(), localNode);
       persistentMetadataService.getMetadata().nodes()
-          .forEach(node -> nodes.putIfAbsent(node.id(), new StatefulNode(
+          .forEach(node -> nodes.putIfAbsent(node.id(), new StatefulMember(
               node.id(),
               node.type(),
               node.address(),

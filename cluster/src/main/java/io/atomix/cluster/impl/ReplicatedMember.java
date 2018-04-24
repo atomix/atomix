@@ -15,8 +15,8 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.Timestamp;
@@ -28,12 +28,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Default cluster node.
  */
-public class ReplicatedNode extends Node {
+public class ReplicatedMember extends Member {
   private final LogicalTimestamp timestamp;
   private final boolean tombstone;
 
-  public ReplicatedNode(
-      NodeId id,
+  public ReplicatedMember(
+      MemberId id,
       Type type,
       Address address,
       String zone,

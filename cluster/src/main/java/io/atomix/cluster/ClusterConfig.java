@@ -31,8 +31,8 @@ public class ClusterConfig implements Config {
   private static final int DEFAULT_MULTICAST_PORT = 54321;
 
   private String name = DEFAULT_CLUSTER_NAME;
-  private NodeConfig localNode;
-  private Collection<NodeConfig> nodes = new ArrayList<>();
+  private MemberConfig localNode;
+  private Collection<MemberConfig> nodes = new ArrayList<>();
   private boolean multicastEnabled = false;
   private Address multicastAddress;
 
@@ -69,7 +69,7 @@ public class ClusterConfig implements Config {
    *
    * @return the local node configuration
    */
-  public NodeConfig getLocalNode() {
+  public MemberConfig getLocalNode() {
     return localNode;
   }
 
@@ -79,7 +79,7 @@ public class ClusterConfig implements Config {
    * @param localNode the local node configuration
    * @return the cluster configuration
    */
-  public ClusterConfig setLocalNode(NodeConfig localNode) {
+  public ClusterConfig setLocalNode(MemberConfig localNode) {
     this.localNode = localNode;
     return this;
   }
@@ -89,7 +89,7 @@ public class ClusterConfig implements Config {
    *
    * @return the cluster nodes
    */
-  public Collection<NodeConfig> getNodes() {
+  public Collection<MemberConfig> getNodes() {
     return nodes;
   }
 
@@ -99,7 +99,7 @@ public class ClusterConfig implements Config {
    * @param nodes the cluster nodes
    * @return the cluster configuration
    */
-  public ClusterConfig setNodes(Collection<NodeConfig> nodes) {
+  public ClusterConfig setNodes(Collection<MemberConfig> nodes) {
     this.nodes = nodes;
     return this;
   }

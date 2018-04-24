@@ -18,9 +18,9 @@ package io.atomix.protocols.raft.partition;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.Partition;
@@ -147,11 +147,11 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     this.managementService = managementService;
 
     // Ensure the Raft group membership intersects with persistent cluster membership.
-    if (!validateMembership(managementService.getClusterService())) {
+    if (!validateMembership(managementService.getMembershipService())) {
       return Futures.exceptionalFuture(new ConfigurationException("Raft partition group must be configured with persistent membership"));
     }
 
-    this.metadata = buildPartitions(managementService.getClusterService());
+    this.metadata = buildPartitions(managementService.getMembershipService());
     List<CompletableFuture<Partition>> futures = metadata.stream()
         .map(metadata -> {
           RaftPartition partition = partitions.get(metadata.id());
@@ -169,25 +169,25 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     return join(managementService);
   }
 
-  private boolean validateMembership(ClusterService clusterService) {
+  private boolean validateMembership(ClusterMembershipService membershipService) {
     if (config.getMembers().isEmpty()) {
       return false;
     }
 
     for (String member : config.getMembers()) {
-      Node node = clusterService.getNode(member);
-      if (node == null || node.type() != Node.Type.PERSISTENT) {
+      Member node = membershipService.getMember(member);
+      if (node == null || node.type() != Member.Type.PERSISTENT) {
         return false;
       }
     }
     return true;
   }
 
-  private Collection<PartitionMetadata> buildPartitions(ClusterService clusterService) {
-    List<NodeId> sorted = new ArrayList<>(clusterService.getNodes().stream()
-        .filter(node -> node.type() == Node.Type.PERSISTENT)
+  private Collection<PartitionMetadata> buildPartitions(ClusterMembershipService membershipService) {
+    List<MemberId> sorted = new ArrayList<>(membershipService.getMembers().stream()
+        .filter(node -> node.type() == Member.Type.PERSISTENT)
         .filter(node -> config.getMembers().contains(node.id().id()))
-        .map(Node::id)
+        .map(Member::id)
         .collect(Collectors.toSet()));
     Collections.sort(sorted);
 
@@ -202,7 +202,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     Set<PartitionMetadata> metadata = Sets.newHashSet();
     for (int i = 0; i < partitions.size(); i++) {
       PartitionId partitionId = sortedPartitionIds.get(i);
-      Set<NodeId> set = new HashSet<>(count);
+      Set<MemberId> set = new HashSet<>(count);
       for (int j = 0; j < count; j++) {
         set.add(sorted.get((i + j) % length));
       }
@@ -255,7 +255,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the Raft partition group builder
      * @throws NullPointerException if the members are null
      */
-    public Builder withMembers(NodeId... members) {
+    public Builder withMembers(MemberId... members) {
       return withMembers(Stream.of(members).map(nodeId -> nodeId.id()).collect(Collectors.toList()));
     }
 
@@ -266,7 +266,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the Raft partition group builder
      * @throws NullPointerException if the members are null
      */
-    public Builder withMembers(Node... members) {
+    public Builder withMembers(Member... members) {
       return withMembers(Stream.of(members).map(node -> node.id().id()).collect(Collectors.toList()));
     }
 

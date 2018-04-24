@@ -15,7 +15,7 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.Node;
+import io.atomix.cluster.Member;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -47,7 +47,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
    * @return a new Atomix instance.
    */
   protected Atomix atomix() throws Exception {
-    Atomix instance = createAtomix(Node.Type.EPHEMERAL, id++, Arrays.asList(1, 2, 3), Arrays.asList()).start().get(10, TimeUnit.SECONDS);
+    Atomix instance = createAtomix(Member.Type.EPHEMERAL, id++, Arrays.asList(1, 2, 3), Arrays.asList()).start().get(10, TimeUnit.SECONDS);
     instances.add(instance);
     return instance;
   }
@@ -56,9 +56,9 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   public static void setupAtomix() throws Exception {
     AbstractAtomixTest.setupAtomix();
     instances = new ArrayList<>();
-    instances.add(createAtomix(Node.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
-    instances.add(createAtomix(Node.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
-    instances.add(createAtomix(Node.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
     List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::start).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }

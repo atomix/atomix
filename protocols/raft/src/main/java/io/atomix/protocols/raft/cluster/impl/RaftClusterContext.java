@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.cluster.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftCluster;
@@ -61,7 +61,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   private final RaftContext raft;
   private final DefaultRaftMember member;
   private volatile Configuration configuration;
-  private final Map<NodeId, RaftMemberContext> membersMap = new ConcurrentHashMap<>();
+  private final Map<MemberId, RaftMemberContext> membersMap = new ConcurrentHashMap<>();
   private final Set<RaftMember> members = new CopyOnWriteArraySet<>();
   private final List<RaftMemberContext> remoteMembers = new CopyOnWriteArrayList<>();
   private final Map<RaftMember.Type, List<RaftMemberContext>> memberTypes = new HashMap<>();
@@ -71,9 +71,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   private volatile CompletableFuture<Void> leaveFuture;
   private final Set<RaftClusterEventListener> listeners = new CopyOnWriteArraySet<>();
 
-  public RaftClusterContext(NodeId localNodeId, RaftContext raft) {
+  public RaftClusterContext(MemberId localMemberId, RaftContext raft) {
     Instant time = Instant.now();
-    this.member = new DefaultRaftMember(localNodeId, RaftMember.Type.PASSIVE, time).setCluster(this);
+    this.member = new DefaultRaftMember(localMemberId, RaftMember.Type.PASSIVE, time).setCluster(this);
     this.raft = checkNotNull(raft, "context cannot be null");
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(raft.getName())
@@ -159,7 +159,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   }
 
   @Override
-  public DefaultRaftMember getMember(NodeId id) {
+  public DefaultRaftMember getMember(MemberId id) {
     if (member.nodeId().equals(id)) {
       return member;
     }
@@ -191,7 +191,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
    * @param id The member ID.
    * @return The member state.
    */
-  public RaftMemberContext getMemberState(NodeId id) {
+  public RaftMemberContext getMemberState(MemberId id) {
     return membersMap.get(id);
   }
 
@@ -201,7 +201,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
    * @param id The member ID.
    * @return The member.
    */
-  public DefaultRaftMember getRemoteMember(NodeId id) {
+  public DefaultRaftMember getRemoteMember(MemberId id) {
     RaftMemberContext member = membersMap.get(id);
     return member != null ? member.getMember() : null;
   }
@@ -269,7 +269,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   }
 
   @Override
-  public CompletableFuture<Void> bootstrap(Collection<NodeId> cluster) {
+  public CompletableFuture<Void> bootstrap(Collection<MemberId> cluster) {
     if (joinFuture != null)
       return joinFuture;
 
@@ -292,7 +292,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   }
 
   @Override
-  public synchronized CompletableFuture<Void> listen(Collection<NodeId> cluster) {
+  public synchronized CompletableFuture<Void> listen(Collection<MemberId> cluster) {
     if (joinFuture != null)
       return joinFuture;
 
@@ -320,7 +320,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   }
 
   @Override
-  public synchronized CompletableFuture<Void> join(Collection<NodeId> cluster) {
+  public synchronized CompletableFuture<Void> join(Collection<MemberId> cluster) {
     if (joinFuture != null)
       return joinFuture;
 

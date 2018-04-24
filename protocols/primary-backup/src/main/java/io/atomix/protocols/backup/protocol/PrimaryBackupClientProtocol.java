@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.backup.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
 
@@ -31,29 +31,29 @@ public interface PrimaryBackupClientProtocol {
   /**
    * Sends an execute request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<ExecuteResponse> execute(NodeId nodeId, ExecuteRequest request);
+  CompletableFuture<ExecuteResponse> execute(MemberId memberId, ExecuteRequest request);
 
   /**
    * Sends a metadata request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request);
+  CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request);
 
   /**
    * Sends a close request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<CloseResponse> close(NodeId nodeId, CloseRequest request);
+  CompletableFuture<CloseResponse> close(MemberId memberId, CloseRequest request);
 
   /**
    * Registers a publish request listener.

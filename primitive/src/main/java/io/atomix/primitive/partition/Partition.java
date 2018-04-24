@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveClient;
 
 import java.util.Collection;
@@ -44,14 +44,14 @@ public interface Partition {
    *
    * @return the partition's current primary
    */
-  NodeId primary();
+  MemberId primary();
 
   /**
    * Returns the partition's backups.
    *
    * @return the partition's backups
    */
-  Collection<NodeId> backups();
+  Collection<MemberId> backups();
 
   /**
    * Returns the primitive client for the partition.

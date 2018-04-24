@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.cluster.Node;
+import io.atomix.cluster.Member;
 
 /**
  * Partition member group.
@@ -35,9 +35,9 @@ public interface MemberGroup {
   /**
    * Returns a boolean indicating whether the given node is a member of the group.
    *
-   * @param node the node to check
+   * @param member the node to check
    * @return indicates whether the given node is a member of the group
    */
-  boolean isMember(Node node);
+  boolean isMember(Member member);
 
 }

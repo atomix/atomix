@@ -17,7 +17,7 @@ package io.atomix.protocols.backup.partition.impl;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.messaging.MessagingException;
 import io.atomix.primitive.PrimitiveException;
@@ -50,9 +50,9 @@ public class PrimaryBackupClientCommunicator implements PrimaryBackupClientProto
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, NodeId nodeId) {
+  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, MemberId memberId) {
     CompletableFuture<U> future = new CompletableFuture<>();
-    clusterCommunicator.<T, U>send(subject, request, serializer::encode, serializer::decode, nodeId).whenComplete((result, error) -> {
+    clusterCommunicator.<T, U>send(subject, request, serializer::encode, serializer::decode, memberId).whenComplete((result, error) -> {
       if (error == null) {
         future.complete(result);
       } else {
@@ -68,18 +68,18 @@ public class PrimaryBackupClientCommunicator implements PrimaryBackupClientProto
   }
 
   @Override
-  public CompletableFuture<ExecuteResponse> execute(NodeId nodeId, ExecuteRequest request) {
-    return sendAndReceive(context.executeSubject, request, nodeId);
+  public CompletableFuture<ExecuteResponse> execute(MemberId memberId, ExecuteRequest request) {
+    return sendAndReceive(context.executeSubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request) {
-    return sendAndReceive(context.metadataSubject, request, nodeId);
+  public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
+    return sendAndReceive(context.metadataSubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<CloseResponse> close(NodeId nodeId, CloseRequest request) {
-    return sendAndReceive(context.closeSubject, request, nodeId);
+  public CompletableFuture<CloseResponse> close(MemberId memberId, CloseRequest request) {
+    return sendAndReceive(context.closeSubject, request, memberId);
   }
 
   @Override

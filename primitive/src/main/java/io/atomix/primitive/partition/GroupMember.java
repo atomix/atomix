@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 
 import java.util.Objects;
 
@@ -24,15 +24,15 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Primary election member.
  * <p>
- * A member represents a tuple of {@link NodeId} and {@link MemberGroupId} which can be used to prioritize members
+ * A member represents a tuple of {@link MemberId} and {@link MemberGroupId} which can be used to prioritize members
  * during primary elections.
  */
-public class Member {
-  private final NodeId nodeId;
+public class GroupMember {
+  private final MemberId memberId;
   private final MemberGroupId groupId;
 
-  public Member(NodeId nodeId, MemberGroupId groupId) {
-    this.nodeId = nodeId;
+  public GroupMember(MemberId memberId, MemberGroupId groupId) {
+    this.memberId = memberId;
     this.groupId = groupId;
   }
 
@@ -41,8 +41,8 @@ public class Member {
    *
    * @return the member node ID
    */
-  public NodeId nodeId() {
-    return nodeId;
+  public MemberId nodeId() {
+    return memberId;
   }
 
   /**
@@ -56,14 +56,14 @@ public class Member {
 
   @Override
   public int hashCode() {
-    return Objects.hash(nodeId, groupId);
+    return Objects.hash(memberId, groupId);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof Member) {
-      Member member = (Member) object;
-      return member.nodeId.equals(nodeId) && member.groupId.equals(groupId);
+    if (object instanceof GroupMember) {
+      GroupMember member = (GroupMember) object;
+      return member.memberId.equals(memberId) && member.groupId.equals(groupId);
     }
     return false;
   }
@@ -71,7 +71,7 @@ public class Member {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("nodeId", nodeId)
+        .add("nodeId", memberId)
         .add("groupId", groupId)
         .toString();
   }

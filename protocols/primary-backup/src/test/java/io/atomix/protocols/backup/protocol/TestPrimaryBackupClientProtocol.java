@@ -16,7 +16,7 @@
 package io.atomix.protocols.backup.protocol;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
@@ -33,12 +33,12 @@ import java.util.function.Consumer;
 public class TestPrimaryBackupClientProtocol extends TestPrimaryBackupProtocol implements PrimaryBackupClientProtocol {
   private final Map<SessionId, Consumer<PrimitiveEvent>> eventListeners = Maps.newConcurrentMap();
 
-  public TestPrimaryBackupClientProtocol(NodeId memberId, Map<NodeId, TestPrimaryBackupServerProtocol> servers, Map<NodeId, TestPrimaryBackupClientProtocol> clients) {
+  public TestPrimaryBackupClientProtocol(MemberId memberId, Map<MemberId, TestPrimaryBackupServerProtocol> servers, Map<MemberId, TestPrimaryBackupClientProtocol> clients) {
     super(servers, clients);
     clients.put(memberId, this);
   }
 
-  private CompletableFuture<TestPrimaryBackupServerProtocol> getServer(NodeId memberId) {
+  private CompletableFuture<TestPrimaryBackupServerProtocol> getServer(MemberId memberId) {
     TestPrimaryBackupServerProtocol server = server(memberId);
     if (server != null) {
       return Futures.completedFuture(server);
@@ -48,18 +48,18 @@ public class TestPrimaryBackupClientProtocol extends TestPrimaryBackupProtocol i
   }
 
   @Override
-  public CompletableFuture<ExecuteResponse> execute(NodeId nodeId, ExecuteRequest request) {
-    return getServer(nodeId).thenCompose(server -> server.execute(request));
+  public CompletableFuture<ExecuteResponse> execute(MemberId memberId, ExecuteRequest request) {
+    return getServer(memberId).thenCompose(server -> server.execute(request));
   }
 
   @Override
-  public CompletableFuture<CloseResponse> close(NodeId nodeId, CloseRequest request) {
-    return getServer(nodeId).thenCompose(server -> server.close(request));
+  public CompletableFuture<CloseResponse> close(MemberId memberId, CloseRequest request) {
+    return getServer(memberId).thenCompose(server -> server.close(request));
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request) {
-    return getServer(nodeId).thenCompose(server -> server.metadata(request));
+  public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
+    return getServer(memberId).thenCompose(server -> server.metadata(request));
   }
 
   @Override

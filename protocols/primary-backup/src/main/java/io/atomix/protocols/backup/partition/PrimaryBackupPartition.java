@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.backup.partition;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
@@ -62,7 +62,7 @@ public class PrimaryBackupPartition implements Partition {
   }
 
   @Override
-  public NodeId primary() {
+  public MemberId primary() {
     return election.getTerm()
         .join()
         .primary()
@@ -70,12 +70,12 @@ public class PrimaryBackupPartition implements Partition {
   }
 
   @Override
-  public Collection<NodeId> backups() {
+  public Collection<MemberId> backups() {
     return election.getTerm()
         .join()
         .candidates()
         .stream()
-        .map(Member::nodeId)
+        .map(GroupMember::nodeId)
         .collect(Collectors.toList());
   }
 

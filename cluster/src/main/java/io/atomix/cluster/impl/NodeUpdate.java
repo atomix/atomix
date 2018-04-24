@@ -24,9 +24,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 final class NodeUpdate {
   private final LogicalTimestamp timestamp;
-  private final ReplicatedNode node;
+  private final ReplicatedMember node;
 
-  NodeUpdate(ReplicatedNode node, LogicalTimestamp timestamp) {
+  NodeUpdate(ReplicatedMember node, LogicalTimestamp timestamp) {
     this.node = node;
     this.timestamp = timestamp;
   }
@@ -36,7 +36,7 @@ final class NodeUpdate {
    *
    * @return the updated node
    */
-  public ReplicatedNode node() {
+  public ReplicatedMember node() {
     return node;
   }
 

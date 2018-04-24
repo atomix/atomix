@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.protocols.raft.ReadConsistency;
 
@@ -158,7 +158,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
      * @return The open session request builder.
      * @throws NullPointerException if {@code node} is {@code null}
      */
-    public Builder withNodeId(NodeId node) {
+    public Builder withNodeId(MemberId node) {
       this.nodeId = checkNotNull(node, "node cannot be null").id();
       return this;
     }

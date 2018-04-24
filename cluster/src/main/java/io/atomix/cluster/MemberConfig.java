@@ -24,9 +24,9 @@ import java.util.Set;
 /**
  * Node configuration.
  */
-public class NodeConfig implements Config {
-  private NodeId id;
-  private Node.Type type;
+public class MemberConfig implements Config {
+  private MemberId id;
+  private Member.Type type;
   private Address address;
   private String zone;
   private String rack;
@@ -38,9 +38,9 @@ public class NodeConfig implements Config {
    *
    * @return the node identifier
    */
-  public NodeId getId() {
+  public MemberId getId() {
     if (id == null) {
-      id = NodeId.from(address.address().getHostName());
+      id = MemberId.from(address.address().getHostName());
     }
     return id;
   }
@@ -51,8 +51,8 @@ public class NodeConfig implements Config {
    * @param id the node identifier
    * @return the node configuration
    */
-  public NodeConfig setId(String id) {
-    return setId(NodeId.from(id));
+  public MemberConfig setId(String id) {
+    return setId(MemberId.from(id));
   }
 
   /**
@@ -61,7 +61,7 @@ public class NodeConfig implements Config {
    * @param id the node identifier
    * @return the node configuration
    */
-  public NodeConfig setId(NodeId id) {
+  public MemberConfig setId(MemberId id) {
     this.id = id;
     return this;
   }
@@ -71,7 +71,7 @@ public class NodeConfig implements Config {
    *
    * @return the node type
    */
-  public Node.Type getType() {
+  public Member.Type getType() {
     return type;
   }
 
@@ -81,7 +81,7 @@ public class NodeConfig implements Config {
    * @param type the node type
    * @return the node configuration
    */
-  public NodeConfig setType(Node.Type type) {
+  public MemberConfig setType(Member.Type type) {
     this.type = type;
     return this;
   }
@@ -101,7 +101,7 @@ public class NodeConfig implements Config {
    * @param address the node address
    * @return the node configuration
    */
-  public NodeConfig setAddress(String address) {
+  public MemberConfig setAddress(String address) {
     return setAddress(Address.from(address));
   }
 
@@ -111,7 +111,7 @@ public class NodeConfig implements Config {
    * @param address the node address
    * @return the node configuration
    */
-  public NodeConfig setAddress(Address address) {
+  public MemberConfig setAddress(Address address) {
     this.address = address;
     return this;
   }
@@ -131,7 +131,7 @@ public class NodeConfig implements Config {
    * @param zone the node zone
    * @return the node configuration
    */
-  public NodeConfig setZone(String zone) {
+  public MemberConfig setZone(String zone) {
     this.zone = zone;
     return this;
   }
@@ -151,7 +151,7 @@ public class NodeConfig implements Config {
    * @param rack the node rack
    * @return the node configuration
    */
-  public NodeConfig setRack(String rack) {
+  public MemberConfig setRack(String rack) {
     this.rack = rack;
     return this;
   }
@@ -171,7 +171,7 @@ public class NodeConfig implements Config {
    * @param host the node host
    * @return the node configuration
    */
-  public NodeConfig setHost(String host) {
+  public MemberConfig setHost(String host) {
     this.host = host;
     return this;
   }
@@ -191,7 +191,7 @@ public class NodeConfig implements Config {
    * @param tags the node tags
    * @return the node configuration
    */
-  public NodeConfig setTags(Set<String> tags) {
+  public MemberConfig setTags(Set<String> tags) {
     this.tags = tags;
     return this;
   }
@@ -202,7 +202,7 @@ public class NodeConfig implements Config {
    * @param tag the tag to add
    * @return the node configuration
    */
-  public NodeConfig addTag(String tag) {
+  public MemberConfig addTag(String tag) {
     tags.add(tag);
     return this;
   }

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.core.Atomix;
@@ -88,7 +88,7 @@ public class VertxRestService implements ManagedRestService {
     deployment.start();
 
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterService.class, atomix.clusterService());
+        .put(ClusterMembershipService.class, atomix.membershipService());
     deployment.getDispatcher().getDefaultContextObjects()
         .put(ClusterMessagingService.class, atomix.messagingService());
     deployment.getDispatcher().getDefaultContextObjects()

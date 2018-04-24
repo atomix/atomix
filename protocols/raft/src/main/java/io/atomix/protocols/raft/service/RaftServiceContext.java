@@ -16,7 +16,7 @@
 
 package io.atomix.protocols.raft.service;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationType;
@@ -200,7 +200,7 @@ public class RaftServiceContext implements ServiceContext {
     int sessionCount = reader.readInt();
     for (int i = 0; i < sessionCount; i++) {
       SessionId sessionId = SessionId.from(reader.readLong());
-      NodeId node = NodeId.from(reader.readString());
+      MemberId node = MemberId.from(reader.readString());
       ReadConsistency readConsistency = ReadConsistency.valueOf(reader.readString());
       long minTimeout = reader.readLong();
       long maxTimeout = reader.readLong();

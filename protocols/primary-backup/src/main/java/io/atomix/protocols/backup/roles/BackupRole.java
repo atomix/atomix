@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.backup.roles;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
@@ -153,7 +153,7 @@ public class BackupRole extends PrimaryBackupRole {
   /**
    * Requests a restore from the primary.
    */
-  private void requestRestore(NodeId primary) {
+  private void requestRestore(MemberId primary) {
     context.protocol().restore(primary, RestoreRequest.request(context.descriptor(), context.currentTerm()))
         .whenCompleteAsync((response, error) -> {
           if (error == null && response.status() == PrimaryBackupResponse.Status.OK) {
@@ -162,7 +162,7 @@ public class BackupRole extends PrimaryBackupRole {
             Buffer buffer = HeapBuffer.wrap(response.data());
             int sessions = buffer.readInt();
             for (int i = 0; i < sessions; i++) {
-              context.getOrCreateSession(buffer.readLong(), NodeId.from(buffer.readString()));
+              context.getOrCreateSession(buffer.readLong(), MemberId.from(buffer.readString()));
             }
 
             context.service().restore(buffer);

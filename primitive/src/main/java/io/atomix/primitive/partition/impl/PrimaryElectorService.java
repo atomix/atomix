@@ -19,7 +19,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryTerm;
@@ -222,15 +222,15 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   }
 
   private static class Registration {
-    private final Member member;
+    private final GroupMember member;
     private final long sessionId;
 
-    public Registration(Member member, long sessionId) {
+    public Registration(GroupMember member, long sessionId) {
       this.member = member;
       this.sessionId = sessionId;
     }
 
-    public Member member() {
+    public GroupMember member() {
       return member;
     }
 
@@ -340,7 +340,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       return new PrimaryTerm(term, primary(), candidates());
     }
 
-    Member primary() {
+    GroupMember primary() {
       if (primary == null) {
         return null;
       } else {
@@ -348,7 +348,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       }
     }
 
-    List<Member> candidates() {
+    List<GroupMember> candidates() {
       return registrations.stream().map(registration -> registration.member()).collect(Collectors.toList());
     }
 
@@ -401,8 +401,8 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
           .filter(entry -> {
             // Get the topic leader's identifier and a list of session identifiers.
             // Then return true if the leader's identifier matches any of the session's candidates.
-            Member leaderId = entry.getValue().primary();
-            List<Member> sessionCandidates = entry.getValue().registrations.stream()
+            GroupMember leaderId = entry.getValue().primary();
+            List<GroupMember> sessionCandidates = entry.getValue().registrations.stream()
                 .filter(r -> r.sessionId == registration.sessionId)
                 .map(r -> r.member())
                 .collect(Collectors.toList());
@@ -412,7 +412,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
           .count();
     }
 
-    ElectionState transfer(Member member) {
+    ElectionState transfer(GroupMember member) {
       Registration newLeader = registrations.stream()
           .filter(r -> Objects.equals(r.member(), member))
           .findFirst()
