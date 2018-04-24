@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.service;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.Session.State;
@@ -91,7 +91,7 @@ public class RaftSessionsTest {
 
     return new RaftSession(
         SessionId.from(sessionId),
-        NodeId.from("1"),
+        MemberId.from("1"),
         "test",
         new TestPrimitiveType(),
         ReadConsistency.LINEARIZABLE,

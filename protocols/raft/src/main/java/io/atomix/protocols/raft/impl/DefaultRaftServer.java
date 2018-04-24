@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftCluster;
@@ -79,17 +79,17 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   @Override
-  public CompletableFuture<RaftServer> bootstrap(Collection<NodeId> cluster) {
+  public CompletableFuture<RaftServer> bootstrap(Collection<MemberId> cluster) {
     return start(() -> cluster().bootstrap(cluster));
   }
 
   @Override
-  public CompletableFuture<RaftServer> listen(Collection<NodeId> cluster) {
+  public CompletableFuture<RaftServer> listen(Collection<MemberId> cluster) {
     return start(() -> cluster().listen(cluster));
   }
 
   @Override
-  public CompletableFuture<RaftServer> join(Collection<NodeId> cluster) {
+  public CompletableFuture<RaftServer> join(Collection<MemberId> cluster) {
     return start(() -> cluster().join(cluster));
   }
 
@@ -218,8 +218,8 @@ public class DefaultRaftServer implements RaftServer {
    * Default Raft server builder.
    */
   public static class Builder extends RaftServer.Builder {
-    public Builder(NodeId localNodeId) {
-      super(localNodeId);
+    public Builder(MemberId localMemberId) {
+      super(localMemberId);
     }
 
     @Override
@@ -230,7 +230,7 @@ public class DefaultRaftServer implements RaftServer {
 
       // If the server name is null, set it to the member ID.
       if (name == null) {
-        name = localNodeId.id();
+        name = localMemberId.id();
       }
 
       // If the storage is not configured, create a new Storage instance with the configured serializer.
@@ -238,7 +238,7 @@ public class DefaultRaftServer implements RaftServer {
         storage = RaftStorage.builder().build();
       }
 
-      RaftContext raft = new RaftContext(name, localNodeId, clusterService, protocol, storage, primitiveTypes, threadModel, threadPoolSize);
+      RaftContext raft = new RaftContext(name, localMemberId, membershipService, protocol, storage, primitiveTypes, threadModel, threadPoolSize);
       raft.setElectionTimeout(electionTimeout);
       raft.setHeartbeatInterval(heartbeatInterval);
       raft.setSessionTimeout(sessionTimeout);

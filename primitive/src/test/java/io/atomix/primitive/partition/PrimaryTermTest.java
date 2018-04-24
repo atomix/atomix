@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -29,12 +29,12 @@ import static org.junit.Assert.assertEquals;
 public class PrimaryTermTest {
   @Test
   public void testPrimaryTerm() throws Exception {
-    Member primary = new Member(NodeId.from("1"), MemberGroupId.from("1"));
-    List<Member> candidates = Arrays.asList(
-        new Member(NodeId.from("2"), MemberGroupId.from("2")),
-        new Member(NodeId.from("3"), MemberGroupId.from("2")),
-        new Member(NodeId.from("4"), MemberGroupId.from("3")),
-        new Member(NodeId.from("5"), MemberGroupId.from("3")));
+    GroupMember primary = new GroupMember(MemberId.from("1"), MemberGroupId.from("1"));
+    List<GroupMember> candidates = Arrays.asList(
+        new GroupMember(MemberId.from("2"), MemberGroupId.from("2")),
+        new GroupMember(MemberId.from("3"), MemberGroupId.from("2")),
+        new GroupMember(MemberId.from("4"), MemberGroupId.from("3")),
+        new GroupMember(MemberId.from("5"), MemberGroupId.from("3")));
 
     PrimaryTerm term = new PrimaryTerm(1, primary, candidates);
     assertEquals(primary, term.primary());

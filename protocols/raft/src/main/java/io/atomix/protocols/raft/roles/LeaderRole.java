@@ -116,7 +116,7 @@ public final class LeaderRole extends ActiveRole {
     commitInitialEntries();
 
     // Register the cluster event listener.
-    raft.getClusterService().addListener(clusterListener);
+    raft.getMembershipService().addListener(clusterListener);
 
     return super.start()
         .thenRun(this::startAppendTimer)
@@ -1087,7 +1087,7 @@ public final class LeaderRole extends ActiveRole {
 
   @Override
   public synchronized CompletableFuture<Void> stop() {
-    raft.getClusterService().removeListener(clusterListener);
+    raft.getMembershipService().removeListener(clusterListener);
     return super.stop()
         .thenRun(appender::close)
         .thenRun(this::cancelAppendTimer)

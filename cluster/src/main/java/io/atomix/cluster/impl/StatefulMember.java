@@ -15,8 +15,8 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
 
 import java.util.Set;
@@ -24,11 +24,11 @@ import java.util.Set;
 /**
  * Default cluster node.
  */
-public class StatefulNode extends Node {
+public class StatefulMember extends Member {
   private State state = State.INACTIVE;
 
-  public StatefulNode(
-      NodeId id,
+  public StatefulMember(
+      MemberId id,
       Type type,
       Address address,
       String zone,

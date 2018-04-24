@@ -24,35 +24,35 @@ import java.util.stream.Collectors;
 /**
  * Test cluster service.
  */
-public class TestClusterService implements ClusterService {
-  private final NodeId localNode;
-  private final Collection<NodeId> nodes;
+public class TestClusterMembershipService implements ClusterMembershipService {
+  private final MemberId localNode;
+  private final Collection<MemberId> nodes;
 
-  public TestClusterService(NodeId localNode, Collection<NodeId> nodes) {
+  public TestClusterMembershipService(MemberId localNode, Collection<MemberId> nodes) {
     this.localNode = localNode;
     this.nodes = nodes;
   }
 
   @Override
-  public Node getLocalNode() {
-    return Node.builder(localNode)
-        .withType(Node.Type.PERSISTENT)
+  public Member getLocalMember() {
+    return Member.builder(localNode)
+        .withType(Member.Type.PERSISTENT)
         .withAddress(Address.from("localhost", localNode.hashCode()))
         .build();
   }
 
   @Override
-  public Set<Node> getNodes() {
+  public Set<Member> getMembers() {
     return nodes.stream()
-        .map(node -> Node.builder(node)
-            .withType(Node.Type.PERSISTENT)
+        .map(node -> Member.builder(node)
+            .withType(Member.Type.PERSISTENT)
             .withAddress(Address.from("localhost", node.hashCode()))
             .build())
         .collect(Collectors.toSet());
   }
 
   @Override
-  public Node getNode(NodeId nodeId) {
+  public Member getMember(MemberId memberId) {
     return null;
   }
 

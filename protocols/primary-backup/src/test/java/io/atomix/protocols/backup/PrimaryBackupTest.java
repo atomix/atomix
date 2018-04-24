@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.backup;
 
-import io.atomix.cluster.NodeId;
-import io.atomix.cluster.TestClusterService;
+import io.atomix.cluster.MemberId;
+import io.atomix.cluster.TestClusterMembershipService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -28,7 +28,6 @@ import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.TestPrimaryElection;
-import io.atomix.primitive.partition.impl.DefaultMemberGroupService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
@@ -66,7 +65,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   private volatile int nodeId;
   private volatile int sessionId;
   private PrimaryElection election;
-  protected volatile List<NodeId> nodes;
+  protected volatile List<MemberId> nodes;
   protected volatile List<PrimaryBackupClient> clients = new ArrayList<>();
   protected volatile List<PrimaryBackupServer> servers = new ArrayList<>();
   protected volatile TestPrimaryBackupProtocolFactory protocolFactory;
@@ -375,8 +374,8 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    *
    * @return The next unique member identifier.
    */
-  private NodeId nextNodeId() {
-    return NodeId.from(String.valueOf(++nodeId));
+  private MemberId nextNodeId() {
+    return MemberId.from(String.valueOf(++nodeId));
   }
 
   /**
@@ -407,11 +406,11 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   /**
    * Creates a Raft server.
    */
-  private PrimaryBackupServer createServer(NodeId nodeId) {
+  private PrimaryBackupServer createServer(MemberId memberId) {
     PrimaryBackupServer server = PrimaryBackupServer.builder()
         .withServerName("test")
-        .withProtocol(protocolFactory.newServerProtocol(nodeId))
-        .withClusterService(new TestClusterService(nodeId, nodes))
+        .withProtocol(protocolFactory.newServerProtocol(memberId))
+        .withMembershipService(new TestClusterMembershipService(memberId, nodes))
         .withMemberGroupProvider(MemberGroupStrategy.NODE_AWARE)
         .withPrimaryElection(election)
         .addPrimitiveType(TestPrimitiveType.INSTANCE)
@@ -424,13 +423,13 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    * Creates a Raft client.
    */
   private PrimaryBackupClient createClient() throws Throwable {
-    NodeId nodeId = nextNodeId();
+    MemberId memberId = nextNodeId();
     PrimaryBackupClient client = PrimaryBackupClient.builder()
         .withClientName("test")
-        .withClusterService(new TestClusterService(nodeId, nodes))
+        .withMembershipService(new TestClusterMembershipService(memberId, nodes))
         .withSessionIdProvider(() -> CompletableFuture.completedFuture(nextSessionId()))
         .withPrimaryElection(election)
-        .withProtocol(protocolFactory.newClientProtocol(nodeId))
+        .withProtocol(protocolFactory.newClientProtocol(memberId))
         .build();
     clients.add(client);
     return client;

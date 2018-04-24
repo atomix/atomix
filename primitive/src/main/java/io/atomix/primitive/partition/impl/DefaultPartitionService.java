@@ -16,9 +16,9 @@
 package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
@@ -62,7 +62,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionService.class);
   private static final String BOOTSTRAP_SUBJECT = "partition-bootstrap";
 
-  private final ClusterService clusterService;
+  private final ClusterMembershipService membershipService;
   private final ClusterMessagingService messagingService;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
   private final Serializer serializer;
@@ -74,12 +74,12 @@ public class DefaultPartitionService implements ManagedPartitionService {
 
   @SuppressWarnings("unchecked")
   public DefaultPartitionService(
-      ClusterService clusterService,
+      ClusterMembershipService membershipService,
       ClusterMessagingService messagingService,
       PrimitiveTypeRegistry primitiveTypeRegistry,
       ManagedPartitionGroup systemGroup,
       Collection<ManagedPartitionGroup> groups) {
-    this.clusterService = clusterService;
+    this.membershipService = membershipService;
     this.messagingService = messagingService;
     this.primitiveTypeRegistry = primitiveTypeRegistry;
     this.systemGroup = systemGroup != null ? new WrappedPartitionGroup(systemGroup, true) : null;
@@ -93,7 +93,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
 
     KryoNamespace.Builder builder = KryoNamespace.builder()
         .register(KryoNamespaces.BASIC)
-        .register(NodeId.class)
+        .register(MemberId.class)
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class);
     for (PartitionGroupFactory factory : PartitionGroups.getGroupFactories()) {
@@ -131,8 +131,8 @@ public class DefaultPartitionService implements ManagedPartitionService {
    */
   private CompletableFuture<Void> bootstrap() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    Futures.allOf(clusterService.getNodes().stream()
-        .filter(node -> !node.id().equals(clusterService.getLocalNode().id()))
+    Futures.allOf(membershipService.getMembers().stream()
+        .filter(node -> !node.id().equals(membershipService.getLocalMember().id()))
         .map(node -> bootstrap(node))
         .collect(Collectors.toList()))
         .whenComplete((result, error) -> {
@@ -155,14 +155,14 @@ public class DefaultPartitionService implements ManagedPartitionService {
    * Bootstraps the service from the given node.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Void> bootstrap(Node node) {
+  private CompletableFuture<Void> bootstrap(Member member) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    messagingService.<NodeId, PartitionGroupInfo>send(
+    messagingService.<MemberId, PartitionGroupInfo>send(
         BOOTSTRAP_SUBJECT,
-        clusterService.getLocalNode().id(),
+        membershipService.getLocalMember().id(),
         serializer::encode,
         serializer::decode,
-        node.id())
+        member.id())
         .whenComplete((info, error) -> {
           if (error == null) {
             if (systemGroup != null && info.systemGroup != null &&
@@ -194,7 +194,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
     return future;
   }
 
-  private PartitionGroupInfo handleBootstrap(NodeId nodeId) {
+  private PartitionGroupInfo handleBootstrap(MemberId memberId) {
     return new PartitionGroupInfo(
         systemGroup.config(),
         groups.values()
@@ -210,10 +210,10 @@ public class DefaultPartitionService implements ManagedPartitionService {
     return bootstrap()
         .thenCompose(v -> {
           PartitionManagementService managementService = new DefaultPartitionManagementService(
-              clusterService,
+              membershipService,
               messagingService,
               primitiveTypeRegistry,
-              new HashBasedPrimaryElectionService(clusterService, messagingService),
+              new HashBasedPrimaryElectionService(membershipService, messagingService),
               new DefaultSessionIdService());
           if (systemGroup.isMember()) {
             return systemGroup.join(managementService);
@@ -227,7 +227,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
           return systemElectionService.start()
               .thenCompose(v2 -> systemSessionIdService.start())
               .thenApply(v2 -> new DefaultPartitionManagementService(
-                  clusterService,
+                  membershipService,
                   messagingService,
                   primitiveTypeRegistry,
                   systemElectionService,

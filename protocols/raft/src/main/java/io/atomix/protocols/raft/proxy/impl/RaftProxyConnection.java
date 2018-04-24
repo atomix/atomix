@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.CloseSessionResponse;
@@ -66,7 +66,7 @@ public class RaftProxyConnection {
   private final RaftClientProtocol protocol;
   private final MemberSelector selector;
   private final ThreadContext context;
-  private NodeId currentNode;
+  private MemberId currentNode;
   private int selectionId;
 
   public RaftProxyConnection(RaftClientProtocol protocol, MemberSelector selector, ThreadContext context, LoggerContext loggerContext) {
@@ -89,7 +89,7 @@ public class RaftProxyConnection {
    * @param leader the selector leader
    * @param servers the selector servers
    */
-  public void reset(NodeId leader, Collection<NodeId> servers) {
+  public void reset(MemberId leader, Collection<MemberId> servers) {
     selector.reset(leader, servers);
   }
 
@@ -98,7 +98,7 @@ public class RaftProxyConnection {
    *
    * @return The current selector leader.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return selector.leader();
   }
 
@@ -107,7 +107,7 @@ public class RaftProxyConnection {
    *
    * @return The current set of members.
    */
-  public Collection<NodeId> members() {
+  public Collection<MemberId> members() {
     return selector.members();
   }
 
@@ -210,15 +210,15 @@ public class RaftProxyConnection {
   /**
    * Sends the given request attempt to the cluster.
    */
-  protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<NodeId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
+  protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<MemberId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
     sendRequest(request, sender, 0, future);
   }
 
   /**
    * Sends the given request attempt to the cluster.
    */
-  protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<NodeId, T, CompletableFuture<U>> sender, int count, CompletableFuture<U> future) {
-    NodeId node = next();
+  protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<MemberId, T, CompletableFuture<U>> sender, int count, CompletableFuture<U> future) {
+    MemberId node = next();
     if (node != null) {
       log.trace("Sending {} to {}", request, node);
       int selectionId = this.selectionId;
@@ -253,7 +253,7 @@ public class RaftProxyConnection {
    * Handles a response from the cluster.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, int count, int selectionId, NodeId node, RaftResponse response, Throwable error, CompletableFuture future) {
+  protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, int count, int selectionId, MemberId node, RaftResponse response, Throwable error, CompletableFuture future) {
     if (error == null) {
       log.trace("Received {} from {}", response, node);
       if (COMPLETE_PREDICATE.test(response)) {
@@ -282,7 +282,7 @@ public class RaftProxyConnection {
   /**
    * Connects to the cluster.
    */
-  protected NodeId next() {
+  protected MemberId next() {
     // If a connection was already established then use that connection.
     if (currentNode != null) {
       return currentNode;

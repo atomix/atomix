@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.messaging.MessagingService;
 import io.atomix.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
@@ -194,7 +194,7 @@ public class RaftFuzzTest implements Runnable {
       .register(Collections.emptyList().getClass())
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
-      .register(NodeId.class)
+      .register(MemberId.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
@@ -217,7 +217,7 @@ public class RaftFuzzTest implements Runnable {
       .register(ArrayList.class)
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
-      .register(NodeId.class)
+      .register(MemberId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -239,7 +239,7 @@ public class RaftFuzzTest implements Runnable {
   private Map<Integer, Scheduled> restartTimers = new ConcurrentHashMap<>();
   private LocalRaftProtocolFactory protocolFactory;
   private List<MessagingService> messagingServices = new ArrayList<>();
-  private Map<NodeId, Address> addressMap = new ConcurrentHashMap<>();
+  private Map<MemberId, Address> addressMap = new ConcurrentHashMap<>();
   private static final String[] KEYS = new String[1024];
   private final Random random = new Random();
 
@@ -516,8 +516,8 @@ public class RaftFuzzTest implements Runnable {
    *
    * @return The next unique member identifier.
    */
-  private NodeId nextNodeId() {
-    return NodeId.from(String.valueOf(++nextId));
+  private MemberId nextNodeId() {
+    return MemberId.from(String.valueOf(++nextId));
   }
 
   /**
@@ -586,20 +586,20 @@ public class RaftFuzzTest implements Runnable {
    * Creates a Raft client.
    */
   private RaftClient createClient() throws Exception {
-    NodeId nodeId = nextNodeId();
+    MemberId memberId = nextNodeId();
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Address address = Address.from(++port);
       MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
-      addressMap.put(nodeId, address);
+      addressMap.put(memberId, address);
       protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
     } else {
-      protocol = protocolFactory.newClientProtocol(nodeId);
+      protocol = protocolFactory.newClientProtocol(memberId);
     }
 
     RaftClient client = RaftClient.builder()
-        .withNodeId(nodeId)
+        .withNodeId(memberId)
         .withProtocol(protocol)
         .build();
 
@@ -709,22 +709,22 @@ public class RaftFuzzTest implements Runnable {
    * Test member.
    */
   public static class TestMember implements RaftMember {
-    private final NodeId nodeId;
+    private final MemberId memberId;
     private final Type type;
 
-    public TestMember(NodeId nodeId, Type type) {
-      this.nodeId = nodeId;
+    public TestMember(MemberId memberId, Type type) {
+      this.memberId = memberId;
       this.type = type;
     }
 
     @Override
-    public NodeId nodeId() {
-      return nodeId;
+    public MemberId nodeId() {
+      return memberId;
     }
 
     @Override
     public int hash() {
-      return nodeId.hashCode();
+      return memberId.hashCode();
     }
 
     @Override

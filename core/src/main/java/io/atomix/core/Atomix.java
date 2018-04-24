@@ -16,8 +16,8 @@
 package io.atomix.core;
 
 import io.atomix.cluster.AtomixCluster;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.Node;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.election.LeaderElection;
@@ -140,10 +140,10 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
     this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
-    this.partitions = buildPartitionService(config, clusterService(), messagingService(), primitiveTypes);
+    this.partitions = buildPartitionService(config, membershipService(), messagingService(), primitiveTypes);
     this.primitives = new CorePrimitivesService(
         executorService,
-        clusterService(),
+        membershipService(),
         messagingService(),
         eventingService(),
         partitions,
@@ -370,14 +370,14 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
    */
   private static ManagedPartitionService buildPartitionService(
       AtomixConfig config,
-      ClusterService clusterService,
+      ClusterMembershipService clusterMembershipService,
       ClusterMessagingService messagingService,
       PrimitiveTypeRegistry primitiveTypeRegistry) {
     List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups()) {
       partitionGroups.add(PartitionGroups.createGroup(partitionGroupConfig));
     }
-    return new DefaultPartitionService(clusterService, messagingService, primitiveTypeRegistry, buildSystemPartitionGroup(config), partitionGroups);
+    return new DefaultPartitionService(clusterMembershipService, messagingService, primitiveTypeRegistry, buildSystemPartitionGroup(config), partitionGroups);
   }
 
   /**
@@ -535,20 +535,20 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
     }
 
     @Override
-    public Builder withLocalNode(Node localNode) {
-      super.withLocalNode(localNode);
+    public Builder withLocalNode(Member localMember) {
+      super.withLocalNode(localMember);
       return this;
     }
 
     @Override
-    public Builder withNodes(Node... coreNodes) {
-      super.withNodes(coreNodes);
+    public Builder withNodes(Member... coreMembers) {
+      super.withNodes(coreMembers);
       return this;
     }
 
     @Override
-    public Builder withNodes(Collection<Node> nodes) {
-      super.withNodes(nodes);
+    public Builder withNodes(Collection<Member> members) {
+      super.withNodes(members);
       return this;
     }
 

@@ -19,7 +19,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
@@ -57,7 +57,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   private Logger log;
   private final PrimitiveType primitiveType;
   private final PrimitiveDescriptor descriptor;
-  private final ClusterService clusterService;
+  private final ClusterMembershipService clusterMembershipService;
   private final PrimaryBackupClientProtocol protocol;
   private final SessionId sessionId;
   private final PrimaryElection primaryElection;
@@ -74,14 +74,14 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
       SessionId sessionId,
       PrimitiveType primitiveType,
       PrimitiveDescriptor descriptor,
-      ClusterService clusterService,
+      ClusterMembershipService clusterMembershipService,
       PrimaryBackupClientProtocol protocol,
       PrimaryElection primaryElection,
       ThreadContext threadContext) {
     this.sessionId = checkNotNull(sessionId);
     this.primitiveType = primitiveType;
     this.descriptor = descriptor;
-    this.clusterService = clusterService;
+    this.clusterMembershipService = clusterMembershipService;
     this.protocol = protocol;
     this.primaryElection = primaryElection;
     this.threadContext = threadContext;
@@ -148,7 +148,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   }
 
   private void execute(PrimitiveOperation operation, ComposableFuture<byte[]> future) {
-    ExecuteRequest request = ExecuteRequest.request(descriptor, sessionId.id(), clusterService.getLocalNode().id(), operation);
+    ExecuteRequest request = ExecuteRequest.request(descriptor, sessionId.id(), clusterMembershipService.getLocalMember().id(), operation);
     log.trace("Sending {} to {}", request, term.primary());
     PrimaryTerm term = this.term;
     if (term.primary() != null) {
@@ -257,7 +257,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
       protocol.close(term.primary().nodeId(), new CloseRequest(descriptor, sessionId.id()))
           .whenCompleteAsync((response, error) -> {
             protocol.unregisterEventListener(sessionId);
-            clusterService.removeListener(clusterEventListener);
+            clusterMembershipService.removeListener(clusterEventListener);
             primaryElection.removeListener(primaryElectionListener);
             future.complete(null);
           }, threadContext);

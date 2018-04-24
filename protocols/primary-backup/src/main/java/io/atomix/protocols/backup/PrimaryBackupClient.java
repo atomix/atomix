@@ -15,14 +15,14 @@
  */
 package io.atomix.protocols.backup;
 
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveException.Unavailable;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
@@ -69,7 +69,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
   private static final Serializer SERIALIZER = PrimaryBackupSerializers.PROTOCOL;
 
   private final String clientName;
-  private final ClusterService clusterService;
+  private final ClusterMembershipService clusterMembershipService;
   private final PrimaryBackupClientProtocol protocol;
   private final PrimaryElection primaryElection;
   private final SessionIdService sessionIdService;
@@ -78,13 +78,13 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
 
   public PrimaryBackupClient(
       String clientName,
-      ClusterService clusterService,
+      ClusterMembershipService clusterMembershipService,
       PrimaryBackupClientProtocol protocol,
       PrimaryElection primaryElection,
       SessionIdService sessionIdService,
       ThreadContextFactory threadContextFactory) {
     this.clientName = clientName;
-    this.clusterService = clusterService;
+    this.clusterMembershipService = clusterMembershipService;
     this.protocol = protocol;
     this.primaryElection = primaryElection;
     this.sessionIdService = sessionIdService;
@@ -114,7 +114,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
             primitiveType.id(),
             primitiveProtocol.backups(),
             primitiveProtocol.replication()),
-        clusterService,
+        clusterMembershipService,
         PrimaryBackupClient.this.protocol,
         primaryElection,
         threadContextFactory.createContext());
@@ -152,7 +152,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
     CompletableFuture<Set<String>> future = new CompletableFuture<>();
     MetadataRequest request = MetadataRequest.request(primitiveType.id());
     threadContext.execute(() -> {
-      Member primary = primaryElection.getTerm().join().primary();
+      GroupMember primary = primaryElection.getTerm().join().primary();
       if (primary == null) {
         future.completeExceptionally(new Unavailable());
         return;
@@ -190,7 +190,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
    */
   public static class Builder implements io.atomix.utils.Builder<PrimaryBackupClient> {
     protected String clientName = "atomix";
-    protected ClusterService clusterService;
+    protected ClusterMembershipService clusterMembershipService;
     protected PrimaryBackupClientProtocol protocol;
     protected PrimaryElection primaryElection;
     protected SessionIdService sessionIdService;
@@ -211,13 +211,13 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
     }
 
     /**
-     * Sets the cluster service.
+     * Sets the cluster membership service.
      *
-     * @param clusterService the cluster service
+     * @param membershipService the cluster membership service
      * @return the client builder
      */
-    public Builder withClusterService(ClusterService clusterService) {
-      this.clusterService = checkNotNull(clusterService, "clusterService cannot be null");
+    public Builder withMembershipService(ClusterMembershipService membershipService) {
+      this.clusterMembershipService = checkNotNull(membershipService, "membershipService cannot be null");
       return this;
     }
 
@@ -301,7 +301,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
           : threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
       return new PrimaryBackupClient(
           clientName,
-          clusterService,
+          clusterMembershipService,
           protocol,
           primaryElection,
           sessionIdService,

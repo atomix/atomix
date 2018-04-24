@@ -15,7 +15,7 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.Node;
+import io.atomix.cluster.Member;
 import io.atomix.core.profile.Profile;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -48,43 +48,43 @@ public abstract class AbstractAtomixTest {
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes) {
-    Node localNode = Node.builder(String.valueOf(id))
+  protected static Atomix.Builder buildAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes) {
+    Member localMember = Member.builder(String.valueOf(id))
         .withType(type)
         .withAddress("localhost", BASE_PORT + id)
         .build();
 
-    Collection<Node> nodes = Stream.concat(
+    Collection<Member> members = Stream.concat(
         persistentNodes.stream()
-            .map(nodeId -> Node.builder(String.valueOf(nodeId))
-                .withType(Node.Type.PERSISTENT)
+            .map(nodeId -> Member.builder(String.valueOf(nodeId))
+                .withType(Member.Type.PERSISTENT)
                 .withAddress("localhost", BASE_PORT + nodeId)
                 .build()),
         ephemeralNodes.stream()
             .filter(nodeId -> !persistentNodes.contains(nodeId))
-            .map(nodeId -> Node.builder(String.valueOf(nodeId))
-                .withType(Node.Type.EPHEMERAL)
+            .map(nodeId -> Member.builder(String.valueOf(nodeId))
+                .withType(Member.Type.EPHEMERAL)
                 .withAddress("localhost", BASE_PORT + nodeId)
                 .build()))
         .collect(Collectors.toList());
 
     return Atomix.builder()
         .withClusterName("test")
-        .withLocalNode(localNode)
-        .withNodes(nodes);
+        .withLocalNode(localMember)
+        .withNodes(members);
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Profile... profiles) {
+  protected static Atomix createAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Profile... profiles) {
     return createAtomix(type, id, persistentIds, ephemeralIds, b -> b.withProfiles(profiles).build());
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
+  protected static Atomix createAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
     return builderFunction.apply(buildAtomix(type, id, persistentIds, ephemeralIds));
   }
 

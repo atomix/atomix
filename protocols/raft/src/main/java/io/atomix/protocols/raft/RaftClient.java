@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveClient;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -60,7 +60,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    * @param cluster The cluster to which to connect.
    * @return The client builder.
    */
-  static Builder builder(NodeId... cluster) {
+  static Builder builder(MemberId... cluster) {
     return builder(Arrays.asList(cluster));
   }
 
@@ -74,7 +74,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    * @param cluster The cluster to which to connect.
    * @return The client builder.
    */
-  static Builder builder(Collection<NodeId> cluster) {
+  static Builder builder(Collection<MemberId> cluster) {
     return new DefaultRaftClient.Builder(cluster);
   }
 
@@ -90,7 +90,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    * @deprecated since 2.1
    */
   @Deprecated
-  static Builder newBuilder(NodeId... cluster) {
+  static Builder newBuilder(MemberId... cluster) {
     return builder(cluster);
   }
 
@@ -98,7 +98,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    * @deprecated since 2.1
    */
   @Deprecated
-  static Builder newBuilder(Collection<NodeId> cluster) {
+  static Builder newBuilder(Collection<MemberId> cluster) {
     return builder(cluster);
   }
 
@@ -121,7 +121,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    *
    * @return the current leader
    */
-  NodeId leader();
+  MemberId leader();
 
   /**
    * Returns the Raft metadata.
@@ -142,7 +142,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    * @return A completable future to be completed once the client is registered.
    */
   default CompletableFuture<RaftClient> connect() {
-    return connect((Collection<NodeId>) null);
+    return connect((Collection<MemberId>) null);
   }
 
   /**
@@ -154,7 +154,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    * @param members A set of server addresses to which to connect.
    * @return A completable future to be completed once the client is registered.
    */
-  default CompletableFuture<RaftClient> connect(NodeId... members) {
+  default CompletableFuture<RaftClient> connect(MemberId... members) {
     if (members == null || members.length == 0) {
       return connect();
     } else {
@@ -171,7 +171,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    * @param members A set of server addresses to which to connect.
    * @return A completable future to be completed once the client is registered.
    */
-  CompletableFuture<RaftClient> connect(Collection<NodeId> members);
+  CompletableFuture<RaftClient> connect(Collection<MemberId> members);
 
   /**
    * Closes the client.
@@ -193,14 +193,14 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    * </pre>
    */
   abstract class Builder implements io.atomix.utils.Builder<RaftClient> {
-    protected final Collection<NodeId> cluster;
+    protected final Collection<MemberId> cluster;
     protected String clientId = UUID.randomUUID().toString();
-    protected NodeId nodeId;
+    protected MemberId memberId;
     protected RaftClientProtocol protocol;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
 
-    protected Builder(Collection<NodeId> cluster) {
+    protected Builder(Collection<MemberId> cluster) {
       this.cluster = checkNotNull(cluster, "cluster cannot be null");
     }
 
@@ -222,12 +222,12 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
     /**
      * Sets the local node identifier.
      *
-     * @param nodeId The local node identifier.
+     * @param memberId The local node identifier.
      * @return The client builder.
      * @throws NullPointerException if {@code nodeId} is null
      */
-    public Builder withNodeId(NodeId nodeId) {
-      this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
+    public Builder withNodeId(MemberId memberId) {
+      this.memberId = checkNotNull(memberId, "nodeId cannot be null");
       return this;
     }
 

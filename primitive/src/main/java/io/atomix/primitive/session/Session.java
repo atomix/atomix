@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.session;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
@@ -74,7 +74,7 @@ public interface Session {
    *
    * @return The node to which the session belongs.
    */
-  NodeId nodeId();
+  MemberId nodeId();
 
   /**
    * Returns the session state.

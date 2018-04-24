@@ -85,7 +85,7 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<MultiPrimar
   private PrimaryBackupClient newClient() {
     return PrimaryBackupClient.builder()
         .withClientName(partition.name())
-        .withClusterService(managementService.getClusterService())
+        .withMembershipService(managementService.getMembershipService())
         .withProtocol(new PrimaryBackupClientCommunicator(
             partition.name(),
             Serializer.using(PrimaryBackupNamespaces.PROTOCOL),

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import org.junit.Test;
 
@@ -43,7 +43,7 @@ public class MemberSelectorTest {
     assertNull(selector.leader());
     assertFalse(selector.hasNext());
 
-    selectorManager.resetAll(null, Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
+    selectorManager.resetAll(null, Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
     assertNull(selector.leader());
     assertTrue(selector.hasNext());
     selector.hasNext();
@@ -59,7 +59,7 @@ public class MemberSelectorTest {
     assertNotNull(selector.next());
     assertFalse(selector.hasNext());
 
-    selectorManager.resetAll(NodeId.from("a"), Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
+    selectorManager.resetAll(MemberId.from("a"), Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
     assertNotNull(selector.leader());
     assertTrue(selector.hasNext());
     assertNotNull(selector.next());
@@ -85,7 +85,7 @@ public class MemberSelectorTest {
     assertNull(selector.leader());
     assertFalse(selector.hasNext());
 
-    selectorManager.resetAll(null, Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
+    selectorManager.resetAll(null, Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
     assertNull(selector.leader());
     assertTrue(selector.hasNext());
     assertNotNull(selector.next());
@@ -99,7 +99,7 @@ public class MemberSelectorTest {
     assertNotNull(selector.next());
     assertFalse(selector.hasNext());
 
-    selectorManager.resetAll(NodeId.from("a"), Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
+    selectorManager.resetAll(MemberId.from("a"), Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
     assertNotNull(selector.leader());
     assertTrue(selector.hasNext());
     assertNotNull(selector.next());
@@ -118,7 +118,7 @@ public class MemberSelectorTest {
     assertNull(selector.leader());
     assertFalse(selector.hasNext());
 
-    selectorManager.resetAll(null, Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
+    selectorManager.resetAll(null, Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
     assertNull(selector.leader());
     assertTrue(selector.hasNext());
     assertNotNull(selector.next());
@@ -131,18 +131,18 @@ public class MemberSelectorTest {
     assertNotNull(selector.next());
     assertFalse(selector.hasNext());
 
-    selectorManager.resetAll(NodeId.from("a"), Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
-    assertEquals(NodeId.from("a"), selector.leader());
+    selectorManager.resetAll(MemberId.from("a"), Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
+    assertEquals(MemberId.from("a"), selector.leader());
     assertEquals(3, selector.members().size());
     assertTrue(selector.hasNext());
     assertNotNull(selector.next());
     assertFalse(selector.hasNext());
 
-    selectorManager.resetAll(null, Arrays.asList(NodeId.from("a"), NodeId.from("b"), NodeId.from("c")));
+    selectorManager.resetAll(null, Arrays.asList(MemberId.from("a"), MemberId.from("b"), MemberId.from("c")));
     assertNull(selector.leader());
     assertTrue(selector.hasNext());
 
-    selectorManager.resetAll(NodeId.from("a"), Arrays.asList(NodeId.from("b"), NodeId.from("c")));
+    selectorManager.resetAll(MemberId.from("a"), Arrays.asList(MemberId.from("b"), MemberId.from("c")));
     assertNull(selector.leader());
     assertTrue(selector.hasNext());
   }

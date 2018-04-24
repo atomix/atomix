@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -69,7 +69,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   private volatile RaftProxyListener proxyListener;
   private volatile RaftProxyInvoker proxyInvoker;
   private volatile RaftProxyState state;
-  private final Consumer<NodeId> leaderChangeListener = this::onLeaderChange;
+  private final Consumer<MemberId> leaderChangeListener = this::onLeaderChange;
 
   public DefaultRaftProxy(
       String serviceName,
@@ -210,8 +210,8 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
         });
   }
 
-  private void onLeaderChange(NodeId nodeId) {
-    if (nodeId != null) {
+  private void onLeaderChange(MemberId memberId) {
+    if (memberId != null) {
       proxyInvoker.reset();
     }
   }

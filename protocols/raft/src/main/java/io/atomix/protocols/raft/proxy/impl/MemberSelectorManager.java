@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Lists;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.util.Collection;
@@ -31,16 +31,16 @@ import java.util.function.Consumer;
  */
 public final class MemberSelectorManager {
   private final Set<MemberSelector> selectors = new CopyOnWriteArraySet<>();
-  private final Set<Consumer<NodeId>> leaderChangeListeners = new CopyOnWriteArraySet<>();
-  private volatile NodeId leader;
-  private volatile Collection<NodeId> members = Collections.emptyList();
+  private final Set<Consumer<MemberId>> leaderChangeListeners = new CopyOnWriteArraySet<>();
+  private volatile MemberId leader;
+  private volatile Collection<MemberId> members = Collections.emptyList();
 
   /**
    * Adds a leader change listener.
    *
    * @param listener the listener to add
    */
-  public void addLeaderChangeListener(Consumer<NodeId> listener) {
+  public void addLeaderChangeListener(Consumer<MemberId> listener) {
     leaderChangeListeners.add(listener);
   }
 
@@ -49,7 +49,7 @@ public final class MemberSelectorManager {
    *
    * @param listener the listener to remove
    */
-  public void removeLeaderChangeListener(Consumer<NodeId> listener) {
+  public void removeLeaderChangeListener(Consumer<MemberId> listener) {
     leaderChangeListeners.remove(listener);
   }
 
@@ -58,7 +58,7 @@ public final class MemberSelectorManager {
    *
    * @return The current cluster leader.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -67,7 +67,7 @@ public final class MemberSelectorManager {
    *
    * @return The set of members in the cluster.
    */
-  public Collection<NodeId> members() {
+  public Collection<MemberId> members() {
     return members;
   }
 
@@ -96,8 +96,8 @@ public final class MemberSelectorManager {
    * @param leader  The current cluster leader.
    * @param members The collection of all active members.
    */
-  public void resetAll(NodeId leader, Collection<NodeId> members) {
-    NodeId oldLeader = this.leader;
+  public void resetAll(MemberId leader, Collection<MemberId> members) {
+    MemberId oldLeader = this.leader;
     this.leader = leader;
     this.members = Lists.newLinkedList(members);
     selectors.forEach(s -> s.reset(leader, this.members));

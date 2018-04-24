@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.session.SessionIdService;
@@ -30,7 +30,7 @@ public interface PartitionManagementService {
    *
    * @return the cluster service
    */
-  ClusterService getClusterService();
+  ClusterMembershipService getMembershipService();
 
   /**
    * Returns the cluster messaging service.

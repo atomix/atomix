@@ -16,7 +16,7 @@
 package io.atomix.protocols.backup.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.Session;
@@ -38,14 +38,14 @@ import java.util.Set;
 public class PrimaryBackupSession implements Session {
   private final Logger log;
   private final SessionId sessionId;
-  private final NodeId nodeId;
+  private final MemberId memberId;
   private final PrimaryBackupServiceContext context;
   private final Set<SessionEventListener> eventListeners = Sets.newIdentityHashSet();
   private State state = State.OPEN;
 
-  public PrimaryBackupSession(SessionId sessionId, NodeId nodeId, PrimaryBackupServiceContext context) {
+  public PrimaryBackupSession(SessionId sessionId, MemberId memberId, PrimaryBackupServiceContext context) {
     this.sessionId = sessionId;
-    this.nodeId = nodeId;
+    this.memberId = memberId;
     this.context = context;
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(getClass())
         .addValue(context.serverName())
@@ -69,8 +69,8 @@ public class PrimaryBackupSession implements Session {
   }
 
   @Override
-  public NodeId nodeId() {
-    return nodeId;
+  public MemberId nodeId() {
+    return memberId;
   }
 
   @Override
@@ -92,8 +92,8 @@ public class PrimaryBackupSession implements Session {
   public void publish(PrimitiveEvent event) {
     if (context.getRole() == Role.PRIMARY) {
       context.threadContext().execute(() -> {
-        log.trace("Sending {} to {}", event, nodeId);
-        context.protocol().event(nodeId, sessionId, event);
+        log.trace("Sending {} to {}", event, memberId);
+        context.protocol().event(memberId, sessionId, event);
       });
     }
   }

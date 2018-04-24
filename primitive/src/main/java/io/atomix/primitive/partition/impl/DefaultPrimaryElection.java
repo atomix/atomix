@@ -17,7 +17,7 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.primitive.partition.ManagedPrimaryElection;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
@@ -65,7 +65,7 @@ public class DefaultPrimaryElection implements ManagedPrimaryElection {
   }
 
   @Override
-  public CompletableFuture<PrimaryTerm> enter(Member member) {
+  public CompletableFuture<PrimaryTerm> enter(GroupMember member) {
     return proxy.invoke(ENTER, SERIALIZER::encode, new Enter(partitionId, member), SERIALIZER::decode);
   }
 
