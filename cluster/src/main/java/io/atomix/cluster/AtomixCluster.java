@@ -106,11 +106,6 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   }
 
   public AtomixCluster(ClusterConfig config) {
-    // Apply profiles to all configurations.
-    config.getProfile().configure(config);
-    config.getLocalNode().getProfile().configure(config.getLocalNode());
-    config.getNodes().forEach(node -> node.getProfile().configure(node));
-
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
     this.bootstrapMetadataService = buildBootstrapMetadataService(config);

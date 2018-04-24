@@ -16,7 +16,6 @@
 package io.atomix.cluster;
 
 import com.google.common.collect.ImmutableSet;
-import io.atomix.cluster.profile.NodeProfile;
 import io.atomix.utils.config.Configured;
 import io.atomix.utils.net.Address;
 
@@ -132,7 +131,6 @@ public class Node implements Configured<NodeConfig> {
   private final Set<String> tags;
 
   public Node(NodeConfig config) {
-    config.getProfile().configure(config);
     this.id = checkNotNull(config.getId(), "id cannot be null");
     this.type = checkNotNull(config.getType(), "type cannot be null");
     this.address = checkNotNull(config.getAddress(), "address cannot be null");
@@ -391,17 +389,6 @@ public class Node implements Configured<NodeConfig> {
      */
     public Builder addTag(String tag) {
       config.addTag(tag);
-      return this;
-    }
-
-    /**
-     * Configures the node with the given profile.
-     *
-     * @param profile the node profile
-     * @return the node builder
-     */
-    public Builder withProfile(NodeProfile profile) {
-      config.setProfile(profile);
       return this;
     }
 
