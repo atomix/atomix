@@ -17,6 +17,7 @@ package io.atomix.cluster.impl;
 
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.Member.State;
@@ -69,7 +70,8 @@ public class DefaultClusterMembershipServiceTest {
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(localMember1.address()).start().join(),
-        broadcastServiceFactory.newBroadcastService().start().join());
+        broadcastServiceFactory.newBroadcastService().start().join(),
+        new GroupMembershipConfig());
 
     Member localMember2 = buildNode(2, Member.Type.PERSISTENT);
     ManagedClusterMembershipService clusterService2 = new DefaultClusterMembershipService(
@@ -77,7 +79,8 @@ public class DefaultClusterMembershipServiceTest {
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(localMember2.address()).start().join(),
-        broadcastServiceFactory.newBroadcastService().start().join());
+        broadcastServiceFactory.newBroadcastService().start().join(),
+        new GroupMembershipConfig());
 
     Member localMember3 = buildNode(3, Member.Type.PERSISTENT);
     ManagedClusterMembershipService clusterService3 = new DefaultClusterMembershipService(
@@ -85,7 +88,8 @@ public class DefaultClusterMembershipServiceTest {
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(localMember3.address()).start().join(),
-        broadcastServiceFactory.newBroadcastService().start().join());
+        broadcastServiceFactory.newBroadcastService().start().join(),
+        new GroupMembershipConfig());
 
     assertNull(clusterService1.getMember(MemberId.from("1")));
     assertNull(clusterService1.getMember(MemberId.from("2")));
@@ -121,7 +125,8 @@ public class DefaultClusterMembershipServiceTest {
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingServiceFactory.newMessagingService(ephemeralMember.address()).start().join(),
-        broadcastServiceFactory.newBroadcastService().start().join());
+        broadcastServiceFactory.newBroadcastService().start().join(),
+        new GroupMembershipConfig());
 
     assertEquals(State.INACTIVE, ephemeralClusterService.getLocalMember().getState());
 

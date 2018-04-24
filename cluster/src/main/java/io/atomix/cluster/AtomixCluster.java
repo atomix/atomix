@@ -313,7 +313,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
     } else {
       localMember = new Member(config.getLocalNode());
     }
-    return new DefaultClusterMembershipService(localMember, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
+    return new DefaultClusterMembershipService(localMember, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService, config.getMembership());
   }
 
   /**

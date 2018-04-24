@@ -35,6 +35,7 @@ public class ClusterConfig implements Config {
   private Collection<MemberConfig> nodes = new ArrayList<>();
   private boolean multicastEnabled = false;
   private Address multicastAddress;
+  private GroupMembershipConfig membership = new GroupMembershipConfig();
 
   public ClusterConfig() {
     try {
@@ -141,6 +142,26 @@ public class ClusterConfig implements Config {
    */
   public ClusterConfig setMulticastAddress(Address multicastAddress) {
     this.multicastAddress = multicastAddress;
+    return this;
+  }
+
+  /**
+   * Returns the group membership configuration.
+   *
+   * @return the group membership configuration
+   */
+  public GroupMembershipConfig getMembership() {
+    return membership;
+  }
+
+  /**
+   * Sets the group membership configuration.
+   *
+   * @param membership the group membership configuration
+   * @return the cluster configuration
+   */
+  public ClusterConfig setMembership(GroupMembershipConfig membership) {
+    this.membership = membership;
     return this;
   }
 }

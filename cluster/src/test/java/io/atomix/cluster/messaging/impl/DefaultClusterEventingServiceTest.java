@@ -18,6 +18,7 @@ package io.atomix.cluster.messaging.impl;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
@@ -75,7 +76,8 @@ public class DefaultClusterEventingServiceTest {
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingService1,
-        broadcastServiceFactory.newBroadcastService().start().join())
+        broadcastServiceFactory.newBroadcastService().start().join(),
+        new GroupMembershipConfig())
         .start()
         .join();
     ClusterEventingService eventService1 = new DefaultClusterEventingService(clusterMembershipService1, messagingService1).start().join();
@@ -87,7 +89,8 @@ public class DefaultClusterEventingServiceTest {
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingService2,
-        broadcastServiceFactory.newBroadcastService().start().join())
+        broadcastServiceFactory.newBroadcastService().start().join(),
+        new GroupMembershipConfig())
         .start()
         .join();
     ClusterEventingService eventService2 = new DefaultClusterEventingService(clusterMembershipService2, messagingService2).start().join();
@@ -99,7 +102,8 @@ public class DefaultClusterEventingServiceTest {
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingService3,
-        broadcastServiceFactory.newBroadcastService().start().join())
+        broadcastServiceFactory.newBroadcastService().start().join(),
+        new GroupMembershipConfig())
         .start()
         .join();
     ClusterEventingService eventService3 = new DefaultClusterEventingService(clusterMembershipService3, messagingService3).start().join();

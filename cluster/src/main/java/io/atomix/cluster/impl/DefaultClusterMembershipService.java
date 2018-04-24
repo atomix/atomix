@@ -21,9 +21,10 @@ import com.google.common.collect.Sets;
 import io.atomix.cluster.BootstrapMetadataService;
 import io.atomix.cluster.ClusterEvent;
 import io.atomix.cluster.ClusterEventListener;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.ClusterMetadataEvent;
 import io.atomix.cluster.ClusterMetadataEventListener;
-import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.Member.State;
@@ -67,14 +68,7 @@ public class DefaultClusterMembershipService
 
   private static final Logger LOGGER = getLogger(DefaultClusterMembershipService.class);
 
-  private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
-  private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
-  private static final long DEFAULT_FAILURE_TIME = 10000;
   private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
-
-  private int heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
-
-  private int phiFailureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
 
   private static final Serializer SERIALIZER = Serializer.using(
       KryoNamespace.builder()
@@ -92,6 +86,11 @@ public class DefaultClusterMembershipService
   private final BroadcastService broadcastService;
   private final BootstrapMetadataService bootstrapMetadataService;
   private final PersistentMetadataService persistentMetadataService;
+
+  private final int heartbeatInterval;
+  private final int phiFailureThreshold;
+  private final int failureTimeout;
+
   private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulMember localNode;
   private final Map<MemberId, StatefulMember> nodes = Maps.newConcurrentMap();
@@ -110,7 +109,8 @@ public class DefaultClusterMembershipService
       BootstrapMetadataService bootstrapMetadataService,
       PersistentMetadataService persistentMetadataService,
       MessagingService messagingService,
-      BroadcastService broadcastService) {
+      BroadcastService broadcastService,
+      GroupMembershipConfig config) {
     this.bootstrapMetadataService = checkNotNull(bootstrapMetadataService, "bootstrapMetadataService cannot be null");
     this.persistentMetadataService = checkNotNull(persistentMetadataService, "coreMetadataService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
@@ -123,6 +123,9 @@ public class DefaultClusterMembershipService
         localMember.rack(),
         localMember.host(),
         localMember.tags());
+    this.heartbeatInterval = config.getHeartbeatInterval();
+    this.phiFailureThreshold = config.getPhiFailureThreshold();
+    this.failureTimeout = config.getFailureTimeout();
   }
 
   @Override
@@ -196,7 +199,7 @@ public class DefaultClusterMembershipService
       CompletableFuture<Void> future = sendHeartbeat(node.address(), payload);
       PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
       double phi = failureDetector.phi();
-      if (phi >= phiFailureThreshold || (phi == 0.0 && failureDetector.lastUpdated() > 0 && System.currentTimeMillis() - failureDetector.lastUpdated() > DEFAULT_FAILURE_TIME)) {
+      if (phi >= phiFailureThreshold || (phi == 0.0 && failureDetector.lastUpdated() > 0 && System.currentTimeMillis() - failureDetector.lastUpdated() > failureTimeout)) {
         if (node.getState() == State.ACTIVE) {
           deactivateNode(node);
         }
