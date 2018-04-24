@@ -23,7 +23,7 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.protocols.backup.PrimaryBackupProtocol;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionClient;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionServer;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -89,7 +89,7 @@ public class PrimaryBackupPartition implements Partition {
   }
 
   @Override
-  public PrimitiveClient<MultiPrimaryProtocol> getPrimitiveClient() {
+  public PrimitiveClient<PrimaryBackupProtocol> getPrimitiveClient() {
     return client;
   }
 

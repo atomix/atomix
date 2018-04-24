@@ -24,9 +24,9 @@ import java.time.Duration;
 import java.util.concurrent.Executor;
 
 /**
- * Multi-primary protocol configuration.
+ * Primary-backup protocol configuration.
  */
-public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPrimaryProtocolConfig> {
+public class PrimaryBackupProtocolConfig extends PrimitiveProtocolConfig<PrimaryBackupProtocolConfig> {
   private Consistency consistency = Consistency.SEQUENTIAL;
   private Replication replication = Replication.ASYNCHRONOUS;
   private Recovery recovery = Recovery.RECOVER;
@@ -50,7 +50,7 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param consistency the consistency level
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setConsistency(Consistency consistency) {
+  public PrimaryBackupProtocolConfig setConsistency(Consistency consistency) {
     this.consistency = consistency;
     return this;
   }
@@ -70,7 +70,7 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param replication the replication level
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setReplication(Replication replication) {
+  public PrimaryBackupProtocolConfig setReplication(Replication replication) {
     this.replication = replication;
     return this;
   }
@@ -90,7 +90,7 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param recovery the recovery strategy
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setRecovery(Recovery recovery) {
+  public PrimaryBackupProtocolConfig setRecovery(Recovery recovery) {
     this.recovery = recovery;
     return this;
   }
@@ -110,7 +110,7 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param numBackups the number of backups
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setNumBackups(int numBackups) {
+  public PrimaryBackupProtocolConfig setNumBackups(int numBackups) {
     this.numBackups = numBackups;
     return this;
   }
@@ -130,7 +130,7 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param maxRetries the maximum allowed number of retries
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setMaxRetries(int maxRetries) {
+  public PrimaryBackupProtocolConfig setMaxRetries(int maxRetries) {
     this.maxRetries = maxRetries;
     return this;
   }
@@ -150,7 +150,7 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param retryDelayMillis the retry delay in milliseconds
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setRetryDelayMillis(long retryDelayMillis) {
+  public PrimaryBackupProtocolConfig setRetryDelayMillis(long retryDelayMillis) {
     return setRetryDelay(Duration.ofMillis(retryDelayMillis));
   }
 
@@ -160,7 +160,7 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param retryDelay the retry delay
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setRetryDelay(Duration retryDelay) {
+  public PrimaryBackupProtocolConfig setRetryDelay(Duration retryDelay) {
     this.retryDelay = retryDelay;
     return this;
   }
@@ -180,7 +180,7 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param executor the executor
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setExecutor(Executor executor) {
+  public PrimaryBackupProtocolConfig setExecutor(Executor executor) {
     this.executor = executor;
     return this;
   }

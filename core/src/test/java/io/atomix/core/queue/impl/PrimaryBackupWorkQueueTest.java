@@ -16,7 +16,7 @@
 package io.atomix.core.queue.impl;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.protocols.backup.PrimaryBackupProtocol;
 
 /**
  * Primary-backup work queue test.
@@ -24,7 +24,7 @@ import io.atomix.protocols.backup.MultiPrimaryProtocol;
 public class PrimaryBackupWorkQueueTest extends WorkQueueTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return MultiPrimaryProtocol.builder()
+    return PrimaryBackupProtocol.builder()
         .withBackups(2)
         .withMaxRetries(5)
         .build();
