@@ -23,11 +23,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Cluster node digest.
  */
-final class NodeDigest {
+final class MemberDigest {
   private final LogicalTimestamp timestamp;
   private final boolean tombstone;
 
-  NodeDigest(LogicalTimestamp timestamp, boolean tombstone) {
+  MemberDigest(LogicalTimestamp timestamp, boolean tombstone) {
     this.timestamp = timestamp;
     this.tombstone = tombstone;
   }

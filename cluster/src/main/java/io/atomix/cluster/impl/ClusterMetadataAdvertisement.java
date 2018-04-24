@@ -24,9 +24,9 @@ import java.util.Set;
  * Cluster metadata anti-entropy advertisement.
  */
 final class ClusterMetadataAdvertisement {
-  private final Map<MemberId, NodeDigest> digests;
+  private final Map<MemberId, MemberDigest> digests;
 
-  ClusterMetadataAdvertisement(Map<MemberId, NodeDigest> digests) {
+  ClusterMetadataAdvertisement(Map<MemberId, MemberDigest> digests) {
     this.digests = digests;
   }
 
@@ -45,7 +45,7 @@ final class ClusterMetadataAdvertisement {
    * @param memberId the node for which to return the digest
    * @return the digest for the given node
    */
-  public NodeDigest digest(MemberId memberId) {
+  public MemberDigest digest(MemberId memberId) {
     return digests.get(memberId);
   }
 }
