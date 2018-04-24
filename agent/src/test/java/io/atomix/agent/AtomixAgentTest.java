@@ -47,7 +47,7 @@ public class AtomixAgentTest {
   private static final Path PATH = Paths.get("target/test-logs/");
 
   @Test
-  public void testParseNodeId() throws Exception {
+  public void testParseMemberId() throws Exception {
     assertEquals(MemberId.from("127.0.0.1"), AtomixAgent.parseMemberId("127.0.0.1"));
     assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo"));
     assertEquals(MemberId.from("127.0.0.1"), AtomixAgent.parseMemberId("127.0.0.1:1234"));

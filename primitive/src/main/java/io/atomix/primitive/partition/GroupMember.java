@@ -37,11 +37,11 @@ public class GroupMember {
   }
 
   /**
-   * Returns the member node ID.
+   * Returns the member ID.
    *
-   * @return the member node ID
+   * @return the member ID
    */
-  public MemberId nodeId() {
+  public MemberId memberId() {
     return memberId;
   }
 
@@ -71,7 +71,7 @@ public class GroupMember {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("nodeId", memberId)
+        .add("memberId", memberId)
         .add("groupId", groupId)
         .toString();
   }

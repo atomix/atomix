@@ -158,7 +158,7 @@ public class PrimaryBackupClient implements PrimitiveClient<MultiPrimaryProtocol
         return;
       }
 
-      protocol.metadata(primary.nodeId(), request).whenCompleteAsync((response, error) -> {
+      protocol.metadata(primary.memberId(), request).whenCompleteAsync((response, error) -> {
         if (error == null) {
           if (response.status() == Status.OK) {
             future.complete(response.primitiveNames());

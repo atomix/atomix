@@ -210,7 +210,7 @@ public class DefaultRaftClient implements RaftClient {
 
     @Override
     public RaftClient build() {
-      checkNotNull(memberId, "nodeId cannot be null");
+      checkNotNull(memberId, "memberId cannot be null");
       Logger log = ContextualLoggerFactory.getLogger(DefaultRaftClient.class, LoggerContext.builder(RaftClient.class)
           .addValue(clientId)
           .build());

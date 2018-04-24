@@ -430,10 +430,10 @@ public class RaftFuzzTest implements Runnable {
       RaftServer server = servers.get(serverIndex);
       CompletableFuture<Void> leaveFuture;
       if (remove) {
-        System.out.println("Removing server: " + server.cluster().getMember().nodeId());
+        System.out.println("Removing server: " + server.cluster().getMember().memberId());
         leaveFuture = server.leave();
       } else {
-        System.out.println("Shutting down server: " + server.cluster().getMember().nodeId());
+        System.out.println("Shutting down server: " + server.cluster().getMember().memberId());
         leaveFuture = server.shutdown();
       }
       leaveFuture.whenComplete((result, error) -> {
@@ -443,11 +443,11 @@ public class RaftFuzzTest implements Runnable {
           servers.set(serverIndex, newServer);
           CompletableFuture<RaftServer> joinFuture;
           if (remove) {
-            System.out.println("Adding server: " + newServer.cluster().getMember().nodeId());
-            joinFuture = newServer.join(members.get(members.size() - 1).nodeId());
+            System.out.println("Adding server: " + newServer.cluster().getMember().memberId());
+            joinFuture = newServer.join(members.get(members.size() - 1).memberId());
           } else {
-            System.out.println("Bootstrapping server: " + newServer.cluster().getMember().nodeId());
-            joinFuture = newServer.bootstrap(members.stream().map(RaftMember::nodeId).collect(Collectors.toList()));
+            System.out.println("Bootstrapping server: " + newServer.cluster().getMember().memberId());
+            joinFuture = newServer.bootstrap(members.stream().map(RaftMember::memberId).collect(Collectors.toList()));
           }
           joinFuture.whenComplete((result2, error2) -> {
             scheduleRestarts(context);
@@ -543,7 +543,7 @@ public class RaftFuzzTest implements Runnable {
     CountDownLatch latch = new CountDownLatch(nodes);
     for (int i = 0; i < nodes; i++) {
       RaftServer server = createServer(members.get(i));
-      server.bootstrap(members.stream().map(RaftMember::nodeId).collect(Collectors.toList())).thenRun(latch::countDown);
+      server.bootstrap(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(latch::countDown);
       servers.add(server);
     }
 
@@ -561,17 +561,17 @@ public class RaftFuzzTest implements Runnable {
       Address address = Address.from(++port);
       MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
       messagingServices.add(messagingManager);
-      addressMap.put(member.nodeId(), address);
+      addressMap.put(member.memberId(), address);
       protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
     } else {
-      protocol = protocolFactory.newServerProtocol(member.nodeId());
+      protocol = protocolFactory.newServerProtocol(member.memberId());
     }
 
-    RaftServer.Builder builder = RaftServer.builder(member.nodeId())
+    RaftServer.Builder builder = RaftServer.builder(member.memberId())
         .withProtocol(protocol)
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
-            .withDirectory(new File(String.format("target/fuzz-logs/%s", member.nodeId())))
+            .withDirectory(new File(String.format("target/fuzz-logs/%s", member.memberId())))
             .withSerializer(storageSerializer)
             .withMaxSegmentSize(1024 * 1024)
             .build())
@@ -599,11 +599,11 @@ public class RaftFuzzTest implements Runnable {
     }
 
     RaftClient client = RaftClient.builder()
-        .withNodeId(memberId)
+        .withMemberId(memberId)
         .withProtocol(protocol)
         .build();
 
-    client.connect(members.stream().map(RaftMember::nodeId).collect(Collectors.toList())).join();
+    client.connect(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).join();
     clients.add(client);
     return client;
   }
@@ -718,7 +718,7 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public MemberId nodeId() {
+    public MemberId memberId() {
       return memberId;
     }
 

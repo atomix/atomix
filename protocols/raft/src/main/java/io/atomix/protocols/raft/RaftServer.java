@@ -567,7 +567,7 @@ public interface RaftServer {
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
     protected Builder(MemberId localMemberId) {
-      this.localMemberId = checkNotNull(localMemberId, "localNodeId cannot be null");
+      this.localMemberId = checkNotNull(localMemberId, "localMemberId cannot be null");
     }
 
     /**

@@ -144,7 +144,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    * Open session request builder.
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, OpenSessionRequest> {
-    private String nodeId;
+    private String memberId;
     private String serviceName;
     private String serviceType;
     private ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
@@ -158,8 +158,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
      * @return The open session request builder.
      * @throws NullPointerException if {@code node} is {@code null}
      */
-    public Builder withNodeId(MemberId node) {
-      this.nodeId = checkNotNull(node, "node cannot be null").id();
+    public Builder withMemberId(MemberId node) {
+      this.memberId = checkNotNull(node, "node cannot be null").id();
       return this;
     }
 
@@ -228,7 +228,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     protected void validate() {
       super.validate();
-      checkNotNull(nodeId, "client cannot be null");
+      checkNotNull(memberId, "memberId cannot be null");
       checkNotNull(serviceName, "name cannot be null");
       checkNotNull(serviceType, "typeName cannot be null");
       checkArgument(minTimeout >= 0, "minTimeout must be positive");
@@ -241,7 +241,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     public OpenSessionRequest build() {
       validate();
-      return new OpenSessionRequest(nodeId, serviceName, serviceType, readConsistency, minTimeout, maxTimeout);
+      return new OpenSessionRequest(memberId, serviceName, serviceType, readConsistency, minTimeout, maxTimeout);
     }
   }
 }

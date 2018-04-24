@@ -224,10 +224,10 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
      *
      * @param memberId The local node identifier.
      * @return The client builder.
-     * @throws NullPointerException if {@code nodeId} is null
+     * @throws NullPointerException if {@code memberId} is null
      */
-    public Builder withNodeId(MemberId memberId) {
-      this.memberId = checkNotNull(memberId, "nodeId cannot be null");
+    public Builder withMemberId(MemberId memberId) {
+      this.memberId = checkNotNull(memberId, "memberId cannot be null");
       return this;
     }
 

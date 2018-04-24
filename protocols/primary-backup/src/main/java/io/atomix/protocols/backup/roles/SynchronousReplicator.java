@@ -128,7 +128,7 @@ class SynchronousReplicator implements Replicator {
       long lastIndex = index;
       BackupRequest request = BackupRequest.request(
           context.descriptor(),
-          context.nodeId(),
+          context.memberId(),
           context.currentTerm(),
           context.getCommitIndex(),
           operations);

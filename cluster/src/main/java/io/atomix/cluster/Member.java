@@ -31,34 +31,34 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Member implements Configured<MemberConfig> {
 
   /**
-   * Returns a new node builder with no ID.
+   * Returns a new member builder with no ID.
    *
-   * @return the node builder
+   * @return the member builder
    */
   public static Builder builder() {
     return new Builder(null);
   }
 
   /**
-   * Returns a new node builder.
+   * Returns a new member builder.
    *
-   * @param nodeId the node identifier
-   * @return the node builder
-   * @throws NullPointerException if the node ID is null
+   * @param memberId the member identifier
+   * @return the member builder
+   * @throws NullPointerException if the member ID is null
    */
-  public static Builder builder(String nodeId) {
-    return builder(MemberId.from(nodeId));
+  public static Builder builder(String memberId) {
+    return builder(MemberId.from(memberId));
   }
 
   /**
-   * Returns a new node builder.
+   * Returns a new member builder.
    *
-   * @param memberId the node identifier
-   * @return the node builder
-   * @throws NullPointerException if the node ID is null
+   * @param memberId the member identifier
+   * @return the member builder
+   * @throws NullPointerException if the member ID is null
    */
   public static Builder builder(MemberId memberId) {
-    return new Builder(checkNotNull(memberId, "nodeId cannot be null"));
+    return new Builder(checkNotNull(memberId, "memberId cannot be null"));
   }
 
   /**

@@ -66,7 +66,7 @@ public class PrimaryBackupPartition implements Partition {
     return election.getTerm()
         .join()
         .primary()
-        .nodeId();
+        .memberId();
   }
 
   @Override
@@ -75,7 +75,7 @@ public class PrimaryBackupPartition implements Partition {
         .join()
         .candidates()
         .stream()
-        .map(GroupMember::nodeId)
+        .map(GroupMember::memberId)
         .collect(Collectors.toList());
   }
 

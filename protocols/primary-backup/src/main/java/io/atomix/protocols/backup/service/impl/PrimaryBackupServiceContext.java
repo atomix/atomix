@@ -175,11 +175,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   }
 
   /**
-   * Returns the local node ID.
+   * Returns the local member ID.
    *
-   * @return the local node ID
+   * @return the local member ID
    */
-  public MemberId nodeId() {
+  public MemberId memberId() {
     return localMemberId;
   }
 
@@ -520,7 +520,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private void handleClusterEvent(ClusterEvent event) {
     if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED) {
       for (Session session : sessions) {
-        if (session.nodeId().equals(event.subject().id())) {
+        if (session.memberId().equals(event.subject().id())) {
           role.expire((PrimaryBackupSession) session);
         }
       }
@@ -534,10 +534,10 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     if (term.term() > currentTerm) {
       log.debug("Term changed: {}", term);
       currentTerm = term.term();
-      primary = term.primary() != null ? term.primary().nodeId() : null;
+      primary = term.primary() != null ? term.primary().memberId() : null;
       backups = term.backups(descriptor.backups())
           .stream()
-          .map(GroupMember::nodeId)
+          .map(GroupMember::memberId)
           .collect(Collectors.toList());
 
       if (Objects.equals(primary, clusterMembershipService.getLocalMember().id())) {

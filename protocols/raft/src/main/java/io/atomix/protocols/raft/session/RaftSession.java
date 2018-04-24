@@ -133,7 +133,7 @@ public class RaftSession implements Session {
   }
 
   @Override
-  public MemberId nodeId() {
+  public MemberId memberId() {
     return member;
   }
 
