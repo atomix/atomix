@@ -195,9 +195,9 @@ public class AtomixTest extends AbstractAtomixTest {
 
     // client1 added to data node
     ClusterMembershipEvent event1 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_ADDED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event1.type());
     event1 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_ACTIVATED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, event1.type());
 
     Thread.sleep(1000);
 
@@ -209,29 +209,29 @@ public class AtomixTest extends AbstractAtomixTest {
 
     // client2 added to data node
     ClusterMembershipEvent event2 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_ADDED, event2.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event2.type());
     event2 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_ACTIVATED, event2.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, event2.type());
 
     // client2 added to client node
     event1 = clientListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_ADDED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event1.type());
     event1 = clientListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_ACTIVATED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, event1.type());
 
     client2.stop().join();
 
     // client2 removed from data node
     event1 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_DEACTIVATED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, event1.type());
     event1 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_REMOVED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
 
     // client2 removed from client node
     event1 = clientListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_DEACTIVATED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, event1.type());
     event1 = clientListener.event();
-    assertEquals(ClusterMembershipEvent.Type.NODE_REMOVED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
   }
 
   private static class TestClusterMembershipEventListener implements ClusterMembershipEventListener {
