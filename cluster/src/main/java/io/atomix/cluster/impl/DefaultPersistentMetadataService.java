@@ -119,7 +119,7 @@ public class DefaultPersistentMetadataService
   }
 
   @Override
-  public void addNode(Member member) {
+  public void addMember(Member member) {
     if (member.type() == Member.Type.PERSISTENT) {
       ReplicatedMember replicatedNode = nodes.get(member.id());
       if (replicatedNode == null) {
@@ -142,7 +142,7 @@ public class DefaultPersistentMetadataService
   }
 
   @Override
-  public void removeNode(Member member) {
+  public void removeMember(Member member) {
     ReplicatedMember replicatedNode = nodes.get(member.id());
     if (replicatedNode != null) {
       LogicalTimestamp timestamp = clock.increment();

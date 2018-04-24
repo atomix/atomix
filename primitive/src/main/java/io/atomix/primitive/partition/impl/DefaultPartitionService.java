@@ -24,6 +24,7 @@ import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
+import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
@@ -95,7 +96,8 @@ public class DefaultPartitionService implements ManagedPartitionService {
         .register(KryoNamespaces.BASIC)
         .register(MemberId.class)
         .register(PartitionGroupInfo.class)
-        .register(PartitionGroupConfig.class);
+        .register(PartitionGroupConfig.class)
+        .register(MemberGroupStrategy.class);
     for (PartitionGroupFactory factory : PartitionGroups.getGroupFactories()) {
       builder.register(factory.configClass());
     }

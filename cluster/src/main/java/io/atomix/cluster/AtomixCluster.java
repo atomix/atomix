@@ -174,7 +174,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   }
 
   protected CompletableFuture<Void> joinCluster() {
-    persistentMetadataService.addNode(membershipService().getLocalMember());
+    persistentMetadataService.addMember(membershipService().getLocalMember());
     return CompletableFuture.completedFuture(null);
   }
 
@@ -202,7 +202,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   }
 
   protected CompletableFuture<Void> leaveCluster() {
-    persistentMetadataService.removeNode(membershipService().getLocalMember());
+    persistentMetadataService.removeMember(membershipService().getLocalMember());
     return CompletableFuture.completedFuture(null);
   }
 
@@ -249,7 +249,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   protected static ManagedMessagingService buildMessagingService(ClusterConfig config) {
     return NettyMessagingService.builder()
         .withName(config.getName())
-        .withAddress(config.getLocalNode().getAddress())
+        .withAddress(config.getLocalMember().getAddress())
         .build();
   }
 
@@ -258,7 +258,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
    */
   protected static ManagedBroadcastService buildBroadcastService(ClusterConfig config) {
     return NettyBroadcastService.builder()
-        .withLocalAddress(config.getLocalNode().getAddress())
+        .withLocalAddress(config.getLocalMember().getAddress())
         .withGroupAddress(config.getMulticastAddress())
         .withEnabled(config.isMulticastEnabled())
         .build();
@@ -268,9 +268,9 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
    * Builds a bootstrap metadata service.
    */
   protected static ManagedBootstrapMetadataService buildBootstrapMetadataService(ClusterConfig config) {
-    boolean hasCoreNodes = config.getNodes().stream().anyMatch(node -> node.getType() == Member.Type.PERSISTENT);
+    boolean hasCoreNodes = config.getMembers().stream().anyMatch(node -> node.getType() == Member.Type.PERSISTENT);
     ClusterMetadata metadata = ClusterMetadata.builder()
-        .withNodes(config.getNodes()
+        .withNodes(config.getMembers()
             .stream()
             .filter(node -> (!hasCoreNodes && node.getType() == Member.Type.EPHEMERAL) || (hasCoreNodes && node.getType() == Member.Type.PERSISTENT))
             .map(Member::new)
@@ -284,7 +284,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
    */
   protected static ManagedPersistentMetadataService buildPersistentMetadataService(ClusterConfig config, MessagingService messagingService) {
     ClusterMetadata metadata = ClusterMetadata.builder()
-        .withNodes(config.getNodes()
+        .withNodes(config.getMembers()
             .stream()
             .filter(node -> node.getType() == Member.Type.PERSISTENT)
             .map(Member::new)
@@ -304,14 +304,14 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
       BroadcastService broadcastService) {
     // If the local node has not be configured, create a default node.
     Member localMember;
-    if (config.getLocalNode() == null) {
+    if (config.getLocalMember() == null) {
       Address address = Address.empty();
       localMember = Member.builder(address.toString())
           .withType(Member.Type.PERSISTENT)
           .withAddress(address)
           .build();
     } else {
-      localMember = new Member(config.getLocalNode());
+      localMember = new Member(config.getLocalMember());
     }
     return new DefaultClusterMembershipService(localMember, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService, config.getMembership());
   }
@@ -363,19 +363,9 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
      * @param localMember the local node metadata
      * @return the cluster metadata builder
      */
-    public Builder withLocalNode(Member localMember) {
-      config.setLocalNode(localMember.config());
+    public Builder withLocalMember(Member localMember) {
+      config.setLocalMember(localMember.config());
       return this;
-    }
-
-    /**
-     * Sets the core nodes.
-     *
-     * @param coreMembers the core nodes
-     * @return the Atomix builder
-     */
-    public Builder withNodes(Member... coreMembers) {
-      return withNodes(Arrays.asList(checkNotNull(coreMembers)));
     }
 
     /**
@@ -384,8 +374,18 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
      * @param members the core nodes
      * @return the Atomix builder
      */
-    public Builder withNodes(Collection<Member> members) {
-      config.setNodes(members.stream().map(n -> n.config()).collect(Collectors.toList()));
+    public Builder withMembers(Member... members) {
+      return withMembers(Arrays.asList(checkNotNull(members)));
+    }
+
+    /**
+     * Sets the core nodes.
+     *
+     * @param members the core nodes
+     * @return the Atomix builder
+     */
+    public Builder withMembers(Collection<Member> members) {
+      config.setMembers(members.stream().map(n -> n.config()).collect(Collectors.toList()));
       return this;
     }
 

@@ -25,13 +25,13 @@ public interface ManagedPersistentMetadataService extends PersistentMetadataServ
    *
    * @param member the node to add to the cluster metadata
    */
-  void addNode(Member member);
+  void addMember(Member member);
 
   /**
    * Removes the given node from the cluster metadata.
    *
    * @param member the node to remove from the cluster metadata
    */
-  void removeNode(Member member);
+  void removeMember(Member member);
 
 }

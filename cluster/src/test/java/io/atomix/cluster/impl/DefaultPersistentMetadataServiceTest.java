@@ -55,7 +55,7 @@ public class DefaultPersistentMetadataServiceTest {
     ManagedPersistentMetadataService metadataService2 = new DefaultPersistentMetadataService(
         clusterMetadata, messagingServiceFactory.newMessagingService(localMember2.address()).start().join());
     metadataService2.start().join();
-    metadataService2.addNode(localMember2);
+    metadataService2.addMember(localMember2);
 
     assertEquals(2, metadataService2.getMetadata().nodes().size());
   }
@@ -105,7 +105,7 @@ public class DefaultPersistentMetadataServiceTest {
     TestClusterMetadataEventListener remoteEventListener3 = new TestClusterMetadataEventListener();
     metadataService3.addListener(remoteEventListener3);
 
-    metadataService4.addNode(localMember4);
+    metadataService4.addMember(localMember4);
     assertEquals(4, metadataService4.getMetadata().nodes().size());
     assertEquals(4, localEventListener.event().subject().nodes().size());
 
