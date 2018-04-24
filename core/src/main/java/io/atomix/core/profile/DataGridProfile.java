@@ -36,8 +36,8 @@ public class DataGridProfile implements NamedProfile {
 
   @Override
   public void configure(AtomixConfig config) {
-    if (config.getSystemPartitionGroup() == null) {
-      config.setSystemPartitionGroup(new PrimaryBackupPartitionGroupConfig()
+    if (config.getManagementGroup() == null) {
+      config.setManagementGroup(new PrimaryBackupPartitionGroupConfig()
           .setName(SYSTEM_GROUP_NAME)
           .setPartitions(1)
           .setMemberGroupStrategy(MemberGroupStrategy.RACK_AWARE));

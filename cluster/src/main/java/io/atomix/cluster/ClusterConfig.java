@@ -19,8 +19,8 @@ import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Cluster configuration.
@@ -32,10 +32,10 @@ public class ClusterConfig implements Config {
 
   private String name = DEFAULT_CLUSTER_NAME;
   private MemberConfig localMember;
-  private Collection<MemberConfig> members = new ArrayList<>();
+  private Map<String, MemberConfig> members = new HashMap<>();
   private boolean multicastEnabled = false;
   private Address multicastAddress;
-  private GroupMembershipConfig membership = new GroupMembershipConfig();
+  private GroupMembershipConfig membershipConfig = new GroupMembershipConfig();
 
   public ClusterConfig() {
     try {
@@ -90,7 +90,7 @@ public class ClusterConfig implements Config {
    *
    * @return the cluster nodes
    */
-  public Collection<MemberConfig> getMembers() {
+  public Map<String, MemberConfig> getMembers() {
     return members;
   }
 
@@ -100,8 +100,20 @@ public class ClusterConfig implements Config {
    * @param members the cluster nodes
    * @return the cluster configuration
    */
-  public ClusterConfig setMembers(Collection<MemberConfig> members) {
+  public ClusterConfig setMembers(Map<String, MemberConfig> members) {
+    members.forEach((id, member) -> member.setId(id));
     this.members = members;
+    return this;
+  }
+
+  /**
+   * Adds a member to the configuration.
+   *
+   * @param member the member to add
+   * @return the cluster configuration
+   */
+  public ClusterConfig addMember(MemberConfig member) {
+    members.put(member.getId().id(), member);
     return this;
   }
 
@@ -150,18 +162,18 @@ public class ClusterConfig implements Config {
    *
    * @return the group membership configuration
    */
-  public GroupMembershipConfig getMembership() {
-    return membership;
+  public GroupMembershipConfig getMembershipConfig() {
+    return membershipConfig;
   }
 
   /**
    * Sets the group membership configuration.
    *
-   * @param membership the group membership configuration
+   * @param membershipConfig the group membership configuration
    * @return the cluster configuration
    */
-  public ClusterConfig setMembership(GroupMembershipConfig membership) {
-    this.membership = membership;
+  public ClusterConfig setMembershipConfig(GroupMembershipConfig membershipConfig) {
+    this.membershipConfig = membershipConfig;
     return this;
   }
 }

@@ -2,18 +2,19 @@
 cluster:
   name: test
   members:
-    - id: node1
+    node1:
       type: persistent
       address: localhost:5000
-    - id: node2
+    node2:
       type: persistent
       address: localhost:5001
-    - id: node3
+    node3:
       type: persistent
       address: localhost:5002
-system-partition-group:
-  name: system
+# The management partition group from which primitives and additional partition groups are managed
+management-group:
   type: raft
+  partitions: 1
   data-directory: target/test-logs/system
   members:
     - node1
@@ -21,8 +22,8 @@ system-partition-group:
     - node3
 # A list of partition groups
 partition-groups:
-  - type: raft
-    name: core
+  raft:
+    type: raft
     storage-level: memory
     partitions: 7
     partition-size: 3
@@ -31,8 +32,8 @@ partition-groups:
       - node1
       - node2
       - node3
-  - type: multi-primary
-    name: data
+  data:
+    type: multi-primary
     partitions: 7
 # Distributed primitive configurations
 primitives:

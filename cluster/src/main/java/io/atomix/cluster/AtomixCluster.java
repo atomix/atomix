@@ -268,11 +268,12 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
    * Builds a bootstrap metadata service.
    */
   protected static ManagedBootstrapMetadataService buildBootstrapMetadataService(ClusterConfig config) {
-    boolean hasCoreNodes = config.getMembers().stream().anyMatch(node -> node.getType() == Member.Type.PERSISTENT);
+    boolean hasPersistentNodes = config.getMembers().values().stream().anyMatch(node -> node.getType() == Member.Type.PERSISTENT);
     ClusterMetadata metadata = ClusterMetadata.builder()
         .withNodes(config.getMembers()
+            .values()
             .stream()
-            .filter(node -> (!hasCoreNodes && node.getType() == Member.Type.EPHEMERAL) || (hasCoreNodes && node.getType() == Member.Type.PERSISTENT))
+            .filter(node -> (!hasPersistentNodes && node.getType() == Member.Type.EPHEMERAL) || (hasPersistentNodes && node.getType() == Member.Type.PERSISTENT))
             .map(Member::new)
             .collect(Collectors.toList()))
         .build();
@@ -285,6 +286,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   protected static ManagedPersistentMetadataService buildPersistentMetadataService(ClusterConfig config, MessagingService messagingService) {
     ClusterMetadata metadata = ClusterMetadata.builder()
         .withNodes(config.getMembers()
+            .values()
             .stream()
             .filter(node -> node.getType() == Member.Type.PERSISTENT)
             .map(Member::new)
@@ -313,7 +315,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
     } else {
       localMember = new Member(config.getLocalMember());
     }
-    return new DefaultClusterMembershipService(localMember, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService, config.getMembership());
+    return new DefaultClusterMembershipService(localMember, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService, config.getMembershipConfig());
   }
 
   /**
@@ -385,7 +387,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
      * @return the Atomix builder
      */
     public Builder withMembers(Collection<Member> members) {
-      config.setMembers(members.stream().map(n -> n.config()).collect(Collectors.toList()));
+      members.forEach(member -> config.addMember(member.config()));
       return this;
     }
 

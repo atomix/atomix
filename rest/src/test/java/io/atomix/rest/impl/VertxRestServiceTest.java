@@ -282,7 +282,7 @@ public class VertxRestServiceTest {
         .withClusterName("test")
         .withLocalMember(localMember)
         .withMembers(members)
-        .withSystemPartitionGroup(PrimaryBackupPartitionGroup.builder("system")
+        .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)
             .build())
         .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")

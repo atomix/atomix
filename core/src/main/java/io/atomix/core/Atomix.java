@@ -43,7 +43,6 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
-import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionGroups;
 import io.atomix.primitive.partition.PartitionService;
@@ -66,7 +65,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -362,7 +360,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
    * Builds the core partition group.
    */
   private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
-    return config.getSystemPartitionGroup() != null ? PartitionGroups.createGroup(config.getSystemPartitionGroup()) : null;
+    return config.getManagementGroup() != null ? PartitionGroups.createGroup(config.getManagementGroup()) : null;
   }
 
   /**
@@ -374,7 +372,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
       ClusterMessagingService messagingService,
       PrimitiveTypeRegistry primitiveTypeRegistry) {
     List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
-    for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups()) {
+    for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups().values()) {
       partitionGroups.add(PartitionGroups.createGroup(partitionGroupConfig));
     }
     return new DefaultPartitionService(clusterMembershipService, messagingService, primitiveTypeRegistry, buildSystemPartitionGroup(config), partitionGroups);
@@ -448,13 +446,13 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
     }
 
     /**
-     * Sets the system partition group.
+     * Sets the system management partition group.
      *
-     * @param systemPartitionGroup the system partition group
+     * @param systemManagementGroup the system management partition group
      * @return the Atomix builder
      */
-    public Builder withSystemPartitionGroup(ManagedPartitionGroup systemPartitionGroup) {
-      config.setSystemPartitionGroup(systemPartitionGroup.config());
+    public Builder withManagementGroup(ManagedPartitionGroup systemManagementGroup) {
+      config.setManagementGroup(systemManagementGroup.config());
       return this;
     }
 
@@ -477,7 +475,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @throws NullPointerException if the partition groups are null
      */
     public Builder withPartitionGroups(Collection<ManagedPartitionGroup> partitionGroups) {
-      config.setPartitionGroups(partitionGroups.stream().map(PartitionGroup::config).collect(Collectors.toList()));
+      partitionGroups.forEach(group -> config.addPartitionGroup(group.config()));
       return this;
     }
 
