@@ -79,9 +79,9 @@ public class DefaultPersistentMetadataService
           .register(Member.Type.class)
           .register(new AddressSerializer(), Address.class)
           .register(LogicalTimestamp.class)
-          .register(NodeUpdate.class)
+          .register(MemberUpdate.class)
           .register(ClusterMetadataAdvertisement.class)
-          .register(NodeDigest.class)
+          .register(MemberDigest.class)
           .build("ClusterMetadataService"));
 
   private final Logger log = LoggerFactory.getLogger(getClass());
@@ -135,7 +135,7 @@ public class DefaultPersistentMetadataService
             timestamp,
             false);
         nodes.put(replicatedNode.id(), replicatedNode);
-        broadcastUpdate(new NodeUpdate(replicatedNode, timestamp));
+        broadcastUpdate(new MemberUpdate(replicatedNode, timestamp));
         post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
       }
     }
@@ -157,7 +157,7 @@ public class DefaultPersistentMetadataService
           timestamp,
           true);
       nodes.put(replicatedNode.id(), replicatedNode);
-      broadcastUpdate(new NodeUpdate(replicatedNode, timestamp));
+      broadcastUpdate(new MemberUpdate(replicatedNode, timestamp));
       post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));
     }
   }
@@ -224,7 +224,7 @@ public class DefaultPersistentMetadataService
   /**
    * Broadcasts the given update to all peers.
    */
-  private void broadcastUpdate(NodeUpdate update) {
+  private void broadcastUpdate(MemberUpdate update) {
     nodes.values().stream()
         .map(Member::address)
         .filter(address -> !address.equals(messagingService.address()))
@@ -234,7 +234,7 @@ public class DefaultPersistentMetadataService
   /**
    * Sends the given update to the given node.
    */
-  private void sendUpdate(Address address, NodeUpdate update) {
+  private void sendUpdate(Address address, MemberUpdate update) {
     messagingService.sendAsync(address, UPDATE_MESSAGE, SERIALIZER.encode(update));
   }
 
@@ -242,7 +242,7 @@ public class DefaultPersistentMetadataService
    * Handles an update from another node.
    */
   private void handleUpdate(Address address, byte[] payload) {
-    NodeUpdate update = SERIALIZER.decode(payload);
+    MemberUpdate update = SERIALIZER.decode(payload);
     clock.incrementAndUpdate(update.timestamp());
     ReplicatedMember node = nodes.get(update.node().id());
     if (node == null || node.timestamp().isOlderThan(update.timestamp())) {
@@ -264,7 +264,7 @@ public class DefaultPersistentMetadataService
   private void sendAdvertisement(Address address) {
     clock.increment();
     ClusterMetadataAdvertisement advertisement = new ClusterMetadataAdvertisement(
-        Maps.newHashMap(Maps.transformValues(nodes, node -> new NodeDigest(node.timestamp(), node.tombstone()))));
+        Maps.newHashMap(Maps.transformValues(nodes, node -> new MemberDigest(node.timestamp(), node.tombstone()))));
     messagingService.sendAndReceive(address, ADVERTISEMENT_MESSAGE, SERIALIZER.encode(advertisement))
         .whenComplete((response, error) -> {
           if (error == null) {
@@ -272,7 +272,7 @@ public class DefaultPersistentMetadataService
             for (MemberId memberId : nodes) {
               ReplicatedMember node = this.nodes.get(memberId);
               if (node != null) {
-                sendUpdate(address, new NodeUpdate(node, clock.increment()));
+                sendUpdate(address, new MemberUpdate(node, clock.increment()));
               }
             }
           } else {
@@ -302,9 +302,9 @@ public class DefaultPersistentMetadataService
     LogicalTimestamp timestamp = clock.increment();
     ClusterMetadataAdvertisement advertisement = SERIALIZER.decode(payload);
     Set<MemberId> staleNodes = nodes.values().stream().map(node -> {
-      NodeDigest digest = advertisement.digest(node.id());
+      MemberDigest digest = advertisement.digest(node.id());
       if (digest == null || node.isNewerThan(digest.timestamp())) {
-        sendUpdate(address, new NodeUpdate(node, timestamp));
+        sendUpdate(address, new MemberUpdate(node, timestamp));
       } else if (digest.isNewerThan(node.timestamp())) {
         if (digest.tombstone()) {
           if (!node.tombstone()) {

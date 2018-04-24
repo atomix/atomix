@@ -22,11 +22,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Cluster metadata update.
  */
-final class NodeUpdate {
+final class MemberUpdate {
   private final LogicalTimestamp timestamp;
   private final ReplicatedMember node;
 
-  NodeUpdate(ReplicatedMember node, LogicalTimestamp timestamp) {
+  MemberUpdate(ReplicatedMember node, LogicalTimestamp timestamp) {
     this.node = node;
     this.timestamp = timestamp;
   }
