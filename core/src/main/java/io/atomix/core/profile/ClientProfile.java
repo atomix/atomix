@@ -31,6 +31,6 @@ public class ClientProfile implements NamedProfile {
 
   @Override
   public void configure(AtomixConfig config) {
-    config.getClusterConfig().getLocalNode().setType(Member.Type.EPHEMERAL);
+    config.getClusterConfig().getLocalMember().setType(Member.Type.EPHEMERAL);
   }
 }

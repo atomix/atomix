@@ -535,20 +535,20 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
     }
 
     @Override
-    public Builder withLocalNode(Member localMember) {
-      super.withLocalNode(localMember);
+    public Builder withLocalMember(Member localMember) {
+      super.withLocalMember(localMember);
       return this;
     }
 
     @Override
-    public Builder withNodes(Member... coreMembers) {
-      super.withNodes(coreMembers);
+    public Builder withMembers(Member... members) {
+      super.withMembers(members);
       return this;
     }
 
     @Override
-    public Builder withNodes(Collection<Member> members) {
-      super.withNodes(members);
+    public Builder withMembers(Collection<Member> members) {
+      super.withMembers(members);
       return this;
     }
 

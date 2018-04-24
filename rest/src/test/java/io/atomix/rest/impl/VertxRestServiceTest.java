@@ -280,8 +280,8 @@ public class VertxRestServiceTest {
 
     return Atomix.builder()
         .withClusterName("test")
-        .withLocalNode(localMember)
-        .withNodes(members)
+        .withLocalMember(localMember)
+        .withMembers(members)
         .withSystemPartitionGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)
             .build())

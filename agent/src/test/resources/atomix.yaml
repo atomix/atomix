@@ -1,7 +1,7 @@
 # Cluster configuration
 cluster:
   name: test
-  nodes:
+  members:
     - id: node1
       type: persistent
       address: localhost:5000
@@ -15,6 +15,10 @@ system-partition-group:
   name: system
   type: raft
   data-directory: target/test-logs/system
+  members:
+    - node1
+    - node2
+    - node3
 # A list of partition groups
 partition-groups:
   - type: raft
@@ -23,6 +27,10 @@ partition-groups:
     partitions: 7
     partition-size: 3
     data-directory: target/test-logs/core
+    members:
+      - node1
+      - node2
+      - node3
   - type: multi-primary
     name: data
     partitions: 7

@@ -70,8 +70,8 @@ public abstract class AbstractAtomixTest {
 
     return Atomix.builder()
         .withClusterName("test")
-        .withLocalNode(localMember)
-        .withNodes(members);
+        .withLocalMember(localMember)
+        .withMembers(members);
   }
 
   /**

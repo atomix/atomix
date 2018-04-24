@@ -17,6 +17,7 @@ package io.atomix.protocols.raft;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMetadata;
+import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
@@ -486,7 +487,8 @@ public class RaftPerformanceTest implements Runnable {
             new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
             new DefaultPersistentMetadataService(new ClusterMetadata(members), messagingService),
             messagingService,
-            new BroadcastServiceAdapter()))
+            new BroadcastServiceAdapter(),
+            new GroupMembershipConfig()))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MAPPED)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))
