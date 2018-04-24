@@ -37,6 +37,8 @@ import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.impl.DefaultSessionIdService;
 import io.atomix.primitive.session.impl.ReplicatedSessionIdService;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.SingleThreadContext;
+import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -50,6 +52,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Default partition service.
@@ -66,6 +70,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
   private WrappedPartitionGroup defaultGroup;
   private final Map<String, WrappedPartitionGroup> groups = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
+  private ThreadContext threadContext;
 
   @SuppressWarnings("unchecked")
   public DefaultPartitionService(
@@ -127,6 +132,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
   private CompletableFuture<Void> bootstrap() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     Futures.allOf(clusterService.getNodes().stream()
+        .filter(node -> !node.id().equals(clusterService.getLocalNode().id()))
         .map(node -> bootstrap(node))
         .collect(Collectors.toList()))
         .whenComplete((result, error) -> {
@@ -162,6 +168,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
             if (systemGroup != null && info.systemGroup != null &&
                 (!systemGroup.name().equals(info.systemGroup.getName()) || !systemGroup.type().equals(info.systemGroup.getType()))) {
               future.completeExceptionally(new ConfigurationException("Duplicate system group detected"));
+              return;
             } else if (systemGroup == null && info.systemGroup != null) {
               systemGroup = new WrappedPartitionGroup(PartitionGroups.createGroup(info.systemGroup), false);
             }
@@ -176,8 +183,10 @@ public class DefaultPartitionService implements ManagedPartitionService {
                 }
               } else if (!group.type().equals(groupConfig.getType())) {
                 future.completeExceptionally(new ConfigurationException("Duplicate partition group " + groupConfig.getName() + " detected"));
+                return;
               }
             }
+            future.complete(null);
           } else {
             future.complete(null);
           }
@@ -185,8 +194,19 @@ public class DefaultPartitionService implements ManagedPartitionService {
     return future;
   }
 
+  private PartitionGroupInfo handleBootstrap(NodeId nodeId) {
+    return new PartitionGroupInfo(
+        systemGroup.config(),
+        groups.values()
+            .stream()
+            .map(PartitionGroup::config)
+            .collect(Collectors.toList()));
+  }
+
   @Override
   public CompletableFuture<PartitionService> start() {
+    threadContext = new SingleThreadContext(namedThreads("atomix-partition-service-%d", LOGGER));
+    messagingService.subscribe(BOOTSTRAP_SUBJECT, serializer::decode, this::handleBootstrap, serializer::encode, threadContext);
     return bootstrap()
         .thenCompose(v -> {
           PartitionManagementService managementService = new DefaultPartitionManagementService(
@@ -225,6 +245,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
               .collect(Collectors.toList());
           return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
             LOGGER.info("Started");
+            started.set(true);
             return this;
           });
         });
@@ -237,11 +258,17 @@ public class DefaultPartitionService implements ManagedPartitionService {
 
   @Override
   public CompletableFuture<Void> stop() {
+    messagingService.unsubscribe(BOOTSTRAP_SUBJECT);
     List<CompletableFuture<Void>> futures = groups.values().stream()
         .map(ManagedPartitionGroup::close)
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
+      ThreadContext threadContext = this.threadContext;
+      if (threadContext != null) {
+        threadContext.close();
+      }
       LOGGER.info("Stopped");
+      started.set(false);
     });
   }
 
