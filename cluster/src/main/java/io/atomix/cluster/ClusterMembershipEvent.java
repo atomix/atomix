@@ -30,24 +30,24 @@ public class ClusterMembershipEvent extends AbstractEvent<ClusterMembershipEvent
    */
   public enum Type {
     /**
-     * Signifies that a new cluster instance has been administratively added.
+     * Signifies that a new member has been added.
      */
-    NODE_ADDED,
+    MEMBER_ADDED,
 
     /**
-     * Signifies that a cluster instance has been administratively removed.
+     * Signifies that a member has been removed.
      */
-    NODE_REMOVED,
+    MEMBER_REMOVED,
 
     /**
-     * Signifies that a cluster instance became active.
+     * Signifies that a member became active.
      */
-    NODE_ACTIVATED,
+    MEMBER_ACTIVATED,
 
     /**
-     * Signifies that a cluster instance became inactive.
+     * Signifies that a member became inactive.
      */
-    NODE_DEACTIVATED
+    MEMBER_DEACTIVATED
   }
 
   /**

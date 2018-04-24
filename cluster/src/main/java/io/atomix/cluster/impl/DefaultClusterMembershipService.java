@@ -160,8 +160,8 @@ public class DefaultClusterMembershipService
   private void handleBroadcastMessage(byte[] message) {
     StatefulMember node = SERIALIZER.decode(message);
     if (nodes.putIfAbsent(node.id(), node) == null) {
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_ADDED, node));
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_ACTIVATED, node));
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, node));
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, node));
       sendHeartbeats();
     }
   }
@@ -223,8 +223,8 @@ public class DefaultClusterMembershipService
         boolean sendHeartbeats = false;
         for (StatefulMember node : nodes) {
           if (this.nodes.putIfAbsent(node.id(), node) == null) {
-            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_ADDED, node));
-            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_ACTIVATED, node));
+            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, node));
+            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, node));
             sendHeartbeats = true;
           }
         }
@@ -275,8 +275,8 @@ public class DefaultClusterMembershipService
       LOGGER.info("{} - Node activated: {}", localMember.id(), statefulNode);
       statefulNode.setState(State.ACTIVE);
       nodes.put(statefulNode.id(), statefulNode);
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_ADDED, statefulNode));
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_ACTIVATED, statefulNode));
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, statefulNode));
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, statefulNode));
       sendHeartbeat(member.address(), SERIALIZER.encode(new ClusterHeartbeat(
           localMember.id(),
           localMember.type(),
@@ -287,7 +287,7 @@ public class DefaultClusterMembershipService
     } else if (existingNode.getState() == State.INACTIVE) {
       LOGGER.info("{} - Node activated: {}", localMember.id(), existingNode);
       existingNode.setState(State.ACTIVE);
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_ACTIVATED, existingNode));
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, existingNode));
     }
   }
 
@@ -301,11 +301,11 @@ public class DefaultClusterMembershipService
       existingNode.setState(State.INACTIVE);
       switch (existingNode.type()) {
         case PERSISTENT:
-          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_DEACTIVATED, existingNode));
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingNode));
           break;
         case EPHEMERAL:
-          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_DEACTIVATED, existingNode));
-          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_REMOVED, existingNode));
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingNode));
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, existingNode));
           break;
         default:
           throw new AssertionError();
@@ -332,7 +332,7 @@ public class DefaultClusterMembershipService
                 node.host(),
                 node.tags());
             nodes.put(newNode.id(), newNode);
-            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_ADDED, newNode));
+            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, newNode));
           }
           return node.id();
         }).collect(Collectors.toSet());
@@ -350,7 +350,7 @@ public class DefaultClusterMembershipService
     for (MemberId memberId : missingNodes) {
       StatefulMember existingNode = nodes.remove(memberId);
       if (existingNode != null) {
-        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.NODE_REMOVED, existingNode));
+        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, existingNode));
       }
     }
   }
