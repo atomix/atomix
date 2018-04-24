@@ -47,7 +47,7 @@ final class ClusterHeartbeat {
    *
    * @return the identifier of the node that sent the heartbeat
    */
-  public MemberId nodeId() {
+  public MemberId memberId() {
     return memberId;
   }
 
@@ -99,7 +99,7 @@ final class ClusterHeartbeat {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("nodeId", memberId)
+        .add("memberId", memberId)
         .add("type", type)
         .toString();
   }

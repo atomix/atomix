@@ -88,7 +88,7 @@ public interface RaftMember {
    *
    * @return The member node ID.
    */
-  MemberId nodeId();
+  MemberId memberId();
 
   /**
    * Returns the member hash.

@@ -62,7 +62,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class PrimaryBackupTest extends ConcurrentTestCase {
   private static final Serializer SERIALIZER = DefaultSerializers.BASIC;
-  private volatile int nodeId;
+  private volatile int memberId;
   private volatile int sessionId;
   private PrimaryElection election;
   protected volatile List<MemberId> nodes;
@@ -374,8 +374,8 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    *
    * @return The next unique member identifier.
    */
-  private MemberId nextNodeId() {
-    return MemberId.from(String.valueOf(++nodeId));
+  private MemberId nextMemberId() {
+    return MemberId.from(String.valueOf(++memberId));
   }
 
   /**
@@ -392,7 +392,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     List<PrimaryBackupServer> servers = new ArrayList<>();
 
     for (int i = 0; i < count; i++) {
-      nodes.add(nextNodeId());
+      nodes.add(nextMemberId());
       PrimaryBackupServer server = createServer(nodes.get(i));
       server.start().thenRun(this::resume);
       servers.add(server);
@@ -423,7 +423,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    * Creates a Raft client.
    */
   private PrimaryBackupClient createClient() throws Throwable {
-    MemberId memberId = nextNodeId();
+    MemberId memberId = nextMemberId();
     PrimaryBackupClient client = PrimaryBackupClient.builder()
         .withClientName("test")
         .withMembershipService(new TestClusterMembershipService(memberId, nodes))
@@ -451,7 +451,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   @After
   public void clearTests() throws Exception {
     nodes = new ArrayList<>();
-    nodeId = 0;
+    memberId = 0;
     sessionId = 0;
     clients = new ArrayList<>();
     servers = new ArrayList<>();

@@ -518,7 +518,7 @@ public class RaftPerformanceTest implements Runnable {
     }
 
     RaftClient client = RaftClient.builder()
-        .withNodeId(member.id())
+        .withMemberId(member.id())
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.SHARED_THREAD_POOL)
         .build();
@@ -636,7 +636,7 @@ public class RaftPerformanceTest implements Runnable {
     }
 
     @Override
-    public MemberId nodeId() {
+    public MemberId memberId() {
       return memberId;
     }
 

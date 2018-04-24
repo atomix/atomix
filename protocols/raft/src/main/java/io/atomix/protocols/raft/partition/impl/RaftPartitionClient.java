@@ -120,7 +120,7 @@ public class RaftPartitionClient implements PrimitiveClient<RaftProtocol>, Manag
   private RaftClient newRaftClient(RaftClientProtocol protocol) {
     return RaftClient.builder()
         .withClientId(partition.name())
-        .withNodeId(localMemberId)
+        .withMemberId(localMemberId)
         .withProtocol(protocol)
         .build();
   }

@@ -83,7 +83,7 @@ public class PrimaryBackupServerContext implements Managed<Void> {
    * @return the current server role
    */
   public Role getRole() {
-    return Objects.equals(primaryElection.getTerm().join().primary().nodeId(), clusterMembershipService.getLocalMember().id())
+    return Objects.equals(primaryElection.getTerm().join().primary().memberId(), clusterMembershipService.getLocalMember().id())
         ? Role.PRIMARY
         : Role.BACKUP;
   }

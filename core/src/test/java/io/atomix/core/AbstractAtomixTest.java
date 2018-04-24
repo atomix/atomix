@@ -56,15 +56,15 @@ public abstract class AbstractAtomixTest {
 
     Collection<Member> members = Stream.concat(
         persistentNodes.stream()
-            .map(nodeId -> Member.builder(String.valueOf(nodeId))
+            .map(memberId -> Member.builder(String.valueOf(memberId))
                 .withType(Member.Type.PERSISTENT)
-                .withAddress("localhost", BASE_PORT + nodeId)
+                .withAddress("localhost", BASE_PORT + memberId)
                 .build()),
         ephemeralNodes.stream()
-            .filter(nodeId -> !persistentNodes.contains(nodeId))
-            .map(nodeId -> Member.builder(String.valueOf(nodeId))
+            .filter(memberId -> !persistentNodes.contains(memberId))
+            .map(memberId -> Member.builder(String.valueOf(memberId))
                 .withType(Member.Type.EPHEMERAL)
-                .withAddress("localhost", BASE_PORT + nodeId)
+                .withAddress("localhost", BASE_PORT + memberId)
                 .build()))
         .collect(Collectors.toList());
 

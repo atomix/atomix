@@ -71,7 +71,7 @@ public final class FollowerRole extends ActiveRole {
    */
   private void handleClusterEvent(ClusterEvent event) {
     RaftMember leader = raft.getLeader();
-    if (leader != null && event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(leader.nodeId())) {
+    if (leader != null && event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(leader.memberId())) {
       sendPollRequests();
     }
   }
@@ -155,11 +155,11 @@ public final class FollowerRole extends ActiveRole {
       log.debug("Polling {} for next term {}", member, raft.getTerm() + 1);
       PollRequest request = PollRequest.builder()
           .withTerm(raft.getTerm())
-          .withCandidate(raft.getCluster().getMember().nodeId())
+          .withCandidate(raft.getCluster().getMember().memberId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLastLogTerm(lastTerm)
           .build();
-      raft.getProtocol().poll(member.nodeId(), request).whenCompleteAsync((response, error) -> {
+      raft.getProtocol().poll(member.memberId(), request).whenCompleteAsync((response, error) -> {
         raft.checkThread();
         if (isRunning() && !complete.get()) {
           if (error != null) {

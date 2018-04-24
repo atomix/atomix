@@ -75,8 +75,8 @@ public class HashBasedPrimaryElection
       }
     }
     candidates.sort((a, b) -> {
-      int aoffset = Hashing.murmur3_32().hashString(a.nodeId().id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
-      int boffset = Hashing.murmur3_32().hashString(b.nodeId().id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
+      int aoffset = Hashing.murmur3_32().hashString(a.memberId().id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
+      int boffset = Hashing.murmur3_32().hashString(b.memberId().id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
       return aoffset - boffset;
     });
     currentTerm = new PrimaryTerm(electionService.incrementTerm(), candidates.get(0), candidates.subList(1, candidates.size()));

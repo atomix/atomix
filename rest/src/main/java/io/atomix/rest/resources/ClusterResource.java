@@ -136,9 +136,9 @@ public class ClusterResource extends AbstractRestResource {
   @GET
   @Path("/nodes/{node}/events")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getNodeEvent(@PathParam("node") String nodeId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, nodeId, l -> e -> {
-      if (e.subject().id().id().equals(nodeId)) {
+  public void getNodeEvent(@PathParam("node") String memberId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, memberId, l -> e -> {
+      if (e.subject().id().id().equals(memberId)) {
         l.addEvent(e);
       }
     });
@@ -159,10 +159,10 @@ public class ClusterResource extends AbstractRestResource {
   @POST
   @Path("/nodes/{node}/events")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response addNodeListener(@PathParam("node") String nodeId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events) {
+  public Response addNodeListener(@PathParam("node") String memberId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events) {
     String id = UUID.randomUUID().toString();
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, getNodeListener(nodeId, id), l -> e -> {
-      if (e.subject().id().id().equals(nodeId)) {
+    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, getNodeListener(memberId, id), l -> e -> {
+      if (e.subject().id().id().equals(memberId)) {
         l.addEvent(e);
       }
     });
@@ -175,8 +175,8 @@ public class ClusterResource extends AbstractRestResource {
   @GET
   @Path("/nodes/{node}/events/{id}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getNodeEvent(@PathParam("node") String nodeId, @PathParam("id") String listenerId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getEventLog(ClusterResource.class, getNodeListener(nodeId, listenerId));
+  public void getNodeEvent(@PathParam("node") String memberId, @PathParam("id") String listenerId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getEventLog(ClusterResource.class, getNodeListener(memberId, listenerId));
     if (eventLog == null) {
       response.resume(Response.status(Status.NOT_FOUND).build());
       return;
@@ -194,15 +194,15 @@ public class ClusterResource extends AbstractRestResource {
 
   @DELETE
   @Path("/nodes/{node}/events/{id}")
-  public void removeNodeListener(@PathParam("node") String nodeId, @PathParam("id") String listenerId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.removeEventLog(ClusterResource.class, getNodeListener(nodeId, listenerId));
+  public void removeNodeListener(@PathParam("node") String memberId, @PathParam("id") String listenerId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events) {
+    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.removeEventLog(ClusterResource.class, getNodeListener(memberId, listenerId));
     if (eventLog != null && eventLog.close()) {
       clusterMembershipService.removeListener(eventLog.listener());
     }
   }
 
-  private static String getNodeListener(String nodeId, String id) {
-    return String.format("%s-%s", nodeId, id);
+  private static String getNodeListener(String memberId, String id) {
+    return String.format("%s-%s", memberId, id);
   }
 
   /**

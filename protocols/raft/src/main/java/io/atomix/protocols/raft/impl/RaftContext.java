@@ -362,7 +362,7 @@ public class RaftContext implements AutoCloseable {
         DefaultRaftMember member = cluster.getMember(leader);
         if (member != null) {
           this.leader = leader;
-          log.info("Found leader {}", member.nodeId());
+          log.info("Found leader {}", member.memberId());
           electionListeners.forEach(l -> l.accept(member));
         }
       }
@@ -399,7 +399,7 @@ public class RaftContext implements AutoCloseable {
    */
   public boolean isLeader() {
     MemberId leader = this.leader;
-    return leader != null && leader.equals(cluster.getMember().nodeId());
+    return leader != null && leader.equals(cluster.getMember().memberId());
   }
 
   /**
@@ -441,7 +441,7 @@ public class RaftContext implements AutoCloseable {
     meta.storeVote(this.lastVotedFor);
 
     if (candidate != null) {
-      log.debug("Voted for {}", member.nodeId());
+      log.debug("Voted for {}", member.memberId());
     } else {
       log.trace("Reset last voted for");
     }
@@ -718,7 +718,7 @@ public class RaftContext implements AutoCloseable {
       Consumer<RaftMember> electionListener = new Consumer<RaftMember>() {
         @Override
         public void accept(RaftMember member) {
-          if (member.nodeId().equals(cluster.getMember().nodeId())) {
+          if (member.memberId().equals(cluster.getMember().memberId())) {
             future.complete(null);
           } else {
             future.completeExceptionally(new RaftException.ProtocolException("Failed to transfer leadership"));
@@ -733,8 +733,8 @@ public class RaftContext implements AutoCloseable {
       RaftMember member = getCluster().getMember();
       RaftMember leader = getLeader();
       if (leader != null) {
-        protocol.transfer(leader.nodeId(), TransferRequest.builder()
-            .withMember(member.nodeId())
+        protocol.transfer(leader.memberId(), TransferRequest.builder()
+            .withMember(member.memberId())
             .build()).whenCompleteAsync((response, error) -> {
           if (error != null) {
             future.completeExceptionally(error);

@@ -45,11 +45,11 @@ public interface ClusterMembershipService extends ListenerService<ClusterEvent, 
    * This is a convenience method that wraps the given {@link String} in a {@link MemberId}. To avoid unnecessary
    * object allocation, repeated invocations of this method should instead use {@link #getMember(MemberId)}.
    *
-   * @param nodeId the member identifier
+   * @param memberId the member identifier
    * @return the member or {@code null} if no node with the given identifier exists
    */
-  default Member getMember(String nodeId) {
-    return getMember(MemberId.from(nodeId));
+  default Member getMember(String memberId) {
+    return getMember(MemberId.from(memberId));
   }
 
   /**

@@ -247,7 +247,7 @@ public class RaftServiceContext implements ServiceContext {
     writer.writeInt(sessions.getSessions().size());
     for (RaftSession session : sessions.getSessions()) {
       writer.writeLong(session.sessionId().id());
-      writer.writeString(session.nodeId().id());
+      writer.writeString(session.memberId().id());
       writer.writeString(session.readConsistency().name());
       writer.writeLong(session.minTimeout());
       writer.writeLong(session.maxTimeout());

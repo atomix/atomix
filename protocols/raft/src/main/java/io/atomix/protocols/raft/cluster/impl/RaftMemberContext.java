@@ -378,7 +378,7 @@ public final class RaftMemberContext {
   public String toString() {
     RaftLogReader reader = this.reader;
     return toStringHelper(this)
-        .add("member", member.nodeId())
+        .add("member", member.memberId())
         .add("term", term)
         .add("configIndex", configIndex)
         .add("snapshotIndex", snapshotIndex)

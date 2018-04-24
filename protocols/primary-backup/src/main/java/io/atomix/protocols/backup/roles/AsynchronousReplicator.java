@@ -105,7 +105,7 @@ class AsynchronousReplicator implements Replicator {
       operations.clear();
       BackupRequest request = BackupRequest.request(
           context.descriptor(),
-          context.nodeId(),
+          context.memberId(),
           context.currentTerm(),
           context.currentIndex(),
           batch);

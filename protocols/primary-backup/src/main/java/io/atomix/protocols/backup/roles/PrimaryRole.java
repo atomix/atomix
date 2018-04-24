@@ -19,7 +19,6 @@ import com.google.common.collect.Lists;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.Sessions;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.CloseOperation;
@@ -95,7 +94,7 @@ public class PrimaryRole extends PrimaryBackupRole {
         index,
         timestamp,
         session.sessionId().id(),
-        session.nodeId(),
+        session.memberId(),
         request.operation()))
         .thenApply(v -> {
           try {
@@ -125,7 +124,7 @@ public class PrimaryRole extends PrimaryBackupRole {
           index,
           timestamp,
           newSession.sessionId().id(),
-          newSession.nodeId(),
+          newSession.memberId(),
           null))
           .thenApply(v -> {
             context.setIndex(index);
@@ -165,7 +164,7 @@ public class PrimaryRole extends PrimaryBackupRole {
     buffer.writeInt(sessions.size());
     for (Session session : sessions) {
       buffer.writeLong(session.sessionId().id());
-      buffer.writeString(session.nodeId().id());
+      buffer.writeString(session.memberId().id());
     }
 
     context.service().backup(buffer);

@@ -152,7 +152,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
     log.trace("Sending {} to {}", request, term.primary());
     PrimaryTerm term = this.term;
     if (term.primary() != null) {
-      protocol.execute(term.primary().nodeId(), request).whenCompleteAsync((response, error) -> {
+      protocol.execute(term.primary().memberId(), request).whenCompleteAsync((response, error) -> {
         if (error == null) {
           log.trace("Received {}", response);
           if (response.status() == Status.OK) {
@@ -213,7 +213,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(term.primary().nodeId())) {
+    if (event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(term.primary().memberId())) {
       threadContext.execute(() -> {
         state = State.SUSPENDED;
         stateChangeListeners.forEach(l -> l.accept(state));
@@ -254,7 +254,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     if (term.primary() != null) {
-      protocol.close(term.primary().nodeId(), new CloseRequest(descriptor, sessionId.id()))
+      protocol.close(term.primary().memberId(), new CloseRequest(descriptor, sessionId.id()))
           .whenCompleteAsync((response, error) -> {
             protocol.unregisterEventListener(sessionId);
             clusterMembershipService.removeListener(clusterEventListener);

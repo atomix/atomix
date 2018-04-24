@@ -44,10 +44,10 @@ import static org.junit.Assert.assertTrue;
 public class DefaultClusterEventingServiceTest {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
-  private Member buildNode(int nodeId, Member.Type type) {
-    return Member.builder(String.valueOf(nodeId))
+  private Member buildNode(int memberId, Member.Type type) {
+    return Member.builder(String.valueOf(memberId))
         .withType(type)
-        .withAddress("localhost", nodeId)
+        .withAddress("localhost", memberId)
         .build();
   }
 

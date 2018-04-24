@@ -69,7 +69,7 @@ public class PrimaryBackupSession implements Session {
   }
 
   @Override
-  public MemberId nodeId() {
+  public MemberId memberId() {
     return memberId;
   }
 

@@ -105,7 +105,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       Function<M, byte[]> encoder,
       Set<MemberId> nodes) {
     byte[] payload = encoder.apply(message);
-    nodes.forEach(nodeId -> doUnicast(subject, payload, nodeId));
+    nodes.forEach(memberId -> doUnicast(subject, payload, memberId));
   }
 
   @Override

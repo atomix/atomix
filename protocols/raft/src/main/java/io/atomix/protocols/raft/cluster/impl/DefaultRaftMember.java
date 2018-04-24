@@ -73,7 +73,7 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   }
 
   @Override
-  public MemberId nodeId() {
+  public MemberId memberId() {
     return id;
   }
 

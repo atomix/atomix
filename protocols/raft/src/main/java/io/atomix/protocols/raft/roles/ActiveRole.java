@@ -139,7 +139,7 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!raft.getCluster().getRemoteMemberStates().stream().map(m -> m.getMember().nodeId()).collect(Collectors.toSet()).contains(request.candidate())) {
+    else if (!raft.getCluster().getRemoteMemberStates().stream().map(m -> m.getMember().memberId()).collect(Collectors.toSet()).contains(request.candidate())) {
       log.debug("Rejected {}: candidate is not known to the local member", request);
       return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
@@ -166,7 +166,7 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // If we already voted for the requesting server, respond successfully.
     else if (raft.getLastVotedFor() == request.candidate()) {
-      log.debug("Accepted {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).nodeId());
+      log.debug("Accepted {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).memberId());
       return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())
@@ -175,7 +175,7 @@ public abstract class ActiveRole extends PassiveRole {
     }
     // In this case, we've already voted for someone else.
     else {
-      log.debug("Rejected {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).nodeId());
+      log.debug("Rejected {}: already voted for {}", request, raft.getCluster().getMember(raft.getLastVotedFor()).memberId());
       return VoteResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .withTerm(raft.getTerm())

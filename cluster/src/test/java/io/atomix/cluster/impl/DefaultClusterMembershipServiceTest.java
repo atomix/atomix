@@ -39,10 +39,10 @@ import static org.junit.Assert.assertNull;
  */
 public class DefaultClusterMembershipServiceTest {
 
-  private Member buildNode(int nodeId, Member.Type type) {
-    return Member.builder(String.valueOf(nodeId))
+  private Member buildNode(int memberId, Member.Type type) {
+    return Member.builder(String.valueOf(memberId))
         .withType(type)
-        .withAddress("localhost", nodeId)
+        .withAddress("localhost", memberId)
         .build();
   }
 

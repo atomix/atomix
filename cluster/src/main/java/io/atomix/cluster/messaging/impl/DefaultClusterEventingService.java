@@ -24,10 +24,10 @@ import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.Subscription;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingException;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -99,8 +99,8 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   @Override
   public <M> void broadcast(String topic, M message, Function<M, byte[]> encoder) {
     byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.ALL, encoder.apply(message)));
-    getSubscriberNodes(topic).forEach(nodeId -> {
-      Member member = membershipService.getMember(nodeId);
+    getSubscriberNodes(topic).forEach(memberId -> {
+      Member member = membershipService.getMember(memberId);
       if (member != null && member.getState() == Member.State.ACTIVE) {
         messagingService.sendAsync(member.address(), topic, payload);
       }
@@ -109,7 +109,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
 
   @Override
   public <M> CompletableFuture<Void> unicast(String topic, M message, Function<M, byte[]> encoder) {
-    MemberId memberId = getNextNodeId(topic);
+    MemberId memberId = getNextMemberId(topic);
     if (memberId != null) {
       Member member = membershipService.getMember(memberId);
       if (member != null && member.getState() == Member.State.ACTIVE) {
@@ -122,7 +122,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
 
   @Override
   public <M, R> CompletableFuture<R> send(String topic, M message, Function<M, byte[]> encoder, Function<byte[], R> decoder, Duration timeout) {
-    MemberId memberId = getNextNodeId(topic);
+    MemberId memberId = getNextMemberId(topic);
     if (memberId != null) {
       Member member = membershipService.getMember(memberId);
       if (member != null && member.getState() == Member.State.ACTIVE) {
@@ -146,7 +146,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
     }
     return topic.remoteSubscriptions().stream()
         .filter(s -> !s.isTombstone())
-        .map(s -> s.nodeId())
+        .map(s -> s.memberId())
         .distinct();
   }
 
@@ -156,7 +156,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    * @param topicName the topic for which to return the next node ID
    * @return the next node ID for the given message topic
    */
-  private MemberId getNextNodeId(String topicName) {
+  private MemberId getNextMemberId(String topicName) {
     InternalTopic topic = topics.get(topicName);
     if (topic == null) {
       return null;
@@ -164,7 +164,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
 
     TopicIterator iterator = topic.iterator();
     if (iterator.hasNext()) {
-      return iterator.next().nodeId();
+      return iterator.next().memberId();
     }
     return null;
   }
@@ -208,7 +208,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
     for (InternalSubscriptionInfo subscription : subscriptions) {
       InternalTopic topic = topics.computeIfAbsent(subscription.topic, InternalTopic::new);
       InternalSubscriptionInfo matchingSubscription = topic.remoteSubscriptions().stream()
-          .filter(s -> s.nodeId().equals(subscription.nodeId()) && s.logicalTimestamp().equals(subscription.logicalTimestamp()))
+          .filter(s -> s.memberId().equals(subscription.memberId()) && s.logicalTimestamp().equals(subscription.logicalTimestamp()))
           .findFirst()
           .orElse(null);
       if (matchingSubscription == null) {
@@ -656,7 +656,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
      *
      * @return the node to which the subscription belongs
      */
-    MemberId nodeId() {
+    MemberId memberId() {
       return memberId;
     }
 

@@ -70,11 +70,11 @@ public interface Session {
   PrimitiveType serviceType();
 
   /**
-   * Returns the node identifier to which the session belongs.
+   * Returns the member identifier to which the session belongs.
    *
-   * @return The node to which the session belongs.
+   * @return The member to which the session belongs.
    */
-  MemberId nodeId();
+  MemberId memberId();
 
   /**
    * Returns the session state.

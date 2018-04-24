@@ -164,7 +164,7 @@ public class RaftProxyManager {
 
     log.debug("Opening session; name: {}, type: {}", serviceName, primitiveType);
     OpenSessionRequest request = OpenSessionRequest.builder()
-        .withNodeId(memberId)
+        .withMemberId(memberId)
         .withServiceName(serviceName)
         .withServiceType(primitiveType)
         .withReadConsistency(readConsistency)

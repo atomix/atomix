@@ -269,8 +269,8 @@ public class VertxRestServiceTest {
     deleteData();
   }
 
-  protected Atomix buildAtomix(int nodeId) {
-    Member localMember = Member.builder(String.valueOf(nodeId))
+  protected Atomix buildAtomix(int memberId) {
+    Member localMember = Member.builder(String.valueOf(memberId))
         .withType(Member.Type.EPHEMERAL)
         .withAddress("localhost", findAvailablePort(BASE_PORT))
         .build();
