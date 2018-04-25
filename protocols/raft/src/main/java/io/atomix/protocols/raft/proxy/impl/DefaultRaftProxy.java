@@ -19,8 +19,9 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxy;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.impl.AbstractPartitionProxy;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -55,9 +56,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * In the event that the client session expires, clients are responsible for opening a new session by creating and
  * opening a new session object.
  */
-public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProxy {
+public class DefaultRaftProxy extends AbstractPartitionProxy implements RaftProxy {
   private final String serviceName;
   private final PrimitiveType primitiveType;
+  private final PartitionId partitionId;
   private final Duration minTimeout;
   private final Duration maxTimeout;
   private final RaftClientProtocol protocol;
@@ -74,6 +76,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   public DefaultRaftProxy(
       String serviceName,
       PrimitiveType primitiveType,
+      PartitionId partitionId,
       RaftClientProtocol protocol,
       MemberSelectorManager selectorManager,
       RaftProxyManager sessionManager,
@@ -84,6 +87,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
       Duration maxTimeout) {
     this.serviceName = checkNotNull(serviceName, "serviceName cannot be null");
     this.primitiveType = checkNotNull(primitiveType, "serviceType cannot be null");
+    this.partitionId = checkNotNull(partitionId, "partitionId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
     this.readConsistency = checkNotNull(readConsistency, "readConsistency cannot be null");
@@ -100,7 +104,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public PrimitiveType serviceType() {
+  public PrimitiveType type() {
     return primitiveType;
   }
 
@@ -110,19 +114,24 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public PrimitiveProxy.State getState() {
+  public PartitionId partitionId() {
+    return partitionId;
+  }
+
+  @Override
+  public PartitionProxy.State getState() {
     return state.getState();
   }
 
   @Override
-  public void addStateChangeListener(Consumer<PrimitiveProxy.State> listener) {
+  public void addStateChangeListener(Consumer<PartitionProxy.State> listener) {
     if (state != null) {
       state.addStateChangeListener(listener);
     }
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<PrimitiveProxy.State> listener) {
+  public void removeStateChangeListener(Consumer<PartitionProxy.State> listener) {
     if (state != null) {
       state.removeStateChangeListener(listener);
     }
@@ -152,7 +161,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> connect() {
+  public CompletableFuture<PartitionProxy> connect() {
     return sessionManager.openSession(
         serviceName,
         primitiveType,
@@ -168,7 +177,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
               protocol,
               selectorManager.createSelector(CommunicationStrategy.LEADER),
               context,
-              LoggerContext.builder(PrimitiveProxy.class)
+              LoggerContext.builder(PartitionProxy.class)
                   .addValue(state.getSessionId())
                   .add("type", state.getPrimitiveType())
                   .add("name", state.getPrimitiveName())
@@ -177,7 +186,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
               protocol,
               selectorManager.createSelector(communicationStrategy),
               context,
-              LoggerContext.builder(PrimitiveProxy.class)
+              LoggerContext.builder(PartitionProxy.class)
                   .addValue(state.getSessionId())
                   .add("type", state.getPrimitiveType())
                   .add("name", state.getPrimitiveName())
@@ -220,7 +229,7 @@ public class DefaultRaftProxy extends AbstractPrimitiveProxy implements RaftProx
   public CompletableFuture<Void> close() {
     if (state != null) {
       return sessionManager.closeSession(state.getSessionId())
-          .whenComplete((result, error) -> state.setState(PrimitiveProxy.State.CLOSED));
+          .whenComplete((result, error) -> state.setState(PartitionProxy.State.CLOSED));
     }
     return CompletableFuture.completedFuture(null);
   }

@@ -15,12 +15,7 @@
  */
 package io.atomix.protocols.backup.partition.impl;
 
-import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.PartitionManagementService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.protocols.backup.PrimaryBackupProtocol;
 import io.atomix.protocols.backup.PrimaryBackupClient;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
@@ -30,14 +25,12 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Primary-backup partition client.
  */
-public class PrimaryBackupPartitionClient implements PrimitiveClient<PrimaryBackupProtocol>, Managed<PrimaryBackupPartitionClient> {
+public class PrimaryBackupPartitionClient implements Managed<PrimaryBackupPartitionClient> {
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
@@ -53,24 +46,13 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<PrimaryBack
     this.threadFactory = threadFactory;
   }
 
-  @Override
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
-    return newProxy(primitiveName, primitiveType, PrimaryBackupProtocol.builder()
-        .withMaxRetries(5)
-        .withRetryDelay(Duration.ofMillis(100))
-        .withBackups(2)
-        .withReplication(Replication.ASYNCHRONOUS)
-        .build());
-  }
-
-  @Override
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PrimaryBackupProtocol primitiveProtocol) {
-    return client.newProxy(primitiveName, primitiveType, primitiveProtocol);
-  }
-
-  @Override
-  public CompletableFuture<Set<String>> getPrimitives(PrimitiveType primitiveType) {
-    return client.getPrimitives(primitiveType);
+  /**
+   * Returns the proxy client.
+   *
+   * @return the proxy client
+   */
+  public PrimaryBackupClient getProxyClient() {
+    return client;
   }
 
   @Override
@@ -85,6 +67,7 @@ public class PrimaryBackupPartitionClient implements PrimitiveClient<PrimaryBack
   private PrimaryBackupClient newClient() {
     return PrimaryBackupClient.builder()
         .withClientName(partition.name())
+        .withPartitionId(partition.id())
         .withMembershipService(managementService.getMembershipService())
         .withProtocol(new PrimaryBackupClientCommunicator(
             partition.name(),

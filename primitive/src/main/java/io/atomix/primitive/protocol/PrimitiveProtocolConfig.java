@@ -24,6 +24,13 @@ public abstract class PrimitiveProtocolConfig<C extends PrimitiveProtocolConfig<
   private String group;
 
   /**
+   * Returns the primitive protocol type.
+   *
+   * @return the primitive protocol type
+   */
+  public abstract PrimitiveProtocol.Type getType();
+
+  /**
    * Returns the protocol group.
    *
    * @return the protocol group

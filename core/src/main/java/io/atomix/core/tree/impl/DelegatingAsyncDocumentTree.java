@@ -21,7 +21,7 @@ import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeListener;
-import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Document tree that delegates to an underlying instance.
  */
-public class DelegatingAsyncDocumentTree<V> extends DelegatingDistributedPrimitive implements AsyncDocumentTree<V> {
+public class DelegatingAsyncDocumentTree<V> extends DelegatingAsyncPrimitive implements AsyncDocumentTree<V> {
   private final AsyncDocumentTree<V> delegateTree;
 
   public DelegatingAsyncDocumentTree(AsyncDocumentTree<V> delegateTree) {

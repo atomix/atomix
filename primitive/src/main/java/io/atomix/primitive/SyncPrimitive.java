@@ -27,7 +27,7 @@ public interface SyncPrimitive extends DistributedPrimitive {
    * any state state associated with the primitive. Whether modifications made within the
    * destroy method have local or global visibility is left unspecified.
    */
-  default void destroy() {
+  default void delete() {
   }
 
   /**

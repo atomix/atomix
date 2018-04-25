@@ -20,7 +20,7 @@ import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -50,7 +50,7 @@ final class RaftProxyListener {
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
     this.executor = checkNotNull(executor, "executor cannot be null");
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
         .addValue(state.getSessionId())
         .add("type", state.getPrimitiveType())
         .add("name", state.getPrimitiveName())

@@ -16,12 +16,11 @@
 package io.atomix.protocols.raft.partition;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.PrimitiveClient;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
-import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.partition.impl.RaftClientCommunicator;
 import io.atomix.protocols.raft.partition.impl.RaftNamespaces;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionClient;
@@ -117,8 +116,8 @@ public class RaftPartition implements Partition {
   }
 
   @Override
-  public PrimitiveClient<RaftProtocol> getPrimitiveClient() {
-    return client;
+  public RaftClient getProxyClient() {
+    return client.getProxyClient();
   }
 
   /**

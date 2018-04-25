@@ -16,9 +16,10 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.primitive.Consistency;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 import java.time.Duration;
 import java.util.concurrent.Executor;
@@ -34,6 +35,11 @@ public class PrimaryBackupProtocolConfig extends PrimitiveProtocolConfig<Primary
   private int maxRetries = 0;
   private Duration retryDelay = Duration.ofMillis(100);
   private Executor executor;
+
+  @Override
+  public PrimitiveProtocol.Type getType() {
+    return PrimaryBackupProtocol.TYPE;
+  }
 
   /**
    * Returns the consistency level.

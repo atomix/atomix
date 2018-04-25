@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Primitive partition group.
  */
-public interface PartitionGroup extends Configured<PartitionGroupConfig> {
+public interface PartitionGroup<P extends Partition> extends Configured<PartitionGroupConfig> {
 
   /**
    * Returns the partition group name.
@@ -56,7 +56,7 @@ public interface PartitionGroup extends Configured<PartitionGroupConfig> {
    * @return the partition or {@code null} if no partition with the given identifier exists
    * @throws NullPointerException if the partition identifier is {@code null}
    */
-  Partition getPartition(PartitionId partitionId);
+  P getPartition(PartitionId partitionId);
 
   /**
    * Returns the partition for the given key.
@@ -64,7 +64,7 @@ public interface PartitionGroup extends Configured<PartitionGroupConfig> {
    * @param key the key for which to return the partition
    * @return the partition for the given key
    */
-  default Partition getPartition(String key) {
+  default P getPartition(String key) {
     int hashCode = Hashing.sha256().hashString(key, StandardCharsets.UTF_8).asInt();
     return getPartition(getPartitionIds().get(Math.abs(hashCode) % getPartitionIds().size()));
   }
@@ -74,7 +74,7 @@ public interface PartitionGroup extends Configured<PartitionGroupConfig> {
    *
    * @return a collection of all partitions
    */
-  Collection<Partition> getPartitions();
+  Collection<P> getPartitions();
 
   /**
    * Returns a sorted list of partition IDs.

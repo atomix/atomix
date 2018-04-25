@@ -98,9 +98,9 @@ public class CachingAsyncConsistentMap<K, V> extends DelegatingAsyncConsistentMa
   }
 
   @Override
-  public CompletableFuture<Void> destroy() {
+  public CompletableFuture<Void> delete() {
     super.removeStatusChangeListener(statusListener);
-    return super.destroy().thenCompose(v -> removeListener(cacheUpdater));
+    return super.delete().thenCompose(v -> removeListener(cacheUpdater));
   }
 
   @Override

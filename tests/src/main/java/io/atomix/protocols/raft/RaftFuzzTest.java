@@ -28,7 +28,7 @@ import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.partition.impl.PrimaryElectorService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
@@ -319,7 +319,7 @@ public class RaftFuzzTest implements Runnable {
     for (int i = 0; i < clients; i++) {
       ReadConsistency consistency = randomConsistency();
       RaftClient client = createClient();
-      PrimitiveProxy proxy = createProxy(client, consistency);
+      PartitionProxy proxy = createProxy(client, consistency);
       Scheduler scheduler = new SingleThreadContext("fuzz-test-" + i);
 
       final int clientId = i;
@@ -611,11 +611,11 @@ public class RaftFuzzTest implements Runnable {
   /**
    * Creates a test session.
    */
-  private PrimitiveProxy createProxy(RaftClient client, ReadConsistency consistency) {
-    return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
+  private PartitionProxy createProxy(RaftClient client, ReadConsistency consistency) {
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
-        .build())
+        .build()
         .connect()
         .join();
   }

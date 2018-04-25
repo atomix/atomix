@@ -29,10 +29,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Base class for primitive delegates.
  */
-public abstract class DelegatingDistributedPrimitive implements AsyncPrimitive {
+public abstract class DelegatingAsyncPrimitive implements AsyncPrimitive {
   private final AsyncPrimitive primitive;
 
-  public DelegatingDistributedPrimitive(AsyncPrimitive primitive) {
+  public DelegatingAsyncPrimitive(AsyncPrimitive primitive) {
     this.primitive = checkNotNull(primitive);
   }
 
@@ -47,8 +47,8 @@ public abstract class DelegatingDistributedPrimitive implements AsyncPrimitive {
   }
 
   @Override
-  public CompletableFuture<Void> destroy() {
-    return primitive.destroy();
+  public CompletableFuture<Void> delete() {
+    return primitive.delete();
   }
 
   @Override
@@ -85,7 +85,7 @@ public abstract class DelegatingDistributedPrimitive implements AsyncPrimitive {
 
   @Override
   public boolean equals(Object other) {
-    return other instanceof DelegatingDistributedPrimitive
-        && primitive.equals(((DelegatingDistributedPrimitive) other).primitive);
+    return other instanceof DelegatingAsyncPrimitive
+        && primitive.equals(((DelegatingAsyncPrimitive) other).primitive);
   }
 }

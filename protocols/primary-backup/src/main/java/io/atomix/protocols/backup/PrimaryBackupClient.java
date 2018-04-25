@@ -16,35 +16,26 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.PrimitiveException.Unavailable;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
-import io.atomix.primitive.Replication;
-import io.atomix.primitive.partition.GroupMember;
+import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.proxy.impl.BlockingAwarePrimitiveProxy;
-import io.atomix.primitive.proxy.impl.RecoveringPrimitiveProxy;
-import io.atomix.primitive.proxy.impl.RetryingPrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.proxy.impl.BlockingAwarePartitionProxy;
+import io.atomix.primitive.proxy.impl.RecoveringPartitionProxy;
+import io.atomix.primitive.proxy.impl.RetryingPartitionProxy;
 import io.atomix.primitive.session.SessionIdService;
-import io.atomix.protocols.backup.protocol.MetadataRequest;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
-import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
 import io.atomix.protocols.backup.proxy.PrimaryBackupProxy;
-import io.atomix.protocols.backup.serializer.impl.PrimaryBackupSerializers;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
-import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
-import java.time.Duration;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -55,7 +46,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup client.
  */
-public class PrimaryBackupClient implements PrimitiveClient<PrimaryBackupProtocol> {
+public class PrimaryBackupClient implements ProxyClient {
 
   /**
    * Returns a new primary-backup client builder.
@@ -66,9 +57,8 @@ public class PrimaryBackupClient implements PrimitiveClient<PrimaryBackupProtoco
     return new Builder();
   }
 
-  private static final Serializer SERIALIZER = PrimaryBackupSerializers.PROTOCOL;
-
   private final String clientName;
+  private final PartitionId partitionId;
   private final ClusterMembershipService clusterMembershipService;
   private final PrimaryBackupClientProtocol protocol;
   private final PrimaryElection primaryElection;
@@ -78,12 +68,14 @@ public class PrimaryBackupClient implements PrimitiveClient<PrimaryBackupProtoco
 
   public PrimaryBackupClient(
       String clientName,
+      PartitionId partitionId,
       ClusterMembershipService clusterMembershipService,
       PrimaryBackupClientProtocol protocol,
       PrimaryElection primaryElection,
       SessionIdService sessionIdService,
       ThreadContextFactory threadContextFactory) {
     this.clientName = clientName;
+    this.partitionId = partitionId;
     this.clusterMembershipService = clusterMembershipService;
     this.protocol = protocol;
     this.primaryElection = primaryElection;
@@ -93,84 +85,52 @@ public class PrimaryBackupClient implements PrimitiveClient<PrimaryBackupProtoco
   }
 
   @Override
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType) {
-    return newProxy(primitiveName, primitiveType, PrimaryBackupProtocol.builder()
-        .withMaxRetries(5)
-        .withRetryDelay(Duration.ofMillis(100))
-        .withBackups(2)
-        .withReplication(Replication.ASYNCHRONOUS)
-        .build());
-  }
+  public PrimaryBackupProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType) {
+    return new PrimaryBackupProxy.Builder() {
+      @Override
+      public PartitionProxy build() {
+        Supplier<PartitionProxy> proxyBuilder = () -> new PrimaryBackupProxy(
+            clientName,
+            partitionId,
+            sessionIdService.nextSessionId().join(),
+            primitiveType,
+            new PrimitiveDescriptor(
+                primitiveName,
+                primitiveType.id(),
+                numBackups,
+                replication),
+            clusterMembershipService,
+            PrimaryBackupClient.this.protocol,
+            primaryElection,
+            threadContextFactory.createContext());
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PrimaryBackupProtocol primitiveProtocol) {
-    Supplier<PrimitiveProxy> proxyBuilder = () -> new PrimaryBackupProxy(
-        clientName,
-        sessionIdService.nextSessionId().join(),
-        primitiveType,
-        new PrimitiveDescriptor(
-            primitiveName,
-            primitiveType.id(),
-            primitiveProtocol.backups(),
-            primitiveProtocol.replication()),
-        clusterMembershipService,
-        PrimaryBackupClient.this.protocol,
-        primaryElection,
-        threadContextFactory.createContext());
-
-    PrimitiveProxy proxy;
-    if (primitiveProtocol.recovery() == Recovery.RECOVER) {
-      proxy = new RecoveringPrimitiveProxy(
-          clientName,
-          primitiveName,
-          primitiveType,
-          proxyBuilder,
-          threadContextFactory.createContext());
-    } else {
-      proxy = proxyBuilder.get();
-    }
-
-    // If max retries is set, wrap the client in a retrying proxy client.
-    if (primitiveProtocol.maxRetries() > 0) {
-      proxy = new RetryingPrimitiveProxy(
-          proxy,
-          threadContextFactory.createContext(),
-          primitiveProtocol.maxRetries(),
-          primitiveProtocol.retryDelay());
-    }
-
-    // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
-    Executor executor = primitiveProtocol.executor() != null
-        ? primitiveProtocol.executor()
-        : threadContextFactory.createContext();
-    return new BlockingAwarePrimitiveProxy(proxy, executor);
-  }
-
-  @Override
-  public CompletableFuture<Set<String>> getPrimitives(PrimitiveType primitiveType) {
-    CompletableFuture<Set<String>> future = new CompletableFuture<>();
-    MetadataRequest request = MetadataRequest.request(primitiveType.id());
-    threadContext.execute(() -> {
-      GroupMember primary = primaryElection.getTerm().join().primary();
-      if (primary == null) {
-        future.completeExceptionally(new Unavailable());
-        return;
-      }
-
-      protocol.metadata(primary.memberId(), request).whenCompleteAsync((response, error) -> {
-        if (error == null) {
-          if (response.status() == Status.OK) {
-            future.complete(response.primitiveNames());
-          } else {
-            future.completeExceptionally(new PrimitiveException.Unavailable());
-          }
+        PartitionProxy proxy;
+        if (recovery == Recovery.RECOVER) {
+          proxy = new RecoveringPartitionProxy(
+              clientName,
+              partitionId,
+              primitiveName,
+              primitiveType,
+              proxyBuilder,
+              threadContextFactory.createContext());
         } else {
-          future.completeExceptionally(new PrimitiveException.Unavailable());
+          proxy = proxyBuilder.get();
         }
-      }, threadContext);
-    });
-    return future;
+
+        // If max retries is set, wrap the client in a retrying proxy client.
+        if (maxRetries > 0) {
+          proxy = new RetryingPartitionProxy(
+              proxy,
+              threadContextFactory.createContext(),
+              maxRetries,
+              retryDelay);
+        }
+
+        // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
+        Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
+        return new BlockingAwarePartitionProxy(proxy, executor);
+      }
+    };
   }
 
   /**
@@ -190,6 +150,7 @@ public class PrimaryBackupClient implements PrimitiveClient<PrimaryBackupProtoco
    */
   public static class Builder implements io.atomix.utils.Builder<PrimaryBackupClient> {
     protected String clientName = "atomix";
+    protected PartitionId partitionId;
     protected ClusterMembershipService clusterMembershipService;
     protected PrimaryBackupClientProtocol protocol;
     protected PrimaryElection primaryElection;
@@ -207,6 +168,17 @@ public class PrimaryBackupClient implements PrimitiveClient<PrimaryBackupProtoco
      */
     public Builder withClientName(String clientName) {
       this.clientName = checkNotNull(clientName, "clientName cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the client partition ID.
+     *
+     * @param partitionId the client partition ID
+     * @return the client builder
+     */
+    public Builder withPartitionId(PartitionId partitionId) {
+      this.partitionId = checkNotNull(partitionId, "partitionId cannot be null");
       return this;
     }
 
@@ -301,6 +273,7 @@ public class PrimaryBackupClient implements PrimitiveClient<PrimaryBackupProtoco
           : threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
       return new PrimaryBackupClient(
           clientName,
+          partitionId,
           clusterMembershipService,
           protocol,
           primaryElection,

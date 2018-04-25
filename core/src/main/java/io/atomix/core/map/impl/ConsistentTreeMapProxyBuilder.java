@@ -20,7 +20,7 @@ import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMapBuilder;
 import io.atomix.core.map.ConsistentTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -38,22 +38,19 @@ public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentTreeMap<V>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
-    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
-        .thenCompose(info -> managementService.getPartitionService()
-            .getPartitionGroup(protocol)
-            .getPartition(name())
-            .getPrimitiveClient()
-            .newProxy(name(), primitiveType(), protocol)
-            .connect()
-            .thenApply(proxy -> {
-              ConsistentTreeMapProxy rawMap = new ConsistentTreeMapProxy(proxy);
-              Serializer serializer = serializer();
-              return new TranscodingAsyncConsistentTreeMap<V, byte[]>(
-                  rawMap,
-                  value -> value == null ? null : serializer.encode(value),
-                  bytes -> serializer.decode(bytes))
-                  .sync();
-            }));
+    PrimitiveProxy proxy = protocol.newProxy(
+        name(),
+        primitiveType(),
+        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+    return new ConsistentTreeMapProxy(proxy, managementService.getPrimitiveRegistry())
+        .connect()
+        .thenApply(map -> {
+          Serializer serializer = serializer();
+          return new TranscodingAsyncConsistentTreeMap<V, byte[]>(
+              (AsyncConsistentTreeMap) map,
+              value -> serializer.encode(value),
+              bytes -> serializer.decode(bytes))
+              .sync();
+        });
   }
 }

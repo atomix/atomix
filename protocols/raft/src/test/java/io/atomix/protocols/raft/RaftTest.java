@@ -26,7 +26,7 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
@@ -185,7 +185,7 @@ public class RaftTest extends ConcurrentTestCase {
   private void testServerJoinLate(RaftMember.Type type, RaftServer.Role role) throws Throwable {
     createServers(3);
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     submit(session, 0, 100);
     await(10000);
     RaftServer joiner = createServer(nextNodeId());
@@ -207,7 +207,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Submits a bunch of commands recursively.
    */
-  private void submit(PrimitiveProxy session, int count, int total) {
+  private void submit(PartitionProxy session, int count, int total) {
     if (count < total) {
       session.invoke(WRITE).whenComplete((result, error) -> {
         threadAssertNull(error);
@@ -226,7 +226,7 @@ public class RaftTest extends ConcurrentTestCase {
   public void testTransferLeadership() throws Throwable {
     List<RaftServer> servers = createServers(3);
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     submit(session, 0, 1000);
     RaftServer follower = servers.stream()
         .filter(RaftServer::isFollower)
@@ -244,7 +244,7 @@ public class RaftTest extends ConcurrentTestCase {
   public void testCrashRecover() throws Throwable {
     List<RaftServer> servers = createServers(3);
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     submit(session, 0, 100);
     await(30000);
     Thread.sleep(15000);
@@ -285,9 +285,9 @@ public class RaftTest extends ConcurrentTestCase {
   public void testClientKeepAlive() throws Throwable {
     createServers(3);
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     Thread.sleep(Duration.ofSeconds(10).toMillis());
-    threadAssertTrue(session.getState() == PrimitiveProxy.State.CONNECTED);
+    threadAssertTrue(session.getState() == PartitionProxy.State.CONNECTED);
   }
 
   /**
@@ -447,7 +447,7 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(nodes);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.invoke(WRITE).thenRun(this::resume);
 
     await(30000);
@@ -484,7 +484,7 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(live, total);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.invoke(WRITE).thenRun(this::resume);
 
     await(30000);
@@ -617,7 +617,7 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(nodes);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client, consistency);
+    PartitionProxy session = createSession(client, consistency);
     session.invoke(READ).thenRun(this::resume);
 
     await(30000);
@@ -673,7 +673,7 @@ public class RaftTest extends ConcurrentTestCase {
     AtomicLong index = new AtomicLong();
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.<Long>addEventListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(count.incrementAndGet(), 2L);
       threadAssertEquals(index.get(), event);
@@ -738,7 +738,7 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(nodes);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
@@ -791,7 +791,7 @@ public class RaftTest extends ConcurrentTestCase {
     AtomicLong index = new AtomicLong();
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.<Long>addEventListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(counter.incrementAndGet(), 3);
       threadAssertTrue(event >= index.get());
@@ -835,7 +835,7 @@ public class RaftTest extends ConcurrentTestCase {
     AtomicLong index = new AtomicLong();
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
 
     session.<Long>addEventListener(CHANGE_EVENT, clientSerializer::decode, event -> {
       threadAssertEquals(index.get(), event);
@@ -873,7 +873,7 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(nodes);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.addEventListener(message -> {
       threadAssertNotNull(message);
       resume();
@@ -909,7 +909,7 @@ public class RaftTest extends ConcurrentTestCase {
     List<RaftServer> servers = createServers(nodes);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
@@ -954,7 +954,7 @@ public class RaftTest extends ConcurrentTestCase {
     List<RaftServer> servers = createServers(nodes);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
@@ -995,7 +995,7 @@ public class RaftTest extends ConcurrentTestCase {
     List<RaftServer> servers = createServers(nodes);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
@@ -1036,7 +1036,7 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(nodes);
 
     RaftClient client = createClient();
-    PrimitiveProxy session = createSession(client);
+    PartitionProxy session = createSession(client);
     session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
@@ -1090,7 +1090,7 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(nodes);
 
     RaftClient client1 = createClient();
-    PrimitiveProxy session1 = createSession(client1);
+    PartitionProxy session1 = createSession(client1);
     RaftClient client2 = createClient();
     createSession(client2);
     session1.addEventListener(EXPIRE_EVENT, this::resume);
@@ -1130,7 +1130,7 @@ public class RaftTest extends ConcurrentTestCase {
     createServers(nodes);
 
     RaftClient client1 = createClient();
-    PrimitiveProxy session1 = createSession(client1);
+    PartitionProxy session1 = createSession(client1);
     RaftClient client2 = createClient();
     session1.invoke(CLOSE).thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 1);
@@ -1247,19 +1247,19 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Creates a test session.
    */
-  private PrimitiveProxy createSession(RaftClient client) throws Exception {
+  private PartitionProxy createSession(RaftClient client) throws Exception {
     return createSession(client, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Creates a test session.
    */
-  private PrimitiveProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
-    return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
+  private PartitionProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
         .withReadConsistency(consistency)
         .withMinTimeout(Duration.ofMillis(250))
         .withMaxTimeout(Duration.ofSeconds(5))
-        .build())
+        .build()
         .connect()
         .get(5, TimeUnit.SECONDS);
   }

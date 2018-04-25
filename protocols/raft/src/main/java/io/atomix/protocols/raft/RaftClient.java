@@ -16,10 +16,13 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.PrimitiveClient;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
+import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.utils.concurrent.ThreadModel;
 
 import java.util.Arrays;
@@ -34,7 +37,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Provides an interface for submitting operations to the Raft cluster.
  */
-public interface RaftClient extends PrimitiveClient<RaftProtocol> {
+public interface RaftClient extends ProxyClient {
 
   /**
    * Returns a new Raft client builder.
@@ -130,6 +133,9 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
    */
   RaftMetadataClient metadata();
 
+  @Override
+  RaftProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType);
+
   /**
    * Connects the client to Raft cluster via the default server address.
    * <p>
@@ -195,6 +201,7 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
   abstract class Builder implements io.atomix.utils.Builder<RaftClient> {
     protected final Collection<MemberId> cluster;
     protected String clientId = UUID.randomUUID().toString();
+    protected PartitionId partitionId;
     protected MemberId memberId;
     protected RaftClientProtocol protocol;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
@@ -216,6 +223,18 @@ public interface RaftClient extends PrimitiveClient<RaftProtocol> {
      */
     public Builder withClientId(String clientId) {
       this.clientId = checkNotNull(clientId, "clientId cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the partition identifier.
+     *
+     * @param partitionId The partition identifier.
+     * @return The client builder.
+     * @throws NullPointerException if {@code partitionId} is null
+     */
+    public Builder withPartitionId(PartitionId partitionId) {
+      this.partitionId = checkNotNull(partitionId, "partitionId cannot be null");
       return this;
     }
 

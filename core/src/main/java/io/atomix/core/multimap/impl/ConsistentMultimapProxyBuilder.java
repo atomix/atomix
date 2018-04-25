@@ -22,7 +22,7 @@ import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimapBuilder;
 import io.atomix.core.multimap.ConsistentMultimapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -38,24 +38,21 @@ public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuil
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentMultimap<K, V>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
-    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
-        .thenCompose(info -> managementService.getPartitionService()
-            .getPartitionGroup(protocol)
-            .getPartition(name())
-            .getPrimitiveClient()
-            .newProxy(name(), primitiveType(), protocol)
-            .connect()
-            .thenApply(proxy -> {
-              AsyncConsistentMultimap<String, byte[]> rawMap = new ConsistentSetMultimapProxy(proxy);
-              Serializer serializer = serializer();
-              return new TranscodingAsyncConsistentMultimap<K, V, String, byte[]>(
-                  rawMap,
-                  key -> BaseEncoding.base16().encode(serializer.encode(key)),
-                  string -> serializer.decode(BaseEncoding.base16().decode(string)),
-                  value -> serializer.encode(value),
-                  bytes -> serializer.decode(bytes))
-                  .sync();
-            }));
+    PrimitiveProxy proxy = protocol.newProxy(
+        name(),
+        primitiveType(),
+        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+    return new ConsistentSetMultimapProxy(proxy, managementService.getPrimitiveRegistry())
+        .connect()
+        .thenApply(multimap -> {
+          Serializer serializer = serializer();
+          return new TranscodingAsyncConsistentMultimap<K, V, String, byte[]>(
+              multimap,
+              key -> BaseEncoding.base16().encode(serializer.encode(key)),
+              string -> serializer.decode(BaseEncoding.base16().decode(string)),
+              value -> serializer.encode(value),
+              bytes -> serializer.decode(bytes))
+              .sync();
+        });
   }
 }

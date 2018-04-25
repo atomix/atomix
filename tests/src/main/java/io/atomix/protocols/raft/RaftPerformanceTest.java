@@ -35,7 +35,7 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
@@ -298,7 +298,7 @@ public class RaftPerformanceTest implements Runnable {
 
     CompletableFuture<Void>[] futures = new CompletableFuture[NUM_CLIENTS];
     RaftClient[] clients = new RaftClient[NUM_CLIENTS];
-    PrimitiveProxy[] proxies = new PrimitiveProxy[NUM_CLIENTS];
+    PartitionProxy[] proxies = new PartitionProxy[NUM_CLIENTS];
     for (int i = 0; i < NUM_CLIENTS; i++) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       clients[i] = createClient();
@@ -325,7 +325,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Runs operations for a single Raft proxy.
    */
-  private void runProxy(PrimitiveProxy proxy, CompletableFuture<Void> future) {
+  private void runProxy(PartitionProxy proxy, CompletableFuture<Void> future) {
     int count = totalOperations.incrementAndGet();
     if (count > TOTAL_OPERATIONS) {
       future.complete(null);
@@ -531,11 +531,11 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Creates a test session.
    */
-  private PrimitiveProxy createProxy(RaftClient client) {
-    return client.newProxy("test", TestPrimitiveType.INSTANCE, RaftProtocol.builder()
+  private PartitionProxy createProxy(RaftClient client) {
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
-        .build());
+        .build();
   }
 
   private static final OperationId PUT = OperationId.command("put");

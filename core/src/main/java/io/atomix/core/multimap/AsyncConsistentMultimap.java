@@ -46,7 +46,7 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
   }
 
   @Override
-  default CompletableFuture<Void> destroy() {
+  default CompletableFuture<Void> delete() {
     return clear();
   }
 
