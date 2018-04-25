@@ -16,11 +16,18 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.primitive.Consistency;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +36,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Primary-backup protocol.
  */
-public class PrimaryBackupProtocol implements PrimitiveProtocol {
+public class PrimaryBackupProtocol implements PrimitiveProtocol<PrimaryBackupPartitionGroup> {
   public static final Type TYPE = new Type();
 
   /**
@@ -63,14 +70,14 @@ public class PrimaryBackupProtocol implements PrimitiveProtocol {
     return new Builder(new PrimaryBackupProtocolConfig().setGroup(group));
   }
 
-  private final PrimaryBackupProtocolConfig config;
+  protected final PrimaryBackupProtocolConfig config;
 
-  public PrimaryBackupProtocol(PrimaryBackupProtocolConfig config) {
+  protected PrimaryBackupProtocol(PrimaryBackupProtocolConfig config) {
     this.config = config;
   }
 
   @Override
-  public Type type() {
+  public PrimitiveProtocol.Type type() {
     return TYPE;
   }
 
@@ -79,67 +86,19 @@ public class PrimaryBackupProtocol implements PrimitiveProtocol {
     return config.getGroup();
   }
 
-  /**
-   * Returns the protocol consistency model.
-   *
-   * @return the protocol consistency model
-   */
-  public Consistency consistency() {
-    return config.getConsistency();
-  }
-
-  /**
-   * Returns the protocol replications strategy.
-   *
-   * @return the protocol replication strategy
-   */
-  public Replication replication() {
-    return config.getReplication();
-  }
-
-  /**
-   * Returns the protocol recovery strategy.
-   *
-   * @return the protocol recovery strategy
-   */
-  public Recovery recovery() {
-    return config.getRecovery();
-  }
-
-  /**
-   * Returns the number of backups.
-   *
-   * @return the number of backups
-   */
-  public int backups() {
-    return config.getNumBackups();
-  }
-
-  /**
-   * Returns the maximum number of allowed retries.
-   *
-   * @return the maximum number of allowed retries
-   */
-  public int maxRetries() {
-    return config.getMaxRetries();
-  }
-
-  /**
-   * Returns the retry delay.
-   *
-   * @return the retry delay
-   */
-  public Duration retryDelay() {
-    return config.getRetryDelay();
-  }
-
-  /**
-   * Returns the proxy executor.
-   *
-   * @return the proxy executor
-   */
-  public Executor executor() {
-    return config.getExecutor();
+  @Override
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PrimaryBackupPartitionGroup partitionGroup) {
+    PrimaryBackupPartition partition = partitionGroup.getPartition(primitiveName);
+    PartitionProxy proxy = partition.getProxyClient().proxyBuilder(primitiveName, primitiveType)
+        .withConsistency(config.getConsistency())
+        .withReplication(config.getReplication())
+        .withRecovery(config.getRecovery())
+        .withNumBackups(config.getNumBackups())
+        .withMaxRetries(config.getMaxRetries())
+        .withRetryDelay(config.getRetryDelay())
+        .withExecutor(config.getExecutor())
+        .build();
+    return new PartitionedPrimitiveProxy(primitiveName, primitiveType, Collections.singleton(proxy), (key, partitions) -> partition.id());
   }
 
   @Override
@@ -147,11 +106,6 @@ public class PrimaryBackupProtocol implements PrimitiveProtocol {
     return toStringHelper(this)
         .add("type", type())
         .add("group", group())
-        .add("consistency", consistency())
-        .add("replication", replication())
-        .add("backups", backups())
-        .add("maxRetries", maxRetries())
-        .add("retryDelay", retryDelay())
         .toString();
   }
 

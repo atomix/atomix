@@ -28,7 +28,7 @@ import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.TestPrimaryElection;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
@@ -92,7 +92,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(nodes);
 
     PrimaryBackupClient client = createClient();
-    PrimitiveProxy session = createProxy(client, backups, replication);
+    PartitionProxy session = createProxy(client, backups, replication);
     session.invoke(WRITE).thenRun(this::resume);
 
     await(5000);
@@ -120,7 +120,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(nodes);
 
     PrimaryBackupClient client = createClient();
-    PrimitiveProxy session = createProxy(client, backups, replication);
+    PartitionProxy session = createProxy(client, backups, replication);
     session.invoke(READ).thenRun(this::resume);
 
     await(5000);
@@ -151,7 +151,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     AtomicLong index = new AtomicLong();
 
     PrimaryBackupClient client = createClient();
-    PrimitiveProxy session = createProxy(client, backups, replication);
+    PartitionProxy session = createProxy(client, backups, replication);
     session.<Long>addEventListener(CHANGE_EVENT, SERIALIZER::decode, event -> {
       threadAssertEquals(count.incrementAndGet(), 2L);
       threadAssertEquals(index.get(), event);
@@ -191,14 +191,14 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(nodes);
 
     PrimaryBackupClient client1 = createClient();
-    PrimitiveProxy session1 = createProxy(client1, backups, replication);
+    PartitionProxy session1 = createProxy(client1, backups, replication);
     session1.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     PrimaryBackupClient client2 = createClient();
-    PrimitiveProxy session2 = createProxy(client2, backups, replication);
+    PartitionProxy session2 = createProxy(client2, backups, replication);
     session2.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
@@ -234,7 +234,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(nodes);
 
     PrimaryBackupClient client = createClient();
-    PrimitiveProxy session = createProxy(client, backups, replication);
+    PartitionProxy session = createProxy(client, backups, replication);
     session.addEventListener(message -> {
       threadAssertNotNull(message);
       resume();
@@ -266,7 +266,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     List<PrimaryBackupServer> servers = createServers(5);
 
     PrimaryBackupClient client = createClient();
-    PrimitiveProxy session = createProxy(client, 3, replication);
+    PartitionProxy session = createProxy(client, 3, replication);
     session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
@@ -311,20 +311,20 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(3);
 
     PrimaryBackupClient client = createClient();
-    PrimitiveProxy session = createProxy(client, 2, replication);
+    PartitionProxy session = createProxy(client, 2, replication);
     session.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    PrimitiveProxy session1 = createProxy(createClient(), 2, replication);
+    PartitionProxy session1 = createProxy(createClient(), 2, replication);
     session1.invoke(READ).thenRun(this::resume);
     session1.addEventListener(event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    PrimitiveProxy session2 = createProxy(createClient(), 2, replication);
+    PartitionProxy session2 = createProxy(createClient(), 2, replication);
     session2.invoke(READ).thenRun(this::resume);
     session2.addEventListener(event -> {
       threadAssertNotNull(event);
@@ -357,12 +357,12 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(3);
 
     PrimaryBackupClient client1 = createClient();
-    PrimitiveProxy session1 = createProxy(client1, 2, replication);
+    PartitionProxy session1 = createProxy(client1, 2, replication);
     PrimaryBackupClient client2 = createClient();
     session1.invoke(CLOSE).thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 1);
     session1.addEventListener(CLOSE_EVENT, this::resume);
-    PrimitiveProxy session2 = createProxy(client2, 2, replication);
+    PartitionProxy session2 = createProxy(client2, 2, replication);
     session2.invoke(READ).thenRun(this::resume);
     await(5000);
     session2.close().thenRun(this::resume);
@@ -438,11 +438,11 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   /**
    * Creates a new primary-backup proxy.
    */
-  private PrimitiveProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
-    return client.newProxy("test", TestPrimitiveType.INSTANCE, PrimaryBackupProtocol.builder()
-        .withBackups(backups)
+  private PartitionProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
+        .withNumBackups(backups)
         .withReplication(replication)
-        .build())
+        .build()
         .connect()
         .join();
   }

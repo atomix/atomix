@@ -13,44 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive;
+package io.atomix.primitive.proxy;
 
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import io.atomix.primitive.proxy.PartitionProxy;
 
 /**
- * Primitive client.
+ * Proxy client.
  */
-public interface PrimitiveClient<P extends PrimitiveProtocol> {
-
-  /**
-   * Returns a new proxy builder for the given primitive type.
-   *
-   * @param primitiveName the proxy name
-   * @param primitiveType the type for which to return a new proxy builder
-   * @return a new proxy builder for the given primitive type
-   */
-  PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType);
+public interface ProxyClient {
 
   /**
    * Returns a new proxy builder for the given primitive type.
    *
    * @param primitiveName     the proxy name
    * @param primitiveType     the type for which to return a new proxy builder
-   * @param primitiveProtocol the primitive protocol
    * @return a new proxy builder for the given primitive type
    */
-  PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, P primitiveProtocol);
-
-  /**
-   * Gets a list of primitives of the given type.
-   *
-   * @param primitiveType the primitive type
-   * @return the primitive names
-   */
-  CompletableFuture<Set<String>> getPrimitives(PrimitiveType primitiveType);
+  PartitionProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType);
 
 }

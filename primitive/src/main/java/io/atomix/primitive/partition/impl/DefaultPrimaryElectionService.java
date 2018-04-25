@@ -25,7 +25,7 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryElectionService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
@@ -52,12 +52,12 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
       .register(PrimaryElectorEvents.NAMESPACE)
       .build());
 
-  private final PartitionGroup partitions;
+  private final PartitionGroup<?> partitions;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private final Consumer<PrimaryElectionEvent> eventListener = event -> listeners.forEach(l -> l.onEvent(event));
   private final Map<PartitionId, ManagedPrimaryElection> elections = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
-  private PrimitiveProxy proxy;
+  private PartitionProxy proxy;
 
   public DefaultPrimaryElectionService(PartitionGroup partitionGroup) {
     this.partitions = checkNotNull(partitionGroup);
@@ -82,8 +82,9 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimaryElectionService> start() {
-    return partitions.getPartitions().iterator().next().getPrimitiveClient()
-        .newProxy(PRIMITIVE_NAME, PrimaryElectorType.instance())
+    return partitions.getPartitions().iterator().next().getProxyClient()
+        .proxyBuilder(PRIMITIVE_NAME, PrimaryElectorType.instance())
+        .build()
         .connect()
         .thenAccept(proxy -> {
           this.proxy = proxy;
@@ -100,7 +101,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
 
   @Override
   public CompletableFuture<Void> stop() {
-    PrimitiveProxy proxy = this.proxy;
+    PartitionProxy proxy = this.proxy;
     if (proxy != null) {
       return proxy.close()
           .whenComplete((result, error) -> {

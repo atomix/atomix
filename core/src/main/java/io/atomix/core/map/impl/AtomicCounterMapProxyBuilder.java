@@ -20,7 +20,7 @@ import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapBuilder;
 import io.atomix.core.map.AtomicCounterMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -36,22 +36,19 @@ public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicCounterMap<K>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
-    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
-        .thenCompose(info -> managementService.getPartitionService()
-            .getPartitionGroup(protocol)
-            .getPartition(name())
-            .getPrimitiveClient()
-            .newProxy(name(), primitiveType(), protocol)
-            .connect()
-            .thenApply(proxy -> {
-              AtomicCounterMapProxy rawMap = new AtomicCounterMapProxy(proxy);
-              Serializer serializer = serializer();
-              return new TranscodingAsyncAtomicCounterMap<K, String>(
-                  rawMap,
-                  key -> BaseEncoding.base16().encode(serializer.encode(key)),
-                  string -> serializer.decode(BaseEncoding.base16().decode(string)))
-                  .sync();
-            }));
+    PrimitiveProxy proxy = protocol.newProxy(
+        name(),
+        primitiveType(),
+        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+    return new AtomicCounterMapProxy(proxy, managementService.getPrimitiveRegistry())
+        .connect()
+        .thenApply(multimap -> {
+          Serializer serializer = serializer();
+          return new TranscodingAsyncAtomicCounterMap<K, String>(
+              multimap,
+              key -> BaseEncoding.base16().encode(serializer.encode(key)),
+              string -> serializer.decode(BaseEncoding.base16().decode(string)))
+              .sync();
+        });
   }
 }

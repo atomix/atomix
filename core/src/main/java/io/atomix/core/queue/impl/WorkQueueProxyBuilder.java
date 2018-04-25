@@ -19,7 +19,8 @@ import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueBuilder;
 import io.atomix.core.queue.WorkQueueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,14 +35,19 @@ public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<WorkQueue<E>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
-    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
-        .thenCompose(info -> managementService.getPartitionService()
-            .getPartitionGroup(protocol)
-            .getPartition(name())
-            .getPrimitiveClient()
-            .newProxy(name(), primitiveType(), protocol)
-            .connect()
-            .thenApply(proxy -> new TranscodingAsyncWorkQueue<E, byte[]>(new WorkQueueProxy(proxy), serializer()::encode, serializer()::decode).sync()));
+    PrimitiveProxy proxy = protocol.newProxy(
+        name(),
+        primitiveType(),
+        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+    return new WorkQueueProxy(proxy, managementService.getPrimitiveRegistry())
+        .connect()
+        .thenApply(queue -> {
+          Serializer serializer = serializer();
+          return new TranscodingAsyncWorkQueue<E, byte[]>(
+              queue,
+              item -> serializer.encode(item),
+              bytes -> serializer.decode(bytes))
+              .sync();
+        });
   }
 }

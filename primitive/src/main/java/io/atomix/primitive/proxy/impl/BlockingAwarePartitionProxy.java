@@ -18,7 +18,7 @@ package io.atomix.primitive.proxy.impl;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Map;
@@ -31,26 +31,26 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft proxy delegate that completes futures on a thread pool.
  */
-public class BlockingAwarePrimitiveProxy extends DelegatingPrimitiveProxy {
+public class BlockingAwarePartitionProxy extends DelegatingPartitionProxy {
   private final Executor executor;
-  private final Map<Consumer<PrimitiveProxy.State>, Consumer<PrimitiveProxy.State>> stateChangeListeners = Maps.newConcurrentMap();
+  private final Map<Consumer<PartitionProxy.State>, Consumer<PartitionProxy.State>> stateChangeListeners = Maps.newConcurrentMap();
   private final Map<Consumer<PrimitiveEvent>, Consumer<PrimitiveEvent>> eventListeners = Maps.newConcurrentMap();
 
-  public BlockingAwarePrimitiveProxy(PrimitiveProxy delegate, Executor executor) {
+  public BlockingAwarePartitionProxy(PartitionProxy delegate, Executor executor) {
     super(delegate);
     this.executor = checkNotNull(executor, "executor cannot be null");
   }
 
   @Override
-  public void addStateChangeListener(Consumer<PrimitiveProxy.State> listener) {
-    Consumer<PrimitiveProxy.State> wrappedListener = state -> executor.execute(() -> listener.accept(state));
+  public void addStateChangeListener(Consumer<PartitionProxy.State> listener) {
+    Consumer<PartitionProxy.State> wrappedListener = state -> executor.execute(() -> listener.accept(state));
     stateChangeListeners.put(listener, wrappedListener);
     super.addStateChangeListener(wrappedListener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<PrimitiveProxy.State> listener) {
-    Consumer<PrimitiveProxy.State> wrappedListener = stateChangeListeners.remove(listener);
+  public void removeStateChangeListener(Consumer<PartitionProxy.State> listener) {
+    Consumer<PartitionProxy.State> wrappedListener = stateChangeListeners.remove(listener);
     if (wrappedListener != null) {
       super.removeStateChangeListener(wrappedListener);
     }

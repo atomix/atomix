@@ -15,8 +15,9 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.Recovery;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
@@ -34,6 +35,11 @@ public class RaftProtocolConfig extends PrimitiveProtocolConfig<RaftProtocolConf
   private int maxRetries = 0;
   private Duration retryDelay = Duration.ofMillis(100);
   private Executor executor;
+
+  @Override
+  public PrimitiveProtocol.Type getType() {
+    return RaftProtocol.TYPE;
+  }
 
   /**
    * Returns the minimum session timeout.

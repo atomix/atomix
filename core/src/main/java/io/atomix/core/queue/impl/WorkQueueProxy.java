@@ -16,7 +16,6 @@
 package io.atomix.core.queue.impl;
 
 import com.google.common.collect.ImmutableList;
-
 import io.atomix.core.queue.AsyncWorkQueue;
 import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueue;
@@ -24,8 +23,10 @@ import io.atomix.core.queue.WorkQueueStats;
 import io.atomix.core.queue.impl.WorkQueueOperations.Add;
 import io.atomix.core.queue.impl.WorkQueueOperations.Complete;
 import io.atomix.core.queue.impl.WorkQueueOperations.Take;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.AbstractAccumulator;
 import io.atomix.utils.Accumulator;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -60,7 +61,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Distributed resource providing the {@link WorkQueue} primitive.
  */
-public class WorkQueueProxy extends AbstractAsyncPrimitive implements AsyncWorkQueue<byte[]> {
+public class WorkQueueProxy extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]>> implements AsyncWorkQueue<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(WorkQueueOperations.NAMESPACE)
@@ -73,22 +74,16 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive implements AsyncWorkQ
   private final Timer timer = new Timer("atomix-work-queue-completer");
   private final AtomicBoolean isRegistered = new AtomicBoolean(false);
 
-  public WorkQueueProxy(PrimitiveProxy proxy) {
-    super(proxy);
+  public WorkQueueProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
     executor = newSingleThreadExecutor(namedThreads("atomix-work-queue-" + proxy.name() + "-%d", log));
-    proxy.addStateChangeListener(state -> {
-      if (state == PrimitiveProxy.State.CONNECTED && isRegistered.get()) {
-        proxy.invoke(REGISTER);
-      }
-    });
-    proxy.addEventListener(TASK_AVAILABLE, this::resumeWork);
   }
 
   @Override
-  public CompletableFuture<Void> destroy() {
+  public CompletableFuture<Void> delete() {
     executor.shutdown();
     timer.cancel();
-    return proxy.invoke(CLEAR);
+    return invoke(getPartitionKey(), CLEAR);
   }
 
   @Override
@@ -96,7 +91,7 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive implements AsyncWorkQ
     if (items.isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
-    return proxy.invoke(ADD, SERIALIZER::encode, new Add(items));
+    return invoke(getPartitionKey(), ADD, SERIALIZER::encode, new Add(items));
   }
 
   @Override
@@ -104,7 +99,7 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive implements AsyncWorkQ
     if (maxTasks <= 0) {
       return CompletableFuture.completedFuture(ImmutableList.of());
     }
-    return proxy.invoke(TAKE, SERIALIZER::encode, new Take(maxTasks), SERIALIZER::decode);
+    return invoke(getPartitionKey(), TAKE, SERIALIZER::encode, new Take(maxTasks), SERIALIZER::decode);
   }
 
   @Override
@@ -112,7 +107,7 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive implements AsyncWorkQ
     if (taskIds.isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
-    return proxy.invoke(COMPLETE, SERIALIZER::encode, new Complete(taskIds));
+    return invoke(getPartitionKey(), COMPLETE, SERIALIZER::encode, new Complete(taskIds));
   }
 
   @Override
@@ -136,7 +131,7 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive implements AsyncWorkQ
 
   @Override
   public CompletableFuture<WorkQueueStats> stats() {
-    return proxy.invoke(STATS, SERIALIZER::decode);
+    return invoke(getPartitionKey(), STATS, SERIALIZER::decode);
   }
 
   private void resumeWork() {
@@ -149,11 +144,24 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive implements AsyncWorkQ
   }
 
   private CompletableFuture<Void> register() {
-    return proxy.invoke(REGISTER).thenRun(() -> isRegistered.set(true));
+    return invoke(getPartitionKey(), REGISTER).thenRun(() -> isRegistered.set(true));
   }
 
   private CompletableFuture<Void> unregister() {
-    return proxy.invoke(UNREGISTER).thenRun(() -> isRegistered.set(false));
+    return invoke(getPartitionKey(), UNREGISTER).thenRun(() -> isRegistered.set(false));
+  }
+
+  @Override
+  public CompletableFuture<AsyncWorkQueue<byte[]>> connect() {
+    return super.connect()
+        .thenRun(() -> {
+          addStateChangeListener(getPartitionKey(), state -> {
+            if (state == Proxy.State.CONNECTED && isRegistered.get()) {
+              invoke(getPartitionKey(), REGISTER);
+            }
+          });
+          addEventListener(getPartitionKey(), TASK_AVAILABLE, this::resumeWork);
+        }).thenApply(v -> this);
   }
 
   @Override

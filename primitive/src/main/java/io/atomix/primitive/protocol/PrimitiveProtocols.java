@@ -15,8 +15,8 @@
  */
 package io.atomix.primitive.protocol;
 
-import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.Services;
+import io.atomix.utils.config.ConfigurationException;
 
 /**
  * Primitive protocols.
@@ -32,7 +32,7 @@ public class PrimitiveProtocols {
   @SuppressWarnings("unchecked")
   public static PrimitiveProtocol createProtocol(PrimitiveProtocolConfig config) {
     for (PrimitiveProtocolFactory factory : Services.loadAll(PrimitiveProtocolFactory.class)) {
-      if (factory.configClass().isAssignableFrom(config.getClass())) {
+      if (factory.type().equals(config.getType())) {
         return factory.create(config);
       }
     }

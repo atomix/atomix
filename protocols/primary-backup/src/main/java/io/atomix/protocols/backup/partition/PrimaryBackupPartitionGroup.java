@@ -51,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup partition group.
  */
-public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
+public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup<PrimaryBackupPartition> {
 
   /**
    * Returns a new primary-backup partition group builder.
@@ -114,13 +114,13 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public Partition getPartition(PartitionId partitionId) {
+  public PrimaryBackupPartition getPartition(PartitionId partitionId) {
     return partitions.get(partitionId);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Collection<Partition> getPartitions() {
+  public Collection<PrimaryBackupPartition> getPartitions() {
     return (Collection) partitions.values();
   }
 
@@ -130,7 +130,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
+  public CompletableFuture<ManagedPartitionGroup<PrimaryBackupPartition>> join(PartitionManagementService managementService) {
     threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.join(managementService, threadFactory))
@@ -142,7 +142,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
+  public CompletableFuture<ManagedPartitionGroup<PrimaryBackupPartition>> connect(PartitionManagementService managementService) {
     threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.connect(managementService, threadFactory))

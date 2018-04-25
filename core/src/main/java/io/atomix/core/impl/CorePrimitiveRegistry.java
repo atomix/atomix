@@ -27,6 +27,8 @@ import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
 import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
@@ -113,24 +115,25 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public CompletableFuture<PrimitiveRegistry> start() {
-    return partitionService.getSystemPartitionGroup()
-        .getPartitions()
-        .iterator()
-        .next()
-        .getPrimitiveClient()
-        .newProxy("primitives", ConsistentMapType.instance())
+    PrimitiveProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
+    PrimitiveProxy proxy = protocol.newProxy(
+        "primitives",
+        ConsistentMapType.instance(),
+        partitionService.getSystemPartitionGroup());
+    return new ConsistentMapProxy(proxy, this)
         .connect()
-        .thenAccept(proxy -> {
-          this.primitives = new TranscodingAsyncConsistentMap<>(
-              new ConsistentMapProxy(proxy),
+        .thenApply(map -> {
+          primitives = new TranscodingAsyncConsistentMap<>(
+              map,
               key -> key,
               key -> key,
               value -> value != null ? SERIALIZER.encode(value) : null,
               value -> value != null ? SERIALIZER.decode(value) : null);
           started.set(true);
-        })
-        .thenApply(v -> this);
+          return this;
+        });
   }
 
   @Override

@@ -21,7 +21,7 @@ import com.google.common.collect.Multiset;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEventListener;
-import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -39,7 +39,7 @@ import java.util.concurrent.Executor;
  * @param <V> value type
  */
 public class DelegatingAsyncConsistentMultimap<K, V>
-    extends DelegatingDistributedPrimitive implements AsyncConsistentMultimap<K, V> {
+    extends DelegatingAsyncPrimitive implements AsyncConsistentMultimap<K, V> {
 
   private final AsyncConsistentMultimap<K, V> delegateMap;
 

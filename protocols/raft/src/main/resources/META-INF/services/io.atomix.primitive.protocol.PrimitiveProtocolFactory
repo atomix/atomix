@@ -14,3 +14,4 @@
 # limitations under the License.
 #
 io.atomix.protocols.raft.RaftProtocolFactory
+io.atomix.protocols.raft.MultiRaftProtocolFactory

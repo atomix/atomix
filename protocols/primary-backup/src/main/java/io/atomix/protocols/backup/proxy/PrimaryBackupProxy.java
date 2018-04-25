@@ -20,15 +20,19 @@ import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.primitive.Consistency;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.Recovery;
+import io.atomix.primitive.Replication;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.proxy.impl.AbstractPrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.impl.AbstractPartitionProxy;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.CloseRequest;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
@@ -45,20 +49,24 @@ import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Primary-backup proxy.
  */
-public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
+public class PrimaryBackupProxy extends AbstractPartitionProxy {
   private static final int RETRY_DELAY = 100;
   private Logger log;
   private final PrimitiveType primitiveType;
   private final PrimitiveDescriptor descriptor;
   private final ClusterMembershipService clusterMembershipService;
   private final PrimaryBackupClientProtocol protocol;
+  private final PartitionId partitionId;
   private final SessionId sessionId;
   private final PrimaryElection primaryElection;
   private final ThreadContext threadContext;
@@ -71,6 +79,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
 
   public PrimaryBackupProxy(
       String clientName,
+      PartitionId partitionId,
       SessionId sessionId,
       PrimitiveType primitiveType,
       PrimitiveDescriptor descriptor,
@@ -78,6 +87,7 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
       PrimaryBackupClientProtocol protocol,
       PrimaryElection primaryElection,
       ThreadContext threadContext) {
+    this.partitionId = checkNotNull(partitionId);
     this.sessionId = checkNotNull(sessionId);
     this.primitiveType = primitiveType;
     this.descriptor = descriptor;
@@ -86,16 +96,11 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
     this.primaryElection = primaryElection;
     this.threadContext = threadContext;
     primaryElection.addListener(primaryElectionListener);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
         .addValue(clientName)
         .add("type", primitiveType.id())
         .add("name", descriptor.name())
         .build());
-  }
-
-  @Override
-  public SessionId sessionId() {
-    return sessionId;
   }
 
   @Override
@@ -104,13 +109,23 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public PrimitiveType serviceType() {
+  public PrimitiveType type() {
     return primitiveType;
   }
 
   @Override
   public State getState() {
     return state;
+  }
+
+  @Override
+  public PartitionId partitionId() {
+    return partitionId;
+  }
+
+  @Override
+  public SessionId sessionId() {
+    return sessionId;
   }
 
   @Override
@@ -230,8 +245,8 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> connect() {
-    CompletableFuture<PrimitiveProxy> future = new CompletableFuture<>();
+  public CompletableFuture<PartitionProxy> connect() {
+    CompletableFuture<PartitionProxy> future = new CompletableFuture<>();
     threadContext.execute(() -> {
       primaryElection.getTerm().whenCompleteAsync((term, error) -> {
         if (error == null) {
@@ -265,5 +280,121 @@ public class PrimaryBackupProxy extends AbstractPrimitiveProxy {
       future.complete(null);
     }
     return future;
+  }
+
+  /**
+   * Primary-backup partition proxy builder.
+   */
+  public abstract static class Builder extends PartitionProxy.Builder {
+    protected Consistency consistency = Consistency.SEQUENTIAL;
+    protected Replication replication = Replication.ASYNCHRONOUS;
+    protected Recovery recovery = Recovery.RECOVER;
+    protected int numBackups = 1;
+    protected int maxRetries = 0;
+    protected Duration retryDelay = Duration.ofMillis(100);
+    protected Executor executor;
+
+    /**
+     * Sets the protocol consistency model.
+     *
+     * @param consistency the protocol consistency model
+     * @return the protocol builder
+     */
+    public Builder withConsistency(Consistency consistency) {
+      this.consistency = checkNotNull(consistency, "consistency cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the protocol replication strategy.
+     *
+     * @param replication the protocol replication strategy
+     * @return the protocol builder
+     */
+    public Builder withReplication(Replication replication) {
+      this.replication = checkNotNull(replication, "replication cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the protocol recovery strategy.
+     *
+     * @param recovery the protocol recovery strategy
+     * @return the protocol builder
+     */
+    public Builder withRecovery(Recovery recovery) {
+      this.recovery = checkNotNull(recovery, "recovery cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the number of backups.
+     *
+     * @param numBackups the number of backups
+     * @return the protocol builder
+     */
+    public Builder withNumBackups(int numBackups) {
+      checkArgument(numBackups >= 0, "numBackups must be positive");
+      this.numBackups = numBackups;
+      return this;
+    }
+
+    /**
+     * Sets the maximum number of retries before an operation can be failed.
+     *
+     * @param maxRetries the maximum number of retries before an operation can be failed
+     * @return the proxy builder
+     */
+    public Builder withMaxRetries(int maxRetries) {
+      checkArgument(maxRetries >= 0, "maxRetries must be positive");
+      this.maxRetries = maxRetries;
+      return this;
+    }
+
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelayMillis the delay between operation retries in milliseconds
+     * @return the proxy builder
+     */
+    public Builder withRetryDelayMillis(long retryDelayMillis) {
+      return withRetryDelay(Duration.ofMillis(retryDelayMillis));
+    }
+
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelay the delay between operation retries
+     * @param timeUnit   the delay time unit
+     * @return the proxy builder
+     * @throws NullPointerException if the time unit is null
+     */
+    public Builder withRetryDelay(long retryDelay, TimeUnit timeUnit) {
+      return withRetryDelay(Duration.ofMillis(timeUnit.toMillis(retryDelay)));
+    }
+
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelay the delay between operation retries
+     * @return the proxy builder
+     * @throws NullPointerException if the delay is null
+     */
+    public Builder withRetryDelay(Duration retryDelay) {
+      this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the executor with which to complete proxy futures.
+     *
+     * @param executor The executor with which to complete proxy futures.
+     * @return The proxy builder.
+     * @throws NullPointerException if the executor is null
+     */
+    public Builder withExecutor(Executor executor) {
+      this.executor = executor;
+      return this;
+    }
   }
 }

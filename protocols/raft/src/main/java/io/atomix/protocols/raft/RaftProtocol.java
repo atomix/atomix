@@ -15,11 +15,18 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
+import io.atomix.protocols.raft.partition.RaftPartition;
+import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft protocol.
  */
-public class RaftProtocol implements PrimitiveProtocol {
+public class RaftProtocol implements PrimitiveProtocol<RaftPartitionGroup> {
   public static final Type TYPE = new Type();
 
   /**
@@ -69,7 +76,7 @@ public class RaftProtocol implements PrimitiveProtocol {
   }
 
   @Override
-  public Type type() {
+  public PrimitiveProtocol.Type type() {
     return TYPE;
   }
 
@@ -78,76 +85,20 @@ public class RaftProtocol implements PrimitiveProtocol {
     return config.getGroup();
   }
 
-  /**
-   * Returns the minimum timeout.
-   *
-   * @return the minimum timeout
-   */
-  public Duration minTimeout() {
-    return config.getMinTimeout();
-  }
-
-  /**
-   * Returns the maximum timeout.
-   *
-   * @return the maximum timeout
-   */
-  public Duration maxTimeout() {
-    return config.getMaxTimeout();
-  }
-
-  /**
-   * Returns the read consistency.
-   *
-   * @return the read consistency
-   */
-  public ReadConsistency readConsistency() {
-    return config.getReadConsistency();
-  }
-
-  /**
-   * Returns the communication strategy.
-   *
-   * @return the communication strategy
-   */
-  public CommunicationStrategy communicationStrategy() {
-    return config.getCommunicationStrategy();
-  }
-
-  /**
-   * Returns the recovery strategy.
-   *
-   * @return the recovery strategy
-   */
-  public Recovery recoveryStrategy() {
-    return config.getRecoveryStrategy();
-  }
-
-  /**
-   * Returns the maximum number of allowed retries.
-   *
-   * @return the maximum number of allowed retries
-   */
-  public int maxRetries() {
-    return config.getMaxRetries();
-  }
-
-  /**
-   * Returns the retry delay.
-   *
-   * @return the retry delay
-   */
-  public Duration retryDelay() {
-    return config.getRetryDelay();
-  }
-
-  /**
-   * Returns the proxy executor.
-   *
-   * @return the proxy executor
-   */
-  public Executor executor() {
-    return config.getExecutor();
+  @Override
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, RaftPartitionGroup partitionGroup) {
+    RaftPartition partition = partitionGroup.getPartition(primitiveName);
+    PartitionProxy proxy = partition.getProxyClient().proxyBuilder(primitiveName, primitiveType)
+        .withMinTimeout(config.getMinTimeout())
+        .withMaxTimeout(config.getMaxTimeout())
+        .withReadConsistency(config.getReadConsistency())
+        .withCommunicationStrategy(config.getCommunicationStrategy())
+        .withRecoveryStrategy(config.getRecoveryStrategy())
+        .withMaxRetries(config.getMaxRetries())
+        .withRetryDelay(config.getRetryDelay())
+        .withExecutor(config.getExecutor())
+        .build();
+    return new PartitionedPrimitiveProxy(primitiveName, primitiveType, Collections.singleton(proxy), (key, partitions) -> partition.id());
   }
 
   /**

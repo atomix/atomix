@@ -69,7 +69,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
   private final Serializer serializer;
   private WrappedPartitionGroup systemGroup;
   private WrappedPartitionGroup defaultGroup;
-  private final Map<String, WrappedPartitionGroup> groups = Maps.newConcurrentMap();
+  private final Map<String, WrappedPartitionGroup<?>> groups = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
   private ThreadContext threadContext;
 
@@ -201,7 +201,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
         systemGroup.config(),
         groups.values()
             .stream()
-            .map(PartitionGroup::config)
+            .map(group -> group.config())
             .collect(Collectors.toList()));
   }
 
@@ -239,9 +239,9 @@ public class DefaultPartitionService implements ManagedPartitionService {
           List<CompletableFuture> futures = groups.values().stream()
               .map(group -> {
                 if (group.isMember()) {
-                  return group.join(managementService);
+                  return group.join((PartitionManagementService) managementService);
                 } else {
-                  return group.connect(managementService);
+                  return group.connect((PartitionManagementService) managementService);
                 }
               })
               .collect(Collectors.toList());
@@ -284,8 +284,8 @@ public class DefaultPartitionService implements ManagedPartitionService {
     }
   }
 
-  private static class WrappedPartitionGroup implements ManagedPartitionGroup {
-    private final ManagedPartitionGroup group;
+  private static class WrappedPartitionGroup<P extends Partition> implements ManagedPartitionGroup<P> {
+    private final ManagedPartitionGroup<P> group;
     private final boolean member;
 
     public WrappedPartitionGroup(ManagedPartitionGroup group, boolean member) {
@@ -318,12 +318,12 @@ public class DefaultPartitionService implements ManagedPartitionService {
     }
 
     @Override
-    public Partition getPartition(PartitionId partitionId) {
+    public P getPartition(PartitionId partitionId) {
       return group.getPartition(partitionId);
     }
 
     @Override
-    public Collection<Partition> getPartitions() {
+    public Collection<P> getPartitions() {
       return group.getPartitions();
     }
 
@@ -333,12 +333,12 @@ public class DefaultPartitionService implements ManagedPartitionService {
     }
 
     @Override
-    public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
+    public CompletableFuture<ManagedPartitionGroup<P>> join(PartitionManagementService managementService) {
       return group.join(managementService);
     }
 
     @Override
-    public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
+    public CompletableFuture<ManagedPartitionGroup<P>> connect(PartitionManagementService managementService) {
       return group.connect(managementService);
     }
 

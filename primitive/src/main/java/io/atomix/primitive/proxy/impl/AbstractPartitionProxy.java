@@ -18,7 +18,7 @@ package io.atomix.primitive.proxy.impl;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -27,9 +27,9 @@ import java.util.function.Function;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Default Raft proxy.
+ * Base partition proxy.
  */
-public abstract class AbstractPrimitiveProxy implements PrimitiveProxy {
+public abstract class AbstractPartitionProxy implements PartitionProxy {
   private final Map<EventType, Map<Object, Consumer<PrimitiveEvent>>> eventTypeListeners = Maps.newConcurrentMap();
 
   @Override
