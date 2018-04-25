@@ -421,7 +421,7 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     map.ceilingKey(two).thenAccept(result -> assertEquals(two, result)).join();
 
     //adding to highest key so there is no acceptable response
-    map.ceilingKey(four + "a").thenAccept(reslt -> assertNull(reslt)).join();
+    map.ceilingKey(four + "a").thenAccept(result -> assertNull(result)).join();
     map.higherKey(three).thenAccept(result -> assertEquals(four, result)).join();
     map.higherKey(four).thenAccept(result -> assertNull(result)).join();
 

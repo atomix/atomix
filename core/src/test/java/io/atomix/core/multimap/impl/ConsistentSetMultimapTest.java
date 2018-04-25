@@ -82,7 +82,7 @@ public abstract class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
         thenAccept(result -> assertTrue(result)).join();
     map.size().thenAccept(result -> assertEquals(3, (int) result))
         .join();
-    //Check behavior under remove of non-existant key
+    //Check behavior under remove of non-existent key
     map.remove(one, one).
         thenAccept(result -> assertFalse(result)).join();
     map.size().thenAccept(result -> assertEquals(3, (int) result))

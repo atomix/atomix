@@ -547,7 +547,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
     private InternalSubscription[] subscriptions = new InternalSubscription[0];
 
     /**
-     * Returns a list of subscriptions within the subscripber.
+     * Returns a list of subscriptions within the subscriber.
      *
      * @return a list of subscriptions
      */

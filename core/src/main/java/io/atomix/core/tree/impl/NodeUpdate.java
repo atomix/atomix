@@ -94,7 +94,7 @@ public final class NodeUpdate<V> {
   }
 
   /**
-   * Transforms this instance into an instance of different paramterized types.
+   * Transforms this instance into an instance of different parameterized types.
    *
    * @param valueMapper transcoder to value type
    * @param <T>         value type of returned instance
