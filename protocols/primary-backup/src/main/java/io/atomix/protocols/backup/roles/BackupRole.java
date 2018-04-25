@@ -167,7 +167,6 @@ public class BackupRole extends PrimaryBackupRole {
 
             context.service().restore(buffer);
             operations.clear();
-            context.setCommitIndex(response.index());
           }
         }, context.threadContext());
   }

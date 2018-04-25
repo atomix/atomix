@@ -55,8 +55,12 @@ class AsynchronousReplicator implements Replicator {
     for (NodeId backup : context.backups()) {
       futures.add(queues.computeIfAbsent(backup, BackupQueue::new).add(operation));
     }
-    context.setCommitIndex(operation.index());
-    return Futures.allOf(futures).thenApply(v -> null);
+    return Futures.allOf(futures).exceptionally(throwable -> {
+        if (log.isDebugEnabled()) {
+            log.debug("Failed replicating backup", throwable);
+        }
+        return null;
+    }).thenRun(() -> context.setCommitIndex(operation.index()));
   }
 
   @Override
@@ -95,18 +99,18 @@ class AsynchronousReplicator implements Replicator {
      */
     CompletableFuture<Void> add(BackupOperation operation) {
       operations.add(operation);
-      if (operations.size() >= MAX_BATCH_SIZE && backupFuture.isDone()) {
-        return backupFuture = backup();
+      if (operations.size() >= MAX_BATCH_SIZE) {
+        backupFuture = backupFuture.thenCompose(v -> backup());
       }
-      return CompletableFuture.completedFuture(null);
+      return backupFuture;
     }
 
     /**
      * Sends the next batch if enough time has elapsed.
      */
     private void maybeBackup() {
-      if (System.currentTimeMillis() - lastSent > MAX_BATCH_TIME && !operations.isEmpty() && backupFuture.isDone()) {
-        backupFuture = backup();
+      if (System.currentTimeMillis() - lastSent > MAX_BATCH_TIME && !operations.isEmpty()) {
+        backupFuture = backupFuture.thenCompose(v -> backup());
       }
     }
 
@@ -123,7 +127,14 @@ class AsynchronousReplicator implements Replicator {
           context.currentIndex(),
           batch);
       log.trace("Sending {} to {}", request, nodeId);
-      return context.protocol().backup(nodeId, request).thenRun(() -> lastSent = System.currentTimeMillis());
+      return context.protocol().backup(nodeId, request).whenComplete((response, throwable) -> {
+        if (throwable != null) {
+          if (log.isDebugEnabled()) {
+              log.debug("Failed sending batch to backup", throwable);
+          }
+        }
+        lastSent = System.currentTimeMillis();
+      }).thenApply(v -> null);
     }
 
     /**
