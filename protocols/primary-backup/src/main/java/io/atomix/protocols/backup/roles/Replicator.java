@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.backup.roles;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.protocols.backup.protocol.BackupOperation;
 
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +32,14 @@ interface Replicator {
    * @return a future to be completed with the operation index
    */
   CompletableFuture<Void> replicate(BackupOperation operation);
+
+  /**
+   * Clear backup queue of given node.
+   *
+   * @param nodeId node id
+   * @param endIndex remove all operations that index less than endIndex
+   */
+  void removePreviousOperation(NodeId nodeId, long endIndex);
 
   /**
    * Closes the replicator.

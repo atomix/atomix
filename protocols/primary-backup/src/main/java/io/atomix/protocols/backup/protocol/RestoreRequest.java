@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.backup.protocol;
 
+import io.atomix.cluster.NodeId;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
@@ -22,25 +24,32 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class RestoreRequest extends PrimitiveRequest {
 
-  public static RestoreRequest request(PrimitiveDescriptor primitive, long term) {
-    return new RestoreRequest(primitive, term);
+  public static RestoreRequest request(PrimitiveDescriptor primitive, NodeId nodeId, long term) {
+    return new RestoreRequest(primitive, nodeId, term);
   }
 
   private final long term;
+  private final NodeId nodeId;
 
-  public RestoreRequest(PrimitiveDescriptor primitive, long term) {
+  public RestoreRequest(PrimitiveDescriptor primitive, NodeId nodeId, long term) {
     super(primitive);
     this.term = term;
+    this.nodeId = nodeId;
   }
 
   public long term() {
     return term;
   }
 
+  public NodeId nodeId() {
+    return nodeId;
+  }
+
   @Override
   public String toString() {
     return toStringHelper(this)
         .add("primitive", primitive())
+        .add("nodeId", nodeId())
         .add("term", term())
         .toString();
   }

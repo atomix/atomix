@@ -20,10 +20,12 @@ import io.atomix.cluster.NodeId;
 import io.atomix.protocols.backup.protocol.BackupOperation;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,11 +51,20 @@ class AsynchronousReplicator implements Replicator {
 
   @Override
   public CompletableFuture<Void> replicate(BackupOperation operation) {
+    List<CompletableFuture<Void>> futures = new ArrayList<>(context.backups().size());
     for (NodeId backup : context.backups()) {
-      queues.computeIfAbsent(backup, BackupQueue::new).add(operation);
+      futures.add(queues.computeIfAbsent(backup, BackupQueue::new).add(operation));
     }
     context.setCommitIndex(operation.index());
-    return CompletableFuture.completedFuture(null);
+    return Futures.allOf(futures).thenApply(v -> null);
+  }
+
+  @Override
+  public void removePreviousOperation(NodeId nodeId, long endIndex) {
+    queues.computeIfPresent(nodeId, (node, queue) -> {
+      queue.clear(endIndex);
+      return queue;
+    });
   }
 
   @Override
@@ -68,6 +79,7 @@ class AsynchronousReplicator implements Replicator {
     private final Queue<BackupOperation> operations = new LinkedList<>();
     private final NodeId nodeId;
     private final Scheduled backupTimer;
+    private CompletableFuture<Void> backupFuture = CompletableFuture.completedFuture(null);
     private long lastSent;
 
     BackupQueue(NodeId nodeId) {
@@ -81,26 +93,27 @@ class AsynchronousReplicator implements Replicator {
      *
      * @param operation the operation to add
      */
-    void add(BackupOperation operation) {
+    CompletableFuture<Void> add(BackupOperation operation) {
       operations.add(operation);
-      if (operations.size() >= MAX_BATCH_SIZE) {
-        backup();
+      if (operations.size() >= MAX_BATCH_SIZE && backupFuture.isDone()) {
+        return backupFuture = backup();
       }
+      return CompletableFuture.completedFuture(null);
     }
 
     /**
      * Sends the next batch if enough time has elapsed.
      */
     private void maybeBackup() {
-      if (System.currentTimeMillis() - lastSent > MAX_BATCH_TIME && !operations.isEmpty()) {
-        backup();
+      if (System.currentTimeMillis() - lastSent > MAX_BATCH_TIME && !operations.isEmpty() && backupFuture.isDone()) {
+        backupFuture = backup();
       }
     }
 
     /**
      * Sends the next batch to the backup.
      */
-    private void backup() {
+    private CompletableFuture<Void> backup() {
       List<BackupOperation> batch = ImmutableList.copyOf(operations);
       operations.clear();
       BackupRequest request = BackupRequest.request(
@@ -110,8 +123,7 @@ class AsynchronousReplicator implements Replicator {
           context.currentIndex(),
           batch);
       log.trace("Sending {} to {}", request, nodeId);
-      context.protocol().backup(nodeId, request);
-      lastSent = System.currentTimeMillis();
+      return context.protocol().backup(nodeId, request).thenRun(() -> lastSent = System.currentTimeMillis());
     }
 
     /**
@@ -119,6 +131,18 @@ class AsynchronousReplicator implements Replicator {
      */
     void close() {
       backupTimer.cancel();
+    }
+
+
+    /**
+     * Clears the queue.
+     */
+    void clear(long index) {
+      BackupOperation op = operations.peek();
+      while (op != null && op.index() <= index) {
+        operations.remove();
+        op = operations.peek();
+      }
     }
   }
 }

@@ -19,7 +19,6 @@ import com.google.common.collect.Lists;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.Sessions;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.CloseOperation;
@@ -171,6 +170,9 @@ public class PrimaryRole extends PrimaryBackupRole {
     context.service().backup(buffer);
     buffer.flip();
     byte[] bytes = buffer.readBytes(buffer.remaining());
+
+    replicator.removePreviousOperation(request.nodeId(), context.currentIndex());
+
     return CompletableFuture.completedFuture(
         RestoreResponse.ok(context.currentIndex(), context.currentTimestamp(), bytes))
         .thenApply(this::logResponse);
