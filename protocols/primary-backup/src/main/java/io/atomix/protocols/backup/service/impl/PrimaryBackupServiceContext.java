@@ -490,11 +490,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Creates a service session.
    *
    * @param sessionId the session to create
-   * @param memberId    the owning node ID
+   * @param memberId  the owning node ID
    * @return the service session
    */
   public PrimaryBackupSession createSession(long sessionId, MemberId memberId) {
-    PrimaryBackupSession session = new PrimaryBackupSession(SessionId.from(sessionId), memberId, this);
+    PrimaryBackupSession session = new PrimaryBackupSession(SessionId.from(sessionId), memberId, service.serializer(), this);
     sessions.openSession(session);
     return session;
   }
@@ -503,7 +503,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Gets or creates a service session.
    *
    * @param sessionId the session to create
-   * @param memberId    the owning node ID
+   * @param memberId  the owning node ID
    * @return the service session
    */
   public PrimaryBackupSession getOrCreateSession(long sessionId, MemberId memberId) {

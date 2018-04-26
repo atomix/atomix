@@ -26,6 +26,28 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Raft event.
  */
 public class PrimitiveEvent {
+
+  /**
+   * Creates a new primitive event.
+   *
+   * @param eventType the event type
+   * @return the primitive event
+   */
+  public static PrimitiveEvent event(EventType eventType) {
+    return event(eventType, null);
+  }
+
+  /**
+   * Creates a new primitive event.
+   *
+   * @param eventType the event type
+   * @param value     the event value
+   * @return the primitive event
+   */
+  public static PrimitiveEvent event(EventType eventType, byte[] value) {
+    return new PrimitiveEvent(EventType.simplify(eventType), value);
+  }
+
   private final EventType type;
   private final byte[] value;
 

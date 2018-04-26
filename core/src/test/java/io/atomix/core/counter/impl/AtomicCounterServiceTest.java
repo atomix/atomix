@@ -16,6 +16,8 @@
 package io.atomix.core.counter.impl;
 
 import io.atomix.core.counter.impl.AtomicCounterOperations.Set;
+import io.atomix.primitive.service.impl.DefaultBackupInput;
+import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
@@ -42,10 +44,10 @@ public class AtomicCounterServiceTest {
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
-    service.backup(buffer);
+    service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
     service = new AtomicCounterService();
-    service.restore(buffer.flip());
+    service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     long value = service.get(new DefaultCommit<>(
         2,

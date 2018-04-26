@@ -16,6 +16,7 @@
 package io.atomix.protocols.backup.roles;
 
 import io.atomix.cluster.MemberId;
+import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
@@ -165,7 +166,7 @@ public class BackupRole extends PrimaryBackupRole {
               context.getOrCreateSession(buffer.readLong(), MemberId.from(buffer.readString()));
             }
 
-            context.service().restore(buffer);
+            context.service().restore(new DefaultBackupInput(buffer, context.service().serializer()));
             operations.clear();
           }
         }, context.threadContext());

@@ -667,7 +667,7 @@ public class RaftFuzzTest implements Runnable {
     private Map<String, String> map = new HashMap<>();
 
     @Override
-    protected Serializer serializer() {
+    public Serializer serializer() {
       return clientSerializer;
     }
 

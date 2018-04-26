@@ -70,7 +70,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   private Scheduled rebalanceTimer;
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 
@@ -99,7 +99,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   }
 
   private void notifyTermChange(PartitionId partitionId, PrimaryTerm term) {
-    listeners.values().forEach(session -> session.publish(CHANGE, SERIALIZER::encode, new PrimaryElectionEvent(PrimaryElectionEvent.Type.CHANGED, partitionId, term)));
+    listeners.values().forEach(session -> session.publish(CHANGE, new PrimaryElectionEvent(PrimaryElectionEvent.Type.CHANGED, partitionId, term)));
   }
 
   /**

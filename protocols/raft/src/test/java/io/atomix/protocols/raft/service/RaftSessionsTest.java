@@ -30,6 +30,8 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionRegistry;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -98,6 +100,7 @@ public class RaftSessionsTest {
         100,
         5000,
         System.currentTimeMillis(),
+        Serializer.using(KryoNamespaces.BASIC),
         context,
         server,
         mock(ThreadContextFactory.class));

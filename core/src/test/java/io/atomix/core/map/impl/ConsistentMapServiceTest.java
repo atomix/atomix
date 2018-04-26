@@ -17,6 +17,8 @@ package io.atomix.core.map.impl;
 
 import io.atomix.core.map.impl.ConsistentMapOperations.Get;
 import io.atomix.core.map.impl.ConsistentMapOperations.Put;
+import io.atomix.primitive.service.impl.DefaultBackupInput;
+import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
@@ -53,10 +55,10 @@ public class ConsistentMapServiceTest {
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
-    service.backup(buffer);
+    service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
     service = new TestConsistentMapService();
-    service.restore(buffer.flip());
+    service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     Versioned<byte[]> value = service.get(new DefaultCommit<>(
         2,

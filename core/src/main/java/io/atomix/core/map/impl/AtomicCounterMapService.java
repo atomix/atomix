@@ -73,7 +73,7 @@ public class AtomicCounterMapService extends AbstractPrimitiveService {
   private Map<String, Long> map = new HashMap<>();
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 

@@ -123,7 +123,7 @@ public class DocumentTreeService extends AbstractPrimitiveService {
   }
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return serializer;
   }
 
@@ -330,7 +330,7 @@ public class DocumentTreeService extends AbstractPrimitiveService {
 
     public <M> void publish(EventType topic, M message) {
       listeners.stream().findAny().ifPresent(listener ->
-          listener.session().publish(topic, serializer::encode, message));
+          listener.session().publish(topic, message));
     }
 
     private void recomputeLeastCommonAncestor() {

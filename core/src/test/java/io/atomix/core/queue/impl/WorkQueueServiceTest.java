@@ -21,6 +21,8 @@ import io.atomix.core.queue.impl.WorkQueueOperations.Add;
 import io.atomix.core.queue.impl.WorkQueueOperations.Take;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
+import io.atomix.primitive.service.impl.DefaultBackupInput;
+import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionId;
@@ -64,11 +66,11 @@ public class WorkQueueServiceTest {
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
-    service.backup(buffer);
+    service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
     service = new WorkQueueService();
     service.init(context);
-    service.restore(buffer.flip());
+    service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     Collection<Task<byte[]>> value = service.take(new DefaultCommit<>(
         2,
