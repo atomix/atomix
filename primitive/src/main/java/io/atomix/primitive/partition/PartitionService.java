@@ -59,11 +59,19 @@ public interface PartitionService {
    * @param protocol the primitive protocol
    * @return the first partition group that matches the given primitive protocol
    */
+  @SuppressWarnings("unchecked")
   default <P extends Partition> PartitionGroup<P> getPartitionGroup(PrimitiveProtocol protocol) {
     if (protocol == null) {
       return getDefaultPartitionGroup();
     } else if (protocol.group() != null) {
-      return getPartitionGroup(protocol.group());
+      PartitionGroup<P> group = getPartitionGroup(protocol.group());
+      if (group != null) {
+        return group;
+      }
+      PartitionGroup systemGroup = getSystemPartitionGroup();
+      if (systemGroup != null && systemGroup.name().equals(protocol.group())) {
+        return systemGroup;
+      }
     }
     return getPartitionGroup(protocol.type());
   }
