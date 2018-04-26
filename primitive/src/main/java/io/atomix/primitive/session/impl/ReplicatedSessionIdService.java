@@ -26,6 +26,7 @@ import io.atomix.utils.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 import static io.atomix.primitive.session.impl.SessionIdGeneratorOperations.NEXT;
 
 /**
@@ -47,7 +48,8 @@ public class ReplicatedSessionIdService implements ManagedSessionIdService {
 
   @Override
   public CompletableFuture<SessionId> nextSessionId() {
-    return proxy.<Long>invoke(NEXT, SERIALIZER::decode)
+    return proxy.execute(operation(NEXT))
+        .<Long>thenApply(SERIALIZER::decode)
         .thenApply(SessionId::from);
   }
 

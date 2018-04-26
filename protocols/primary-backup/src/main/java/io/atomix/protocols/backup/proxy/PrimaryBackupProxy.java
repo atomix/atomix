@@ -16,6 +16,7 @@
 package io.atomix.protocols.backup.proxy;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
@@ -25,6 +26,7 @@ import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
@@ -32,7 +34,6 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.impl.AbstractPartitionProxy;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.CloseRequest;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
@@ -47,6 +48,7 @@ import org.slf4j.Logger;
 
 import java.net.ConnectException;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -59,7 +61,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup proxy.
  */
-public class PrimaryBackupProxy extends AbstractPartitionProxy {
+public class PrimaryBackupProxy implements PartitionProxy {
   private static final int RETRY_DELAY = 100;
   private Logger log;
   private final PrimitiveType primitiveType;
@@ -71,7 +73,7 @@ public class PrimaryBackupProxy extends AbstractPartitionProxy {
   private final PrimaryElection primaryElection;
   private final ThreadContext threadContext;
   private final Set<Consumer<State>> stateChangeListeners = Sets.newIdentityHashSet();
-  private final Set<Consumer<PrimitiveEvent>> eventListeners = Sets.newIdentityHashSet();
+  private final Map<EventType, Set<Consumer<PrimitiveEvent>>> eventListeners = Maps.newHashMap();
   private final PrimaryElectionEventListener primaryElectionListener = event -> changeReplicas(event.term());
   private final ClusterMembershipEventListener membershipEventListener = this::handleClusterEvent;
   private PrimaryTerm term;
@@ -204,13 +206,13 @@ public class PrimaryBackupProxy extends AbstractPartitionProxy {
   }
 
   @Override
-  public void addEventListener(Consumer<PrimitiveEvent> listener) {
-    eventListeners.add(listener);
+  public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
+    eventListeners.computeIfAbsent(eventType, t -> Sets.newLinkedHashSet()).add(listener);
   }
 
   @Override
-  public void removeEventListener(Consumer<PrimitiveEvent> listener) {
-    eventListeners.remove(listener);
+  public void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
+    eventListeners.computeIfAbsent(eventType, t -> Sets.newLinkedHashSet()).remove(listener);
   }
 
   /**
@@ -241,7 +243,10 @@ public class PrimaryBackupProxy extends AbstractPartitionProxy {
    */
   private void handleEvent(PrimitiveEvent event) {
     log.trace("Received {}", event);
-    eventListeners.forEach(l -> l.accept(event));
+    Set<Consumer<PrimitiveEvent>> listeners = eventListeners.get(event.type());
+    if (listeners != null) {
+      listeners.forEach(l -> l.accept(event));
+    }
   }
 
   @Override

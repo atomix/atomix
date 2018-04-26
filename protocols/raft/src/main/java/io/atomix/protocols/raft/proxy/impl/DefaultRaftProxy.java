@@ -17,11 +17,11 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.impl.AbstractPartitionProxy;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -56,7 +56,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * In the event that the client session expires, clients are responsible for opening a new session by creating and
  * opening a new session object.
  */
-public class DefaultRaftProxy extends AbstractPartitionProxy implements RaftProxy {
+public class DefaultRaftProxy implements RaftProxy {
   private final String serviceName;
   private final PrimitiveType primitiveType;
   private final PartitionId partitionId;
@@ -147,16 +147,16 @@ public class DefaultRaftProxy extends AbstractPartitionProxy implements RaftProx
   }
 
   @Override
-  public void addEventListener(Consumer<PrimitiveEvent> listener) {
+  public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
     if (proxyListener != null) {
-      proxyListener.addEventListener(listener);
+      proxyListener.addEventListener(eventType, listener);
     }
   }
 
   @Override
-  public void removeEventListener(Consumer<PrimitiveEvent> listener) {
+  public void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
     if (proxyListener != null) {
-      proxyListener.removeEventListener(listener);
+      proxyListener.removeEventListener(eventType, listener);
     }
   }
 

@@ -27,7 +27,6 @@ import io.atomix.primitive.session.SessionId;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -83,64 +82,13 @@ public class DelegatingPartitionProxy implements PartitionProxy {
   }
 
   @Override
-  public void addEventListener(Consumer<PrimitiveEvent> listener) {
-    proxy.addEventListener(listener);
+  public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
+    proxy.addEventListener(eventType, listener);
   }
 
   @Override
-  public void removeEventListener(Consumer<PrimitiveEvent> listener) {
-    proxy.removeEventListener(listener);
-  }
-
-  @Override
-  public void addEventListener(EventType eventType, Runnable listener) {
-    Consumer<PrimitiveEvent> wrappedListener = e -> {
-      if (e.type().id().equals(eventType.id())) {
-        listener.run();
-      }
-    };
-    eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap()).put(listener, wrappedListener);
-    addEventListener(wrappedListener);
-  }
-
-  @Override
-  public void addEventListener(EventType eventType, Consumer<byte[]> listener) {
-    Consumer<PrimitiveEvent> wrappedListener = e -> {
-      if (e.type().id().equals(eventType.id())) {
-        listener.accept(e.value());
-      }
-    };
-    eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap())
-        .put(listener, wrappedListener);
-    addEventListener(wrappedListener);
-  }
-
-  @Override
-  public <T> void addEventListener(EventType eventType, Function<byte[], T> decoder, Consumer<T> listener) {
-    Consumer<PrimitiveEvent> wrappedListener = e -> {
-      if (e.type().id().equals(eventType.id())) {
-        listener.accept(decoder.apply(e.value()));
-      }
-    };
-    eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap())
-        .put(listener, wrappedListener);
-    addEventListener(wrappedListener);
-  }
-
-  @Override
-  public void removeEventListener(EventType eventType, Runnable listener) {
-    Consumer<PrimitiveEvent> eventListener =
-        eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap())
-            .remove(listener);
-    removeEventListener(eventListener);
-  }
-
-  @Override
-  public void removeEventListener(EventType eventType, Consumer listener) {
-    Consumer<PrimitiveEvent> eventListener =
-        eventTypeListeners.computeIfAbsent(eventType.id(), e -> Maps.newConcurrentMap())
-            .remove(listener);
-    removeEventListener(eventListener);
+  public void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
+    proxy.removeEventListener(eventType, listener);
   }
 
   @Override

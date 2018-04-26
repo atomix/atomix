@@ -15,8 +15,11 @@
  */
 package io.atomix.primitive.proxy.impl;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
@@ -43,7 +46,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Primitive proxy that supports recovery.
  */
-public class RecoveringPartitionProxy extends AbstractPartitionProxy {
+public class RecoveringPartitionProxy implements PartitionProxy {
   private static final SessionId DEFAULT_SESSION_ID = SessionId.from(0);
   private final PartitionId partitionId;
   private final String name;
@@ -55,7 +58,7 @@ public class RecoveringPartitionProxy extends AbstractPartitionProxy {
   private volatile PartitionProxy proxy;
   private volatile PartitionProxy.State state = PartitionProxy.State.SUSPENDED;
   private final Set<Consumer<PartitionProxy.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
-  private final Set<Consumer<PrimitiveEvent>> eventListeners = Sets.newCopyOnWriteArraySet();
+  private final Multimap<EventType, Consumer<PrimitiveEvent>> eventListeners = HashMultimap.create();
   private Scheduled recoverTask;
   private volatile boolean connected = false;
 
@@ -157,19 +160,19 @@ public class RecoveringPartitionProxy extends AbstractPartitionProxy {
       clientFuture = new OrderedFuture<>();
       openProxy(clientFuture);
 
-      return clientFuture.thenApply(client -> {
+      return clientFuture.thenApply(proxy -> {
         synchronized (this) {
           this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
-              .addValue(client.sessionId())
-              .add("type", client.type())
-              .add("name", client.name())
+              .addValue(proxy.sessionId())
+              .add("type", proxy.type())
+              .add("name", proxy.name())
               .build());
-          this.proxy = client;
-          client.addStateChangeListener(this::onStateChange);
-          eventListeners.forEach(client::addEventListener);
+          this.proxy = proxy;
+          proxy.addStateChangeListener(this::onStateChange);
+          eventListeners.forEach(proxy::addEventListener);
           onStateChange(PartitionProxy.State.CONNECTED);
         }
-        return client;
+        return proxy;
       });
     }
     return Futures.exceptionalFuture(new IllegalStateException("Client not open"));
@@ -202,22 +205,22 @@ public class RecoveringPartitionProxy extends AbstractPartitionProxy {
   }
 
   @Override
-  public synchronized void addEventListener(Consumer<PrimitiveEvent> consumer) {
+  public synchronized void addEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
     checkOpen();
-    eventListeners.add(consumer);
+    eventListeners.put(eventType, consumer);
     PartitionProxy proxy = this.proxy;
     if (proxy != null) {
-      proxy.addEventListener(consumer);
+      proxy.addEventListener(eventType, consumer);
     }
   }
 
   @Override
-  public synchronized void removeEventListener(Consumer<PrimitiveEvent> consumer) {
+  public synchronized void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
     checkOpen();
-    eventListeners.remove(consumer);
+    eventListeners.remove(eventType, consumer);
     PartitionProxy proxy = this.proxy;
     if (proxy != null) {
-      proxy.removeEventListener(consumer);
+      proxy.removeEventListener(eventType, consumer);
     }
   }
 

@@ -16,8 +16,6 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.primitive.operation.OperationId;
-import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.protocol.CommandRequest;
@@ -36,6 +34,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -71,7 +70,7 @@ public class RaftProxyInvokerTest {
     ThreadContext threadContext = new TestContext();
 
     RaftProxyInvoker submitter = new RaftProxyInvoker(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, threadContext);
-    assertArrayEquals(submitter.invoke(new PrimitiveOperation(COMMAND, HeapBytes.EMPTY)).get(), "Hello world!".getBytes());
+    assertArrayEquals(submitter.invoke(operation(COMMAND, HeapBytes.EMPTY)).get(), "Hello world!".getBytes());
     assertEquals(state.getCommandRequest(), 1);
     assertEquals(state.getCommandResponse(), 1);
     assertEquals(state.getResponseIndex(), 10);
@@ -96,8 +95,8 @@ public class RaftProxyInvokerTest {
 
     RaftProxyInvoker submitter = new RaftProxyInvoker(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, threadContext);
 
-    CompletableFuture<byte[]> result1 = submitter.invoke(new PrimitiveOperation(COMMAND, HeapBytes.EMPTY));
-    CompletableFuture<byte[]> result2 = submitter.invoke(new PrimitiveOperation(COMMAND, HeapBytes.EMPTY));
+    CompletableFuture<byte[]> result1 = submitter.invoke(operation(COMMAND));
+    CompletableFuture<byte[]> result2 = submitter.invoke(operation(COMMAND));
 
     future2.complete(CommandResponse.builder()
       .withStatus(RaftResponse.Status.OK)
@@ -146,7 +145,7 @@ public class RaftProxyInvokerTest {
     ThreadContext threadContext = new TestContext();
 
     RaftProxyInvoker submitter = new RaftProxyInvoker(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, threadContext);
-    assertTrue(Arrays.equals(submitter.invoke(new PrimitiveOperation(QUERY, HeapBytes.EMPTY)).get(), "Hello world!".getBytes()));
+    assertTrue(Arrays.equals(submitter.invoke(operation(QUERY)).get(), "Hello world!".getBytes()));
     assertEquals(state.getResponseIndex(), 10);
   }
 
@@ -169,8 +168,8 @@ public class RaftProxyInvokerTest {
 
     RaftProxyInvoker submitter = new RaftProxyInvoker(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, threadContext);
 
-    CompletableFuture<byte[]> result1 = submitter.invoke(new PrimitiveOperation(QUERY, HeapBytes.EMPTY));
-    CompletableFuture<byte[]> result2 = submitter.invoke(new PrimitiveOperation(QUERY, HeapBytes.EMPTY));
+    CompletableFuture<byte[]> result1 = submitter.invoke(operation(QUERY));
+    CompletableFuture<byte[]> result2 = submitter.invoke(operation(QUERY));
 
     future2.complete(QueryResponse.builder()
       .withStatus(RaftResponse.Status.OK)
@@ -216,8 +215,8 @@ public class RaftProxyInvokerTest {
 
     RaftProxyInvoker submitter = new RaftProxyInvoker(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, threadContext);
 
-    CompletableFuture<byte[]> result1 = submitter.invoke(new PrimitiveOperation(QUERY, HeapBytes.EMPTY));
-    CompletableFuture<byte[]> result2 = submitter.invoke(new PrimitiveOperation(QUERY, HeapBytes.EMPTY));
+    CompletableFuture<byte[]> result1 = submitter.invoke(operation(QUERY));
+    CompletableFuture<byte[]> result2 = submitter.invoke(operation(QUERY));
 
     assertEquals(state.getResponseIndex(), 1);
 
@@ -254,7 +253,7 @@ public class RaftProxyInvokerTest {
 
     RaftProxyInvoker submitter = new RaftProxyInvoker(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, threadContext);
 
-    CompletableFuture<byte[]> result = submitter.invoke(new PrimitiveOperation(COMMAND, HeapBytes.EMPTY));
+    CompletableFuture<byte[]> result = submitter.invoke(operation(COMMAND));
 
     assertEquals(state.getResponseIndex(), 1);
 
@@ -282,7 +281,7 @@ public class RaftProxyInvokerTest {
 
     RaftProxyInvoker submitter = new RaftProxyInvoker(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, threadContext);
 
-    CompletableFuture<byte[]> result = submitter.invoke(new PrimitiveOperation(QUERY, HeapBytes.EMPTY));
+    CompletableFuture<byte[]> result = submitter.invoke(operation(QUERY));
 
     assertEquals(state.getResponseIndex(), 1);
 

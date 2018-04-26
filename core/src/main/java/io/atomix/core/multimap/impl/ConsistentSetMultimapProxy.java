@@ -93,6 +93,11 @@ public class ConsistentSetMultimapProxy
     super(proxy, registry);
   }
 
+  @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
   private void handleEvent(List<MultimapEvent<String, byte[]>> events) {
     events.forEach(event ->
         mapEventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event))));
@@ -100,7 +105,7 @@ public class ConsistentSetMultimapProxy
 
   @Override
   public CompletableFuture<Integer> size() {
-    return this.<Integer>invokes(SIZE, SERIALIZER::decode)
+    return this.<Integer>invokeAll(SIZE)
         .thenApply(results -> results.reduce(Math::addExact).orElse(0));
   }
 
@@ -111,124 +116,90 @@ public class ConsistentSetMultimapProxy
 
   @Override
   public CompletableFuture<Boolean> containsKey(String key) {
-    return invoke(key, CONTAINS_KEY, SERIALIZER::encode, new ContainsKey(key), SERIALIZER::decode);
+    return invokeBy(key, CONTAINS_KEY, new ContainsKey(key));
   }
 
   @Override
   public CompletableFuture<Boolean> containsValue(byte[] value) {
-    return this.<ContainsValue, Boolean>invokes(
-        CONTAINS_VALUE,
-        SERIALIZER::encode,
-        new ContainsValue(value),
-        SERIALIZER::decode)
+    return this.<ContainsValue, Boolean>invokeAll(CONTAINS_VALUE, new ContainsValue(value))
         .thenApply(results -> results.filter(Predicate.isEqual(true)).findFirst().orElse(false));
   }
 
   @Override
   public CompletableFuture<Boolean> containsEntry(String key, byte[] value) {
-    return this.<ContainsEntry, Boolean>invokes(
-        CONTAINS_ENTRY,
-        SERIALIZER::encode,
-        new ContainsEntry(key, value),
-        SERIALIZER::decode)
+    return this.<ContainsEntry, Boolean>invokeAll(CONTAINS_ENTRY, new ContainsEntry(key, value))
         .thenApply(results -> results.filter(Predicate.isEqual(true)).findFirst().orElse(false));
   }
 
   @Override
   public CompletableFuture<Boolean> put(String key, byte[] value) {
-    return invoke(
-        key,
-        PUT,
-        SERIALIZER::encode,
-        new Put(key, Collections.singletonList(value), null),
-        SERIALIZER::decode);
+    return invokeBy(key, PUT, new Put(key, Collections.singletonList(value), null));
   }
 
   @Override
   public CompletableFuture<Boolean> remove(String key, byte[] value) {
-    return invoke(key, REMOVE, SERIALIZER::encode, new MultiRemove(key,
-        Collections.singletonList(value), null), SERIALIZER::decode);
+    return invokeBy(key, REMOVE, new MultiRemove(key, Collections.singletonList(value), null));
   }
 
   @Override
   public CompletableFuture<Boolean> removeAll(String key, Collection<? extends byte[]> values) {
-    return invoke(
-        key,
-        REMOVE,
-        SERIALIZER::encode,
-        new MultiRemove(key, (Collection<byte[]>) values, null),
-        SERIALIZER::decode);
+    return invokeBy(key, REMOVE, new MultiRemove(key, (Collection<byte[]>) values, null));
   }
 
   @Override
   public CompletableFuture<Versioned<Collection<? extends byte[]>>> removeAll(String key) {
-    return invoke(
-        key,
-        REMOVE_ALL,
-        SERIALIZER::encode,
-        new RemoveAll(key, null),
-        SERIALIZER::decode);
+    return invokeBy(key, REMOVE_ALL, new RemoveAll(key, null));
   }
 
   @Override
   public CompletableFuture<Boolean> putAll(String key, Collection<? extends byte[]> values) {
-    return invoke(
-        key,
-        PUT,
-        SERIALIZER::encode,
-        new Put(key, values, null),
-        SERIALIZER::decode);
+    return invokeBy(key, PUT, new Put(key, values, null));
   }
 
   @Override
   public CompletableFuture<Versioned<Collection<? extends byte[]>>> replaceValues(
       String key, Collection<byte[]> values) {
-    return invoke(
-        key,
-        REPLACE,
-        SERIALIZER::encode,
-        new Replace(key, values, null),
-        SERIALIZER::decode);
+    return invokeBy(key, REPLACE, new Replace(key, values, null));
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    return invokes(CLEAR);
+    return invokeAll(CLEAR).thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<Versioned<Collection<? extends byte[]>>> get(String key) {
-    return invoke(key, GET, SERIALIZER::encode, new Get(key), SERIALIZER::decode);
+    return invokeBy(key, GET, new Get(key));
   }
 
   @Override
   public CompletableFuture<Set<String>> keySet() {
-    return this.<Set<String>>invokes(KEY_SET, SERIALIZER::decode)
+    return this.<Set<String>>invokeAll(KEY_SET)
         .thenApply(results -> results.reduce((s1, s2) -> ImmutableSet.<String>builder().addAll(s1).addAll(s2).build()).orElse(ImmutableSet.of()));
   }
 
   @Override
   public CompletableFuture<Multiset<String>> keys() {
-    return this.<Multiset<String>>invokes(KEYS, SERIALIZER::decode)
+    return this.<Multiset<String>>invokeAll(KEYS)
         .thenApply(results -> results.reduce(Multisets::sum).orElse(HashMultiset.create()));
   }
 
   @Override
   public CompletableFuture<Multiset<byte[]>> values() {
-    return this.<Multiset<byte[]>>invokes(VALUES, SERIALIZER::decode)
+    return this.<Multiset<byte[]>>invokeAll(VALUES)
         .thenApply(results -> results.reduce(Multisets::sum).orElse(HashMultiset.create()));
   }
 
   @Override
   public CompletableFuture<Collection<Map.Entry<String, byte[]>>> entries() {
-    return this.<Collection<Map.Entry<String, byte[]>>>invokes(ENTRIES, SERIALIZER::decode)
+    return this.<Collection<Map.Entry<String, byte[]>>>invokeAll(ENTRIES)
         .thenApply(results -> results.reduce((s1, s2) -> ImmutableList.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableList.of()));
   }
 
   @Override
   public CompletableFuture<Void> addListener(MultimapEventListener<String, byte[]> listener, Executor executor) {
     if (mapEventListeners.isEmpty()) {
-      return invokes(ADD_LISTENER);
+      return invokeAll(ADD_LISTENER).thenApply(v -> null);
     } else {
       mapEventListeners.put(listener, executor);
       return CompletableFuture.completedFuture(null);
@@ -238,7 +209,7 @@ public class ConsistentSetMultimapProxy
   @Override
   public CompletableFuture<Void> removeListener(MultimapEventListener<String, byte[]> listener) {
     if (mapEventListeners.remove(listener) != null && mapEventListeners.isEmpty()) {
-      return invokes(REMOVE_LISTENER);
+      return invokeAll(REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -255,11 +226,11 @@ public class ConsistentSetMultimapProxy
   @Override
   public CompletableFuture<AsyncConsistentMultimap<String, byte[]>> connect() {
     return super.connect()
-        .thenRun(() -> getPartitions().forEach(partition -> {
-          partition.addEventListener(CHANGE, SERIALIZER::decode, this::handleEvent);
-          partition.addStateChangeListener(state -> {
+        .thenRun(() -> getPartitionIds().forEach(partition -> {
+          listenOn(partition, CHANGE, this::handleEvent);
+          addStateChangeListenerOn(partition, state -> {
             if (state == PartitionProxy.State.CONNECTED && isListening()) {
-              partition.invoke(ADD_LISTENER);
+              invokeOn(partition, ADD_LISTENER);
             }
           });
         }))

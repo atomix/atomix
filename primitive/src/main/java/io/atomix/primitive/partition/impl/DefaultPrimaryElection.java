@@ -16,8 +16,8 @@
 package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.primitive.partition.ManagedPrimaryElection;
 import io.atomix.primitive.partition.GroupMember;
+import io.atomix.primitive.partition.ManagedPrimaryElection;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 import static io.atomix.primitive.partition.impl.PrimaryElectorOperations.ENTER;
 import static io.atomix.primitive.partition.impl.PrimaryElectorOperations.Enter;
 import static io.atomix.primitive.partition.impl.PrimaryElectorOperations.GET_TERM;
@@ -66,12 +67,12 @@ public class DefaultPrimaryElection implements ManagedPrimaryElection {
 
   @Override
   public CompletableFuture<PrimaryTerm> enter(GroupMember member) {
-    return proxy.invoke(ENTER, SERIALIZER::encode, new Enter(partitionId, member), SERIALIZER::decode);
+    return proxy.execute(operation(ENTER, SERIALIZER.encode(new Enter(partitionId, member)))).thenApply(SERIALIZER::decode);
   }
 
   @Override
   public CompletableFuture<PrimaryTerm> getTerm() {
-    return proxy.invoke(GET_TERM, SERIALIZER::encode, new GetTerm(partitionId), SERIALIZER::decode);
+    return proxy.execute(operation(GET_TERM, SERIALIZER.encode(new GetTerm(partitionId)))).thenApply(SERIALIZER::decode);
   }
 
   @Override

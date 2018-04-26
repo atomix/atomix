@@ -68,68 +68,68 @@ public class AtomicCounterMapProxy extends AbstractAsyncPrimitive<AsyncAtomicCou
   }
 
   @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
   public CompletableFuture<Long> incrementAndGet(String key) {
-    return invoke(key, INCREMENT_AND_GET, SERIALIZER::encode, new IncrementAndGet(key), SERIALIZER::decode);
+    return invokeBy(key, INCREMENT_AND_GET, new IncrementAndGet(key));
   }
 
   @Override
   public CompletableFuture<Long> decrementAndGet(String key) {
-    return invoke(key, DECREMENT_AND_GET, SERIALIZER::encode, new DecrementAndGet(key), SERIALIZER::decode);
+    return invokeBy(key, DECREMENT_AND_GET, new DecrementAndGet(key));
   }
 
   @Override
   public CompletableFuture<Long> getAndIncrement(String key) {
-    return invoke(key, GET_AND_INCREMENT, SERIALIZER::encode, new GetAndIncrement(key), SERIALIZER::decode);
+    return invokeBy(key, GET_AND_INCREMENT, new GetAndIncrement(key));
   }
 
   @Override
   public CompletableFuture<Long> getAndDecrement(String key) {
-    return invoke(key, GET_AND_DECREMENT, SERIALIZER::encode, new GetAndDecrement(key), SERIALIZER::decode);
+    return invokeBy(key, GET_AND_DECREMENT, new GetAndDecrement(key));
   }
 
   @Override
   public CompletableFuture<Long> addAndGet(String key, long delta) {
-    return invoke(key, ADD_AND_GET, SERIALIZER::encode, new AddAndGet(key, delta), SERIALIZER::decode);
+    return invokeBy(key, ADD_AND_GET, new AddAndGet(key, delta));
   }
 
   @Override
   public CompletableFuture<Long> getAndAdd(String key, long delta) {
-    return invoke(key, GET_AND_ADD, SERIALIZER::encode, new GetAndAdd(key, delta), SERIALIZER::decode);
+    return invokeBy(key, GET_AND_ADD, new GetAndAdd(key, delta));
   }
 
   @Override
   public CompletableFuture<Long> get(String key) {
-    return invoke(key, GET, SERIALIZER::encode, new Get(key), SERIALIZER::decode);
+    return invokeBy(key, GET, new Get(key));
   }
 
   @Override
   public CompletableFuture<Long> put(String key, long newValue) {
-    return invoke(key, PUT, SERIALIZER::encode, new Put(key, newValue), SERIALIZER::decode);
+    return invokeBy(key, PUT, new Put(key, newValue));
   }
 
   @Override
   public CompletableFuture<Long> putIfAbsent(String key, long newValue) {
-    return invoke(key, PUT_IF_ABSENT, SERIALIZER::encode, new PutIfAbsent(key, newValue), SERIALIZER::decode);
+    return invokeBy(key, PUT_IF_ABSENT, new PutIfAbsent(key, newValue));
   }
 
   @Override
   public CompletableFuture<Boolean> replace(String key, long expectedOldValue, long newValue) {
-    return invoke(
-        key,
-        REPLACE,
-        SERIALIZER::encode,
-        new Replace(key, expectedOldValue, newValue),
-        SERIALIZER::decode);
+    return invokeBy(key, REPLACE, new Replace(key, expectedOldValue, newValue));
   }
 
   @Override
   public CompletableFuture<Long> remove(String key) {
-    return invoke(key, REMOVE, SERIALIZER::encode, new Remove(key), SERIALIZER::decode);
+    return invokeBy(key, REMOVE, new Remove(key));
   }
 
   @Override
   public CompletableFuture<Boolean> remove(String key, long value) {
-    return invoke(key, REMOVE_VALUE, SERIALIZER::encode, new RemoveValue(key, value), SERIALIZER::decode);
+    return invokeBy(key, REMOVE_VALUE, new RemoveValue(key, value));
   }
 
   @Override
@@ -139,13 +139,13 @@ public class AtomicCounterMapProxy extends AbstractAsyncPrimitive<AsyncAtomicCou
 
   @Override
   public CompletableFuture<Integer> size() {
-    return this.<Integer>invokes(SIZE, SERIALIZER::decode)
+    return this.<Integer>invokeAll(SIZE)
         .thenApply(results -> results.reduce(Math::addExact).orElse(0));
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    return invokes(CLEAR);
+    return invokeAll(CLEAR).thenApply(v -> null);
   }
 
   @Override

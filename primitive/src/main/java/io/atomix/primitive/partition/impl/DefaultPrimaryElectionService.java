@@ -17,6 +17,7 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.partition.ManagedPrimaryElection;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.PartitionGroup;
@@ -54,7 +55,10 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
 
   private final PartitionGroup<?> partitions;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
-  private final Consumer<PrimaryElectionEvent> eventListener = event -> listeners.forEach(l -> l.onEvent(event));
+  private final Consumer<PrimitiveEvent> eventListener = event -> {
+    PrimaryElectionEvent electionEvent = SERIALIZER.decode(event.value());
+    listeners.forEach(l -> l.onEvent(electionEvent));
+  };
   private final Map<PartitionId, ManagedPrimaryElection> elections = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
   private PartitionProxy proxy;
@@ -88,7 +92,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
         .connect()
         .thenAccept(proxy -> {
           this.proxy = proxy;
-          proxy.addEventListener(CHANGE, SERIALIZER::decode, eventListener);
+          proxy.addEventListener(CHANGE, eventListener);
           started.set(true);
         })
         .thenApply(v -> this);

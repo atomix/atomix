@@ -19,7 +19,6 @@ package io.atomix.primitive.service;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.time.WallClockTimestamp;
 
@@ -104,7 +103,7 @@ public interface ServiceExecutor extends ThreadContext {
     checkNotNull(callback, "callback cannot be null");
     handle(operationId, commit -> {
       callback.run();
-      return HeapBytes.EMPTY;
+      return null;
     });
   }
 
@@ -134,7 +133,7 @@ public interface ServiceExecutor extends ThreadContext {
     checkNotNull(callback, "callback cannot be null");
     handle(operationId, commit -> {
       callback.accept(commit.mapToNull());
-      return HeapBytes.EMPTY;
+      return null;
     });
   }
 
@@ -167,7 +166,7 @@ public interface ServiceExecutor extends ThreadContext {
     checkNotNull(callback, "callback cannot be null");
     handle(operationId, commit -> {
       callback.accept(commit.map(decoder));
-      return HeapBytes.EMPTY;
+      return null;
     });
   }
 

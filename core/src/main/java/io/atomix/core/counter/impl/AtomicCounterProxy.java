@@ -54,54 +54,59 @@ public class AtomicCounterProxy extends AbstractAsyncPrimitive<AsyncAtomicCounte
     super(proxy, registry);
   }
 
+  @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
   private long nullOrZero(Long value) {
     return value != null ? value : 0;
   }
 
   @Override
   public CompletableFuture<Long> get() {
-    return this.<Long>invoke(getPartitionKey(), GET, SERIALIZER::decode).thenApply(this::nullOrZero);
+    return this.<Long>invokeBy(getPartitionKey(), GET).thenApply(this::nullOrZero);
   }
 
   @Override
   public CompletableFuture<Void> set(long value) {
-    return this.invoke(getPartitionKey(), SET, SERIALIZER::encode, new Set(value));
+    return this.invokeBy(getPartitionKey(), SET, new Set(value));
   }
 
   @Override
   public CompletableFuture<Boolean> compareAndSet(long expectedValue, long updateValue) {
-    return this.invoke(getPartitionKey(), COMPARE_AND_SET, SERIALIZER::encode,
-        new CompareAndSet(expectedValue, updateValue), SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), COMPARE_AND_SET,
+        new CompareAndSet(expectedValue, updateValue));
   }
 
   @Override
   public CompletableFuture<Long> addAndGet(long delta) {
-    return this.invoke(getPartitionKey(), ADD_AND_GET, SERIALIZER::encode, new AddAndGet(delta), SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), ADD_AND_GET, new AddAndGet(delta));
   }
 
   @Override
   public CompletableFuture<Long> getAndAdd(long delta) {
-    return this.invoke(getPartitionKey(), GET_AND_ADD, SERIALIZER::encode, new GetAndAdd(delta), SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), GET_AND_ADD, new GetAndAdd(delta));
   }
 
   @Override
   public CompletableFuture<Long> incrementAndGet() {
-    return this.invoke(getPartitionKey(), INCREMENT_AND_GET, SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), INCREMENT_AND_GET);
   }
 
   @Override
   public CompletableFuture<Long> getAndIncrement() {
-    return this.invoke(getPartitionKey(), GET_AND_INCREMENT, SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), GET_AND_INCREMENT);
   }
 
   @Override
   public CompletableFuture<Long> decrementAndGet() {
-    return this.invoke(getPartitionKey(), DECREMENT_AND_GET, SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), DECREMENT_AND_GET);
   }
 
   @Override
   public CompletableFuture<Long> getAndDecrement() {
-    return this.invoke(getPartitionKey(), GET_AND_DECREMENT, SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), GET_AND_DECREMENT);
   }
 
   @Override

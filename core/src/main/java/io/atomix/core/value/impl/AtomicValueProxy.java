@@ -56,30 +56,34 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive<AsyncAtomicValue<by
   }
 
   @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
   public CompletableFuture<byte[]> get() {
-    return invoke(getPartitionKey(), GET, SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), GET);
   }
 
   @Override
   public CompletableFuture<Void> set(byte[] value) {
-    return invoke(getPartitionKey(), SET, SERIALIZER::encode, new AtomicValueOperations.Set(value));
+    return invokeBy(getPartitionKey(), SET, new AtomicValueOperations.Set(value));
   }
 
   @Override
   public CompletableFuture<Boolean> compareAndSet(byte[] expect, byte[] update) {
-    return invoke(getPartitionKey(), COMPARE_AND_SET, SERIALIZER::encode,
-        new CompareAndSet(expect, update), SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), COMPARE_AND_SET, new CompareAndSet(expect, update));
   }
 
   @Override
   public CompletableFuture<byte[]> getAndSet(byte[] value) {
-    return invoke(getPartitionKey(), GET_AND_SET, SERIALIZER::encode, new GetAndSet(value), SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), GET_AND_SET, new GetAndSet(value));
   }
 
   @Override
   public CompletableFuture<Void> addListener(AtomicValueEventListener<byte[]> listener) {
     if (eventListeners.isEmpty()) {
-      return invoke(getPartitionKey(), ADD_LISTENER).thenRun(() -> eventListeners.add(listener));
+      return invokeBy(getPartitionKey(), ADD_LISTENER).thenRun(() -> eventListeners.add(listener));
     } else {
       eventListeners.add(listener);
       return CompletableFuture.completedFuture(null);
@@ -89,7 +93,7 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive<AsyncAtomicValue<by
   @Override
   public CompletableFuture<Void> removeListener(AtomicValueEventListener<byte[]> listener) {
     if (eventListeners.remove(listener) && eventListeners.isEmpty()) {
-      return invoke(getPartitionKey(), REMOVE_LISTENER).thenApply(v -> null);
+      return invokeBy(getPartitionKey(), REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }

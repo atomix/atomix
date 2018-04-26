@@ -79,38 +79,43 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive<AsyncLeaderElecto
   }
 
   @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
   public CompletableFuture<Leadership<byte[]>> run(String topic, byte[] id) {
-    return invoke(topic, RUN, SERIALIZER::encode, new Run(topic, id), SERIALIZER::decode);
+    return invokeBy(topic, RUN, new Run(topic, id));
   }
 
   @Override
   public CompletableFuture<Void> withdraw(String topic, byte[] id) {
-    return invoke(topic, WITHDRAW, SERIALIZER::encode, new Withdraw(topic, id));
+    return invokeBy(topic, WITHDRAW, new Withdraw(topic, id));
   }
 
   @Override
   public CompletableFuture<Boolean> anoint(String topic, byte[] id) {
-    return invoke(topic, ANOINT, SERIALIZER::encode, new Anoint(topic, id), SERIALIZER::decode);
+    return invokeBy(topic, ANOINT, new Anoint(topic, id));
   }
 
   @Override
   public CompletableFuture<Boolean> promote(String topic, byte[] id) {
-    return invoke(topic, PROMOTE, SERIALIZER::encode, new Promote(topic, id), SERIALIZER::decode);
+    return invokeBy(topic, PROMOTE, new Promote(topic, id));
   }
 
   @Override
   public CompletableFuture<Void> evict(byte[] id) {
-    return invokes(EVICT, SERIALIZER::encode, new Evict(id));
+    return invokeAll(EVICT, new Evict(id)).thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<Leadership<byte[]>> getLeadership(String topic) {
-    return invoke(topic, GET_LEADERSHIP, SERIALIZER::encode, new GetLeadership(topic), SERIALIZER::decode);
+    return invokeBy(topic, GET_LEADERSHIP, new GetLeadership(topic));
   }
 
   @Override
   public CompletableFuture<Map<String, Leadership<byte[]>>> getLeaderships() {
-    return this.<Map<String, Leadership<byte[]>>>invokes(GET_ALL_LEADERSHIPS, SERIALIZER::decode)
+    return this.<Map<String, Leadership<byte[]>>>invokeAll(GET_ALL_LEADERSHIPS)
         .thenApply(leaderships -> {
           ImmutableMap.Builder<String, Leadership<byte[]>> builder = ImmutableMap.builder();
           leaderships.forEach(builder::putAll);
@@ -130,7 +135,7 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive<AsyncLeaderElecto
     });
 
     if (empty) {
-      return invoke(topic, ADD_LISTENER);
+      return invokeBy(topic, ADD_LISTENER);
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -142,7 +147,7 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive<AsyncLeaderElecto
       return s.size() == 0 ? null : s;
     });
     if (leadershipChangeListeners.isEmpty()) {
-      return invoke(topic, REMOVE_LISTENER).thenApply(v -> null);
+      return invokeBy(topic, REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -157,10 +162,10 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive<AsyncLeaderElecto
         .thenRun(() -> {
           addStateChangeListeners((partition, state) -> {
             if (state == Proxy.State.CONNECTED && isListening()) {
-              invoke(partition, ADD_LISTENER);
+              invokeOn(partition, ADD_LISTENER);
             }
           });
-          addEventListeners(CHANGE, SERIALIZER::decode, this::handleEvent);
+          listenAll(CHANGE, this::handleEvent);
         })
         .thenApply(v -> this);
   }

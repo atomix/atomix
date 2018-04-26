@@ -127,6 +127,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static io.atomix.primitive.operation.PrimitiveOperation.operation;
+
 /**
  * Copycat performance test.
  *
@@ -330,7 +332,7 @@ public class RaftPerformanceTest implements Runnable {
     if (count > TOTAL_OPERATIONS) {
       future.complete(null);
     } else if (count % 10 < WRITE_RATIO) {
-      proxy.invoke(PUT, clientSerializer::encode, Maps.immutableEntry(randomKey(), UUID.randomUUID().toString()))
+      proxy.execute(operation(PUT, clientSerializer.encode(Maps.immutableEntry(randomKey(), UUID.randomUUID().toString()))))
           .whenComplete((result, error) -> {
             if (error == null) {
               writeCount.incrementAndGet();
@@ -338,7 +340,7 @@ public class RaftPerformanceTest implements Runnable {
             runProxy(proxy, future);
           });
     } else {
-      proxy.invoke(GET, clientSerializer::encode, randomKey()).whenComplete((result, error) -> {
+      proxy.execute(operation(GET, clientSerializer.encode(randomKey()))).whenComplete((result, error) -> {
         if (error == null) {
           readCount.incrementAndGet();
         }
