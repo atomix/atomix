@@ -46,7 +46,7 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new ConsistentMapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(rawMap -> {

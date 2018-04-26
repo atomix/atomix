@@ -38,7 +38,7 @@ public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new WorkQueueProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(queue -> {
