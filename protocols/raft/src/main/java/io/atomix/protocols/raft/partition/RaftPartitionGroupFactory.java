@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.partition;
 
 import io.atomix.primitive.partition.PartitionGroupFactory;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
 
 import java.io.File;
@@ -30,7 +30,7 @@ public class RaftPartitionGroupFactory implements PartitionGroupFactory<RaftPart
 
   @Override
   public PrimitiveProtocol.Type type() {
-    return RaftProtocol.TYPE;
+    return MultiRaftProtocol.TYPE;
   }
 
   @Override

@@ -16,7 +16,7 @@
 package io.atomix.core.counter.impl;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.backup.PrimaryBackupProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
  * Primary-backup atomic counter test.
@@ -24,7 +24,7 @@ import io.atomix.protocols.backup.PrimaryBackupProtocol;
 public class PrimaryBackupAtomicCounterTest extends AtomicCounterTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return PrimaryBackupProtocol.builder()
+    return MultiPrimaryProtocol.builder()
         .withBackups(2)
         .withMaxRetries(5)
         .build();

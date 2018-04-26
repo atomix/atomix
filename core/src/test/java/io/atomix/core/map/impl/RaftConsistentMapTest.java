@@ -16,7 +16,7 @@
 package io.atomix.core.map.impl;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 import java.time.Duration;
 
@@ -26,7 +26,7 @@ import java.time.Duration;
 public class RaftConsistentMapTest extends ConsistentMapTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return RaftProtocol.builder()
+    return MultiRaftProtocol.builder()
         .withMaxTimeout(Duration.ofSeconds(1))
         .withMaxRetries(5)
         .build();

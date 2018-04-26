@@ -16,7 +16,7 @@
 package io.atomix.core.tree.impl;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.backup.PrimaryBackupProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
  * Document tree test using the primary-backup protocol.
@@ -24,7 +24,7 @@ import io.atomix.protocols.backup.PrimaryBackupProtocol;
 public class PrimaryBackupDocumentTreeTest extends DocumentTreeTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return PrimaryBackupProtocol.builder()
+    return MultiPrimaryProtocol.builder()
         .withBackups(2)
         .withMaxRetries(5)
         .build();

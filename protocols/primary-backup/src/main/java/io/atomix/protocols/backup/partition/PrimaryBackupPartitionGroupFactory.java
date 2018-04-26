@@ -17,7 +17,7 @@ package io.atomix.protocols.backup.partition;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.partition.PartitionGroupFactory;
-import io.atomix.protocols.backup.PrimaryBackupProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 import java.io.File;
 
@@ -29,7 +29,7 @@ public class PrimaryBackupPartitionGroupFactory implements PartitionGroupFactory
 
   @Override
   public PrimitiveProtocol.Type type() {
-    return PrimaryBackupProtocol.TYPE;
+    return MultiPrimaryProtocol.TYPE;
   }
 
   @Override

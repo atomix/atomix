@@ -18,19 +18,23 @@ package io.atomix.protocols.backup;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
-import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 import java.time.Duration;
 import java.util.concurrent.Executor;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Multi-primary protocol configuration.
  */
-public class MultiPrimaryProtocolConfig extends PrimaryBackupProtocolConfig {
-  private Partitioner<String> partitioner = Partitioner.MURMUR3;
+public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPrimaryProtocolConfig> {
+  private Consistency consistency = Consistency.SEQUENTIAL;
+  private Replication replication = Replication.ASYNCHRONOUS;
+  private Recovery recovery = Recovery.RECOVER;
+  private int numBackups = 1;
+  private int maxRetries = 0;
+  private Duration retryDelay = Duration.ofMillis(100);
+  private Executor executor;
 
   @Override
   public PrimitiveProtocol.Type getType() {
@@ -38,76 +42,152 @@ public class MultiPrimaryProtocolConfig extends PrimaryBackupProtocolConfig {
   }
 
   /**
-   * Returns the protocol partitioner.
+   * Returns the consistency level.
    *
-   * @return the protocol partitioner
+   * @return the consistency level
    */
-  public Partitioner<String> getPartitioner() {
-    return partitioner;
+  public Consistency getConsistency() {
+    return consistency;
   }
 
   /**
-   * Sets the protocol partitioner.
+   * Sets the consistency level.
    *
-   * @param partitioner the protocol partitioner
+   * @param consistency the consistency level
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setPartitioner(Partitioner<String> partitioner) {
-    this.partitioner = checkNotNull(partitioner, "partitioner cannot be null");
-    return this;
-  }
-
-  @Override
-  public MultiPrimaryProtocolConfig setGroup(String group) {
-    super.setGroup(group);
-    return this;
-  }
-
-  @Override
   public MultiPrimaryProtocolConfig setConsistency(Consistency consistency) {
-    super.setConsistency(consistency);
+    this.consistency = consistency;
     return this;
   }
 
-  @Override
+  /**
+   * Returns the replication level.
+   *
+   * @return the replication level
+   */
+  public Replication getReplication() {
+    return replication;
+  }
+
+  /**
+   * Sets the replication level.
+   *
+   * @param replication the replication level
+   * @return the protocol configuration
+   */
   public MultiPrimaryProtocolConfig setReplication(Replication replication) {
-    super.setReplication(replication);
+    this.replication = replication;
     return this;
   }
 
-  @Override
+  /**
+   * Returns the recovery strategy.
+   *
+   * @return the recovery strategy
+   */
+  public Recovery getRecovery() {
+    return recovery;
+  }
+
+  /**
+   * Sets the recovery strategy.
+   *
+   * @param recovery the recovery strategy
+   * @return the protocol configuration
+   */
   public MultiPrimaryProtocolConfig setRecovery(Recovery recovery) {
-    super.setRecovery(recovery);
+    this.recovery = recovery;
     return this;
   }
 
-  @Override
+  /**
+   * Returns the number of backups.
+   *
+   * @return the number of backups
+   */
+  public int getNumBackups() {
+    return numBackups;
+  }
+
+  /**
+   * Sets the number of backups.
+   *
+   * @param numBackups the number of backups
+   * @return the protocol configuration
+   */
   public MultiPrimaryProtocolConfig setNumBackups(int numBackups) {
-    super.setNumBackups(numBackups);
+    this.numBackups = numBackups;
     return this;
   }
 
-  @Override
+  /**
+   * Returns the maximum allowed number of retries.
+   *
+   * @return the maximum allowed number of retries
+   */
+  public int getMaxRetries() {
+    return maxRetries;
+  }
+
+  /**
+   * Sets the maximum allowed number of retries.
+   *
+   * @param maxRetries the maximum allowed number of retries
+   * @return the protocol configuration
+   */
   public MultiPrimaryProtocolConfig setMaxRetries(int maxRetries) {
-    super.setMaxRetries(maxRetries);
+    this.maxRetries = maxRetries;
     return this;
   }
 
-  @Override
+  /**
+   * Returns the retry delay.
+   *
+   * @return the retry delay
+   */
+  public Duration getRetryDelay() {
+    return retryDelay;
+  }
+
+  /**
+   * Sets the retry delay.
+   *
+   * @param retryDelayMillis the retry delay in milliseconds
+   * @return the protocol configuration
+   */
   public MultiPrimaryProtocolConfig setRetryDelayMillis(long retryDelayMillis) {
-    super.setRetryDelayMillis(retryDelayMillis);
-    return this;
+    return setRetryDelay(Duration.ofMillis(retryDelayMillis));
   }
 
-  @Override
+  /**
+   * Sets the retry delay.
+   *
+   * @param retryDelay the retry delay
+   * @return the protocol configuration
+   */
   public MultiPrimaryProtocolConfig setRetryDelay(Duration retryDelay) {
-    super.setRetryDelay(retryDelay);
+    this.retryDelay = retryDelay;
     return this;
   }
 
-  @Override
+  /**
+   * Returns the executor.
+   *
+   * @return the executor
+   */
+  public Executor getExecutor() {
+    return executor;
+  }
+
+  /**
+   * Sets the executor.
+   *
+   * @param executor the executor
+   * @return the protocol configuration
+   */
   public MultiPrimaryProtocolConfig setExecutor(Executor executor) {
-    super.setExecutor(executor);
+    this.executor = executor;
     return this;
   }
 }
