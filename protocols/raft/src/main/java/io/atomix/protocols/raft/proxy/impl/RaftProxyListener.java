@@ -67,7 +67,7 @@ final class RaftProxyListener {
    * @param listener the event listener callback
    */
   public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
-    executor.execute(() -> eventListeners.computeIfAbsent(eventType, e -> Sets.newLinkedHashSet()).add(listener));
+    executor.execute(() -> eventListeners.computeIfAbsent(eventType.canonicalize(), e -> Sets.newLinkedHashSet()).add(listener));
   }
 
   /**
@@ -76,7 +76,7 @@ final class RaftProxyListener {
    * @param listener the event listener callback
    */
   public void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
-    executor.execute(() -> eventListeners.computeIfAbsent(eventType, e -> Sets.newLinkedHashSet()).remove(listener));
+    executor.execute(() -> eventListeners.computeIfAbsent(eventType.canonicalize(), e -> Sets.newLinkedHashSet()).remove(listener));
   }
 
   /**
