@@ -204,9 +204,11 @@ public final class Futures {
    * @param <T> value type of CompletableFuture
    * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
    */
+  @SuppressWarnings("unchecked")
   public static <T> CompletableFuture<Stream<T>> allOf(Stream<CompletableFuture<T>> futures) {
-    return CompletableFuture.allOf((CompletableFuture[]) futures.toArray())
-        .thenApply(v -> futures.map(CompletableFuture::join));
+    CompletableFuture<T>[] futuresArray = futures.toArray(CompletableFuture[]::new);
+    return CompletableFuture.allOf(futuresArray)
+        .thenApply(v -> Stream.of(futuresArray).map(CompletableFuture::join));
   }
 
   /**
