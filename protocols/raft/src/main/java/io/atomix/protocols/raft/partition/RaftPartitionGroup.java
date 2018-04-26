@@ -88,9 +88,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
   private final int partitionSize;
   private final Map<PartitionId, RaftPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
-  private PartitionManagementService managementService;
   private Collection<PartitionMetadata> metadata;
-  private CompletableFuture<Void> metadataChangeFuture = CompletableFuture.completedFuture(null);
 
   public RaftPartitionGroup(RaftPartitionGroupConfig config) {
     this.name = config.getName();
@@ -144,8 +142,6 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
 
   @Override
   public CompletableFuture<ManagedPartitionGroup<RaftPartition>> join(PartitionManagementService managementService) {
-    this.managementService = managementService;
-
     // Ensure the Raft group membership intersects with persistent cluster membership.
     if (!validateMembership(managementService.getMembershipService())) {
       return Futures.exceptionalFuture(new ConfigurationException("Raft partition group must be configured with persistent membership"));
