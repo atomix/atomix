@@ -18,11 +18,11 @@ package io.atomix.core.lock.impl;
 import io.atomix.core.lock.impl.DistributedLockOperations.Lock;
 import io.atomix.core.lock.impl.DistributedLockOperations.Unlock;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -56,21 +56,26 @@ public class DistributedLockService extends AbstractPrimitiveService {
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
   @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
   protected void configure(ServiceExecutor executor) {
-    executor.register(LOCK, SERIALIZER::decode, this::lock);
-    executor.register(UNLOCK, SERIALIZER::decode, this::unlock);
+    executor.register(LOCK, this::lock);
+    executor.register(UNLOCK, this::unlock);
   }
 
   @Override
-  public void backup(BufferOutput<?> output) {
-    output.writeObject(lock, SERIALIZER::encode);
-    output.writeObject(queue, SERIALIZER::encode);
+  public void backup(BackupOutput output) {
+    output.writeObject(lock);
+    output.writeObject(queue);
   }
 
   @Override
-  public void restore(BufferInput<?> input) {
-    lock = input.readObject(SERIALIZER::decode);
-    queue = input.readObject(SERIALIZER::decode);
+  public void restore(BackupInput input) {
+    lock = input.readObject();
+    queue = input.readObject();
 
     // After the snapshot is installed, we need to cancel any existing timers and schedule new ones based on the
     // state provided by the snapshot.

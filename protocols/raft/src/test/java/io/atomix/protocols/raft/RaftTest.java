@@ -29,6 +29,8 @@ import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceExecutor;
@@ -49,8 +51,6 @@ import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.storage.StorageLevel;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -1370,11 +1370,16 @@ public class RaftTest extends ConcurrentTestCase {
     private Commit<Void> close;
 
     @Override
+    protected Serializer serializer() {
+      return clientSerializer;
+    }
+
+    @Override
     protected void configure(ServiceExecutor executor) {
-      executor.register(WRITE, this::write, clientSerializer::encode);
-      executor.register(READ, this::read, clientSerializer::encode);
-      executor.register(EVENT, clientSerializer::decode, this::event, clientSerializer::encode);
-      executor.register(CLOSE, c -> close(c));
+      executor.register(WRITE, this::write);
+      executor.register(READ, this::read);
+      executor.register(EVENT, this::event);
+      executor.<Void>register(CLOSE, c -> close(c));
       executor.register(EXPIRE, this::expire);
     }
 
@@ -1393,12 +1398,12 @@ public class RaftTest extends ConcurrentTestCase {
     }
 
     @Override
-    public void backup(BufferOutput<?> writer) {
+    public void backup(BackupOutput writer) {
       writer.writeLong(10);
     }
 
     @Override
-    public void restore(BufferInput<?> reader) {
+    public void restore(BackupInput reader) {
       assertEquals(10, reader.readLong());
     }
 

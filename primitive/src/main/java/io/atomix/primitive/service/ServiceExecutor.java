@@ -112,14 +112,9 @@ public interface ServiceExecutor extends ThreadContext {
    *
    * @param operationId the operation identifier
    * @param callback the operation callback
-   * @param encoder result encoder
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
-  default <R> void register(OperationId operationId, Supplier<R> callback, Function<R, byte[]> encoder) {
-    checkNotNull(operationId, "operationId cannot be null");
-    checkNotNull(callback, "callback cannot be null");
-    handle(operationId, commit -> encoder.apply(callback.get()));
-  }
+  <R> void register(OperationId operationId, Supplier<R> callback);
 
   /**
    * Registers a operation callback.
@@ -128,64 +123,16 @@ public interface ServiceExecutor extends ThreadContext {
    * @param callback the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
-  default void register(OperationId operationId, Consumer<Commit<Void>> callback) {
-    checkNotNull(operationId, "operationId cannot be null");
-    checkNotNull(callback, "callback cannot be null");
-    handle(operationId, commit -> {
-      callback.accept(commit.mapToNull());
-      return null;
-    });
-  }
-
-  /**
-   * Registers a operation callback.
-   *
-   * @param operationId the operation identifier
-   * @param callback the operation callback
-   * @param encoder result encoder
-   * @throws NullPointerException if the {@code operationId} or {@code callback} is null
-   */
-  default <R> void register(OperationId operationId, Function<Commit<Void>, R> callback, Function<R, byte[]> encoder) {
-    checkNotNull(operationId, "operationId cannot be null");
-    checkNotNull(callback, "callback cannot be null");
-    checkNotNull(encoder, "encoder cannot be null");
-    handle(operationId, commit -> encoder.apply(callback.apply(commit.mapToNull())));
-  }
-
-  /**
-   * Registers a operation callback.
-   *
-   * @param operationId the operation identifier
-   * @param decoder the operation decoder
-   * @param callback the operation callback
-   * @throws NullPointerException if the {@code operationId} or {@code callback} is null
-   */
-  default <T> void register(OperationId operationId, Function<byte[], T> decoder, Consumer<Commit<T>> callback) {
-    checkNotNull(operationId, "operationId cannot be null");
-    checkNotNull(decoder, "decoder cannot be null");
-    checkNotNull(callback, "callback cannot be null");
-    handle(operationId, commit -> {
-      callback.accept(commit.map(decoder));
-      return null;
-    });
-  }
+  <T> void register(OperationId operationId, Consumer<Commit<T>> callback);
 
   /**
    * Registers an operation callback.
    *
    * @param operationId the operation identifier
-   * @param decoder the operation decoder
    * @param callback the operation callback
-   * @param encoder the output encoder
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
-  default <T, R> void register(OperationId operationId, Function<byte[], T> decoder, Function<Commit<T>, R> callback, Function<R, byte[]> encoder) {
-    checkNotNull(operationId, "operationId cannot be null");
-    checkNotNull(decoder, "decoder cannot be null");
-    checkNotNull(callback, "callback cannot be null");
-    checkNotNull(encoder, "encoder cannot be null");
-    handle(operationId, commit -> encoder.apply(callback.apply(commit.map(decoder))));
-  }
+  <T, R> void register(OperationId operationId, Function<Commit<T>, R> callback);
 
   @Override
   default void close() {

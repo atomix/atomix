@@ -30,6 +30,8 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.TestPrimaryElection;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceExecutor;
@@ -37,8 +39,6 @@ import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.protocol.TestPrimaryBackupProtocolFactory;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.serializer.serializers.DefaultSerializers;
 import net.jodah.concurrentunit.ConcurrentTestCase;
@@ -508,11 +508,16 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     private Commit<Void> close;
 
     @Override
+    protected Serializer serializer() {
+      return SERIALIZER;
+    }
+
+    @Override
     protected void configure(ServiceExecutor executor) {
-      executor.register(WRITE, this::write, SERIALIZER::encode);
-      executor.register(READ, this::read, SERIALIZER::encode);
-      executor.register(EVENT, SERIALIZER::decode, this::event, SERIALIZER::encode);
-      executor.register(CLOSE, c -> close(c));
+      executor.register(WRITE, this::write);
+      executor.register(READ, this::read);
+      executor.register(EVENT, this::event);
+      executor.<Void>register(CLOSE, c -> close(c));
       executor.register(EXPIRE, this::expire);
     }
 
@@ -531,12 +536,12 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     }
 
     @Override
-    public void backup(BufferOutput<?> writer) {
+    public void backup(BackupOutput writer) {
       writer.writeLong(10);
     }
 
     @Override
-    public void restore(BufferInput<?> reader) {
+    public void restore(BackupInput reader) {
       assertEquals(10, reader.readLong());
     }
 

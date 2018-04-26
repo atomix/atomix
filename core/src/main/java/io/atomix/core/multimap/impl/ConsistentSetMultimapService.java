@@ -26,10 +26,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.service.AbstractPrimitiveService;
-import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
 import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.ContainsEntry;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.ContainsKey;
@@ -40,32 +36,17 @@ import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.MultimapOper
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.Put;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.RemoveAll;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.Replace;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
+import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceExecutor;
+import io.atomix.primitive.session.Session;
 import io.atomix.utils.Match;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
-
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapEvents.CHANGE;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.ADD_LISTENER;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.CLEAR;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.CONTAINS_ENTRY;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.CONTAINS_KEY;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.CONTAINS_VALUE;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.ENTRIES;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.GET;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.IS_EMPTY;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.KEYS;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.KEY_SET;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.PUT;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REMOVE;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REMOVE_ALL;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REMOVE_LISTENER;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REPLACE;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.SIZE;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.VALUES;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -85,6 +66,25 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapEvents.CHANGE;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.ADD_LISTENER;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.CLEAR;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.CONTAINS_ENTRY;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.CONTAINS_KEY;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.CONTAINS_VALUE;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.ENTRIES;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.GET;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.IS_EMPTY;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.KEYS;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.KEY_SET;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.PUT;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REMOVE;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REMOVE_ALL;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REMOVE_LISTENER;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.REPLACE;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.SIZE;
+import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.VALUES;
 
 /**
  * State Machine for {@link ConsistentSetMultimapProxy} resource.
@@ -119,14 +119,19 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
   private Map<String, MapEntryValue> backingMap = Maps.newHashMap();
 
   @Override
-  public void backup(BufferOutput<?> writer) {
+  protected Serializer serializer() {
+    return serializer;
+  }
+
+  @Override
+  public void backup(BackupOutput writer) {
     writer.writeLong(globalVersion.get());
     writer.writeObject(Sets.newHashSet(listeners.keySet()), serializer::encode);
     writer.writeObject(backingMap, serializer::encode);
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  public void restore(BackupInput reader) {
     globalVersion = new AtomicLong(reader.readLong());
 
     listeners = new LinkedHashMap<>();
@@ -139,21 +144,21 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
 
   @Override
   protected void configure(ServiceExecutor executor) {
-    executor.register(SIZE, this::size, serializer::encode);
-    executor.register(IS_EMPTY, this::isEmpty, serializer::encode);
-    executor.register(CONTAINS_KEY, serializer::decode, this::containsKey, serializer::encode);
-    executor.register(CONTAINS_VALUE, serializer::decode, this::containsValue, serializer::encode);
-    executor.register(CONTAINS_ENTRY, serializer::decode, this::containsEntry, serializer::encode);
+    executor.register(SIZE, this::size);
+    executor.register(IS_EMPTY, this::isEmpty);
+    executor.register(CONTAINS_KEY, this::containsKey);
+    executor.register(CONTAINS_VALUE, this::containsValue);
+    executor.register(CONTAINS_ENTRY, this::containsEntry);
     executor.register(CLEAR, this::clear);
-    executor.register(KEY_SET, this::keySet, serializer::encode);
-    executor.register(KEYS, this::keys, serializer::encode);
-    executor.register(VALUES, this::values, serializer::encode);
-    executor.register(ENTRIES, this::entries, serializer::encode);
-    executor.register(GET, serializer::decode, this::get, serializer::encode);
-    executor.register(REMOVE_ALL, serializer::decode, this::removeAll, serializer::encode);
-    executor.register(REMOVE, serializer::decode, this::multiRemove, serializer::encode);
-    executor.register(PUT, serializer::decode, this::put, serializer::encode);
-    executor.register(REPLACE, serializer::decode, this::replace, serializer::encode);
+    executor.register(KEY_SET, this::keySet);
+    executor.register(KEYS, this::keys);
+    executor.register(VALUES, this::values);
+    executor.register(ENTRIES, this::entries);
+    executor.register(GET, this::get);
+    executor.register(REMOVE_ALL, this::removeAll);
+    executor.register(REMOVE, this::multiRemove);
+    executor.register(PUT, this::put);
+    executor.register(REPLACE, this::replace);
     executor.register(ADD_LISTENER, this::listen);
     executor.register(REMOVE_LISTENER, this::unlisten);
   }

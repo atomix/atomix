@@ -16,12 +16,17 @@
 package io.atomix.primitive.service;
 
 import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.service.impl.DefaultBackupInput;
+import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.Sessions;
+import io.atomix.storage.buffer.BufferInput;
+import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Clock;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.WallClock;
@@ -36,10 +41,39 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
   private ServiceContext context;
   private ServiceExecutor executor;
 
+  /**
+   * Returns the primitive service serializer.
+   *
+   * @return the primitive service serializer
+   */
+  protected abstract Serializer serializer();
+
+  /**
+   * Encodes the given object using the configured {@link #serializer()}.
+   *
+   * @param object the object to encode
+   * @param <T>    the object type
+   * @return the encoded bytes
+   */
+  protected <T> byte[] encode(T object) {
+    return object != null ? serializer().encode(object) : null;
+  }
+
+  /**
+   * Decodes the given object using the configured {@link #serializer()}.
+   *
+   * @param bytes the bytes to decode
+   * @param <T>   the object type
+   * @return the decoded object
+   */
+  protected <T> T decode(byte[] bytes) {
+    return bytes != null ? serializer().decode(bytes) : null;
+  }
+
   @Override
   public void init(ServiceContext context) {
     this.context = context;
-    this.executor = new DefaultServiceExecutor(context);
+    this.executor = new DefaultServiceExecutor(context, serializer());
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
         .addValue(context.serviceId())
         .add("type", context.serviceType())
@@ -47,6 +81,30 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
         .build());
     configure(executor);
   }
+
+  @Override
+  public void backup(BufferOutput<?> output) {
+    backup(new DefaultBackupOutput(output, serializer()));
+  }
+
+  /**
+   * Writes the service to a backup.
+   *
+   * @param output the backup output
+   */
+  protected abstract void backup(BackupOutput output);
+
+  @Override
+  public void restore(BufferInput<?> input) {
+    restore(new DefaultBackupInput(input, serializer()));
+  }
+
+  /**
+   * Restores the service from a backup.
+   *
+   * @param input the backup input
+   */
+  protected abstract void restore(BackupInput input);
 
   @Override
   public void tick(WallClockTimestamp timestamp) {

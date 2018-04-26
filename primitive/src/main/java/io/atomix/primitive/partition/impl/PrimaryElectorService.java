@@ -24,11 +24,11 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -70,14 +70,19 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   private Scheduled rebalanceTimer;
 
   @Override
-  public void backup(BufferOutput<?> writer) {
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
+  public void backup(BackupOutput writer) {
     writer.writeObject(Sets.newHashSet(listeners.keySet()), SERIALIZER::encode);
     writer.writeObject(elections, SERIALIZER::encode);
     getLogger().debug("Took state machine snapshot");
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
       listeners.put(sessionId, getSessions().getSession(sessionId));
@@ -89,8 +94,8 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
 
   @Override
   protected void configure(ServiceExecutor executor) {
-    executor.register(PrimaryElectorOperations.ENTER, SERIALIZER::decode, this::enter, SERIALIZER::encode);
-    executor.register(PrimaryElectorOperations.GET_TERM, SERIALIZER::decode, this::getTerm, SERIALIZER::encode);
+    executor.register(PrimaryElectorOperations.ENTER, this::enter);
+    executor.register(PrimaryElectorOperations.GET_TERM, this::getTerm);
   }
 
   private void notifyTermChange(PartitionId partitionId, PrimaryTerm term) {

@@ -28,13 +28,16 @@ import io.atomix.core.map.impl.AtomicCounterMapOperations.Remove;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.RemoveValue;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Replace;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.ADD_AND_GET;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.CLEAR;
@@ -51,9 +54,6 @@ import static io.atomix.core.map.impl.AtomicCounterMapOperations.REMOVE;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.REMOVE_VALUE;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.REPLACE;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.SIZE;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Atomic counter map state for Atomix.
@@ -73,32 +73,37 @@ public class AtomicCounterMapService extends AbstractPrimitiveService {
   private Map<String, Long> map = new HashMap<>();
 
   @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
   protected void configure(ServiceExecutor executor) {
-    executor.register(PUT, SERIALIZER::decode, this::put, SERIALIZER::encode);
-    executor.register(PUT_IF_ABSENT, SERIALIZER::decode, this::putIfAbsent, SERIALIZER::encode);
-    executor.register(GET, SERIALIZER::decode, this::get, SERIALIZER::encode);
-    executor.register(REPLACE, SERIALIZER::decode, this::replace, SERIALIZER::encode);
-    executor.register(REMOVE, SERIALIZER::decode, this::remove, SERIALIZER::encode);
-    executor.register(REMOVE_VALUE, SERIALIZER::decode, this::removeValue, SERIALIZER::encode);
-    executor.register(GET_AND_INCREMENT, SERIALIZER::decode, this::getAndIncrement, SERIALIZER::encode);
-    executor.register(GET_AND_DECREMENT, SERIALIZER::decode, this::getAndDecrement, SERIALIZER::encode);
-    executor.register(INCREMENT_AND_GET, SERIALIZER::decode, this::incrementAndGet, SERIALIZER::encode);
-    executor.register(DECREMENT_AND_GET, SERIALIZER::decode, this::decrementAndGet, SERIALIZER::encode);
-    executor.register(ADD_AND_GET, SERIALIZER::decode, this::addAndGet, SERIALIZER::encode);
-    executor.register(GET_AND_ADD, SERIALIZER::decode, this::getAndAdd, SERIALIZER::encode);
-    executor.register(SIZE, this::size, SERIALIZER::encode);
-    executor.register(IS_EMPTY, this::isEmpty, SERIALIZER::encode);
+    executor.register(PUT, this::put);
+    executor.register(PUT_IF_ABSENT, this::putIfAbsent);
+    executor.register(GET, this::get);
+    executor.register(REPLACE, this::replace);
+    executor.register(REMOVE, this::remove);
+    executor.register(REMOVE_VALUE, this::removeValue);
+    executor.register(GET_AND_INCREMENT, this::getAndIncrement);
+    executor.register(GET_AND_DECREMENT, this::getAndDecrement);
+    executor.register(INCREMENT_AND_GET, this::incrementAndGet);
+    executor.register(DECREMENT_AND_GET, this::decrementAndGet);
+    executor.register(ADD_AND_GET, this::addAndGet);
+    executor.register(GET_AND_ADD, this::getAndAdd);
+    executor.register(SIZE, this::size);
+    executor.register(IS_EMPTY, this::isEmpty);
     executor.register(CLEAR, this::clear);
   }
 
   @Override
-  public void backup(BufferOutput<?> writer) {
-    writer.writeObject(map, SERIALIZER::encode);
+  public void backup(BackupOutput writer) {
+    writer.writeObject(map);
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
-    map = reader.readObject(SERIALIZER::decode);
+  public void restore(BackupInput reader) {
+    map = reader.readObject();
   }
 
   /**
