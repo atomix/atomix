@@ -122,11 +122,11 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
         "primitives",
         ConsistentMapType.instance(),
         partitionService.getSystemPartitionGroup());
-    return new ConsistentMapProxy(proxy, this)
-        .connect()
-        .thenApply(map -> {
+    return proxy.connect()
+        .thenApply(v -> {
+          ConsistentMapProxy mapProxy = new ConsistentMapProxy(proxy, this);
           primitives = new TranscodingAsyncConsistentMap<>(
-              map,
+              mapProxy,
               key -> key,
               key -> key,
               value -> value != null ? SERIALIZER.encode(value) : null,
