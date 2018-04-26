@@ -116,7 +116,7 @@ public class PrimaryBackupPartition implements Partition {
       ThreadContextFactory threadFactory) {
     election = managementService.getElectionService().getElectionFor(partitionId);
     client = new PrimaryBackupPartitionClient(this, managementService, threadFactory);
-    return server.start().thenCompose(v -> client.start()).thenApply(v -> this);
+    return client.start().thenApply(v -> this);
   }
 
   /**
