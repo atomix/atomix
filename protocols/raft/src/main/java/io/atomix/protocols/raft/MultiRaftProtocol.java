@@ -26,15 +26,16 @@ import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Multi-Raft protocol.
  */
-public class MultiRaftProtocol extends RaftProtocol {
+public class MultiRaftProtocol implements PrimitiveProtocol<RaftPartitionGroup> {
   public static final Type TYPE = new Type();
 
   /**
@@ -71,8 +72,7 @@ public class MultiRaftProtocol extends RaftProtocol {
   private final MultiRaftProtocolConfig config;
 
   protected MultiRaftProtocol(MultiRaftProtocolConfig config) {
-    super(config);
-    this.config = config;
+    this.config = checkNotNull(config, "config cannot be null");
   }
 
   @Override
@@ -81,92 +81,143 @@ public class MultiRaftProtocol extends RaftProtocol {
   }
 
   @Override
+  public String group() {
+    return config.getGroup();
+  }
+
+  @Override
   public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, RaftPartitionGroup partitionGroup) {
-    List<PartitionProxy> partitions = new ArrayList<>();
-    for (RaftPartition partition : partitionGroup.getPartitions()) {
-      PartitionProxy proxy = partition.getProxyClient().proxyBuilder(primitiveName, primitiveType)
-          .withMinTimeout(config.getMinTimeout())
-          .withMaxTimeout(config.getMaxTimeout())
-          .withReadConsistency(config.getReadConsistency())
-          .withCommunicationStrategy(config.getCommunicationStrategy())
-          .withRecoveryStrategy(config.getRecoveryStrategy())
-          .withMaxRetries(config.getMaxRetries())
-          .withRetryDelay(config.getRetryDelay())
-          .withExecutor(config.getExecutor())
-          .build();
-      partitions.add(proxy);
-    }
-    return new PartitionedPrimitiveProxy(primitiveName, primitiveType, partitions, config.getPartitioner());
+    RaftPartition partition = partitionGroup.getPartition(primitiveName);
+    PartitionProxy proxy = partition.getProxyClient().proxyBuilder(primitiveName, primitiveType)
+        .withMinTimeout(config.getMinTimeout())
+        .withMaxTimeout(config.getMaxTimeout())
+        .withReadConsistency(config.getReadConsistency())
+        .withCommunicationStrategy(config.getCommunicationStrategy())
+        .withRecoveryStrategy(config.getRecoveryStrategy())
+        .withMaxRetries(config.getMaxRetries())
+        .withRetryDelay(config.getRetryDelay())
+        .withExecutor(config.getExecutor())
+        .build();
+    return new PartitionedPrimitiveProxy(primitiveName, primitiveType, Collections.singleton(proxy), (key, partitions) -> partition.id());
   }
 
   /**
    * Multi-Raft protocol builder.
    */
-  public static class Builder extends RaftProtocol.Builder {
-    private final MultiRaftProtocolConfig config;
-
+  public static class Builder extends PrimitiveProtocol.Builder<MultiRaftProtocolConfig, MultiRaftProtocol> {
     protected Builder(MultiRaftProtocolConfig config) {
       super(config);
-      this.config = config;
     }
 
-    @Override
+    /**
+     * Sets the minimum session timeout.
+     *
+     * @param minTimeout the minimum session timeout
+     * @return the Raft protocol builder
+     */
     public Builder withMinTimeout(Duration minTimeout) {
-      super.withMinTimeout(minTimeout);
+      config.setMinTimeout(minTimeout);
       return this;
     }
 
-    @Override
+    /**
+     * Sets the maximum session timeout.
+     *
+     * @param maxTimeout the maximum session timeout
+     * @return the Raft protocol builder
+     */
     public Builder withMaxTimeout(Duration maxTimeout) {
-      super.withMaxTimeout(maxTimeout);
+      config.setMaxTimeout(maxTimeout);
       return this;
     }
 
-    @Override
+    /**
+     * Sets the read consistency level.
+     *
+     * @param readConsistency the read consistency level
+     * @return the Raft protocol builder
+     */
     public Builder withReadConsistency(ReadConsistency readConsistency) {
-      super.withReadConsistency(readConsistency);
+      config.setReadConsistency(readConsistency);
       return this;
     }
 
-    @Override
+    /**
+     * Sets the communication strategy.
+     *
+     * @param communicationStrategy the communication strategy
+     * @return the Raft protocol builder
+     */
     public Builder withCommunicationStrategy(CommunicationStrategy communicationStrategy) {
-      super.withCommunicationStrategy(communicationStrategy);
+      config.setCommunicationStrategy(communicationStrategy);
       return this;
     }
 
-    @Override
+    /**
+     * Sets the recovery strategy.
+     *
+     * @param recoveryStrategy the recovery strategy
+     * @return the Raft protocol builder
+     */
     public Builder withRecoveryStrategy(Recovery recoveryStrategy) {
-      super.withRecoveryStrategy(recoveryStrategy);
+      config.setRecoveryStrategy(recoveryStrategy);
       return this;
     }
 
-    @Override
+    /**
+     * Sets the maximum number of retries before an operation can be failed.
+     *
+     * @param maxRetries the maximum number of retries before an operation can be failed
+     * @return the proxy builder
+     */
     public Builder withMaxRetries(int maxRetries) {
-      super.withMaxRetries(maxRetries);
+      config.setMaxRetries(maxRetries);
       return this;
     }
 
-    @Override
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelayMillis the delay between operation retries in milliseconds
+     * @return the proxy builder
+     */
     public Builder withRetryDelayMillis(long retryDelayMillis) {
-      super.withRetryDelayMillis(retryDelayMillis);
-      return this;
+      return withRetryDelay(Duration.ofMillis(retryDelayMillis));
     }
 
-    @Override
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelay the delay between operation retries
+     * @param timeUnit   the delay time unit
+     * @return the proxy builder
+     * @throws NullPointerException if the time unit is null
+     */
     public Builder withRetryDelay(long retryDelay, TimeUnit timeUnit) {
-      super.withRetryDelay(retryDelay, timeUnit);
-      return this;
+      return withRetryDelay(Duration.ofMillis(timeUnit.toMillis(retryDelay)));
     }
 
-    @Override
+    /**
+     * Sets the operation retry delay.
+     *
+     * @param retryDelay the delay between operation retries
+     * @return the proxy builder
+     * @throws NullPointerException if the delay is null
+     */
     public Builder withRetryDelay(Duration retryDelay) {
-      super.withRetryDelay(retryDelay);
+      config.setRetryDelay(retryDelay);
       return this;
     }
 
-    @Override
+    /**
+     * Sets the executor with which to complete proxy futures.
+     *
+     * @param executor The executor with which to complete proxy futures.
+     * @return The proxy builder.
+     * @throws NullPointerException if the executor is null
+     */
     public Builder withExecutor(Executor executor) {
-      super.withExecutor(executor);
+      config.setExecutor(executor);
       return this;
     }
 

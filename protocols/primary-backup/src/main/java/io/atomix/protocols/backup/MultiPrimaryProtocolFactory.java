@@ -16,29 +16,19 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocolFactory;
 
 /**
  * Multi-primary protocol factory.
  */
-public class MultiPrimaryProtocolFactory extends PrimaryBackupProtocolFactory {
+public class MultiPrimaryProtocolFactory implements PrimitiveProtocolFactory<MultiPrimaryProtocolConfig, MultiPrimaryProtocol> {
   @Override
   public PrimitiveProtocol.Type type() {
     return MultiPrimaryProtocol.TYPE;
   }
 
   @Override
-  public Class<? extends PrimitiveProtocolConfig> configClass() {
-    return MultiPrimaryProtocolConfig.class;
-  }
-
-  @Override
-  public Class<? extends PrimitiveProtocol> protocolClass() {
-    return MultiPrimaryProtocol.class;
-  }
-
-  @Override
-  public MultiPrimaryProtocol create(PrimaryBackupProtocolConfig config) {
-    return new MultiPrimaryProtocol((MultiPrimaryProtocolConfig) config);
+  public MultiPrimaryProtocol create(MultiPrimaryProtocolConfig config) {
+    return new MultiPrimaryProtocol(config);
   }
 }

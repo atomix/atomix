@@ -31,7 +31,7 @@ import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
-import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.config.ConfigurationException;
@@ -110,7 +110,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
 
   @Override
   public Type type() {
-    return RaftProtocol.TYPE;
+    return MultiRaftProtocol.TYPE;
   }
 
   @Override
@@ -120,7 +120,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
 
   @Override
   public PrimitiveProtocol newProtocol() {
-    return RaftProtocol.builder(name)
+    return MultiRaftProtocol.builder(name)
         .withRecoveryStrategy(Recovery.RECOVER)
         .withMaxRetries(5)
         .build();

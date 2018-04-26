@@ -16,7 +16,7 @@
 package io.atomix.core.queue.impl;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
  * Raft work queue test.
@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.RaftProtocol;
 public class RaftWorkQueueTest extends WorkQueueTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return RaftProtocol.builder()
+    return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
   }

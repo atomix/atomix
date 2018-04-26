@@ -16,7 +16,7 @@
 package io.atomix.core.multimap.impl;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
  * Raft multimap test.
@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.RaftProtocol;
 public class RaftConsistentSetMultimapTest extends ConsistentSetMultimapTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return RaftProtocol.builder()
+    return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
   }
