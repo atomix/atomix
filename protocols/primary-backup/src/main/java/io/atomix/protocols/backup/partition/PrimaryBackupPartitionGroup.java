@@ -29,7 +29,6 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadPoolContextFactory;
@@ -52,6 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Primary-backup partition group.
  */
 public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup<PrimaryBackupPartition> {
+  public static final PartitionGroup.Type TYPE = new Type();
 
   /**
    * Returns a new primary-backup partition group builder.
@@ -61,6 +61,18 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup<Primar
    */
   public static Builder builder(String name) {
     return new Builder(new PrimaryBackupPartitionGroupConfig().setName(name));
+  }
+
+  /**
+   * The primary-backup partition group type.
+   */
+  public static class Type implements PartitionGroup.Type {
+    private static final String NAME = "primary-backup";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
   }
 
   private static Collection<PrimaryBackupPartition> buildPartitions(PrimaryBackupPartitionGroupConfig config) {
@@ -95,7 +107,12 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup<Primar
   }
 
   @Override
-  public Type type() {
+  public PartitionGroup.Type type() {
+    return TYPE;
+  }
+
+  @Override
+  public PrimitiveProtocol.Type protocol() {
     return MultiPrimaryProtocol.TYPE;
   }
 

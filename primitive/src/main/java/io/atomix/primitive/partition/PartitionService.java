@@ -48,7 +48,7 @@ public interface PartitionService {
   @SuppressWarnings("unchecked")
   default <P extends Partition> PartitionGroup<P> getPartitionGroup(PrimitiveProtocol.Type type) {
     return getPartitionGroups().stream()
-        .filter(group -> group.type().equals(type))
+        .filter(group -> group.protocol().equals(type))
         .findFirst()
         .orElse(null);
   }

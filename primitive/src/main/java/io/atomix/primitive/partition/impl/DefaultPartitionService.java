@@ -178,7 +178,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
         .whenComplete((info, error) -> {
           if (error == null) {
             if (systemGroup != null && info.systemGroup != null &&
-                (!systemGroup.name().equals(info.systemGroup.getName()) || !systemGroup.type().equals(info.systemGroup.getType()))) {
+                (!systemGroup.name().equals(info.systemGroup.getName()) || !systemGroup.protocol().equals(info.systemGroup.getType()))) {
               future.completeExceptionally(new ConfigurationException("Duplicate system group detected"));
               return;
             } else if (systemGroup == null && info.systemGroup != null) {
@@ -193,7 +193,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
                 if (defaultGroup == null) {
                   defaultGroup = wrappedGroup;
                 }
-              } else if (!group.type().equals(groupConfig.getType())) {
+              } else if (!group.protocol().equals(groupConfig.getType())) {
                 future.completeExceptionally(new ConfigurationException("Duplicate partition group " + groupConfig.getName() + " detected"));
                 return;
               }
@@ -318,8 +318,13 @@ public class DefaultPartitionService implements ManagedPartitionService {
     }
 
     @Override
-    public PrimitiveProtocol.Type type() {
+    public Type type() {
       return group.type();
+    }
+
+    @Override
+    public PrimitiveProtocol.Type protocol() {
+      return group.protocol();
     }
 
     @Override

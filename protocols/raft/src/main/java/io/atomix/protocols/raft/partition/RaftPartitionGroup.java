@@ -30,7 +30,6 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.Futures;
@@ -58,6 +57,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft partition group.
  */
 public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> {
+  public static final PartitionGroup.Type TYPE = new Type();
 
   /**
    * Returns a new Raft partition group builder.
@@ -67,6 +67,18 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
    */
   public static Builder builder(String name) {
     return new Builder(new RaftPartitionGroupConfig().setName(name));
+  }
+
+  /**
+   * The Raft partition group type.
+   */
+  public static class Type implements PartitionGroup.Type {
+    private static final String NAME = "raft";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftPartitionGroup.class);
@@ -107,7 +119,12 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
   }
 
   @Override
-  public Type type() {
+  public PartitionGroup.Type type() {
+    return TYPE;
+  }
+
+  @Override
+  public PrimitiveProtocol.Type protocol() {
     return MultiRaftProtocol.TYPE;
   }
 

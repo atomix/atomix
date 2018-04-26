@@ -29,6 +29,18 @@ import java.util.List;
 public interface PartitionGroup<P extends Partition> extends Configured<PartitionGroupConfig> {
 
   /**
+   * Primitive protocol type.
+   */
+  interface Type {
+    /**
+     * Returns the protocol type name.
+     *
+     * @return the protocol type name
+     */
+    String name();
+  }
+
+  /**
    * Returns the partition group name.
    *
    * @return the partition group name
@@ -36,11 +48,18 @@ public interface PartitionGroup<P extends Partition> extends Configured<Partitio
   String name();
 
   /**
+   * Returns the partition group type.
+   *
+   * @return the partition group type
+   */
+  Type type();
+
+  /**
    * Returns the primitive protocol type supported by the partition group.
    *
    * @return the primitive protocol type supported by the partition group
    */
-  PrimitiveProtocol.Type type();
+  PrimitiveProtocol.Type protocol();
 
   /**
    * Returns a new primitive protocol.
