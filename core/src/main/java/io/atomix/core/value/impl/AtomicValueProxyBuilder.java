@@ -40,7 +40,7 @@ public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new AtomicValueProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(elector -> {

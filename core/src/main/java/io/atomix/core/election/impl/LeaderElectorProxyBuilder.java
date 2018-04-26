@@ -38,7 +38,7 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new LeaderElectorProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(elector -> {

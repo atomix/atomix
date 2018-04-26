@@ -37,7 +37,7 @@ public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new AtomicCounterProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(counter -> counter.sync());

@@ -41,7 +41,7 @@ public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuil
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new ConsistentSetMultimapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(multimap -> {

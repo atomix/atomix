@@ -19,12 +19,12 @@ import io.atomix.primitive.Consistency;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -36,7 +36,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Multi-primary protocol.
  */
-public class MultiPrimaryProtocol implements PrimitiveProtocol<PrimaryBackupPartitionGroup> {
+public class MultiPrimaryProtocol implements PrimitiveProtocol {
   public static final Type TYPE = new Type();
 
   /**
@@ -87,8 +87,8 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol<PrimaryBackupPart
   }
 
   @Override
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PrimaryBackupPartitionGroup partitionGroup) {
-    PrimaryBackupPartition partition = partitionGroup.getPartition(primitiveName);
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PartitionService partitionService) {
+    PrimaryBackupPartition partition = partitionService.<PrimaryBackupPartition>getPartitionGroup(this).getPartition(primitiveName);
     PartitionProxy proxy = partition.getProxyClient().proxyBuilder(primitiveName, primitiveType)
         .withConsistency(config.getConsistency())
         .withReplication(config.getReplication())

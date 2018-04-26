@@ -39,7 +39,7 @@ public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> 
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new AtomicCounterMapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(multimap -> {

@@ -121,7 +121,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
     PrimitiveProxy proxy = protocol.newProxy(
         "primitives",
         ConsistentMapType.instance(),
-        partitionService.getSystemPartitionGroup());
+        partitionService);
     return proxy.connect()
         .thenApply(v -> {
           ConsistentMapProxy mapProxy = new ConsistentMapProxy(proxy, this);

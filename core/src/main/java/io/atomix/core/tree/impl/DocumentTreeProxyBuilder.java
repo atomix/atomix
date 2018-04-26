@@ -41,7 +41,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new DocumentTreeProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(tree -> {

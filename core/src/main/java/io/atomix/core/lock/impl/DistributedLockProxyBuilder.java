@@ -38,7 +38,7 @@ public class DistributedLockProxyBuilder extends DistributedLockBuilder {
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new DistributedLockProxy(proxy, managementService.getPrimitiveRegistry(), managementService.getExecutorService())
         .connect()
         .thenApply(AsyncDistributedLock::sync);

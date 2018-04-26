@@ -38,7 +38,7 @@ public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
     PrimitiveProxy proxy = protocol.newProxy(
         name(),
         primitiveType(),
-        managementService.getPartitionService().getPartitionGroup(protocol.group()));
+        managementService.getPartitionService());
     return new LeaderElectionProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(elector -> {

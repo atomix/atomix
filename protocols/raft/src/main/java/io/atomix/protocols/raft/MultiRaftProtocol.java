@@ -17,12 +17,12 @@ package io.atomix.protocols.raft;
 
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
+import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
 import io.atomix.protocols.raft.partition.RaftPartition;
-import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
@@ -35,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Multi-Raft protocol.
  */
-public class MultiRaftProtocol implements PrimitiveProtocol<RaftPartitionGroup> {
+public class MultiRaftProtocol implements PrimitiveProtocol {
   public static final Type TYPE = new Type();
 
   /**
@@ -86,8 +86,8 @@ public class MultiRaftProtocol implements PrimitiveProtocol<RaftPartitionGroup> 
   }
 
   @Override
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, RaftPartitionGroup partitionGroup) {
-    RaftPartition partition = partitionGroup.getPartition(primitiveName);
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PartitionService partitionService) {
+    RaftPartition partition = partitionService.<RaftPartition>getPartitionGroup(this).getPartition(primitiveName);
     PartitionProxy proxy = partition.getProxyClient().proxyBuilder(primitiveName, primitiveType)
         .withMinTimeout(config.getMinTimeout())
         .withMaxTimeout(config.getMaxTimeout())
