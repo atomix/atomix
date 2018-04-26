@@ -56,7 +56,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 
@@ -88,7 +88,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
           queue.remove(holder);
           PrimitiveSession session = getSessions().getSession(holder.session);
           if (session != null && session.getState().active()) {
-            session.publish(FAILED, SERIALIZER::encode, new LockEvent(holder.id, holder.index));
+            session.publish(FAILED, new LockEvent(holder.id, holder.index));
           }
         }));
       }
@@ -120,13 +120,10 @@ public class DistributedLockService extends AbstractPrimitiveService {
           commit.index(),
           commit.session().sessionId().id(),
           0);
-      commit.session().publish(
-          LOCKED,
-          SERIALIZER::encode,
-          new LockEvent(commit.value().id(), commit.index()));
+      commit.session().publish(LOCKED, new LockEvent(commit.value().id(), commit.index()));
       // If the timeout is 0, that indicates this is a tryLock request. Immediately fail the request.
     } else if (commit.value().timeout() == 0) {
-      commit.session().publish(FAILED, SERIALIZER::encode, new LockEvent(commit.value().id(), commit.index()));
+      commit.session().publish(FAILED, new LockEvent(commit.value().id(), commit.index()));
       // If a timeout exists, add the request to the queue and set a timer. Note that the lock request expiration
       // time is based on the *state machine* time - not the system time - to ensure consistency across servers.
     } else if (commit.value().timeout() > 0) {
@@ -143,10 +140,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
         timers.remove(commit.index());
         queue.remove(holder);
         if (commit.session().getState().active()) {
-          commit.session().publish(
-              FAILED,
-              SERIALIZER::encode,
-              new LockEvent(commit.value().id(), commit.index()));
+          commit.session().publish(FAILED, new LockEvent(commit.value().id(), commit.index()));
         }
       }));
       // If the lock is -1, just add the request to the queue with no expiration.
@@ -194,10 +188,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
         if (session == null || !session.getState().active()) {
           lock = queue.poll();
         } else {
-          session.publish(
-              LOCKED,
-              SERIALIZER::encode,
-              new LockEvent(lock.id, commit.index()));
+          session.publish(LOCKED, new LockEvent(lock.id, commit.index()));
           break;
         }
       }
@@ -234,10 +225,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
         if (lockSession == null || !lockSession.getState().active()) {
           lock = queue.poll();
         } else {
-          lockSession.publish(
-              LOCKED,
-              SERIALIZER::encode,
-              new LockEvent(lock.id, lock.index));
+          lockSession.publish(LOCKED, new LockEvent(lock.id, lock.index));
           break;
         }
       }

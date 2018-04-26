@@ -79,7 +79,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
   private Map<Long, PrimitiveSession> registeredWorkers = Maps.newHashMap();
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 

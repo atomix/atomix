@@ -18,6 +18,7 @@ package io.atomix.protocols.raft.session;
 import com.google.common.collect.Lists;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.session.PrimitiveSession;
@@ -36,6 +37,7 @@ import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -63,6 +65,7 @@ public class RaftSession implements PrimitiveSession {
   private final ReadConsistency readConsistency;
   private final long minTimeout;
   private final long maxTimeout;
+  private final Serializer serializer;
   private final RaftServerProtocol protocol;
   private final RaftServiceContext context;
   private final RaftContext server;
@@ -92,6 +95,7 @@ public class RaftSession implements PrimitiveSession {
       long minTimeout,
       long maxTimeout,
       long lastUpdated,
+      Serializer serializer,
       RaftServiceContext context,
       RaftContext server,
       ThreadContextFactory threadContextFactory) {
@@ -107,6 +111,7 @@ public class RaftSession implements PrimitiveSession {
     this.completeIndex = sessionId.id();
     this.lastApplied = sessionId.id();
     this.protocol = server.getProtocol();
+    this.serializer = serializer;
     this.context = context;
     this.server = server;
     this.eventExecutor = threadContextFactory.createContext();
@@ -479,6 +484,11 @@ public class RaftSession implements PrimitiveSession {
    */
   public void setEventIndex(long eventIndex) {
     this.eventIndex = eventIndex;
+  }
+
+  @Override
+  public <T> void publish(EventType eventType, T event) {
+    publish(PrimitiveEvent.event(eventType, serializer.encode(event)));
   }
 
   @Override

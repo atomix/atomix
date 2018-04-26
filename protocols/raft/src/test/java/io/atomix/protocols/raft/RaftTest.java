@@ -1370,7 +1370,7 @@ public class RaftTest extends ConcurrentTestCase {
     private Commit<Void> close;
 
     @Override
-    protected Serializer serializer() {
+    public Serializer serializer() {
       return clientSerializer;
     }
 
@@ -1417,10 +1417,10 @@ public class RaftTest extends ConcurrentTestCase {
 
     protected long event(Commit<Boolean> commit) {
       if (commit.value()) {
-        commit.session().publish(CHANGE_EVENT, clientSerializer::encode, commit.index());
+        commit.session().publish(CHANGE_EVENT, commit.index());
       } else {
         for (PrimitiveSession session : getSessions()) {
-          session.publish(CHANGE_EVENT, clientSerializer::encode, commit.index());
+          session.publish(CHANGE_EVENT, commit.index());
         }
       }
       return commit.index();

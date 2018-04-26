@@ -119,7 +119,7 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
   private Map<String, MapEntryValue> backingMap = Maps.newHashMap();
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return serializer;
   }
 
@@ -438,7 +438,7 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
    * @param events list of map event to publish
    */
   private void publish(List<MultimapEvent<String, byte[]>> events) {
-    listeners.values().forEach(session -> session.publish(CHANGE, serializer::encode, events));
+    listeners.values().forEach(session -> session.publish(CHANGE, events));
   }
 
   private interface MapEntryValue {

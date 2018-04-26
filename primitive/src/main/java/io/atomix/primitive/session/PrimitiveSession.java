@@ -20,8 +20,6 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 
-import java.util.function.Function;
-
 /**
  * Provides an interface to communicating with a client via session events.
  * <p>
@@ -109,24 +107,10 @@ public interface PrimitiveSession {
    * Publishes an event to the session.
    *
    * @param eventType the event identifier
-   * @param encoder   the event value encoder
    * @param event     the event value
    * @param <T>       the event type
    */
-  default <T> void publish(EventType eventType, Function<T, byte[]> encoder, T event) {
-    publish(eventType, encoder.apply(event));
-  }
-
-  /**
-   * Publishes an event to the session.
-   *
-   * @param eventType the event identifier
-   * @param event     the event to publish
-   * @throws NullPointerException if the event is {@code null}
-   */
-  default void publish(EventType eventType, byte[] event) {
-    publish(new PrimitiveEvent(EventType.simplify(eventType), event));
-  }
+  <T> void publish(EventType eventType, T event);
 
   /**
    * Publishes an event to the session.

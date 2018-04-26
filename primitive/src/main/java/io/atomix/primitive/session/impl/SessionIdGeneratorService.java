@@ -34,17 +34,17 @@ public class SessionIdGeneratorService extends AbstractPrimitiveService {
   private long id;
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 
   @Override
-  protected void backup(BackupOutput writer) {
+  public void backup(BackupOutput writer) {
     writer.writeLong(id);
   }
 
   @Override
-  protected void restore(BackupInput reader) {
+  public void restore(BackupInput reader) {
     id = reader.readLong();
   }
 

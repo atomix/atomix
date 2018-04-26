@@ -89,7 +89,7 @@ public class ConsistentTreeMapService extends ConsistentMapService {
   }
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 

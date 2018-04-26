@@ -16,17 +16,12 @@
 package io.atomix.primitive.service;
 
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.primitive.service.impl.DefaultBackupInput;
-import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.PrimitiveSessions;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Clock;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.WallClock;
@@ -40,13 +35,6 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
   private Logger log;
   private ServiceContext context;
   private ServiceExecutor executor;
-
-  /**
-   * Returns the primitive service serializer.
-   *
-   * @return the primitive service serializer
-   */
-  protected abstract Serializer serializer();
 
   /**
    * Encodes the given object using the configured {@link #serializer()}.
@@ -81,30 +69,6 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
         .build());
     configure(executor);
   }
-
-  @Override
-  public void backup(BufferOutput<?> output) {
-    backup(new DefaultBackupOutput(output, serializer()));
-  }
-
-  /**
-   * Writes the service to a backup.
-   *
-   * @param output the backup output
-   */
-  protected abstract void backup(BackupOutput output);
-
-  @Override
-  public void restore(BufferInput<?> input) {
-    restore(new DefaultBackupInput(input, serializer()));
-  }
-
-  /**
-   * Restores the service from a backup.
-   *
-   * @param input the backup input
-   */
-  protected abstract void restore(BackupInput input);
 
   @Override
   public void tick(WallClockTimestamp timestamp) {

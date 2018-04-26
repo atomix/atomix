@@ -55,7 +55,7 @@ public class AtomicValueService extends AbstractPrimitiveService {
   private java.util.Set<PrimitiveSession> listeners = Sets.newHashSet();
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 
@@ -92,7 +92,7 @@ public class AtomicValueService extends AbstractPrimitiveService {
     byte[] oldValue = this.value;
     this.value = value;
     AtomicValueEvent<byte[]> event = new AtomicValueEvent<>(oldValue, value);
-    listeners.forEach(s -> s.publish(CHANGE, SERIALIZER::encode, event));
+    listeners.forEach(s -> s.publish(CHANGE, event));
     return oldValue;
   }
 

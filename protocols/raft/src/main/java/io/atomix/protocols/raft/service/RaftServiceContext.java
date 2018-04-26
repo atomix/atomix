@@ -24,10 +24,12 @@ import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceContext;
+import io.atomix.primitive.service.impl.DefaultBackupInput;
+import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.PrimitiveSessions;
+import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
@@ -39,6 +41,7 @@ import io.atomix.storage.buffer.Bytes;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClock;
@@ -122,6 +125,10 @@ public class RaftServiceContext implements ServiceContext {
   @Override
   public PrimitiveType serviceType() {
     return primitiveType;
+  }
+
+  public Serializer serializer() {
+    return service.serializer();
   }
 
   @Override
@@ -217,6 +224,7 @@ public class RaftServiceContext implements ServiceContext {
                 minTimeout,
                 maxTimeout,
                 sessionTimestamp,
+                service.serializer(),
                 this,
                 raft,
                 threadContextFactory));
@@ -231,7 +239,7 @@ public class RaftServiceContext implements ServiceContext {
     }
     currentIndex = reader.snapshot().index();
     currentTimestamp = reader.snapshot().timestamp().unixTimestamp();
-    service.restore(reader);
+    service.restore(new DefaultBackupInput(reader, service.serializer()));
   }
 
   /**
@@ -257,7 +265,7 @@ public class RaftServiceContext implements ServiceContext {
       writer.writeLong(session.getEventIndex());
       writer.writeLong(session.getLastCompleted());
     }
-    service.backup(writer);
+    service.backup(new DefaultBackupOutput(writer, service.serializer()));
   }
 
   /**

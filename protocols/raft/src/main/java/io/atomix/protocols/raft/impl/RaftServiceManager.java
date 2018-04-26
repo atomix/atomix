@@ -650,6 +650,7 @@ public class RaftServiceManager implements AutoCloseable {
         entry.entry().minTimeout(),
         entry.entry().maxTimeout(),
         entry.entry().timestamp(),
+        service.serializer(),
         service,
         raft,
         threadContextFactory));

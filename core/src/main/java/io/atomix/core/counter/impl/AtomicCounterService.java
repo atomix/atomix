@@ -52,7 +52,7 @@ public class AtomicCounterService extends AbstractPrimitiveService {
   private Long value = 0L;
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 

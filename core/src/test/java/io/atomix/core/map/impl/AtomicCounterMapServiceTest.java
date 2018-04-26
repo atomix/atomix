@@ -17,6 +17,8 @@ package io.atomix.core.map.impl;
 
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Get;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Put;
+import io.atomix.primitive.service.impl.DefaultBackupInput;
+import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
@@ -43,10 +45,10 @@ public class AtomicCounterMapServiceTest {
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
-    service.backup(buffer);
+    service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
     service = new AtomicCounterMapService();
-    service.restore(buffer.flip());
+    service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     long value = service.get(new DefaultCommit<>(
         2,

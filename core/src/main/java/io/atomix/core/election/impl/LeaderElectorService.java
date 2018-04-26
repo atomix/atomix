@@ -86,7 +86,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
   private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 
@@ -135,7 +135,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
     if (changes.isEmpty()) {
       return;
     }
-    listeners.values().forEach(session -> session.publish(CHANGE, SERIALIZER::encode, changes));
+    listeners.values().forEach(session -> session.publish(CHANGE, changes));
   }
 
   /**

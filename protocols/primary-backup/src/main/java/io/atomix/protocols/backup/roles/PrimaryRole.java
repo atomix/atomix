@@ -17,6 +17,7 @@ package io.atomix.protocols.backup.roles;
 
 import com.google.common.collect.Lists;
 import io.atomix.primitive.operation.OperationType;
+import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
@@ -167,7 +168,7 @@ public class PrimaryRole extends PrimaryBackupRole {
       buffer.writeString(session.memberId().id());
     }
 
-    context.service().backup(buffer);
+    context.service().backup(new DefaultBackupOutput(buffer, context.service().serializer()));
     buffer.flip();
     byte[] bytes = buffer.readBytes(buffer.remaining());
     return CompletableFuture.completedFuture(

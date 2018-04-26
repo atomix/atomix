@@ -131,12 +131,12 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   }
 
   @Override
-  protected Serializer serializer() {
+  public Serializer serializer() {
     return SERIALIZER;
   }
 
   @Override
-  protected void backup(BackupOutput writer) {
+  public void backup(BackupOutput writer) {
     writer.writeObject(Sets.newHashSet(listeners.keySet()));
     writer.writeObject(preparedKeys);
     writer.writeObject(entries());
@@ -145,7 +145,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   }
 
   @Override
-  protected void restore(BackupInput reader) {
+  public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(serializer()::decode)) {
       listeners.put(sessionId, getSessions().getSession(sessionId));
@@ -1004,7 +1004,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    */
   private void publish(List<MapEvent<String, byte[]>> events) {
     listeners.values().forEach(session -> {
-      session.publish(CHANGE, serializer()::encode, events);
+      session.publish(CHANGE, events);
     });
   }
 
