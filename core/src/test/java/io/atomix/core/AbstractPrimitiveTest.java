@@ -16,6 +16,7 @@
 package io.atomix.core;
 
 import io.atomix.cluster.Member;
+import io.atomix.core.profile.Profiles;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -56,9 +57,9 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   public static void setupAtomix() throws Exception {
     AbstractAtomixTest.setupAtomix();
     instances = new ArrayList<>();
-    instances.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList()));
-    instances.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList()));
-    instances.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList()));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), Profiles.CONSENSUS, Profiles.DATA_GRID));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), Profiles.CONSENSUS, Profiles.DATA_GRID));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), Profiles.CONSENSUS, Profiles.DATA_GRID));
     List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::start).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }
