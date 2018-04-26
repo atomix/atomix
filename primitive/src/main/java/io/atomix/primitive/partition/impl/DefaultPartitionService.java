@@ -107,25 +107,29 @@ public class DefaultPartitionService implements ManagedPartitionService {
   @Override
   @SuppressWarnings("unchecked")
   public PartitionGroup getSystemPartitionGroup() {
-    return systemGroup;
+    return systemGroup.group;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public PartitionGroup getDefaultPartitionGroup() {
-    return defaultGroup;
+    return defaultGroup.group;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public PartitionGroup getPartitionGroup(String name) {
-    return groups.get(name);
+    WrappedPartitionGroup group = groups.get(name);
+    return group != null ? group.group : null;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Collection<PartitionGroup> getPartitionGroups() {
-    return (Collection) groups.values();
+    return groups.values()
+        .stream()
+        .map(group -> group.group)
+        .collect(Collectors.toList());
   }
 
   /**
@@ -198,7 +202,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
 
   private PartitionGroupInfo handleBootstrap(MemberId memberId) {
     return new PartitionGroupInfo(
-        systemGroup.config(),
+        systemGroup != null ? systemGroup.config() : null,
         groups.values()
             .stream()
             .map(group -> group.config())
