@@ -45,7 +45,7 @@ public class PrimitiveEvent {
    * @return the primitive event
    */
   public static PrimitiveEvent event(EventType eventType, byte[] value) {
-    return new PrimitiveEvent(EventType.simplify(eventType), value);
+    return new PrimitiveEvent(EventType.canonical(eventType), value);
   }
 
   private final EventType type;

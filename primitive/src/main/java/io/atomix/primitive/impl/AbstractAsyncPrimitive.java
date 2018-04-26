@@ -242,7 +242,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
   protected <T> void listenAll(EventType eventType, BiConsumer<PartitionId, T> listener) {
     getPartitions().forEach(partition -> {
       Consumer<PrimitiveEvent> partitionListener = event -> listener.accept(partition.partitionId(), decode(event.value()));
-      eventListeners.computeIfAbsent(eventType, t -> Maps.newHashMap())
+      eventListeners.computeIfAbsent(eventType.canonicalize(), t -> Maps.newHashMap())
           .computeIfAbsent(partition.partitionId(), p -> Maps.newIdentityHashMap())
           .put(listener, partitionListener);
       partition.addEventListener(eventType, partitionListener);
@@ -258,7 +258,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
   protected void listenAll(EventType eventType, Consumer<PartitionId> listener) {
     getPartitions().forEach(partition -> {
       Consumer<PrimitiveEvent> partitionListener = event -> listener.accept(partition.partitionId());
-      eventListeners.computeIfAbsent(eventType, t -> Maps.newHashMap())
+      eventListeners.computeIfAbsent(eventType.canonicalize(), t -> Maps.newHashMap())
           .computeIfAbsent(partition.partitionId(), p -> Maps.newIdentityHashMap())
           .put(listener, partitionListener);
       partition.addEventListener(eventType, partitionListener);
@@ -272,7 +272,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @param listener  the event listener to add
    */
   protected void unlistenAll(EventType eventType, Consumer<PartitionId> listener) {
-    Map<PartitionId, Map<Object, Consumer>> eventTypeListeners = eventListeners.get(eventType);
+    Map<PartitionId, Map<Object, Consumer>> eventTypeListeners = eventListeners.get(eventType.canonicalize());
     if (eventTypeListeners != null) {
       getPartitions().forEach(partition -> {
         Map<Object, Consumer> partitionListeners = eventTypeListeners.get(partition.partitionId());
@@ -286,7 +286,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
           }
         }
         if (eventTypeListeners.isEmpty()) {
-          eventListeners.remove(eventType);
+          eventListeners.remove(eventType.canonicalize());
         }
       });
     }
@@ -299,7 +299,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @param listener  the event listener to remove
    */
   protected void unlistenAll(EventType eventType, BiConsumer listener) {
-    Map<PartitionId, Map<Object, Consumer>> eventTypeListeners = eventListeners.get(eventType);
+    Map<PartitionId, Map<Object, Consumer>> eventTypeListeners = eventListeners.get(eventType.canonicalize());
     if (eventTypeListeners != null) {
       getPartitions().forEach(partition -> {
         Map<Object, Consumer> partitionListeners = eventTypeListeners.get(partition.partitionId());
@@ -313,7 +313,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
           }
         }
         if (eventTypeListeners.isEmpty()) {
-          eventListeners.remove(eventType);
+          eventListeners.remove(eventType.canonicalize());
         }
       });
     }
@@ -396,7 +396,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    */
   protected <T> void listenOn(PartitionId partitionId, EventType eventType, Consumer<T> listener) {
     Consumer<PrimitiveEvent> partitionListener = event -> listener.accept(decode(event.value()));
-    eventListeners.computeIfAbsent(eventType, t -> Maps.newHashMap())
+    eventListeners.computeIfAbsent(eventType.canonicalize(), t -> Maps.newHashMap())
         .computeIfAbsent(partitionId, p -> Maps.newIdentityHashMap())
         .put(listener, partitionListener);
     getPartition(partitionId).addEventListener(eventType, partitionListener);
@@ -411,7 +411,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    */
   protected void listenOn(PartitionId partitionId, EventType eventType, Runnable listener) {
     Consumer<PrimitiveEvent> partitionListener = event -> listener.run();
-    eventListeners.computeIfAbsent(eventType, t -> Maps.newHashMap())
+    eventListeners.computeIfAbsent(eventType.canonicalize(), t -> Maps.newHashMap())
         .computeIfAbsent(partitionId, p -> Maps.newIdentityHashMap())
         .put(listener, partitionListener);
     getPartition(partitionId).addEventListener(eventType, partitionListener);
@@ -425,7 +425,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @param listener    the event listener to add
    */
   protected void unlistenOn(PartitionId partitionId, EventType eventType, Runnable listener) {
-    Map<PartitionId, Map<Object, Consumer>> eventTypeListeners = eventListeners.get(eventType);
+    Map<PartitionId, Map<Object, Consumer>> eventTypeListeners = eventListeners.get(eventType.canonicalize());
     if (eventTypeListeners != null) {
       Map<Object, Consumer> partitionListeners = eventTypeListeners.get(partitionId);
       if (partitionListeners != null) {
@@ -438,7 +438,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
         }
       }
       if (eventTypeListeners.isEmpty()) {
-        eventListeners.remove(eventType);
+        eventListeners.remove(eventType.canonicalize());
       }
     }
   }
@@ -451,7 +451,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @param listener    the event listener to remove
    */
   protected void unlistenOn(PartitionId partitionId, EventType eventType, Consumer listener) {
-    Map<PartitionId, Map<Object, Consumer>> eventTypeListeners = eventListeners.get(eventType);
+    Map<PartitionId, Map<Object, Consumer>> eventTypeListeners = eventListeners.get(eventType.canonicalize());
     if (eventTypeListeners != null) {
       Map<Object, Consumer> partitionListeners = eventTypeListeners.get(partitionId);
       if (partitionListeners != null) {
@@ -464,7 +464,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
         }
       }
       if (eventTypeListeners.isEmpty()) {
-        eventListeners.remove(eventType);
+        eventListeners.remove(eventType.canonicalize());
       }
     }
   }

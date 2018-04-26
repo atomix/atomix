@@ -207,7 +207,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
   @Override
   public synchronized void addEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
     checkOpen();
-    eventListeners.put(eventType, consumer);
+    eventListeners.put(eventType.canonicalize(), consumer);
     PartitionProxy proxy = this.proxy;
     if (proxy != null) {
       proxy.addEventListener(eventType, consumer);
@@ -217,7 +217,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
   @Override
   public synchronized void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
     checkOpen();
-    eventListeners.remove(eventType, consumer);
+    eventListeners.remove(eventType.canonicalize(), consumer);
     PartitionProxy proxy = this.proxy;
     if (proxy != null) {
       proxy.removeEventListener(eventType, consumer);

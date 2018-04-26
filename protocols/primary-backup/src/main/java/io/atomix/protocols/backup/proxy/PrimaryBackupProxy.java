@@ -207,12 +207,12 @@ public class PrimaryBackupProxy implements PartitionProxy {
 
   @Override
   public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
-    eventListeners.computeIfAbsent(eventType, t -> Sets.newLinkedHashSet()).add(listener);
+    eventListeners.computeIfAbsent(eventType.canonicalize(), t -> Sets.newLinkedHashSet()).add(listener);
   }
 
   @Override
   public void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
-    eventListeners.computeIfAbsent(eventType, t -> Sets.newLinkedHashSet()).remove(listener);
+    eventListeners.computeIfAbsent(eventType.canonicalize(), t -> Sets.newLinkedHashSet()).remove(listener);
   }
 
   /**
