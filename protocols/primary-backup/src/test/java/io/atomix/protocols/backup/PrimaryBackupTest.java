@@ -426,6 +426,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     MemberId memberId = nextMemberId();
     PrimaryBackupClient client = PrimaryBackupClient.builder()
         .withClientName("test")
+        .withPartitionId(PartitionId.from("test", 1))
         .withMembershipService(new TestClusterMembershipService(memberId, nodes))
         .withSessionIdProvider(() -> CompletableFuture.completedFuture(nextSessionId()))
         .withPrimaryElection(election)
