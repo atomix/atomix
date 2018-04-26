@@ -15,11 +15,10 @@
  */
 package io.atomix.core.multimap.impl;
 
-import io.atomix.core.multimap.impl.ConsistentSetMultimapService;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.Get;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.Put;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.time.Versioned;
@@ -49,7 +48,7 @@ public class ConsistentSetMultimapServiceTest {
         PUT,
         new Put(
             "foo", Arrays.asList("Hello world!".getBytes()), Match.ANY),
-        mock(Session.class),
+        mock(PrimitiveSession.class),
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
@@ -62,7 +61,7 @@ public class ConsistentSetMultimapServiceTest {
         2,
         GET,
         new Get("foo"),
-        mock(Session.class),
+        mock(PrimitiveSession.class),
         System.currentTimeMillis()));
     assertNotNull(value);
     assertEquals(1, value.value().size());

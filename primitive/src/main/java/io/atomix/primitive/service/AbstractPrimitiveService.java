@@ -19,8 +19,8 @@ import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
-import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.Sessions;
+import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.PrimitiveSessions;
 import io.atomix.storage.buffer.BufferInput;
 import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.Scheduler;
@@ -177,7 +177,7 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return the current session
    */
-  protected Session getCurrentSession() {
+  protected PrimitiveSession getCurrentSession() {
     return context.currentSession();
   }
 
@@ -213,22 +213,22 @@ public abstract class AbstractPrimitiveService implements PrimitiveService {
    *
    * @return The state machine's sessions.
    */
-  protected Sessions getSessions() {
+  protected PrimitiveSessions getSessions() {
     return context.sessions();
   }
 
   @Override
-  public void onOpen(Session session) {
+  public void onOpen(PrimitiveSession session) {
 
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
 
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
 
   }
 }

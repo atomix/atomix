@@ -45,7 +45,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -112,7 +112,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
       .register(new HashMap().keySet().getClass())
       .build());
 
-  protected Map<Long, Session> listeners = new LinkedHashMap<>();
+  protected Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
   private Map<String, MapEntryValue> map;
   protected Set<String> preparedKeys = Sets.newHashSet();
   protected Map<TransactionId, TransactionScope> activeTransactions = Maps.newHashMap();
@@ -701,7 +701,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    *
    * @param session listen session
    */
-  protected void listen(Session session) {
+  protected void listen(PrimitiveSession session) {
     listeners.put(session.sessionId().id(), session);
   }
 
@@ -710,7 +710,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    *
    * @param session unlisten session
    */
-  protected void unlisten(Session session) {
+  protected void unlisten(PrimitiveSession session) {
     listeners.remove(session.sessionId().id());
   }
 
@@ -1009,12 +1009,12 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     closeListener(session.sessionId().id());
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     closeListener(session.sessionId().id());
   }
 

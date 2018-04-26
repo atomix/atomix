@@ -25,7 +25,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -52,7 +52,7 @@ public class AtomicValueService extends AbstractPrimitiveService {
       .build());
 
   private byte[] value;
-  private java.util.Set<Session> listeners = Sets.newHashSet();
+  private java.util.Set<PrimitiveSession> listeners = Sets.newHashSet();
 
   @Override
   protected Serializer serializer() {
@@ -73,7 +73,7 @@ public class AtomicValueService extends AbstractPrimitiveService {
   public void backup(BackupOutput writer) {
     writer.writeInt(value.length).writeBytes(value);
     java.util.Set<Long> sessionIds = new HashSet<>();
-    for (Session session : listeners) {
+    for (PrimitiveSession session : listeners) {
       sessionIds.add(session.sessionId().id());
     }
     writer.writeObject(sessionIds);

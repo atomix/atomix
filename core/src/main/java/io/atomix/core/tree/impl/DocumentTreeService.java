@@ -42,7 +42,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.Match;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -290,12 +290,12 @@ public class DocumentTreeService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     closeListener(session.sessionId().id());
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     closeListener(session.sessionId().id());
   }
 
@@ -341,10 +341,10 @@ public class DocumentTreeService extends AbstractPrimitiveService {
   }
 
   private static class Listener {
-    private final Session session;
+    private final PrimitiveSession session;
     private final DocumentPath path;
 
-    public Listener(Session session, DocumentPath path) {
+    public Listener(PrimitiveSession session, DocumentPath path) {
       this.session = session;
       this.path = path;
     }
@@ -353,7 +353,7 @@ public class DocumentTreeService extends AbstractPrimitiveService {
       return path;
     }
 
-    public Session session() {
+    public PrimitiveSession session() {
       return session;
     }
   }

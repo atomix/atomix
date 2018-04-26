@@ -22,7 +22,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -86,7 +86,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
         timers.put(holder.index, getScheduler().schedule(Duration.ofMillis(holder.expire - getWallClock().getTime().unixTimestamp()), () -> {
           timers.remove(holder.index);
           queue.remove(holder);
-          Session session = getSessions().getSession(holder.session);
+          PrimitiveSession session = getSessions().getSession(holder.session);
           if (session != null && session.getState().active()) {
             session.publish(FAILED, SERIALIZER::encode, new LockEvent(holder.id, holder.index));
           }
@@ -96,12 +96,12 @@ public class DistributedLockService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     releaseSession(session);
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     releaseSession(session);
   }
 
@@ -190,7 +190,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
 
         // If the lock session is for some reason inactive, continue on to the next waiter. Otherwise,
         // publish a LOCKED event to the new lock holder's session.
-        Session session = getSessions().getSession(lock.session);
+        PrimitiveSession session = getSessions().getSession(lock.session);
         if (session == null || !session.getState().active()) {
           lock = queue.poll();
         } else {
@@ -213,7 +213,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
    *
    * @param session the closed session
    */
-  private void releaseSession(Session session) {
+  private void releaseSession(PrimitiveSession session) {
     // Remove all instances of the session from the lock queue.
     queue.removeIf(lock -> lock.session == session.sessionId().id());
 
@@ -230,7 +230,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
 
         // If the lock session is inactive, continue on to the next waiter. Otherwise,
         // publish a LOCKED event to the new lock holder's session.
-        Session lockSession = getSessions().getSession(lock.session);
+        PrimitiveSession lockSession = getSessions().getSession(lock.session);
         if (lockSession == null || !lockSession.getState().active()) {
           lock = queue.poll();
         } else {

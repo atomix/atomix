@@ -25,9 +25,9 @@ import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.primitive.session.Sessions;
+import io.atomix.primitive.session.PrimitiveSessions;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
@@ -63,7 +63,7 @@ public class RaftServiceContext implements ServiceContext {
   private final RaftSessions sessions;
   private final ThreadContextFactory threadContextFactory;
   private long currentIndex;
-  private Session currentSession;
+  private PrimitiveSession currentSession;
   private long currentTimestamp;
   private OperationType currentOperation;
   private final LogicalClock logicalClock = new LogicalClock() {
@@ -130,7 +130,7 @@ public class RaftServiceContext implements ServiceContext {
   }
 
   @Override
-  public Session currentSession() {
+  public PrimitiveSession currentSession() {
     return currentSession;
   }
 
@@ -150,7 +150,7 @@ public class RaftServiceContext implements ServiceContext {
   }
 
   @Override
-  public Sessions sessions() {
+  public PrimitiveSessions sessions() {
     return sessions;
   }
 
@@ -303,7 +303,7 @@ public class RaftServiceContext implements ServiceContext {
     tick(index, timestamp);
 
     // The session may have been closed by the time this update was executed on the service thread.
-    if (session.getState() != Session.State.CLOSED) {
+    if (session.getState() != PrimitiveSession.State.CLOSED) {
       // Update the session's timestamp to prevent it from being expired.
       session.setLastUpdated(timestamp);
 

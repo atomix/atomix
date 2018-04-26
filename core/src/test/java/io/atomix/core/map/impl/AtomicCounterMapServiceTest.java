@@ -15,11 +15,10 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.impl.AtomicCounterMapService;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Get;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Put;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import org.junit.Test;
@@ -40,7 +39,7 @@ public class AtomicCounterMapServiceTest {
         2,
         PUT,
         new Put("foo", 1),
-        mock(Session.class),
+        mock(PrimitiveSession.class),
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
@@ -53,7 +52,7 @@ public class AtomicCounterMapServiceTest {
         2,
         GET,
         new Get("foo"),
-        mock(Session.class),
+        mock(PrimitiveSession.class),
         System.currentTimeMillis()));
     assertEquals(1, value);
   }

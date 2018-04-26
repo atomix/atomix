@@ -16,12 +16,11 @@
 package io.atomix.core.tree.impl;
 
 import io.atomix.core.tree.DocumentPath;
-import io.atomix.core.tree.impl.DocumentTreeService;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Get;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
 import io.atomix.primitive.Ordering;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.time.Versioned;
@@ -61,7 +60,7 @@ public class DocumentTreeServiceTest {
             Optional.of("Hello world!".getBytes()),
             Match.any(),
             Match.ifNull()),
-        mock(Session.class),
+        mock(PrimitiveSession.class),
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
@@ -74,7 +73,7 @@ public class DocumentTreeServiceTest {
         2,
         GET,
         new Get(DocumentPath.from("root|foo")),
-        mock(Session.class),
+        mock(PrimitiveSession.class),
         System.currentTimeMillis()));
     assertNotNull(value);
     assertArrayEquals("Hello world!".getBytes(), value.value());

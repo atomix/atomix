@@ -34,7 +34,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.ArraySizeHashPrinter;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -76,7 +76,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
   private long termStartTime;
   private List<Registration> registrations = new LinkedList<>();
   private AtomicLong termCounter = new AtomicLong();
-  private Map<Long, Session> listeners = new LinkedHashMap<>();
+  private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
 
   @Override
   protected Serializer serializer() {
@@ -320,7 +320,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
     return new Leadership<>(leader(), candidates());
   }
 
-  private void onSessionEnd(Session session) {
+  private void onSessionEnd(PrimitiveSession session) {
     listeners.remove(session.sessionId().id());
     Leadership<byte[]> oldLeadership = leadership();
     cleanup(session);
@@ -380,7 +380,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
     }
   }
 
-  protected void cleanup(Session session) {
+  protected void cleanup(PrimitiveSession session) {
     Optional<Registration> registration =
         registrations.stream().filter(r -> r.sessionId() == session.sessionId().id()).findFirst();
     if (registration.isPresent()) {
@@ -432,12 +432,12 @@ public class LeaderElectionService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     onSessionEnd(session);
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     onSessionEnd(session);
   }
 }

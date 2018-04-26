@@ -17,9 +17,9 @@ package io.atomix.protocols.raft.service;
 
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionListener;
-import io.atomix.primitive.session.Sessions;
+import io.atomix.primitive.session.PrimitiveSessions;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionRegistry;
 
@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * State machine sessions.
  */
-class RaftSessions implements Sessions {
+class RaftSessions implements PrimitiveSessions {
   private final PrimitiveId primitiveId;
   private final Set<SessionListener> listeners = Sets.newIdentityHashSet();
   private final RaftSessionRegistry sessionManager;
@@ -97,26 +97,26 @@ class RaftSessions implements Sessions {
   }
 
   @Override
-  public Session getSession(long sessionId) {
+  public PrimitiveSession getSession(long sessionId) {
     RaftSession session = sessionManager.getSession(sessionId);
     return session != null && session.getState().active() ? session : null;
   }
 
   @Override
-  public Sessions addListener(SessionListener listener) {
+  public PrimitiveSessions addListener(SessionListener listener) {
     listeners.add(listener);
     return this;
   }
 
   @Override
-  public Sessions removeListener(SessionListener listener) {
+  public PrimitiveSessions removeListener(SessionListener listener) {
     listeners.remove(listener);
     return this;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Iterator<Session> iterator() {
+  public Iterator<PrimitiveSession> iterator() {
     return (Iterator) getSessions().iterator();
   }
 }

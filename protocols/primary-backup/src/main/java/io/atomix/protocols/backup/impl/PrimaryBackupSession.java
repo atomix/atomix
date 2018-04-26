@@ -19,10 +19,10 @@ import com.google.common.collect.Sets;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.PrimitiveEvent;
-import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.SessionEvent;
-import io.atomix.primitive.session.SessionEvent.Type;
-import io.atomix.primitive.session.SessionEventListener;
+import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.PrimitiveSessionEvent;
+import io.atomix.primitive.session.PrimitiveSessionEvent.Type;
+import io.atomix.primitive.session.PrimitiveSessionEventListener;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
@@ -35,12 +35,12 @@ import java.util.Set;
 /**
  * Primary-backup session.
  */
-public class PrimaryBackupSession implements Session {
+public class PrimaryBackupSession implements PrimitiveSession {
   private final Logger log;
   private final SessionId sessionId;
   private final MemberId memberId;
   private final PrimaryBackupServiceContext context;
-  private final Set<SessionEventListener> eventListeners = Sets.newIdentityHashSet();
+  private final Set<PrimitiveSessionEventListener> eventListeners = Sets.newIdentityHashSet();
   private State state = State.OPEN;
 
   public PrimaryBackupSession(SessionId sessionId, MemberId memberId, PrimaryBackupServiceContext context) {
@@ -79,12 +79,12 @@ public class PrimaryBackupSession implements Session {
   }
 
   @Override
-  public void addListener(SessionEventListener listener) {
+  public void addListener(PrimitiveSessionEventListener listener) {
     eventListeners.add(listener);
   }
 
   @Override
-  public void removeListener(SessionEventListener listener) {
+  public void removeListener(PrimitiveSessionEventListener listener) {
     eventListeners.remove(listener);
   }
 
@@ -100,11 +100,11 @@ public class PrimaryBackupSession implements Session {
 
   public void expire() {
     state = State.EXPIRED;
-    eventListeners.forEach(l -> l.onEvent(new SessionEvent(Type.EXPIRE, this)));
+    eventListeners.forEach(l -> l.onEvent(new PrimitiveSessionEvent(Type.EXPIRE, this)));
   }
 
   public void close() {
     state = State.CLOSED;
-    eventListeners.forEach(l -> l.onEvent(new SessionEvent(Type.CLOSE, this)));
+    eventListeners.forEach(l -> l.onEvent(new PrimitiveSessionEvent(Type.CLOSE, this)));
   }
 }

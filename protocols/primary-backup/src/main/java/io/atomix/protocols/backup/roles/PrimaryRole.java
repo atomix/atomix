@@ -18,7 +18,7 @@ package io.atomix.protocols.backup.roles;
 import com.google.common.collect.Lists;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.CloseOperation;
@@ -115,9 +115,9 @@ public class PrimaryRole extends PrimaryBackupRole {
 
   private CompletableFuture<ExecuteResponse> executeQuery(ExecuteRequest request) {
     // If the session doesn't exist, create and replicate a new session before applying the query.
-    Session session = context.getSession(request.session());
+    PrimitiveSession session = context.getSession(request.session());
     if (session == null) {
-      Session newSession = context.createSession(request.session(), request.node());
+      PrimitiveSession newSession = context.createSession(request.session(), request.node());
       long index = context.nextIndex();
       long timestamp = System.currentTimeMillis();
       return replicator.replicate(new ExecuteOperation(
@@ -136,7 +136,7 @@ public class PrimaryRole extends PrimaryBackupRole {
     }
   }
 
-  private ExecuteResponse applyQuery(ExecuteRequest request, Session session) {
+  private ExecuteResponse applyQuery(ExecuteRequest request, PrimitiveSession session) {
     try {
       byte[] result = context.service().apply(new DefaultCommit<>(
           context.getIndex(),
@@ -160,9 +160,9 @@ public class PrimaryRole extends PrimaryBackupRole {
     }
 
     HeapBuffer buffer = HeapBuffer.allocate();
-    List<Session> sessions = Lists.newArrayList(context.sessions());
+    List<PrimitiveSession> sessions = Lists.newArrayList(context.sessions());
     buffer.writeInt(sessions.size());
-    for (Session session : sessions) {
+    for (PrimitiveSession session : sessions) {
       buffer.writeLong(session.sessionId().id());
       buffer.writeString(session.memberId().id());
     }

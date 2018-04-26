@@ -22,7 +22,7 @@ import io.atomix.core.queue.impl.WorkQueueOperations.Take;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
@@ -50,7 +50,7 @@ public class WorkQueueServiceTest {
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
 
-    Session session = mock(Session.class);
+    PrimitiveSession session = mock(PrimitiveSession.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
 
     WorkQueueService service = new WorkQueueService();
