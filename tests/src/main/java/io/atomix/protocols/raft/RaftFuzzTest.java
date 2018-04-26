@@ -121,6 +121,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static io.atomix.primitive.operation.PrimitiveOperation.operation;
+
 /**
  * Raft fuzz test.
  */
@@ -328,65 +330,17 @@ public class RaftFuzzTest implements Runnable {
         int type = randomNumber(4);
         switch (type) {
           case 0:
-            proxy.<Map.Entry<String, String>, Long>invoke(PUT, clientSerializer::encode, Maps.immutableEntry(randomKey(), randomString(1024 * 16)), clientSerializer::decode).thenAccept(result -> {
-              synchronized (lock) {
-                if (result < lastLinearizableIndex) {
-                  System.out.println(result + " is less than last linearizable index " + lastLinearizableIndex);
-                  System.exit(1);
-                } else if (result > index.get()) {
-                  index.set(result);
-                }
-
-                Long lastSequentialIndex = indexes.get(clientId);
-                if (lastSequentialIndex == null) {
-                  indexes.put(clientId, result);
-                } else if (result < lastSequentialIndex) {
-                  System.out.println(result + " is less than last sequential index " + lastSequentialIndex);
-                  System.exit(1);
-                } else {
-                  indexes.put(clientId, lastSequentialIndex);
-                }
-              }
-            });
-            break;
-          case 1:
-            proxy.invoke(GET, clientSerializer::encode, randomKey(), clientSerializer::decode);
-            break;
-          case 2:
-            proxy.<String, Long>invoke(REMOVE, clientSerializer::encode, randomKey(), clientSerializer::decode).thenAccept(result -> {
-              synchronized (lock) {
-                if (result < lastLinearizableIndex) {
-                  System.out.println(result + " is less than last linearizable index " + lastLinearizableIndex);
-                  System.exit(1);
-                } else if (result > index.get()) {
-                  index.set(result);
-                }
-
-                Long lastSequentialIndex = indexes.get(clientId);
-                if (lastSequentialIndex == null) {
-                  indexes.put(clientId, result);
-                } else if (result < lastSequentialIndex) {
-                  System.out.println(result + " is less than last sequential index " + lastSequentialIndex);
-                  System.exit(1);
-                } else {
-                  indexes.put(clientId, lastSequentialIndex);
-                }
-              }
-            });
-            break;
-          case 3:
-            proxy.<Long>invoke(INDEX, clientSerializer::decode).thenAccept(result -> {
-              synchronized (lock) {
-                switch (consistency) {
-                  case LINEARIZABLE:
-                  case LINEARIZABLE_LEASE:
+            proxy.execute(operation(PUT, clientSerializer.encode(Maps.immutableEntry(randomKey(), randomString(1024 * 16)))))
+                .<Long>thenApply(clientSerializer::decode)
+                .thenAccept(result -> {
+                  synchronized (lock) {
                     if (result < lastLinearizableIndex) {
                       System.out.println(result + " is less than last linearizable index " + lastLinearizableIndex);
                       System.exit(1);
                     } else if (result > index.get()) {
                       index.set(result);
                     }
-                  case SEQUENTIAL:
+
                     Long lastSequentialIndex = indexes.get(clientId);
                     if (lastSequentialIndex == null) {
                       indexes.put(clientId, result);
@@ -396,9 +350,63 @@ public class RaftFuzzTest implements Runnable {
                     } else {
                       indexes.put(clientId, lastSequentialIndex);
                     }
-                }
-              }
-            });
+                  }
+                });
+            break;
+          case 1:
+            proxy.execute(operation(GET, clientSerializer.encode(randomKey())));
+            break;
+          case 2:
+            proxy.execute(operation(REMOVE, clientSerializer.encode(randomKey())))
+                .<Long>thenApply(clientSerializer::decode)
+                .thenAccept(result -> {
+                  synchronized (lock) {
+                    if (result < lastLinearizableIndex) {
+                      System.out.println(result + " is less than last linearizable index " + lastLinearizableIndex);
+                      System.exit(1);
+                    } else if (result > index.get()) {
+                      index.set(result);
+                    }
+
+                    Long lastSequentialIndex = indexes.get(clientId);
+                    if (lastSequentialIndex == null) {
+                      indexes.put(clientId, result);
+                    } else if (result < lastSequentialIndex) {
+                      System.out.println(result + " is less than last sequential index " + lastSequentialIndex);
+                      System.exit(1);
+                    } else {
+                      indexes.put(clientId, lastSequentialIndex);
+                    }
+                  }
+                });
+            break;
+          case 3:
+            proxy.execute(operation(INDEX))
+                .<Long>thenApply(clientSerializer::decode)
+                .thenAccept(result -> {
+                  synchronized (lock) {
+                    switch (consistency) {
+                      case LINEARIZABLE:
+                      case LINEARIZABLE_LEASE:
+                        if (result < lastLinearizableIndex) {
+                          System.out.println(result + " is less than last linearizable index " + lastLinearizableIndex);
+                          System.exit(1);
+                        } else if (result > index.get()) {
+                          index.set(result);
+                        }
+                      case SEQUENTIAL:
+                        Long lastSequentialIndex = indexes.get(clientId);
+                        if (lastSequentialIndex == null) {
+                          indexes.put(clientId, result);
+                        } else if (result < lastSequentialIndex) {
+                          System.out.println(result + " is less than last sequential index " + lastSequentialIndex);
+                          System.exit(1);
+                        } else {
+                          indexes.put(clientId, lastSequentialIndex);
+                        }
+                    }
+                  }
+                });
         }
       });
     }

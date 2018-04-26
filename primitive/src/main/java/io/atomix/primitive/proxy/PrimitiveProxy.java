@@ -32,6 +32,13 @@ public interface PrimitiveProxy extends Proxy<PrimitiveProxy> {
   Collection<PartitionProxy> getPartitions();
 
   /**
+   * Returns the collection of all partition IDs.
+   *
+   * @return the collection of all partition IDs
+   */
+  Collection<PartitionId> getPartitionIds();
+
+  /**
    * Returns the proxy with the given identifier.
    *
    * @param partitionId the partition with the given identifier

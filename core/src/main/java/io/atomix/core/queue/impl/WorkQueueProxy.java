@@ -80,10 +80,15 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]
   }
 
   @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
   public CompletableFuture<Void> delete() {
     executor.shutdown();
     timer.cancel();
-    return invoke(getPartitionKey(), CLEAR);
+    return invokeBy(getPartitionKey(), CLEAR);
   }
 
   @Override
@@ -91,7 +96,7 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]
     if (items.isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
-    return invoke(getPartitionKey(), ADD, SERIALIZER::encode, new Add(items));
+    return invokeBy(getPartitionKey(), ADD, new Add(items));
   }
 
   @Override
@@ -99,7 +104,7 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]
     if (maxTasks <= 0) {
       return CompletableFuture.completedFuture(ImmutableList.of());
     }
-    return invoke(getPartitionKey(), TAKE, SERIALIZER::encode, new Take(maxTasks), SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), TAKE, new Take(maxTasks));
   }
 
   @Override
@@ -107,7 +112,7 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]
     if (taskIds.isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
-    return invoke(getPartitionKey(), COMPLETE, SERIALIZER::encode, new Complete(taskIds));
+    return invokeBy(getPartitionKey(), COMPLETE, new Complete(taskIds));
   }
 
   @Override
@@ -131,7 +136,7 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]
 
   @Override
   public CompletableFuture<WorkQueueStats> stats() {
-    return invoke(getPartitionKey(), STATS, SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), STATS);
   }
 
   private void resumeWork() {
@@ -144,23 +149,23 @@ public class WorkQueueProxy extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]
   }
 
   private CompletableFuture<Void> register() {
-    return invoke(getPartitionKey(), REGISTER).thenRun(() -> isRegistered.set(true));
+    return invokeBy(getPartitionKey(), REGISTER).thenRun(() -> isRegistered.set(true));
   }
 
   private CompletableFuture<Void> unregister() {
-    return invoke(getPartitionKey(), UNREGISTER).thenRun(() -> isRegistered.set(false));
+    return invokeBy(getPartitionKey(), UNREGISTER).thenRun(() -> isRegistered.set(false));
   }
 
   @Override
   public CompletableFuture<AsyncWorkQueue<byte[]>> connect() {
     return super.connect()
         .thenRun(() -> {
-          addStateChangeListener(getPartitionKey(), state -> {
+          addStateChangeListenerBy(getPartitionKey(), state -> {
             if (state == Proxy.State.CONNECTED && isRegistered.get()) {
-              invoke(getPartitionKey(), REGISTER);
+              invokeBy(getPartitionKey(), REGISTER);
             }
           });
-          addEventListener(getPartitionKey(), TASK_AVAILABLE, this::resumeWork);
+          listenBy(getPartitionKey(), TASK_AVAILABLE, this::resumeWork);
         }).thenApply(v -> this);
   }
 

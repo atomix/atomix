@@ -19,7 +19,6 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
-import io.atomix.storage.buffer.HeapBytes;
 
 import java.util.function.Function;
 
@@ -103,7 +102,7 @@ public interface Session {
    * @param eventType the event type
    */
   default void publish(EventType eventType) {
-    publish(eventType, HeapBytes.EMPTY);
+    publish(eventType, null);
   }
 
   /**

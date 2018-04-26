@@ -86,6 +86,11 @@ public class PartitionedPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
+  public Collection<PartitionId> getPartitionIds() {
+    return partitions.keySet();
+  }
+
+  @Override
   public PartitionProxy getPartition(PartitionId partitionId) {
     return partitions.get(partitionId);
   }

@@ -64,44 +64,49 @@ public class LeaderElectionProxy extends AbstractAsyncPrimitive<AsyncLeaderElect
     super(proxy, registry);
   }
 
+  @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
   private void handleEvent(PartitionId partitionId, List<LeadershipEvent> changes) {
     changes.forEach(change -> leadershipChangeListeners.forEach(l -> l.onEvent(change)));
   }
 
   @Override
   public CompletableFuture<Leadership<byte[]>> run(byte[] id) {
-    return invoke(getPartitionKey(), RUN, SERIALIZER::encode, new Run(id), SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), RUN, new Run(id));
   }
 
   @Override
   public CompletableFuture<Void> withdraw(byte[] id) {
-    return invoke(getPartitionKey(), WITHDRAW, SERIALIZER::encode, new Withdraw(id));
+    return invokeBy(getPartitionKey(), WITHDRAW, new Withdraw(id));
   }
 
   @Override
   public CompletableFuture<Boolean> anoint(byte[] id) {
-    return this.invoke(getPartitionKey(), ANOINT, SERIALIZER::encode, new Anoint(id), SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), ANOINT, new Anoint(id));
   }
 
   @Override
   public CompletableFuture<Boolean> promote(byte[] id) {
-    return this.invoke(getPartitionKey(), PROMOTE, SERIALIZER::encode, new Promote(id), SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), PROMOTE, new Promote(id));
   }
 
   @Override
   public CompletableFuture<Void> evict(byte[] id) {
-    return invoke(getPartitionKey(), EVICT, SERIALIZER::encode, new Evict(id));
+    return invokeBy(getPartitionKey(), EVICT, new Evict(id));
   }
 
   @Override
   public CompletableFuture<Leadership<byte[]>> getLeadership() {
-    return invoke(getPartitionKey(), GET_LEADERSHIP, SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), GET_LEADERSHIP);
   }
 
   @Override
   public synchronized CompletableFuture<Void> addListener(LeadershipEventListener listener) {
     if (leadershipChangeListeners.isEmpty()) {
-      return invoke(getPartitionKey(), ADD_LISTENER).thenRun(() -> leadershipChangeListeners.add(listener));
+      return invokeBy(getPartitionKey(), ADD_LISTENER).thenRun(() -> leadershipChangeListeners.add(listener));
     } else {
       leadershipChangeListeners.add(listener);
       return CompletableFuture.completedFuture(null);
@@ -111,7 +116,7 @@ public class LeaderElectionProxy extends AbstractAsyncPrimitive<AsyncLeaderElect
   @Override
   public synchronized CompletableFuture<Void> removeListener(LeadershipEventListener listener) {
     if (leadershipChangeListeners.remove(listener) && leadershipChangeListeners.isEmpty()) {
-      return invoke(getPartitionKey(), REMOVE_LISTENER).thenApply(v -> null);
+      return invokeBy(getPartitionKey(), REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -126,10 +131,10 @@ public class LeaderElectionProxy extends AbstractAsyncPrimitive<AsyncLeaderElect
         .thenRun(() -> {
           addStateChangeListeners((partition, state) -> {
             if (state == Proxy.State.CONNECTED && isListening()) {
-              invoke(partition, ADD_LISTENER);
+              invokeOn(partition, ADD_LISTENER);
             }
           });
-          addEventListeners(CHANGE, SERIALIZER::decode, this::handleEvent);
+          listenAll(CHANGE, this::handleEvent);
         })
         .thenApply(v -> this);
   }

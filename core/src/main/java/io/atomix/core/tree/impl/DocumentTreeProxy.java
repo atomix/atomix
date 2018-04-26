@@ -80,17 +80,18 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
   }
 
   @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
   public DocumentPath root() {
     return DocumentPath.ROOT;
   }
 
   @Override
   public CompletableFuture<Map<String, Versioned<byte[]>>> getChildren(DocumentPath path) {
-    return this.<GetChildren, DocumentTreeResult<Map<String, Versioned<byte[]>>>>invokes(
-        GET_CHILDREN,
-        SERIALIZER::encode,
-        new GetChildren(checkNotNull(path)),
-        SERIALIZER::decode)
+    return this.<GetChildren, DocumentTreeResult<Map<String, Versioned<byte[]>>>>invokeAll(GET_CHILDREN, new GetChildren(checkNotNull(path)))
         .thenApply(results -> {
           Map<String, Versioned<byte[]>> children = Maps.newLinkedHashMap();
           results.filter(result -> result.status() == DocumentTreeResult.Status.OK)
@@ -103,17 +104,15 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(DocumentPath path) {
-    return invoke(path.toString(), GET, SERIALIZER::encode, new Get(checkNotNull(path)), SERIALIZER::decode);
+    return invokeBy(path.toString(), GET, new Get(checkNotNull(path)));
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> set(DocumentPath path, byte[] value) {
-    return this.<Update, DocumentTreeResult<Versioned<byte[]>>>invoke(
+    return this.<Update, DocumentTreeResult<Versioned<byte[]>>>invokeBy(
         path.toString(),
         UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.any()),
-        SERIALIZER::decode)
+        new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.any()))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -150,28 +149,19 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, long version) {
-    return this.<Update, DocumentTreeResult<byte[]>>invoke(
+    return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
         path.toString(),
         UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path),
-            Optional.ofNullable(newValue),
-            Match.any(),
-            Match.ifValue(version)), SERIALIZER::decode)
+        new Update(checkNotNull(path), Optional.ofNullable(newValue), Match.any(), Match.ifValue(version)))
         .thenApply(result -> result.updated());
   }
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, byte[] currentValue) {
-    return this.<Update, DocumentTreeResult<byte[]>>invoke(
+    return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
         path.toString(),
         UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path),
-            Optional.ofNullable(newValue),
-            Match.ifValue(currentValue),
-            Match.any()),
-        SERIALIZER::decode)
+        new Update(checkNotNull(path), Optional.ofNullable(newValue), Match.ifValue(currentValue), Match.any()))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -188,12 +178,10 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
     if (path.equals(DocumentPath.from("root"))) {
       return Futures.exceptionalFuture(new IllegalDocumentModificationException());
     }
-    return this.<Update, DocumentTreeResult<Versioned<byte[]>>>invoke(
+    return this.<Update, DocumentTreeResult<Versioned<byte[]>>>invokeBy(
         path.toString(),
         UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path), null, Match.any(), Match.ifNotNull()),
-        SERIALIZER::decode)
+        new Update(checkNotNull(path), null, Match.any(), Match.ifNotNull()))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -212,7 +200,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
     InternalListener internalListener = new InternalListener(path, listener, MoreExecutors.directExecutor());
     // TODO: Support API that takes an executor
     if (!eventListeners.containsKey(listener)) {
-      return invokes(ADD_LISTENER, SERIALIZER::encode, new Listen(path))
+      return invokeAll(ADD_LISTENER, new Listen(path))
           .thenRun(() -> eventListeners.put(listener, internalListener));
     }
     return CompletableFuture.completedFuture(null);
@@ -223,7 +211,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
     checkNotNull(listener);
     InternalListener internalListener = eventListeners.remove(listener);
     if (internalListener != null && eventListeners.isEmpty()) {
-      return invokes(REMOVE_LISTENER, SERIALIZER::encode, new Unlisten(internalListener.path))
+      return invokeAll(REMOVE_LISTENER, new Unlisten(internalListener.path))
           .thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
@@ -235,16 +223,16 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
         .thenRun(() -> {
           addStateChangeListeners((partition, state) -> {
             if (state == PartitionProxy.State.CONNECTED && isListening()) {
-              invoke(partition, ADD_LISTENER, SERIALIZER::encode, new Listen());
+              invokeOn(partition, ADD_LISTENER, new Listen());
             }
           });
-          addEventListeners(CHANGE, SERIALIZER::decode, this::processTreeUpdates);
+          listenAll(CHANGE, this::processTreeUpdates);
         }).thenApply(v -> this);
   }
 
   @Override
   public CompletableFuture<Void> delete() {
-    return invokes(CLEAR);
+    return invokeAll(CLEAR).thenApply(v -> null);
   }
 
   @Override
@@ -253,12 +241,10 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
   }
 
   private CompletableFuture<DocumentTreeResult.Status> createInternal(DocumentPath path, byte[] value) {
-    return this.<Update, DocumentTreeResult<byte[]>>invoke(
+    return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
         path.toString(),
         UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.ifNull()),
-        SERIALIZER::decode)
+        new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.ifNull()))
         .thenApply(result -> result.status());
   }
 

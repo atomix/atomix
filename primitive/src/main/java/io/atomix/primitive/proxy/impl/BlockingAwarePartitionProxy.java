@@ -16,6 +16,7 @@
 package io.atomix.primitive.proxy.impl;
 
 import com.google.common.collect.Maps;
+import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.proxy.PartitionProxy;
@@ -62,17 +63,17 @@ public class BlockingAwarePartitionProxy extends DelegatingPartitionProxy {
   }
 
   @Override
-  public void addEventListener(Consumer<PrimitiveEvent> listener) {
+  public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
     Consumer<PrimitiveEvent> wrappedListener = e -> executor.execute(() -> listener.accept(e));
     eventListeners.put(listener, wrappedListener);
-    super.addEventListener(wrappedListener);
+    super.addEventListener(eventType, wrappedListener);
   }
 
   @Override
-  public void removeEventListener(Consumer<PrimitiveEvent> listener) {
+  public void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
     Consumer<PrimitiveEvent> wrappedListener = eventListeners.remove(listener);
     if (wrappedListener != null) {
-      super.removeEventListener(wrappedListener);
+      super.removeEventListener(eventType, wrappedListener);
     }
   }
 }

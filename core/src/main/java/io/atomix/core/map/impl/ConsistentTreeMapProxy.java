@@ -104,89 +104,85 @@ public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncC
 
   @Override
   public CompletableFuture<String> firstKey() {
-    return this.<String>invokes(FIRST_KEY, serializer()::decode)
+    return this.<String>invokeAll(FIRST_KEY)
         .thenApply(results -> results.reduce(this::lesserKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> lastKey() {
-    return this.<String>invokes(LAST_KEY, serializer()::decode)
+    return this.<String>invokeAll(LAST_KEY)
         .thenApply(results -> results.reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> ceilingEntry(String key) {
-    return this.<CeilingEntry, Map.Entry<String, Versioned<byte[]>>>invokes(
-        CEILING_ENTRY, serializer()::encode, new CeilingEntry(key), serializer()::decode)
+    return this.<CeilingEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(CEILING_ENTRY, new CeilingEntry(key))
         .thenApply(results -> results.reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> floorEntry(String key) {
-    return this.<FloorEntry, Map.Entry<String, Versioned<byte[]>>>invokes(
-        FLOOR_ENTRY, serializer()::encode, new FloorEntry(key), serializer()::decode)
+    return this.<FloorEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(FLOOR_ENTRY, new FloorEntry(key))
         .thenApply(results -> results.reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> higherEntry(String key) {
-    return this.<HigherEntry, Map.Entry<String, Versioned<byte[]>>>invokes(
-        HIGHER_ENTRY, serializer()::encode, new HigherEntry(key), serializer()::decode)
+    return this.<HigherEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(HIGHER_ENTRY, new HigherEntry(key))
         .thenApply(results -> results.reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lowerEntry(String key) {
-    return this.<LowerEntry, Map.Entry<String, Versioned<byte[]>>>invokes(
-        LOWER_ENTRY, serializer()::encode, new LowerEntry(key), serializer()::decode)
+    return this.<LowerEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(LOWER_ENTRY, new LowerEntry(key))
         .thenApply(results -> results.reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> firstEntry() {
-    return this.<Map.Entry<String, Versioned<byte[]>>>invokes(FIRST_ENTRY, serializer()::decode)
+    return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(FIRST_ENTRY)
         .thenApply(results -> results.reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lastEntry() {
-    return this.<Map.Entry<String, Versioned<byte[]>>>invokes(LAST_ENTRY, serializer()::decode)
+    return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(LAST_ENTRY)
         .thenApply(results -> results.reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> pollFirstEntry() {
-    return this.<Map.Entry<String, Versioned<byte[]>>>invokes(POLL_FIRST_ENTRY, serializer()::decode)
+    return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(POLL_FIRST_ENTRY)
         .thenApply(results -> results.reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> pollLastEntry() {
-    return this.<Map.Entry<String, Versioned<byte[]>>>invokes(POLL_LAST_ENTRY, serializer()::decode)
+    return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(POLL_LAST_ENTRY)
         .thenApply(results -> results.reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> lowerKey(String key) {
-    return this.<LowerKey, String>invokes(LOWER_KEY, serializer()::encode, new LowerKey(key), serializer()::decode)
+    return this.<LowerKey, String>invokeAll(LOWER_KEY, new LowerKey(key))
         .thenApply(results -> results.reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> floorKey(String key) {
-    return this.<FloorKey, String>invokes(FLOOR_KEY, serializer()::encode, new FloorKey(key), serializer()::decode)
+    return this.<FloorKey, String>invokeAll(FLOOR_KEY, new FloorKey(key))
         .thenApply(results -> results.reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> ceilingKey(String key) {
-    return this.<CeilingKey, String>invokes(CEILING_KEY, serializer()::encode, new CeilingKey(key), serializer()::decode)
+    return this.<CeilingKey, String>invokeAll(CEILING_KEY, new CeilingKey(key))
         .thenApply(results -> results.reduce(this::lesserKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> higherKey(String key) {
-    return this.<HigherKey, String>invokes(HIGHER_KEY, serializer()::encode, new HigherKey(key), serializer()::decode)
+    return this.<HigherKey, String>invokeAll(HIGHER_KEY, new HigherKey(key))
         .thenApply(results -> results.reduce(this::lesserKey).orElse(null));
   }
 

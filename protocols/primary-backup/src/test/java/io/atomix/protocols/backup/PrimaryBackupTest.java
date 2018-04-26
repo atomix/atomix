@@ -55,6 +55,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -93,7 +94,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
 
     PrimaryBackupClient client = createClient();
     PartitionProxy session = createProxy(client, backups, replication);
-    session.invoke(WRITE).thenRun(this::resume);
+    session.execute(operation(WRITE)).thenRun(this::resume);
 
     await(5000);
   }
@@ -121,7 +122,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
 
     PrimaryBackupClient client = createClient();
     PartitionProxy session = createProxy(client, backups, replication);
-    session.invoke(READ).thenRun(this::resume);
+    session.execute(operation(READ)).thenRun(this::resume);
 
     await(5000);
   }
@@ -152,13 +153,14 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
 
     PrimaryBackupClient client = createClient();
     PartitionProxy session = createProxy(client, backups, replication);
-    session.<Long>addEventListener(CHANGE_EVENT, SERIALIZER::decode, event -> {
+    session.<Long>addEventListener(CHANGE_EVENT, event -> {
       threadAssertEquals(count.incrementAndGet(), 2L);
       threadAssertEquals(index.get(), event);
       resume();
     });
 
-    session.<Boolean, Long>invoke(EVENT, SERIALIZER::encode, true, SERIALIZER::decode)
+    session.execute(operation(EVENT, SERIALIZER.encode(true)))
+        .<Long>thenApply(SERIALIZER::decode)
         .thenAccept(result -> {
           threadAssertNotNull(result);
           threadAssertEquals(count.incrementAndGet(), 1L);
@@ -192,23 +194,23 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
 
     PrimaryBackupClient client1 = createClient();
     PartitionProxy session1 = createProxy(client1, backups, replication);
-    session1.addEventListener(event -> {
+    session1.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     PrimaryBackupClient client2 = createClient();
     PartitionProxy session2 = createProxy(client2, backups, replication);
-    session2.addEventListener(event -> {
+    session2.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    session1.invoke(READ).thenRun(this::resume);
-    session2.invoke(READ).thenRun(this::resume);
+    session1.execute(operation(READ, null)).thenRun(this::resume);
+    session2.execute(operation(READ, null)).thenRun(this::resume);
     await(5000, 2);
 
-    session1.invoke(EVENT, SERIALIZER::encode, false).thenRun(this::resume);
+    session1.execute(operation(EVENT, SERIALIZER.encode(false))).thenRun(this::resume);
     await(5000, 3);
   }
 
@@ -235,13 +237,13 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
 
     PrimaryBackupClient client = createClient();
     PartitionProxy session = createProxy(client, backups, replication);
-    session.addEventListener(message -> {
+    session.addEventListener(CHANGE_EVENT, message -> {
       threadAssertNotNull(message);
       resume();
     });
 
     for (int i = 0; i < 10; i++) {
-      session.invoke(EVENT, SERIALIZER::encode, true).thenRun(this::resume);
+      session.execute(operation(EVENT, SERIALIZER.encode(true))).thenRun(this::resume);
 
       await(5000, 2);
     }
@@ -267,13 +269,13 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
 
     PrimaryBackupClient client = createClient();
     PartitionProxy session = createProxy(client, 3, replication);
-    session.addEventListener(event -> {
+    session.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     for (int i = 0; i < 10; i++) {
-      session.invoke(EVENT, SERIALIZER::encode, true).thenRun(this::resume);
+      session.execute(operation(EVENT, SERIALIZER.encode(true))).thenRun(this::resume);
 
       await(5000, 2);
     }
@@ -282,7 +284,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     leader.stop().get(10, TimeUnit.SECONDS);
 
     for (int i = 0; i < 10; i++) {
-      session.invoke(EVENT, SERIALIZER::encode, true).thenRun(this::resume);
+      session.execute(operation(EVENT, SERIALIZER.encode(true))).thenRun(this::resume);
 
       await(5000, 2);
     }
@@ -312,21 +314,21 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
 
     PrimaryBackupClient client = createClient();
     PartitionProxy session = createProxy(client, 2, replication);
-    session.addEventListener(event -> {
+    session.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     PartitionProxy session1 = createProxy(createClient(), 2, replication);
-    session1.invoke(READ).thenRun(this::resume);
-    session1.addEventListener(event -> {
+    session1.execute(operation(READ)).thenRun(this::resume);
+    session1.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     PartitionProxy session2 = createProxy(createClient(), 2, replication);
-    session2.invoke(READ).thenRun(this::resume);
-    session2.addEventListener(event -> {
+    session2.execute(operation(READ)).thenRun(this::resume);
+    session2.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
@@ -334,7 +336,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     await(5000, 2);
 
     for (int i = 0; i < 10; i++) {
-      session.invoke(EVENT, SERIALIZER::encode, false).thenRun(this::resume);
+      session.execute(operation(EVENT, SERIALIZER.encode(false))).thenRun(this::resume);
 
       await(10000, 4);
     }
@@ -359,11 +361,11 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     PrimaryBackupClient client1 = createClient();
     PartitionProxy session1 = createProxy(client1, 2, replication);
     PrimaryBackupClient client2 = createClient();
-    session1.invoke(CLOSE).thenRun(this::resume);
+    session1.execute(operation(CLOSE)).thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 1);
-    session1.addEventListener(CLOSE_EVENT, this::resume);
+    session1.addEventListener(CLOSE_EVENT, e -> resume());
     PartitionProxy session2 = createProxy(client2, 2, replication);
-    session2.invoke(READ).thenRun(this::resume);
+    session2.execute(operation(READ)).thenRun(this::resume);
     await(5000);
     session2.close().thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 2);
