@@ -127,7 +127,7 @@ public class MetaStore implements AutoCloseable {
     if (configurationBuffer.position(0).readByte() == 1) {
       int bytesLength = configurationBuffer.readInt();
       if (bytesLength == 0) {
-        throw new IllegalStateException("Bytes length equal to zero");
+        return null;
       }
       return serializer.decode(configurationBuffer.readBytes(bytesLength));
     }
