@@ -26,6 +26,7 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
+import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.Commit;
@@ -1236,6 +1237,7 @@ public class RaftTest extends ConcurrentTestCase {
     MemberId memberId = nextNodeId();
     RaftClient client = RaftClient.builder()
         .withMemberId(memberId)
+        .withPartitionId(PartitionId.from("test", 1))
         .withProtocol(protocolFactory.newClientProtocol(memberId))
         .build();
     client.connect(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
