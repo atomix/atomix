@@ -17,8 +17,8 @@ package io.atomix.protocols.raft.service;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.Session.State;
+import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.PrimitiveSession.State;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionListener;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -107,17 +107,17 @@ public class RaftSessionsTest {
     private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
 
     @Override
-    public void onOpen(Session session) {
+    public void onOpen(PrimitiveSession session) {
       queue.add("open");
     }
 
     @Override
-    public void onExpire(Session session) {
+    public void onExpire(PrimitiveSession session) {
       queue.add("expire");
     }
 
     @Override
-    public void onClose(Session session) {
+    public void onClose(PrimitiveSession session) {
       queue.add("close");
     }
 

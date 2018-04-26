@@ -31,7 +31,7 @@ import java.util.function.Function;
  * expired or closed, linearizability, sequential consistency, and other guarantees for events and operations are
  * effectively lost. Session implementations guarantee linearizability for session messages by coordinating between
  * the client and a single server at any given time. This means messages {@link #publish(PrimitiveEvent) published}
- * via the {@link Session} are guaranteed to arrive on the other side of the connection exactly once and in the order
+ * via the {@link PrimitiveSession} are guaranteed to arrive on the other side of the connection exactly once and in the order
  * in which they are sent by replicated state machines. In the event of a server-to-client message being lost, the
  * message will be resent so long as at least one Raft server is able to communicate with the client and the client's
  * session does not expire while switching between servers.
@@ -45,7 +45,7 @@ import java.util.function.Function;
  * When the message is published, it will be queued to be sent to the other side of the connection. Raft guarantees
  * that the message will eventually be received by the client unless the session itself times out or is closed.
  */
-public interface Session {
+public interface PrimitiveSession {
 
   /**
    * Returns the session identifier.
@@ -87,14 +87,14 @@ public interface Session {
    *
    * @param listener the state change listener to add
    */
-  void addListener(SessionEventListener listener);
+  void addListener(PrimitiveSessionEventListener listener);
 
   /**
    * Removes a state change listener from the session.
    *
    * @param listener the state change listener to remove
    */
-  void removeListener(SessionEventListener listener);
+  void removeListener(PrimitiveSessionEventListener listener);
 
   /**
    * Publishes an empty event to the session.

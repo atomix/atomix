@@ -41,7 +41,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.Match;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -115,7 +115,7 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
       .build());
 
   private AtomicLong globalVersion = new AtomicLong(1);
-  private Map<Long, Session> listeners = new LinkedHashMap<>();
+  private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
   private Map<String, MapEntryValue> backingMap = Maps.newHashMap();
 
   @Override
@@ -164,12 +164,12 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     listeners.remove(session.sessionId().id());
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     listeners.remove(session.sessionId().id());
   }
 

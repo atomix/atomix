@@ -30,7 +30,7 @@ import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -185,12 +185,12 @@ public class ConsistentTreeMapService extends ConsistentMapService {
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     closeListener(session.sessionId().id());
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     closeListener(session.sessionId().id());
   }
 

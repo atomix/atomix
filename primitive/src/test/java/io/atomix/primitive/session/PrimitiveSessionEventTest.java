@@ -15,8 +15,6 @@
  */
 package io.atomix.primitive.session;
 
-import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.SessionEvent;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -25,13 +23,13 @@ import static org.mockito.Mockito.mock;
 /**
  * Raft session event test.
  */
-public class SessionEventTest {
+public class PrimitiveSessionEventTest {
   @Test
   public void testRaftSessionEvent() throws Exception {
-    Session session = mock(Session.class);
+    PrimitiveSession session = mock(PrimitiveSession.class);
     long timestamp = System.currentTimeMillis();
-    SessionEvent event = new SessionEvent(SessionEvent.Type.OPEN, session, timestamp);
-    assertEquals(SessionEvent.Type.OPEN, event.type());
+    PrimitiveSessionEvent event = new PrimitiveSessionEvent(PrimitiveSessionEvent.Type.OPEN, session, timestamp);
+    assertEquals(PrimitiveSessionEvent.Type.OPEN, event.type());
     assertEquals(session, event.subject());
     assertEquals(timestamp, event.time());
   }

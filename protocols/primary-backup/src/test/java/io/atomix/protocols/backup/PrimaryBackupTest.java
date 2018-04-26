@@ -35,7 +35,7 @@ import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.protocol.TestPrimaryBackupProtocolFactory;
@@ -522,14 +522,14 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     }
 
     @Override
-    public void onExpire(Session session) {
+    public void onExpire(PrimitiveSession session) {
       if (expire != null) {
         expire.session().publish(EXPIRE_EVENT);
       }
     }
 
     @Override
-    public void onClose(Session session) {
+    public void onClose(PrimitiveSession session) {
       if (close != null && !session.equals(close.session())) {
         close.session().publish(CLOSE_EVENT);
       }
@@ -557,7 +557,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
       if (commit.value()) {
         commit.session().publish(CHANGE_EVENT, SERIALIZER::encode, commit.index());
       } else {
-        for (Session session : getSessions()) {
+        for (PrimitiveSession session : getSessions()) {
           session.publish(CHANGE_EVENT, SERIALIZER::encode, commit.index());
         }
       }

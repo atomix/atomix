@@ -20,7 +20,7 @@ import io.atomix.utils.event.AbstractEvent;
 /**
  * Raft session event.
  */
-public class SessionEvent extends AbstractEvent<SessionEvent.Type, Session> {
+public class PrimitiveSessionEvent extends AbstractEvent<PrimitiveSessionEvent.Type, PrimitiveSession> {
 
   /**
    * Raft session type.
@@ -42,11 +42,11 @@ public class SessionEvent extends AbstractEvent<SessionEvent.Type, Session> {
     CLOSE,
   }
 
-  public SessionEvent(SessionEvent.Type type, Session subject) {
+  public PrimitiveSessionEvent(PrimitiveSessionEvent.Type type, PrimitiveSession subject) {
     super(type, subject);
   }
 
-  public SessionEvent(SessionEvent.Type type, Session subject, long time) {
+  public PrimitiveSessionEvent(PrimitiveSessionEvent.Type type, PrimitiveSession subject, long time) {
     super(type, subject, time);
   }
 }

@@ -39,7 +39,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.ArraySizeHashPrinter;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -83,7 +83,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
 
   private Map<String, AtomicLong> termCounters = new HashMap<>();
   private Map<String, ElectionState> elections = new HashMap<>();
-  private Map<Long, Session> listeners = new LinkedHashMap<>();
+  private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
 
   @Override
   protected Serializer serializer() {
@@ -355,7 +355,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
     return electionState == null ? new LinkedList<>() : electionState.candidates();
   }
 
-  private void onSessionEnd(Session session) {
+  private void onSessionEnd(PrimitiveSession session) {
     listeners.remove(session.sessionId().id());
     Set<String> topics = elections.keySet();
     List<LeadershipEvent<byte[]>> changes = Lists.newArrayList();
@@ -457,7 +457,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
           .count();
     }
 
-    public ElectionState cleanup(String topic, Session session, Supplier<Long> termCounter) {
+    public ElectionState cleanup(String topic, PrimitiveSession session, Supplier<Long> termCounter) {
       Optional<Registration> registration =
           registrations.stream().filter(r -> r.sessionId() == session.sessionId().id()).findFirst();
       if (registration.isPresent()) {
@@ -586,12 +586,12 @@ public class LeaderElectorService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     onSessionEnd(session);
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     onSessionEnd(session);
   }
 

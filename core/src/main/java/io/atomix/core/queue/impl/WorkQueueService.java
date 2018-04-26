@@ -31,7 +31,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -76,7 +76,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
 
   private Queue<Task<byte[]>> unassignedTasks = Queues.newArrayDeque();
   private Map<String, TaskAssignment> assignments = Maps.newHashMap();
-  private Map<Long, Session> registeredWorkers = Maps.newHashMap();
+  private Map<Long, PrimitiveSession> registeredWorkers = Maps.newHashMap();
 
   @Override
   protected Serializer serializer() {
@@ -196,12 +196,12 @@ public class WorkQueueService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     evictWorker(session.sessionId().id());
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     evictWorker(session.sessionId().id());
   }
 
