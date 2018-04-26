@@ -17,7 +17,6 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.collect.Maps;
-
 import io.atomix.core.map.impl.ConsistentTreeMapOperations.CeilingEntry;
 import io.atomix.core.map.impl.ConsistentTreeMapOperations.CeilingKey;
 import io.atomix.core.map.impl.ConsistentTreeMapOperations.FloorEntry;
@@ -37,6 +36,11 @@ import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.CEILING_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.CEILING_KEY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.FIRST_ENTRY;
@@ -52,11 +56,6 @@ import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LOWER_KEY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.POLL_FIRST_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.POLL_LAST_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.SUB_MAP;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
 
 /**
  * State machine corresponding to {@link ConsistentTreeMapProxy} backed by a
@@ -97,21 +96,21 @@ public class ConsistentTreeMapService extends ConsistentMapService {
   @Override
   public void configure(ServiceExecutor executor) {
     super.configure(executor);
-    executor.register(SUB_MAP, serializer()::decode, this::subMap, serializer()::encode);
-    executor.register(FIRST_KEY, (Commit<Void> c) -> firstKey(), serializer()::encode);
-    executor.register(LAST_KEY, (Commit<Void> c) -> lastKey(), serializer()::encode);
-    executor.register(FIRST_ENTRY, (Commit<Void> c) -> firstEntry(), serializer()::encode);
-    executor.register(LAST_ENTRY, (Commit<Void> c) -> lastEntry(), serializer()::encode);
-    executor.register(POLL_FIRST_ENTRY, (Commit<Void> c) -> pollFirstEntry(), serializer()::encode);
-    executor.register(POLL_LAST_ENTRY, (Commit<Void> c) -> pollLastEntry(), serializer()::encode);
-    executor.register(LOWER_ENTRY, serializer()::decode, this::lowerEntry, serializer()::encode);
-    executor.register(LOWER_KEY, serializer()::decode, this::lowerKey, serializer()::encode);
-    executor.register(FLOOR_ENTRY, serializer()::decode, this::floorEntry, serializer()::encode);
-    executor.register(FLOOR_KEY, serializer()::decode, this::floorKey, serializer()::encode);
-    executor.register(CEILING_ENTRY, serializer()::decode, this::ceilingEntry, serializer()::encode);
-    executor.register(CEILING_KEY, serializer()::decode, this::ceilingKey, serializer()::encode);
-    executor.register(HIGHER_ENTRY, serializer()::decode, this::higherEntry, serializer()::encode);
-    executor.register(HIGHER_KEY, serializer()::decode, this::higherKey, serializer()::encode);
+    executor.register(SUB_MAP, this::subMap);
+    executor.register(FIRST_KEY, (Commit<Void> c) -> firstKey());
+    executor.register(LAST_KEY, (Commit<Void> c) -> lastKey());
+    executor.register(FIRST_ENTRY, (Commit<Void> c) -> firstEntry());
+    executor.register(LAST_ENTRY, (Commit<Void> c) -> lastEntry());
+    executor.register(POLL_FIRST_ENTRY, (Commit<Void> c) -> pollFirstEntry());
+    executor.register(POLL_LAST_ENTRY, (Commit<Void> c) -> pollLastEntry());
+    executor.register(LOWER_ENTRY, this::lowerEntry);
+    executor.register(LOWER_KEY, this::lowerKey);
+    executor.register(FLOOR_ENTRY, this::floorEntry);
+    executor.register(FLOOR_KEY, this::floorKey);
+    executor.register(CEILING_ENTRY, this::ceilingEntry);
+    executor.register(CEILING_KEY, this::ceilingKey);
+    executor.register(HIGHER_ENTRY, this::higherEntry);
+    executor.register(HIGHER_KEY, this::higherKey);
   }
 
   protected NavigableMap<String, MapEntryValue> subMap(

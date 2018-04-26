@@ -20,10 +20,6 @@ import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.service.AbstractPrimitiveService;
-import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
 import io.atomix.core.election.Leader;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
@@ -33,21 +29,15 @@ import io.atomix.core.election.impl.LeaderElectionOperations.Evict;
 import io.atomix.core.election.impl.LeaderElectionOperations.Promote;
 import io.atomix.core.election.impl.LeaderElectionOperations.Run;
 import io.atomix.core.election.impl.LeaderElectionOperations.Withdraw;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
+import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceExecutor;
+import io.atomix.primitive.session.Session;
 import io.atomix.utils.ArraySizeHashPrinter;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
-
-import static io.atomix.core.election.impl.LeaderElectionEvents.CHANGE;
-import static io.atomix.core.election.impl.LeaderElectionOperations.ADD_LISTENER;
-import static io.atomix.core.election.impl.LeaderElectionOperations.ANOINT;
-import static io.atomix.core.election.impl.LeaderElectionOperations.EVICT;
-import static io.atomix.core.election.impl.LeaderElectionOperations.GET_LEADERSHIP;
-import static io.atomix.core.election.impl.LeaderElectionOperations.PROMOTE;
-import static io.atomix.core.election.impl.LeaderElectionOperations.REMOVE_LISTENER;
-import static io.atomix.core.election.impl.LeaderElectionOperations.RUN;
-import static io.atomix.core.election.impl.LeaderElectionOperations.WITHDRAW;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -58,6 +48,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
+import static io.atomix.core.election.impl.LeaderElectionEvents.CHANGE;
+import static io.atomix.core.election.impl.LeaderElectionOperations.ADD_LISTENER;
+import static io.atomix.core.election.impl.LeaderElectionOperations.ANOINT;
+import static io.atomix.core.election.impl.LeaderElectionOperations.EVICT;
+import static io.atomix.core.election.impl.LeaderElectionOperations.GET_LEADERSHIP;
+import static io.atomix.core.election.impl.LeaderElectionOperations.PROMOTE;
+import static io.atomix.core.election.impl.LeaderElectionOperations.REMOVE_LISTENER;
+import static io.atomix.core.election.impl.LeaderElectionOperations.RUN;
+import static io.atomix.core.election.impl.LeaderElectionOperations.WITHDRAW;
 
 /**
  * State machine for {@link LeaderElectionProxy} resource.
@@ -79,25 +79,30 @@ public class LeaderElectionService extends AbstractPrimitiveService {
   private Map<Long, Session> listeners = new LinkedHashMap<>();
 
   @Override
-  public void backup(BufferOutput<?> writer) {
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
+  public void backup(BackupOutput writer) {
     writer.writeLong(termCounter.get());
-    writer.writeObject(leader, SERIALIZER::encode);
+    writer.writeObject(leader);
     writer.writeLong(term);
     writer.writeLong(termStartTime);
-    writer.writeObject(registrations, SERIALIZER::encode);
-    writer.writeObject(Sets.newHashSet(listeners.keySet()), SERIALIZER::encode);
+    writer.writeObject(registrations);
+    writer.writeObject(Sets.newHashSet(listeners.keySet()));
     getLogger().debug("Took state machine snapshot");
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  public void restore(BackupInput reader) {
     termCounter.set(reader.readLong());
-    leader = reader.readObject(SERIALIZER::decode);
+    leader = reader.readObject();
     term = reader.readLong();
     termStartTime = reader.readLong();
-    registrations = reader.readObject(SERIALIZER::decode);
+    registrations = reader.readObject();
     listeners = new LinkedHashMap<>();
-    for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
+    for (Long sessionId : reader.<Set<Long>>readObject()) {
       listeners.put(sessionId, getSessions().getSession(sessionId));
     }
     getLogger().debug("Reinstated state machine from snapshot");
@@ -109,13 +114,13 @@ public class LeaderElectionService extends AbstractPrimitiveService {
     executor.register(ADD_LISTENER, this::listen);
     executor.register(REMOVE_LISTENER, this::unlisten);
     // Commands
-    executor.register(RUN, SERIALIZER::decode, this::run, SERIALIZER::encode);
-    executor.register(WITHDRAW, SERIALIZER::decode, this::withdraw);
-    executor.register(ANOINT, SERIALIZER::decode, this::anoint, SERIALIZER::encode);
-    executor.register(PROMOTE, SERIALIZER::decode, this::promote, SERIALIZER::encode);
-    executor.register(EVICT, SERIALIZER::decode, this::evict);
+    executor.register(RUN, this::run);
+    executor.register(WITHDRAW, this::withdraw);
+    executor.register(ANOINT, this::anoint);
+    executor.register(PROMOTE, this::promote);
+    executor.register(EVICT, this::evict);
     // Queries
-    executor.register(GET_LEADERSHIP, this::getLeadership, SERIALIZER::encode);
+    executor.register(GET_LEADERSHIP, this::getLeadership);
   }
 
   private void notifyLeadershipChange(Leadership<byte[]> previousLeadership, Leadership<byte[]> newLeadership) {

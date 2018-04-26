@@ -30,6 +30,8 @@ import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.partition.impl.PrimaryElectorService;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceExecutor;
@@ -84,8 +86,6 @@ import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.storage.StorageLevel;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -667,15 +667,20 @@ public class RaftFuzzTest implements Runnable {
     private Map<String, String> map = new HashMap<>();
 
     @Override
-    protected void configure(ServiceExecutor executor) {
-      executor.register(PUT, clientSerializer::decode, this::put, clientSerializer::encode);
-      executor.register(GET, clientSerializer::decode, this::get, clientSerializer::encode);
-      executor.register(REMOVE, clientSerializer::decode, this::remove, clientSerializer::encode);
-      executor.register(INDEX, this::index, clientSerializer::encode);
+    protected Serializer serializer() {
+      return clientSerializer;
     }
 
     @Override
-    public void backup(BufferOutput<?> writer) {
+    protected void configure(ServiceExecutor executor) {
+      executor.register(PUT, this::put);
+      executor.register(GET, this::get);
+      executor.register(REMOVE, this::remove);
+      executor.register(INDEX, this::index);
+    }
+
+    @Override
+    public void backup(BackupOutput writer) {
       writer.writeInt(map.size());
       for (Map.Entry<String, String> entry : map.entrySet()) {
         writer.writeString(entry.getKey());
@@ -684,7 +689,7 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public void restore(BufferInput<?> reader) {
+    public void restore(BackupInput reader) {
       map = new HashMap<>();
       int size = reader.readInt();
       for (int i = 0; i < size; i++) {

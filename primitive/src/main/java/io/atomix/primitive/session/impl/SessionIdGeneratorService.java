@@ -16,9 +16,9 @@
 package io.atomix.primitive.session.impl;
 
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
@@ -34,18 +34,23 @@ public class SessionIdGeneratorService extends AbstractPrimitiveService {
   private long id;
 
   @Override
-  public void backup(BufferOutput<?> writer) {
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
+  protected void backup(BackupOutput writer) {
     writer.writeLong(id);
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  protected void restore(BackupInput reader) {
     id = reader.readLong();
   }
 
   @Override
   protected void configure(ServiceExecutor executor) {
-    executor.register(SessionIdGeneratorOperations.NEXT, this::next, SERIALIZER::encode);
+    executor.register(SessionIdGeneratorOperations.NEXT, this::next);
   }
 
   /**

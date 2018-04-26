@@ -23,13 +23,12 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
-
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeEvent;
+import io.atomix.core.tree.DocumentTreeEvent.Type;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
-import io.atomix.core.tree.DocumentTreeEvent.Type;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Get;
 import io.atomix.core.tree.impl.DocumentTreeOperations.GetChildren;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Listen;
@@ -39,24 +38,16 @@ import io.atomix.core.tree.impl.DocumentTreeResult.Status;
 import io.atomix.primitive.Ordering;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.Match;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
-
-import static io.atomix.core.tree.impl.DocumentTreeEvents.CHANGE;
-import static io.atomix.core.tree.impl.DocumentTreeOperations.ADD_LISTENER;
-import static io.atomix.core.tree.impl.DocumentTreeOperations.CLEAR;
-import static io.atomix.core.tree.impl.DocumentTreeOperations.GET;
-import static io.atomix.core.tree.impl.DocumentTreeOperations.GET_CHILDREN;
-import static io.atomix.core.tree.impl.DocumentTreeOperations.REMOVE_LISTENER;
-import static io.atomix.core.tree.impl.DocumentTreeOperations.UPDATE;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -70,6 +61,14 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
+import static io.atomix.core.tree.impl.DocumentTreeEvents.CHANGE;
+import static io.atomix.core.tree.impl.DocumentTreeOperations.ADD_LISTENER;
+import static io.atomix.core.tree.impl.DocumentTreeOperations.CLEAR;
+import static io.atomix.core.tree.impl.DocumentTreeOperations.GET;
+import static io.atomix.core.tree.impl.DocumentTreeOperations.GET_CHILDREN;
+import static io.atomix.core.tree.impl.DocumentTreeOperations.REMOVE_LISTENER;
+import static io.atomix.core.tree.impl.DocumentTreeOperations.UPDATE;
 
 /**
  * State Machine for {@link DocumentTreeProxy} resource.
@@ -124,31 +123,36 @@ public class DocumentTreeService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void backup(BufferOutput<?> writer) {
-    writer.writeLong(versionCounter.get());
-    writer.writeObject(listeners, serializer::encode);
-    writer.writeObject(docTree, serializer::encode);
-    writer.writeObject(preparedKeys, serializer::encode);
+  protected Serializer serializer() {
+    return serializer;
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  public void backup(BackupOutput writer) {
+    writer.writeLong(versionCounter.get());
+    writer.writeObject(listeners);
+    writer.writeObject(docTree);
+    writer.writeObject(preparedKeys);
+  }
+
+  @Override
+  public void restore(BackupInput reader) {
     versionCounter = new AtomicLong(reader.readLong());
-    listeners = reader.readObject(serializer::decode);
-    docTree = reader.readObject(serializer::decode);
-    preparedKeys = reader.readObject(serializer::decode);
+    listeners = reader.readObject();
+    docTree = reader.readObject();
+    preparedKeys = reader.readObject();
   }
 
   @Override
   protected void configure(ServiceExecutor executor) {
     // Listeners
-    executor.register(ADD_LISTENER, serializer::decode, this::listen);
-    executor.register(REMOVE_LISTENER, serializer::decode, this::unlisten);
+    executor.register(ADD_LISTENER, this::listen);
+    executor.register(REMOVE_LISTENER, this::unlisten);
     // queries
-    executor.register(GET, serializer::decode, this::get, serializer::encode);
-    executor.register(GET_CHILDREN, serializer::decode, this::getChildren, serializer::encode);
+    executor.register(GET, this::get);
+    executor.register(GET_CHILDREN, this::getChildren);
     // commands
-    executor.register(UPDATE, serializer::decode, this::update, serializer::encode);
+    executor.register(UPDATE, this::update);
     executor.register(CLEAR, this::clear);
   }
 

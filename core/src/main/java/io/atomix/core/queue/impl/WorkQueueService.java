@@ -21,30 +21,20 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
-
 import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueueStats;
 import io.atomix.core.queue.impl.WorkQueueOperations.Add;
 import io.atomix.core.queue.impl.WorkQueueOperations.Complete;
 import io.atomix.core.queue.impl.WorkQueueOperations.Take;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
-
-import static io.atomix.core.queue.impl.WorkQueueEvents.TASK_AVAILABLE;
-import static io.atomix.core.queue.impl.WorkQueueOperations.ADD;
-import static io.atomix.core.queue.impl.WorkQueueOperations.CLEAR;
-import static io.atomix.core.queue.impl.WorkQueueOperations.COMPLETE;
-import static io.atomix.core.queue.impl.WorkQueueOperations.REGISTER;
-import static io.atomix.core.queue.impl.WorkQueueOperations.STATS;
-import static io.atomix.core.queue.impl.WorkQueueOperations.TAKE;
-import static io.atomix.core.queue.impl.WorkQueueOperations.UNREGISTER;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -58,6 +48,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static io.atomix.core.queue.impl.WorkQueueEvents.TASK_AVAILABLE;
+import static io.atomix.core.queue.impl.WorkQueueOperations.ADD;
+import static io.atomix.core.queue.impl.WorkQueueOperations.CLEAR;
+import static io.atomix.core.queue.impl.WorkQueueOperations.COMPLETE;
+import static io.atomix.core.queue.impl.WorkQueueOperations.REGISTER;
+import static io.atomix.core.queue.impl.WorkQueueOperations.STATS;
+import static io.atomix.core.queue.impl.WorkQueueOperations.TAKE;
+import static io.atomix.core.queue.impl.WorkQueueOperations.UNREGISTER;
 
 /**
  * State machine for {@link WorkQueueProxy} resource.
@@ -80,32 +79,37 @@ public class WorkQueueService extends AbstractPrimitiveService {
   private Map<Long, Session> registeredWorkers = Maps.newHashMap();
 
   @Override
-  public void backup(BufferOutput<?> writer) {
-    writer.writeObject(Sets.newHashSet(registeredWorkers.keySet()), SERIALIZER::encode);
-    writer.writeObject(assignments, SERIALIZER::encode);
-    writer.writeObject(unassignedTasks, SERIALIZER::encode);
+  protected Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
+  public void backup(BackupOutput writer) {
+    writer.writeObject(Sets.newHashSet(registeredWorkers.keySet()));
+    writer.writeObject(assignments);
+    writer.writeObject(unassignedTasks);
     writer.writeLong(totalCompleted.get());
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  public void restore(BackupInput reader) {
     registeredWorkers = Maps.newHashMap();
-    for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
+    for (Long sessionId : reader.<Set<Long>>readObject()) {
       registeredWorkers.put(sessionId, getSessions().getSession(sessionId));
     }
-    assignments = reader.readObject(SERIALIZER::decode);
-    unassignedTasks = reader.readObject(SERIALIZER::decode);
+    assignments = reader.readObject();
+    unassignedTasks = reader.readObject();
     totalCompleted.set(reader.readLong());
   }
 
   @Override
   protected void configure(ServiceExecutor executor) {
-    executor.register(STATS, this::stats, SERIALIZER::encode);
+    executor.register(STATS, this::stats);
     executor.register(REGISTER, this::register);
     executor.register(UNREGISTER, this::unregister);
-    executor.register(ADD, SERIALIZER::decode, this::add);
-    executor.register(TAKE, SERIALIZER::decode, this::take, SERIALIZER::encode);
-    executor.register(COMPLETE, SERIALIZER::decode, this::complete);
+    executor.register(ADD, this::add);
+    executor.register(TAKE, this::take);
+    executor.register(COMPLETE, this::complete);
     executor.register(CLEAR, this::clear);
   }
 
