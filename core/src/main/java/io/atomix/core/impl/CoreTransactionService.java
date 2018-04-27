@@ -102,7 +102,7 @@ public class CoreTransactionService implements ManagedTransactionService {
   public CompletableFuture<TransactionService> start() {
     return ConsistentMapType.<TransactionId, TransactionState>instance()
         .newPrimitiveBuilder("atomix-transactions", managementService)
-        .withProtocol(managementService.getPartitionService().getDefaultPartitionGroup().newProtocol())
+        .withProtocol(managementService.getPartitionService().getSystemPartitionGroup().newProtocol())
         .withSerializer(SERIALIZER)
         .buildAsync()
         .thenApply(transactions -> {

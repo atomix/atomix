@@ -15,16 +15,21 @@
  */
 package io.atomix.primitive;
 
+import com.google.common.base.Joiner;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocols;
 import io.atomix.utils.Builder;
+import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.serializer.SerializerConfig;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -159,7 +164,15 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
     if (protocol == null) {
       PrimitiveProtocolConfig protocolConfig = config.getProtocolConfig();
       if (protocolConfig == null) {
-        protocol = managementService.getPartitionService().getDefaultPartitionGroup().newProtocol();
+        Collection<PartitionGroup> partitionGroups = managementService.getPartitionService().getPartitionGroups();
+        if (partitionGroups.size() == 1) {
+          protocol = partitionGroups.iterator().next().newProtocol();
+        } else {
+          String groups = Joiner.on(", ").join(partitionGroups.stream()
+              .map(group -> String.format("%s:%s", group.type().name(), group.name()))
+              .collect(Collectors.toList()));
+          throw new ConfigurationException(String.format("Primitive protocol is ambiguous: %d partition groups found (%s)", partitionGroups.size(), groups));
+        }
       } else {
         protocol = PrimitiveProtocols.createProtocol(protocolConfig);
       }

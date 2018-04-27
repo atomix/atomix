@@ -113,12 +113,6 @@ public class DefaultPartitionService implements ManagedPartitionService {
 
   @Override
   @SuppressWarnings("unchecked")
-  public PartitionGroup getDefaultPartitionGroup() {
-    return defaultGroup.group;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
   public PartitionGroup getPartitionGroup(String name) {
     WrappedPartitionGroup group = groups.get(name);
     if (group != null) {
