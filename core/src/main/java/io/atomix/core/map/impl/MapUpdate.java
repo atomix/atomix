@@ -17,7 +17,7 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.base.MoreObjects;
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 
 import java.util.Objects;
 import java.util.function.Function;

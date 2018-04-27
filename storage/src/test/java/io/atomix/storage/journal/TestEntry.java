@@ -15,7 +15,7 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 

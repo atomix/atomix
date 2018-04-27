@@ -24,7 +24,7 @@ import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.time.Versioned;
-import io.atomix.utils.Match;
+import io.atomix.utils.misc.Match;
 import org.junit.Test;
 
 import java.util.Arrays;

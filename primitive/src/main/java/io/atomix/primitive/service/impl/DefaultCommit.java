@@ -18,7 +18,7 @@ package io.atomix.primitive.service.impl;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClockTimestamp;
 
