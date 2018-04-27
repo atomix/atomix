@@ -60,11 +60,11 @@ public abstract class LeaderElectorTest extends AbstractPrimitiveTest {
 
     AsyncLeaderElector<MemberId> elector2 = atomix().<MemberId>leaderElectorBuilder("test-elector-run", protocol()).build().async();
     elector2.run("bar", node2).thenAccept(result -> {
-      assertEquals(node1, result.leader().id());
-      assertEquals(1, result.leader().term());
+      assertEquals(node2, result.leader().id());
+      assertEquals(2, result.leader().term());
       assertEquals(2, result.candidates().size());
-      assertEquals(node1, result.candidates().get(0));
-      assertEquals(node2, result.candidates().get(1));
+      assertEquals(node2, result.candidates().get(0));
+      assertEquals(node1, result.candidates().get(1));
     }).join();
   }
 
