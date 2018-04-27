@@ -171,6 +171,9 @@ public class PrimaryRole extends PrimaryBackupRole {
     context.service().backup(new DefaultBackupOutput(buffer, context.service().serializer()));
     buffer.flip();
     byte[] bytes = buffer.readBytes(buffer.remaining());
+
+    replicator.removePreviousOperation(request.memberId(), context.currentIndex());
+
     return CompletableFuture.completedFuture(
         RestoreResponse.ok(context.currentIndex(), context.currentTimestamp(), bytes))
         .thenApply(this::logResponse);

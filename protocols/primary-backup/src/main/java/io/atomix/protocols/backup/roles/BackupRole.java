@@ -155,7 +155,7 @@ public class BackupRole extends PrimaryBackupRole {
    * Requests a restore from the primary.
    */
   private void requestRestore(MemberId primary) {
-    context.protocol().restore(primary, RestoreRequest.request(context.descriptor(), context.currentTerm()))
+    context.protocol().restore(primary, RestoreRequest.request(context.descriptor(), context.memberId(), context.currentTerm()))
         .whenCompleteAsync((response, error) -> {
           if (error == null && response.status() == PrimaryBackupResponse.Status.OK) {
             context.resetIndex(response.index(), response.timestamp());

@@ -58,6 +58,15 @@ class SynchronousReplicator implements Replicator {
     return future;
   }
 
+  @Override
+  public void removePreviousOperation(MemberId memberId, long endIndex) {
+    queues.computeIfPresent(memberId, (node, queue) -> {
+      queue.clear(endIndex);
+      return queue;
+    });
+  }
+
+
   /**
    * Completes futures.
    */
@@ -150,6 +159,17 @@ class SynchronousReplicator implements Replicator {
         maybeBackup();
       }, context.threadContext());
       operations.clear();
+    }
+
+    /**
+     * Clears the queue.
+     */
+    void clear(long index) {
+      BackupOperation op = operations.peek();
+      while (op != null && op.index() <= index) {
+        operations.remove();
+        op = operations.peek();
+      }
     }
   }
 }
