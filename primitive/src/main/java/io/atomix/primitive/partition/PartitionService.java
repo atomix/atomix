@@ -61,9 +61,7 @@ public interface PartitionService {
    */
   @SuppressWarnings("unchecked")
   default <P extends Partition> PartitionGroup<P> getPartitionGroup(PrimitiveProtocol protocol) {
-    if (protocol == null) {
-      return getDefaultPartitionGroup();
-    } else if (protocol.group() != null) {
+    if (protocol.group() != null) {
       PartitionGroup<P> group = getPartitionGroup(protocol.group());
       if (group != null) {
         return group;
@@ -74,16 +72,6 @@ public interface PartitionService {
       }
     }
     return getPartitionGroup(protocol.type());
-  }
-
-  /**
-   * Returns the default partition group.
-   *
-   * @return the default partition group
-   */
-  @SuppressWarnings("unchecked")
-  default <P extends Partition> PartitionGroup<P> getDefaultPartitionGroup() {
-    return getPartitionGroups().iterator().next();
   }
 
   /**
