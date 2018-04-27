@@ -16,7 +16,7 @@
 
 package io.atomix.core.tree.impl;
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
@@ -46,7 +46,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -91,26 +90,19 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
 
   @Override
   public CompletableFuture<Map<String, Versioned<byte[]>>> getChildren(DocumentPath path) {
-    return this.<GetChildren, DocumentTreeResult<Map<String, Versioned<byte[]>>>>invokeAll(GET_CHILDREN, new GetChildren(checkNotNull(path)))
-        .thenApply(results -> {
-          Map<String, Versioned<byte[]>> children = Maps.newLinkedHashMap();
-          results.filter(result -> result.status() == DocumentTreeResult.Status.OK)
-              .map(result -> result.result())
-              .filter(Objects::nonNull)
-              .forEach(children::putAll);
-          return children;
-        });
+    return this.<GetChildren, DocumentTreeResult<Map<String, Versioned<byte[]>>>>invokeBy(getPartitionKey(), GET_CHILDREN, new GetChildren(checkNotNull(path)))
+        .thenApply(result -> result.status() == OK ? result.result() : ImmutableMap.of());
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(DocumentPath path) {
-    return invokeBy(path.toString(), GET, new Get(checkNotNull(path)));
+    return invokeBy(getPartitionKey(), GET, new Get(checkNotNull(path)));
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> set(DocumentPath path, byte[] value) {
     return this.<Update, DocumentTreeResult<Versioned<byte[]>>>invokeBy(
-        path.toString(),
+        getPartitionKey(),
         UPDATE,
         new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.any()))
         .thenCompose(result -> {
@@ -150,7 +142,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, long version) {
     return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
-        path.toString(),
+        getPartitionKey(),
         UPDATE,
         new Update(checkNotNull(path), Optional.ofNullable(newValue), Match.any(), Match.ifValue(version)))
         .thenApply(result -> result.updated());
@@ -159,7 +151,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, byte[] currentValue) {
     return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
-        path.toString(),
+        getPartitionKey(),
         UPDATE,
         new Update(checkNotNull(path), Optional.ofNullable(newValue), Match.ifValue(currentValue), Match.any()))
         .thenCompose(result -> {
@@ -179,7 +171,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
       return Futures.exceptionalFuture(new IllegalDocumentModificationException());
     }
     return this.<Update, DocumentTreeResult<Versioned<byte[]>>>invokeBy(
-        path.toString(),
+        getPartitionKey(),
         UPDATE,
         new Update(checkNotNull(path), null, Match.any(), Match.ifNotNull()))
         .thenCompose(result -> {
@@ -200,7 +192,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
     InternalListener internalListener = new InternalListener(path, listener, MoreExecutors.directExecutor());
     // TODO: Support API that takes an executor
     if (!eventListeners.containsKey(listener)) {
-      return invokeAll(ADD_LISTENER, new Listen(path))
+      return invokeBy(getPartitionKey(), ADD_LISTENER, new Listen(path))
           .thenRun(() -> eventListeners.put(listener, internalListener));
     }
     return CompletableFuture.completedFuture(null);
@@ -211,7 +203,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
     checkNotNull(listener);
     InternalListener internalListener = eventListeners.remove(listener);
     if (internalListener != null && eventListeners.isEmpty()) {
-      return invokeAll(REMOVE_LISTENER, new Unlisten(internalListener.path))
+      return invokeBy(getPartitionKey(), REMOVE_LISTENER, new Unlisten(internalListener.path))
           .thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
@@ -232,7 +224,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
 
   @Override
   public CompletableFuture<Void> delete() {
-    return invokeAll(CLEAR).thenApply(v -> null);
+    return invokeBy(getPartitionKey(), CLEAR).thenApply(v -> null);
   }
 
   @Override
@@ -242,7 +234,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<
 
   private CompletableFuture<DocumentTreeResult.Status> createInternal(DocumentPath path, byte[] value) {
     return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
-        path.toString(),
+        getPartitionKey(),
         UPDATE,
         new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.ifNull()))
         .thenApply(result -> result.status());
