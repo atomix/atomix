@@ -18,6 +18,7 @@ package io.atomix.protocols.backup;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
@@ -28,6 +29,7 @@ import java.util.concurrent.Executor;
  * Multi-primary protocol configuration.
  */
 public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPrimaryProtocolConfig> {
+  private Partitioner<String> partitioner = Partitioner.MURMUR3;
   private Consistency consistency = Consistency.SEQUENTIAL;
   private Replication replication = Replication.ASYNCHRONOUS;
   private Recovery recovery = Recovery.RECOVER;
@@ -39,6 +41,26 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
   @Override
   public PrimitiveProtocol.Type getType() {
     return MultiPrimaryProtocol.TYPE;
+  }
+
+  /**
+   * Returns the protocol partitioner.
+   *
+   * @return the protocol partitioner
+   */
+  public Partitioner<String> getPartitioner() {
+    return partitioner;
+  }
+
+  /**
+   * Sets the protocol partitioner.
+   *
+   * @param partitioner the protocol partitioner
+   * @return the protocol configuration
+   */
+  public MultiPrimaryProtocolConfig setPartitioner(Partitioner<String> partitioner) {
+    this.partitioner = partitioner;
+    return this;
   }
 
   /**

@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.primitive.Recovery;
+import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
@@ -27,6 +28,7 @@ import java.util.concurrent.Executor;
  * Raft protocol configuration.
  */
 public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftProtocolConfig> {
+  private Partitioner<String> partitioner = Partitioner.MURMUR3;
   private Duration minTimeout = Duration.ofMillis(250);
   private Duration maxTimeout = Duration.ofSeconds(30);
   private ReadConsistency readConsistency = ReadConsistency.SEQUENTIAL;
@@ -39,6 +41,26 @@ public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftPr
   @Override
   public PrimitiveProtocol.Type getType() {
     return MultiRaftProtocol.TYPE;
+  }
+
+  /**
+   * Returns the protocol partitioner.
+   *
+   * @return the protocol partitioner
+   */
+  public Partitioner<String> getPartitioner() {
+    return partitioner;
+  }
+
+  /**
+   * Sets the protocol partitioner.
+   *
+   * @param partitioner the protocol partitioner
+   * @return the protocol configuration
+   */
+  public MultiRaftProtocolConfig setPartitioner(Partitioner<String> partitioner) {
+    this.partitioner = partitioner;
+    return this;
   }
 
   /**
