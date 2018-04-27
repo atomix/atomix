@@ -155,7 +155,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     PartitionProxy session = createProxy(client, backups, replication);
     session.<Long>addEventListener(CHANGE_EVENT, event -> {
       threadAssertEquals(count.incrementAndGet(), 2L);
-      threadAssertEquals(index.get(), event);
+      threadAssertEquals(index.get(), SERIALIZER.decode(event.value()));
       resume();
     });
 
