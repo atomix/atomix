@@ -16,8 +16,10 @@
 package io.atomix.core;
 
 import io.atomix.cluster.Member;
-import io.atomix.core.profile.Profile;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
+import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -26,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -55,11 +58,24 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
 
   @BeforeClass
   public static void setupAtomix() throws Exception {
+    Function<Atomix.Builder, Atomix> build = builder ->
+        builder.withManagementGroup(RaftPartitionGroup.builder("system")
+            .withNumPartitions(1)
+            .withMembers("1", "2", "3")
+            .build())
+            .addPartitionGroup(RaftPartitionGroup.builder("raft")
+                .withNumPartitions(3)
+                .withMembers("1", "2", "3")
+                .build())
+            .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
+                .withNumPartitions(7)
+                .build())
+            .build();
     AbstractAtomixTest.setupAtomix();
     instances = new ArrayList<>();
-    instances.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), Profile.CONSENSUS, Profile.DATA_GRID));
-    instances.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), Profile.CONSENSUS, Profile.DATA_GRID));
-    instances.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), Profile.CONSENSUS, Profile.DATA_GRID));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), build));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), build));
+    instances.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), build));
     List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::start).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }
