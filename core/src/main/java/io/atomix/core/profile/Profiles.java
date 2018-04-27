@@ -34,7 +34,7 @@ public final class Profiles {
    */
   public static NamedProfile getNamedProfile(String profileName) {
     for (NamedProfile type : Services.loadAll(NamedProfile.class)) {
-      if (type.name().toLowerCase().replace("_", "-").equals(profileName.toLowerCase().replace("_", "-"))) {
+      if (type.name().replace("_", "-").equalsIgnoreCase(profileName.replace("_", "-"))) {
         return type;
       }
     }
