@@ -16,7 +16,7 @@
 package io.atomix.utils.concurrent;
 
 import com.google.common.collect.Lists;
-import io.atomix.utils.Match;
+import io.atomix.utils.misc.Match;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

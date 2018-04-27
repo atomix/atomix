@@ -16,7 +16,7 @@
 package io.atomix.utils.time;
 
 import com.google.common.collect.ComparisonChain;
-import io.atomix.utils.TimestampPrinter;
+import io.atomix.utils.misc.TimestampPrinter;
 
 import java.util.Objects;
 

@@ -35,7 +35,7 @@ import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 

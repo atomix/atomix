@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.utils;
+package io.atomix.utils.concurrent;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

@@ -35,7 +35,7 @@ import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.utils.Match;
+import io.atomix.utils.misc.Match;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;

@@ -16,6 +16,7 @@
 package io.atomix.utils;
 
 import com.google.common.base.Objects;
+import io.atomix.utils.misc.Match;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;

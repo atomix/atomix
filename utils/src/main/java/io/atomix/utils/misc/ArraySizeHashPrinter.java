@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.utils;
+package io.atomix.utils.misc;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;

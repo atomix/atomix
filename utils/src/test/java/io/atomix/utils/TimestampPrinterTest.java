@@ -15,6 +15,7 @@
  */
 package io.atomix.utils;
 
+import io.atomix.utils.misc.TimestampPrinter;
 import org.junit.Ignore;
 import org.junit.Test;
 
