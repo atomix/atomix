@@ -53,8 +53,6 @@ import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LAST_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LAST_KEY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LOWER_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LOWER_KEY;
-import static io.atomix.core.map.impl.ConsistentTreeMapOperations.POLL_FIRST_ENTRY;
-import static io.atomix.core.map.impl.ConsistentTreeMapOperations.POLL_LAST_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.SUB_MAP;
 
 /**
@@ -101,8 +99,7 @@ public class ConsistentTreeMapService extends ConsistentMapService {
     executor.register(LAST_KEY, (Commit<Void> c) -> lastKey());
     executor.register(FIRST_ENTRY, (Commit<Void> c) -> firstEntry());
     executor.register(LAST_ENTRY, (Commit<Void> c) -> lastEntry());
-    executor.register(POLL_FIRST_ENTRY, (Commit<Void> c) -> pollFirstEntry());
-    executor.register(POLL_LAST_ENTRY, (Commit<Void> c) -> pollLastEntry());
+    executor.register(LAST_ENTRY, (Commit<Void> c) -> lastEntry());
     executor.register(LOWER_ENTRY, this::lowerEntry);
     executor.register(LOWER_KEY, this::lowerKey);
     executor.register(FLOOR_ENTRY, this::floorEntry);
@@ -140,14 +137,6 @@ public class ConsistentTreeMapService extends ConsistentMapService {
 
   protected Map.Entry<String, Versioned<byte[]>> lastEntry() {
     return isEmpty() ? null : toVersionedEntry(entries().lastEntry());
-  }
-
-  protected Map.Entry<String, Versioned<byte[]>> pollFirstEntry() {
-    return toVersionedEntry(entries().pollFirstEntry());
-  }
-
-  protected Map.Entry<String, Versioned<byte[]>> pollLastEntry() {
-    return toVersionedEntry(entries().pollLastEntry());
   }
 
   protected Map.Entry<String, Versioned<byte[]>> lowerEntry(Commit<? extends LowerEntry> commit) {

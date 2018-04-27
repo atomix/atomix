@@ -94,16 +94,6 @@ public class DelegatingAsyncConsistentTreeMap<V>
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> pollFirstEntry() {
-    return delegateMap.pollFirstEntry();
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> pollLastEntry() {
-    return delegateMap.pollLastEntry();
-  }
-
-  @Override
   public CompletableFuture<String> lowerKey(String key) {
     return delegateMap.lowerKey(key);
   }
