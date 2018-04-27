@@ -30,6 +30,7 @@ import io.atomix.utils.event.AbstractListenerManager;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -79,7 +80,10 @@ public class HashBasedPrimaryElection
       int boffset = Hashing.murmur3_32().hashString(b.memberId().id(), StandardCharsets.UTF_8).asInt() % partitionId.id();
       return aoffset - boffset;
     });
-    currentTerm = new PrimaryTerm(electionService.incrementTerm(), candidates.get(0), candidates.subList(1, candidates.size()));
+    currentTerm = new PrimaryTerm(
+        electionService.incrementTerm(),
+        candidates.isEmpty() ? null : candidates.get(0),
+        candidates.isEmpty() ? Collections.emptyList() : candidates.subList(1, candidates.size()));
     post(new PrimaryElectionEvent(PrimaryElectionEvent.Type.CHANGED, partitionId, currentTerm));
   }
 }
