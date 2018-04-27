@@ -15,15 +15,18 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocols;
 import io.atomix.utils.Builder;
+import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.serializer.SerializerConfig;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -159,7 +162,12 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
     if (protocol == null) {
       PrimitiveProtocolConfig protocolConfig = config.getProtocolConfig();
       if (protocolConfig == null) {
-        protocol = managementService.getPartitionService().getDefaultPartitionGroup().newProtocol();
+        Collection<PartitionGroup> partitionGroups = managementService.getPartitionService().getPartitionGroups();
+        if (partitionGroups.size() == 1) {
+          protocol = partitionGroups.iterator().next().newProtocol();
+        } else {
+          throw new ConfigurationException("Primitive protocol is ambiguous: " + partitionGroups.size() + " partition groups found");
+        }
       } else {
         protocol = PrimitiveProtocols.createProtocol(protocolConfig);
       }
