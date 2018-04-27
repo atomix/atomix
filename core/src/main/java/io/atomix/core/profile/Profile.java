@@ -23,6 +23,23 @@ import io.atomix.core.AtomixConfig;
 public interface Profile {
 
   /**
+   * The consensus profile configures an Atomix instance with a Raft system partition and a multi-Raft data partition group.
+   */
+  ConsensusProfile CONSENSUS = new ConsensusProfile();
+
+  /**
+   * The data grid profile configures an Atomix instance with a primary-backup system partition if no system partition
+   * is configured, and a primary-backup data partition group.
+   */
+  DataGridProfile DATA_GRID = new DataGridProfile();
+
+  /**
+   * The client profile configures the local member as a {@link io.atomix.cluster.Member.Type#EPHEMERAL} member and
+   * does not configure any system or primitive partition groups.
+   */
+  ClientProfile CLIENT = new ClientProfile();
+
+  /**
    * Configures the Atomix instance.
    *
    * @param config the Atomix configuration

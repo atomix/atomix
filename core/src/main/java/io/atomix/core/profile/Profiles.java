@@ -22,9 +22,6 @@ import io.atomix.utils.config.ConfigurationException;
  * Atomix profiles.
  */
 public final class Profiles {
-  public static final ConsensusProfile CONSENSUS = new ConsensusProfile();
-  public static final DataGridProfile DATA_GRID = new DataGridProfile();
-  public static final ClientProfile CLIENT = new ClientProfile();
 
   /**
    * Returns the Atomix profile for the given name
