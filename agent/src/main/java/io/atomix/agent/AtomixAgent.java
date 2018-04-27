@@ -57,7 +57,6 @@ public class AtomixAgent {
 
     ArgumentType<Member.Type> typeArgumentType = (argumentParser, argument, value) -> Member.Type.valueOf(value.toUpperCase());
     ArgumentType<Address> addressArgumentType = (argumentParser, argument, value) -> Address.from(value);
-    ArgumentType<File> fileArgumentType = (argumentParser, argument, value) -> new File(value);
 
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
