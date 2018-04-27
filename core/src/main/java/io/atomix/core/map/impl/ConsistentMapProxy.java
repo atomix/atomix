@@ -119,7 +119,8 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive<AsyncConsistentMa
 
   private void handleEvent(List<MapEvent<String, byte[]>> events) {
     events.forEach(event ->
-        mapEventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event))));
+        mapEventListeners.forEach((listener, executor) ->
+            executor.execute(() -> listener.event(event))));
   }
 
   @Override
@@ -374,6 +375,7 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive<AsyncConsistentMa
   @Override
   public synchronized CompletableFuture<Void> addListener(MapEventListener<String, byte[]> listener, Executor executor) {
     if (mapEventListeners.isEmpty()) {
+      mapEventListeners.put(listener, executor);
       return invokeAll(ADD_LISTENER).thenApply(v -> null);
     } else {
       mapEventListeners.put(listener, executor);

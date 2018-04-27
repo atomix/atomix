@@ -33,8 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -434,8 +434,7 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
   }
 
   private static class TestMapEventListener implements MapEventListener<String, String> {
-
-    private final BlockingQueue<MapEvent<String, String>> queue = new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<MapEvent<String, String>> queue = new LinkedBlockingQueue<>();
 
     @Override
     public void event(MapEvent<String, String> event) {
