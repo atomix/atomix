@@ -36,16 +36,16 @@ public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicCounterMap<K>> buildAsync() {
-    PrimitiveProxy proxy = protocol.newProxy(
+    PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
         managementService.getPartitionService());
     return new AtomicCounterMapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(multimap -> {
+        .thenApply(map -> {
           Serializer serializer = serializer();
           return new TranscodingAsyncAtomicCounterMap<K, String>(
-              multimap,
+              map,
               key -> BaseEncoding.base16().encode(serializer.encode(key)),
               string -> serializer.decode(BaseEncoding.base16().decode(string)))
               .sync();

@@ -86,7 +86,7 @@ public class VertxRestServiceTest {
         .statusCode(200)
         .assertThat()
         .body("id", equalTo("1"))
-        .body("type", equalTo("DATA"))
+        .body("type", equalTo("EPHEMERAL"))
         .body("host", equalTo(instances.get(0).membershipService().getLocalMember().address().host()))
         .body("port", equalTo(instances.get(0).membershipService().getLocalMember().address().port()))
         .body("status", equalTo("ACTIVE"));
@@ -180,10 +180,14 @@ public class VertxRestServiceTest {
 
   @Test
   public void testMap() throws Exception {
-    JsonNode json = JsonNodeFactory.withExactBigDecimals(true).objectNode()
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
         .put("type", "consistent-map")
         .put("cache-enabled", true)
-        .put("null-values", false);
+        .put("null-values", false)
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
 
     given()
         .spec(specs.get(0))

@@ -35,7 +35,7 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<LeaderElector<T>> buildAsync() {
-    PrimitiveProxy proxy = protocol.newProxy(
+    PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
         managementService.getPartitionService());

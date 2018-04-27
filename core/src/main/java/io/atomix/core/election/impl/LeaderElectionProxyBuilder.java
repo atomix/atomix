@@ -35,16 +35,16 @@ public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<LeaderElection<T>> buildAsync() {
-    PrimitiveProxy proxy = protocol.newProxy(
+    PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
         managementService.getPartitionService());
     return new LeaderElectionProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(elector -> {
+        .thenApply(election -> {
           Serializer serializer = serializer();
           return new TranscodingAsyncLeaderElection<T, byte[]>(
-              elector,
+              election,
               key -> serializer.encode(key),
               bytes -> serializer.decode(bytes))
               .sync();

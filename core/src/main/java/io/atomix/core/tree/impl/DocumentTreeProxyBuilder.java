@@ -38,7 +38,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DocumentTree<V>> buildAsync() {
-    PrimitiveProxy proxy = protocol.newProxy(
+    PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
         managementService.getPartitionService());

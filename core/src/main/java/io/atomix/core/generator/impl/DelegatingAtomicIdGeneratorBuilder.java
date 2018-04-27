@@ -35,7 +35,7 @@ public class DelegatingAtomicIdGeneratorBuilder extends AtomicIdGeneratorBuilder
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicIdGenerator> buildAsync() {
-    PrimitiveProxy proxy = protocol.newProxy(
+    PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
         managementService.getPartitionService());

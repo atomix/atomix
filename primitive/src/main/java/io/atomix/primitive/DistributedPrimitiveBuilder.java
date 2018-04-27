@@ -35,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <P> primitive type
  */
 public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> implements Builder<P> {
-  private final PrimitiveType type;
+  protected final PrimitiveType type;
   protected final String name;
   protected final C config;
   protected Serializer serializer;
