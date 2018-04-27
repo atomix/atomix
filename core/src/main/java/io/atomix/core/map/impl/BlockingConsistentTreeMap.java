@@ -111,16 +111,6 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public Map.Entry<String, Versioned<V>> pollFirstEntry() {
-    return complete(treeMap.pollFirstEntry());
-  }
-
-  @Override
-  public Map.Entry<String, Versioned<V>> pollLastEntry() {
-    return complete(treeMap.pollLastEntry());
-  }
-
-  @Override
   public String lowerKey(String key) {
     return complete(treeMap.lowerKey(key));
   }

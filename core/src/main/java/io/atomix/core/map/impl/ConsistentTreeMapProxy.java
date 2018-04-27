@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 
@@ -55,8 +56,6 @@ import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LAST_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LAST_KEY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LOWER_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LOWER_KEY;
-import static io.atomix.core.map.impl.ConsistentTreeMapOperations.POLL_FIRST_ENTRY;
-import static io.atomix.core.map.impl.ConsistentTreeMapOperations.POLL_LAST_ENTRY;
 
 /**
  * Implementation of {@link io.atomix.core.map.AsyncConsistentTreeMap}.
@@ -105,85 +104,73 @@ public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncC
   @Override
   public CompletableFuture<String> firstKey() {
     return this.<String>invokeAll(FIRST_KEY)
-        .thenApply(results -> results.reduce(this::lesserKey).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> lastKey() {
     return this.<String>invokeAll(LAST_KEY)
-        .thenApply(results -> results.reduce(this::greaterKey).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> ceilingEntry(String key) {
     return this.<CeilingEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(CEILING_ENTRY, new CeilingEntry(key))
-        .thenApply(results -> results.reduce(this::lesserEntry).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> floorEntry(String key) {
     return this.<FloorEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(FLOOR_ENTRY, new FloorEntry(key))
-        .thenApply(results -> results.reduce(this::greaterEntry).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> higherEntry(String key) {
     return this.<HigherEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(HIGHER_ENTRY, new HigherEntry(key))
-        .thenApply(results -> results.reduce(this::lesserEntry).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lowerEntry(String key) {
     return this.<LowerEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(LOWER_ENTRY, new LowerEntry(key))
-        .thenApply(results -> results.reduce(this::greaterEntry).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> firstEntry() {
     return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(FIRST_ENTRY)
-        .thenApply(results -> results.reduce(this::lesserEntry).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lastEntry() {
     return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(LAST_ENTRY)
-        .thenApply(results -> results.reduce(this::greaterEntry).orElse(null));
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> pollFirstEntry() {
-    return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(POLL_FIRST_ENTRY)
-        .thenApply(results -> results.reduce(this::lesserEntry).orElse(null));
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> pollLastEntry() {
-    return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(POLL_LAST_ENTRY)
-        .thenApply(results -> results.reduce(this::greaterEntry).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> lowerKey(String key) {
     return this.<LowerKey, String>invokeAll(LOWER_KEY, new LowerKey(key))
-        .thenApply(results -> results.reduce(this::greaterKey).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> floorKey(String key) {
     return this.<FloorKey, String>invokeAll(FLOOR_KEY, new FloorKey(key))
-        .thenApply(results -> results.reduce(this::greaterKey).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> ceilingKey(String key) {
     return this.<CeilingKey, String>invokeAll(CEILING_KEY, new CeilingKey(key))
-        .thenApply(results -> results.reduce(this::lesserKey).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> higherKey(String key) {
     return this.<HigherKey, String>invokeAll(HIGHER_KEY, new HigherKey(key))
-        .thenApply(results -> results.reduce(this::lesserKey).orElse(null));
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override

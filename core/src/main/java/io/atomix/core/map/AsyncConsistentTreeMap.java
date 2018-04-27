@@ -99,20 +99,6 @@ public interface AsyncConsistentTreeMap<V> extends AsyncConsistentMap<String, V>
   CompletableFuture<Map.Entry<String, Versioned<V>>> lastEntry();
 
   /**
-   * Return and remove the entry associated with the lowest key.
-   *
-   * @return the entry or null if none exist
-   */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> pollFirstEntry();
-
-  /**
-   * Return and remove the entry associated with the highest key.
-   *
-   * @return the entry or null if none exist
-   */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> pollLastEntry();
-
-  /**
    * Return the entry associated with the greatest key less than key.
    *
    * @param key the key
