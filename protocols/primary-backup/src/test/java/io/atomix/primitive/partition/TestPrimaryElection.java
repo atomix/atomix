@@ -32,7 +32,7 @@ public class TestPrimaryElection implements PrimaryElection {
   private final PartitionId partitionId;
   private long counter;
   private PrimaryTerm term;
-  private final List<Member> candidates = new ArrayList<>();
+  private final List<GroupMember> candidates = new ArrayList<>();
   private final Set<PrimaryElectionEventListener> listeners = Sets.newConcurrentHashSet();
 
   public TestPrimaryElection(PartitionId partitionId) {
@@ -40,7 +40,7 @@ public class TestPrimaryElection implements PrimaryElection {
   }
 
   @Override
-  public CompletableFuture<PrimaryTerm> enter(Member member) {
+  public CompletableFuture<PrimaryTerm> enter(GroupMember member) {
     candidates.add(member);
     if (term == null) {
       term = new PrimaryTerm(++counter, member, Collections.emptyList());

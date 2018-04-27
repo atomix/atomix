@@ -20,7 +20,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.utils.Match;
+import io.atomix.utils.misc.Match;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.time.Versioned;
@@ -41,8 +41,6 @@ public enum ConsistentTreeMapOperations implements OperationId {
   LAST_KEY(OperationType.QUERY),
   FIRST_ENTRY(OperationType.QUERY),
   LAST_ENTRY(OperationType.QUERY),
-  POLL_FIRST_ENTRY(OperationType.COMMAND),
-  POLL_LAST_ENTRY(OperationType.COMMAND),
   LOWER_ENTRY(OperationType.QUERY),
   LOWER_KEY(OperationType.QUERY),
   FLOOR_ENTRY(OperationType.QUERY),

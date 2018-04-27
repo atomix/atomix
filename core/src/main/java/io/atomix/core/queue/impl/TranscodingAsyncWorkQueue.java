@@ -83,8 +83,8 @@ public class TranscodingAsyncWorkQueue<V1, V2> implements AsyncWorkQueue<V1> {
   }
 
   @Override
-  public CompletableFuture<Void> destroy() {
-    return backingQueue.destroy();
+  public CompletableFuture<Void> delete() {
+    return backingQueue.delete();
   }
 
   @Override

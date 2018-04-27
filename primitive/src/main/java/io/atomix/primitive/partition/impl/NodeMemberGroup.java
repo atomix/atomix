@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition.impl;
 
-import io.atomix.cluster.Node;
+import io.atomix.cluster.Member;
 import io.atomix.primitive.partition.MemberGroup;
 import io.atomix.primitive.partition.MemberGroupId;
 
@@ -30,11 +30,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class NodeMemberGroup implements MemberGroup {
   private final MemberGroupId groupId;
-  private final Set<Node> nodes;
+  private final Set<Member> members;
 
-  public NodeMemberGroup(MemberGroupId groupId, Set<Node> nodes) {
+  public NodeMemberGroup(MemberGroupId groupId, Set<Member> members) {
     this.groupId = checkNotNull(groupId);
-    this.nodes = checkNotNull(nodes);
+    this.members = checkNotNull(members);
   }
 
   @Override
@@ -43,20 +43,20 @@ public class NodeMemberGroup implements MemberGroup {
   }
 
   @Override
-  public boolean isMember(Node node) {
-    return nodes.contains(node);
+  public boolean isMember(Member member) {
+    return members.contains(member);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(groupId, nodes);
+    return Objects.hash(groupId, members);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof NodeMemberGroup) {
       NodeMemberGroup memberGroup = (NodeMemberGroup) object;
-      return memberGroup.groupId.equals(groupId) && memberGroup.nodes.equals(nodes);
+      return memberGroup.groupId.equals(groupId) && memberGroup.members.equals(members);
     }
     return false;
   }
@@ -65,7 +65,7 @@ public class NodeMemberGroup implements MemberGroup {
   public String toString() {
     return toStringHelper(this)
         .add("id", groupId)
-        .add("nodes", nodes)
+        .add("nodes", members)
         .toString();
   }
 }

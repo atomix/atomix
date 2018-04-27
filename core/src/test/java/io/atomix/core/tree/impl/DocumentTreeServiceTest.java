@@ -16,16 +16,17 @@
 package io.atomix.core.tree.impl;
 
 import io.atomix.core.tree.DocumentPath;
-import io.atomix.core.tree.impl.DocumentTreeService;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Get;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
 import io.atomix.primitive.Ordering;
+import io.atomix.primitive.service.impl.DefaultBackupInput;
+import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.time.Versioned;
-import io.atomix.utils.Match;
+import io.atomix.utils.misc.Match;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -61,20 +62,20 @@ public class DocumentTreeServiceTest {
             Optional.of("Hello world!".getBytes()),
             Match.any(),
             Match.ifNull()),
-        mock(Session.class),
+        mock(PrimitiveSession.class),
         System.currentTimeMillis()));
 
     Buffer buffer = HeapBuffer.allocate();
-    service.backup(buffer);
+    service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
     service = new DocumentTreeService(ordering);
-    service.restore(buffer.flip());
+    service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     Versioned<byte[]> value = service.get(new DefaultCommit<>(
         2,
         GET,
         new Get(DocumentPath.from("root|foo")),
-        mock(Session.class),
+        mock(PrimitiveSession.class),
         System.currentTimeMillis()));
     assertNotNull(value);
     assertArrayEquals("Hello world!".getBytes(), value.value());

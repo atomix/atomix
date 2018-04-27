@@ -16,7 +16,7 @@
 package io.atomix.protocols.backup.partition.impl;
 
 import com.google.common.base.Preconditions;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
@@ -50,23 +50,23 @@ public class PrimaryBackupServerCommunicator implements PrimaryBackupServerProto
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, NodeId nodeId) {
-    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, NodeId.from(nodeId.id()));
+  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, MemberId memberId) {
+    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, MemberId.from(memberId.id()));
   }
 
   @Override
-  public CompletableFuture<BackupResponse> backup(NodeId nodeId, BackupRequest request) {
-    return sendAndReceive(context.backupSubject, request, nodeId);
+  public CompletableFuture<BackupResponse> backup(MemberId memberId, BackupRequest request) {
+    return sendAndReceive(context.backupSubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<RestoreResponse> restore(NodeId nodeId, RestoreRequest request) {
-    return sendAndReceive(context.restoreSubject, request, nodeId);
+  public CompletableFuture<RestoreResponse> restore(MemberId memberId, RestoreRequest request) {
+    return sendAndReceive(context.restoreSubject, request, memberId);
   }
 
   @Override
-  public void event(NodeId nodeId, SessionId session, PrimitiveEvent event) {
-    clusterCommunicator.unicast(context.eventSubject(session.id()), event, serializer::encode, nodeId);
+  public void event(MemberId memberId, SessionId session, PrimitiveEvent event) {
+    clusterCommunicator.unicast(context.eventSubject(session.id()), event, serializer::encode, memberId);
   }
 
   @Override

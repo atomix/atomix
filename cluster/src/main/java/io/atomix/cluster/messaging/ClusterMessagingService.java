@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster.messaging;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
 
 import java.time.Duration;
@@ -80,12 +80,12 @@ public interface ClusterMessagingService {
    *
    * @param subject  message subject
    * @param message  message to send
-   * @param toNodeId destination node identifier
+   * @param toMemberId destination node identifier
    * @param <M>      message type
    * @return future that is completed when the message is sent
    */
-  default <M> CompletableFuture<Void> unicast(String subject, M message, NodeId toNodeId) {
-    return unicast(subject, message, BASIC::encode, toNodeId);
+  default <M> CompletableFuture<Void> unicast(String subject, M message, MemberId toMemberId) {
+    return unicast(subject, message, BASIC::encode, toMemberId);
   }
 
   /**
@@ -94,22 +94,22 @@ public interface ClusterMessagingService {
    * @param subject  message subject
    * @param message  message to send
    * @param encoder  function for encoding message to byte[]
-   * @param toNodeId destination node identifier
+   * @param toMemberId destination node identifier
    * @param <M>      message type
    * @return future that is completed when the message is sent
    */
-  <M> CompletableFuture<Void> unicast(String subject, M message, Function<M, byte[]> encoder, NodeId toNodeId);
+  <M> CompletableFuture<Void> unicast(String subject, M message, Function<M, byte[]> encoder, MemberId toMemberId);
 
   /**
    * Multicasts a message to a set of controller nodes.
    *
    * @param subject  message subject
    * @param message message to send
-   * @param nodeIds recipient node identifiers
+   * @param memberIds recipient node identifiers
    * @param <M>     message type
    */
-  default <M> void multicast(String subject, M message, Set<NodeId> nodeIds) {
-    multicast(subject, message, BASIC::encode, nodeIds);
+  default <M> void multicast(String subject, M message, Set<MemberId> memberIds) {
+    multicast(subject, message, BASIC::encode, memberIds);
   }
 
   /**
@@ -118,17 +118,17 @@ public interface ClusterMessagingService {
    * @param subject  message subject
    * @param message message to send
    * @param encoder function for encoding message to byte[]
-   * @param nodeIds recipient node identifiers
+   * @param memberIds recipient node identifiers
    * @param <M>     message type
    */
-  <M> void multicast(String subject, M message, Function<M, byte[]> encoder, Set<NodeId> nodeIds);
+  <M> void multicast(String subject, M message, Function<M, byte[]> encoder, Set<MemberId> memberIds);
 
   /**
    * Sends a message and expects a reply.
    *
    * @param subject  message subject
    * @param message  message to send
-   * @param toNodeId recipient node identifier
+   * @param toMemberId recipient node identifier
    * @param <M>      request type
    * @param <R>      reply type
    * @return reply future
@@ -136,8 +136,8 @@ public interface ClusterMessagingService {
   default <M, R> CompletableFuture<R> send(
       String subject,
       M message,
-      NodeId toNodeId) {
-    return send(subject, message, BASIC::encode, BASIC::decode, toNodeId, null);
+      MemberId toMemberId) {
+    return send(subject, message, BASIC::encode, BASIC::decode, toMemberId, null);
   }
 
   /**
@@ -145,7 +145,7 @@ public interface ClusterMessagingService {
    *
    * @param subject  message subject
    * @param message  message to send
-   * @param toNodeId recipient node identifier
+   * @param toMemberId recipient node identifier
    * @param timeout  response timeout
    * @param <M>      request type
    * @param <R>      reply type
@@ -154,9 +154,9 @@ public interface ClusterMessagingService {
   default <M, R> CompletableFuture<R> send(
       String subject,
       M message,
-      NodeId toNodeId,
+      MemberId toMemberId,
       Duration timeout) {
-    return send(subject, message, BASIC::encode, BASIC::decode, toNodeId, timeout);
+    return send(subject, message, BASIC::encode, BASIC::decode, toMemberId, timeout);
   }
 
   /**
@@ -166,7 +166,7 @@ public interface ClusterMessagingService {
    * @param message  message to send
    * @param encoder  function for encoding request to byte[]
    * @param decoder  function for decoding response from byte[]
-   * @param toNodeId recipient node identifier
+   * @param toMemberId recipient node identifier
    * @param <M>      request type
    * @param <R>      reply type
    * @return reply future
@@ -176,8 +176,8 @@ public interface ClusterMessagingService {
       M message,
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder,
-      NodeId toNodeId) {
-    return send(subject, message, encoder, decoder, toNodeId, null);
+      MemberId toMemberId) {
+    return send(subject, message, encoder, decoder, toMemberId, null);
   }
 
   /**
@@ -187,7 +187,7 @@ public interface ClusterMessagingService {
    * @param message  message to send
    * @param encoder  function for encoding request to byte[]
    * @param decoder  function for decoding response from byte[]
-   * @param toNodeId recipient node identifier
+   * @param toMemberId recipient node identifier
    * @param timeout  response timeout
    * @param <M>      request type
    * @param <R>      reply type
@@ -198,7 +198,7 @@ public interface ClusterMessagingService {
       M message,
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder,
-      NodeId toNodeId,
+      MemberId toMemberId,
       Duration timeout);
 
   /**

@@ -16,13 +16,22 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.primitive.Consistency;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.partition.Partitioner;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -30,12 +39,19 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Multi-primary protocol.
  */
 public class MultiPrimaryProtocol implements PrimitiveProtocol {
-  public static final Type TYPE = new Type() {
+  public static final Type TYPE = new Type();
+
+  /**
+   * The multi-primary protocol type.
+   */
+  public static class Type implements PrimitiveProtocol.Type {
+    private static final String NAME = "multi-primary";
+
     @Override
     public String name() {
-      return "multi-primary";
+      return NAME;
     }
-  };
+  }
 
   /**
    * Returns a new multi-primary protocol builder.
@@ -56,14 +72,14 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     return new Builder(new MultiPrimaryProtocolConfig().setGroup(group));
   }
 
-  private final MultiPrimaryProtocolConfig config;
+  protected final MultiPrimaryProtocolConfig config;
 
-  public MultiPrimaryProtocol(MultiPrimaryProtocolConfig config) {
+  protected MultiPrimaryProtocol(MultiPrimaryProtocolConfig config) {
     this.config = config;
   }
 
   @Override
-  public Type type() {
+  public PrimitiveProtocol.Type type() {
     return TYPE;
   }
 
@@ -72,67 +88,22 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     return config.getGroup();
   }
 
-  /**
-   * Returns the protocol consistency model.
-   *
-   * @return the protocol consistency model
-   */
-  public Consistency consistency() {
-    return config.getConsistency();
-  }
-
-  /**
-   * Returns the protocol replications strategy.
-   *
-   * @return the protocol replication strategy
-   */
-  public Replication replication() {
-    return config.getReplication();
-  }
-
-  /**
-   * Returns the protocol recovery strategy.
-   *
-   * @return the protocol recovery strategy
-   */
-  public Recovery recovery() {
-    return config.getRecovery();
-  }
-
-  /**
-   * Returns the number of backups.
-   *
-   * @return the number of backups
-   */
-  public int backups() {
-    return config.getNumBackups();
-  }
-
-  /**
-   * Returns the maximum number of allowed retries.
-   *
-   * @return the maximum number of allowed retries
-   */
-  public int maxRetries() {
-    return config.getMaxRetries();
-  }
-
-  /**
-   * Returns the retry delay.
-   *
-   * @return the retry delay
-   */
-  public Duration retryDelay() {
-    return config.getRetryDelay();
-  }
-
-  /**
-   * Returns the proxy executor.
-   *
-   * @return the proxy executor
-   */
-  public Executor executor() {
-    return config.getExecutor();
+  @Override
+  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PartitionService partitionService) {
+    Collection<PartitionProxy> partitions = partitionService.<PrimaryBackupPartition>getPartitionGroup(this)
+        .getPartitions()
+        .stream()
+        .map(partition -> partition.getProxyClient().proxyBuilder(primitiveName, primitiveType)
+            .withConsistency(config.getConsistency())
+            .withReplication(config.getReplication())
+            .withRecovery(config.getRecovery())
+            .withNumBackups(config.getBackups())
+            .withMaxRetries(config.getMaxRetries())
+            .withRetryDelay(config.getRetryDelay())
+            .withExecutor(config.getExecutor())
+            .build())
+        .collect(Collectors.toList());
+    return new PartitionedPrimitiveProxy(primitiveName, primitiveType, partitions, config.getPartitioner());
   }
 
   @Override
@@ -140,11 +111,6 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     return toStringHelper(this)
         .add("type", type())
         .add("group", group())
-        .add("consistency", consistency())
-        .add("replication", replication())
-        .add("backups", backups())
-        .add("maxRetries", maxRetries())
-        .add("retryDelay", retryDelay())
         .toString();
   }
 
@@ -154,6 +120,17 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
   public static class Builder extends PrimitiveProtocol.Builder<MultiPrimaryProtocolConfig, MultiPrimaryProtocol> {
     protected Builder(MultiPrimaryProtocolConfig config) {
       super(config);
+    }
+
+    /**
+     * Sets the protocol partitioner.
+     *
+     * @param partitioner the protocol partitioner
+     * @return the protocol builder
+     */
+    public Builder withPartitioner(Partitioner<String> partitioner) {
+      config.setPartitioner(partitioner);
+      return this;
     }
 
     /**
@@ -196,7 +173,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the protocol builder
      */
     public Builder withBackups(int numBackups) {
-      config.setNumBackups(numBackups);
+      config.setBackups(numBackups);
       return this;
     }
 

@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.event;
 
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -26,6 +26,28 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Raft event.
  */
 public class PrimitiveEvent {
+
+  /**
+   * Creates a new primitive event.
+   *
+   * @param eventType the event type
+   * @return the primitive event
+   */
+  public static PrimitiveEvent event(EventType eventType) {
+    return event(eventType, null);
+  }
+
+  /**
+   * Creates a new primitive event.
+   *
+   * @param eventType the event type
+   * @param value     the event value
+   * @return the primitive event
+   */
+  public static PrimitiveEvent event(EventType eventType, byte[] value) {
+    return new PrimitiveEvent(EventType.canonical(eventType), value);
+  }
+
   private final EventType type;
   private final byte[] value;
 

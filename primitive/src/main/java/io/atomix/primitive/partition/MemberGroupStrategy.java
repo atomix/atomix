@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.cluster.Node;
+import io.atomix.cluster.Member;
 import io.atomix.primitive.partition.impl.NodeMemberGroup;
 
 import java.util.Collection;
@@ -40,8 +40,8 @@ public enum MemberGroupStrategy implements MemberGroupProvider {
    */
   ZONE_AWARE {
     @Override
-    public Collection<MemberGroup> getMemberGroups(Collection<Node> nodes) {
-      return groupNodes(nodes, Node::zone);
+    public Collection<MemberGroup> getMemberGroups(Collection<Member> members) {
+      return groupNodes(members, node -> node.zone() != null ? node.zone() : node.id().id());
     }
   },
 
@@ -52,8 +52,8 @@ public enum MemberGroupStrategy implements MemberGroupProvider {
    */
   RACK_AWARE {
     @Override
-    public Collection<MemberGroup> getMemberGroups(Collection<Node> nodes) {
-      return groupNodes(nodes, Node::rack);
+    public Collection<MemberGroup> getMemberGroups(Collection<Member> members) {
+      return groupNodes(members, node -> node.rack() != null ? node.rack() : node.id().id());
     }
   },
 
@@ -64,8 +64,8 @@ public enum MemberGroupStrategy implements MemberGroupProvider {
    */
   HOST_AWARE {
     @Override
-    public Collection<MemberGroup> getMemberGroups(Collection<Node> nodes) {
-      return groupNodes(nodes, Node::host);
+    public Collection<MemberGroup> getMemberGroups(Collection<Member> members) {
+      return groupNodes(members, node -> node.host() != null ? node.host() : node.id().id());
     }
   },
 
@@ -77,22 +77,22 @@ public enum MemberGroupStrategy implements MemberGroupProvider {
    */
   NODE_AWARE {
     @Override
-    public Collection<MemberGroup> getMemberGroups(Collection<Node> nodes) {
-      return groupNodes(nodes, node -> node.id().id());
+    public Collection<MemberGroup> getMemberGroups(Collection<Member> members) {
+      return groupNodes(members, node -> node.id().id());
     }
   };
 
   /**
    * Groups nodes by the given key function.
    *
-   * @param nodes       the nodes to group
+   * @param members       the nodes to group
    * @param keyFunction the key function to apply to nodes to extract a key
    * @return a collection of node member groups
    */
-  protected Collection<MemberGroup> groupNodes(Collection<Node> nodes, Function<Node, String> keyFunction) {
-    Map<String, Set<Node>> groups = new HashMap<>();
-    for (Node node : nodes) {
-      groups.computeIfAbsent(keyFunction.apply(node), k -> new HashSet<>()).add(node);
+  protected Collection<MemberGroup> groupNodes(Collection<Member> members, Function<Member, String> keyFunction) {
+    Map<String, Set<Member>> groups = new HashMap<>();
+    for (Member member : members) {
+      groups.computeIfAbsent(keyFunction.apply(member), k -> new HashSet<>()).add(member);
     }
 
     return groups.entrySet().stream()

@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.RaftClient;
@@ -56,12 +56,12 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   }
 
   @Override
-  public NodeId getLeader() {
+  public MemberId getLeader() {
     return selectorManager.leader();
   }
 
   @Override
-  public Collection<NodeId> getMembers() {
+  public Collection<MemberId> getMembers() {
     return selectorManager.members();
   }
 

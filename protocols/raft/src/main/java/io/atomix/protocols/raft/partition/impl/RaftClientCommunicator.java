@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.partition.impl;
 
 import com.google.common.base.Preconditions;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
@@ -62,38 +62,38 @@ public class RaftClientCommunicator implements RaftClientProtocol {
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, NodeId nodeId) {
-    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, nodeId);
+  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, MemberId memberId) {
+    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, memberId);
   }
 
   @Override
-  public CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request) {
-    return sendAndReceive(context.openSessionSubject, request, nodeId);
+  public CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request) {
+    return sendAndReceive(context.openSessionSubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request) {
-    return sendAndReceive(context.closeSessionSubject, request, nodeId);
+  public CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request) {
+    return sendAndReceive(context.closeSessionSubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request) {
-    return sendAndReceive(context.keepAliveSubject, request, nodeId);
+  public CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request) {
+    return sendAndReceive(context.keepAliveSubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request) {
-    return sendAndReceive(context.querySubject, request, nodeId);
+  public CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request) {
+    return sendAndReceive(context.querySubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request) {
-    return sendAndReceive(context.commandSubject, request, nodeId);
+  public CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request) {
+    return sendAndReceive(context.commandSubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request) {
-    return sendAndReceive(context.metadataSubject, request, nodeId);
+  public CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request) {
+    return sendAndReceive(context.metadataSubject, request, memberId);
   }
 
   @Override
@@ -107,7 +107,7 @@ public class RaftClientCommunicator implements RaftClientProtocol {
   }
 
   @Override
-  public void reset(Set<NodeId> members, ResetRequest request) {
+  public void reset(Set<MemberId> members, ResetRequest request) {
     clusterCommunicator.multicast(context.resetSubject(request.session()), request, serializer::encode, members);
   }
 

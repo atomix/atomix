@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.session;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -26,6 +26,8 @@ import io.atomix.protocols.raft.proxy.impl.TestPrimitiveType;
 import io.atomix.protocols.raft.service.RaftServiceContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -66,13 +68,14 @@ public class RaftSessionRegistryTest {
 
     return new RaftSession(
         SessionId.from(sessionId),
-        NodeId.from("1"),
+        MemberId.from("1"),
         "test",
         new TestPrimitiveType(),
         ReadConsistency.LINEARIZABLE,
         100,
         5000,
         System.currentTimeMillis(),
+        Serializer.using(KryoNamespaces.BASIC),
         context,
         server,
         mock(ThreadContextFactory.class));

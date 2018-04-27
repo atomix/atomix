@@ -16,13 +16,14 @@
 package io.atomix.protocols.raft.session;
 
 import com.google.common.collect.Lists;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.SessionEvent;
-import io.atomix.primitive.session.SessionEventListener;
+import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.PrimitiveSessionEvent;
+import io.atomix.primitive.session.PrimitiveSessionEventListener;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
@@ -31,11 +32,12 @@ import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.service.RaftServiceContext;
-import io.atomix.utils.TimestampPrinter;
+import io.atomix.utils.misc.TimestampPrinter;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -54,15 +56,16 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Raft session.
  */
-public class RaftSession implements Session {
+public class RaftSession implements PrimitiveSession {
   private final Logger log;
   private final SessionId sessionId;
-  private final NodeId member;
+  private final MemberId member;
   private final String name;
   private final PrimitiveType primitiveType;
   private final ReadConsistency readConsistency;
   private final long minTimeout;
   private final long maxTimeout;
+  private final Serializer serializer;
   private final RaftServerProtocol protocol;
   private final RaftServiceContext context;
   private final RaftContext server;
@@ -81,17 +84,18 @@ public class RaftSession implements Session {
   private final Map<Long, OperationResult> results = new HashMap<>();
   private final Queue<EventHolder> events = new LinkedList<>();
   private volatile EventHolder currentEventList;
-  private final Set<SessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
+  private final Set<PrimitiveSessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
 
   public RaftSession(
       SessionId sessionId,
-      NodeId member,
+      MemberId member,
       String name,
       PrimitiveType primitiveType,
       ReadConsistency readConsistency,
       long minTimeout,
       long maxTimeout,
       long lastUpdated,
+      Serializer serializer,
       RaftServiceContext context,
       RaftContext server,
       ThreadContextFactory threadContextFactory) {
@@ -107,10 +111,11 @@ public class RaftSession implements Session {
     this.completeIndex = sessionId.id();
     this.lastApplied = sessionId.id();
     this.protocol = server.getProtocol();
+    this.serializer = serializer;
     this.context = context;
     this.server = server;
     this.eventExecutor = threadContextFactory.createContext();
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(Session.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveSession.class)
         .addValue(sessionId)
         .add("type", context.serviceType())
         .add("name", context.serviceName())
@@ -133,7 +138,7 @@ public class RaftSession implements Session {
   }
 
   @Override
-  public NodeId nodeId() {
+  public MemberId memberId() {
     return member;
   }
 
@@ -218,25 +223,25 @@ public class RaftSession implements Session {
       log.debug("State changed: {}", state);
       switch (state) {
         case OPEN:
-          eventListeners.forEach(l -> l.onEvent(new SessionEvent(SessionEvent.Type.OPEN, this, getLastUpdated())));
+          eventListeners.forEach(l -> l.onEvent(new PrimitiveSessionEvent(PrimitiveSessionEvent.Type.OPEN, this, getLastUpdated())));
           break;
         case EXPIRED:
-          eventListeners.forEach(l -> l.onEvent(new SessionEvent(SessionEvent.Type.EXPIRE, this, getLastUpdated())));
+          eventListeners.forEach(l -> l.onEvent(new PrimitiveSessionEvent(PrimitiveSessionEvent.Type.EXPIRE, this, getLastUpdated())));
           break;
         case CLOSED:
-          eventListeners.forEach(l -> l.onEvent(new SessionEvent(SessionEvent.Type.CLOSE, this, getLastUpdated())));
+          eventListeners.forEach(l -> l.onEvent(new PrimitiveSessionEvent(PrimitiveSessionEvent.Type.CLOSE, this, getLastUpdated())));
           break;
       }
     }
   }
 
   @Override
-  public void addListener(SessionEventListener listener) {
+  public void addListener(PrimitiveSessionEventListener listener) {
     eventListeners.add(listener);
   }
 
   @Override
-  public void removeListener(SessionEventListener listener) {
+  public void removeListener(PrimitiveSessionEventListener listener) {
     eventListeners.remove(listener);
   }
 
@@ -482,6 +487,11 @@ public class RaftSession implements Session {
   }
 
   @Override
+  public <T> void publish(EventType eventType, T event) {
+    publish(PrimitiveEvent.event(eventType, serializer.encode(event)));
+  }
+
+  @Override
   public void publish(PrimitiveEvent event) {
     // Store volatile state in a local variable.
     State state = this.state;
@@ -622,7 +632,7 @@ public class RaftSession implements Session {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof Session && ((Session) object).sessionId() == sessionId;
+    return object instanceof PrimitiveSession && ((PrimitiveSession) object).sessionId() == sessionId;
   }
 
   @Override

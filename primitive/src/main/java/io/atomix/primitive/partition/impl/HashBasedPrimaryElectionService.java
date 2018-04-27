@@ -16,8 +16,8 @@
 package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.PartitionId;
@@ -53,21 +53,21 @@ public class HashBasedPrimaryElectionService
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
-      .register(NodeId.class)
+      .register(MemberId.class)
       .build());
 
   private final Logger log = LoggerFactory.getLogger(getClass());
-  private final ClusterService clusterService;
+  private final ClusterMembershipService clusterMembershipService;
   private final ClusterMessagingService messagingService;
   private final Map<PartitionId, PrimaryElection> elections = Maps.newConcurrentMap();
   private final PrimaryElectionEventListener primaryElectionListener = this::post;
-  private final Map<NodeId, Integer> counters = Maps.newConcurrentMap();
+  private final Map<MemberId, Integer> counters = Maps.newConcurrentMap();
   private final ScheduledExecutorService executor;
   private final AtomicBoolean started = new AtomicBoolean();
   private ScheduledFuture<?> broadcastFuture;
 
-  public HashBasedPrimaryElectionService(ClusterService clusterService, ClusterMessagingService messagingService) {
-    this.clusterService = clusterService;
+  public HashBasedPrimaryElectionService(ClusterMembershipService clusterMembershipService, ClusterMessagingService messagingService) {
+    this.clusterMembershipService = clusterMembershipService;
     this.messagingService = messagingService;
     this.executor = Executors.newSingleThreadScheduledExecutor(Threads.namedThreads("primary-election-%d", log));
   }
@@ -75,7 +75,7 @@ public class HashBasedPrimaryElectionService
   @Override
   public PrimaryElection getElectionFor(PartitionId partitionId) {
     return elections.computeIfAbsent(partitionId, id -> {
-      PrimaryElection election = new HashBasedPrimaryElection(partitionId, clusterService, this);
+      PrimaryElection election = new HashBasedPrimaryElection(partitionId, clusterMembershipService, this);
       election.addListener(primaryElectionListener);
       return election;
     });
@@ -96,13 +96,13 @@ public class HashBasedPrimaryElectionService
    * @return the current term
    */
   long incrementTerm() {
-    counters.compute(clusterService.getLocalNode().id(), (id, value) -> value != null ? value + 1 : 1);
+    counters.compute(clusterMembershipService.getLocalMember().id(), (id, value) -> value != null ? value + 1 : 1);
     broadcastCounters();
     return getTerm();
   }
 
-  private void updateCounters(Map<NodeId, Integer> counters) {
-    for (Map.Entry<NodeId, Integer> entry : counters.entrySet()) {
+  private void updateCounters(Map<MemberId, Integer> counters) {
+    for (Map.Entry<MemberId, Integer> entry : counters.entrySet()) {
       this.counters.compute(entry.getKey(), (key, value) -> {
         if (value == null || value < entry.getValue()) {
           return entry.getValue();

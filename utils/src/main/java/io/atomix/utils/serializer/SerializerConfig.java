@@ -15,7 +15,7 @@
  */
 package io.atomix.utils.serializer;
 
-import io.atomix.utils.Config;
+import io.atomix.utils.config.Config;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -15,6 +15,10 @@
  */
 package io.atomix.primitive.protocol;
 
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.proxy.PrimitiveProxy;
+
 /**
  * Primitive protocol.
  */
@@ -45,6 +49,16 @@ public interface PrimitiveProtocol {
    * @return the protocol group name
    */
   String group();
+
+  /**
+   * Returns a new primitive proxy for the given partition group.
+   *
+   * @param primitiveName the primitive name
+   * @param primitiveType the primitive type
+   * @param partitionService the partition service
+   * @return the proxy for the given partition group
+   */
+  PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, PartitionService partitionService);
 
   /**
    * Primitive protocol.

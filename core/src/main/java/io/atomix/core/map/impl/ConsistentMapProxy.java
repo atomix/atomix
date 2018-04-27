@@ -15,6 +15,12 @@
  */
 package io.atomix.core.map.impl;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapException;
@@ -37,13 +43,32 @@ import io.atomix.core.map.impl.ConsistentMapOperations.TransactionPrepare;
 import io.atomix.core.map.impl.ConsistentMapOperations.TransactionRollback;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static io.atomix.core.map.impl.ConsistentMapEvents.CHANGE;
 import static io.atomix.core.map.impl.ConsistentMapOperations.ADD_LISTENER;
@@ -55,7 +80,6 @@ import static io.atomix.core.map.impl.ConsistentMapOperations.ENTRY_SET;
 import static io.atomix.core.map.impl.ConsistentMapOperations.GET;
 import static io.atomix.core.map.impl.ConsistentMapOperations.GET_ALL_PRESENT;
 import static io.atomix.core.map.impl.ConsistentMapOperations.GET_OR_DEFAULT;
-import static io.atomix.core.map.impl.ConsistentMapOperations.IS_EMPTY;
 import static io.atomix.core.map.impl.ConsistentMapOperations.KEY_SET;
 import static io.atomix.core.map.impl.ConsistentMapOperations.PREPARE;
 import static io.atomix.core.map.impl.ConsistentMapOperations.PUT;
@@ -72,24 +96,10 @@ import static io.atomix.core.map.impl.ConsistentMapOperations.ROLLBACK;
 import static io.atomix.core.map.impl.ConsistentMapOperations.SIZE;
 import static io.atomix.core.map.impl.ConsistentMapOperations.VALUES;
 
-import java.time.Duration;
-import java.util.Collection;
-import java.util.ConcurrentModificationException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.function.BiFunction;
-import java.util.function.Predicate;
-
 /**
  * Distributed resource providing the {@link AsyncConsistentMap} primitive.
  */
-public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncConsistentMap<String, byte[]> {
+public class ConsistentMapProxy extends AbstractAsyncPrimitive<AsyncConsistentMap<String, byte[]>> implements AsyncConsistentMap<String, byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(ConsistentMapOperations.NAMESPACE)
@@ -99,14 +109,8 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
 
   private final Map<MapEventListener<String, byte[]>, Executor> mapEventListeners = new ConcurrentHashMap<>();
 
-  public ConsistentMapProxy(PrimitiveProxy proxy) {
-    super(proxy);
-    proxy.addEventListener(CHANGE, SERIALIZER::decode, this::handleEvent);
-    proxy.addStateChangeListener(state -> {
-      if (state == PrimitiveProxy.State.CONNECTED && isListening()) {
-        proxy.invoke(ADD_LISTENER);
-      }
-    });
+  public ConsistentMapProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   protected Serializer serializer() {
@@ -115,79 +119,96 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
 
   private void handleEvent(List<MapEvent<String, byte[]>> events) {
     events.forEach(event ->
-        mapEventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event))));
+        mapEventListeners.forEach((listener, executor) ->
+            executor.execute(() -> listener.event(event))));
   }
 
   @Override
   public CompletableFuture<Boolean> isEmpty() {
-    return proxy.invoke(IS_EMPTY, serializer()::decode);
+    return size().thenApply(size -> size == 0);
   }
 
   @Override
   public CompletableFuture<Integer> size() {
-    return proxy.invoke(SIZE, serializer()::decode);
+    return this.<Integer>invokeAll(SIZE)
+        .thenApply(results -> results.reduce(Math::addExact).orElse(0));
   }
 
   @Override
   public CompletableFuture<Boolean> containsKey(String key) {
-    return proxy.invoke(CONTAINS_KEY, serializer()::encode, new ContainsKey(key), serializer()::decode);
+    return invokeBy(key, CONTAINS_KEY, new ContainsKey(key));
   }
 
   @Override
   public CompletableFuture<Boolean> containsValue(byte[] value) {
-    return proxy.invoke(CONTAINS_VALUE, serializer()::encode, new ContainsValue(value), serializer()::decode);
+    return this.<ContainsValue, Boolean>invokeAll(
+        CONTAINS_VALUE,
+        new ContainsValue(value))
+        .thenApply(results -> results.filter(Predicate.isEqual(true)).findFirst().orElse(false));
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(String key) {
-    return proxy.invoke(GET, serializer()::encode, new Get(key), serializer()::decode);
+    return invokeBy(key, GET, new Get(key));
   }
 
   @Override
   public CompletableFuture<Map<String, Versioned<byte[]>>> getAllPresent(Iterable<String> keys) {
-    Set<String> uniqueKeys = new HashSet<>();
-    for (String key : keys) {
-      uniqueKeys.add(key);
-    }
-    return proxy.invoke(
-        GET_ALL_PRESENT,
-        serializer()::encode,
-        new GetAllPresent(uniqueKeys),
-        serializer()::decode);
+    return Futures.allOf(getPartitionIds()
+        .stream()
+        .map(partition -> {
+          Set<String> uniqueKeys = new HashSet<>();
+          for (String key : keys) {
+            uniqueKeys.add(key);
+          }
+          return this.<GetAllPresent, Map<String, Versioned<byte[]>>>invokeOn(
+              partition,
+              GET_ALL_PRESENT,
+              new GetAllPresent(uniqueKeys));
+        })
+        .collect(Collectors.toList()))
+        .thenApply(maps -> {
+          Map<String, Versioned<byte[]>> result = new HashMap<>();
+          for (Map<String, Versioned<byte[]>> map : maps) {
+            result.putAll(map);
+          }
+          return ImmutableMap.copyOf(result);
+        });
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> getOrDefault(String key, byte[] defaultValue) {
-    return proxy.invoke(
+    return invokeBy(
+        key,
         GET_OR_DEFAULT,
-        serializer()::encode,
-        new GetOrDefault(key, defaultValue),
-        serializer()::decode);
+        new GetOrDefault(key, defaultValue));
   }
 
   @Override
   public CompletableFuture<Set<String>> keySet() {
-    return proxy.invoke(KEY_SET, serializer()::decode);
+    return this.<Set<String>>invokeAll(KEY_SET)
+        .thenApply(results -> results.reduce((s1, s2) -> ImmutableSet.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableSet.of()));
   }
 
   @Override
   public CompletableFuture<Collection<Versioned<byte[]>>> values() {
-    return proxy.invoke(VALUES, serializer()::decode);
+    return this.<Collection<Versioned<byte[]>>>invokeAll(VALUES)
+        .thenApply(results -> results.reduce((s1, s2) -> ImmutableList.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableList.of()));
   }
 
   @Override
   public CompletableFuture<Set<Entry<String, Versioned<byte[]>>>> entrySet() {
-    return proxy.invoke(ENTRY_SET, serializer()::decode);
+    return this.<Set<Map.Entry<String, Versioned<byte[]>>>>invokeAll(ENTRY_SET)
+        .thenApply(results -> results.reduce((s1, s2) -> ImmutableSet.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableSet.of()));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> put(String key, byte[] value, Duration ttl) {
-    return proxy.<Put, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<Put, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         PUT,
-        serializer()::encode,
-        new Put(key, value, ttl.toMillis()),
-        serializer()::decode)
+        new Put(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -195,11 +216,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> putAndGet(String key, byte[] value, Duration ttl) {
-    return proxy.<Put, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<Put, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         PUT_AND_GET,
-        serializer()::encode,
-        new Put(key, value, ttl.toMillis()),
-        serializer()::decode)
+        new Put(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -207,11 +227,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> putIfAbsent(String key, byte[] value, Duration ttl) {
-    return proxy.<Put, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<Put, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         PUT_IF_ABSENT,
-        serializer()::encode,
-        new Put(key, value, ttl.toMillis()),
-        serializer()::decode)
+        new Put(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -219,11 +238,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> remove(String key) {
-    return proxy.<Remove, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<Remove, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         REMOVE,
-        serializer()::encode,
-        new Remove(key),
-        serializer()::decode)
+        new Remove(key))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -231,11 +249,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> remove(String key, byte[] value) {
-    return proxy.<RemoveValue, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<RemoveValue, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         REMOVE_VALUE,
-        serializer()::encode,
-        new RemoveValue(key, value),
-        serializer()::decode)
+        new RemoveValue(key, value))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
@@ -243,11 +260,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> remove(String key, long version) {
-    return proxy.<RemoveVersion, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<RemoveVersion, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         REMOVE_VERSION,
-        serializer()::encode,
-        new RemoveVersion(key, version),
-        serializer()::decode)
+        new RemoveVersion(key, version))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
@@ -255,11 +271,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> replace(String key, byte[] value) {
-    return proxy.<Replace, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<Replace, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         REPLACE,
-        serializer()::encode,
-        new Replace(key, value),
-        serializer()::decode)
+        new Replace(key, value))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -267,11 +282,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> replace(String key, byte[] oldValue, byte[] newValue) {
-    return proxy.<ReplaceValue, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<ReplaceValue, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         REPLACE_VALUE,
-        serializer()::encode,
-        new ReplaceValue(key, oldValue, newValue),
-        serializer()::decode)
+        new ReplaceValue(key, oldValue, newValue))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
@@ -279,20 +293,22 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> replace(String key, long oldVersion, byte[] newValue) {
-    return proxy.<ReplaceVersion, MapEntryUpdateResult<String, byte[]>>invoke(
+    return this.<ReplaceVersion, MapEntryUpdateResult<String, byte[]>>invokeBy(
+        key,
         REPLACE_VERSION,
-        serializer()::encode,
-        new ReplaceVersion(key, oldVersion, newValue),
-        serializer()::decode)
+        new ReplaceVersion(key, oldVersion, newValue))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    return proxy.<MapEntryUpdateResult.Status>invoke(CLEAR, serializer()::decode)
-        .whenComplete((r, e) -> throwIfLocked(r))
-        .thenApply(v -> null);
+    return CompletableFuture.allOf(getPartitionIds()
+        .stream()
+        .map(partition -> this.<MapEntryUpdateResult.Status>invokeOn(partition, CLEAR)
+            .whenComplete((r, e) -> throwIfLocked(r))
+            .thenApply(v -> null))
+        .toArray(CompletableFuture[]::new));
   }
 
   @Override
@@ -319,29 +335,26 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
       }
 
       if (r1 == null) {
-        return proxy.<Put, MapEntryUpdateResult<String, byte[]>>invoke(
+        return this.<Put, MapEntryUpdateResult<String, byte[]>>invokeBy(
+            key,
             PUT_IF_ABSENT,
-            serializer()::encode,
-            new Put(key, computedValue, 0),
-            serializer()::decode)
+            new Put(key, computedValue, 0))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(result -> new Versioned<>(computedValue, result.version()));
       } else if (computedValue == null) {
-        return proxy.<RemoveVersion, MapEntryUpdateResult<String, byte[]>>invoke(
+        return this.<RemoveVersion, MapEntryUpdateResult<String, byte[]>>invokeBy(
+            key,
             REMOVE_VERSION,
-            serializer()::encode,
-            new RemoveVersion(key, r1.version()),
-            serializer()::decode)
+            new RemoveVersion(key, r1.version()))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(v -> null);
       } else {
-        return proxy.<ReplaceVersion, MapEntryUpdateResult<String, byte[]>>invoke(
+        return this.<ReplaceVersion, MapEntryUpdateResult<String, byte[]>>invokeBy(
+            key,
             REPLACE_VERSION,
-            serializer()::encode,
-            new ReplaceVersion(key, r1.version(), computedValue),
-            serializer()::decode)
+            new ReplaceVersion(key, r1.version(), computedValue))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(result -> result.status() == MapEntryUpdateResult.Status.OK
@@ -360,10 +373,10 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   }
 
   @Override
-  public synchronized CompletableFuture<Void> addListener(MapEventListener<String, byte[]> listener,
-                                                          Executor executor) {
+  public synchronized CompletableFuture<Void> addListener(MapEventListener<String, byte[]> listener, Executor executor) {
     if (mapEventListeners.isEmpty()) {
-      return proxy.invoke(ADD_LISTENER).thenRun(() -> mapEventListeners.put(listener, executor));
+      mapEventListeners.put(listener, executor);
+      return invokeAll(ADD_LISTENER).thenApply(v -> null);
     } else {
       mapEventListeners.put(listener, executor);
       return CompletableFuture.completedFuture(null);
@@ -373,7 +386,7 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
   @Override
   public synchronized CompletableFuture<Void> removeListener(MapEventListener<String, byte[]> listener) {
     if (mapEventListeners.remove(listener) != null && mapEventListeners.isEmpty()) {
-      return proxy.invoke(REMOVE_LISTENER).thenApply(v -> null);
+      return invokeAll(REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -392,32 +405,50 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive implements AsyncC
 
   @Override
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
-    return proxy.<TransactionPrepare, PrepareResult>invoke(
-        PREPARE,
-        serializer()::encode,
-        new TransactionPrepare(transactionLog),
-        serializer()::decode)
-        .thenApply(v -> v == PrepareResult.OK || v == PrepareResult.PARTIAL_FAILURE);
+    Map<PartitionId, List<MapUpdate<String, byte[]>>> updatesGroupedByMap = Maps.newIdentityHashMap();
+    transactionLog.records().forEach(update -> {
+      PartitionProxy partition = getPartition(update.key());
+      updatesGroupedByMap.computeIfAbsent(partition.partitionId(), k -> Lists.newLinkedList()).add(update);
+    });
+    Map<PartitionId, TransactionLog<MapUpdate<String, byte[]>>> transactionsByMap =
+        Maps.transformValues(updatesGroupedByMap, list -> new TransactionLog<>(transactionLog.transactionId(), transactionLog.version(), list));
+
+    return Futures.allOf(transactionsByMap.entrySet()
+        .stream()
+        .map(e -> this.<TransactionPrepare, PrepareResult>invokeOn(e.getKey(), PREPARE, new TransactionPrepare(transactionLog))
+            .thenApply(v -> v == PrepareResult.OK || v == PrepareResult.PARTIAL_FAILURE))
+        .collect(Collectors.toList()))
+        .thenApply(list -> list.stream().reduce(Boolean::logicalAnd).orElse(true));
   }
 
   @Override
   public CompletableFuture<Void> commit(TransactionId transactionId) {
-    return proxy.<TransactionCommit, CommitResult>invoke(
+    return this.<TransactionCommit, CommitResult>invokeAll(
         COMMIT,
-        serializer()::encode,
-        new TransactionCommit(transactionId),
-        serializer()::decode)
+        new TransactionCommit(transactionId))
         .thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<Void> rollback(TransactionId transactionId) {
-    return proxy.invoke(
+    return this.invokeAll(
         ROLLBACK,
-        serializer()::encode,
-        new TransactionRollback(transactionId),
-        serializer()::decode)
+        new TransactionRollback(transactionId))
         .thenApply(v -> null);
+  }
+
+  @Override
+  public CompletableFuture<AsyncConsistentMap<String, byte[]>> connect() {
+    return super.connect()
+        .thenRun(() -> getPartitionIds().forEach(partition -> {
+          listenOn(partition, CHANGE, this::handleEvent);
+          addStateChangeListenerOn(partition, state -> {
+            if (state == PartitionProxy.State.CONNECTED && isListening()) {
+              invokeOn(partition, ADD_LISTENER);
+            }
+          });
+        }))
+        .thenApply(v -> this);
   }
 
   private boolean isListening() {

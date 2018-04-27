@@ -24,6 +24,13 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncPrimitive extends DistributedPrimitive {
 
   /**
+   * Closes the primitive.
+   *
+   * @return a future to be completed once the primitive is closed
+   */
+  CompletableFuture<Void> close();
+
+  /**
    * Purges state associated with this primitive.
    * <p>
    * Implementations can override and provide appropriate clean up logic for purging
@@ -32,16 +39,9 @@ public interface AsyncPrimitive extends DistributedPrimitive {
    *
    * @return {@code CompletableFuture} that is completed when the operation completes
    */
-  default CompletableFuture<Void> destroy() {
+  default CompletableFuture<Void> delete() {
     return CompletableFuture.completedFuture(null);
   }
-
-  /**
-   * Closes the primitive.
-   *
-   * @return a future to be completed once the primitive is closed
-   */
-  CompletableFuture<Void> close();
 
   /**
    * Returns a synchronous wrapper around the asynchronous primitive.

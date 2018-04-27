@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.backup;
 
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.MemberGroupProvider;
@@ -105,7 +105,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
    */
   public static class Builder implements io.atomix.utils.Builder<PrimaryBackupServer> {
     protected String serverName = "atomix";
-    protected ClusterService clusterService;
+    protected ClusterMembershipService membershipService;
     protected PrimaryBackupServerProtocol protocol;
     protected PrimaryElection primaryElection;
     protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
@@ -127,13 +127,13 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     }
 
     /**
-     * Sets the cluster service.
+     * Sets the cluster membership service.
      *
-     * @param clusterService the cluster service
+     * @param membershipService the cluster membership service
      * @return the server builder
      */
-    public Builder withClusterService(ClusterService clusterService) {
-      this.clusterService = checkNotNull(clusterService, "clusterService cannot be null");
+    public Builder withMembershipService(ClusterMembershipService membershipService) {
+      this.membershipService = checkNotNull(membershipService, "membershipService cannot be null");
       return this;
     }
 
@@ -241,8 +241,8 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
           : threadModel.factory("backup-server-" + serverName + "-%d", threadPoolSize, log);
       return new PrimaryBackupServer(new PrimaryBackupServerContext(
           serverName,
-          clusterService,
-          new DefaultMemberGroupService(clusterService, memberGroupProvider),
+          membershipService,
+          new DefaultMemberGroupService(membershipService, memberGroupProvider),
           protocol,
           threadContextFactory,
           primitiveTypes,

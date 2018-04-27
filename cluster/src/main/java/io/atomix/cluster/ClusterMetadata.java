@@ -35,10 +35,10 @@ public class ClusterMetadata {
     return new Builder();
   }
 
-  private final Collection<Node> nodes;
+  private final Collection<Member> members;
 
-  public ClusterMetadata(Collection<Node> nodes) {
-    this.nodes = nodes;
+  public ClusterMetadata(Collection<Member> members) {
+    this.members = members;
   }
 
   /**
@@ -46,14 +46,14 @@ public class ClusterMetadata {
    *
    * @return the collection of bootstrap nodes
    */
-  public Collection<Node> nodes() {
-    return nodes;
+  public Collection<Member> nodes() {
+    return members;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("nodes", nodes)
+        .add("nodes", members)
         .toString();
   }
 
@@ -61,34 +61,34 @@ public class ClusterMetadata {
    * Cluster metadata builder.
    */
   public static class Builder implements io.atomix.utils.Builder<ClusterMetadata> {
-    protected Collection<Node> nodes;
+    protected Collection<Member> members;
 
     /**
      * Sets the bootstrap nodes.
      *
-     * @param bootstrapNodes the nodes from which to bootstrap the cluster
+     * @param bootstrapMembers the nodes from which to bootstrap the cluster
      * @return the cluster metadata builder
      * @throws NullPointerException if the bootstrap nodes are {@code null}
      */
-    public Builder withNodes(Node... bootstrapNodes) {
-      return withNodes(Arrays.asList(checkNotNull(bootstrapNodes)));
+    public Builder withNodes(Member... bootstrapMembers) {
+      return withNodes(Arrays.asList(checkNotNull(bootstrapMembers)));
     }
 
     /**
      * Sets the nodes.
      *
-     * @param nodes the nodes from which to the cluster
+     * @param members the nodes from which to the cluster
      * @return the cluster metadata builder
      * @throws NullPointerException if the nodes are {@code null}
      */
-    public Builder withNodes(Collection<Node> nodes) {
-      this.nodes = checkNotNull(nodes, "nodes cannot be null");
+    public Builder withNodes(Collection<Member> members) {
+      this.members = checkNotNull(members, "nodes cannot be null");
       return this;
     }
 
     @Override
     public ClusterMetadata build() {
-      return new ClusterMetadata(nodes);
+      return new ClusterMetadata(members);
     }
   }
 }

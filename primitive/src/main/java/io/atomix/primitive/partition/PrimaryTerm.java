@@ -35,10 +35,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class PrimaryTerm {
   private final long term;
-  private final Member primary;
-  private final List<Member> candidates;
+  private final GroupMember primary;
+  private final List<GroupMember> candidates;
 
-  public PrimaryTerm(long term, Member primary, List<Member> candidates) {
+  public PrimaryTerm(long term, GroupMember primary, List<GroupMember> candidates) {
     this.term = term;
     this.primary = primary;
     this.candidates = candidates;
@@ -63,7 +63,7 @@ public class PrimaryTerm {
    *
    * @return the primary member
    */
-  public Member primary() {
+  public GroupMember primary() {
     return primary;
   }
 
@@ -75,7 +75,7 @@ public class PrimaryTerm {
    *
    * @return the list of members
    */
-  public List<Member> candidates() {
+  public List<GroupMember> candidates() {
     return candidates;
   }
 
@@ -89,12 +89,12 @@ public class PrimaryTerm {
    * @param numBackups the number of backups to return
    * @return an ordered list of backup members
    */
-  public List<Member> backups(int numBackups) {
+  public List<GroupMember> backups(int numBackups) {
     if (primary == null) {
       return Collections.emptyList();
     }
 
-    List<Member> backups = new ArrayList<>();
+    List<GroupMember> backups = new ArrayList<>();
     Set<MemberGroupId> groups = new HashSet<>();
 
     // Add the primary group to the set of groups to avoid assigning a backup in the same group.
@@ -104,7 +104,7 @@ public class PrimaryTerm {
     int i = 0;
     for (int j = 0; j < numBackups; j++) {
       while (i < candidates.size()) {
-        Member member = candidates.get(i++);
+        GroupMember member = candidates.get(i++);
         if (groups.add(member.groupId())) {
           backups.add(member);
           break;
@@ -114,7 +114,7 @@ public class PrimaryTerm {
 
     // If there are still not enough backups, add duplicate groups.
     for (int j = backups.size(); j < numBackups; j++) {
-      for (Member candidate : candidates) {
+      for (GroupMember candidate : candidates) {
         if (!candidate.equals(primary) && !backups.contains(candidate)) {
           backups.add(candidate);
           break;

@@ -120,8 +120,8 @@ public class TranscodingAsyncDocumentTree<V1, V2> implements AsyncDocumentTree<V
   }
 
   @Override
-  public CompletableFuture<Void> destroy() {
-    return backingTree.destroy();
+  public CompletableFuture<Void> delete() {
+    return backingTree.delete();
   }
 
   @Override

@@ -94,20 +94,6 @@ public interface ConsistentTreeMap<V> extends ConsistentMap<String, V> {
   Map.Entry<String, Versioned<V>> lastEntry();
 
   /**
-   * Returns and removes the entry associated with the lowest key.
-   *
-   * @return the entry or null
-   */
-  Map.Entry<String, Versioned<V>> pollFirstEntry();
-
-  /**
-   * Returns and removes the entry associated with the highest key.
-   *
-   * @return the entry or null
-   */
-  Map.Entry<String, Versioned<V>> pollLastEntry();
-
-  /**
    * Returns the entry associated with the greatest key less than key.
    *
    * @param key the key

@@ -16,7 +16,7 @@
 package io.atomix.core.config.jackson;
 
 import io.atomix.core.AtomixConfig;
-import io.atomix.core.config.ConfigProvider;
+import io.atomix.utils.config.ConfigProvider;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -58,7 +58,7 @@ public class JacksonConfigProviderTest {
     File file = new File(getClass().getClassLoader().getResource("env.yaml").getFile());
     assertTrue(provider.isConfigFile(file));
     AtomixConfig config = provider.load(file, AtomixConfig.class);
-    assertEquals("test", config.getPartitionGroups().iterator().next().getName());
+    assertEquals("test", config.getPartitionGroups().values().iterator().next().getName());
   }
 
   @Test
@@ -67,8 +67,8 @@ public class JacksonConfigProviderTest {
     ConfigProvider provider = new JacksonConfigProvider();
     File file = new File(getClass().getClassLoader().getResource("env.yaml").getFile());
     AtomixConfig config = provider.load(IOUtils.toString(file.toURI(), StandardCharsets.UTF_8), AtomixConfig.class);
-    assertEquals("test", config.getPartitionGroups().iterator().next().getName());
-    assertEquals(3, config.getPartitionGroups().iterator().next().getPartitions());
+    assertEquals("test", config.getPartitionGroups().values().iterator().next().getName());
+    assertEquals(3, config.getPartitionGroups().values().iterator().next().getPartitions());
   }
 
   @Test
@@ -78,7 +78,7 @@ public class JacksonConfigProviderTest {
     File file = new File(getClass().getClassLoader().getResource("sys.yaml").getFile());
     assertTrue(provider.isConfigFile(file));
     AtomixConfig config = provider.load(file, AtomixConfig.class);
-    assertEquals("test", config.getPartitionGroups().iterator().next().getName());
+    assertEquals("test", config.getPartitionGroups().values().iterator().next().getName());
   }
 
   @Test
@@ -88,6 +88,6 @@ public class JacksonConfigProviderTest {
     File file = new File(getClass().getClassLoader().getResource("sys.yaml").getFile());
     assertTrue(provider.isConfigFile(file));
     AtomixConfig config = provider.load(IOUtils.toString(file.toURI(), StandardCharsets.UTF_8), AtomixConfig.class);
-    assertEquals("test", config.getPartitionGroups().iterator().next().getName());
+    assertEquals("test", config.getPartitionGroups().values().iterator().next().getName());
   }
 }

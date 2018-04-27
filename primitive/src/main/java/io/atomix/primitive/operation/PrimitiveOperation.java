@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.operation;
 
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -26,6 +26,28 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Base type for Raft state operations.
  */
 public class PrimitiveOperation {
+
+  /**
+   * Creates a new primitive operation with a simplified identifier and a null value.
+   *
+   * @param id    the operation identifier
+   * @return the primitive operation
+   */
+  public static PrimitiveOperation operation(OperationId id) {
+    return new PrimitiveOperation(OperationId.simplify(id), null);
+  }
+
+  /**
+   * Creates a new primitive operation with a simplified identifier.
+   *
+   * @param id    the operation identifier
+   * @param value the operation value
+   * @return the primitive operation
+   */
+  public static PrimitiveOperation operation(OperationId id, byte[] value) {
+    return new PrimitiveOperation(OperationId.simplify(id), value);
+  }
+
   protected final OperationId id;
   protected final byte[] value;
 
@@ -75,7 +97,7 @@ public class PrimitiveOperation {
   public String toString() {
     return toStringHelper(this)
         .add("id", id)
-        .add("value", ArraySizeHashPrinter.of(value))
+        .add("value", value != null ? ArraySizeHashPrinter.of(value) : null)
         .toString();
   }
 }

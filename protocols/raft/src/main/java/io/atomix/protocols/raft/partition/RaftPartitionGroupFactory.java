@@ -15,36 +15,20 @@
  */
 package io.atomix.protocols.raft.partition;
 
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupFactory;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.RaftProtocol;
-import io.atomix.storage.StorageLevel;
-
-import java.io.File;
 
 /**
  * Raft partition group factory.
  */
 public class RaftPartitionGroupFactory implements PartitionGroupFactory<RaftPartitionGroupConfig, RaftPartitionGroup> {
-  private static final String SYSTEM_GROUP_NAME = "system";
-
   @Override
-  public PrimitiveProtocol.Type type() {
-    return RaftProtocol.TYPE;
+  public PartitionGroup.Type type() {
+    return RaftPartitionGroup.TYPE;
   }
 
   @Override
   public RaftPartitionGroup createGroup(RaftPartitionGroupConfig config) {
     return new RaftPartitionGroup(config);
-  }
-
-  @Override
-  public RaftPartitionGroup createSystemGroup(int size, File dataDirectory) {
-    return RaftPartitionGroup.builder(SYSTEM_GROUP_NAME)
-        .withNumPartitions(1)
-        .withPartitionSize(size)
-        .withDataDirectory(new File(dataDirectory, SYSTEM_GROUP_NAME))
-        .withStorageLevel(StorageLevel.DISK)
-        .build();
   }
 }

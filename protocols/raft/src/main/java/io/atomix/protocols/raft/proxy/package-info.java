@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides a {@link io.atomix.primitive.proxy.PrimitiveProxy} implementation for the Raft consensus protocol.
+ * Provides a {@link io.atomix.primitive.proxy.PartitionProxy} implementation for the Raft consensus protocol.
  */
 package io.atomix.protocols.raft.proxy;

@@ -15,22 +15,28 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Managed partition group.
  */
-public interface ManagedPartitionGroup<P extends PrimitiveProtocol> extends PartitionGroup<P> {
+public interface ManagedPartitionGroup<P extends Partition> extends PartitionGroup<P> {
 
   /**
-   * Initializes the partition group.
+   * Joins the partition group.
    *
    * @param managementService the partition management service
-   * @return a future to be completed once the partition group has been initialized
+   * @return a future to be completed once the partition group has been joined
    */
-  CompletableFuture<ManagedPartitionGroup<P>> open(PartitionManagementService managementService);
+  CompletableFuture<ManagedPartitionGroup<P>> join(PartitionManagementService managementService);
+
+  /**
+   * Connects to the partition group.
+   *
+   * @param managementService the partition management service
+   * @return a future to be completed once the partition group has been connected
+   */
+  CompletableFuture<ManagedPartitionGroup<P>> connect(PartitionManagementService managementService);
 
   /**
    * Closes the partition group.

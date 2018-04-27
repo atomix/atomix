@@ -20,7 +20,7 @@ import io.atomix.core.generator.AtomicIdGenerator;
 import io.atomix.core.generator.AtomicIdGeneratorBuilder;
 import io.atomix.core.generator.AtomicIdGeneratorConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -35,14 +35,12 @@ public class DelegatingAtomicIdGeneratorBuilder extends AtomicIdGeneratorBuilder
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicIdGenerator> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
-    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
-        .thenCompose(info -> managementService.getPartitionService()
-            .getPartitionGroup(protocol)
-            .getPartition(name())
-            .getPrimitiveClient()
-            .newProxy(name(), primitiveType(), protocol)
-            .connect()
-            .thenApply(proxy -> new DelegatingAtomicIdGenerator(new AtomicCounterProxy(proxy)).sync()));
+    PrimitiveProxy proxy = protocol().newProxy(
+        name(),
+        primitiveType(),
+        managementService.getPartitionService());
+    return new AtomicCounterProxy(proxy, managementService.getPrimitiveRegistry())
+        .connect()
+        .thenApply(counter -> new DelegatingAtomicIdGenerator(counter).sync());
   }
 }

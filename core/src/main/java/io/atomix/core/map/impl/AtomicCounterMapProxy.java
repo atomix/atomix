@@ -29,11 +29,15 @@ import io.atomix.core.map.impl.AtomicCounterMapOperations.PutIfAbsent;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Remove;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.RemoveValue;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Replace;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
+
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.ADD_AND_GET;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.CLEAR;
@@ -43,7 +47,6 @@ import static io.atomix.core.map.impl.AtomicCounterMapOperations.GET_AND_ADD;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.GET_AND_DECREMENT;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.GET_AND_INCREMENT;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.INCREMENT_AND_GET;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.IS_EMPTY;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.PUT;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.PUT_IF_ABSENT;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.REMOVE;
@@ -51,99 +54,103 @@ import static io.atomix.core.map.impl.AtomicCounterMapOperations.REMOVE_VALUE;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.REPLACE;
 import static io.atomix.core.map.impl.AtomicCounterMapOperations.SIZE;
 
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-
 /**
  * {@code AsyncAtomicCounterMap} implementation backed by Atomix.
  */
-public class AtomicCounterMapProxy extends AbstractAsyncPrimitive implements AsyncAtomicCounterMap<String> {
+public class AtomicCounterMapProxy extends AbstractAsyncPrimitive<AsyncAtomicCounterMap<String>> implements AsyncAtomicCounterMap<String> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicCounterMapOperations.NAMESPACE)
       .build());
 
-  public AtomicCounterMapProxy(PrimitiveProxy proxy) {
-    super(proxy);
+  public AtomicCounterMapProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
+  }
+
+  @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
   }
 
   @Override
   public CompletableFuture<Long> incrementAndGet(String key) {
-    return proxy.invoke(INCREMENT_AND_GET, SERIALIZER::encode, new IncrementAndGet(key), SERIALIZER::decode);
+    return invokeBy(key, INCREMENT_AND_GET, new IncrementAndGet(key));
   }
 
   @Override
   public CompletableFuture<Long> decrementAndGet(String key) {
-    return proxy.invoke(DECREMENT_AND_GET, SERIALIZER::encode, new DecrementAndGet(key), SERIALIZER::decode);
+    return invokeBy(key, DECREMENT_AND_GET, new DecrementAndGet(key));
   }
 
   @Override
   public CompletableFuture<Long> getAndIncrement(String key) {
-    return proxy.invoke(GET_AND_INCREMENT, SERIALIZER::encode, new GetAndIncrement(key), SERIALIZER::decode);
+    return invokeBy(key, GET_AND_INCREMENT, new GetAndIncrement(key));
   }
 
   @Override
   public CompletableFuture<Long> getAndDecrement(String key) {
-    return proxy.invoke(GET_AND_DECREMENT, SERIALIZER::encode, new GetAndDecrement(key), SERIALIZER::decode);
+    return invokeBy(key, GET_AND_DECREMENT, new GetAndDecrement(key));
   }
 
   @Override
   public CompletableFuture<Long> addAndGet(String key, long delta) {
-    return proxy.invoke(ADD_AND_GET, SERIALIZER::encode, new AddAndGet(key, delta), SERIALIZER::decode);
+    return invokeBy(key, ADD_AND_GET, new AddAndGet(key, delta));
   }
 
   @Override
   public CompletableFuture<Long> getAndAdd(String key, long delta) {
-    return proxy.invoke(GET_AND_ADD, SERIALIZER::encode, new GetAndAdd(key, delta), SERIALIZER::decode);
+    return invokeBy(key, GET_AND_ADD, new GetAndAdd(key, delta));
   }
 
   @Override
   public CompletableFuture<Long> get(String key) {
-    return proxy.invoke(GET, SERIALIZER::encode, new Get(key), SERIALIZER::decode);
+    return invokeBy(key, GET, new Get(key));
   }
 
   @Override
   public CompletableFuture<Long> put(String key, long newValue) {
-    return proxy.invoke(PUT, SERIALIZER::encode, new Put(key, newValue), SERIALIZER::decode);
+    return invokeBy(key, PUT, new Put(key, newValue));
   }
 
   @Override
   public CompletableFuture<Long> putIfAbsent(String key, long newValue) {
-    return proxy.invoke(PUT_IF_ABSENT, SERIALIZER::encode, new PutIfAbsent(key, newValue), SERIALIZER::decode);
+    return invokeBy(key, PUT_IF_ABSENT, new PutIfAbsent(key, newValue));
   }
 
   @Override
   public CompletableFuture<Boolean> replace(String key, long expectedOldValue, long newValue) {
-    return proxy.invoke(
-        REPLACE,
-        SERIALIZER::encode,
-        new Replace(key, expectedOldValue, newValue),
-        SERIALIZER::decode);
+    return invokeBy(key, REPLACE, new Replace(key, expectedOldValue, newValue));
   }
 
   @Override
   public CompletableFuture<Long> remove(String key) {
-    return proxy.invoke(REMOVE, SERIALIZER::encode, new Remove(key), SERIALIZER::decode);
+    return invokeBy(key, REMOVE, new Remove(key));
   }
 
   @Override
   public CompletableFuture<Boolean> remove(String key, long value) {
-    return proxy.invoke(REMOVE_VALUE, SERIALIZER::encode, new RemoveValue(key, value), SERIALIZER::decode);
-  }
-
-  @Override
-  public CompletableFuture<Integer> size() {
-    return proxy.invoke(SIZE, SERIALIZER::decode);
+    return invokeBy(key, REMOVE_VALUE, new RemoveValue(key, value));
   }
 
   @Override
   public CompletableFuture<Boolean> isEmpty() {
-    return proxy.invoke(IS_EMPTY, SERIALIZER::decode);
+    return size().thenApply(size -> size == 0);
+  }
+
+  @Override
+  public CompletableFuture<Integer> size() {
+    return this.<Integer>invokeAll(SIZE)
+        .thenApply(results -> results.reduce(Math::addExact).orElse(0));
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    return proxy.invoke(CLEAR);
+    return invokeAll(CLEAR).thenApply(v -> null);
+  }
+
+  @Override
+  public CompletableFuture<AsyncAtomicCounterMap<String>> connect() {
+    return super.connect();
   }
 
   @Override

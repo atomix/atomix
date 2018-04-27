@@ -17,9 +17,9 @@ package io.atomix.protocols.backup.service.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionListener;
-import io.atomix.primitive.session.Sessions;
+import io.atomix.primitive.session.PrimitiveSessions;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 
 import java.util.Iterator;
@@ -29,7 +29,7 @@ import java.util.Set;
 /**
  * State machine sessions.
  */
-public class PrimaryBackupServiceSessions implements Sessions {
+public class PrimaryBackupServiceSessions implements PrimitiveSessions {
   private final Map<Long, PrimaryBackupSession> sessions = Maps.newConcurrentMap();
   private final Set<SessionListener> listeners = Sets.newIdentityHashSet();
 
@@ -73,20 +73,20 @@ public class PrimaryBackupServiceSessions implements Sessions {
   }
 
   @Override
-  public Sessions addListener(SessionListener listener) {
+  public PrimitiveSessions addListener(SessionListener listener) {
     listeners.add(listener);
     return this;
   }
 
   @Override
-  public Sessions removeListener(SessionListener listener) {
+  public PrimitiveSessions removeListener(SessionListener listener) {
     listeners.remove(listener);
     return this;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Iterator<Session> iterator() {
+  public Iterator<PrimitiveSession> iterator() {
     return (Iterator) sessions.values().iterator();
   }
 }

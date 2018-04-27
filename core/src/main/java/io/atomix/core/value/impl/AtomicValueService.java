@@ -16,20 +16,22 @@
 package io.atomix.core.value.impl;
 
 import com.google.common.collect.Sets;
-
 import io.atomix.core.value.AtomicValueEvent;
 import io.atomix.core.value.impl.AtomicValueOperations.CompareAndSet;
 import io.atomix.core.value.impl.AtomicValueOperations.GetAndSet;
 import io.atomix.core.value.impl.AtomicValueOperations.Set;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
+
+import java.util.Arrays;
+import java.util.HashSet;
 
 import static io.atomix.core.value.impl.AtomicValueEvents.CHANGE;
 import static io.atomix.core.value.impl.AtomicValueOperations.ADD_LISTENER;
@@ -38,9 +40,6 @@ import static io.atomix.core.value.impl.AtomicValueOperations.GET;
 import static io.atomix.core.value.impl.AtomicValueOperations.GET_AND_SET;
 import static io.atomix.core.value.impl.AtomicValueOperations.REMOVE_LISTENER;
 import static io.atomix.core.value.impl.AtomicValueOperations.SET;
-
-import java.util.Arrays;
-import java.util.HashSet;
 
 /**
  * Raft atomic value service.
@@ -53,33 +52,38 @@ public class AtomicValueService extends AbstractPrimitiveService {
       .build());
 
   private byte[] value;
-  private java.util.Set<Session> listeners = Sets.newHashSet();
+  private java.util.Set<PrimitiveSession> listeners = Sets.newHashSet();
+
+  @Override
+  public Serializer serializer() {
+    return SERIALIZER;
+  }
 
   @Override
   protected void configure(ServiceExecutor executor) {
-    executor.register(SET, SERIALIZER::decode, this::set);
-    executor.register(GET, this::get, SERIALIZER::encode);
-    executor.register(COMPARE_AND_SET, SERIALIZER::decode, this::compareAndSet, SERIALIZER::encode);
-    executor.register(GET_AND_SET, SERIALIZER::decode, this::getAndSet, SERIALIZER::encode);
+    executor.register(SET, this::set);
+    executor.register(GET, this::get);
+    executor.register(COMPARE_AND_SET, this::compareAndSet);
+    executor.register(GET_AND_SET, this::getAndSet);
     executor.register(ADD_LISTENER, (Commit<Void> c) -> listeners.add(c.session()));
     executor.register(REMOVE_LISTENER, (Commit<Void> c) -> listeners.remove(c.session()));
   }
 
   @Override
-  public void backup(BufferOutput<?> writer) {
+  public void backup(BackupOutput writer) {
     writer.writeInt(value.length).writeBytes(value);
     java.util.Set<Long> sessionIds = new HashSet<>();
-    for (Session session : listeners) {
+    for (PrimitiveSession session : listeners) {
       sessionIds.add(session.sessionId().id());
     }
-    writer.writeObject(sessionIds, SERIALIZER::encode);
+    writer.writeObject(sessionIds);
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  public void restore(BackupInput reader) {
     value = reader.readBytes(reader.readInt());
     listeners = new HashSet<>();
-    for (Long sessionId : reader.<java.util.Set<Long>>readObject(SERIALIZER::decode)) {
+    for (Long sessionId : reader.<java.util.Set<Long>>readObject()) {
       listeners.add(getSessions().getSession(sessionId));
     }
   }
@@ -88,7 +92,7 @@ public class AtomicValueService extends AbstractPrimitiveService {
     byte[] oldValue = this.value;
     this.value = value;
     AtomicValueEvent<byte[]> event = new AtomicValueEvent<>(oldValue, value);
-    listeners.forEach(s -> s.publish(CHANGE, SERIALIZER::encode, event));
+    listeners.forEach(s -> s.publish(CHANGE, event));
     return oldValue;
   }
 
