@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
@@ -263,11 +264,14 @@ public class DefaultPartitionService implements ManagedPartitionService {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public CompletableFuture<Void> stop() {
     messagingService.unsubscribe(BOOTSTRAP_SUBJECT);
-    List<CompletableFuture<Void>> futures = groups.values().stream()
-        .map(ManagedPartitionGroup::close)
-        .collect(Collectors.toList());
+
+    Stream<CompletableFuture<Void>> systemStream = Stream.of(systemGroup != null ? systemGroup.close() : CompletableFuture.completedFuture(null));
+    Stream<CompletableFuture<Void>> groupStream = groups.values().stream().map(ManagedPartitionGroup::close);
+    List<CompletableFuture<Void>> futures = Stream.concat(systemStream, groupStream).collect(Collectors.toList());
+
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
       ThreadContext threadContext = this.threadContext;
       if (threadContext != null) {

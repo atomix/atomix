@@ -577,6 +577,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public CompletableFuture<Void> close() {
     clusterMembershipService.removeListener(membershipEventListener);
     primaryElection.removeListener(primaryElectionListener);
+    role.close();
     return CompletableFuture.completedFuture(null);
   }
 }
