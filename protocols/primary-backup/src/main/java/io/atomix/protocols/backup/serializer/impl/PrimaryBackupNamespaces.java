@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.backup.serializer.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.Replication;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.event.impl.DefaultEventType;
@@ -53,7 +53,7 @@ public final class PrimaryBackupNamespaces {
   public static final KryoNamespace PROTOCOL = KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
-      .register(NodeId.class)
+      .register(MemberId.class)
       .register(PrimaryBackupResponse.Status.class)
       .register(ExecuteRequest.class)
       .register(ExecuteResponse.class)

@@ -15,9 +15,8 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.Node;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
-import io.atomix.protocols.raft.partition.RaftPartitionGroup;
+import io.atomix.cluster.Member;
+import io.atomix.core.profile.Profile;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -27,7 +26,6 @@ import java.net.ServerSocket;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
@@ -50,56 +48,44 @@ public abstract class AbstractAtomixTest {
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix.Builder buildAtomix(Node.Type type, int id, List<Integer> nodeIds, List<Integer> bootstrapIds) {
-    Node localNode = Node.builder(String.valueOf(id))
+  protected static Atomix.Builder buildAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes) {
+    Member localMember = Member.builder(String.valueOf(id))
         .withType(type)
         .withAddress("localhost", BASE_PORT + id)
         .build();
 
-    Collection<Node> nodes = Stream.concat(
-        nodeIds.stream()
-            .map(nodeId -> Node.builder(String.valueOf(nodeId))
-                .withType(Node.Type.CORE)
-                .withAddress("localhost", BASE_PORT + nodeId)
+    Collection<Member> members = Stream.concat(
+        persistentNodes.stream()
+            .map(memberId -> Member.builder(String.valueOf(memberId))
+                .withType(Member.Type.PERSISTENT)
+                .withAddress("localhost", BASE_PORT + memberId)
                 .build()),
-        bootstrapIds.stream()
-            .filter(nodeId -> !nodeIds.contains(nodeId))
-            .map(nodeId -> Node.builder(String.valueOf(nodeId))
-                .withType(Node.Type.DATA)
-                .withAddress("localhost", BASE_PORT + nodeId)
+        ephemeralNodes.stream()
+            .filter(memberId -> !persistentNodes.contains(memberId))
+            .map(memberId -> Member.builder(String.valueOf(memberId))
+                .withType(Member.Type.EPHEMERAL)
+                .withAddress("localhost", BASE_PORT + memberId)
                 .build()))
         .collect(Collectors.toList());
 
-    Atomix.Builder builder = Atomix.builder()
+    return Atomix.builder()
         .withClusterName("test")
-        .withDataDirectory(new File("target/test-logs/" + id))
-        .withLocalNode(localNode)
-        .withNodes(nodes)
-        .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
-            .withNumPartitions(3)
-            .build());
-    if (!nodeIds.isEmpty()) {
-      builder.addPartitionGroup(RaftPartitionGroup.builder("core")
-          .withPartitionSize(3)
-          .withNumPartitions(3)
-          .withDataDirectory(new File("target/test-logs/core/" + id))
-          .build());
-    }
-    return builder;
+        .withLocalMember(localMember)
+        .withMembers(members);
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds) {
-    return createAtomix(type, id, coreIds, bootstrapIds, b -> b.build());
+  protected static Atomix createAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Profile... profiles) {
+    return createAtomix(type, id, persistentIds, ephemeralIds, b -> b.withProfiles(profiles).build());
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(Node.Type type, int id, List<Integer> coreIds, List<Integer> bootstrapIds, Function<Atomix.Builder, Atomix> builderFunction) {
-    return builderFunction.apply(buildAtomix(type, id, coreIds, bootstrapIds));
+  protected static Atomix createAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
+    return builderFunction.apply(buildAtomix(type, id, persistentIds, ephemeralIds));
   }
 
   @AfterClass
@@ -123,7 +109,7 @@ public abstract class AbstractAtomixTest {
    * Deletes data from the test data directory.
    */
   protected static void deleteData() throws Exception {
-    Path directory = Paths.get("target/test-logs/");
+    Path directory = new File(System.getProperty("user.dir"), ".data").toPath();
     if (Files.exists(directory)) {
       Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
         @Override

@@ -17,6 +17,7 @@ package io.atomix.primitive.partition;
 
 import com.google.common.hash.Hashing;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.utils.config.Configured;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -25,7 +26,19 @@ import java.util.List;
 /**
  * Primitive partition group.
  */
-public interface PartitionGroup<P extends PrimitiveProtocol> {
+public interface PartitionGroup<P extends Partition> extends Configured<PartitionGroupConfig> {
+
+  /**
+   * Primitive protocol type.
+   */
+  interface Type {
+    /**
+     * Returns the protocol type name.
+     *
+     * @return the protocol type name
+     */
+    String name();
+  }
 
   /**
    * Returns the partition group name.
@@ -35,18 +48,25 @@ public interface PartitionGroup<P extends PrimitiveProtocol> {
   String name();
 
   /**
+   * Returns the partition group type.
+   *
+   * @return the partition group type
+   */
+  Type type();
+
+  /**
    * Returns the primitive protocol type supported by the partition group.
    *
    * @return the primitive protocol type supported by the partition group
    */
-  PrimitiveProtocol.Type type();
+  PrimitiveProtocol.Type protocol();
 
   /**
    * Returns a new primitive protocol.
    *
    * @return a new primitive protocol
    */
-  P newProtocol();
+  PrimitiveProtocol newProtocol();
 
   /**
    * Returns a partition by ID.
@@ -55,7 +75,7 @@ public interface PartitionGroup<P extends PrimitiveProtocol> {
    * @return the partition or {@code null} if no partition with the given identifier exists
    * @throws NullPointerException if the partition identifier is {@code null}
    */
-  Partition getPartition(PartitionId partitionId);
+  P getPartition(PartitionId partitionId);
 
   /**
    * Returns the partition for the given key.
@@ -63,7 +83,7 @@ public interface PartitionGroup<P extends PrimitiveProtocol> {
    * @param key the key for which to return the partition
    * @return the partition for the given key
    */
-  default Partition getPartition(String key) {
+  default P getPartition(String key) {
     int hashCode = Hashing.sha256().hashString(key, StandardCharsets.UTF_8).asInt();
     return getPartition(getPartitionIds().get(Math.abs(hashCode) % getPartitionIds().size()));
   }
@@ -73,7 +93,7 @@ public interface PartitionGroup<P extends PrimitiveProtocol> {
    *
    * @return a collection of all partitions
    */
-  Collection<Partition<P>> getPartitions();
+  Collection<P> getPartitions();
 
   /**
    * Returns a sorted list of partition IDs.

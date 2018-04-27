@@ -15,6 +15,7 @@
  */
 package io.atomix.core.config.jackson;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.io.IOContext;
@@ -24,16 +25,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import io.atomix.core.config.ConfigProvider;
 import io.atomix.core.config.jackson.impl.ConfigPropertyNamingStrategy;
 import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
 import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
+import io.atomix.core.config.jackson.impl.ProfileDeserializer;
+import io.atomix.core.profile.Profile;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
-import io.atomix.utils.Config;
-import io.atomix.utils.ConfigurationException;
+import io.atomix.utils.config.Config;
+import io.atomix.utils.config.ConfigProvider;
+import io.atomix.utils.config.ConfigurationException;
 
 import java.io.File;
 import java.io.IOException;
@@ -130,6 +133,10 @@ public class JacksonConfigProvider implements ConfigProvider {
 
   private void setupObjectMapper(ObjectMapper mapper) {
     mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
+    mapper.setVisibility(mapper.getVisibilityChecker()
+        .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+        .withGetterVisibility(JsonAutoDetect.Visibility.ANY)
+        .withSetterVisibility(JsonAutoDetect.Visibility.ANY));
     mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
@@ -139,6 +146,7 @@ public class JacksonConfigProvider implements ConfigProvider {
     module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
     module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
     module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
+    module.addDeserializer(Profile.class, new ProfileDeserializer());
     mapper.registerModule(module);
   }
 

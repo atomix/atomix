@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.backup.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 
 import java.util.Collection;
 import java.util.Map;
@@ -24,15 +24,15 @@ import java.util.Map;
  * Base class for Raft protocol.
  */
 public abstract class TestPrimaryBackupProtocol {
-  private final Map<NodeId, TestPrimaryBackupServerProtocol> servers;
-  private final Map<NodeId, TestPrimaryBackupClientProtocol> clients;
+  private final Map<MemberId, TestPrimaryBackupServerProtocol> servers;
+  private final Map<MemberId, TestPrimaryBackupClientProtocol> clients;
 
-  public TestPrimaryBackupProtocol(Map<NodeId, TestPrimaryBackupServerProtocol> servers, Map<NodeId, TestPrimaryBackupClientProtocol> clients) {
+  public TestPrimaryBackupProtocol(Map<MemberId, TestPrimaryBackupServerProtocol> servers, Map<MemberId, TestPrimaryBackupClientProtocol> clients) {
     this.servers = servers;
     this.clients = clients;
   }
 
-  TestPrimaryBackupServerProtocol server(NodeId memberId) {
+  TestPrimaryBackupServerProtocol server(MemberId memberId) {
     return servers.get(memberId);
   }
 
@@ -40,7 +40,7 @@ public abstract class TestPrimaryBackupProtocol {
     return servers.values();
   }
 
-  TestPrimaryBackupClientProtocol client(NodeId memberId) {
+  TestPrimaryBackupClientProtocol client(MemberId memberId) {
     return clients.get(memberId);
   }
 }

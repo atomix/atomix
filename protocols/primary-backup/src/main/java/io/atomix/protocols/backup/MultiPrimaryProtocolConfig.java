@@ -16,9 +16,11 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.primitive.Consistency;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.partition.Partitioner;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 import java.time.Duration;
 import java.util.concurrent.Executor;
@@ -27,13 +29,39 @@ import java.util.concurrent.Executor;
  * Multi-primary protocol configuration.
  */
 public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPrimaryProtocolConfig> {
+  private Partitioner<String> partitioner = Partitioner.MURMUR3;
   private Consistency consistency = Consistency.SEQUENTIAL;
   private Replication replication = Replication.ASYNCHRONOUS;
   private Recovery recovery = Recovery.RECOVER;
-  private int numBackups = 1;
+  private int backups = 1;
   private int maxRetries = 0;
   private Duration retryDelay = Duration.ofMillis(100);
   private Executor executor;
+
+  @Override
+  public PrimitiveProtocol.Type getType() {
+    return MultiPrimaryProtocol.TYPE;
+  }
+
+  /**
+   * Returns the protocol partitioner.
+   *
+   * @return the protocol partitioner
+   */
+  public Partitioner<String> getPartitioner() {
+    return partitioner;
+  }
+
+  /**
+   * Sets the protocol partitioner.
+   *
+   * @param partitioner the protocol partitioner
+   * @return the protocol configuration
+   */
+  public MultiPrimaryProtocolConfig setPartitioner(Partitioner<String> partitioner) {
+    this.partitioner = partitioner;
+    return this;
+  }
 
   /**
    * Returns the consistency level.
@@ -100,8 +128,8 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    *
    * @return the number of backups
    */
-  public int getNumBackups() {
-    return numBackups;
+  public int getBackups() {
+    return backups;
   }
 
   /**
@@ -110,8 +138,8 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param numBackups the number of backups
    * @return the protocol configuration
    */
-  public MultiPrimaryProtocolConfig setNumBackups(int numBackups) {
-    this.numBackups = numBackups;
+  public MultiPrimaryProtocolConfig setBackups(int numBackups) {
+    this.backups = numBackups;
     return this;
   }
 

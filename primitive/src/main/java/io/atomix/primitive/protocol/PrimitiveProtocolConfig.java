@@ -15,13 +15,20 @@
  */
 package io.atomix.primitive.protocol;
 
-import io.atomix.utils.Config;
+import io.atomix.utils.config.Config;
 
 /**
  * Primitive protocol configuration.
  */
 public abstract class PrimitiveProtocolConfig<C extends PrimitiveProtocolConfig<C>> implements Config {
   private String group;
+
+  /**
+   * Returns the primitive protocol type.
+   *
+   * @return the primitive protocol type
+   */
+  public abstract PrimitiveProtocol.Type getType();
 
   /**
    * Returns the protocol group.

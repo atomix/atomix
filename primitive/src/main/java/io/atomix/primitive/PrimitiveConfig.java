@@ -59,9 +59,10 @@ public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> {
    * @param serializerConfig the serializer configuration
    * @return the primitive configuration
    */
-  public PrimitiveConfig setSerializerConfig(SerializerConfig serializerConfig) {
+  @SuppressWarnings("unchecked")
+  public C setSerializerConfig(SerializerConfig serializerConfig) {
     this.serializerConfig = serializerConfig;
-    return this;
+    return (C) this;
   }
 
   /**
@@ -79,9 +80,10 @@ public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> {
    * @param protocolConfig the protocol configuration
    * @return the primitive configuration
    */
-  public PrimitiveConfig setProtocolConfig(PrimitiveProtocolConfig protocolConfig) {
+  @SuppressWarnings("unchecked")
+  public C setProtocolConfig(PrimitiveProtocolConfig protocolConfig) {
     this.protocolConfig = protocolConfig;
-    return this;
+    return (C) this;
   }
 
   /**

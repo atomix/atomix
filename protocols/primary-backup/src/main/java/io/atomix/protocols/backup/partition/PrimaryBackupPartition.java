@@ -15,15 +15,14 @@
  */
 package io.atomix.protocols.backup.partition;
 
-import io.atomix.cluster.NodeId;
-import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.partition.Member;
+import io.atomix.cluster.MemberId;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.protocols.backup.PrimaryBackupClient;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionClient;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionServer;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -37,7 +36,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Primary-backup partition.
  */
-public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
+public class PrimaryBackupPartition implements Partition {
   private final PartitionId partitionId;
   private final MemberGroupProvider memberGroupProvider;
   private PrimaryElection election;
@@ -62,20 +61,20 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
   }
 
   @Override
-  public NodeId primary() {
+  public MemberId primary() {
     return election.getTerm()
         .join()
         .primary()
-        .nodeId();
+        .memberId();
   }
 
   @Override
-  public Collection<NodeId> backups() {
+  public Collection<MemberId> backups() {
     return election.getTerm()
         .join()
         .candidates()
         .stream()
-        .map(Member::nodeId)
+        .map(GroupMember::memberId)
         .collect(Collectors.toList());
   }
 
@@ -89,14 +88,14 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
   }
 
   @Override
-  public PrimitiveClient<MultiPrimaryProtocol> getPrimitiveClient() {
-    return client;
+  public PrimaryBackupClient getProxyClient() {
+    return client.getProxyClient();
   }
 
   /**
-   * Opens the primary-backup partition.
+   * Joins the primary-backup partition.
    */
-  CompletableFuture<Partition> open(
+  CompletableFuture<Partition> join(
       PartitionManagementService managementService,
       ThreadContextFactory threadFactory) {
     election = managementService.getElectionService().getElectionFor(partitionId);
@@ -110,6 +109,17 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
   }
 
   /**
+   * Connects to the primary-backup partition.
+   */
+  CompletableFuture<Partition> connect(
+      PartitionManagementService managementService,
+      ThreadContextFactory threadFactory) {
+    election = managementService.getElectionService().getElectionFor(partitionId);
+    client = new PrimaryBackupPartitionClient(this, managementService, threadFactory);
+    return client.start().thenApply(v -> this);
+  }
+
+  /**
    * Closes the primary-backup partition.
    */
   public CompletableFuture<Void> close() {
@@ -119,9 +129,13 @@ public class PrimaryBackupPartition implements Partition<MultiPrimaryProtocol> {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     client.stop().whenComplete((clientResult, clientError) -> {
-      server.stop().whenComplete((serverResult, serverError) -> {
+      if (server != null) {
+        server.stop().whenComplete((serverResult, serverError) -> {
+          future.complete(null);
+        });
+      } else {
         future.complete(null);
-      });
+      }
     });
     return future;
   }

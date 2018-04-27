@@ -23,7 +23,7 @@ import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -45,7 +45,7 @@ import java.util.function.Predicate;
  * @param <V> value type
  */
 public class DelegatingAsyncConsistentMap<K, V>
-    extends DelegatingDistributedPrimitive implements AsyncConsistentMap<K, V> {
+    extends DelegatingAsyncPrimitive implements AsyncConsistentMap<K, V> {
 
   private final AsyncConsistentMap<K, V> delegateMap;
 

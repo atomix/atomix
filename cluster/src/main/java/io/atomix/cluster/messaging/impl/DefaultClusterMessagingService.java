@@ -16,14 +16,14 @@
 package io.atomix.cluster.messaging.impl;
 
 import com.google.common.base.Objects;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.cluster.messaging.ManagedClusterMessagingService;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,12 +53,12 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     CONNECT_EXCEPTION.setStackTrace(new StackTraceElement[0]);
   }
 
-  protected final ClusterService cluster;
+  protected final ClusterMembershipService membershipService;
   protected final MessagingService messagingService;
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public DefaultClusterMessagingService(ClusterService cluster, MessagingService messagingService) {
-    this.cluster = checkNotNull(cluster, "clusterService cannot be null");
+  public DefaultClusterMessagingService(ClusterMembershipService membershipService, MessagingService messagingService) {
+    this.membershipService = checkNotNull(membershipService, "clusterService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
   }
 
@@ -67,10 +67,10 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       String subject,
       M message,
       Function<M, byte[]> encoder) {
-    multicast(subject, message, encoder, cluster.getNodes()
+    multicast(subject, message, encoder, membershipService.getMembers()
         .stream()
-        .filter(node -> !Objects.equal(node, cluster.getLocalNode()))
-        .map(Node::id)
+        .filter(node -> !Objects.equal(node, membershipService.getLocalMember()))
+        .map(Member::id)
         .collect(Collectors.toSet()));
   }
 
@@ -79,9 +79,9 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       String subject,
       M message,
       Function<M, byte[]> encoder) {
-    multicast(subject, message, encoder, cluster.getNodes()
+    multicast(subject, message, encoder, membershipService.getMembers()
         .stream()
-        .map(Node::id)
+        .map(Member::id)
         .collect(Collectors.toSet()));
   }
 
@@ -90,9 +90,9 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       String subject,
       M message,
       Function<M, byte[]> encoder,
-      NodeId toNodeId) {
+      MemberId toMemberId) {
     try {
-      return doUnicast(subject, encoder.apply(message), toNodeId);
+      return doUnicast(subject, encoder.apply(message), toMemberId);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -103,9 +103,9 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       String subject,
       M message,
       Function<M, byte[]> encoder,
-      Set<NodeId> nodes) {
+      Set<MemberId> nodes) {
     byte[] payload = encoder.apply(message);
-    nodes.forEach(nodeId -> doUnicast(subject, payload, nodeId));
+    nodes.forEach(memberId -> doUnicast(subject, payload, memberId));
   }
 
   @Override
@@ -114,29 +114,29 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
       M message,
       Function<M, byte[]> encoder,
       Function<byte[], R> decoder,
-      NodeId toNodeId,
+      MemberId toMemberId,
       Duration timeout) {
     try {
-      return sendAndReceive(subject, encoder.apply(message), toNodeId, timeout).thenApply(decoder);
+      return sendAndReceive(subject, encoder.apply(message), toMemberId, timeout).thenApply(decoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
   }
 
-  private CompletableFuture<Void> doUnicast(String subject, byte[] payload, NodeId toNodeId) {
-    Node node = cluster.getNode(toNodeId);
-    if (node == null) {
+  private CompletableFuture<Void> doUnicast(String subject, byte[] payload, MemberId toMemberId) {
+    Member member = membershipService.getMember(toMemberId);
+    if (member == null) {
       return Futures.exceptionalFuture(CONNECT_EXCEPTION);
     }
-    return messagingService.sendAsync(node.address(), subject, payload);
+    return messagingService.sendAsync(member.address(), subject, payload);
   }
 
-  private CompletableFuture<byte[]> sendAndReceive(String subject, byte[] payload, NodeId toNodeId, Duration timeout) {
-    Node node = cluster.getNode(toNodeId);
-    if (node == null) {
+  private CompletableFuture<byte[]> sendAndReceive(String subject, byte[] payload, MemberId toMemberId, Duration timeout) {
+    Member member = membershipService.getMember(toMemberId);
+    if (member == null) {
       return Futures.exceptionalFuture(CONNECT_EXCEPTION);
     }
-    return messagingService.sendAndReceive(node.address(), subject, payload, timeout);
+    return messagingService.sendAndReceive(member.address(), subject, payload, timeout);
   }
 
   @Override
@@ -188,8 +188,8 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
   @Override
   public <M> CompletableFuture<Void> subscribe(String subject, Function<byte[], M> decoder, BiConsumer<Address, M> handler, Executor executor) {
     messagingService.registerHandler(subject,
-            new InternalMessageBiConsumer<>(decoder, handler),
-            executor);
+        new InternalMessageBiConsumer<>(decoder, handler),
+        executor);
     return CompletableFuture.completedFuture(null);
   }
 
@@ -220,8 +220,8 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
     private final Function<M, CompletableFuture<R>> handler;
 
     InternalMessageResponder(Function<byte[], M> decoder,
-                                    Function<R, byte[]> encoder,
-                                    Function<M, CompletableFuture<R>> handler) {
+                             Function<R, byte[]> encoder,
+                             Function<M, CompletableFuture<R>> handler) {
       this.decoder = decoder;
       this.encoder = encoder;
       this.handler = handler;

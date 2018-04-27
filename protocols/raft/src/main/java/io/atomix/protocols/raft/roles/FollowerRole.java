@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEventListener;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  * Follower state.
  */
 public final class FollowerRole extends ActiveRole {
-  private final ClusterEventListener clusterListener = this::handleClusterEvent;
+  private final ClusterMembershipEventListener clusterListener = this::handleClusterEvent;
   private final Random random = new Random();
   private Scheduled heartbeatTimer;
 
@@ -62,16 +62,16 @@ public final class FollowerRole extends ActiveRole {
 
   @Override
   public synchronized CompletableFuture<RaftRole> start() {
-    raft.getClusterService().addListener(clusterListener);
+    raft.getMembershipService().addListener(clusterListener);
     return super.start().thenRun(this::resetHeartbeatTimeout).thenApply(v -> this);
   }
 
   /**
    * Handles a cluster event.
    */
-  private void handleClusterEvent(ClusterEvent event) {
+  private void handleClusterEvent(ClusterMembershipEvent event) {
     RaftMember leader = raft.getLeader();
-    if (leader != null && event.type() == ClusterEvent.Type.NODE_DEACTIVATED && event.subject().id().equals(leader.nodeId())) {
+    if (leader != null && event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED && event.subject().id().equals(leader.memberId())) {
       sendPollRequests();
     }
   }
@@ -155,11 +155,11 @@ public final class FollowerRole extends ActiveRole {
       log.debug("Polling {} for next term {}", member, raft.getTerm() + 1);
       PollRequest request = PollRequest.builder()
           .withTerm(raft.getTerm())
-          .withCandidate(raft.getCluster().getMember().nodeId())
+          .withCandidate(raft.getCluster().getMember().memberId())
           .withLastLogIndex(lastEntry != null ? lastEntry.index() : 0)
           .withLastLogTerm(lastTerm)
           .build();
-      raft.getProtocol().poll(member.nodeId(), request).whenCompleteAsync((response, error) -> {
+      raft.getProtocol().poll(member.memberId(), request).whenCompleteAsync((response, error) -> {
         raft.checkThread();
         if (isRunning() && !complete.get()) {
           if (error != null) {
@@ -231,7 +231,7 @@ public final class FollowerRole extends ActiveRole {
 
   @Override
   public synchronized CompletableFuture<Void> stop() {
-    raft.getClusterService().removeListener(clusterListener);
+    raft.getMembershipService().removeListener(clusterListener);
     return super.stop().thenRun(this::cancelHeartbeatTimers);
   }
 

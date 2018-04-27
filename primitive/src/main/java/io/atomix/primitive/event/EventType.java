@@ -39,7 +39,16 @@ public interface EventType extends Identifier<String> {
    * @param eventType the event type to simplify
    * @return the simplified event type
    */
-  static EventType simplify(EventType eventType) {
+  static EventType canonical(EventType eventType) {
     return new DefaultEventType(eventType.id());
+  }
+
+  /**
+   * Returns an identical event type in canonical form.
+   *
+   * @return an identical event type in canonical form
+   */
+  default EventType canonicalize() {
+    return canonical(this);
   }
 }

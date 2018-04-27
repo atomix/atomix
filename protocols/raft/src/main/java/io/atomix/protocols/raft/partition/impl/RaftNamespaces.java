@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.partition.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.event.impl.DefaultEventType;
 import io.atomix.primitive.operation.OperationType;
@@ -145,7 +145,7 @@ public final class RaftNamespaces {
       .register(Collections.emptyList().getClass())
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
-      .register(NodeId.class)
+      .register(MemberId.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
@@ -173,7 +173,7 @@ public final class RaftNamespaces {
       .register(ArrayList.class)
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
-      .register(NodeId.class)
+      .register(MemberId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)

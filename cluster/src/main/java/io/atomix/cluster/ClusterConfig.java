@@ -15,12 +15,12 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.utils.Config;
+import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Cluster configuration.
@@ -31,10 +31,11 @@ public class ClusterConfig implements Config {
   private static final int DEFAULT_MULTICAST_PORT = 54321;
 
   private String name = DEFAULT_CLUSTER_NAME;
-  private NodeConfig localNode;
-  private Collection<NodeConfig> nodes = new ArrayList<>();
+  private MemberConfig localMember;
+  private Map<String, MemberConfig> members = new HashMap<>();
   private boolean multicastEnabled = false;
   private Address multicastAddress;
+  private GroupMembershipConfig membershipConfig = new GroupMembershipConfig();
 
   public ClusterConfig() {
     try {
@@ -69,18 +70,18 @@ public class ClusterConfig implements Config {
    *
    * @return the local node configuration
    */
-  public NodeConfig getLocalNode() {
-    return localNode;
+  public MemberConfig getLocalMember() {
+    return localMember;
   }
 
   /**
    * Sets the local node configuration.
    *
-   * @param localNode the local node configuration
+   * @param localMember the local node configuration
    * @return the cluster configuration
    */
-  public ClusterConfig setLocalNode(NodeConfig localNode) {
-    this.localNode = localNode;
+  public ClusterConfig setLocalMember(MemberConfig localMember) {
+    this.localMember = localMember;
     return this;
   }
 
@@ -89,18 +90,30 @@ public class ClusterConfig implements Config {
    *
    * @return the cluster nodes
    */
-  public Collection<NodeConfig> getNodes() {
-    return nodes;
+  public Map<String, MemberConfig> getMembers() {
+    return members;
   }
 
   /**
    * Sets the cluster nodes.
    *
-   * @param nodes the cluster nodes
+   * @param members the cluster nodes
    * @return the cluster configuration
    */
-  public ClusterConfig setNodes(Collection<NodeConfig> nodes) {
-    this.nodes = nodes;
+  public ClusterConfig setMembers(Map<String, MemberConfig> members) {
+    members.forEach((id, member) -> member.setId(id));
+    this.members = members;
+    return this;
+  }
+
+  /**
+   * Adds a member to the configuration.
+   *
+   * @param member the member to add
+   * @return the cluster configuration
+   */
+  public ClusterConfig addMember(MemberConfig member) {
+    members.put(member.getId().id(), member);
     return this;
   }
 
@@ -141,6 +154,26 @@ public class ClusterConfig implements Config {
    */
   public ClusterConfig setMulticastAddress(Address multicastAddress) {
     this.multicastAddress = multicastAddress;
+    return this;
+  }
+
+  /**
+   * Returns the group membership configuration.
+   *
+   * @return the group membership configuration
+   */
+  public GroupMembershipConfig getMembershipConfig() {
+    return membershipConfig;
+  }
+
+  /**
+   * Sets the group membership configuration.
+   *
+   * @param membershipConfig the group membership configuration
+   * @return the cluster configuration
+   */
+  public ClusterConfig setMembershipConfig(GroupMembershipConfig membershipConfig) {
+    this.membershipConfig = membershipConfig;
     return this;
   }
 }

@@ -19,16 +19,16 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -66,18 +66,23 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       .build());
 
   private Map<PartitionId, ElectionState> elections = new HashMap<>();
-  private Map<Long, Session> listeners = new LinkedHashMap<>();
+  private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
   private Scheduled rebalanceTimer;
 
   @Override
-  public void backup(BufferOutput<?> writer) {
+  public Serializer serializer() {
+    return SERIALIZER;
+  }
+
+  @Override
+  public void backup(BackupOutput writer) {
     writer.writeObject(Sets.newHashSet(listeners.keySet()), SERIALIZER::encode);
     writer.writeObject(elections, SERIALIZER::encode);
     getLogger().debug("Took state machine snapshot");
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
       listeners.put(sessionId, getSessions().getSession(sessionId));
@@ -89,12 +94,12 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
 
   @Override
   protected void configure(ServiceExecutor executor) {
-    executor.register(PrimaryElectorOperations.ENTER, SERIALIZER::decode, this::enter, SERIALIZER::encode);
-    executor.register(PrimaryElectorOperations.GET_TERM, SERIALIZER::decode, this::getTerm, SERIALIZER::encode);
+    executor.register(PrimaryElectorOperations.ENTER, this::enter);
+    executor.register(PrimaryElectorOperations.GET_TERM, this::getTerm);
   }
 
   private void notifyTermChange(PartitionId partitionId, PrimaryTerm term) {
-    listeners.values().forEach(session -> session.publish(CHANGE, SERIALIZER::encode, new PrimaryElectionEvent(PrimaryElectionEvent.Type.CHANGED, partitionId, term)));
+    listeners.values().forEach(session -> session.publish(CHANGE, new PrimaryElectionEvent(PrimaryElectionEvent.Type.CHANGED, partitionId, term)));
   }
 
   /**
@@ -207,7 +212,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
     return electionState != null ? electionState.term() : null;
   }
 
-  private void onSessionEnd(Session session) {
+  private void onSessionEnd(PrimitiveSession session) {
     listeners.remove(session.sessionId().id());
     Set<PartitionId> partitions = elections.keySet();
     partitions.forEach(partitionId -> {
@@ -222,15 +227,15 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   }
 
   private static class Registration {
-    private final Member member;
+    private final GroupMember member;
     private final long sessionId;
 
-    public Registration(Member member, long sessionId) {
+    public Registration(GroupMember member, long sessionId) {
       this.member = member;
       this.sessionId = sessionId;
     }
 
-    public Member member() {
+    public GroupMember member() {
       return member;
     }
 
@@ -291,7 +296,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       this.elections = elections;
     }
 
-    ElectionState cleanup(Session session) {
+    ElectionState cleanup(PrimitiveSession session) {
       Optional<Registration> registration =
           registrations.stream().filter(r -> r.sessionId() == session.sessionId().id()).findFirst();
       if (registration.isPresent()) {
@@ -340,7 +345,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       return new PrimaryTerm(term, primary(), candidates());
     }
 
-    Member primary() {
+    GroupMember primary() {
       if (primary == null) {
         return null;
       } else {
@@ -348,7 +353,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       }
     }
 
-    List<Member> candidates() {
+    List<GroupMember> candidates() {
       return registrations.stream().map(registration -> registration.member()).collect(Collectors.toList());
     }
 
@@ -401,8 +406,8 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
           .filter(entry -> {
             // Get the topic leader's identifier and a list of session identifiers.
             // Then return true if the leader's identifier matches any of the session's candidates.
-            Member leaderId = entry.getValue().primary();
-            List<Member> sessionCandidates = entry.getValue().registrations.stream()
+            GroupMember leaderId = entry.getValue().primary();
+            List<GroupMember> sessionCandidates = entry.getValue().registrations.stream()
                 .filter(r -> r.sessionId == registration.sessionId)
                 .map(r -> r.member())
                 .collect(Collectors.toList());
@@ -412,7 +417,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
           .count();
     }
 
-    ElectionState transfer(Member member) {
+    ElectionState transfer(GroupMember member) {
       Registration newLeader = registrations.stream()
           .filter(r -> Objects.equals(r.member(), member))
           .findFirst()
@@ -432,17 +437,17 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onOpen(Session session) {
+  public void onOpen(PrimitiveSession session) {
     listeners.put(session.sessionId().id(), session);
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     onSessionEnd(session);
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     onSessionEnd(session);
   }
 }

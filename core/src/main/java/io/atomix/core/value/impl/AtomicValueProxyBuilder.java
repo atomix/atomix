@@ -19,7 +19,8 @@ import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -36,21 +37,19 @@ public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicValue<V>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
-    return managementService.getPrimitiveRegistry().createPrimitive(name(), primitiveType())
-        .thenCompose(info -> managementService.getPartitionService()
-            .getPartitionGroup(protocol)
-            .getPartition(name())
-            .getPrimitiveClient()
-            .newProxy(name(), primitiveType(), protocol)
-            .connect()
-            .thenApply(proxy -> {
-              AtomicValueProxy value = new AtomicValueProxy(proxy);
-              return new TranscodingAsyncAtomicValue<V, byte[]>(
-                  value,
-                  serializer()::encode,
-                  serializer()::decode)
-                  .sync();
-            }));
+    PrimitiveProxy proxy = protocol().newProxy(
+        name(),
+        primitiveType(),
+        managementService.getPartitionService());
+    return new AtomicValueProxy(proxy, managementService.getPrimitiveRegistry())
+        .connect()
+        .thenApply(elector -> {
+          Serializer serializer = serializer();
+          return new TranscodingAsyncAtomicValue<V, byte[]>(
+              elector,
+              key -> serializer.encode(key),
+              bytes -> serializer.decode(bytes))
+              .sync();
+        });
   }
 }

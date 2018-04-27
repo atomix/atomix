@@ -17,6 +17,7 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.partition.ManagedPrimaryElection;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.PartitionGroup;
@@ -25,7 +26,7 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryElectionService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
@@ -54,12 +55,15 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
 
   private final PartitionGroup<?> partitions;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
-  private final Consumer<PrimaryElectionEvent> eventListener = event -> listeners.forEach(l -> l.onEvent(event));
+  private final Consumer<PrimitiveEvent> eventListener = event -> {
+    PrimaryElectionEvent electionEvent = SERIALIZER.decode(event.value());
+    listeners.forEach(l -> l.onEvent(electionEvent));
+  };
   private final Map<PartitionId, ManagedPrimaryElection> elections = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
-  private PrimitiveProxy proxy;
+  private PartitionProxy proxy;
 
-  public DefaultPrimaryElectionService(PartitionGroup<?> partitionGroup) {
+  public DefaultPrimaryElectionService(PartitionGroup partitionGroup) {
     this.partitions = checkNotNull(partitionGroup);
   }
 
@@ -82,12 +86,13 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimaryElectionService> start() {
-    return partitions.getPartitions().iterator().next().getPrimitiveClient()
-        .newProxy(PRIMITIVE_NAME, PrimaryElectorType.instance())
+    return partitions.getPartitions().iterator().next().getProxyClient()
+        .proxyBuilder(PRIMITIVE_NAME, PrimaryElectorType.instance())
+        .build()
         .connect()
         .thenAccept(proxy -> {
           this.proxy = proxy;
-          proxy.addEventListener(CHANGE, SERIALIZER::decode, eventListener);
+          proxy.addEventListener(CHANGE, eventListener);
           started.set(true);
         })
         .thenApply(v -> this);
@@ -100,7 +105,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
 
   @Override
   public CompletableFuture<Void> stop() {
-    PrimitiveProxy proxy = this.proxy;
+    PartitionProxy proxy = this.proxy;
     if (proxy != null) {
       return proxy.close()
           .whenComplete((result, error) -> {

@@ -16,13 +16,14 @@
 package io.atomix.utils.concurrent;
 
 import com.google.common.collect.Lists;
-import io.atomix.utils.Match;
+import io.atomix.utils.misc.Match;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utilities for creating completed and exceptional futures.
@@ -193,6 +194,21 @@ public final class Futures {
       }
     });
     return newFuture;
+  }
+
+  /**
+   * Returns a new CompletableFuture completed with a list of computed values
+   * when all of the given CompletableFuture complete.
+   *
+   * @param futures the CompletableFutures
+   * @param <T> value type of CompletableFuture
+   * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
+   */
+  @SuppressWarnings("unchecked")
+  public static <T> CompletableFuture<Stream<T>> allOf(Stream<CompletableFuture<T>> futures) {
+    CompletableFuture<T>[] futuresArray = futures.toArray(CompletableFuture[]::new);
+    return CompletableFuture.allOf(futuresArray)
+        .thenApply(v -> Stream.of(futuresArray).map(CompletableFuture::join));
   }
 
   /**

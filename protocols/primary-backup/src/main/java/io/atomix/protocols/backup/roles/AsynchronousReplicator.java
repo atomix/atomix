@@ -16,7 +16,7 @@
 package io.atomix.protocols.backup.roles;
 
 import com.google.common.collect.ImmutableList;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.protocols.backup.protocol.BackupOperation;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
@@ -42,7 +42,7 @@ class AsynchronousReplicator implements Replicator {
 
   private final PrimaryBackupServiceContext context;
   private final Logger log;
-  private final Map<NodeId, BackupQueue> queues = new HashMap<>();
+  private final Map<MemberId, BackupQueue> queues = new HashMap<>();
 
   AsynchronousReplicator(PrimaryBackupServiceContext context, Logger log) {
     this.context = context;
@@ -52,7 +52,7 @@ class AsynchronousReplicator implements Replicator {
   @Override
   public CompletableFuture<Void> replicate(BackupOperation operation) {
     List<CompletableFuture<Void>> futures = new ArrayList<>(context.backups().size());
-    for (NodeId backup : context.backups()) {
+    for (MemberId backup : context.backups()) {
       futures.add(queues.computeIfAbsent(backup, BackupQueue::new).add(operation));
     }
     return Futures.allOf(futures).exceptionally(throwable -> {
@@ -64,8 +64,8 @@ class AsynchronousReplicator implements Replicator {
   }
 
   @Override
-  public void removePreviousOperation(NodeId nodeId, long endIndex) {
-    queues.computeIfPresent(nodeId, (node, queue) -> {
+  public void removePreviousOperation(MemberId memberId, long endIndex) {
+    queues.computeIfPresent(memberId, (node, queue) -> {
       queue.clear(endIndex);
       return queue;
     });
@@ -81,13 +81,13 @@ class AsynchronousReplicator implements Replicator {
    */
   private final class BackupQueue {
     private final Queue<BackupOperation> operations = new LinkedList<>();
-    private final NodeId nodeId;
+    private final MemberId memberId;
     private final Scheduled backupTimer;
     private CompletableFuture<Void> backupFuture = CompletableFuture.completedFuture(null);
     private long lastSent;
 
-    BackupQueue(NodeId nodeId) {
-      this.nodeId = nodeId;
+    BackupQueue(MemberId memberId) {
+      this.memberId = memberId;
       this.backupTimer = context.threadContext()
           .schedule(Duration.ofMillis(MAX_BATCH_TIME / 2), Duration.ofMillis(MAX_BATCH_TIME / 2), this::maybeBackup);
     }
@@ -122,12 +122,12 @@ class AsynchronousReplicator implements Replicator {
       operations.clear();
       BackupRequest request = BackupRequest.request(
           context.descriptor(),
-          context.nodeId(),
+          context.memberId(),
           context.currentTerm(),
           context.currentIndex(),
           batch);
-      log.trace("Sending {} to {}", request, nodeId);
-      return context.protocol().backup(nodeId, request).whenComplete((response, throwable) -> {
+      log.trace("Sending {} to {}", request, memberId);
+      return context.protocol().backup(memberId, request).whenComplete((response, throwable) -> {
         if (throwable != null) {
           if (log.isDebugEnabled()) {
               log.debug("Failed sending batch to backup", throwable);

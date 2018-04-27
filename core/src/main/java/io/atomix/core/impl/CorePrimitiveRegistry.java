@@ -26,7 +26,9 @@ import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypes;
-import io.atomix.primitive.partition.PartitionGroup;
+import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 
@@ -38,18 +40,20 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Core primitive registry.
  */
 public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
-  private final PartitionGroup<?> partitionGroup;
+  private final PartitionService partitionService;
   private final AtomicBoolean started = new AtomicBoolean();
   private AsyncConsistentMap<String, String> primitives;
 
-  public CorePrimitiveRegistry(PartitionGroup partitionGroup) {
-    this.partitionGroup = partitionGroup;
+  public CorePrimitiveRegistry(PartitionService partitionService) {
+    this.partitionService = checkNotNull(partitionService);
   }
 
   @Override
@@ -111,23 +115,25 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public CompletableFuture<PrimitiveRegistry> start() {
-    return partitionGroup.getPartitions()
-        .iterator()
-        .next()
-        .getPrimitiveClient()
-        .newProxy("primitives", ConsistentMapType.instance())
-        .connect()
-        .thenAccept(proxy -> {
-          this.primitives = new TranscodingAsyncConsistentMap<>(
-              new ConsistentMapProxy(proxy),
+    PrimitiveProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
+    PrimitiveProxy proxy = protocol.newProxy(
+        "primitives",
+        ConsistentMapType.instance(),
+        partitionService);
+    return proxy.connect()
+        .thenApply(v -> {
+          ConsistentMapProxy mapProxy = new ConsistentMapProxy(proxy, this);
+          primitives = new TranscodingAsyncConsistentMap<>(
+              mapProxy,
               key -> key,
               key -> key,
               value -> value != null ? SERIALIZER.encode(value) : null,
               value -> value != null ? SERIALIZER.decode(value) : null);
           started.set(true);
-        })
-        .thenApply(v -> this);
+          return this;
+        });
   }
 
   @Override

@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 
 import java.util.Map;
 import java.util.Set;
@@ -24,9 +24,9 @@ import java.util.Set;
  * Cluster metadata anti-entropy advertisement.
  */
 final class ClusterMetadataAdvertisement {
-  private final Map<NodeId, NodeDigest> digests;
+  private final Map<MemberId, MemberDigest> digests;
 
-  ClusterMetadataAdvertisement(Map<NodeId, NodeDigest> digests) {
+  ClusterMetadataAdvertisement(Map<MemberId, MemberDigest> digests) {
     this.digests = digests;
   }
 
@@ -35,17 +35,17 @@ final class ClusterMetadataAdvertisement {
    *
    * @return the set of digests in the advertisement
    */
-  public Set<NodeId> digests() {
+  public Set<MemberId> digests() {
     return digests.keySet();
   }
 
   /**
    * Returns the digest for the given node.
    *
-   * @param nodeId the node for which to return the digest
+   * @param memberId the node for which to return the digest
    * @return the digest for the given node
    */
-  public NodeDigest digest(NodeId nodeId) {
-    return digests.get(nodeId);
+  public MemberDigest digest(MemberId memberId) {
+    return digests.get(memberId);
   }
 }

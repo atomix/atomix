@@ -41,11 +41,11 @@ import io.atomix.core.map.impl.MapUpdate.Type;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.Session;
-import io.atomix.storage.buffer.BufferInput;
-import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -112,7 +112,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
       .register(new HashMap().keySet().getClass())
       .build());
 
-  protected Map<Long, Session> listeners = new LinkedHashMap<>();
+  protected Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
   private Map<String, MapEntryValue> map;
   protected Set<String> preparedKeys = Sets.newHashSet();
   protected Map<TransactionId, TransactionScope> activeTransactions = Maps.newHashMap();
@@ -130,21 +130,22 @@ public class ConsistentMapService extends AbstractPrimitiveService {
     return map;
   }
 
-  protected Serializer serializer() {
+  @Override
+  public Serializer serializer() {
     return SERIALIZER;
   }
 
   @Override
-  public void backup(BufferOutput<?> writer) {
-    writer.writeObject(Sets.newHashSet(listeners.keySet()), serializer()::encode);
-    writer.writeObject(preparedKeys, serializer()::encode);
-    writer.writeObject(entries(), serializer()::encode);
-    writer.writeObject(activeTransactions, serializer()::encode);
+  public void backup(BackupOutput writer) {
+    writer.writeObject(Sets.newHashSet(listeners.keySet()));
+    writer.writeObject(preparedKeys);
+    writer.writeObject(entries());
+    writer.writeObject(activeTransactions);
     writer.writeLong(currentVersion);
   }
 
   @Override
-  public void restore(BufferInput<?> reader) {
+  public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(serializer()::decode)) {
       listeners.put(sessionId, getSessions().getSession(sessionId));
@@ -169,32 +170,32 @@ public class ConsistentMapService extends AbstractPrimitiveService {
     executor.register(ADD_LISTENER, (Commit<Void> c) -> listen(c.session()));
     executor.register(REMOVE_LISTENER, (Commit<Void> c) -> unlisten(c.session()));
     // Queries
-    executor.register(CONTAINS_KEY, serializer()::decode, this::containsKey, serializer()::encode);
-    executor.register(CONTAINS_VALUE, serializer()::decode, this::containsValue, serializer()::encode);
-    executor.register(ENTRY_SET, (Commit<Void> c) -> entrySet(), serializer()::encode);
-    executor.register(GET, serializer()::decode, this::get, serializer()::encode);
-    executor.register(GET_ALL_PRESENT, serializer()::decode, this::getAllPresent, serializer()::encode);
-    executor.register(GET_OR_DEFAULT, serializer()::decode, this::getOrDefault, serializer()::encode);
-    executor.register(IS_EMPTY, (Commit<Void> c) -> isEmpty(), serializer()::encode);
-    executor.register(KEY_SET, (Commit<Void> c) -> keySet(), serializer()::encode);
-    executor.register(SIZE, (Commit<Void> c) -> size(), serializer()::encode);
-    executor.register(VALUES, (Commit<Void> c) -> values(), serializer()::encode);
+    executor.register(CONTAINS_KEY, this::containsKey);
+    executor.register(CONTAINS_VALUE, this::containsValue);
+    executor.register(ENTRY_SET, (Commit<Void> c) -> entrySet());
+    executor.register(GET, this::get);
+    executor.register(GET_ALL_PRESENT, this::getAllPresent);
+    executor.register(GET_OR_DEFAULT, this::getOrDefault);
+    executor.register(IS_EMPTY, (Commit<Void> c) -> isEmpty());
+    executor.register(KEY_SET, (Commit<Void> c) -> keySet());
+    executor.register(SIZE, (Commit<Void> c) -> size());
+    executor.register(VALUES, (Commit<Void> c) -> values());
     // Commands
-    executor.register(PUT, serializer()::decode, this::put, serializer()::encode);
-    executor.register(PUT_IF_ABSENT, serializer()::decode, this::putIfAbsent, serializer()::encode);
-    executor.register(PUT_AND_GET, serializer()::decode, this::putAndGet, serializer()::encode);
-    executor.register(REMOVE, serializer()::decode, this::remove, serializer()::encode);
-    executor.register(REMOVE_VALUE, serializer()::decode, this::removeValue, serializer()::encode);
-    executor.register(REMOVE_VERSION, serializer()::decode, this::removeVersion, serializer()::encode);
-    executor.register(REPLACE, serializer()::decode, this::replace, serializer()::encode);
-    executor.register(REPLACE_VALUE, serializer()::decode, this::replaceValue, serializer()::encode);
-    executor.register(REPLACE_VERSION, serializer()::decode, this::replaceVersion, serializer()::encode);
-    executor.register(CLEAR, (Commit<Void> c) -> clear(), serializer()::encode);
-    executor.register(BEGIN, serializer()::decode, this::begin, serializer()::encode);
-    executor.register(PREPARE, serializer()::decode, this::prepare, serializer()::encode);
-    executor.register(PREPARE_AND_COMMIT, serializer()::decode, this::prepareAndCommit, serializer()::encode);
-    executor.register(COMMIT, serializer()::decode, this::commit, serializer()::encode);
-    executor.register(ROLLBACK, serializer()::decode, this::rollback, serializer()::encode);
+    executor.register(PUT, this::put);
+    executor.register(PUT_IF_ABSENT, this::putIfAbsent);
+    executor.register(PUT_AND_GET, this::putAndGet);
+    executor.register(REMOVE, this::remove);
+    executor.register(REMOVE_VALUE, this::removeValue);
+    executor.register(REMOVE_VERSION, this::removeVersion);
+    executor.register(REPLACE, this::replace);
+    executor.register(REPLACE_VALUE, this::replaceValue);
+    executor.register(REPLACE_VERSION, this::replaceVersion);
+    executor.register(CLEAR, (Commit<Void> c) -> clear());
+    executor.register(BEGIN, this::begin);
+    executor.register(PREPARE, this::prepare);
+    executor.register(PREPARE_AND_COMMIT, this::prepareAndCommit);
+    executor.register(COMMIT, this::commit);
+    executor.register(ROLLBACK, this::rollback);
   }
 
   /**
@@ -354,7 +355,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   /**
    * Updates the given value.
    *
-   * @param key the key to update
+   * @param key   the key to update
    * @param value the value to update
    */
   protected void putValue(String key, MapEntryValue value) {
@@ -700,7 +701,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    *
    * @param session listen session
    */
-  protected void listen(Session session) {
+  protected void listen(PrimitiveSession session) {
     listeners.put(session.sessionId().id(), session);
   }
 
@@ -709,7 +710,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    *
    * @param session unlisten session
    */
-  protected void unlisten(Session session) {
+  protected void unlisten(PrimitiveSession session) {
     listeners.remove(session.sessionId().id());
   }
 
@@ -1003,17 +1004,17 @@ public class ConsistentMapService extends AbstractPrimitiveService {
    */
   private void publish(List<MapEvent<String, byte[]>> events) {
     listeners.values().forEach(session -> {
-      session.publish(CHANGE, serializer()::encode, events);
+      session.publish(CHANGE, events);
     });
   }
 
   @Override
-  public void onExpire(Session session) {
+  public void onExpire(PrimitiveSession session) {
     closeListener(session.sessionId().id());
   }
 
   @Override
-  public void onClose(Session session) {
+  public void onClose(PrimitiveSession session) {
     closeListener(session.sessionId().id());
   }
 

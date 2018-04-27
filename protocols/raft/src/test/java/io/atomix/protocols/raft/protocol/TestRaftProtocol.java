@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
 
@@ -29,13 +29,13 @@ import java.util.concurrent.TimeoutException;
  * Base class for Raft protocol.
  */
 public abstract class TestRaftProtocol {
-  private final Map<NodeId, TestRaftServerProtocol> servers;
-  private final Map<NodeId, TestRaftClientProtocol> clients;
+  private final Map<MemberId, TestRaftServerProtocol> servers;
+  private final Map<MemberId, TestRaftClientProtocol> clients;
   private final ThreadContext context;
 
   public TestRaftProtocol(
-      Map<NodeId, TestRaftServerProtocol> servers,
-      Map<NodeId, TestRaftClientProtocol> clients,
+      Map<MemberId, TestRaftServerProtocol> servers,
+      Map<MemberId, TestRaftClientProtocol> clients,
       ThreadContext context) {
     this.servers = servers;
     this.clients = clients;
@@ -51,7 +51,7 @@ public abstract class TestRaftProtocol {
     return future.whenComplete((r, e) -> scheduled.cancel());
   }
 
-  TestRaftServerProtocol server(NodeId memberId) {
+  TestRaftServerProtocol server(MemberId memberId) {
     return servers.get(memberId);
   }
 
@@ -59,7 +59,7 @@ public abstract class TestRaftProtocol {
     return servers.values();
   }
 
-  TestRaftClientProtocol client(NodeId memberId) {
+  TestRaftClientProtocol client(MemberId memberId) {
     return clients.get(memberId);
   }
 }

@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.protocols.raft.RaftError;
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -44,11 +44,11 @@ public class KeepAliveResponse extends AbstractRaftResponse {
     return new Builder();
   }
 
-  private final NodeId leader;
-  private final Collection<NodeId> members;
+  private final MemberId leader;
+  private final Collection<MemberId> members;
   private final long[] sessionIds;
 
-  public KeepAliveResponse(Status status, RaftError error, NodeId leader, Collection<NodeId> members, long[] sessionIds) {
+  public KeepAliveResponse(Status status, RaftError error, MemberId leader, Collection<MemberId> members, long[] sessionIds) {
     super(status, error);
     this.leader = leader;
     this.members = members;
@@ -60,7 +60,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    *
    * @return The cluster leader.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -69,7 +69,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    *
    * @return The cluster members.
    */
-  public Collection<NodeId> members() {
+  public Collection<MemberId> members() {
     return members;
   }
 
@@ -121,8 +121,8 @@ public class KeepAliveResponse extends AbstractRaftResponse {
    * Status response builder.
    */
   public static class Builder extends AbstractRaftResponse.Builder<Builder, KeepAliveResponse> {
-    private NodeId leader;
-    private Collection<NodeId> members;
+    private MemberId leader;
+    private Collection<MemberId> members;
     private long[] sessionIds;
 
     /**
@@ -131,7 +131,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
      * @param leader The response leader.
      * @return The response builder.
      */
-    public Builder withLeader(NodeId leader) {
+    public Builder withLeader(MemberId leader) {
       this.leader = leader;
       return this;
     }
@@ -143,7 +143,7 @@ public class KeepAliveResponse extends AbstractRaftResponse {
      * @return The response builder.
      * @throws NullPointerException if {@code members} is null
      */
-    public Builder withMembers(Collection<NodeId> members) {
+    public Builder withMembers(Collection<MemberId> members) {
       this.members = checkNotNull(members, "members cannot be null");
       return this;
     }

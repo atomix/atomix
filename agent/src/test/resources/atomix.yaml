@@ -1,27 +1,39 @@
-data-directory: target/test-logs/
 # Cluster configuration
 cluster:
   name: test
-  nodes:
-    - id: node1
-      type: core
+  members:
+    node1:
+      type: persistent
       address: localhost:5000
-    - id: node2
-      type: core
+    node2:
+      type: persistent
       address: localhost:5001
-    - id: node3
-      type: core
+    node3:
+      type: persistent
       address: localhost:5002
+# The management partition group from which primitives and additional partition groups are managed
+management-group:
+  type: raft
+  partitions: 1
+  data-directory: target/test-logs/system
+  members:
+    - node1
+    - node2
+    - node3
 # A list of partition groups
 partition-groups:
-  - type: raft
-    name: core
+  raft:
+    type: raft
     storage-level: memory
     partitions: 7
     partition-size: 3
     data-directory: target/test-logs/core
-  - type: multi-primary
-    name: data
+    members:
+      - node1
+      - node2
+      - node3
+  data:
+    type: multi-primary
     partitions: 7
 # Distributed primitive configurations
 primitives:

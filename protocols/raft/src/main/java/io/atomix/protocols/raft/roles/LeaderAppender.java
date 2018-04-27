@@ -199,7 +199,7 @@ final class LeaderAppender extends AbstractAppender {
           return;
         }
 
-        log.debug("Replicating snapshot {} to {}", snapshot.index(), member.getMember().nodeId());
+        log.debug("Replicating snapshot {} to {}", snapshot.index(), member.getMember().memberId());
         sendInstallRequest(member, buildInstallRequest(member, snapshot));
       } else if (member.canAppend()) {
         sendAppendRequest(member, buildAppendRequest(member, -1));
@@ -409,7 +409,7 @@ final class LeaderAppender extends AbstractAppender {
   protected void handleAppendResponseError(RaftMemberContext member, AppendRequest request, AppendResponse response) {
     // If we've received a greater term, update the term and transition back to follower.
     if (response.term() > raft.getTerm()) {
-      log.debug("Received higher term from {}", member.getMember().nodeId());
+      log.debug("Received higher term from {}", member.getMember().memberId());
       raft.setTerm(response.term());
       raft.setLeader(null);
       raft.transition(RaftServer.Role.FOLLOWER);

@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -28,9 +28,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class PartitionMetadata {
   private final PartitionId id;
-  private final Collection<NodeId> members;
+  private final Collection<MemberId> members;
 
-  public PartitionMetadata(PartitionId id, Collection<NodeId> members) {
+  public PartitionMetadata(PartitionId id, Collection<MemberId> members) {
     this.id = id;
     this.members = members;
   }
@@ -49,7 +49,7 @@ public class PartitionMetadata {
    *
    * @return collection of controller node identifiers
    */
-  public Collection<NodeId> members() {
+  public Collection<MemberId> members() {
     return members;
   }
 

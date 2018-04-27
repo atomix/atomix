@@ -17,7 +17,7 @@ package io.atomix.core.impl;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.core.AtomixConfig;
@@ -60,9 +60,10 @@ import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.utils.AtomixRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -76,6 +77,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Default primitives service.
  */
 public class CorePrimitivesService implements ManagedPrimitivesService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(CorePrimitivesService.class);
   private static final int CACHE_SIZE = 1000;
 
   private final PrimitiveManagementService managementService;
@@ -89,16 +91,15 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   public CorePrimitivesService(
       ScheduledExecutorService executorService,
-      ClusterService clusterService,
+      ClusterMembershipService membershipService,
       ClusterMessagingService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
-      PartitionGroup systemPartitionGroup,
       AtomixConfig config) {
-    this.primitiveRegistry = new CorePrimitiveRegistry(systemPartitionGroup);
+    this.primitiveRegistry = new CorePrimitiveRegistry(partitionService);
     this.managementService = new CorePrimitiveManagementService(
         executorService,
-        clusterService,
+        membershipService,
         communicationService,
         eventService,
         partitionService,
@@ -234,7 +235,10 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   public CompletableFuture<PrimitivesService> start() {
     return primitiveRegistry.start()
         .thenCompose(v -> transactionService.start())
-        .thenRun(() -> started.set(true))
+        .thenRun(() -> {
+          LOGGER.info("Started");
+          started.set(true);
+        })
         .thenApply(v -> this);
   }
 

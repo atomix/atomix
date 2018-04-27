@@ -15,12 +15,12 @@
  */
 package io.atomix.rest.resources;
 
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEvent.Type;
-import io.atomix.cluster.ClusterEventListener;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEvent.Type;
+import io.atomix.cluster.ClusterMembershipEventListener;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.core.utils.EventLog;
 import io.atomix.core.utils.EventManager;
 import org.slf4j.Logger;
@@ -51,35 +51,35 @@ public class ClusterResource extends AbstractRestResource {
   @GET
   @Path("/node")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getNode(@Context ClusterService clusterService) {
-    return Response.ok(new NodeInfo(clusterService.getLocalNode())).build();
+  public Response getNode(@Context ClusterMembershipService clusterMembershipService) {
+    return Response.ok(new NodeInfo(clusterMembershipService.getLocalMember())).build();
   }
 
   @GET
   @Path("/nodes")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getNodes(@Context ClusterService clusterService) {
-    return Response.ok(clusterService.getNodes().stream().map(NodeInfo::new).collect(Collectors.toList())).build();
+  public Response getNodes(@Context ClusterMembershipService clusterMembershipService) {
+    return Response.ok(clusterMembershipService.getMembers().stream().map(NodeInfo::new).collect(Collectors.toList())).build();
   }
 
   @GET
   @Path("/nodes/{node}")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getNodeInfo(@PathParam("node") String nodeId, @Context ClusterService clusterService) {
-    Node node = clusterService.getNode(NodeId.from(nodeId));
-    if (node == null) {
+  public Response getNodeInfo(@PathParam("node") String nodeId, @Context ClusterMembershipService clusterMembershipService) {
+    Member member = clusterMembershipService.getMember(MemberId.from(nodeId));
+    if (member == null) {
       return Response.status(Status.NOT_FOUND).build();
     }
-    return Response.ok(new NodeInfo(node)).build();
+    return Response.ok(new NodeInfo(member)).build();
   }
 
   @GET
   @Path("/events")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getEvent(@Context ClusterService clusterService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, "", l -> e -> l.addEvent(e));
+  public void getEvent(@Context ClusterMembershipService clusterMembershipService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<ClusterMembershipEventListener, ClusterMembershipEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, "", l -> e -> l.addEvent(e));
     if (eventLog.open()) {
-      clusterService.addListener(eventLog.listener());
+      clusterMembershipService.addListener(eventLog.listener());
     }
 
     eventLog.nextEvent().whenComplete((result, error) -> {
@@ -95,11 +95,11 @@ public class ClusterResource extends AbstractRestResource {
   @POST
   @Path("/events")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response addListener(@Context ClusterService clusterService, @Context EventManager events) {
+  public Response addListener(@Context ClusterMembershipService clusterMembershipService, @Context EventManager events) {
     String listenerId = UUID.randomUUID().toString();
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, listenerId, l -> e -> l.addEvent(e));
+    EventLog<ClusterMembershipEventListener, ClusterMembershipEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, listenerId, l -> e -> l.addEvent(e));
     if (eventLog.open()) {
-      clusterService.addListener(eventLog.listener());
+      clusterMembershipService.addListener(eventLog.listener());
     }
     return Response.ok(listenerId).build();
   }
@@ -107,8 +107,8 @@ public class ClusterResource extends AbstractRestResource {
   @GET
   @Path("/events/{id}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getEvent(@PathParam("id") String listenerId, @Context ClusterService clusterService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getEventLog(ClusterResource.class, listenerId);
+  public void getEvent(@PathParam("id") String listenerId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<ClusterMembershipEventListener, ClusterMembershipEvent> eventLog = events.getEventLog(ClusterResource.class, listenerId);
     if (eventLog == null) {
       response.resume(Response.status(Status.NOT_FOUND).build());
       return;
@@ -126,24 +126,24 @@ public class ClusterResource extends AbstractRestResource {
 
   @DELETE
   @Path("/events/{id}")
-  public void removeListener(@PathParam("id") String listenerId, @Context ClusterService clusterService, @Context EventManager events) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.removeEventLog(ClusterResource.class, listenerId);
+  public void removeListener(@PathParam("id") String listenerId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events) {
+    EventLog<ClusterMembershipEventListener, ClusterMembershipEvent> eventLog = events.removeEventLog(ClusterResource.class, listenerId);
     if (eventLog != null && eventLog.close()) {
-      clusterService.removeListener(eventLog.listener());
+      clusterMembershipService.removeListener(eventLog.listener());
     }
   }
 
   @GET
   @Path("/nodes/{node}/events")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getNodeEvent(@PathParam("node") String nodeId, @Context ClusterService clusterService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, nodeId, l -> e -> {
-      if (e.subject().id().id().equals(nodeId)) {
+  public void getNodeEvent(@PathParam("node") String memberId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<ClusterMembershipEventListener, ClusterMembershipEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, memberId, l -> e -> {
+      if (e.subject().id().id().equals(memberId)) {
         l.addEvent(e);
       }
     });
     if (eventLog.open()) {
-      clusterService.addListener(eventLog.listener());
+      clusterMembershipService.addListener(eventLog.listener());
     }
 
     eventLog.nextEvent().whenComplete((result, error) -> {
@@ -159,15 +159,15 @@ public class ClusterResource extends AbstractRestResource {
   @POST
   @Path("/nodes/{node}/events")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response addNodeListener(@PathParam("node") String nodeId, @Context ClusterService clusterService, @Context EventManager events) {
+  public Response addNodeListener(@PathParam("node") String memberId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events) {
     String id = UUID.randomUUID().toString();
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, getNodeListener(nodeId, id), l -> e -> {
-      if (e.subject().id().id().equals(nodeId)) {
+    EventLog<ClusterMembershipEventListener, ClusterMembershipEvent> eventLog = events.getOrCreateEventLog(ClusterResource.class, getNodeListener(memberId, id), l -> e -> {
+      if (e.subject().id().id().equals(memberId)) {
         l.addEvent(e);
       }
     });
     if (eventLog.open()) {
-      clusterService.addListener(eventLog.listener());
+      clusterMembershipService.addListener(eventLog.listener());
     }
     return Response.ok(id).build();
   }
@@ -175,8 +175,8 @@ public class ClusterResource extends AbstractRestResource {
   @GET
   @Path("/nodes/{node}/events/{id}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getNodeEvent(@PathParam("node") String nodeId, @PathParam("id") String listenerId, @Context ClusterService clusterService, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.getEventLog(ClusterResource.class, getNodeListener(nodeId, listenerId));
+  public void getNodeEvent(@PathParam("node") String memberId, @PathParam("id") String listenerId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events, @Suspended AsyncResponse response) {
+    EventLog<ClusterMembershipEventListener, ClusterMembershipEvent> eventLog = events.getEventLog(ClusterResource.class, getNodeListener(memberId, listenerId));
     if (eventLog == null) {
       response.resume(Response.status(Status.NOT_FOUND).build());
       return;
@@ -194,45 +194,45 @@ public class ClusterResource extends AbstractRestResource {
 
   @DELETE
   @Path("/nodes/{node}/events/{id}")
-  public void removeNodeListener(@PathParam("node") String nodeId, @PathParam("id") String listenerId, @Context ClusterService clusterService, @Context EventManager events) {
-    EventLog<ClusterEventListener, ClusterEvent> eventLog = events.removeEventLog(ClusterResource.class, getNodeListener(nodeId, listenerId));
+  public void removeNodeListener(@PathParam("node") String memberId, @PathParam("id") String listenerId, @Context ClusterMembershipService clusterMembershipService, @Context EventManager events) {
+    EventLog<ClusterMembershipEventListener, ClusterMembershipEvent> eventLog = events.removeEventLog(ClusterResource.class, getNodeListener(memberId, listenerId));
     if (eventLog != null && eventLog.close()) {
-      clusterService.removeListener(eventLog.listener());
+      clusterMembershipService.removeListener(eventLog.listener());
     }
   }
 
-  private static String getNodeListener(String nodeId, String id) {
-    return String.format("%s-%s", nodeId, id);
+  private static String getNodeListener(String memberId, String id) {
+    return String.format("%s-%s", memberId, id);
   }
 
   /**
    * Node information.
    */
   static class NodeInfo {
-    private final Node node;
+    private final Member member;
 
-    NodeInfo(Node node) {
-      this.node = node;
+    NodeInfo(Member member) {
+      this.member = member;
     }
 
     public String getId() {
-      return node.id().id();
+      return member.id().id();
     }
 
     public String getHost() {
-      return node.address().host();
+      return member.address().host();
     }
 
     public int getPort() {
-      return node.address().port();
+      return member.address().port();
     }
 
-    public Node.Type getType() {
-      return node.type();
+    public Member.Type getType() {
+      return member.type();
     }
 
-    public Node.State getStatus() {
-      return node.getState();
+    public Member.State getStatus() {
+      return member.getState();
     }
   }
 
@@ -240,16 +240,16 @@ public class ClusterResource extends AbstractRestResource {
    * Node event.
    */
   static class NodeEvent {
-    private final NodeId nodeId;
-    private final ClusterEvent.Type type;
+    private final MemberId memberId;
+    private final ClusterMembershipEvent.Type type;
 
-    public NodeEvent(NodeId nodeId, Type type) {
-      this.nodeId = nodeId;
+    public NodeEvent(MemberId memberId, Type type) {
+      this.memberId = memberId;
       this.type = type;
     }
 
     public String getId() {
-      return nodeId.id();
+      return memberId.id();
     }
 
     public Type getType() {

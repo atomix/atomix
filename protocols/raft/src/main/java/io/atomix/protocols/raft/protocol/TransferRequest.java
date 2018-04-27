@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 
 import java.util.Objects;
 
@@ -36,9 +36,9 @@ public class TransferRequest extends AbstractRaftRequest {
     return new Builder();
   }
 
-  protected final NodeId member;
+  protected final MemberId member;
 
-  protected TransferRequest(NodeId member) {
+  protected TransferRequest(MemberId member) {
     this.member = member;
   }
 
@@ -47,7 +47,7 @@ public class TransferRequest extends AbstractRaftRequest {
    *
    * @return The member to which to transfer.
    */
-  public NodeId member() {
+  public MemberId member() {
     return member;
   }
 
@@ -75,7 +75,7 @@ public class TransferRequest extends AbstractRaftRequest {
    * Transfer request builder.
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, TransferRequest> {
-    protected NodeId member;
+    protected MemberId member;
 
     /**
      * Sets the request member.
@@ -85,7 +85,7 @@ public class TransferRequest extends AbstractRaftRequest {
      * @throws NullPointerException if {@code member} is null
      */
     @SuppressWarnings("unchecked")
-    public Builder withMember(NodeId member) {
+    public Builder withMember(MemberId member) {
       this.member = checkNotNull(member, "member cannot be null");
       return this;
     }

@@ -18,28 +18,28 @@ package io.atomix.protocols.raft.partition;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.cluster.ClusterEvent;
-import io.atomix.cluster.ClusterEventListener;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
+import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocol.Type;
-import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.config.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -48,13 +48,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Raft partition group.
  */
-public class RaftPartitionGroup implements ManagedPartitionGroup {
+public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> {
+  public static final PartitionGroup.Type TYPE = new Type();
 
   /**
    * Returns a new Raft partition group builder.
@@ -66,34 +69,44 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     return new Builder(new RaftPartitionGroupConfig().setName(name));
   }
 
+  /**
+   * The Raft partition group type.
+   */
+  public static class Type implements PartitionGroup.Type {
+    private static final String NAME = "raft";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
+  }
+
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftPartitionGroup.class);
 
   private static Collection<RaftPartition> buildPartitions(RaftPartitionGroupConfig config) {
     File partitionsDir = new File(config.getDataDirectory(), "partitions");
     List<RaftPartition> partitions = new ArrayList<>(config.getPartitions());
     for (int i = 0; i < config.getPartitions(); i++) {
-      partitions.add(new RaftPartition(PartitionId.from(config.getName(), i + 1), config.getStorageLevel(), new File(partitionsDir, String.valueOf(i + 1))));
+      partitions.add(new RaftPartition(
+          PartitionId.from(config.getName(), i + 1),
+          StorageLevel.valueOf(config.getStorageLevel().toUpperCase()),
+          new File(partitionsDir, String.valueOf(i + 1))));
     }
     return partitions;
   }
 
   private final String name;
+  private final RaftPartitionGroupConfig config;
   private final int partitionSize;
   private final Map<PartitionId, RaftPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
-  private final ClusterEventListener clusterEventListener = this::handleClusterEvent;
-  private PartitionManagementService managementService;
   private Collection<PartitionMetadata> metadata;
-  private CompletableFuture<Void> metadataChangeFuture = CompletableFuture.completedFuture(null);
 
   public RaftPartitionGroup(RaftPartitionGroupConfig config) {
-    this(config.getName(), buildPartitions(config), config.getPartitionSize());
-  }
-
-  private RaftPartitionGroup(String name, Collection<RaftPartition> partitions, int partitionSize) {
-    this.name = name;
-    this.partitionSize = partitionSize;
-    partitions.forEach(p -> {
+    this.name = config.getName();
+    this.config = config;
+    this.partitionSize = config.getPartitionSize();
+    buildPartitions(config).forEach(p -> {
       this.partitions.put(p.id(), p);
       this.sortedPartitionIds.add(p.id());
     });
@@ -106,27 +119,37 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public Type type() {
-    return RaftProtocol.TYPE;
+  public PartitionGroup.Type type() {
+    return TYPE;
+  }
+
+  @Override
+  public PrimitiveProtocol.Type protocol() {
+    return MultiRaftProtocol.TYPE;
+  }
+
+  @Override
+  public PartitionGroupConfig config() {
+    return config;
   }
 
   @Override
   public PrimitiveProtocol newProtocol() {
-    return RaftProtocol.builder(name)
+    return MultiRaftProtocol.builder(name)
         .withRecoveryStrategy(Recovery.RECOVER)
         .withMaxRetries(5)
         .build();
   }
 
   @Override
-  public Partition getPartition(PartitionId partitionId) {
+  public RaftPartition getPartition(PartitionId partitionId) {
     return partitions.get(partitionId);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Collection<Partition> getPartitions() {
-    return (Collection) partitions.values();
+  public Collection<RaftPartition> getPartitions() {
+    return partitions.values();
   }
 
   @Override
@@ -135,10 +158,13 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup> open(PartitionManagementService managementService) {
-    this.managementService = managementService;
-    managementService.getClusterService().addListener(clusterEventListener);
-    this.metadata = buildPartitions(managementService.getClusterService());
+  public CompletableFuture<ManagedPartitionGroup<RaftPartition>> join(PartitionManagementService managementService) {
+    // Ensure the Raft group membership intersects with persistent cluster membership.
+    if (!validateMembership(managementService.getMembershipService())) {
+      return Futures.exceptionalFuture(new ConfigurationException("Raft partition group must be configured with persistent membership"));
+    }
+
+    this.metadata = buildPartitions(managementService.getMembershipService());
     List<CompletableFuture<Partition>> futures = metadata.stream()
         .map(metadata -> {
           RaftPartition partition = partitions.get(metadata.id());
@@ -151,33 +177,37 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     });
   }
 
-  private synchronized void handleClusterEvent(ClusterEvent event) {
-    if (event.type() == ClusterEvent.Type.NODE_ADDED && event.subject().type() == Node.Type.CORE) {
-      metadataChangeFuture = metadataChangeFuture.thenCompose(v -> {
-        Collection<PartitionMetadata> partitions = buildPartitions(managementService.getClusterService());
-        if (!this.metadata.equals(partitions)) {
-          this.metadata = partitions;
-          return Futures.allOf(partitions.stream().map(partitionMetadata -> {
-            RaftPartition partition = this.partitions.get(partitionMetadata.id());
-            return partition.update(partitionMetadata, managementService);
-          }).collect(Collectors.toList())).thenApply(l -> null);
-        }
-        return CompletableFuture.completedFuture(null);
-      });
-    }
+  @Override
+  public CompletableFuture<ManagedPartitionGroup<RaftPartition>> connect(PartitionManagementService managementService) {
+    return join(managementService);
   }
 
-  private Collection<PartitionMetadata> buildPartitions(ClusterService clusterService) {
-    int partitionSize = this.partitionSize;
-    if (partitionSize == 0) {
-      partitionSize = clusterService.getNodes().size();
+  private boolean validateMembership(ClusterMembershipService membershipService) {
+    if (config.getMembers().isEmpty()) {
+      return false;
     }
 
-    List<NodeId> sorted = new ArrayList<>(clusterService.getNodes().stream()
-        .filter(node -> node.type() == Node.Type.CORE)
-        .map(Node::id)
+    for (String member : config.getMembers()) {
+      Member node = membershipService.getMember(member);
+      if (node == null || node.type() != Member.Type.PERSISTENT) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private Collection<PartitionMetadata> buildPartitions(ClusterMembershipService membershipService) {
+    List<MemberId> sorted = new ArrayList<>(membershipService.getMembers().stream()
+        .filter(node -> node.type() == Member.Type.PERSISTENT)
+        .filter(node -> config.getMembers().contains(node.id().id()))
+        .map(Member::id)
         .collect(Collectors.toSet()));
     Collections.sort(sorted);
+
+    int partitionSize = this.partitionSize;
+    if (partitionSize == 0) {
+      partitionSize = sorted.size();
+    }
 
     int length = sorted.size();
     int count = Math.min(partitionSize, length);
@@ -185,7 +215,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     Set<PartitionMetadata> metadata = Sets.newHashSet();
     for (int i = 0; i < partitions.size(); i++) {
       PartitionId partitionId = sortedPartitionIds.get(i);
-      Set<NodeId> set = new HashSet<>(count);
+      Set<MemberId> set = new HashSet<>(count);
       for (int j = 0; j < count; j++) {
         set.add(sorted.get((i + j) % length));
       }
@@ -221,6 +251,51 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     }
 
     /**
+     * Sets the Raft partition group members.
+     *
+     * @param members the Raft partition group members
+     * @return the Raft partition group builder
+     * @throws NullPointerException if the members are null
+     */
+    public Builder withMembers(String... members) {
+      return withMembers(Arrays.asList(members));
+    }
+
+    /**
+     * Sets the Raft partition group members.
+     *
+     * @param members the Raft partition group members
+     * @return the Raft partition group builder
+     * @throws NullPointerException if the members are null
+     */
+    public Builder withMembers(MemberId... members) {
+      return withMembers(Stream.of(members).map(nodeId -> nodeId.id()).collect(Collectors.toList()));
+    }
+
+    /**
+     * Sets the Raft partition group members.
+     *
+     * @param members the Raft partition group members
+     * @return the Raft partition group builder
+     * @throws NullPointerException if the members are null
+     */
+    public Builder withMembers(Member... members) {
+      return withMembers(Stream.of(members).map(node -> node.id().id()).collect(Collectors.toList()));
+    }
+
+    /**
+     * Sets the Raft partition group members.
+     *
+     * @param members the Raft partition group members
+     * @return the Raft partition group builder
+     * @throws NullPointerException if the members are null
+     */
+    public Builder withMembers(Collection<String> members) {
+      config.setMembers(Sets.newHashSet(checkNotNull(members, "members cannot be null")));
+      return this;
+    }
+
+    /**
      * Sets the number of partitions.
      *
      * @param numPartitions the number of partitions
@@ -251,7 +326,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the Raft partition group builder
      */
     public Builder withStorageLevel(StorageLevel storageLevel) {
-      config.setStorageLevel(storageLevel);
+      config.setStorageLevel(storageLevel.name());
       return this;
     }
 
@@ -262,7 +337,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the replica builder
      */
     public Builder withDataDirectory(File dataDir) {
-      config.setDataDirectory(dataDir);
+      config.setDataDirectory(new File("user.dir").toURI().relativize(dataDir.toURI()).getPath());
       return this;
     }
 

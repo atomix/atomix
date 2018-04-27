@@ -15,16 +15,19 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
-import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -40,7 +43,7 @@ final class RaftProxyListener {
   private final RaftClientProtocol protocol;
   private final MemberSelector memberSelector;
   private final RaftProxyState state;
-  private final Set<Consumer<PrimitiveEvent>> listeners = Sets.newLinkedHashSet();
+  private final Map<EventType, Set<Consumer<PrimitiveEvent>>> eventListeners = Maps.newHashMap();
   private final RaftProxySequencer sequencer;
   private final Executor executor;
 
@@ -50,7 +53,7 @@ final class RaftProxyListener {
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
     this.executor = checkNotNull(executor, "executor cannot be null");
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
         .addValue(state.getSessionId())
         .add("type", state.getPrimitiveType())
         .add("name", state.getPrimitiveName())
@@ -63,8 +66,8 @@ final class RaftProxyListener {
    *
    * @param listener the event listener callback
    */
-  public void addEventListener(Consumer<PrimitiveEvent> listener) {
-    executor.execute(() -> listeners.add(listener));
+  public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
+    executor.execute(() -> eventListeners.computeIfAbsent(eventType.canonicalize(), e -> Sets.newLinkedHashSet()).add(listener));
   }
 
   /**
@@ -72,8 +75,8 @@ final class RaftProxyListener {
    *
    * @param listener the event listener callback
    */
-  public void removeEventListener(Consumer<PrimitiveEvent> listener) {
-    executor.execute(() -> listeners.remove(listener));
+  public void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
+    executor.execute(() -> eventListeners.computeIfAbsent(eventType.canonicalize(), e -> Sets.newLinkedHashSet()).remove(listener));
   }
 
   /**
@@ -120,8 +123,11 @@ final class RaftProxyListener {
 
     sequencer.sequenceEvent(request, () -> {
       for (PrimitiveEvent event : request.events()) {
-        for (Consumer<PrimitiveEvent> listener : listeners) {
-          listener.accept(event);
+        Set<Consumer<PrimitiveEvent>> listeners = eventListeners.get(event.type());
+        if (listeners != null) {
+          for (Consumer<PrimitiveEvent> listener : listeners) {
+            listener.accept(event);
+          }
         }
       }
     });

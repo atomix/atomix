@@ -16,10 +16,10 @@
 package io.atomix.primitive.partition.impl;
 
 import com.google.common.base.MoreObjects;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroupId;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -58,8 +58,8 @@ public enum PrimaryElectorOperations implements OperationId {
       .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
       .register(Enter.class)
       .register(GetTerm.class)
-      .register(Member.class)
-      .register(NodeId.class)
+      .register(GroupMember.class)
+      .register(MemberId.class)
       .register(MemberGroupId.class)
       .register(PartitionId.class)
       .build(PrimaryElectorOperations.class.getSimpleName());
@@ -120,12 +120,12 @@ public enum PrimaryElectorOperations implements OperationId {
    */
   @SuppressWarnings("serial")
   public static class Enter extends PartitionOperation {
-    private Member member;
+    private GroupMember member;
 
     Enter() {
     }
 
-    Enter(PartitionId partitionId, Member member) {
+    Enter(PartitionId partitionId, GroupMember member) {
       super(partitionId);
       this.member = member;
     }
@@ -135,7 +135,7 @@ public enum PrimaryElectorOperations implements OperationId {
      *
      * @return The member
      */
-    public Member member() {
+    public GroupMember member() {
       return member;
     }
 

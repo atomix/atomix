@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.cluster;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
@@ -88,7 +88,7 @@ public interface RaftMember {
    *
    * @return The member node ID.
    */
-  NodeId nodeId();
+  MemberId memberId();
 
   /**
    * Returns the member hash.

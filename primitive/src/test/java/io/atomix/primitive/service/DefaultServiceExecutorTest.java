@@ -21,7 +21,9 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
-import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.junit.Test;
 
@@ -44,19 +46,19 @@ public class DefaultServiceExecutorTest {
     Set<String> calls = new HashSet<>();
 
     executor.register(OperationId.command("a"), () -> calls.add("a"));
-    executor.register(OperationId.command("b"), commit -> calls.add("b"));
+    executor.<Void>register(OperationId.command("b"), commit -> calls.add("b"));
     executor.register(OperationId.query("c"), commit -> {
       calls.add("c");
       return null;
-    }, v -> null);
+    });
     executor.register(OperationId.query("d"), () -> {
       calls.add("d");
       return null;
-    }, v -> null);
-    executor.register(OperationId.command("e"), v -> v, commit -> {
+    });
+    executor.register(OperationId.command("e"), commit -> {
       calls.add("e");
       return commit.value();
-    }, v -> v);
+    });
 
     executor.apply(commit(OperationId.command("a"), 1, null, System.currentTimeMillis()));
     assertTrue(calls.contains("a"));
@@ -77,7 +79,8 @@ public class DefaultServiceExecutorTest {
   @Test
   public void testScheduling() throws Exception {
     ServiceExecutor executor = executor();
-    executor.register(OperationId.command("a"), () -> {});
+    executor.register(OperationId.command("a"), () -> {
+    });
     executor.apply(commit(OperationId.command("a"), 1, null, 0));
 
     Set<String> calls = new HashSet<>();
@@ -95,11 +98,11 @@ public class DefaultServiceExecutorTest {
     when(context.serviceType()).thenReturn(new TestPrimitiveType());
     when(context.serviceName()).thenReturn("test");
     when(context.currentOperation()).thenReturn(OperationType.COMMAND);
-    return new DefaultServiceExecutor(context);
+    return new DefaultServiceExecutor(context, Serializer.using(KryoNamespaces.BASIC));
   }
 
   @SuppressWarnings("unchecked")
   private <T> Commit<T> commit(OperationId operation, long index, T value, long timestamp) {
-    return new DefaultCommit<T>(index, operation, value, mock(Session.class), timestamp);
+    return new DefaultCommit<T>(index, operation, value, mock(PrimitiveSession.class), timestamp);
   }
 }
