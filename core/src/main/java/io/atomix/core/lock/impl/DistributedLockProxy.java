@@ -186,6 +186,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistribute
   @Override
   public CompletableFuture<AsyncDistributedLock> connect() {
     return super.connect()
+        .thenCompose(v -> getPartition(getPartitionKey()).connect())
         .thenRun(() -> {
           listenBy(getPartitionKey(), LOCKED, this::handleLocked);
           listenBy(getPartitionKey(), FAILED, this::handleFailed);
