@@ -34,7 +34,7 @@ public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicCounter> buildAsync() {
-    PrimitiveProxy proxy = protocol.newProxy(
+    PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
         managementService.getPartitionService());

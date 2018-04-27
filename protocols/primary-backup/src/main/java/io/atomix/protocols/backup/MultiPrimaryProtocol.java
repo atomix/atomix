@@ -97,7 +97,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
             .withConsistency(config.getConsistency())
             .withReplication(config.getReplication())
             .withRecovery(config.getRecovery())
-            .withNumBackups(config.getNumBackups())
+            .withNumBackups(config.getBackups())
             .withMaxRetries(config.getMaxRetries())
             .withRetryDelay(config.getRetryDelay())
             .withExecutor(config.getExecutor())
@@ -173,7 +173,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return the protocol builder
      */
     public Builder withBackups(int numBackups) {
-      config.setNumBackups(numBackups);
+      config.setBackups(numBackups);
       return this;
     }
 

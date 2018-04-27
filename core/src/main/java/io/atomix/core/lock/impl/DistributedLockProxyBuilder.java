@@ -35,7 +35,7 @@ public class DistributedLockProxyBuilder extends DistributedLockBuilder {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedLock> buildAsync() {
-    PrimitiveProxy proxy = protocol.newProxy(
+    PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
         managementService.getPartitionService());
