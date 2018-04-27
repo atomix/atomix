@@ -16,16 +16,19 @@
 package io.atomix.core;
 
 import io.atomix.cluster.ClusterConfig;
+import io.atomix.core.profile.Profile;
+import io.atomix.core.profile.Profiles;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.utils.Config;
+import io.atomix.utils.config.Config;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -33,12 +36,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Atomix configuration.
  */
 public class AtomixConfig implements Config {
+  private static final String MANAGEMENT_GROUP_NAME = "system";
+
   private ClusterConfig cluster = new ClusterConfig();
-  private File dataDirectory = new File(System.getProperty("user.dir"), "data");
   private boolean enableShutdownHook;
-  private Collection<PartitionGroupConfig> partitionGroups = new ArrayList<>();
+  private PartitionGroupConfig managementGroup;
+  private Map<String, PartitionGroupConfig> partitionGroups = new HashMap<>();
   private Collection<Class<? extends PrimitiveType>> types = new ArrayList<>();
   private Map<String, PrimitiveConfig> primitives = new HashMap<>();
+  private List<Profile> profiles = new ArrayList<>();
 
   /**
    * Returns the cluster configuration.
@@ -57,37 +63,6 @@ public class AtomixConfig implements Config {
    */
   public AtomixConfig setClusterConfig(ClusterConfig cluster) {
     this.cluster = cluster;
-    return this;
-  }
-
-  /**
-   * Returns the data directory.
-   *
-   * @return the data directory
-   */
-  public File getDataDirectory() {
-    return dataDirectory;
-  }
-
-  /**
-   * Sets the data directory.
-   *
-   * @param dataDirectory the data directory
-   * @return the Atomix configuration
-   */
-  public AtomixConfig setDataDirectory(String dataDirectory) {
-    this.dataDirectory = new File(dataDirectory);
-    return this;
-  }
-
-  /**
-   * Sets the data directory.
-   *
-   * @param dataDirectory the data directory
-   * @return the Atomix configuration
-   */
-  public AtomixConfig setDataDirectory(File dataDirectory) {
-    this.dataDirectory = dataDirectory;
     return this;
   }
 
@@ -112,11 +87,32 @@ public class AtomixConfig implements Config {
   }
 
   /**
+   * Returns the system management partition group.
+   *
+   * @return the system management partition group
+   */
+  public PartitionGroupConfig getManagementGroup() {
+    return managementGroup;
+  }
+
+  /**
+   * Sets the system management partition group.
+   *
+   * @param managementGroup the system management partition group
+   * @return the Atomix configuration
+   */
+  public AtomixConfig setManagementGroup(PartitionGroupConfig managementGroup) {
+    managementGroup.setName(MANAGEMENT_GROUP_NAME);
+    this.managementGroup = managementGroup;
+    return this;
+  }
+
+  /**
    * Returns the partition group configurations.
    *
    * @return the partition group configurations
    */
-  public Collection<PartitionGroupConfig> getPartitionGroups() {
+  public Map<String, PartitionGroupConfig> getPartitionGroups() {
     return partitionGroups;
   }
 
@@ -126,7 +122,8 @@ public class AtomixConfig implements Config {
    * @param partitionGroups the partition group configurations
    * @return the Atomix configuration
    */
-  public AtomixConfig setPartitionGroups(Collection<PartitionGroupConfig> partitionGroups) {
+  public AtomixConfig setPartitionGroups(Map<String, PartitionGroupConfig> partitionGroups) {
+    partitionGroups.forEach((name, group) -> group.setName(name));
     this.partitionGroups = partitionGroups;
     return this;
   }
@@ -138,7 +135,7 @@ public class AtomixConfig implements Config {
    * @return the Atomix configuration
    */
   public AtomixConfig addPartitionGroup(PartitionGroupConfig partitionGroup) {
-    partitionGroups.add(partitionGroup);
+    partitionGroups.put(partitionGroup.getName(), partitionGroup);
     return this;
   }
 
@@ -215,5 +212,38 @@ public class AtomixConfig implements Config {
   @SuppressWarnings("unchecked")
   public <C extends PrimitiveConfig<C>> C getPrimitive(String name) {
     return (C) primitives.get(name);
+  }
+
+  /**
+   * Returns the Atomix profile.
+   *
+   * @return the Atomix profile
+   */
+  public List<Profile> getProfiles() {
+    return profiles;
+  }
+
+  /**
+   * Sets the Atomix profile.
+   *
+   * @param profiles the profiles
+   * @return the Atomix configuration
+   */
+  public AtomixConfig setProfiles(List<String> profiles) {
+    this.profiles = profiles.stream()
+        .map(name -> Profiles.getNamedProfile(name))
+        .collect(Collectors.toList());
+    return this;
+  }
+
+  /**
+   * Adds an Atomix profile.
+   *
+   * @param profile the profile to add
+   * @return the Atomix configuration
+   */
+  public AtomixConfig addProfile(Profile profile) {
+    profiles.add(checkNotNull(profile, "profile cannot be null"));
+    return this;
   }
 }

@@ -17,7 +17,7 @@ package io.atomix.rest.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import io.atomix.cluster.Node;
+import io.atomix.cluster.Member;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.rest.ManagedRestService;
@@ -32,7 +32,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.file.FileVisitResult;
@@ -51,7 +50,6 @@ import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isA;
 
 /**
  * Vert.x REST service test.
@@ -88,9 +86,9 @@ public class VertxRestServiceTest {
         .statusCode(200)
         .assertThat()
         .body("id", equalTo("1"))
-        .body("type", equalTo("DATA"))
-        .body("host", equalTo(instances.get(0).clusterService().getLocalNode().address().host()))
-        .body("port", equalTo(instances.get(0).clusterService().getLocalNode().address().port()))
+        .body("type", equalTo("EPHEMERAL"))
+        .body("host", equalTo(instances.get(0).membershipService().getLocalMember().address().host()))
+        .body("port", equalTo(instances.get(0).membershipService().getLocalMember().address().port()))
         .body("status", equalTo("ACTIVE"));
 
     given()
@@ -166,7 +164,7 @@ public class VertxRestServiceTest {
         .spec(specs.get(1))
         .body("Hello world again!")
         .when()
-        .post("messages/test/" + instances.get(0).clusterService().getLocalNode().id())
+        .post("messages/test/" + instances.get(0).membershipService().getLocalMember().id())
         .then()
         .statusCode(200);
 
@@ -182,10 +180,14 @@ public class VertxRestServiceTest {
 
   @Test
   public void testMap() throws Exception {
-    JsonNode json = JsonNodeFactory.withExactBigDecimals(true).objectNode()
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
         .put("type", "consistent-map")
         .put("cache-enabled", true)
-        .put("null-values", false);
+        .put("null-values", false)
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
 
     given()
         .spec(specs.get(0))
@@ -271,20 +273,22 @@ public class VertxRestServiceTest {
     deleteData();
   }
 
-  protected Atomix buildAtomix(int nodeId) {
-    Node localNode = Node.builder(String.valueOf(nodeId))
-        .withType(Node.Type.DATA)
+  protected Atomix buildAtomix(int memberId) {
+    Member localMember = Member.builder(String.valueOf(memberId))
+        .withType(Member.Type.EPHEMERAL)
         .withAddress("localhost", findAvailablePort(BASE_PORT))
         .build();
 
-    Collection<Node> nodes = Stream.concat(Stream.of(localNode), instances.stream().map(instance -> instance.clusterService().getLocalNode()))
+    Collection<Member> members = Stream.concat(Stream.of(localMember), instances.stream().map(instance -> instance.membershipService().getLocalMember()))
         .collect(Collectors.toList());
 
     return Atomix.builder()
         .withClusterName("test")
-        .withDataDirectory(new File("target/test-logs/1"))
-        .withLocalNode(localNode)
-        .withNodes(nodes)
+        .withLocalMember(localMember)
+        .withMembers(members)
+        .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
+            .withNumPartitions(1)
+            .build())
         .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
             .withNumPartitions(3)
             .build())

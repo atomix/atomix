@@ -15,12 +15,10 @@
  */
 package io.atomix.primitive;
 
-import io.atomix.utils.ConfigurationException;
+import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.Services;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Primitive types.
@@ -44,7 +42,7 @@ public class PrimitiveTypes {
    */
   public static PrimitiveType getPrimitiveType(String typeName) {
     for (PrimitiveType type : Services.loadAll(PrimitiveType.class)) {
-      if (type.id().toLowerCase().replace("_", "-").equals(typeName.toLowerCase().replace("_", "-"))) {
+      if (type.id().replace("_", "-").equalsIgnoreCase(typeName.replace("_", "-"))) {
         return type;
       }
     }

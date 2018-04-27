@@ -16,7 +16,7 @@
 package io.atomix.rest.resources;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.core.utils.EventLog;
 import io.atomix.core.utils.EventManager;
@@ -68,7 +68,7 @@ public class MessagesResource {
   @Path("/{subject}/{node}")
   @Consumes(MediaType.TEXT_PLAIN)
   public void send(@PathParam("subject") String subject, @PathParam("node") String node, @Context ClusterMessagingService communicationService, String body, @Suspended AsyncResponse response) {
-    communicationService.unicast(subject, body, NodeId.from(node)).whenComplete((result, error) -> {
+    communicationService.unicast(subject, body, MemberId.from(node)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

@@ -15,10 +15,10 @@
  */
 package io.atomix.protocols.raft.service;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.primitive.session.Session;
-import io.atomix.primitive.session.Session.State;
+import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.PrimitiveSession.State;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionListener;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -30,6 +30,8 @@ import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionRegistry;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -91,13 +93,14 @@ public class RaftSessionsTest {
 
     return new RaftSession(
         SessionId.from(sessionId),
-        NodeId.from("1"),
+        MemberId.from("1"),
         "test",
         new TestPrimitiveType(),
         ReadConsistency.LINEARIZABLE,
         100,
         5000,
         System.currentTimeMillis(),
+        Serializer.using(KryoNamespaces.BASIC),
         context,
         server,
         mock(ThreadContextFactory.class));
@@ -107,17 +110,17 @@ public class RaftSessionsTest {
     private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
 
     @Override
-    public void onOpen(Session session) {
+    public void onOpen(PrimitiveSession session) {
       queue.add("open");
     }
 
     @Override
-    public void onExpire(Session session) {
+    public void onExpire(PrimitiveSession session) {
       queue.add("expire");
     }
 
     @Override
-    public void onClose(Session session) {
+    public void onClose(PrimitiveSession session) {
       queue.add("close");
     }
 

@@ -25,7 +25,7 @@ import io.atomix.core.transaction.TransactionLog;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.utils.Match;
+import io.atomix.utils.misc.Match;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.time.Versioned;

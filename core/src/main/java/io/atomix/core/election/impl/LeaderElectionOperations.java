@@ -20,7 +20,7 @@ import io.atomix.core.election.Leader;
 import io.atomix.core.election.Leadership;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 

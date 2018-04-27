@@ -16,11 +16,11 @@
 package io.atomix.protocols.backup.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedMemberGroupService;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroup;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
@@ -38,8 +38,10 @@ import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -51,7 +53,7 @@ import java.util.stream.Collectors;
  */
 public class PrimaryBackupServerContext implements Managed<Void> {
   private final String serverName;
-  private final ClusterService clusterService;
+  private final ClusterMembershipService clusterMembershipService;
   private final ManagedMemberGroupService memberGroupService;
   private final PrimaryBackupServerProtocol protocol;
   private final ThreadContextFactory threadContextFactory;
@@ -62,14 +64,14 @@ public class PrimaryBackupServerContext implements Managed<Void> {
 
   public PrimaryBackupServerContext(
       String serverName,
-      ClusterService clusterService,
+      ClusterMembershipService clusterMembershipService,
       ManagedMemberGroupService memberGroupService,
       PrimaryBackupServerProtocol protocol,
       ThreadContextFactory threadContextFactory,
       PrimitiveTypeRegistry primitiveTypes,
       PrimaryElection primaryElection) {
     this.serverName = serverName;
-    this.clusterService = clusterService;
+    this.clusterMembershipService = clusterMembershipService;
     this.memberGroupService = memberGroupService;
     this.protocol = protocol;
     this.threadContextFactory = threadContextFactory;
@@ -83,7 +85,7 @@ public class PrimaryBackupServerContext implements Managed<Void> {
    * @return the current server role
    */
   public Role getRole() {
-    return Objects.equals(primaryElection.getTerm().join().primary().nodeId(), clusterService.getLocalNode().id())
+    return Objects.equals(primaryElection.getTerm().join().primary().memberId(), clusterMembershipService.getLocalMember().id())
         ? Role.PRIMARY
         : Role.BACKUP;
   }
@@ -91,14 +93,16 @@ public class PrimaryBackupServerContext implements Managed<Void> {
   @Override
   public CompletableFuture<Void> start() {
     registerListeners();
-    started.set(true);
     return memberGroupService.start().thenCompose(v -> {
-      MemberGroup group = memberGroupService.getMemberGroup(clusterService.getLocalNode());
+      MemberGroup group = memberGroupService.getMemberGroup(clusterMembershipService.getLocalMember());
       if (group != null) {
-        return primaryElection.enter(new Member(clusterService.getLocalNode().id(), group.id()));
+        return primaryElection.enter(new GroupMember(clusterMembershipService.getLocalMember().id(), group.id()));
       }
       return CompletableFuture.completedFuture(null);
-    }).thenApply(v -> null);
+    }).thenApply(v -> {
+      started.set(true);
+      return null;
+    });
   }
 
   /**
@@ -140,7 +144,7 @@ public class PrimaryBackupServerContext implements Managed<Void> {
           primitiveTypes.get(request.primitive().type()),
           request.primitive(),
           threadContextFactory.createContext(),
-          clusterService,
+          clusterMembershipService,
           memberGroupService,
           protocol,
           primaryElection);
@@ -189,6 +193,9 @@ public class PrimaryBackupServerContext implements Managed<Void> {
   public CompletableFuture<Void> stop() {
     unregisterListeners();
     started.set(false);
-    return memberGroupService.stop();
+    List<CompletableFuture<Void>> futures = services.values().stream()
+        .map(future -> future.thenAccept(service -> service.close()))
+        .collect(Collectors.toList());
+    return Futures.allOf(futures).thenCompose(v -> memberGroupService.stop());
   }
 }

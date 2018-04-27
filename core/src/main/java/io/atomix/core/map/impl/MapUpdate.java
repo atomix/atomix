@@ -17,7 +17,7 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.base.MoreObjects;
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -112,7 +112,7 @@ public final class MapUpdate<K, V> {
   }
 
   /**
-   * Transforms this instance into an instance of different paramterized types.
+   * Transforms this instance into an instance of different parameterized types.
    *
    * @param keyMapper   transcoder for key type
    * @param valueMapper transcoder to value type

@@ -68,7 +68,7 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
   }
 
   @Override
-  default CompletableFuture<Void> destroy() {
+  default CompletableFuture<Void> delete() {
     return clear();
   }
 

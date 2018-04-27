@@ -19,7 +19,7 @@ package io.atomix.core.tree.impl;
 import com.google.common.base.MoreObjects;
 
 import io.atomix.core.tree.DocumentPath;
-import io.atomix.utils.ArraySizeHashPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -94,7 +94,7 @@ public final class NodeUpdate<V> {
   }
 
   /**
-   * Transforms this instance into an instance of different paramterized types.
+   * Transforms this instance into an instance of different parameterized types.
    *
    * @param valueMapper transcoder to value type
    * @param <T>         value type of returned instance

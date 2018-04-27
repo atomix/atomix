@@ -18,8 +18,8 @@ package io.atomix.utils.time;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import io.atomix.utils.ArraySizeHashPrinter;
-import io.atomix.utils.TimestampPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
+import io.atomix.utils.misc.TimestampPrinter;
 
 import java.util.function.Function;
 

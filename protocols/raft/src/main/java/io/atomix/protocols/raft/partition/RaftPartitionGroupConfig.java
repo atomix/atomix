@@ -16,23 +16,53 @@
 package io.atomix.protocols.raft.partition;
 
 import io.atomix.primitive.partition.PartitionGroupConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
 
-import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Raft partition group configuration.
  */
 public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartitionGroupConfig> {
   private static final int DEFAULT_PARTITIONS = 7;
+  private static final String DATA_PREFIX = ".data";
 
+  private Set<String> members = new HashSet<>();
   private int partitionSize;
-  private StorageLevel storageLevel = StorageLevel.MAPPED;
-  private File dataDirectory = new File(System.getProperty("user.dir"), "data");
+  private String storageLevel = StorageLevel.MAPPED.name();
+  private String dataDirectory;
+
+  @Override
+  public PrimitiveProtocol.Type getType() {
+    return MultiRaftProtocol.TYPE;
+  }
 
   @Override
   protected int getDefaultPartitions() {
     return DEFAULT_PARTITIONS;
+  }
+
+  /**
+   * Returns the set of members in the partition group.
+   *
+   * @return the set of members in the partition group
+   */
+  public Set<String> getMembers() {
+    return members;
+  }
+
+  /**
+   * Sets the set of members in the partition group.
+   *
+   * @param members the set of members in the partition group
+   * @return the Raft partition group configuration
+   */
+  public RaftPartitionGroupConfig setMembers(Set<String> members) {
+    this.members = members;
+    return this;
   }
 
   /**
@@ -60,7 +90,7 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    *
    * @return the partition storage level
    */
-  public StorageLevel getStorageLevel() {
+  public String getStorageLevel() {
     return storageLevel;
   }
 
@@ -70,7 +100,8 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    * @param storageLevel the partition storage level
    * @return the Raft partition group configuration
    */
-  public RaftPartitionGroupConfig setStorageLevel(StorageLevel storageLevel) {
+  public RaftPartitionGroupConfig setStorageLevel(String storageLevel) {
+    StorageLevel.valueOf(storageLevel.toUpperCase());
     this.storageLevel = storageLevel;
     return this;
   }
@@ -80,8 +111,8 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    *
    * @return the partition data directory
    */
-  public File getDataDirectory() {
-    return dataDirectory;
+  public String getDataDirectory() {
+    return dataDirectory != null ? dataDirectory : DATA_PREFIX + "/" + getName();
   }
 
   /**
@@ -91,16 +122,6 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    * @return the Raft partition group configuration
    */
   public RaftPartitionGroupConfig setDataDirectory(String dataDirectory) {
-    return setDataDirectory(new File(dataDirectory));
-  }
-
-  /**
-   * Sets the partition data directory.
-   *
-   * @param dataDirectory the partition data directory
-   * @return the Raft partition group configuration
-   */
-  public RaftPartitionGroupConfig setDataDirectory(File dataDirectory) {
     this.dataDirectory = dataDirectory;
     return this;
   }

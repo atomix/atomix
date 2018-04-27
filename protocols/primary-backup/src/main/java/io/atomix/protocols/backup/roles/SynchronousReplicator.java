@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.backup.roles;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.protocols.backup.protocol.BackupOperation;
 import io.atomix.protocols.backup.protocol.BackupRequest;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
 class SynchronousReplicator implements Replicator {
   private final PrimaryBackupServiceContext context;
   private final Logger log;
-  private final Map<NodeId, BackupQueue> queues = new HashMap<>();
+  private final Map<MemberId, BackupQueue> queues = new HashMap<>();
   private final Map<Long, CompletableFuture<Void>> futures = new LinkedHashMap<>();
 
   SynchronousReplicator(PrimaryBackupServiceContext context, Logger log) {
@@ -46,13 +46,13 @@ class SynchronousReplicator implements Replicator {
 
   @Override
   public CompletableFuture<Void> replicate(BackupOperation operation) {
-    if (context.descriptor().backups() == 0) {
+    if (context.backups().isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     futures.put(operation.index(), future);
-    for (NodeId backup : context.backups()) {
+    for (MemberId backup : context.backups()) {
       queues.computeIfAbsent(backup, BackupQueue::new).add(operation);
     }
     return future;
@@ -85,12 +85,12 @@ class SynchronousReplicator implements Replicator {
    */
   private final class BackupQueue {
     private final Queue<BackupOperation> operations = new LinkedList<>();
-    private final NodeId nodeId;
+    private final MemberId memberId;
     private boolean inProgress;
     private long ackedIndex;
 
-    BackupQueue(NodeId nodeId) {
-      this.nodeId = nodeId;
+    BackupQueue(MemberId memberId) {
+      this.memberId = memberId;
     }
 
     /**
@@ -128,23 +128,23 @@ class SynchronousReplicator implements Replicator {
       long lastIndex = index;
       BackupRequest request = BackupRequest.request(
           context.descriptor(),
-          context.nodeId(),
+          context.memberId(),
           context.currentTerm(),
           context.getCommitIndex(),
           operations);
 
-      log.trace("Sending {} to {}", request, nodeId);
-      context.protocol().backup(nodeId, request).whenCompleteAsync((response, error) -> {
+      log.trace("Sending {} to {}", request, memberId);
+      context.protocol().backup(memberId, request).whenCompleteAsync((response, error) -> {
         if (error == null) {
-          log.trace("Received {} from {}", response, nodeId);
+          log.trace("Received {} from {}", response, memberId);
           if (response.status() == Status.OK) {
             ackedIndex = lastIndex;
             completeFutures();
           } else {
-            log.trace("Replication to {} failed!", nodeId);
+            log.trace("Replication to {} failed!", memberId);
           }
         } else {
-          log.trace("Replication to {} failed! {}", nodeId, error);
+          log.trace("Replication to {} failed! {}", memberId, error);
         }
         inProgress = false;
         maybeBackup();

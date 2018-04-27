@@ -227,7 +227,8 @@
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
           <stylesheetfile>${basedir}/docs/style.css</stylesheetfile>
-          <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest.resources:io.atomix.utils.serializer.serializers:io.atomix.protocols.raft.utils</excludePackageNames>
+          <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest*:io.atomix.agent*:io.atomix.storage.buffer:io.atomix.storage.journal*:io.atomix.storage.statistics:io.atomix.protocols.raft.utils:io.atomix.utils.serializer.serializers:io.atomix.utils.concurrent:io.atomix.utils.logging:io.atomix.utils.misc:io.atomix.utils.memory:io.atomix.protocols.raft.roles:io.atomix.protocols.raft.protocol:io.atomix.protocols.raft.storage:io.atomix.protocols.raft.cluster:io.atomix.protocols.raft.test:io.atomix.protocols.backup.roles:io.atomix.protocols.backup.protocol
+          </excludePackageNames>
           <additionalparam>
             -Xdoclint:none
             -notimestamp
@@ -238,8 +239,6 @@
             -group "Primitive API" io.atomix.primitive*
             -group "Raft Protocol" io.atomix.protocols.raft*
             -group "Primary-Backup Protocol" io.atomix.protocols.backup*
-            -group "REST API" io.atomix.rest*
-            -group "Agent" io.atomix.agent*
             -group "Storage" io.atomix.storage*
             -group "Utilities" io.atomix.utils*
           </additionalparam>

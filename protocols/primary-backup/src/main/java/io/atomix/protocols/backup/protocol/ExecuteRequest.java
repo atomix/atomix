@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.backup.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.operation.PrimitiveOperation;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -25,15 +25,15 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class ExecuteRequest extends PrimitiveRequest {
 
-  public static ExecuteRequest request(PrimitiveDescriptor primitive, long session, NodeId node, PrimitiveOperation operation) {
+  public static ExecuteRequest request(PrimitiveDescriptor primitive, long session, MemberId node, PrimitiveOperation operation) {
     return new ExecuteRequest(primitive, session, node, operation);
   }
 
   private final long session;
-  private final NodeId node;
+  private final MemberId node;
   private final PrimitiveOperation operation;
 
-  public ExecuteRequest(PrimitiveDescriptor primitive, long session, NodeId node, PrimitiveOperation operation) {
+  public ExecuteRequest(PrimitiveDescriptor primitive, long session, MemberId node, PrimitiveOperation operation) {
     super(primitive);
     this.session = session;
     this.node = node;
@@ -44,7 +44,7 @@ public class ExecuteRequest extends PrimitiveRequest {
     return session;
   }
 
-  public NodeId node() {
+  public MemberId node() {
     return node;
   }
 

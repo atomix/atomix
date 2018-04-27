@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +38,7 @@ public enum  CommunicationStrategy {
    */
   ANY {
     @Override
-    public List<NodeId> selectConnections(NodeId leader, List<NodeId> members) {
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> members) {
       Collections.shuffle(members);
       return members;
     }
@@ -55,7 +55,7 @@ public enum  CommunicationStrategy {
    */
   LEADER {
     @Override
-    public List<NodeId> selectConnections(NodeId leader, List<NodeId> members) {
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> members) {
       if (leader != null) {
         return Collections.singletonList(leader);
       }
@@ -73,11 +73,11 @@ public enum  CommunicationStrategy {
    */
   FOLLOWERS {
     @Override
-    public List<NodeId> selectConnections(NodeId leader, List<NodeId> members) {
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> members) {
       Collections.shuffle(members);
       if (leader != null && members.size() > 1) {
-        List<NodeId> results = new ArrayList<>(members.size());
-        for (NodeId memberId : members) {
+        List<MemberId> results = new ArrayList<>(members.size());
+        for (MemberId memberId : members) {
           if (!memberId.equals(leader)) {
             results.add(memberId);
           }
@@ -91,7 +91,7 @@ public enum  CommunicationStrategy {
   /**
    * Returns a prioritized list of servers to which the client can connect and submit operations.
    * <p>
-   * The client will iterate the provided {@link NodeId} list in order, attempting to connect to
+   * The client will iterate the provided {@link MemberId} list in order, attempting to connect to
    * each listed server until all servers have been exhausted. Implementations should provide a
    * complete list of servers with which the client can communicate. Limiting the server list
    * only to a single server such as the {@code leader} may result in the client failing, such as in
@@ -104,6 +104,6 @@ public enum  CommunicationStrategy {
    *                may evolve over time as the structure of the cluster changes.
    * @return A collection of servers to which the client can connect.
    */
-  public abstract List<NodeId> selectConnections(NodeId leader, List<NodeId> members);
+  public abstract List<MemberId> selectConnections(MemberId leader, List<MemberId> members);
 
 }

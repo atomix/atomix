@@ -11,7 +11,7 @@
       "serializer": {
         "types": [
           {
-            "type": "io.atomix.cluster.NodeId"
+            "type": "io.atomix.cluster.MemberId"
           }
         ]
       }

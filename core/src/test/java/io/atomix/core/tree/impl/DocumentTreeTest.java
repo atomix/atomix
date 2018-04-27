@@ -293,7 +293,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
     tree.create(path("root.a.b"), "ab").join();
     tree.create(path("root.a.c"), "ac").join();
 
-    tree.destroy().join();
+    tree.delete().join();
     assertEquals(0, tree.getChildren(path("root")).join().size());
   }
 

@@ -16,7 +16,7 @@
 package io.atomix.core.election.impl;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.RaftProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
  * Raft leader election test.
@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.RaftProtocol;
 public class RaftLeaderElectionTest extends LeaderElectionTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return RaftProtocol.builder()
+    return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
   }

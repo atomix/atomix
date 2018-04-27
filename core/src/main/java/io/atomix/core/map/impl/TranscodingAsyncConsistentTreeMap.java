@@ -111,18 +111,6 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>> pollFirstEntry() {
-    return backingMap.pollFirstEntry()
-        .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueTransform.apply(entry.getValue())) : null);
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>> pollLastEntry() {
-    return backingMap.pollLastEntry()
-        .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueTransform.apply(entry.getValue())) : null);
-  }
-
-  @Override
   public CompletableFuture<String> lowerKey(String key) {
     return backingMap.lowerKey(key);
   }

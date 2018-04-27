@@ -15,9 +15,8 @@
  */
 package io.atomix.utils.serializer;
 
-import com.esotericsoftware.kryo.*;
 import com.esotericsoftware.kryo.Serializer;
-import io.atomix.utils.Config;
+import io.atomix.utils.config.Config;
 
 /**
  * Serializable type configuration.

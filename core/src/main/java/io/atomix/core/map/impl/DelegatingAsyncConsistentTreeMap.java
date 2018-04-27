@@ -21,7 +21,7 @@ import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.impl.DelegatingDistributedPrimitive;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -42,7 +42,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * of {@link AsyncConsistentTreeMap}.
  */
 public class DelegatingAsyncConsistentTreeMap<V>
-    extends DelegatingDistributedPrimitive
+    extends DelegatingAsyncPrimitive
     implements AsyncConsistentTreeMap<V> {
 
   private final AsyncConsistentTreeMap<V> delegateMap;
@@ -91,16 +91,6 @@ public class DelegatingAsyncConsistentTreeMap<V>
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<V>>> lastEntry() {
     return delegateMap.lastEntry();
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> pollFirstEntry() {
-    return delegateMap.pollFirstEntry();
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> pollLastEntry() {
-    return delegateMap.pollLastEntry();
   }
 
   @Override

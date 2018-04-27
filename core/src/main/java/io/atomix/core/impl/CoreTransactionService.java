@@ -26,6 +26,8 @@ import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +41,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Core transaction service.
  */
 public class CoreTransactionService implements ManagedTransactionService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(CoreTransactionService.class);
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(TransactionId.class)
@@ -99,11 +102,12 @@ public class CoreTransactionService implements ManagedTransactionService {
   public CompletableFuture<TransactionService> start() {
     return ConsistentMapType.<TransactionId, TransactionState>instance()
         .newPrimitiveBuilder("atomix-transactions", managementService)
-        .withProtocol(managementService.getPartitionService().getDefaultPartitionGroup().newProtocol())
+        .withProtocol(managementService.getPartitionService().getSystemPartitionGroup().newProtocol())
         .withSerializer(SERIALIZER)
         .buildAsync()
         .thenApply(transactions -> {
           this.transactions = transactions.async();
+          LOGGER.info("Started");
           started.set(true);
           return this;
         });

@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.storage.system;
 
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.utils.TimestampPrinter;
+import io.atomix.utils.misc.TimestampPrinter;
 
 import java.util.Collection;
 

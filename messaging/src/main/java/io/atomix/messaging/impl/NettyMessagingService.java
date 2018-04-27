@@ -409,11 +409,14 @@ public class NettyMessagingService implements ManagedMessagingService {
     finalFuture.whenComplete((channel, error) -> {
       if (error == null) {
         if (!channel.isActive()) {
-          final CompletableFuture<Channel> currentFuture;
+          CompletableFuture<Channel> currentFuture;
           synchronized (channelPool) {
             currentFuture = channelPool.get(offset);
             if (currentFuture == finalFuture) {
               channelPool.set(offset, null);
+            } else if (currentFuture == null) {
+              currentFuture = openChannel(address);
+              channelPool.set(offset, currentFuture);
             }
           }
 

@@ -2,9 +2,12 @@ cluster:
   name: test
 primitive-types:
   - io.atomix.core.map.ConsistentMapType
+partition-groups:
+  foo:
+    type: multi-primary
 primitives:
   foo:
     type: consistent-map
     serializer:
       types:
-        - type: io.atomix.cluster.NodeId
+        - type: io.atomix.cluster.MemberId

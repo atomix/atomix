@@ -46,9 +46,9 @@ public abstract class Synchronous<T extends AsyncPrimitive> implements SyncPrimi
   }
 
   @Override
-  public void destroy() {
+  public void delete() {
     try {
-      primitive.destroy().get(DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+      primitive.delete().get(DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new AtomixRuntimeException(e);
     }

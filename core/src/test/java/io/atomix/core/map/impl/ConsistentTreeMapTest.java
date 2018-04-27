@@ -315,17 +315,18 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     map.lowerEntry(one).thenAccept(result -> assertNull(result)).join();
     map.firstEntry().thenAccept(result -> assertNull(result)).join();
     map.lastEntry().thenAccept(result -> assertNull(result)).join();
-    map.pollFirstEntry().thenAccept(result -> assertNull(result)).join();
-    map.pollLastEntry().thenAccept(result -> assertNull(result)).join();
     map.lowerKey(one).thenAccept(result -> assertNull(result)).join();
     map.floorKey(one).thenAccept(result -> assertNull(result)).join();
     map.ceilingKey(one).thenAccept(result -> assertNull(result)).join();
     map.higherKey(one).thenAccept(result -> assertNull(result)).join();
 
+    map.size().thenAccept(result -> assertEquals(0, (int) result)).join();
+
     // TODO: delete() is not supported
     //map.delete().join();
 
     all.forEach(key -> map.put(key, key).thenAccept(result -> assertNull(result)).join());
+    map.size().thenAccept(result -> assertEquals(4, (int) result)).join();
     //Note ordering keys are in their proper ordering in ascending order
     //both in naming and in the allKeys list.
 
@@ -387,30 +388,7 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
       assertEquals(four, result.getValue().value());
     }).join();
 
-    map.pollFirstEntry().thenAccept(result -> {
-      assertEquals(one, result.getKey());
-      assertEquals(one, result.getValue().value());
-    }).join();
-
-    map.containsKey(one).thenAccept(result -> assertFalse(result)).join();
-    map.size().thenAccept(result -> assertEquals(3, (int) result)).join();
-
-    map.pollLastEntry().thenAccept(result -> {
-      assertEquals(four, result.getKey());
-      assertEquals(four, result.getValue().value());
-    }).join();
-
-    map.containsKey(four).thenAccept(result -> assertFalse(result)).join();
-    map.size().thenAccept(result -> assertEquals(2, (int) result)).join();
-
-    //repopulate the missing entries
-    all.forEach(key -> map.put(key, key).thenAccept(result -> {
-      if (key.equals(one) || key.equals(four)) {
-        assertNull(result);
-      } else {
-        assertEquals(key, result.value());
-      }
-    }).join());
+    all.forEach(key -> map.put(key, key).thenAccept(result -> assertEquals(key, result.value())).join());
 
     map.lowerKey(one).thenAccept(result -> assertNull(result)).join();
     map.lowerKey(three).thenAccept(result -> assertEquals(two, result)).join();
@@ -421,7 +399,7 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     map.ceilingKey(two).thenAccept(result -> assertEquals(two, result)).join();
 
     //adding to highest key so there is no acceptable response
-    map.ceilingKey(four + "a").thenAccept(reslt -> assertNull(reslt)).join();
+    map.ceilingKey(four + "a").thenAccept(result -> assertNull(result)).join();
     map.higherKey(three).thenAccept(result -> assertEquals(four, result)).join();
     map.higherKey(four).thenAccept(result -> assertNull(result)).join();
 

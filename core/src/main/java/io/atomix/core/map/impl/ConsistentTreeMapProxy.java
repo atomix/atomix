@@ -28,11 +28,21 @@ import io.atomix.core.map.impl.ConsistentTreeMapOperations.LowerEntry;
 import io.atomix.core.map.impl.ConsistentTreeMapOperations.LowerKey;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.CEILING_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.CEILING_KEY;
@@ -46,16 +56,6 @@ import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LAST_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LAST_KEY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LOWER_ENTRY;
 import static io.atomix.core.map.impl.ConsistentTreeMapOperations.LOWER_KEY;
-import static io.atomix.core.map.impl.ConsistentTreeMapOperations.POLL_FIRST_ENTRY;
-import static io.atomix.core.map.impl.ConsistentTreeMapOperations.POLL_LAST_ENTRY;
-
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
-import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Implementation of {@link io.atomix.core.map.AsyncConsistentTreeMap}.
@@ -76,8 +76,8 @@ public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncC
       .register(TreeMap.class)
       .build());
 
-  public ConsistentTreeMapProxy(PrimitiveProxy proxy) {
-    super(proxy);
+  public ConsistentTreeMapProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   @Override
@@ -85,74 +85,92 @@ public class ConsistentTreeMapProxy extends ConsistentMapProxy implements AsyncC
     return SERIALIZER;
   }
 
+  protected String greaterKey(String a, String b) {
+    return a.compareTo(b) > 0 ? a : b;
+  }
+
+  protected String lesserKey(String a, String b) {
+    return a.compareTo(b) < 0 ? a : b;
+  }
+
+  protected Map.Entry<String, Versioned<byte[]>> greaterEntry(Map.Entry<String, Versioned<byte[]>> a, Map.Entry<String, Versioned<byte[]>> b) {
+    return a.getKey().compareTo(b.getKey()) > 0 ? a : b;
+  }
+
+  protected Map.Entry<String, Versioned<byte[]>> lesserEntry(Map.Entry<String, Versioned<byte[]>> a, Map.Entry<String, Versioned<byte[]>> b) {
+    return a.getKey().compareTo(b.getKey()) < 0 ? a : b;
+  }
+
   @Override
   public CompletableFuture<String> firstKey() {
-    return proxy.invoke(FIRST_KEY, serializer()::decode);
+    return this.<String>invokeAll(FIRST_KEY)
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> lastKey() {
-    return proxy.invoke(LAST_KEY, serializer()::decode);
+    return this.<String>invokeAll(LAST_KEY)
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> ceilingEntry(String key) {
-    return proxy.invoke(CEILING_ENTRY, serializer()::encode, new CeilingEntry(key), serializer()::decode);
+    return this.<CeilingEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(CEILING_ENTRY, new CeilingEntry(key))
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> floorEntry(String key) {
-    return proxy.invoke(FLOOR_ENTRY, serializer()::encode, new FloorEntry(key), serializer()::decode);
+    return this.<FloorEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(FLOOR_ENTRY, new FloorEntry(key))
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> higherEntry(String key) {
-    return proxy.invoke(HIGHER_ENTRY, serializer()::encode, new HigherEntry(key), serializer()::decode);
+    return this.<HigherEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(HIGHER_ENTRY, new HigherEntry(key))
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lowerEntry(String key) {
-    return proxy.invoke(LOWER_ENTRY, serializer()::encode, new LowerEntry(key), serializer()::decode);
+    return this.<LowerEntry, Map.Entry<String, Versioned<byte[]>>>invokeAll(LOWER_ENTRY, new LowerEntry(key))
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> firstEntry() {
-    return proxy.invoke(FIRST_ENTRY, serializer()::decode);
+    return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(FIRST_ENTRY)
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lastEntry() {
-    return proxy.invoke(LAST_ENTRY, serializer()::decode);
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> pollFirstEntry() {
-    return proxy.invoke(POLL_FIRST_ENTRY, serializer()::decode);
-  }
-
-  @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> pollLastEntry() {
-    return proxy.invoke(POLL_LAST_ENTRY, serializer()::decode);
+    return this.<Map.Entry<String, Versioned<byte[]>>>invokeAll(LAST_ENTRY)
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> lowerKey(String key) {
-    return proxy.invoke(LOWER_KEY, serializer()::encode, new LowerKey(key), serializer()::decode);
+    return this.<LowerKey, String>invokeAll(LOWER_KEY, new LowerKey(key))
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> floorKey(String key) {
-    return proxy.invoke(FLOOR_KEY, serializer()::encode, new FloorKey(key), serializer()::decode);
+    return this.<FloorKey, String>invokeAll(FLOOR_KEY, new FloorKey(key))
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> ceilingKey(String key) {
-    return proxy.invoke(CEILING_KEY, serializer()::encode, new CeilingKey(key), serializer()::decode);
+    return this.<CeilingKey, String>invokeAll(CEILING_KEY, new CeilingKey(key))
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> higherKey(String key) {
-    return proxy.invoke(HIGHER_KEY, serializer()::encode, new HigherKey(key), serializer()::decode);
+    return this.<HigherKey, String>invokeAll(HIGHER_KEY, new HigherKey(key))
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override

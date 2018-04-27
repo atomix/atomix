@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides a {@link io.atomix.primitive.proxy.PrimitiveProxy} implementation for primary-backup.
+ * Provides a {@link io.atomix.primitive.proxy.PartitionProxy} implementation for primary-backup.
  */
 package io.atomix.protocols.backup.proxy;

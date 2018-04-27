@@ -21,11 +21,15 @@ import io.atomix.core.counter.impl.AtomicCounterOperations.AddAndGet;
 import io.atomix.core.counter.impl.AtomicCounterOperations.CompareAndSet;
 import io.atomix.core.counter.impl.AtomicCounterOperations.GetAndAdd;
 import io.atomix.core.counter.impl.AtomicCounterOperations.Set;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
+
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 
 import static io.atomix.core.counter.impl.AtomicCounterOperations.ADD_AND_GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.COMPARE_AND_SET;
@@ -37,20 +41,22 @@ import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_INCREM
 import static io.atomix.core.counter.impl.AtomicCounterOperations.INCREMENT_AND_GET;
 import static io.atomix.core.counter.impl.AtomicCounterOperations.SET;
 
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Atomix counter implementation.
  */
-public class AtomicCounterProxy extends AbstractAsyncPrimitive implements AsyncAtomicCounter {
+public class AtomicCounterProxy extends AbstractAsyncPrimitive<AsyncAtomicCounter> implements AsyncAtomicCounter {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicCounterOperations.NAMESPACE)
       .build());
 
-  public AtomicCounterProxy(PrimitiveProxy proxy) {
-    super(proxy);
+  public AtomicCounterProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
+  }
+
+  @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
   }
 
   private long nullOrZero(Long value) {
@@ -59,48 +65,48 @@ public class AtomicCounterProxy extends AbstractAsyncPrimitive implements AsyncA
 
   @Override
   public CompletableFuture<Long> get() {
-    return proxy.<Long>invoke(GET, SERIALIZER::decode).thenApply(this::nullOrZero);
+    return this.<Long>invokeBy(getPartitionKey(), GET).thenApply(this::nullOrZero);
   }
 
   @Override
   public CompletableFuture<Void> set(long value) {
-    return proxy.invoke(SET, SERIALIZER::encode, new Set(value));
+    return this.invokeBy(getPartitionKey(), SET, new Set(value));
   }
 
   @Override
   public CompletableFuture<Boolean> compareAndSet(long expectedValue, long updateValue) {
-    return proxy.invoke(COMPARE_AND_SET, SERIALIZER::encode,
-        new CompareAndSet(expectedValue, updateValue), SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), COMPARE_AND_SET,
+        new CompareAndSet(expectedValue, updateValue));
   }
 
   @Override
   public CompletableFuture<Long> addAndGet(long delta) {
-    return proxy.invoke(ADD_AND_GET, SERIALIZER::encode, new AddAndGet(delta), SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), ADD_AND_GET, new AddAndGet(delta));
   }
 
   @Override
   public CompletableFuture<Long> getAndAdd(long delta) {
-    return proxy.invoke(GET_AND_ADD, SERIALIZER::encode, new GetAndAdd(delta), SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), GET_AND_ADD, new GetAndAdd(delta));
   }
 
   @Override
   public CompletableFuture<Long> incrementAndGet() {
-    return proxy.invoke(INCREMENT_AND_GET, SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), INCREMENT_AND_GET);
   }
 
   @Override
   public CompletableFuture<Long> getAndIncrement() {
-    return proxy.invoke(GET_AND_INCREMENT, SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), GET_AND_INCREMENT);
   }
 
   @Override
   public CompletableFuture<Long> decrementAndGet() {
-    return proxy.invoke(DECREMENT_AND_GET, SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), DECREMENT_AND_GET);
   }
 
   @Override
   public CompletableFuture<Long> getAndDecrement() {
-    return proxy.invoke(GET_AND_DECREMENT, SERIALIZER::decode);
+    return this.invokeBy(getPartitionKey(), GET_AND_DECREMENT);
   }
 
   @Override

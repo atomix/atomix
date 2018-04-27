@@ -174,7 +174,7 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
     assertEquals(stats.totalInProgress(), 0);
     assertEquals(stats.totalCompleted(), 0);
 
-    queue2.destroy().join();
+    queue2.delete().join();
 
     stats = queue1.stats().join();
     assertEquals(stats.totalPending(), 0);

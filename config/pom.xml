@@ -73,7 +73,7 @@
         <configuration>
           <instructions>
             <Export-Package>
-              io.atomix.core.config.jackson.*
+              io.atomix.core.config.*
             </Export-Package>
             <Import-Package>
               !sun.nio.ch,!sun.misc,*

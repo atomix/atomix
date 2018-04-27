@@ -20,8 +20,10 @@ import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.impl.DistributedLockOperations.Lock;
 import io.atomix.core.lock.impl.DistributedLockOperations.Unlock;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.OrderedExecutor;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -48,7 +50,7 @@ import static io.atomix.utils.concurrent.Futures.orderedFuture;
 /**
  * Raft lock.
  */
-public class DistributedLockProxy extends AbstractAsyncPrimitive implements AsyncDistributedLock {
+public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistributedLock> implements AsyncDistributedLock {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(DistributedLockOperations.NAMESPACE)
@@ -61,12 +63,15 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
   private final AtomicInteger id = new AtomicInteger();
   private final AtomicInteger lock = new AtomicInteger();
 
-  public DistributedLockProxy(PrimitiveProxy proxy, ScheduledExecutorService scheduledExecutor) {
-    super(proxy);
+  public DistributedLockProxy(PrimitiveProxy proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
+    super(proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
     this.orderedExecutor = new OrderedExecutor(scheduledExecutor);
-    proxy.addEventListener(LOCKED, SERIALIZER::decode, this::handleLocked);
-    proxy.addEventListener(FAILED, SERIALIZER::decode, this::handleFailed);
+  }
+
+  @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
   }
 
   /**
@@ -101,7 +106,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
   public CompletableFuture<Version> lock() {
     // Create and register a new attempt and invoke the LOCK operation on the replicated state machine.
     LockAttempt attempt = new LockAttempt();
-    proxy.invoke(LOCK, SERIALIZER::encode, new Lock(attempt.id(), -1)).whenComplete((result, error) -> {
+    invokeBy(getPartitionKey(), LOCK, new Lock(attempt.id(), -1)).whenComplete((result, error) -> {
       if (error != null) {
         attempt.completeExceptionally(error);
       }
@@ -114,8 +119,8 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
   @Override
   public CompletableFuture<Optional<Version>> tryLock() {
     // If the proxy is currently disconnected from the cluster, we can just fail the lock attempt here.
-    PrimitiveProxy.State state = proxy.getState();
-    if (state != PrimitiveProxy.State.CONNECTED) {
+    Proxy.State state = getPartition(getPartitionKey()).getState();
+    if (state != Proxy.State.CONNECTED) {
       return CompletableFuture.completedFuture(Optional.empty());
     }
 
@@ -123,7 +128,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
     // a 0 timeout. The timeout will cause the state machine to immediately reject the request if the lock is
     // already owned by another process.
     LockAttempt attempt = new LockAttempt();
-    proxy.invoke(LOCK, SERIALIZER::encode, new Lock(attempt.id(), 0)).whenComplete((result, error) -> {
+    invokeBy(getPartitionKey(), LOCK, new Lock(attempt.id(), 0)).whenComplete((result, error) -> {
       if (error != null) {
         attempt.completeExceptionally(error);
       }
@@ -146,14 +151,14 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
     // lock call also granted to this process.
     LockAttempt attempt = new LockAttempt(timeout, a -> {
       a.complete(null);
-      proxy.invoke(UNLOCK, SERIALIZER::encode, new Unlock(a.id()));
+      invokeBy(getPartitionKey(), UNLOCK, new Unlock(a.id()));
     });
 
     // Invoke the LOCK operation on the replicated state machine with the given timeout. If the lock is currently
     // held by another process, the state machine will add the attempt to a queue and publish a FAILED event if
     // the timer expires before this process can be granted the lock. If the client cannot reach the Raft cluster,
     // the client-side timer will expire the attempt.
-    proxy.invoke(LOCK, SERIALIZER::encode, new Lock(attempt.id(), timeout.toMillis()))
+    invokeBy(getPartitionKey(), LOCK, new Lock(attempt.id(), timeout.toMillis()))
         .whenComplete((result, error) -> {
           if (error != null) {
             attempt.completeExceptionally(error);
@@ -171,20 +176,21 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive implements Asyn
     int lock = this.lock.getAndSet(0);
     if (lock != 0) {
       return orderedFuture(
-          proxy.invoke(UNLOCK, SERIALIZER::encode, new Unlock(lock)),
+          invokeBy(getPartitionKey(), UNLOCK, new Unlock(lock)),
           orderedExecutor,
           scheduledExecutor);
     }
     return CompletableFuture.completedFuture(null);
   }
 
-  /**
-   * Closes the lock.
-   *
-   * @return a future to be completed once the lock has been closed
-   */
-  public CompletableFuture<Void> close() {
-    return proxy.close();
+  @Override
+  public CompletableFuture<AsyncDistributedLock> connect() {
+    return super.connect()
+        .thenCompose(v -> getPartition(getPartitionKey()).connect())
+        .thenRun(() -> {
+          listenBy(getPartitionKey(), LOCKED, this::handleLocked);
+          listenBy(getPartitionKey(), FAILED, this::handleFailed);
+        }).thenApply(v -> this);
   }
 
   @Override

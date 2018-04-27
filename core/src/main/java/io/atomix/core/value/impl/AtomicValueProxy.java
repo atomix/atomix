@@ -16,17 +16,21 @@
 package io.atomix.core.value.impl;
 
 import com.google.common.collect.Sets;
-
 import io.atomix.core.value.AsyncAtomicValue;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueEventListener;
 import io.atomix.core.value.impl.AtomicValueOperations.CompareAndSet;
 import io.atomix.core.value.impl.AtomicValueOperations.GetAndSet;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
+
+import java.time.Duration;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import static io.atomix.core.value.impl.AtomicValueOperations.ADD_LISTENER;
 import static io.atomix.core.value.impl.AtomicValueOperations.COMPARE_AND_SET;
@@ -35,14 +39,10 @@ import static io.atomix.core.value.impl.AtomicValueOperations.GET_AND_SET;
 import static io.atomix.core.value.impl.AtomicValueOperations.REMOVE_LISTENER;
 import static io.atomix.core.value.impl.AtomicValueOperations.SET;
 
-import java.time.Duration;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Atomix counter implementation.
  */
-public class AtomicValueProxy extends AbstractAsyncPrimitive implements AsyncAtomicValue<byte[]> {
+public class AtomicValueProxy extends AbstractAsyncPrimitive<AsyncAtomicValue<byte[]>> implements AsyncAtomicValue<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicValueOperations.NAMESPACE)
@@ -51,35 +51,39 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive implements AsyncAto
 
   private final Set<AtomicValueEventListener<byte[]>> eventListeners = Sets.newConcurrentHashSet();
 
-  public AtomicValueProxy(PrimitiveProxy proxy) {
-    super(proxy);
+  public AtomicValueProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
+  }
+
+  @Override
+  protected Serializer serializer() {
+    return SERIALIZER;
   }
 
   @Override
   public CompletableFuture<byte[]> get() {
-    return proxy.invoke(GET, SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), GET);
   }
 
   @Override
   public CompletableFuture<Void> set(byte[] value) {
-    return proxy.invoke(SET, SERIALIZER::encode, new AtomicValueOperations.Set(value));
+    return invokeBy(getPartitionKey(), SET, new AtomicValueOperations.Set(value));
   }
 
   @Override
   public CompletableFuture<Boolean> compareAndSet(byte[] expect, byte[] update) {
-    return proxy.invoke(COMPARE_AND_SET, SERIALIZER::encode,
-        new CompareAndSet(expect, update), SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), COMPARE_AND_SET, new CompareAndSet(expect, update));
   }
 
   @Override
   public CompletableFuture<byte[]> getAndSet(byte[] value) {
-    return proxy.invoke(GET_AND_SET, SERIALIZER::encode, new GetAndSet(value), SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), GET_AND_SET, new GetAndSet(value));
   }
 
   @Override
   public CompletableFuture<Void> addListener(AtomicValueEventListener<byte[]> listener) {
     if (eventListeners.isEmpty()) {
-      return proxy.invoke(ADD_LISTENER).thenRun(() -> eventListeners.add(listener));
+      return invokeBy(getPartitionKey(), ADD_LISTENER).thenRun(() -> eventListeners.add(listener));
     } else {
       eventListeners.add(listener);
       return CompletableFuture.completedFuture(null);
@@ -89,7 +93,7 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive implements AsyncAto
   @Override
   public CompletableFuture<Void> removeListener(AtomicValueEventListener<byte[]> listener) {
     if (eventListeners.remove(listener) && eventListeners.isEmpty()) {
-      return proxy.invoke(REMOVE_LISTENER).thenApply(v -> null);
+      return invokeBy(getPartitionKey(), REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }

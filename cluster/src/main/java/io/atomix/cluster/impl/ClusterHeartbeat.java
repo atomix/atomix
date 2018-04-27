@@ -15,8 +15,10 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
+
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -24,18 +26,20 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Cluster heartbeat message.
  */
 final class ClusterHeartbeat {
-  private final NodeId nodeId;
-  private final Node.Type type;
+  private final MemberId memberId;
+  private final Member.Type type;
   private final String zone;
   private final String rack;
   private final String host;
+  private final Set<String> tags;
 
-  ClusterHeartbeat(NodeId nodeId, Node.Type type, String zone, String rack, String host) {
-    this.nodeId = nodeId;
+  ClusterHeartbeat(MemberId memberId, Member.Type type, String zone, String rack, String host, Set<String> tags) {
+    this.memberId = memberId;
     this.type = type;
     this.zone = zone;
     this.rack = rack;
     this.host = host;
+    this.tags = tags;
   }
 
   /**
@@ -43,8 +47,8 @@ final class ClusterHeartbeat {
    *
    * @return the identifier of the node that sent the heartbeat
    */
-  public NodeId nodeId() {
-    return nodeId;
+  public MemberId memberId() {
+    return memberId;
   }
 
   /**
@@ -52,7 +56,7 @@ final class ClusterHeartbeat {
    *
    * @return the node type
    */
-  public Node.Type nodeType() {
+  public Member.Type nodeType() {
     return type;
   }
 
@@ -83,10 +87,19 @@ final class ClusterHeartbeat {
     return host;
   }
 
+  /**
+   * Returns the node tags.
+   *
+   * @return the node tags
+   */
+  public Set<String> tags() {
+    return tags;
+  }
+
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("nodeId", nodeId)
+        .add("memberId", memberId)
         .add("type", type)
         .toString();
   }

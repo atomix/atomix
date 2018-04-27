@@ -15,9 +15,9 @@
  */
 package io.atomix.primitive.partition.impl;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.event.EventType;
-import io.atomix.primitive.partition.Member;
+import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroupId;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
@@ -47,8 +47,8 @@ public enum PrimaryElectorEvents implements EventType {
       .register(PrimaryElectionEvent.class)
       .register(PrimaryElectionEvent.Type.class)
       .register(PrimaryTerm.class)
-      .register(Member.class)
-      .register(NodeId.class)
+      .register(GroupMember.class)
+      .register(MemberId.class)
       .register(MemberGroupId.class)
       .register(PartitionId.class)
       .build(PrimaryElectorEvents.class.getSimpleName());

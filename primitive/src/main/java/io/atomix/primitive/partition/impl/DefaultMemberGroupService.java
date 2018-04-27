@@ -15,8 +15,8 @@
  */
 package io.atomix.primitive.partition.impl;
 
-import io.atomix.cluster.ClusterEventListener;
-import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.ClusterMembershipEventListener;
+import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.partition.ManagedMemberGroupService;
 import io.atomix.primitive.partition.MemberGroup;
 import io.atomix.primitive.partition.MemberGroupEvent;
@@ -37,13 +37,13 @@ public class DefaultMemberGroupService
     implements ManagedMemberGroupService {
 
   private final AtomicBoolean started = new AtomicBoolean();
-  private final ClusterService clusterService;
+  private final ClusterMembershipService membershipService;
   private final MemberGroupProvider memberGroupProvider;
-  private final ClusterEventListener clusterEventListener = event -> recomputeGroups();
+  private final ClusterMembershipEventListener membershipEventListener = event -> recomputeGroups();
   private volatile Collection<MemberGroup> memberGroups;
 
-  public DefaultMemberGroupService(ClusterService clusterService, MemberGroupProvider memberGroupProvider) {
-    this.clusterService = clusterService;
+  public DefaultMemberGroupService(ClusterMembershipService membershipService, MemberGroupProvider memberGroupProvider) {
+    this.membershipService = membershipService;
     this.memberGroupProvider = memberGroupProvider;
   }
 
@@ -53,14 +53,14 @@ public class DefaultMemberGroupService
   }
 
   private void recomputeGroups() {
-    memberGroups = memberGroupProvider.getMemberGroups(clusterService.getNodes());
+    memberGroups = memberGroupProvider.getMemberGroups(membershipService.getMembers());
   }
 
   @Override
   public CompletableFuture<MemberGroupService> start() {
     if (started.compareAndSet(false, true)) {
-      memberGroups = memberGroupProvider.getMemberGroups(clusterService.getNodes());
-      clusterService.addListener(clusterEventListener);
+      memberGroups = memberGroupProvider.getMemberGroups(membershipService.getMembers());
+      membershipService.addListener(membershipEventListener);
     }
     return CompletableFuture.completedFuture(this);
   }
@@ -73,7 +73,7 @@ public class DefaultMemberGroupService
   @Override
   public CompletableFuture<Void> stop() {
     if (started.compareAndSet(true, false)) {
-      clusterService.removeListener(clusterEventListener);
+      membershipService.removeListener(membershipEventListener);
     }
     return CompletableFuture.completedFuture(null);
   }

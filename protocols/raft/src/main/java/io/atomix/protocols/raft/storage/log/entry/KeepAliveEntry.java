@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.utils.ArraySizeHashPrinter;
-import io.atomix.utils.TimestampPrinter;
+import io.atomix.utils.misc.ArraySizeHashPrinter;
+import io.atomix.utils.misc.TimestampPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 

@@ -18,16 +18,16 @@ package io.atomix.cluster.messaging.impl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeId;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.cluster.messaging.Subscription;
-import io.atomix.utils.net.Address;
 import io.atomix.messaging.MessagingException;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -68,7 +68,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
-      .register(NodeId.class)
+      .register(MemberId.class)
       .register(LogicalTimestamp.class)
       .register(WallClockTimestamp.class)
       .register(InternalSubscriptionInfo.class)
@@ -81,40 +81,40 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   private static final long GOSSIP_INTERVAL_MILLIS = 1000;
   private static final long TOMBSTONE_EXPIRATION_MILLIS = 1000 * 60;
 
-  private final ClusterService clusterService;
+  private final ClusterMembershipService membershipService;
   private final MessagingService messagingService;
-  private final NodeId localNodeId;
+  private final MemberId localMemberId;
   private final AtomicLong logicalTime = new AtomicLong();
   private ScheduledExecutorService gossipExecutor;
-  private final Map<NodeId, Long> updateTimes = Maps.newConcurrentMap();
+  private final Map<MemberId, Long> updateTimes = Maps.newConcurrentMap();
   private final Map<String, InternalTopic> topics = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public DefaultClusterEventingService(ClusterService clusterService, MessagingService messagingService) {
-    this.clusterService = clusterService;
+  public DefaultClusterEventingService(ClusterMembershipService membershipService, MessagingService messagingService) {
+    this.membershipService = membershipService;
     this.messagingService = messagingService;
-    this.localNodeId = clusterService.getLocalNode().id();
+    this.localMemberId = membershipService.getLocalMember().id();
   }
 
   @Override
   public <M> void broadcast(String topic, M message, Function<M, byte[]> encoder) {
     byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.ALL, encoder.apply(message)));
-    getSubscriberNodes(topic).forEach(nodeId -> {
-      Node node = clusterService.getNode(nodeId);
-      if (node != null && node.getState() == Node.State.ACTIVE) {
-        messagingService.sendAsync(node.address(), topic, payload);
+    getSubscriberNodes(topic).forEach(memberId -> {
+      Member member = membershipService.getMember(memberId);
+      if (member != null && member.getState() == Member.State.ACTIVE) {
+        messagingService.sendAsync(member.address(), topic, payload);
       }
     });
   }
 
   @Override
   public <M> CompletableFuture<Void> unicast(String topic, M message, Function<M, byte[]> encoder) {
-    NodeId nodeId = getNextNodeId(topic);
-    if (nodeId != null) {
-      Node node = clusterService.getNode(nodeId);
-      if (node != null && node.getState() == Node.State.ACTIVE) {
+    MemberId memberId = getNextMemberId(topic);
+    if (memberId != null) {
+      Member member = membershipService.getMember(memberId);
+      if (member != null && member.getState() == Member.State.ACTIVE) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
-        return messagingService.sendAsync(node.address(), topic, payload);
+        return messagingService.sendAsync(member.address(), topic, payload);
       }
     }
     return CompletableFuture.completedFuture(null);
@@ -122,12 +122,12 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
 
   @Override
   public <M, R> CompletableFuture<R> send(String topic, M message, Function<M, byte[]> encoder, Function<byte[], R> decoder, Duration timeout) {
-    NodeId nodeId = getNextNodeId(topic);
-    if (nodeId != null) {
-      Node node = clusterService.getNode(nodeId);
-      if (node != null && node.getState() == Node.State.ACTIVE) {
+    MemberId memberId = getNextMemberId(topic);
+    if (memberId != null) {
+      Member member = membershipService.getMember(memberId);
+      if (member != null && member.getState() == Member.State.ACTIVE) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
-        return messagingService.sendAndReceive(node.address(), topic, payload, timeout).thenApply(decoder);
+        return messagingService.sendAndReceive(member.address(), topic, payload, timeout).thenApply(decoder);
       }
     }
     return Futures.exceptionalFuture(new MessagingException.NoRemoteHandler());
@@ -139,14 +139,14 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    * @param topicName the topic for which to return the collection of subscriber nodes
    * @return the collection of subscribers for the given topic
    */
-  private Stream<NodeId> getSubscriberNodes(String topicName) {
+  private Stream<MemberId> getSubscriberNodes(String topicName) {
     InternalTopic topic = topics.get(topicName);
     if (topic == null) {
       return Stream.empty();
     }
     return topic.remoteSubscriptions().stream()
         .filter(s -> !s.isTombstone())
-        .map(s -> s.nodeId())
+        .map(s -> s.memberId())
         .distinct();
   }
 
@@ -156,7 +156,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    * @param topicName the topic for which to return the next node ID
    * @return the next node ID for the given message topic
    */
-  private NodeId getNextNodeId(String topicName) {
+  private MemberId getNextMemberId(String topicName) {
     InternalTopic topic = topics.get(topicName);
     if (topic == null) {
       return null;
@@ -164,7 +164,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
 
     TopicIterator iterator = topic.iterator();
     if (iterator.hasNext()) {
-      return iterator.next().nodeId();
+      return iterator.next().memberId();
     }
     return null;
   }
@@ -208,7 +208,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
     for (InternalSubscriptionInfo subscription : subscriptions) {
       InternalTopic topic = topics.computeIfAbsent(subscription.topic, InternalTopic::new);
       InternalSubscriptionInfo matchingSubscription = topic.remoteSubscriptions().stream()
-          .filter(s -> s.nodeId().equals(subscription.nodeId()) && s.logicalTimestamp().equals(subscription.logicalTimestamp()))
+          .filter(s -> s.memberId().equals(subscription.memberId()) && s.logicalTimestamp().equals(subscription.logicalTimestamp()))
           .findFirst()
           .orElse(null);
       if (matchingSubscription == null) {
@@ -223,16 +223,16 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    * Sends a gossip message to an active peer.
    */
   private void gossip() {
-    List<Node> nodes = clusterService.getNodes()
+    List<Member> members = membershipService.getMembers()
         .stream()
-        .filter(node -> !localNodeId.equals(node.id()))
-        .filter(node -> node.getState() == Node.State.ACTIVE)
+        .filter(node -> !localMemberId.equals(node.id()))
+        .filter(node -> node.getState() == Member.State.ACTIVE)
         .collect(Collectors.toList());
 
-    if (!nodes.isEmpty()) {
-      Collections.shuffle(nodes);
-      Node node = nodes.get(0);
-      updateNode(node);
+    if (!members.isEmpty()) {
+      Collections.shuffle(members);
+      Member member = members.get(0);
+      updateNode(member);
     }
   }
 
@@ -240,9 +240,9 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    * Updates all active peers with a given subscription.
    */
   private CompletableFuture<Void> updateNodes() {
-    List<CompletableFuture<Void>> futures = clusterService.getNodes()
+    List<CompletableFuture<Void>> futures = membershipService.getMembers()
         .stream()
-        .filter(node -> !localNodeId.equals(node.id()))
+        .filter(node -> !localMemberId.equals(node.id()))
         .map(this::updateNode)
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
@@ -251,11 +251,11 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   /**
    * Sends an update to the given node.
    *
-   * @param node the node to which to send the update
+   * @param member the node to which to send the update
    */
-  private CompletableFuture<Void> updateNode(Node node) {
+  private CompletableFuture<Void> updateNode(Member member) {
     long updateTime = System.currentTimeMillis();
-    long lastUpdateTime = updateTimes.getOrDefault(node.id(), 0L);
+    long lastUpdateTime = updateTimes.getOrDefault(member.id(), 0L);
 
     Collection<InternalSubscriptionInfo> subscriptions = topics.values()
         .stream()
@@ -263,10 +263,10 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
         .collect(Collectors.toList());
 
     CompletableFuture<Void> future = new CompletableFuture<>();
-    messagingService.sendAndReceive(node.address(), GOSSIP_MESSAGE_SUBJECT, SERIALIZER.encode(subscriptions))
+    messagingService.sendAndReceive(member.address(), GOSSIP_MESSAGE_SUBJECT, SERIALIZER.encode(subscriptions))
         .whenComplete((result, error) -> {
           if (error == null) {
-            updateTimes.put(node.id(), updateTime);
+            updateTimes.put(member.id(), updateTime);
           }
           future.complete(null);
         });
@@ -277,7 +277,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    * Purges tombstones from the subscription list.
    */
   private void purgeTombstones() {
-    long minTombstoneTime = clusterService.getNodes()
+    long minTombstoneTime = membershipService.getMembers()
         .stream()
         .map(node -> updateTimes.getOrDefault(node.id(), 0L))
         .reduce(Math::min)
@@ -547,7 +547,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
     private InternalSubscription[] subscriptions = new InternalSubscription[0];
 
     /**
-     * Returns a list of subscriptions within the subscripber.
+     * Returns a list of subscriptions within the subscriber.
      *
      * @return a list of subscriptions
      */
@@ -615,7 +615,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
 
     public InternalSubscription(InternalTopic topic, Function<byte[], CompletableFuture<byte[]>> callback) {
       this.topic = topic;
-      this.metadata = new InternalSubscriptionInfo(localNodeId, topic.topic, new LogicalTimestamp(logicalTime.incrementAndGet()));
+      this.metadata = new InternalSubscriptionInfo(localMemberId, topic.topic, new LogicalTimestamp(logicalTime.incrementAndGet()));
       this.callback = callback;
     }
 
@@ -634,18 +634,18 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
    * Subscription metadata.
    */
   private static class InternalSubscriptionInfo {
-    private final NodeId nodeId;
+    private final MemberId memberId;
     private final String topic;
     private final LogicalTimestamp logicalTimestamp;
     private final boolean tombstone;
     private final WallClockTimestamp timestamp = new WallClockTimestamp();
 
-    InternalSubscriptionInfo(NodeId nodeId, String topic, LogicalTimestamp logicalTimestamp) {
-      this(nodeId, topic, logicalTimestamp, false);
+    InternalSubscriptionInfo(MemberId memberId, String topic, LogicalTimestamp logicalTimestamp) {
+      this(memberId, topic, logicalTimestamp, false);
     }
 
-    InternalSubscriptionInfo(NodeId nodeId, String topic, LogicalTimestamp logicalTimestamp, boolean tombstone) {
-      this.nodeId = nodeId;
+    InternalSubscriptionInfo(MemberId memberId, String topic, LogicalTimestamp logicalTimestamp, boolean tombstone) {
+      this.memberId = memberId;
       this.topic = topic;
       this.logicalTimestamp = logicalTimestamp;
       this.tombstone = tombstone;
@@ -656,8 +656,8 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
      *
      * @return the node to which the subscription belongs
      */
-    NodeId nodeId() {
-      return nodeId;
+    MemberId memberId() {
+      return memberId;
     }
 
     /**
@@ -702,7 +702,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
      * @return the subscription as a tombstone
      */
     InternalSubscriptionInfo asTombstone() {
-      return new InternalSubscriptionInfo(nodeId, topic, logicalTimestamp, true);
+      return new InternalSubscriptionInfo(memberId, topic, logicalTimestamp, true);
     }
   }
 }

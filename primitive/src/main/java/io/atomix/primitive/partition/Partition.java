@@ -15,16 +15,15 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.cluster.NodeId;
-import io.atomix.primitive.PrimitiveClient;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.cluster.MemberId;
+import io.atomix.primitive.proxy.ProxyClient;
 
 import java.util.Collection;
 
 /**
  * Atomix partition.
  */
-public interface Partition<P extends PrimitiveProtocol> {
+public interface Partition {
 
   /**
    * Returns the partition identifier.
@@ -45,20 +44,20 @@ public interface Partition<P extends PrimitiveProtocol> {
    *
    * @return the partition's current primary
    */
-  NodeId primary();
+  MemberId primary();
 
   /**
    * Returns the partition's backups.
    *
    * @return the partition's backups
    */
-  Collection<NodeId> backups();
+  Collection<MemberId> backups();
 
   /**
    * Returns the primitive client for the partition.
    *
    * @return the primitive client for the partition
    */
-  PrimitiveClient<P> getPrimitiveClient();
+  ProxyClient getProxyClient();
 
 }

@@ -16,8 +16,8 @@
 
 package io.atomix.core.tree.impl;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
-
 import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
@@ -30,9 +30,12 @@ import io.atomix.core.tree.impl.DocumentTreeOperations.GetChildren;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Listen;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Unlisten;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.utils.Match;
+import io.atomix.utils.misc.Match;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -62,7 +65,7 @@ import static io.atomix.core.tree.impl.DocumentTreeResult.Status.OK;
 /**
  * Distributed resource providing the {@link AsyncDocumentTree} primitive.
  */
-public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDocumentTree<byte[]> {
+public class DocumentTreeProxy extends AbstractAsyncPrimitive<AsyncDocumentTree<byte[]>> implements AsyncDocumentTree<byte[]> {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(DocumentTreeOperations.NAMESPACE)
@@ -71,19 +74,13 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   private final Map<DocumentTreeListener<byte[]>, InternalListener> eventListeners = new HashMap<>();
 
-  public DocumentTreeProxy(PrimitiveProxy proxy) {
-    super(proxy);
-    proxy.addStateChangeListener(state -> {
-      if (state == PrimitiveProxy.State.CONNECTED && isListening()) {
-        proxy.invoke(ADD_LISTENER, SERIALIZER::encode, new Listen());
-      }
-    });
-    proxy.addEventListener(CHANGE, SERIALIZER::decode, this::processTreeUpdates);
+  public DocumentTreeProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   @Override
-  public CompletableFuture<Void> destroy() {
-    return proxy.invoke(CLEAR);
+  protected Serializer serializer() {
+    return SERIALIZER;
   }
 
   @Override
@@ -93,33 +90,21 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   @Override
   public CompletableFuture<Map<String, Versioned<byte[]>>> getChildren(DocumentPath path) {
-    return proxy.<GetChildren, DocumentTreeResult<Map<String, Versioned<byte[]>>>>invoke(
-        GET_CHILDREN,
-        SERIALIZER::encode,
-        new GetChildren(checkNotNull(path)),
-        SERIALIZER::decode)
-        .thenCompose(result -> {
-          if (result.status() == INVALID_PATH) {
-            return Futures.exceptionalFuture(new NoSuchDocumentPathException());
-          } else if (result.status() == ILLEGAL_MODIFICATION) {
-            return Futures.exceptionalFuture(new IllegalDocumentModificationException());
-          } else {
-            return CompletableFuture.completedFuture(result);
-          }
-        }).thenApply(result -> result.result());
+    return this.<GetChildren, DocumentTreeResult<Map<String, Versioned<byte[]>>>>invokeBy(getPartitionKey(), GET_CHILDREN, new GetChildren(checkNotNull(path)))
+        .thenApply(result -> result.status() == OK ? result.result() : ImmutableMap.of());
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(DocumentPath path) {
-    return proxy.invoke(GET, SERIALIZER::encode, new Get(checkNotNull(path)), SERIALIZER::decode);
+    return invokeBy(getPartitionKey(), GET, new Get(checkNotNull(path)));
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> set(DocumentPath path, byte[] value) {
-    return proxy.<Update, DocumentTreeResult<Versioned<byte[]>>>invoke(UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.any()),
-        SERIALIZER::decode)
+    return this.<Update, DocumentTreeResult<Versioned<byte[]>>>invokeBy(
+        getPartitionKey(),
+        UPDATE,
+        new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.any()))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -156,24 +141,19 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, long version) {
-    return proxy.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path),
-            Optional.ofNullable(newValue),
-            Match.any(),
-            Match.ifValue(version)), SERIALIZER::decode)
+    return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
+        getPartitionKey(),
+        UPDATE,
+        new Update(checkNotNull(path), Optional.ofNullable(newValue), Match.any(), Match.ifValue(version)))
         .thenApply(result -> result.updated());
   }
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, byte[] currentValue) {
-    return proxy.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path),
-            Optional.ofNullable(newValue),
-            Match.ifValue(currentValue),
-            Match.any()),
-        SERIALIZER::decode)
+    return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
+        getPartitionKey(),
+        UPDATE,
+        new Update(checkNotNull(path), Optional.ofNullable(newValue), Match.ifValue(currentValue), Match.any()))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -190,10 +170,10 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
     if (path.equals(DocumentPath.from("root"))) {
       return Futures.exceptionalFuture(new IllegalDocumentModificationException());
     }
-    return proxy.<Update, DocumentTreeResult<Versioned<byte[]>>>invoke(UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path), null, Match.any(), Match.ifNotNull()),
-        SERIALIZER::decode)
+    return this.<Update, DocumentTreeResult<Versioned<byte[]>>>invokeBy(
+        getPartitionKey(),
+        UPDATE,
+        new Update(checkNotNull(path), null, Match.any(), Match.ifNotNull()))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -212,7 +192,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
     InternalListener internalListener = new InternalListener(path, listener, MoreExecutors.directExecutor());
     // TODO: Support API that takes an executor
     if (!eventListeners.containsKey(listener)) {
-      return proxy.invoke(ADD_LISTENER, SERIALIZER::encode, new Listen(path))
+      return invokeBy(getPartitionKey(), ADD_LISTENER, new Listen(path))
           .thenRun(() -> eventListeners.put(listener, internalListener));
     }
     return CompletableFuture.completedFuture(null);
@@ -223,10 +203,28 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
     checkNotNull(listener);
     InternalListener internalListener = eventListeners.remove(listener);
     if (internalListener != null && eventListeners.isEmpty()) {
-      return proxy.invoke(REMOVE_LISTENER, SERIALIZER::encode, new Unlisten(internalListener.path))
+      return invokeBy(getPartitionKey(), REMOVE_LISTENER, new Unlisten(internalListener.path))
           .thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<AsyncDocumentTree<byte[]>> connect() {
+    return super.connect()
+        .thenRun(() -> {
+          addStateChangeListeners((partition, state) -> {
+            if (state == PartitionProxy.State.CONNECTED && isListening()) {
+              invokeOn(partition, ADD_LISTENER, new Listen());
+            }
+          });
+          listenAll(CHANGE, this::processTreeUpdates);
+        }).thenApply(v -> this);
+  }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    return invokeBy(getPartitionKey(), CLEAR).thenApply(v -> null);
   }
 
   @Override
@@ -235,10 +233,10 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
   }
 
   private CompletableFuture<DocumentTreeResult.Status> createInternal(DocumentPath path, byte[] value) {
-    return proxy.<Update, DocumentTreeResult<byte[]>>invoke(UPDATE,
-        SERIALIZER::encode,
-        new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.ifNull()),
-        SERIALIZER::decode)
+    return this.<Update, DocumentTreeResult<byte[]>>invokeBy(
+        getPartitionKey(),
+        UPDATE,
+        new Update(checkNotNull(path), Optional.ofNullable(value), Match.any(), Match.ifNull()))
         .thenApply(result -> result.status());
   }
 
@@ -246,7 +244,7 @@ public class DocumentTreeProxy extends AbstractAsyncPrimitive implements AsyncDo
     return !eventListeners.isEmpty();
   }
 
-  private void processTreeUpdates(List<DocumentTreeEvent<byte[]>> events) {
+  private void processTreeUpdates(PartitionId partitionId, List<DocumentTreeEvent<byte[]>> events) {
     events.forEach(event -> eventListeners.values().forEach(listener -> listener.event(event)));
   }
 

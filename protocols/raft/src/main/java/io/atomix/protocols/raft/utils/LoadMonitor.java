@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.utils;
 
-import io.atomix.utils.SlidingWindowCounter;
+import io.atomix.utils.misc.SlidingWindowCounter;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
