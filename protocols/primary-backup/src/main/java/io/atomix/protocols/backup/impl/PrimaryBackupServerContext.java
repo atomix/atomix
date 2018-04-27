@@ -38,8 +38,10 @@ import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -91,14 +93,16 @@ public class PrimaryBackupServerContext implements Managed<Void> {
   @Override
   public CompletableFuture<Void> start() {
     registerListeners();
-    started.set(true);
     return memberGroupService.start().thenCompose(v -> {
       MemberGroup group = memberGroupService.getMemberGroup(clusterMembershipService.getLocalMember());
       if (group != null) {
         return primaryElection.enter(new GroupMember(clusterMembershipService.getLocalMember().id(), group.id()));
       }
       return CompletableFuture.completedFuture(null);
-    }).thenApply(v -> null);
+    }).thenApply(v -> {
+      started.set(true);
+      return null;
+    });
   }
 
   /**
@@ -189,6 +193,9 @@ public class PrimaryBackupServerContext implements Managed<Void> {
   public CompletableFuture<Void> stop() {
     unregisterListeners();
     started.set(false);
-    return memberGroupService.stop();
+    List<CompletableFuture<Void>> futures = services.values().stream()
+        .map(future -> future.thenAccept(service -> service.close()))
+        .collect(Collectors.toList());
+    return Futures.allOf(futures).thenCompose(v -> memberGroupService.stop());
   }
 }
