@@ -56,7 +56,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
   private Logger log;
   private volatile OrderedFuture<PartitionProxy> clientFuture;
   private volatile PartitionProxy proxy;
-  private volatile PartitionProxy.State state = PartitionProxy.State.SUSPENDED;
+  private volatile State state = State.CLOSED;
   private final Set<Consumer<PartitionProxy.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Multimap<EventType, Consumer<PrimitiveEvent>> eventListeners = HashMultimap.create();
   private Scheduled recoverTask;
