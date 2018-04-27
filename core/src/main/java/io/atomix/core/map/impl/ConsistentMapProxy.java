@@ -415,10 +415,7 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive<AsyncConsistentMa
 
     return Futures.allOf(transactionsByMap.entrySet()
         .stream()
-        .map(e -> this.<TransactionPrepare, PrepareResult>invokeOn(
-            e.getKey(),
-            PREPARE,
-            new TransactionPrepare(transactionLog))
+        .map(e -> this.<TransactionPrepare, PrepareResult>invokeOn(e.getKey(), PREPARE, new TransactionPrepare(transactionLog))
             .thenApply(v -> v == PrepareResult.OK || v == PrepareResult.PARTIAL_FAILURE))
         .collect(Collectors.toList()))
         .thenApply(list -> list.stream().reduce(Boolean::logicalAnd).orElse(true));
