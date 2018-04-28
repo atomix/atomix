@@ -31,6 +31,7 @@ public class ClusterConfig implements Config {
   private static final int DEFAULT_MULTICAST_PORT = 54321;
 
   private String name = DEFAULT_CLUSTER_NAME;
+  private String localMemberId;
   private MemberConfig localMember;
   private Map<String, MemberConfig> members = new HashMap<>();
   private boolean multicastEnabled = false;
@@ -66,12 +67,36 @@ public class ClusterConfig implements Config {
   }
 
   /**
+   * Returns the local member identifier.
+   *
+   * @return the local member identifier
+   */
+  public String getLocalMemberId() {
+    return localMemberId;
+  }
+
+  /**
+   * Sets the local member identifier.
+   *
+   * @param localMemberId the local member identifier
+   * @return the cluster configuration
+   */
+  public ClusterConfig setLocalMemberId(String localMemberId) {
+    this.localMemberId = localMemberId;
+    return this;
+  }
+
+  /**
    * Returns the local node configuration.
    *
    * @return the local node configuration
    */
   public MemberConfig getLocalMember() {
-    return localMember;
+    MemberConfig member = localMember;
+    if (member == null && localMemberId != null) {
+      member = members.get(localMemberId);
+    }
+    return member;
   }
 
   /**
