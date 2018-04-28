@@ -94,6 +94,9 @@ public class BackupRole extends PrimaryBackupRole {
             applyClose((CloseOperation) operation);
             break;
         }
+
+      } else if (operation.index() < i) {
+        continue;
       } else {
         requestRestore(context.primary());
         break;
