@@ -80,6 +80,7 @@ public class OrderedFuture<T> extends CompletableFuture<T> {
           future.completeExceptionally(error);
         }
       }
+      orderedFutures.clear();
     }
   }
 
