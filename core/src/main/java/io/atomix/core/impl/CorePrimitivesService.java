@@ -180,7 +180,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   @Override
   public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
-      String name, PrimitiveType<B, C, P> primitiveType) {
+      String name, PrimitiveType<B, C, P, ?> primitiveType) {
     return primitiveType.newPrimitiveBuilder(name, managementService);
   }
 
@@ -196,7 +196,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
         PrimitiveConfig primitiveConfig = config.getPrimitive(name);
         if (primitiveConfig == null) {
-          primitiveConfig = (PrimitiveConfig) info.type().configClass().newInstance();
+          primitiveConfig = (PrimitiveConfig) info.type().primitiveConfigClass().newInstance();
         }
         return info.type().newPrimitiveBuilder(name, primitiveConfig, managementService).build();
       });
@@ -208,7 +208,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   @SuppressWarnings("unchecked")
   public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(
-      String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
+      String name, PrimitiveType<?, C, P, ?> primitiveType, C primitiveConfig) {
     try {
       return (P) cache.get(name, () -> {
         if (primitiveConfig == null) {

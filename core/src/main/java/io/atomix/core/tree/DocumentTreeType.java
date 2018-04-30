@@ -18,21 +18,18 @@ package io.atomix.core.tree;
 import io.atomix.core.tree.impl.DocumentTreeProxyBuilder;
 import io.atomix.core.tree.impl.DocumentTreeResource;
 import io.atomix.core.tree.impl.DocumentTreeService;
-import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
-
-import java.util.function.Function;
-import java.util.function.Supplier;
+import io.atomix.primitive.service.ServiceConfig;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Document tree primitive type.
  */
-public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
+public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>, ServiceConfig> {
   private static final String NAME = "DOCUMENT_TREE";
 
   /**
@@ -51,14 +48,14 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
   }
 
   @Override
-  public Supplier<PrimitiveService> serviceFactory() {
-    return () -> new DocumentTreeService(Ordering.NATURAL);
+  public PrimitiveService newService(ServiceConfig config) {
+    return new DocumentTreeService(config);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Function<DocumentTree<V>, PrimitiveResource> resourceFactory() {
-    return tree -> new DocumentTreeResource((DocumentTree<String>) tree);
+  public PrimitiveResource newResource(DocumentTree<V> primitive) {
+    return new DocumentTreeResource((AsyncDocumentTree<String>) primitive.async());
   }
 
   @Override

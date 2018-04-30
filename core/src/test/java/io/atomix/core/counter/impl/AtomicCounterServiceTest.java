@@ -16,6 +16,7 @@
 package io.atomix.core.counter.impl;
 
 import io.atomix.core.counter.impl.AtomicCounterOperations.Set;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.mock;
 public class AtomicCounterServiceTest {
   @Test
   public void testSnapshot() throws Exception {
-    AtomicCounterService service = new AtomicCounterService();
+    AtomicCounterService service = new AtomicCounterService(new ServiceConfig());
     service.set(new DefaultCommit<>(
         2,
         SET,
@@ -46,7 +47,7 @@ public class AtomicCounterServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new AtomicCounterService();
+    service = new AtomicCounterService(new ServiceConfig());
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     long value = service.get(new DefaultCommit<>(

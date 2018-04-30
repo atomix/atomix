@@ -20,15 +20,14 @@ import io.atomix.core.map.impl.AtomicCounterMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
-
-import java.util.function.Supplier;
+import io.atomix.primitive.service.ServiceConfig;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Atomic counter map primitive type.
  */
-public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBuilder<K>, AtomicCounterMapConfig, AtomicCounterMap<K>> {
+public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBuilder<K>, AtomicCounterMapConfig, AtomicCounterMap<K>, ServiceConfig> {
   private static final String NAME = "COUNTER_MAP";
 
   /**
@@ -47,8 +46,8 @@ public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBu
   }
 
   @Override
-  public Supplier<PrimitiveService> serviceFactory() {
-    return AtomicCounterMapService::new;
+  public PrimitiveService newService(ServiceConfig config) {
+    return new AtomicCounterMapService(config);
   }
 
   @Override

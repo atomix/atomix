@@ -19,6 +19,7 @@ import io.atomix.core.election.LeaderElectionType;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.impl.LeaderElectionOperations.Run;
 import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
@@ -51,7 +52,7 @@ public class LeaderElectionServiceTest {
     PrimitiveSession session = mock(PrimitiveSession.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
 
-    LeaderElectionService service = new LeaderElectionService();
+    LeaderElectionService service = new LeaderElectionService(new ServiceConfig());
     service.init(context);
 
     byte[] id = "a".getBytes();
@@ -65,7 +66,7 @@ public class LeaderElectionServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new LeaderElectionService();
+    service = new LeaderElectionService(new ServiceConfig());
     service.init(context);
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 

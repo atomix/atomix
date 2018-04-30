@@ -20,6 +20,7 @@ import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,6 +41,7 @@ public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
     PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        new ServiceConfig(),
         managementService.getPartitionService());
     return new AtomicValueProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
