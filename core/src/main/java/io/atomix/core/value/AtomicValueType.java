@@ -22,16 +22,14 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
-
-import java.util.function.Function;
-import java.util.function.Supplier;
+import io.atomix.primitive.service.ServiceConfig;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Atomic value primitive type.
  */
-public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, AtomicValueConfig, AtomicValue<V>> {
+public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, AtomicValueConfig, AtomicValue<V>, ServiceConfig> {
   private static final String NAME = "VALUE";
 
   /**
@@ -50,14 +48,14 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
   }
 
   @Override
-  public Supplier<PrimitiveService> serviceFactory() {
-    return AtomicValueService::new;
+  public PrimitiveService newService(ServiceConfig config) {
+    return new AtomicValueService(config);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Function<AtomicValue<V>, PrimitiveResource> resourceFactory() {
-    return value -> new AtomicValueResource((AtomicValue<String>) value);
+  public PrimitiveResource newResource(AtomicValue<V> primitive) {
+    return new AtomicValueResource((AsyncAtomicValue<String>) primitive.async());
   }
 
   @Override

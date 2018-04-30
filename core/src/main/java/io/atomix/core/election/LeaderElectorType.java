@@ -20,15 +20,14 @@ import io.atomix.core.election.impl.LeaderElectorService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
-
-import java.util.function.Supplier;
+import io.atomix.primitive.service.ServiceConfig;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Leader elector primitive type.
  */
-public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<T>, LeaderElectorConfig, LeaderElector<T>> {
+public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<T>, LeaderElectorConfig, LeaderElector<T>, ServiceConfig> {
   private static final String NAME = "LEADER_ELECTOR";
 
   /**
@@ -47,8 +46,8 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
   }
 
   @Override
-  public Supplier<PrimitiveService> serviceFactory() {
-    return LeaderElectorService::new;
+  public PrimitiveService newService(ServiceConfig config) {
+    return new LeaderElectorService(config);
   }
 
   @Override

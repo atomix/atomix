@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set.impl;
 
-import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,17 +34,19 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed set resource.
  */
-public class DistributedSetResource extends PrimitiveResource<DistributedSet<String>> {
+public class DistributedSetResource implements PrimitiveResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributedSetResource.class);
 
-  public DistributedSetResource(DistributedSet<String> set) {
-    super(set);
+  private final AsyncDistributedSet<String> set;
+
+  public DistributedSetResource(AsyncDistributedSet<String> set) {
+    this.set = set;
   }
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public void get(@Suspended AsyncResponse response) {
-    primitive.async().getAsImmutableSet().whenComplete((result, error) -> {
+    set.getAsImmutableSet().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -58,7 +60,7 @@ public class DistributedSetResource extends PrimitiveResource<DistributedSet<Str
   @Path("/{element}")
   @Produces(MediaType.APPLICATION_JSON)
   public void add(@PathParam("element") String element, @Suspended AsyncResponse response) {
-    primitive.async().add(element).whenComplete((result, error) -> {
+    set.add(element).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -72,7 +74,7 @@ public class DistributedSetResource extends PrimitiveResource<DistributedSet<Str
   @Path("/{element}")
   @Produces(MediaType.APPLICATION_JSON)
   public void contains(@PathParam("element") String element, @Suspended AsyncResponse response) {
-    primitive.async().contains(element).whenComplete((result, error) -> {
+    set.contains(element).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -86,7 +88,7 @@ public class DistributedSetResource extends PrimitiveResource<DistributedSet<Str
   @Path("/{element}")
   @Produces(MediaType.APPLICATION_JSON)
   public void remove(@PathParam("element") String element, @Suspended AsyncResponse response) {
-    primitive.async().remove(element).whenComplete((result, error) -> {
+    set.remove(element).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -100,7 +102,7 @@ public class DistributedSetResource extends PrimitiveResource<DistributedSet<Str
   @Path("/size")
   @Produces(MediaType.APPLICATION_JSON)
   public void size(@Suspended AsyncResponse response) {
-    primitive.async().size().whenComplete((result, error) -> {
+    set.size().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -112,7 +114,7 @@ public class DistributedSetResource extends PrimitiveResource<DistributedSet<Str
 
   @DELETE
   public void clear(@Suspended AsyncResponse response) {
-    primitive.async().clear().whenComplete((result, error) -> {
+    set.clear().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

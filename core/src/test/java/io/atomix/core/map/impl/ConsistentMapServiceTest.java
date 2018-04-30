@@ -17,6 +17,7 @@ package io.atomix.core.map.impl;
 
 import io.atomix.core.map.impl.ConsistentMapOperations.Get;
 import io.atomix.core.map.impl.ConsistentMapOperations.Put;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
@@ -45,7 +46,7 @@ public class ConsistentMapServiceTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testSnapshot() throws Exception {
-    ConsistentMapService service = new TestConsistentMapService();
+    ConsistentMapService service = new TestConsistentMapService(new ServiceConfig());
 
     service.put(new DefaultCommit<>(
         2,
@@ -57,7 +58,7 @@ public class ConsistentMapServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new TestConsistentMapService();
+    service = new TestConsistentMapService(new ServiceConfig());
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     Versioned<byte[]> value = service.get(new DefaultCommit<>(
@@ -73,6 +74,10 @@ public class ConsistentMapServiceTest {
   }
 
   private static class TestConsistentMapService extends ConsistentMapService {
+    TestConsistentMapService(ServiceConfig config) {
+      super(config);
+    }
+
     @Override
     protected Scheduler getScheduler() {
       return new Scheduler() {

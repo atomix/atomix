@@ -27,6 +27,7 @@ import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryElectionService;
 import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
@@ -87,7 +88,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimaryElectionService> start() {
     return partitions.getPartitions().iterator().next().getProxyClient()
-        .proxyBuilder(PRIMITIVE_NAME, PrimaryElectorType.instance())
+        .proxyBuilder(PRIMITIVE_NAME, PrimaryElectorType.instance(), new ServiceConfig())
         .build()
         .connect()
         .thenAccept(proxy -> {

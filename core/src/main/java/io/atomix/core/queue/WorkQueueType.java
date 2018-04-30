@@ -22,16 +22,14 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
-
-import java.util.function.Function;
-import java.util.function.Supplier;
+import io.atomix.primitive.service.ServiceConfig;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Work queue primitive type.
  */
-public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>> {
+public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>, ServiceConfig> {
   private static final String NAME = "WORK_QUEUE";
 
   /**
@@ -50,14 +48,14 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
   }
 
   @Override
-  public Supplier<PrimitiveService> serviceFactory() {
-    return WorkQueueService::new;
+  public PrimitiveService newService(ServiceConfig config) {
+    return new WorkQueueService(config);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Function<WorkQueue<E>, PrimitiveResource> resourceFactory() {
-    return queue -> new WorkQueueResource((WorkQueue<String>) queue);
+  public PrimitiveResource newResource(WorkQueue<E> primitive) {
+    return new WorkQueueResource((AsyncWorkQueue<String>) primitive.async());
   }
 
   @Override

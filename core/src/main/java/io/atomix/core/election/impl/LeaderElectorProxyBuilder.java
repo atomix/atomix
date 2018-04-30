@@ -20,6 +20,7 @@ import io.atomix.core.election.LeaderElectorBuilder;
 import io.atomix.core.election.LeaderElectorConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -38,6 +39,7 @@ public class LeaderElectorProxyBuilder<T> extends LeaderElectorBuilder<T> {
     PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        new ServiceConfig(),
         managementService.getPartitionService());
     return new LeaderElectorProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()

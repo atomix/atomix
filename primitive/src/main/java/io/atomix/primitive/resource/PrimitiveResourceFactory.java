@@ -15,8 +15,20 @@
  */
 package io.atomix.primitive.resource;
 
+import io.atomix.primitive.DistributedPrimitive;
+
 /**
- * Primitive resource.
+ * Primitive resource factory.
  */
-public interface PrimitiveResource {
+@FunctionalInterface
+public interface PrimitiveResourceFactory<P extends DistributedPrimitive> {
+
+  /**
+   * Creates a new primitive resource.
+   *
+   * @param primitive the primitive instance
+   * @return the resource instance
+   */
+  PrimitiveResource create(P primitive);
+
 }
