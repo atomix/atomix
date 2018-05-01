@@ -169,6 +169,7 @@ public class DefaultRaftProxy implements RaftProxy {
     return sessionManager.openSession(
         serviceName,
         primitiveType,
+        serviceConfig,
         readConsistency,
         communicationStrategy,
         minTimeout,
