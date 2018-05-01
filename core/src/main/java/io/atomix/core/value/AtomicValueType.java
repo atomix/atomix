@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Atomic value primitive type.
  */
 public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, AtomicValueConfig, AtomicValue<V>, ServiceConfig> {
-  private static final String NAME = "VALUE";
+  private static final String NAME = "value";
 
   /**
    * Returns a new value type.

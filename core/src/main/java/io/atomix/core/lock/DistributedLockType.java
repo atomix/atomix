@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Distributed lock primitive type.
  */
 public class DistributedLockType implements PrimitiveType<DistributedLockBuilder, DistributedLockConfig, DistributedLock, ServiceConfig> {
-  private static final String NAME = "LOCK";
+  private static final String NAME = "lock";
 
   /**
    * Returns a new distributed lock type.

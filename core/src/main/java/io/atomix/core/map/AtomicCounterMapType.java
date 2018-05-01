@@ -28,7 +28,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Atomic counter map primitive type.
  */
 public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBuilder<K>, AtomicCounterMapConfig, AtomicCounterMap<K>, ServiceConfig> {
-  private static final String NAME = "COUNTER_MAP";
+  private static final String NAME = "counter-map";
 
   /**
    * Returns a new atomic counter map type.

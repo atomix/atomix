@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Leader elector primitive type.
  */
 public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilder<T>, LeaderElectionConfig, LeaderElection<T>, ServiceConfig> {
-  private static final String NAME = "LEADER_ELECTION";
+  private static final String NAME = "leader-election";
 
   /**
    * Returns a new leader elector type.

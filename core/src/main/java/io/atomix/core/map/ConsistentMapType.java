@@ -41,7 +41,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Consistent map primitive type.
  */
 public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuilder<K, V>, ConsistentMapConfig, ConsistentMap<K, V>, ServiceConfig> {
-  private static final String NAME = "CONSISTENT_MAP";
+  private static final String NAME = "consistent-map";
 
   /**
    * Returns a new consistent map type.

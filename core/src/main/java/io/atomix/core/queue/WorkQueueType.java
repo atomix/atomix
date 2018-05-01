@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Work queue primitive type.
  */
 public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>, ServiceConfig> {
-  private static final String NAME = "WORK_QUEUE";
+  private static final String NAME = "work-queue";
 
   /**
    * Returns a new work queue type instance.

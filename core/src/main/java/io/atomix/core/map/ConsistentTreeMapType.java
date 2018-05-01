@@ -29,7 +29,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class ConsistentTreeMapType<V>
     implements PrimitiveType<ConsistentTreeMapBuilder<V>, ConsistentTreeMapConfig, ConsistentTreeMap<V>, ServiceConfig> {
-  private static final String NAME = "CONSISTENT_TREEMAP";
+  private static final String NAME = "consistent-tree-map";
 
   /**
    * Returns a new consistent tree map type.
