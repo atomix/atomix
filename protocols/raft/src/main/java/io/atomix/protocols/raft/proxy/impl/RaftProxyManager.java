@@ -21,6 +21,7 @@ import com.google.common.primitives.Longs;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftException;
@@ -39,6 +40,7 @@ import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -153,6 +155,7 @@ public class RaftProxyManager {
   public CompletableFuture<RaftProxyState> openSession(
       String serviceName,
       PrimitiveType primitiveType,
+      ServiceConfig config,
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
       Duration minTimeout,
@@ -167,6 +170,7 @@ public class RaftProxyManager {
         .withMemberId(memberId)
         .withServiceName(serviceName)
         .withServiceType(primitiveType)
+        .withServiceConfig(Serializer.using(primitiveType.namespace()).encode(config))
         .withReadConsistency(readConsistency)
         .withMinTimeout(minTimeout.toMillis())
         .withMaxTimeout(maxTimeout.toMillis())
