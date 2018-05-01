@@ -28,7 +28,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Transaction primitive type.
  */
 public class TransactionType implements PrimitiveType<TransactionBuilder, TransactionConfig, Transaction, ServiceConfig> {
-  private static final String NAME = "TRANSACTION";
+  private static final String NAME = "transaction";
   private static final TransactionType INSTANCE = new TransactionType();
 
   /**

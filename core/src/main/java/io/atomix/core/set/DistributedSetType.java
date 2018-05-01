@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Distributed set primitive type.
  */
 public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>, ServiceConfig> {
-  private static final String NAME = "SET";
+  private static final String NAME = "set";
 
   /**
    * Returns a new distributed set type.
