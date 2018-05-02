@@ -15,7 +15,11 @@
  */
 package io.atomix.primitive.service;
 
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.operation.OperationId;
+import io.atomix.primitive.operation.Operations;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.PrimitiveSessions;
@@ -28,16 +32,28 @@ import io.atomix.utils.time.WallClock;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Raft service.
  */
-public abstract class AbstractPrimitiveService<C extends ServiceConfig> implements PrimitiveService {
+public abstract class AbstractPrimitiveService<S, C extends ServiceConfig> implements PrimitiveService {
+  private final Class<S> serviceInterface;
   private final C config;
   private Logger log;
   private ServiceContext context;
   private ServiceExecutor executor;
 
   protected AbstractPrimitiveService(C config) {
+    this(null, config);
+  }
+
+  protected AbstractPrimitiveService(Class<S> serviceInterface, C config) {
+    this.serviceInterface = serviceInterface;
     this.config = config;
   }
 
@@ -94,7 +110,68 @@ public abstract class AbstractPrimitiveService<C extends ServiceConfig> implemen
    *
    * @param executor The state machine executor.
    */
-  protected abstract void configure(ServiceExecutor executor);
+  protected void configure(ServiceExecutor executor) {
+    checkNotNull(serviceInterface);
+    for (Map.Entry<OperationId, Method> entry : Operations.getOperationMap(serviceInterface).entrySet()) {
+      configure(entry.getKey(), entry.getValue(), executor);
+    }
+  }
+
+  /**
+   * Configures the given operation on the given executor.
+   *
+   * @param operationId the operation identifier
+   * @param method      the operation method
+   * @param executor    the service executor
+   */
+  private void configure(OperationId operationId, Method method, ServiceExecutor executor) {
+    if (method.getReturnType() == Void.TYPE) {
+      if (method.getParameterTypes().length == 0) {
+        executor.register(operationId, () -> {
+          try {
+            method.invoke(this);
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new PrimitiveException.ServiceException(e.getMessage());
+          }
+        });
+      } else {
+        executor.register(operationId, args -> {
+          try {
+            method.invoke(this, (Object[]) args.value());
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new PrimitiveException.ServiceException(e.getMessage());
+          }
+        });
+      }
+    } else {
+      if (method.getParameterTypes().length == 0) {
+        executor.register(operationId, () -> {
+          try {
+            return method.invoke(this);
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new PrimitiveException.ServiceException(e.getMessage());
+          }
+        });
+      } else {
+        executor.register(operationId, args -> {
+          try {
+            return method.invoke(this, (Object[]) args.value());
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new PrimitiveException.ServiceException(e.getMessage());
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * Returns the primitive type.
+   *
+   * @return the primitive type
+   */
+  protected PrimitiveType getPrimitiveType() {
+    return context.serviceType();
+  }
 
   /**
    * Returns the service logger.
