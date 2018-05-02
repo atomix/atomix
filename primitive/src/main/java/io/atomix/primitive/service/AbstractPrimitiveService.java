@@ -330,8 +330,12 @@ public abstract class AbstractPrimitiveService<S, C, F extends ServiceConfig> im
   @SuppressWarnings("unchecked")
   public final void register(PrimitiveSession session) {
     SessionProxyHandler sessionProxyHandler = new SessionProxyHandler(session);
-    C sessionProxy = (C) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{clientInterface}, sessionProxyHandler);
-    sessions.put(session.sessionId(), new SessionProxy(session, sessionProxy));
+    if (clientInterface != null) {
+      C sessionProxy = (C) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{clientInterface}, sessionProxyHandler);
+      sessions.put(session.sessionId(), new SessionProxy(session, sessionProxy));
+    } else {
+      sessions.put(session.sessionId(), new SessionProxy(session, null));
+    }
     onOpen(session);
   }
 
@@ -447,7 +451,7 @@ public abstract class AbstractPrimitiveService<S, C, F extends ServiceConfig> im
 
     private SessionProxyHandler(PrimitiveSession session) {
       this.session = session;
-      this.events = Events.getMethodMap(clientInterface);
+      this.events = clientInterface != null ? Events.getMethodMap(clientInterface) : Maps.newHashMap();
     }
 
     @Override
