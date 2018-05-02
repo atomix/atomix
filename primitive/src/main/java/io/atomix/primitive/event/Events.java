@@ -70,9 +70,13 @@ public final class Events {
    */
   public static Map<EventType, Method> getEventMap(Class<?> serviceInterface) {
     if (!serviceInterface.isInterface()) {
+      Class type = serviceInterface;
       Map<EventType, Method> events = new HashMap<>();
-      for (Class<?> iface : serviceInterface.getInterfaces()) {
-        events.putAll(findEvents(iface));
+      while (type != Object.class) {
+        for (Class<?> iface : type.getInterfaces()) {
+          events.putAll(findEvents(iface));
+        }
+        type = type.getSuperclass();
       }
       return events;
     }
