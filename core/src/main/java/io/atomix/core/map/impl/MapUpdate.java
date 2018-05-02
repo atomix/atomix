@@ -112,7 +112,7 @@ public final class MapUpdate<K, V> {
   }
 
   /**
-   * Transforms this instance into an instance of different paramterized types.
+   * Transforms this instance into an instance of different parameterized types.
    *
    * @param keyMapper   transcoder for key type
    * @param valueMapper transcoder to value type

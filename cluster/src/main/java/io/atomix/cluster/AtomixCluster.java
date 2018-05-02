@@ -360,6 +360,17 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
     }
 
     /**
+     * Sets the local member name.
+     *
+     * @param localMember the local member name
+     * @return the cluster builder
+     */
+    public Builder withLocalMember(String localMember) {
+      config.setLocalMemberId(localMember);
+      return this;
+    }
+
+    /**
      * Sets the local node metadata.
      *
      * @param localMember the local node metadata
