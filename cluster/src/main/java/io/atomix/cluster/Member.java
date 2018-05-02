@@ -15,12 +15,12 @@
  */
 package io.atomix.cluster;
 
-import com.google.common.collect.ImmutableSet;
+import java.util.Map;
+import java.util.Objects;
+
+import com.google.common.collect.ImmutableMap;
 import io.atomix.utils.config.Configured;
 import io.atomix.utils.net.Address;
-
-import java.util.Objects;
-import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -128,7 +128,7 @@ public class Member implements Configured<MemberConfig> {
   private final String zone;
   private final String rack;
   private final String host;
-  private final Set<String> tags;
+  private final Map<String, String> metadata;
 
   public Member(MemberConfig config) {
     this.id = checkNotNull(config.getId(), "id cannot be null");
@@ -137,17 +137,17 @@ public class Member implements Configured<MemberConfig> {
     this.zone = config.getZone();
     this.rack = config.getRack();
     this.host = config.getHost();
-    this.tags = ImmutableSet.copyOf(config.getTags());
+    this.metadata = ImmutableMap.copyOf(config.getMetadata());
   }
 
-  protected Member(MemberId id, Type type, Address address, String zone, String rack, String host, Set<String> tags) {
+  protected Member(MemberId id, Type type, Address address, String zone, String rack, String host, Map<String, String> metadata) {
     this.id = checkNotNull(id, "id cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
     this.address = checkNotNull(address, "address cannot be null");
     this.zone = zone;
     this.rack = rack;
     this.host = host;
-    this.tags = ImmutableSet.copyOf(tags);
+    this.metadata = ImmutableMap.copyOf(metadata);
   }
 
   /**
@@ -214,12 +214,12 @@ public class Member implements Configured<MemberConfig> {
   }
 
   /**
-   * Returns the node tags.
+   * Returns the node metadata.
    *
-   * @return the node tags
+   * @return the node metadata
    */
-  public Set<String> tags() {
-    return tags;
+  public Map<String, String> metadata() {
+    return metadata;
   }
 
   @Override
@@ -231,7 +231,7 @@ public class Member implements Configured<MemberConfig> {
         .setZone(zone)
         .setRack(rack)
         .setHost(host)
-        .setTags(tags);
+        .setMetadata(metadata);
   }
 
   @Override
@@ -369,26 +369,27 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Sets the node tags.
+     * Sets the node metadata.
      *
-     * @param tags the node tags
+     * @param metadata the node metadata
      * @return the node builder
      * @throws NullPointerException if the tags are null
      */
-    public Builder withTags(Set<String> tags) {
-      config.setTags(tags);
+    public Builder withMetadata(Map<String, String> metadata) {
+      config.setMetadata(metadata);
       return this;
     }
 
     /**
-     * Adds a tag to the node.
+     * Adds metadata to the node.
      *
-     * @param tag the tag to add
+     * @param key the metadata key to add
+     * @param value the metadata value to add
      * @return the node builder
      * @throws NullPointerException if the tag is null
      */
-    public Builder addTag(String tag) {
-      config.addTag(tag);
+    public Builder addMetadata(String key, String value) {
+      config.addMetadata(key, value);
       return this;
     }
 
