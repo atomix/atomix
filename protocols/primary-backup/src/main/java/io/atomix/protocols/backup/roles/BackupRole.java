@@ -139,7 +139,7 @@ public class BackupRole extends PrimaryBackupRole {
     context.setTimestamp(operation.timestamp());
     PrimaryBackupSession session = context.getSession(operation.session());
     if (session != null) {
-      context.sessions().expireSession(session);
+      context.expireSession(session.sessionId().id());
     }
   }
 
@@ -150,7 +150,7 @@ public class BackupRole extends PrimaryBackupRole {
     context.setTimestamp(operation.timestamp());
     PrimaryBackupSession session = context.getSession(operation.session());
     if (session != null) {
-      context.sessions().closeSession(session);
+      context.closeSession(session.sessionId().id());
     }
   }
 

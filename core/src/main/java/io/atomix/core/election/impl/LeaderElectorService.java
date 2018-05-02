@@ -107,7 +107,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
   public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject()) {
-      listeners.put(sessionId, getSessions().getSession(sessionId));
+      listeners.put(sessionId, getSession(sessionId));
     }
     termCounters = reader.readObject();
     elections = reader.readObject();
