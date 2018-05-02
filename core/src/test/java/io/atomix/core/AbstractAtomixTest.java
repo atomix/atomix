@@ -29,7 +29,9 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,9 +51,17 @@ public abstract class AbstractAtomixTest {
    * Creates an Atomix instance.
    */
   protected static Atomix.Builder buildAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes) {
+    return buildAtomix(type, id, persistentNodes, ephemeralNodes, Collections.emptyMap());
+  }
+
+  /**
+   * Creates an Atomix instance.
+   */
+  protected static Atomix.Builder buildAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes, Map<String, String> metadata) {
     Member localMember = Member.builder(String.valueOf(id))
         .withType(type)
         .withAddress("localhost", BASE_PORT + id)
+        .withMetadata(metadata)
         .build();
 
     Collection<Member> members = Stream.concat(
@@ -78,14 +88,28 @@ public abstract class AbstractAtomixTest {
    * Creates an Atomix instance.
    */
   protected static Atomix createAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Profile... profiles) {
-    return createAtomix(type, id, persistentIds, ephemeralIds, b -> b.withProfiles(profiles).build());
+    return createAtomix(type, id, persistentIds, ephemeralIds, Collections.emptyMap(), profiles);
+  }
+
+  /**
+   * Creates an Atomix instance.
+   */
+  protected static Atomix createAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Map<String, String> metadata, Profile... profiles) {
+    return createAtomix(type, id, persistentIds, ephemeralIds, metadata, b -> b.withProfiles(profiles).build());
   }
 
   /**
    * Creates an Atomix instance.
    */
   protected static Atomix createAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
-    return builderFunction.apply(buildAtomix(type, id, persistentIds, ephemeralIds));
+    return createAtomix(type, id, persistentIds, ephemeralIds, Collections.emptyMap(), builderFunction);
+  }
+
+  /**
+   * Creates an Atomix instance.
+   */
+  protected static Atomix createAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Map<String, String> metadata, Function<Atomix.Builder, Atomix> builderFunction) {
+    return builderFunction.apply(buildAtomix(type, id, persistentIds, ephemeralIds, metadata));
   }
 
   @AfterClass

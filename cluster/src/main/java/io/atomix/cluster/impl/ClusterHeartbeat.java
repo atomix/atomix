@@ -15,10 +15,10 @@
  */
 package io.atomix.cluster.impl;
 
+import java.util.Map;
+
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-
-import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -31,15 +31,15 @@ final class ClusterHeartbeat {
   private final String zone;
   private final String rack;
   private final String host;
-  private final Set<String> tags;
+  private final Map<String, String> metadata;
 
-  ClusterHeartbeat(MemberId memberId, Member.Type type, String zone, String rack, String host, Set<String> tags) {
+  ClusterHeartbeat(MemberId memberId, Member.Type type, String zone, String rack, String host, Map<String, String> metadata) {
     this.memberId = memberId;
     this.type = type;
     this.zone = zone;
     this.rack = rack;
     this.host = host;
-    this.tags = tags;
+    this.metadata = metadata;
   }
 
   /**
@@ -88,12 +88,12 @@ final class ClusterHeartbeat {
   }
 
   /**
-   * Returns the node tags.
+   * Returns the node metadata.
    *
-   * @return the node tags
+   * @return the node metadata
    */
-  public Set<String> tags() {
-    return tags;
+  public Map<String, String> metadata() {
+    return metadata;
   }
 
   @Override

@@ -15,11 +15,11 @@
  */
 package io.atomix.cluster.impl;
 
+import java.util.Map;
+
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
-
-import java.util.Set;
 
 /**
  * Default cluster node.
@@ -34,8 +34,8 @@ public class StatefulMember extends Member {
       String zone,
       String rack,
       String host,
-      Set<String> tags) {
-    super(id, type, address, zone, rack, host, tags);
+      Map<String, String> metadata) {
+    super(id, type, address, zone, rack, host, metadata);
   }
 
   /**

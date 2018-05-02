@@ -15,6 +15,20 @@
  */
 package io.atomix.cluster.impl;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -40,20 +54,6 @@ import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
@@ -122,7 +122,7 @@ public class DefaultClusterMembershipService
         localMember.zone(),
         localMember.rack(),
         localMember.host(),
-        localMember.tags());
+        localMember.metadata());
     this.heartbeatInterval = config.getHeartbeatInterval();
     this.phiFailureThreshold = config.getPhiFailureThreshold();
     this.failureTimeout = config.getFailureTimeout();
@@ -185,7 +185,7 @@ public class DefaultClusterMembershipService
             node.zone(),
             node.rack(),
             node.host(),
-            node.tags()));
+            node.metadata()));
 
     byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
         localMember.id(),
@@ -193,7 +193,7 @@ public class DefaultClusterMembershipService
         localMember.zone(),
         localMember.rack(),
         localMember.host(),
-        localMember.tags()));
+        localMember.metadata()));
     return Futures.allOf(Stream.concat(clusterNodes, bootstrapNodes).map(node -> {
       LOGGER.trace("{} - Sending heartbeat: {}", localMember.id(), node.id());
       CompletableFuture<Void> future = sendHeartbeat(node.address(), payload);
@@ -252,7 +252,7 @@ public class DefaultClusterMembershipService
         heartbeat.zone(),
         heartbeat.rack(),
         heartbeat.host(),
-        heartbeat.tags()));
+        heartbeat.metadata()));
     return SERIALIZER.encode(nodes.values().stream()
         .filter(node -> node.type() == Member.Type.EPHEMERAL)
         .collect(Collectors.toList()));
@@ -271,7 +271,7 @@ public class DefaultClusterMembershipService
           member.zone(),
           member.rack(),
           member.host(),
-          member.tags());
+          member.metadata());
       LOGGER.info("{} - Node activated: {}", localMember.id(), statefulNode);
       statefulNode.setState(State.ACTIVE);
       nodes.put(statefulNode.id(), statefulNode);
@@ -283,7 +283,7 @@ public class DefaultClusterMembershipService
           localMember.zone(),
           localMember.rack(),
           localMember.host(),
-          localMember.tags())));
+          localMember.metadata())));
     } else if (existingNode.getState() == State.INACTIVE) {
       LOGGER.info("{} - Node activated: {}", localMember.id(), existingNode);
       existingNode.setState(State.ACTIVE);
@@ -330,7 +330,7 @@ public class DefaultClusterMembershipService
                 node.zone(),
                 node.rack(),
                 node.host(),
-                node.tags());
+                node.metadata());
             nodes.put(newNode.id(), newNode);
             post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, newNode));
           }
@@ -371,7 +371,7 @@ public class DefaultClusterMembershipService
               node.zone(),
               node.rack(),
               node.host(),
-              node.tags())));
+              node.metadata())));
       messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
 
       ComposableFuture<Void> future = new ComposableFuture<>();
