@@ -16,11 +16,12 @@
 package io.atomix.core.map;
 
 import io.atomix.core.map.impl.ConsistentTreeMapProxyBuilder;
-import io.atomix.core.map.impl.ConsistentTreeMapService;
+import io.atomix.core.map.impl.DefaultConsistentTreeMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.serializer.Namespace;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -49,8 +50,13 @@ public class ConsistentTreeMapType<V>
   }
 
   @Override
+  public Namespace namespace() {
+    return ConsistentMapType.instance().namespace();
+  }
+
+  @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentTreeMapService();
+    return new DefaultConsistentTreeMapService();
   }
 
   @Override
