@@ -305,6 +305,16 @@ public abstract class AbstractPrimitiveService<S, C, F extends ServiceConfig> im
   /**
    * Publishes an event to the given session.
    *
+   * @param session the session to which to publish the event
+   * @param event   the event to publish
+   */
+  protected void acceptOn(PrimitiveSession session, Consumer<C> event) {
+    acceptOn(session.sessionId(), event);
+  }
+
+  /**
+   * Publishes an event to the given session.
+   *
    * @param sessionId the session to which to publish the event
    * @param event     the event to publish
    */
