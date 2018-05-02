@@ -1365,7 +1365,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveService extends AbstractPrimitiveService {
+  public static class TestPrimitiveService extends AbstractPrimitiveService<Object, Object, ServiceConfig> {
     private Commit<Void> expire;
     private Commit<Void> close;
 
@@ -1384,7 +1384,7 @@ public class RaftTest extends ConcurrentTestCase {
       executor.register(READ, this::read);
       executor.register(EVENT, this::event);
       executor.<Void>register(CLOSE, c -> close(c));
-      executor.register(EXPIRE, this::expire);
+      executor.register(EXPIRE, (Consumer<Commit<Void>>) this::expire);
     }
 
     @Override
