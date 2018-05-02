@@ -27,7 +27,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -36,6 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -66,8 +69,20 @@ public class AtomixTest extends AbstractAtomixTest {
     return startAtomix(type, id, persistentNodes, Arrays.asList(), profiles);
   }
 
+
+
+  protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, Map<String, String> metadata, Profile... profiles) {
+    return startAtomix(type, id, persistentNodes, Arrays.asList(), metadata, profiles);
+  }
+
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes, Profile... profiles) {
     return startAtomix(type, id, persistentNodes, ephemeralNodes, b -> b.withProfiles(profiles).build());
+  }
+
+
+
+  protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes, Map<String, String> metadata, Profile... profiles) {
+    return startAtomix(type, id, persistentNodes, ephemeralNodes, metadata, b -> b.withProfiles(profiles).build());
   }
 
   /**
@@ -82,6 +97,15 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
     Atomix atomix = createAtomix(type, id, persistentIds, ephemeralIds, builderFunction);
+    instances.add(atomix);
+    return atomix.start();
+  }
+
+  /**
+   * Creates and starts a new test Atomix instance.
+   */
+  protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Map<String, String> metadata, Function<Atomix.Builder, Atomix> builderFunction) {
+    Atomix atomix = createAtomix(type, id, persistentIds, ephemeralIds, metadata, builderFunction);
     instances.add(atomix);
     return atomix.start();
   }
@@ -231,6 +255,38 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, event1.type());
     event1 = clientListener.event();
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
+  }
+
+
+
+  /**
+   * Tests a client metadata.
+   */
+  @Test
+  public void testClientMetadata() throws Exception {
+    List<CompletableFuture<Atomix>> futures = new ArrayList<>();
+    futures.add(startAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
+    futures.add(startAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
+    futures.add(startAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
+    Futures.allOf(futures).join();
+
+    TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
+    instances.get(0).membershipService().addListener(dataListener);
+
+    Atomix client1 = startAtomix(Member.Type.EPHEMERAL, 4, Arrays.asList(1, 2, 3), Collections.singletonMap("a-key", "a-value"), Profile.CLIENT).join();
+    assertEquals(1, client1.partitionService().getPartitionGroups().size());
+
+    // client1 added to data node
+    ClusterMembershipEvent event1 = dataListener.event();
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event1.type());
+    event1 = dataListener.event();
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, event1.type());
+
+    Member meber = event1.subject();
+
+    assertNotNull(meber.metadata());
+    assertEquals(1, meber.metadata().size());
+    assertEquals("a-value", meber.metadata().get("a-key"));
   }
 
   private static class TestClusterMembershipEventListener implements ClusterMembershipEventListener {

@@ -19,3 +19,4 @@ core/data/
 agent/data/
 data/
 .data/
+.sts4-cache/
