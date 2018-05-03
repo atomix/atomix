@@ -16,8 +16,7 @@
 package io.atomix.primitive;
 
 import io.atomix.primitive.service.PrimitiveService;
-
-import java.util.function.Supplier;
+import io.atomix.primitive.service.ServiceConfig;
 
 /**
  * Test primitive type.
@@ -29,7 +28,7 @@ public class TestPrimitiveType implements PrimitiveType {
   }
 
   @Override
-  public Supplier<PrimitiveService> serviceFactory() {
+  public PrimitiveService newService(ServiceConfig config) {
     throw new UnsupportedOperationException();
   }
 

@@ -39,6 +39,7 @@ import io.atomix.protocols.backup.protocol.RestoreResponse;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.List;
@@ -148,7 +149,16 @@ public class PrimaryBackupServerContext implements Managed<Void> {
           memberGroupService,
           protocol,
           primaryElection);
-      return service.open().thenApply(v -> service);
+
+      OrderedFuture<PrimaryBackupServiceContext> newOrderFuture = new OrderedFuture<>();
+      service.open().whenComplete((v, e) -> {
+        if (e != null) {
+          newOrderFuture.completeExceptionally(e);
+        } else {
+          newOrderFuture.complete(service);
+        }
+      });
+      return newOrderFuture;
     });
   }
 

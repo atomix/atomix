@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.cluster.MemberId;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -28,10 +29,10 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Serializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,7 +108,16 @@ public abstract class AbstractLogTest {
     // Append a couple entries.
     Indexed<RaftLogEntry> indexed;
     assertEquals(writer.getNextIndex(), 1);
-    indexed = writer.append(new OpenSessionEntry(1, System.currentTimeMillis(), "client", "test1", "test", ReadConsistency.LINEARIZABLE, 100, 1000));
+    indexed = writer.append(new OpenSessionEntry(
+        1,
+        System.currentTimeMillis(),
+        "client",
+        "test1",
+        "test",
+        new byte[0],
+        ReadConsistency.LINEARIZABLE,
+        100,
+        1000));
     assertEquals(indexed.index(), 1);
 
     assertEquals(writer.getNextIndex(), 2);

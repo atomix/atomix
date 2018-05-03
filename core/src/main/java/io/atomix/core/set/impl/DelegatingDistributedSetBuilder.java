@@ -26,6 +26,7 @@ import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -46,6 +47,7 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
     PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        new ServiceConfig(),
         managementService.getPartitionService());
     return new ConsistentMapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()

@@ -23,6 +23,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -50,6 +51,10 @@ public class AtomicCounterService extends AbstractPrimitiveService {
       .build());
 
   private Long value = 0L;
+
+  public AtomicCounterService(ServiceConfig config) {
+    super(config);
+  }
 
   @Override
   public Serializer serializer() {

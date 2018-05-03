@@ -52,6 +52,16 @@ public interface PrimitiveProxy extends Proxy<PrimitiveProxy> {
    * @param key the key for which to return the partition proxy
    * @return the partition proxy for the given key
    */
-  PartitionProxy getPartition(String key);
+  default PartitionProxy getPartition(String key) {
+    return getPartition(getPartitionId(key));
+  }
+
+  /**
+   * Returns the partition ID for the given key.
+   *
+   * @param key the key for which to return the partition ID
+   * @return the partition ID for the given key
+   */
+  PartitionId getPartitionId(String key);
 
 }

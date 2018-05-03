@@ -41,6 +41,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftClient;
@@ -67,7 +68,6 @@ import io.atomix.protocols.raft.protocol.KeepAliveRequest;
 import io.atomix.protocols.raft.protocol.KeepAliveResponse;
 import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.LeaveResponse;
-import io.atomix.protocols.raft.test.protocol.LocalRaftProtocolFactory;
 import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
@@ -77,10 +77,8 @@ import io.atomix.protocols.raft.protocol.PollResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
-import io.atomix.protocols.raft.test.protocol.RaftClientMessagingProtocol;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.test.protocol.RaftServerMessagingProtocol;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
@@ -98,6 +96,9 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
+import io.atomix.protocols.raft.test.protocol.LocalRaftProtocolFactory;
+import io.atomix.protocols.raft.test.protocol.RaftClientMessagingProtocol;
+import io.atomix.protocols.raft.test.protocol.RaftServerMessagingProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.net.Address;
@@ -128,7 +129,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.atomix.primitive.operation.PrimitiveOperation.operation;
@@ -538,7 +538,7 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a test session.
    */
   private PartitionProxy createProxy(RaftClient client) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build();
@@ -561,8 +561,8 @@ public class RaftPerformanceTest implements Runnable {
     }
 
     @Override
-    public Supplier<PrimitiveService> serviceFactory() {
-      return PerformanceService::new;
+    public PrimitiveService newService(ServiceConfig config) {
+      return new PerformanceService(config);
     }
 
     @Override
@@ -581,6 +581,10 @@ public class RaftPerformanceTest implements Runnable {
    */
   public static class PerformanceService extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
+
+    public PerformanceService(ServiceConfig config) {
+      super(config);
+    }
 
     @Override
     public Serializer serializer() {

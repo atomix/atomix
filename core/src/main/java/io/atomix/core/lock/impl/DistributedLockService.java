@@ -21,6 +21,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
@@ -54,6 +55,10 @@ public class DistributedLockService extends AbstractPrimitiveService {
   private LockHolder lock;
   private Queue<LockHolder> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
+
+  public DistributedLockService(ServiceConfig config) {
+    super(config);
+  }
 
   @Override
   public Serializer serializer() {

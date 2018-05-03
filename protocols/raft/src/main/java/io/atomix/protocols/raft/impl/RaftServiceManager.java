@@ -21,6 +21,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.RaftException;
@@ -50,6 +51,7 @@ import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
@@ -451,6 +453,8 @@ public class RaftServiceManager implements AutoCloseable {
     writer.writeLong(service.serviceId().id());
     writer.writeString(service.serviceType().id());
     writer.writeString(service.serviceName());
+    byte[] config = Serializer.using(service.serviceType().namespace()).encode(service.serviceConfig());
+    writer.writeInt(config.length).writeBytes(config);
     service.takeSnapshot(writer);
   }
 
@@ -487,10 +491,11 @@ public class RaftServiceManager implements AutoCloseable {
     PrimitiveId primitiveId = PrimitiveId.from(reader.readLong());
     PrimitiveType primitiveType = raft.getPrimitiveTypes().get(reader.readString());
     String serviceName = reader.readString();
+    byte[] serviceConfig = reader.readBytes(reader.readInt());
 
     // Get or create the service associated with the snapshot.
     logger.debug("Installing service {} {}", primitiveId, serviceName);
-    RaftServiceContext service = initializeService(primitiveId, primitiveType, serviceName);
+    RaftServiceContext service = initializeService(primitiveId, primitiveType, serviceName, serviceConfig);
     if (service != null) {
       service.installSnapshot(reader);
     }
@@ -593,11 +598,11 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Gets or initializes a service context.
    */
-  private RaftServiceContext getOrInitializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName) {
+  private RaftServiceContext getOrInitializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName, byte[] config) {
     // Get the state machine executor or create one if it doesn't already exist.
     RaftServiceContext service = raft.getServices().getService(serviceName);
     if (service == null) {
-      service = initializeService(primitiveId, primitiveType, serviceName);
+      service = initializeService(primitiveId, primitiveType, serviceName, config);
     }
     return service;
   }
@@ -605,13 +610,16 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Initializes a new service.
    */
-  private RaftServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType<?, ?, ?> primitiveType, String serviceName) {
+  @SuppressWarnings("unchecked")
+  private RaftServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName, byte[] config) {
     RaftServiceContext oldService = raft.getServices().getService(serviceName);
+    ServiceConfig serviceConfig = Serializer.using(primitiveType.namespace()).decode(config);
     RaftServiceContext service = new RaftServiceContext(
         primitiveId,
         serviceName,
         primitiveType,
-        primitiveType.serviceFactory().get(),
+        serviceConfig,
+        primitiveType.newService(serviceConfig),
         raft,
         threadContextFactory);
     raft.getServices().registerService(service);
@@ -631,11 +639,14 @@ public class RaftServiceManager implements AutoCloseable {
     if (primitiveType == null) {
       throw new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType());
     }
+
     // Get the state machine executor or create one if it doesn't already exist.
     RaftServiceContext service = getOrInitializeService(
         PrimitiveId.from(entry.index()),
         raft.getPrimitiveTypes().get(entry.entry().serviceType()),
-        entry.entry().serviceName());
+        entry.entry().serviceName(),
+        entry.entry().serviceConfig());
+
     if (service == null) {
       throw new RaftException.UnknownService("Unknown service type " + entry.entry().serviceType());
     }

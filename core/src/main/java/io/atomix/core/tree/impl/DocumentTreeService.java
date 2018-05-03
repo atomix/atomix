@@ -41,6 +41,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.misc.Match;
@@ -118,8 +119,9 @@ public class DocumentTreeService extends AbstractPrimitiveService {
   private DocumentTree<byte[]> docTree;
   private Set<DocumentPath> preparedKeys = Sets.newHashSet();
 
-  public DocumentTreeService(Ordering ordering) {
-    this.docTree = new DefaultDocumentTree<>(versionCounter::incrementAndGet, ordering);
+  public DocumentTreeService(ServiceConfig config) {
+    super(config);
+    this.docTree = new DefaultDocumentTree<>(versionCounter::incrementAndGet, Ordering.NATURAL);
   }
 
   @Override

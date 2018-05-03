@@ -20,6 +20,7 @@ import io.atomix.core.counter.AtomicCounterBuilder;
 import io.atomix.core.counter.AtomicCounterConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.service.ServiceConfig;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,6 +38,7 @@ public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
     PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        new ServiceConfig(),
         managementService.getPartitionService());
     return new AtomicCounterProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()

@@ -820,7 +820,16 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
-    appendAndCompact(new OpenSessionEntry(term, timestamp, request.node(), request.serviceName(), request.serviceType(), request.readConsistency(), minTimeout, maxTimeout))
+    appendAndCompact(new OpenSessionEntry(
+        term,
+        timestamp,
+        request.node(),
+        request.serviceName(),
+        request.serviceType(),
+        request.serviceConfig(),
+        request.readConsistency(),
+        minTimeout,
+        maxTimeout))
         .whenCompleteAsync((entry, error) -> {
           if (error != null) {
             future.complete(logResponse(OpenSessionResponse.builder()

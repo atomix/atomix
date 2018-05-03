@@ -21,6 +21,7 @@ import io.atomix.core.map.ConsistentTreeMapBuilder;
 import io.atomix.core.map.ConsistentTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +42,7 @@ public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V
     PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        new ServiceConfig(),
         managementService.getPartitionService());
     return new ConsistentTreeMapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
