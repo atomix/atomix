@@ -377,7 +377,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
       ClusterMembershipService clusterMembershipService,
       ClusterMessagingService messagingService,
       PrimitiveTypeRegistry primitiveTypeRegistry) {
-    List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
+    List<ManagedPartitionGroup<?>> partitionGroups = new ArrayList<>();
     for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups().values()) {
       partitionGroups.add(PartitionGroups.createGroup(partitionGroupConfig));
     }

@@ -70,7 +70,6 @@ public class AtomixTest extends AbstractAtomixTest {
   }
 
 
-
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, Map<String, String> metadata, Profile... profiles) {
     return startAtomix(type, id, persistentNodes, Arrays.asList(), metadata, profiles);
   }
@@ -78,7 +77,6 @@ public class AtomixTest extends AbstractAtomixTest {
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes, Profile... profiles) {
     return startAtomix(type, id, persistentNodes, ephemeralNodes, b -> b.withProfiles(profiles).build());
   }
-
 
 
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes, Map<String, String> metadata, Profile... profiles) {
@@ -203,11 +201,23 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests a client joining and leaving the cluster.
    */
   @Test
-  public void testClientJoinLeavePersistent() throws Exception {
+  public void testClientJoinLeaveDataGrid() throws Exception {
+    testClientJoinLeave(Profile.DATA_GRID);
+  }
+
+  /**
+   * Tests a client joining and leaving the cluster.
+   */
+  @Test
+  public void testClientJoinLeaveConsensus() throws Exception {
+    testClientJoinLeave(Profile.CONSENSUS);
+  }
+
+  private void testClientJoinLeave(Profile profile) throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
-    futures.add(startAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
-    futures.add(startAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
+    futures.add(startAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), profile));
+    futures.add(startAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), profile));
+    futures.add(startAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), profile));
     Futures.allOf(futures).join();
 
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
@@ -256,8 +266,6 @@ public class AtomixTest extends AbstractAtomixTest {
     event1 = clientListener.event();
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
   }
-
-
 
   /**
    * Tests a client metadata.
