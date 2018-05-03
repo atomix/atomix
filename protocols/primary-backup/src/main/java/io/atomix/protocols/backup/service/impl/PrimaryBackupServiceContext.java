@@ -299,7 +299,6 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     currentOperation = OperationType.COMMAND;
     operationIndex = index;
     currentIndex = index;
-    commitIndex = index;
     currentTimestamp = timestamp;
     service.tick(new WallClockTimestamp(currentTimestamp));
   }
