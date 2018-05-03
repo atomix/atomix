@@ -203,7 +203,7 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests a client joining and leaving the cluster.
    */
   @Test
-  public void testClientJoinLeaveCore() throws Exception {
+  public void testClientJoinLeavePersistent() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
     futures.add(startAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
     futures.add(startAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
@@ -282,11 +282,11 @@ public class AtomixTest extends AbstractAtomixTest {
     event1 = dataListener.event();
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, event1.type());
 
-    Member meber = event1.subject();
+    Member member = event1.subject();
 
-    assertNotNull(meber.metadata());
-    assertEquals(1, meber.metadata().size());
-    assertEquals("a-value", meber.metadata().get("a-key"));
+    assertNotNull(member.metadata());
+    assertEquals(1, member.metadata().size());
+    assertEquals("a-value", member.metadata().get("a-key"));
   }
 
   private static class TestClusterMembershipEventListener implements ClusterMembershipEventListener {

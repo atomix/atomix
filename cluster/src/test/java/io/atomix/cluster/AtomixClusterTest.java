@@ -19,6 +19,10 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,6 +30,7 @@ import static org.junit.Assert.assertEquals;
  * Atomix cluster test.
  */
 public class AtomixClusterTest {
+
   @Test
   public void testMembers() throws Exception {
     Collection<Member> members = Arrays.asList(
@@ -42,7 +47,7 @@ public class AtomixClusterTest {
             .withAddress("localhost:5002")
             .build());
 
-    AtomixCluster cluster1 = AtomixCluster.builder()
+    AtomixCluster<?> cluster1 = AtomixCluster.builder()
         .withLocalMember("foo")
         .withMembers(members)
         .build();
@@ -50,7 +55,7 @@ public class AtomixClusterTest {
 
     assertEquals("foo", cluster1.membershipService().getLocalMember().id().id());
 
-    AtomixCluster cluster2 = AtomixCluster.builder()
+    AtomixCluster<?> cluster2 = AtomixCluster.builder()
         .withLocalMember("bar")
         .withMembers(members)
         .build();
@@ -58,12 +63,20 @@ public class AtomixClusterTest {
 
     assertEquals("bar", cluster2.membershipService().getLocalMember().id().id());
 
-    AtomixCluster cluster3 = AtomixCluster.builder()
+    AtomixCluster<?> cluster3 = AtomixCluster.builder()
         .withLocalMember("baz")
         .withMembers(members)
         .build();
     cluster3.start().join();
 
     assertEquals("baz", cluster3.membershipService().getLocalMember().id().id());
+
+    List<CompletableFuture<Void>> futures = Stream.of(cluster1, cluster2, cluster3).map(AtomixCluster::stop)
+            .collect(Collectors.toList());
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+    } catch (Exception e) {
+      // Do nothing
+    }
   }
 }
