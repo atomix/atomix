@@ -31,6 +31,7 @@ import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.queue.WorkQueue;
+import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
@@ -237,6 +238,11 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   @Override
   public DistributedLock getLock(String name) {
     return primitives.getLock(name);
+  }
+
+  @Override
+  public DistributedSemaphore getSemaphore(String name) {
+    return primitives.getSemaphore(name);
   }
 
   @Override
