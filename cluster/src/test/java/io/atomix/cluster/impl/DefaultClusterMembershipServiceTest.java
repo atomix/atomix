@@ -95,12 +95,8 @@ public class DefaultClusterMembershipServiceTest {
     assertNull(clusterService1.getMember(MemberId.from("2")));
     assertNull(clusterService1.getMember(MemberId.from("3")));
 
-    CompletableFuture<ClusterMembershipService>[] futures = new CompletableFuture[3];
-    futures[0] = clusterService1.start();
-    futures[1] = clusterService2.start();
-    futures[2] = clusterService3.start();
-
-    CompletableFuture.allOf(futures).join();
+    CompletableFuture.allOf(new CompletableFuture[] {clusterService1.start(), clusterService2.start(),
+            clusterService3.start()}).join();
 
     Thread.sleep(1000);
 
@@ -175,5 +171,8 @@ public class DefaultClusterMembershipServiceTest {
     assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("2")).getState());
     assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("3")).getState());
     assertNull(clusterService2.getMember(MemberId.from("4")));
+
+    CompletableFuture.allOf(new CompletableFuture[] {clusterService1.stop(), clusterService2.stop(),
+            clusterService3.stop()}).join();
   }
 }

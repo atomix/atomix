@@ -156,13 +156,13 @@ public class RaftTest extends ConcurrentTestCase {
   public void testSingleMemberStart() throws Throwable {
     RaftServer server = createServers(1).get(0);
     server.bootstrap().thenRun(this::resume);
-    await(5000);
+    await(10000);
     RaftServer joiner1 = createServer(nextNodeId());
     joiner1.join(server.cluster().getMember().memberId()).thenRun(this::resume);
-    await(5000);
+    await(10000);
     RaftServer joiner2 = createServer(nextNodeId());
     joiner2.join(server.cluster().getMember().memberId()).thenRun(this::resume);
-    await(5000);
+    await(10000);
   }
 
   /**
@@ -189,7 +189,7 @@ public class RaftTest extends ConcurrentTestCase {
     RaftClient client = createClient();
     PartitionProxy session = createSession(client);
     submit(session, 0, 100);
-    await(10000);
+    await(15000);
     RaftServer joiner = createServer(nextNodeId());
     joiner.addRoleChangeListener(s -> {
       if (s == role)
@@ -200,9 +200,9 @@ public class RaftTest extends ConcurrentTestCase {
     } else {
       joiner.listen(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
     }
-    await(10000, 2);
+    await(15000, 2);
     submit(session, 0, 10);
-    await(10000);
+    await(15000);
     Thread.sleep(5000);
   }
 
@@ -235,7 +235,7 @@ public class RaftTest extends ConcurrentTestCase {
         .findFirst()
         .get();
     follower.promote().thenRun(this::resume);
-    await(10000, 2);
+    await(15000, 2);
     assertTrue(follower.isLeader());
   }
 
@@ -319,7 +319,7 @@ public class RaftTest extends ConcurrentTestCase {
     } else {
       server.listen(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
     }
-    await(10000);
+    await(15000);
   }
 
   /**
@@ -330,9 +330,9 @@ public class RaftTest extends ConcurrentTestCase {
     RaftServer server = createServers(1).get(0);
     RaftServer joiner = createServer(nextNodeId());
     joiner.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
-    await(10000);
+    await(15000);
     server.leave().thenRun(this::resume);
-    await(10000);
+    await(15000);
     joiner.leave().thenRun(this::resume);
   }
 
@@ -374,7 +374,7 @@ public class RaftTest extends ConcurrentTestCase {
     } else {
       joiner.listen(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
     }
-    await(10000, 2);
+    await(15000, 2);
   }
 
   /**
@@ -399,7 +399,7 @@ public class RaftTest extends ConcurrentTestCase {
       resume();
     });
     leader.cluster().getMember().demote(RaftMember.Type.PASSIVE).thenRun(this::resume);
-    await(10000, 2);
+    await(15000, 2);
   }
 
   /**
