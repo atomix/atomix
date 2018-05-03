@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.backup.roles;
 
-import com.google.common.collect.Lists;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
@@ -36,7 +35,7 @@ import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -161,7 +160,7 @@ public class PrimaryRole extends PrimaryBackupRole {
     }
 
     HeapBuffer buffer = HeapBuffer.allocate();
-    List<PrimitiveSession> sessions = Lists.newArrayList(context.sessions());
+    Collection<PrimaryBackupSession> sessions = context.getSessions();
     buffer.writeInt(sessions.size());
     for (PrimitiveSession session : sessions) {
       buffer.writeLong(session.sessionId().id());
@@ -183,7 +182,7 @@ public class PrimaryRole extends PrimaryBackupRole {
     return replicator.replicate(new ExpireOperation(index, timestamp, session.sessionId().id()))
         .thenRun(() -> {
           context.setTimestamp(timestamp);
-          context.sessions().expireSession(session);
+          context.expireSession(session.sessionId().id());
         });
   }
 
@@ -194,7 +193,7 @@ public class PrimaryRole extends PrimaryBackupRole {
     return replicator.replicate(new CloseOperation(index, timestamp, session.sessionId().id()))
         .thenRun(() -> {
           context.setTimestamp(timestamp);
-          context.sessions().closeSession(session);
+          context.closeSession(session.sessionId().id());
         });
   }
 
