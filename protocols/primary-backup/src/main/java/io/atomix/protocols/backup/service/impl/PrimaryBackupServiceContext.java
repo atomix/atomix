@@ -300,6 +300,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     operationIndex = index;
     currentIndex = index;
     currentTimestamp = timestamp;
+    setCommitIndex(index);
     service.tick(new WallClockTimestamp(currentTimestamp));
   }
 
