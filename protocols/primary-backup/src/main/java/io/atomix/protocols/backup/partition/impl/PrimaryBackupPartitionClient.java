@@ -35,7 +35,7 @@ public class PrimaryBackupPartitionClient implements Managed<PrimaryBackupPartit
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
   private final ThreadContextFactory threadFactory;
-  private PrimaryBackupClient client;
+  private volatile PrimaryBackupClient client;
 
   public PrimaryBackupPartitionClient(
       PrimaryBackupPartition partition,
