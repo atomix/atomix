@@ -91,7 +91,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
         timers.put(holder.index, getScheduler().schedule(Duration.ofMillis(holder.expire - getWallClock().getTime().unixTimestamp()), () -> {
           timers.remove(holder.index);
           queue.remove(holder);
-          PrimitiveSession session = getSession(holder.session);
+          PrimitiveSession session = getSessions().getSession(holder.session);
           if (session != null && session.getState().active()) {
             session.publish(FAILED, new LockEvent(holder.id, holder.index));
           }
@@ -189,7 +189,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
 
         // If the lock session is for some reason inactive, continue on to the next waiter. Otherwise,
         // publish a LOCKED event to the new lock holder's session.
-        PrimitiveSession session = getSession(lock.session);
+        PrimitiveSession session = getSessions().getSession(lock.session);
         if (session == null || !session.getState().active()) {
           lock = queue.poll();
         } else {
@@ -226,7 +226,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
 
         // If the lock session is inactive, continue on to the next waiter. Otherwise,
         // publish a LOCKED event to the new lock holder's session.
-        PrimitiveSession lockSession = getSession(lock.session);
+        PrimitiveSession lockSession = getSessions().getSession(lock.session);
         if (lockSession == null || !lockSession.getState().active()) {
           lock = queue.poll();
         } else {

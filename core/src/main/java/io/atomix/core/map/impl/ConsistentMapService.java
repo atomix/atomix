@@ -150,7 +150,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(serializer()::decode)) {
-      listeners.put(sessionId, getSession(sessionId));
+      listeners.put(sessionId, getSessions().getSession(sessionId));
     }
     preparedKeys = reader.readObject(serializer()::decode);
     map = reader.readObject(serializer()::decode);

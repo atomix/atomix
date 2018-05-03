@@ -108,7 +108,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
     registrations = reader.readObject();
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject()) {
-      listeners.put(sessionId, getSession(sessionId));
+      listeners.put(sessionId, getSessions().getSession(sessionId));
     }
     getLogger().debug("Reinstated state machine from snapshot");
   }

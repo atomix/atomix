@@ -81,6 +81,20 @@ public interface PrimitiveSession {
   State getState();
 
   /**
+   * Adds a state change listener to the session.
+   *
+   * @param listener the state change listener to add
+   */
+  void addListener(PrimitiveSessionEventListener listener);
+
+  /**
+   * Removes a state change listener from the session.
+   *
+   * @param listener the state change listener to remove
+   */
+  void removeListener(PrimitiveSessionEventListener listener);
+
+  /**
    * Publishes an empty event to the session.
    *
    * @param eventType the event type

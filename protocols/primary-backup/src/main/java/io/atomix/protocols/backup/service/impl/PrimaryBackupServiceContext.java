@@ -16,8 +16,6 @@
 
 package io.atomix.protocols.backup.service.impl;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
@@ -62,9 +60,7 @@ import io.atomix.utils.time.WallClock;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -83,7 +79,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private final ServiceConfig serviceConfig;
   private final PrimitiveDescriptor descriptor;
   private final PrimitiveService service;
-  private final Map<Long, PrimaryBackupSession> sessions = Maps.newConcurrentMap();
+  private final PrimaryBackupServiceSessions sessions = new PrimaryBackupServiceSessions();
   private final ThreadContext threadContext;
   private final ClusterMembershipService clusterMembershipService;
   private final MemberGroupService memberGroupService;
@@ -154,7 +150,10 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public CompletableFuture<Void> open() {
     return primaryElection.getTerm()
         .thenAccept(this::changeRole)
-        .thenRun(() -> service.init(this));
+        .thenRun(() -> {
+          sessions.addListener(service);
+          service.init(this);
+        });
   }
 
   /**
@@ -373,6 +372,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     return wallClock;
   }
 
+  @Override
+  public PrimaryBackupServiceSessions sessions() {
+    return sessions;
+  }
+
   /**
    * Returns the primary node.
    *
@@ -469,7 +473,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public CompletableFuture<CloseResponse> close(CloseRequest request) {
     ComposableFuture<CloseResponse> future = new ComposableFuture<>();
     threadContext.execute(() -> {
-      PrimaryBackupSession session = sessions.get(request.session());
+      PrimaryBackupSession session = sessions.getSession(request.session());
       if (session != null) {
         role.close(session).whenComplete((result, error) -> {
           if (error == null) {
@@ -486,22 +490,13 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   }
 
   /**
-   * Returns the collection of sessions.
-   *
-   * @return the collection of sessions
-   */
-  public Collection<PrimaryBackupSession> getSessions() {
-    return ImmutableList.copyOf(sessions.values());
-  }
-
-  /**
-   * Gets a service session.
+   * Gets or creates a service session.
    *
    * @param sessionId the session to get
    * @return the service session
    */
   public PrimaryBackupSession getSession(long sessionId) {
-    return sessions.get(sessionId);
+    return sessions.getSession(sessionId);
   }
 
   /**
@@ -513,9 +508,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    */
   public PrimaryBackupSession createSession(long sessionId, MemberId memberId) {
     PrimaryBackupSession session = new PrimaryBackupSession(SessionId.from(sessionId), memberId, service.serializer(), this);
-    if (sessions.putIfAbsent(sessionId, session) == null) {
-      service.register(session);
-    }
+    sessions.openSession(session);
     return session;
   }
 
@@ -527,7 +520,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * @return the service session
    */
   public PrimaryBackupSession getOrCreateSession(long sessionId, MemberId memberId) {
-    PrimaryBackupSession session = sessions.get(sessionId);
+    PrimaryBackupSession session = sessions.getSession(sessionId);
     if (session == null) {
       session = createSession(sessionId, memberId);
     }
@@ -535,37 +528,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   }
 
   /**
-   * Expires the session with the given ID.
-   *
-   * @param sessionId the session ID
-   */
-  public void expireSession(long sessionId) {
-    PrimaryBackupSession session = sessions.remove(sessionId);
-    if (session != null) {
-      session.expire();
-      service.expire(session.sessionId());
-    }
-  }
-
-  /**
-   * Closes the session with the given ID.
-   *
-   * @param sessionId the session ID
-   */
-  public void closeSession(long sessionId) {
-    PrimaryBackupSession session = sessions.remove(sessionId);
-    if (session != null) {
-      session.close();
-      service.close(session.sessionId());
-    }
-  }
-
-  /**
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
     if (event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED) {
-      for (PrimitiveSession session : sessions.values()) {
+      for (PrimitiveSession session : sessions) {
         if (session.memberId().equals(event.subject().id())) {
           role.expire((PrimaryBackupSession) session);
         }

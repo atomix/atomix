@@ -90,7 +90,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
-      listeners.put(sessionId, getSession(sessionId));
+      listeners.put(sessionId, getSessions().getSession(sessionId));
     }
     elections = reader.readObject(SERIALIZER::decode);
     elections.values().forEach(e -> e.elections = elections);

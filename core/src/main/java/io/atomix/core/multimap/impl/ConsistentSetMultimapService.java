@@ -141,7 +141,7 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
 
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(serializer::decode)) {
-      listeners.put(sessionId, getSession(sessionId));
+      listeners.put(sessionId, getSessions().getSession(sessionId));
     }
 
     backingMap = reader.readObject(serializer::decode);

@@ -22,6 +22,8 @@ import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.PrimitiveSessionEvent;
+import io.atomix.primitive.session.PrimitiveSessionEventListener;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
@@ -30,11 +32,11 @@ import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.service.RaftServiceContext;
+import io.atomix.utils.misc.TimestampPrinter;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
-import io.atomix.utils.misc.TimestampPrinter;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
@@ -45,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -80,6 +84,7 @@ public class RaftSession implements PrimitiveSession {
   private final Map<Long, OperationResult> results = new HashMap<>();
   private final Queue<EventHolder> events = new LinkedList<>();
   private volatile EventHolder currentEventList;
+  private final Set<PrimitiveSessionEventListener> eventListeners = new CopyOnWriteArraySet<>();
 
   public RaftSession(
       SessionId sessionId,
@@ -216,7 +221,28 @@ public class RaftSession implements PrimitiveSession {
     if (this.state != state) {
       this.state = state;
       log.debug("State changed: {}", state);
+      switch (state) {
+        case OPEN:
+          eventListeners.forEach(l -> l.onEvent(new PrimitiveSessionEvent(PrimitiveSessionEvent.Type.OPEN, this, getLastUpdated())));
+          break;
+        case EXPIRED:
+          eventListeners.forEach(l -> l.onEvent(new PrimitiveSessionEvent(PrimitiveSessionEvent.Type.EXPIRE, this, getLastUpdated())));
+          break;
+        case CLOSED:
+          eventListeners.forEach(l -> l.onEvent(new PrimitiveSessionEvent(PrimitiveSessionEvent.Type.CLOSE, this, getLastUpdated())));
+          break;
+      }
     }
+  }
+
+  @Override
+  public void addListener(PrimitiveSessionEventListener listener) {
+    eventListeners.add(listener);
+  }
+
+  @Override
+  public void removeListener(PrimitiveSessionEventListener listener) {
+    eventListeners.remove(listener);
   }
 
   /**
@@ -352,7 +378,7 @@ public class RaftSession implements PrimitiveSession {
   /**
    * Registers a pending command.
    *
-   * @param sequence       the pending command sequence number
+   * @param sequence the pending command sequence number
    * @param pendingCommand the pending command to register
    */
   public void registerCommand(long sequence, PendingCommand pendingCommand) {
