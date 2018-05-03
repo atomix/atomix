@@ -18,15 +18,15 @@ package io.atomix.core.tree.impl;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Get;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
-import io.atomix.primitive.Ordering;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.utils.time.Versioned;
 import io.atomix.utils.misc.Match;
+import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -43,17 +43,8 @@ import static org.mockito.Mockito.mock;
 public class DocumentTreeServiceTest {
 
   @Test
-  public void testNaturalOrderedSnapshot() throws Exception {
-    testSnapshot(Ordering.NATURAL);
-  }
-
-  @Test
-  public void testInsertionOrderedSnapshot() throws Exception {
-    testSnapshot(Ordering.INSERTION);
-  }
-
-  private void testSnapshot(Ordering ordering) throws Exception {
-    DocumentTreeService service = new DocumentTreeService(ordering);
+  public void testSnapshot() throws Exception {
+    DocumentTreeService service = new DocumentTreeService(new ServiceConfig());
     service.update(new DefaultCommit<>(
         2,
         UPDATE,
@@ -68,7 +59,7 @@ public class DocumentTreeServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new DocumentTreeService(ordering);
+    service = new DocumentTreeService(new ServiceConfig());
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     Versioned<byte[]> value = service.get(new DefaultCommit<>(

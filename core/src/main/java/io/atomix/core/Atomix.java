@@ -175,7 +175,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   @Override
   public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, C, P> primitiveType) {
+      PrimitiveType<B, C, P, ?> primitiveType) {
     return primitives.primitiveBuilder(name, primitiveType);
   }
 
@@ -245,7 +245,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   }
 
   @Override
-  public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
+  public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P, ?> primitiveType, C primitiveConfig) {
     return primitives.getPrimitive(name, primitiveType, primitiveConfig);
   }
 

@@ -16,7 +16,6 @@
 package io.atomix.core.lock.impl;
 
 import io.atomix.core.lock.AsyncDistributedLock;
-import io.atomix.core.lock.DistributedLock;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,26 +31,19 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed lock resource.
  */
-public class DistributedLockResource extends PrimitiveResource<DistributedLock> {
+public class DistributedLockResource implements PrimitiveResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributedLockResource.class);
 
-  public DistributedLockResource(DistributedLock lock) {
-    super(lock);
-  }
+  private final AsyncDistributedLock lock;
 
-  /**
-   * Returns the lock primitive.
-   *
-   * @return the lock primitive
-   */
-  private AsyncDistributedLock lock() {
-    return primitive.async();
+  public DistributedLockResource(AsyncDistributedLock lock) {
+    this.lock = lock;
   }
 
   @POST
   @Produces(MediaType.APPLICATION_JSON)
   public void lock(@Suspended AsyncResponse response) {
-    lock().lock().whenComplete((result, error) -> {
+    lock.lock().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result.value()).build());
       } else {
@@ -63,7 +55,7 @@ public class DistributedLockResource extends PrimitiveResource<DistributedLock> 
 
   @DELETE
   public void unlock(@Suspended AsyncResponse response) {
-    lock().unlock().whenComplete((result, error) -> {
+    lock.unlock().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

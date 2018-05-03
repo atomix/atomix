@@ -13,10 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.resource;
+package io.atomix.primitive.service;
 
 /**
- * Primitive resource.
+ * Primitive service factory.
  */
-public interface PrimitiveResource {
+@FunctionalInterface
+public interface PrimitiveServiceFactory {
+
+  /**
+   * Creates a new primitive service instance.
+   *
+   * @return the primitive service instance
+   */
+  PrimitiveService create();
+
 }

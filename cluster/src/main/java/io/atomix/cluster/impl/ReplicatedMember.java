@@ -15,13 +15,13 @@
  */
 package io.atomix.cluster.impl;
 
+import java.util.Map;
+
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.Timestamp;
-
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -39,10 +39,10 @@ public class ReplicatedMember extends Member {
       String zone,
       String rack,
       String host,
-      Set<String> tags,
+      Map<String, String> metadata,
       LogicalTimestamp timestamp,
       boolean tombstone) {
-    super(id, type, address, zone, rack, host, tags);
+    super(id, type, address, zone, rack, host, metadata);
     this.timestamp = checkNotNull(timestamp, "timestamp cannot be null");
     this.tombstone = tombstone;
   }

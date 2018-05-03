@@ -19,6 +19,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
@@ -134,7 +135,7 @@ public interface RaftClient extends ProxyClient {
   RaftMetadataClient metadata();
 
   @Override
-  RaftProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType);
+  RaftProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig);
 
   /**
    * Connects the client to Raft cluster via the default server address.

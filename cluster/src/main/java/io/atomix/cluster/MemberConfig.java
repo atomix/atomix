@@ -15,11 +15,11 @@
  */
 package io.atomix.cluster;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Node configuration.
@@ -31,7 +31,7 @@ public class MemberConfig implements Config {
   private String zone;
   private String rack;
   private String host;
-  private Set<String> tags = new HashSet<>();
+  private Map<String, String> metadata = new HashMap<>();
 
   /**
    * Returns the node identifier.
@@ -177,33 +177,34 @@ public class MemberConfig implements Config {
   }
 
   /**
-   * Returns the node tags.
+   * Returns the node metadata.
    *
-   * @return the node tags
+   * @return the node metadata
    */
-  public Set<String> getTags() {
-    return tags;
+  public Map<String, String> getMetadata() {
+    return metadata;
   }
 
   /**
-   * Sets the node tags.
+   * Sets the node metadata.
    *
-   * @param tags the node tags
+   * @param metadata the node metadata
    * @return the node configuration
    */
-  public MemberConfig setTags(Set<String> tags) {
-    this.tags = tags;
+  public MemberConfig setMetadata(Map<String, String> metadata) {
+    this.metadata = metadata;
     return this;
   }
 
   /**
    * Adds a node tag.
    *
-   * @param tag the tag to add
+   * @param key the metadata key to add
+   * @param value the metadata value to add
    * @return the node configuration
    */
-  public MemberConfig addTag(String tag) {
-    tags.add(tag);
+  public MemberConfig addMetadata(String key, String value) {
+    this.metadata.put(key, value);
     return this;
   }
 }

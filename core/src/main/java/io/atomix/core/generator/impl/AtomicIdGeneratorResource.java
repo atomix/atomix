@@ -16,7 +16,6 @@
 package io.atomix.core.generator.impl;
 
 import io.atomix.core.generator.AsyncAtomicIdGenerator;
-import io.atomix.core.generator.AtomicIdGenerator;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,26 +30,19 @@ import javax.ws.rs.core.Response;
 /**
  * Unique ID generator resource.
  */
-public class AtomicIdGeneratorResource extends PrimitiveResource<AtomicIdGenerator> {
+public class AtomicIdGeneratorResource implements PrimitiveResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicIdGeneratorResource.class);
 
-  public AtomicIdGeneratorResource(AtomicIdGenerator idGenerator) {
-    super(idGenerator);
-  }
+  private final AsyncAtomicIdGenerator idGenerator;
 
-  /**
-   * Returns the ID generator primitive.
-   *
-   * @return the ID generator primitive
-   */
-  private AsyncAtomicIdGenerator idGenerator() {
-    return primitive.async();
+  public AtomicIdGeneratorResource(AsyncAtomicIdGenerator idGenerator) {
+    this.idGenerator = idGenerator;
   }
 
   @PUT
   @Produces(MediaType.APPLICATION_JSON)
   public void next(@Suspended AsyncResponse response) {
-    idGenerator().nextId().whenComplete((result, error) -> {
+    idGenerator.nextId().whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {

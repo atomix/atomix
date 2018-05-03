@@ -63,6 +63,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
 
   private final PrimitiveProxy proxy;
   private final PrimitiveRegistry registry;
+  private final Serializer serializer;
   private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Map<EventType, Map<PartitionId, Map<Object, Consumer>>> eventListeners = Maps.newIdentityHashMap();
   private final Map<BiConsumer<PartitionId, Proxy.State>, Map<PartitionId, Consumer<Proxy.State>>> stateChangeListeners =
@@ -71,6 +72,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
   public AbstractAsyncPrimitive(PrimitiveProxy proxy, PrimitiveRegistry registry) {
     this.proxy = checkNotNull(proxy, "proxy cannot be null");
     this.registry = checkNotNull(registry, "registry cannot be null");
+    this.serializer = Serializer.using(proxy.type().namespace());
     proxy.addStateChangeListener(this::onStateChange);
   }
 
@@ -89,13 +91,15 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    *
    * @return the serializer for the primitive operations
    */
-  protected abstract Serializer serializer();
+  protected Serializer serializer() {
+    return serializer;
+  }
 
   /**
    * Encodes the given object using the configured {@link #serializer()}.
    *
    * @param object the object to encode
-   * @param <T> the object type
+   * @param <T>    the object type
    * @return the encoded bytes
    */
   protected <T> byte[] encode(T object) {
@@ -106,7 +110,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * Decodes the given object using the configured {@link #serializer()}.
    *
    * @param bytes the bytes to decode
-   * @param <T> the object type
+   * @param <T>   the object type
    * @return the decoded object
    */
   protected <T> T decode(byte[] bytes) {

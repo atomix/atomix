@@ -13,10 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.resource;
+package io.atomix.primitive.operation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Primitive resource.
+ * Operation annotation.
  */
-public interface PrimitiveResource {
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Operation {
+
+  /**
+   * The operation name.
+   */
+  String value() default "";
+
+  /**
+   * The operation type.
+   */
+  OperationType type() default OperationType.COMMAND;
+
 }
