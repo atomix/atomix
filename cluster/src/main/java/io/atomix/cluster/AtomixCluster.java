@@ -52,7 +52,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster configuration.
  */
-public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
+public class AtomixCluster implements Managed<Void> {
 
   /**
    * Returns a new Atomix cluster builder.
@@ -144,7 +144,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized CompletableFuture<T> start() {
+  public synchronized CompletableFuture<Void> start() {
     if (closeFuture != null) {
       return Futures.exceptionalFuture(new IllegalStateException("AtomixCluster instance " +
           (closeFuture.isDone() ? "shutdown" : "shutting down")));
@@ -337,7 +337,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   /**
    * Cluster builder.
    */
-  public static class Builder<T extends AtomixCluster<T>> implements io.atomix.utils.Builder<AtomixCluster<T>> {
+  public static class Builder implements io.atomix.utils.Builder<AtomixCluster> {
     protected final ClusterConfig config;
 
     protected Builder() {
@@ -434,8 +434,8 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
     }
 
     @Override
-    public AtomixCluster<T> build() {
-      return new AtomixCluster<>(config);
+    public AtomixCluster build() {
+      return new AtomixCluster(config);
     }
   }
 }
