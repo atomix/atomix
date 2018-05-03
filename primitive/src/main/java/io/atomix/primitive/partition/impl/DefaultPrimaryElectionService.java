@@ -54,7 +54,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
       .register(PrimaryElectorEvents.NAMESPACE)
       .build());
 
-  private final PartitionGroup<?> partitions;
+  private final PartitionGroup partitions;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private final Consumer<PrimitiveEvent> eventListener = event -> {
     PrimaryElectionEvent electionEvent = SERIALIZER.decode(event.value());

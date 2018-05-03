@@ -79,8 +79,8 @@ public class DefaultPartitionGroupMembershipService
   public DefaultPartitionGroupMembershipService(
       ClusterMembershipService membershipService,
       ClusterMessagingService messagingService,
-      ManagedPartitionGroup<?> systemGroup,
-      Collection<ManagedPartitionGroup<?>> groups) {
+      ManagedPartitionGroup systemGroup,
+      Collection<ManagedPartitionGroup> groups) {
     this.membershipService = membershipService;
     this.messagingService = messagingService;
     this.systemGroup = systemGroup != null

@@ -58,7 +58,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
   private final ManagedPartitionGroupMembershipService groupMembershipService;
   private ManagedPartitionGroup systemGroup;
   private volatile PartitionManagementService partitionManagementService;
-  private final Map<String, ManagedPartitionGroup<?>> groups = Maps.newConcurrentMap();
+  private final Map<String, ManagedPartitionGroup> groups = Maps.newConcurrentMap();
   private final PartitionGroupMembershipEventListener groupMembershipEventListener = this::handleMembershipChange;
   private final AtomicBoolean started = new AtomicBoolean();
 
@@ -67,8 +67,8 @@ public class DefaultPartitionService implements ManagedPartitionService {
       ClusterMembershipService membershipService,
       ClusterMessagingService messagingService,
       PrimitiveTypeRegistry primitiveTypeRegistry,
-      ManagedPartitionGroup<?> systemGroup,
-      Collection<ManagedPartitionGroup<?>> groups) {
+      ManagedPartitionGroup systemGroup,
+      Collection<ManagedPartitionGroup> groups) {
     this.clusterMembershipService = membershipService;
     this.clusterMessagingService = messagingService;
     this.primitiveTypeRegistry = primitiveTypeRegistry;

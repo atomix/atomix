@@ -96,7 +96,7 @@ public class AtomixTest extends AbstractAtomixTest {
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
     Atomix atomix = createAtomix(type, id, persistentIds, ephemeralIds, builderFunction);
     instances.add(atomix);
-    return atomix.start();
+    return atomix.start().thenApply(v -> atomix);
   }
 
   /**
@@ -105,7 +105,7 @@ public class AtomixTest extends AbstractAtomixTest {
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Map<String, String> metadata, Function<Atomix.Builder, Atomix> builderFunction) {
     Atomix atomix = createAtomix(type, id, persistentIds, ephemeralIds, metadata, builderFunction);
     instances.add(atomix);
-    return atomix.start();
+    return atomix.start().thenApply(v -> atomix);
   }
 
   /**

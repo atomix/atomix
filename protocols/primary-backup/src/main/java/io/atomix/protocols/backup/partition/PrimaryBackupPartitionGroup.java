@@ -50,7 +50,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup partition group.
  */
-public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup<PrimaryBackupPartition> {
+public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   public static final PartitionGroup.Type TYPE = new Type();
 
   /**
@@ -137,7 +137,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup<Primar
 
   @Override
   @SuppressWarnings("unchecked")
-  public Collection<PrimaryBackupPartition> getPartitions() {
+  public Collection<Partition> getPartitions() {
     return (Collection) partitions.values();
   }
 
@@ -147,7 +147,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup<Primar
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup<PrimaryBackupPartition>> join(PartitionManagementService managementService) {
+  public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
     threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.join(managementService, threadFactory))
@@ -159,7 +159,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup<Primar
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup<PrimaryBackupPartition>> connect(PartitionManagementService managementService) {
+  public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
     threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.connect(managementService, threadFactory))

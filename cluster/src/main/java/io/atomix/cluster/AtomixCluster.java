@@ -92,7 +92,7 @@ public class AtomixCluster implements Managed<Void> {
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterMessagingService clusterMessagingService;
   protected final ManagedClusterEventingService clusterEventingService;
-  protected volatile CompletableFuture openFuture;
+  protected volatile CompletableFuture<Void> openFuture;
   protected volatile CompletableFuture<Void> closeFuture;
   private final ThreadContext threadContext = new SingleThreadContext("atomix-cluster-%d");
   private final AtomicBoolean started = new AtomicBoolean();
@@ -156,8 +156,7 @@ public class AtomixCluster implements Managed<Void> {
 
     openFuture = startServices()
         .thenComposeAsync(v -> joinCluster(), threadContext)
-        .thenComposeAsync(v -> completeStartup(), threadContext)
-        .thenApply(v -> this);
+        .thenComposeAsync(v -> completeStartup(), threadContext);
 
     return openFuture;
   }
