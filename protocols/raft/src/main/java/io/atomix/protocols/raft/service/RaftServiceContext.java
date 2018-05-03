@@ -23,6 +23,7 @@ import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
@@ -61,6 +62,7 @@ public class RaftServiceContext implements ServiceContext {
   private final PrimitiveId primitiveId;
   private final String serviceName;
   private final PrimitiveType primitiveType;
+  private final ServiceConfig config;
   private final PrimitiveService service;
   private final RaftContext raft;
   private final RaftSessions sessions;
@@ -86,12 +88,14 @@ public class RaftServiceContext implements ServiceContext {
       PrimitiveId primitiveId,
       String serviceName,
       PrimitiveType primitiveType,
+      ServiceConfig config,
       PrimitiveService service,
       RaftContext raft,
       ThreadContextFactory threadContextFactory) {
     this.primitiveId = checkNotNull(primitiveId);
     this.serviceName = checkNotNull(serviceName);
     this.primitiveType = checkNotNull(primitiveType);
+    this.config = checkNotNull(config);
     this.service = checkNotNull(service);
     this.raft = checkNotNull(raft);
     this.sessions = new RaftSessions(primitiveId, raft.getSessions());
@@ -125,6 +129,12 @@ public class RaftServiceContext implements ServiceContext {
   @Override
   public PrimitiveType serviceType() {
     return primitiveType;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <C extends ServiceConfig> C serviceConfig() {
+    return (C) config;
   }
 
   public Serializer serializer() {
@@ -213,21 +223,21 @@ public class RaftServiceContext implements ServiceContext {
       long maxTimeout = reader.readLong();
       long sessionTimestamp = reader.readLong();
 
-            // Only create a new session if one does not already exist. This is necessary to ensure only a single session
-            // is ever opened and exposed to the state machine.
-            RaftSession session = raft.getSessions().addSession(new RaftSession(
-                sessionId,
-                node,
-                serviceName,
-                primitiveType,
-                readConsistency,
-                minTimeout,
-                maxTimeout,
-                sessionTimestamp,
-                service.serializer(),
-                this,
-                raft,
-                threadContextFactory));
+      // Only create a new session if one does not already exist. This is necessary to ensure only a single session
+      // is ever opened and exposed to the state machine.
+      RaftSession session = raft.getSessions().addSession(new RaftSession(
+          sessionId,
+          node,
+          serviceName,
+          primitiveType,
+          readConsistency,
+          minTimeout,
+          maxTimeout,
+          sessionTimestamp,
+          service.serializer(),
+          this,
+          raft,
+          threadContextFactory));
 
       session.setRequestSequence(reader.readLong());
       session.setCommandSequence(reader.readLong());

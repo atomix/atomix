@@ -24,6 +24,6 @@ import io.atomix.primitive.PrimitiveTypes;
 public class PrimitiveConfigDeserializer extends PolymorphicTypeDeserializer<PrimitiveConfig> {
   @SuppressWarnings("unchecked")
   public PrimitiveConfigDeserializer() {
-    super(PrimitiveConfig.class, type -> PrimitiveTypes.getPrimitiveType(type).configClass());
+    super(PrimitiveConfig.class, type -> PrimitiveTypes.getPrimitiveType(type).primitiveConfigClass());
   }
 }

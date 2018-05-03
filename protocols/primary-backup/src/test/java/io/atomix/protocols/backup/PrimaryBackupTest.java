@@ -34,6 +34,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionId;
@@ -53,7 +54,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 import static org.junit.Assert.assertEquals;
@@ -442,7 +442,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    * Creates a new primary-backup proxy.
    */
   private PartitionProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withNumBackups(backups)
         .withReplication(replication)
         .build()
@@ -485,8 +485,8 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     }
 
     @Override
-    public Supplier<PrimitiveService> serviceFactory() {
-      return TestPrimitiveService::new;
+    public PrimitiveService newService(ServiceConfig config) {
+      return new TestPrimitiveService(config);
     }
 
     @Override
@@ -506,6 +506,10 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   public static class TestPrimitiveService extends AbstractPrimitiveService {
     private Commit<Void> expire;
     private Commit<Void> close;
+
+    public TestPrimitiveService(ServiceConfig config) {
+      super(config);
+    }
 
     @Override
     public Serializer serializer() {

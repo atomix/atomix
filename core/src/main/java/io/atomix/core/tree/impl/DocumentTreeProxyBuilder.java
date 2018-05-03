@@ -21,6 +21,7 @@ import io.atomix.core.tree.DocumentTreeBuilder;
 import io.atomix.core.tree.DocumentTreeConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +42,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
     PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        new ServiceConfig(),
         managementService.getPartitionService());
     return new DocumentTreeProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()

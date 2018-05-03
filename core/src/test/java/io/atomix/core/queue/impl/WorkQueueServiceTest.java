@@ -20,6 +20,7 @@ import io.atomix.core.queue.WorkQueueType;
 import io.atomix.core.queue.impl.WorkQueueOperations.Add;
 import io.atomix.core.queue.impl.WorkQueueOperations.Take;
 import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
@@ -55,7 +56,7 @@ public class WorkQueueServiceTest {
     PrimitiveSession session = mock(PrimitiveSession.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
 
-    WorkQueueService service = new WorkQueueService();
+    WorkQueueService service = new WorkQueueService(new ServiceConfig());
     service.init(context);
 
     service.add(new DefaultCommit<>(
@@ -68,7 +69,7 @@ public class WorkQueueServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new WorkQueueService();
+    service = new WorkQueueService(new ServiceConfig());
     service.init(context);
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 

@@ -42,14 +42,16 @@ public class OpenSessionRequest extends AbstractRaftRequest {
   private final String node;
   private final String name;
   private final String typeName;
+  private final byte[] config;
   private final ReadConsistency readConsistency;
   private final long minTimeout;
   private final long maxTimeout;
 
-  public OpenSessionRequest(String node, String name, String typeName, ReadConsistency readConsistency, long minTimeout, long maxTimeout) {
+  public OpenSessionRequest(String node, String name, String typeName, byte[] config, ReadConsistency readConsistency, long minTimeout, long maxTimeout) {
     this.node = node;
     this.name = name;
     this.typeName = typeName;
+    this.config = config;
     this.readConsistency = readConsistency;
     this.minTimeout = minTimeout;
     this.maxTimeout = maxTimeout;
@@ -80,6 +82,15 @@ public class OpenSessionRequest extends AbstractRaftRequest {
    */
   public String serviceType() {
     return typeName;
+  }
+
+  /**
+   * Returns the service configuration.
+   *
+   * @return the service configuration
+   */
+  public byte[] serviceConfig() {
+    return config;
   }
 
   /**
@@ -147,6 +158,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     private String memberId;
     private String serviceName;
     private String serviceType;
+    private byte[] serviceConfig;
     private ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
     private long minTimeout;
     private long maxTimeout;
@@ -184,6 +196,18 @@ public class OpenSessionRequest extends AbstractRaftRequest {
      */
     public Builder withServiceType(PrimitiveType primitiveType) {
       this.serviceType = checkNotNull(primitiveType, "serviceType cannot be null").id();
+      return this;
+    }
+
+    /**
+     * Sets the service configuration.
+     *
+     * @param config the service configuration
+     * @return the open session request builder
+     * @throws NullPointerException if the configuration is {@code null}
+     */
+    public Builder withServiceConfig(byte[] config) {
+      this.serviceConfig = checkNotNull(config, "config cannot be null");
       return this;
     }
 
@@ -231,6 +255,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
       checkNotNull(memberId, "memberId cannot be null");
       checkNotNull(serviceName, "name cannot be null");
       checkNotNull(serviceType, "typeName cannot be null");
+      checkNotNull(serviceConfig, "serviceConfig cannot be null");
       checkArgument(minTimeout >= 0, "minTimeout must be positive");
       checkArgument(maxTimeout >= 0, "maxTimeout must be positive");
     }
@@ -241,7 +266,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     public OpenSessionRequest build() {
       validate();
-      return new OpenSessionRequest(memberId, serviceName, serviceType, readConsistency, minTimeout, maxTimeout);
+      return new OpenSessionRequest(memberId, serviceName, serviceType, serviceConfig, readConsistency, minTimeout, maxTimeout);
     }
   }
 }

@@ -41,7 +41,7 @@ public class PrimitivesResource extends AbstractRestResource {
   @SuppressWarnings("unchecked")
   public PrimitiveResource getPrimitive(@PathParam("name") String name, @Context PrimitivesService primitives) {
     DistributedPrimitive primitive = primitives.getPrimitive(name);
-    return (PrimitiveResource) primitive.primitiveType().resourceFactory().apply(primitive);
+    return primitive.primitiveType().newResource(primitive);
   }
 
   /**

@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.resource;
+package io.atomix.primitive.service;
+
+import io.atomix.utils.config.Config;
 
 /**
- * Primitive resource.
+ * Service configuration class.
  */
-public interface PrimitiveResource {
+public class ServiceConfig implements Config {
 }

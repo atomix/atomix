@@ -21,6 +21,7 @@ import io.atomix.core.generator.AtomicIdGeneratorBuilder;
 import io.atomix.core.generator.AtomicIdGeneratorConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.service.ServiceConfig;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -38,6 +39,7 @@ public class DelegatingAtomicIdGeneratorBuilder extends AtomicIdGeneratorBuilder
     PrimitiveProxy proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        new ServiceConfig(),
         managementService.getPartitionService());
     return new AtomicCounterProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
