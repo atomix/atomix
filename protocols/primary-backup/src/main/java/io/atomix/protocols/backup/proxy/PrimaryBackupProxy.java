@@ -62,6 +62,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Primary-backup proxy.
  */
 public class PrimaryBackupProxy implements PartitionProxy {
+  private static final int MAX_ATTEMPTS = 3;
   private static final int RETRY_DELAY = 100;
   private Logger log;
   private final PrimitiveType primitiveType;
@@ -151,20 +152,24 @@ public class PrimaryBackupProxy implements PartitionProxy {
               future.completeExceptionally(new PrimitiveException.Unavailable());
             } else {
               this.term = term;
-              execute(operation, future);
+              execute(operation, 1, future);
             }
           } else {
             future.completeExceptionally(new PrimitiveException.Unavailable());
           }
         }, threadContext);
       } else {
-        execute(operation, future);
+        execute(operation, 1, future);
       }
     });
     return future;
   }
 
-  private void execute(PrimitiveOperation operation, ComposableFuture<byte[]> future) {
+  private void execute(PrimitiveOperation operation, int attempt, ComposableFuture<byte[]> future) {
+    if (attempt > MAX_ATTEMPTS) {
+      future.completeExceptionally(new PrimitiveException.Unavailable());
+    }
+
     ExecuteRequest request = ExecuteRequest.request(descriptor, sessionId.id(), clusterMembershipService.getLocalMember().id(), operation);
     log.trace("Sending {} to {}", request, term.primary());
     PrimaryTerm term = this.term;
@@ -182,7 +187,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
                 if (newTerm.term() > term.term() && newTerm.primary() != null) {
                   execute(operation).whenComplete(future);
                 } else {
-                  future.completeExceptionally(new PrimitiveException.Unavailable());
+                  threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
                 }
               } else {
                 future.completeExceptionally(new PrimitiveException.Unavailable());
@@ -194,7 +199,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
         } else {
           Throwable cause = Throwables.getRootCause(error);
           if (cause instanceof PrimitiveException.Unavailable) {
-            threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, future));
+            threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
           } else {
             future.completeExceptionally(error);
           }
