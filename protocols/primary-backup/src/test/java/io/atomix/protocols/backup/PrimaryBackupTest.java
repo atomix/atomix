@@ -54,7 +54,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 import static org.junit.Assert.assertEquals;
@@ -504,7 +503,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveService extends AbstractPrimitiveService<Object, Object, ServiceConfig> {
+  public static class TestPrimitiveService extends AbstractPrimitiveService {
     private Commit<Void> expire;
     private Commit<Void> close;
 
@@ -523,7 +522,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
       executor.register(READ, this::read);
       executor.register(EVENT, this::event);
       executor.<Void>register(CLOSE, c -> close(c));
-      executor.register(EXPIRE, (Consumer<Commit<Void>>) this::expire);
+      executor.register(EXPIRE, this::expire);
     }
 
     @Override

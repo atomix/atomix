@@ -567,7 +567,6 @@ public class RaftServiceManager implements AutoCloseable {
    * from the log before they're replicated to some servers.
    */
   private long[] applyKeepAlive(Indexed<KeepAliveEntry> entry) {
-
     // Store the session/command/event sequence and event index instead of acquiring a reference to the entry.
     long[] sessionIds = entry.entry().sessionIds();
     long[] commandSequences = entry.entry().commandSequenceNumbers();
@@ -575,7 +574,6 @@ public class RaftServiceManager implements AutoCloseable {
 
     // Iterate through session identifiers and keep sessions alive.
     List<Long> successfulSessionIds = new ArrayList<>(sessionIds.length);
-    Set<RaftServiceContext> services = new HashSet<>();
     for (int i = 0; i < sessionIds.length; i++) {
       long sessionId = sessionIds[i];
       long commandSequence = commandSequences[i];
@@ -585,13 +583,12 @@ public class RaftServiceManager implements AutoCloseable {
       if (session != null) {
         if (session.getService().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex)) {
           successfulSessionIds.add(sessionId);
-          services.add(session.getService());
         }
       }
     }
 
     // Iterate through services and complete keep-alives, causing sessions to be expired if necessary.
-    for (RaftServiceContext service : services) {
+    for (RaftServiceContext service : raft.getServices()) {
       service.completeKeepAlive(entry.index(), entry.entry().timestamp());
     }
 

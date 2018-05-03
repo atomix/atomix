@@ -47,7 +47,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -101,7 +100,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
   public void restore(BackupInput reader) {
     registeredWorkers = Maps.newHashMap();
     for (Long sessionId : reader.<Set<Long>>readObject()) {
-      registeredWorkers.put(sessionId, getSession(sessionId));
+      registeredWorkers.put(sessionId, getSessions().getSession(sessionId));
     }
     assignments = reader.readObject();
     unassignedTasks = reader.readObject();
@@ -111,7 +110,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
   @Override
   protected void configure(ServiceExecutor executor) {
     executor.register(STATS, this::stats);
-    executor.register(REGISTER, (Consumer<Commit<Void>>) this::register);
+    executor.register(REGISTER, this::register);
     executor.register(UNREGISTER, this::unregister);
     executor.register(ADD, this::add);
     executor.register(TAKE, this::take);
