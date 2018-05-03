@@ -101,11 +101,4 @@ public interface ServiceContext {
    */
   WallClock wallClock();
 
-  /**
-   * Returns the state machine sessions.
-   *
-   * @return The state machine sessions.
-   */
-  PrimitiveSessions sessions();
-
 }

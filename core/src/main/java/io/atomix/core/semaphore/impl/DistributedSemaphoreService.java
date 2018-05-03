@@ -53,15 +53,15 @@ import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.REDUC
 import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.RELEASE;
 
 
-public class DistributedSemaphoreService extends AbstractPrimitiveService<DistributedSemaphoreService, DistributedSemaphoreServiceConfig> {
+public class DistributedSemaphoreService extends AbstractPrimitiveService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-          .register(KryoNamespaces.BASIC)
-          .register(DistributedSemaphoreOperations.NAMESPACE)
-          .register(DistributedSemaphoreEvents.NAMESPACE)
-          .register(QueueStatus.class)
-          .register(Versioned.class)
-          .register(Waiter.class)
-          .build());
+      .register(KryoNamespaces.BASIC)
+      .register(DistributedSemaphoreOperations.NAMESPACE)
+      .register(DistributedSemaphoreEvents.NAMESPACE)
+      .register(QueueStatus.class)
+      .register(Versioned.class)
+      .register(Waiter.class)
+      .build());
 
   private int available;
   private Map<Long, Integer> holders = new HashMap<>();
@@ -106,11 +106,11 @@ public class DistributedSemaphoreService extends AbstractPrimitiveService<Distri
     for (Waiter waiter : waiterQueue) {
       if (waiter.expire > 0) {
         timers.put(waiter.index, getScheduler()
-                .schedule(Duration.ofMillis(waiter.expire - getWallClock().getTime().unixTimestamp()), () -> {
-                  timers.remove(waiter.index);
-                  waiterQueue.remove(waiter);
-                  fail(waiter.session, waiter.id, waiter.acquirePermits, waiter.index);
-                }));
+            .schedule(Duration.ofMillis(waiter.expire - getWallClock().getTime().unixTimestamp()), () -> {
+              timers.remove(waiter.index);
+              waiterQueue.remove(waiter);
+              fail(waiter.session, waiter.id, waiter.acquirePermits, waiter.index);
+            }));
       }
     }
   }
@@ -132,11 +132,11 @@ public class DistributedSemaphoreService extends AbstractPrimitiveService<Distri
     } else {
       if (acquire.timeout() > 0) {
         Waiter waiter = new Waiter(
-                commit.session().sessionId().id(),
-                commit.index(),
-                acquire.id(),
-                acquire.permits(),
-                getWallClock().getTime().unixTimestamp() + acquire.timeout());
+            commit.session().sessionId().id(),
+            commit.index(),
+            acquire.id(),
+            acquire.permits(),
+            getWallClock().getTime().unixTimestamp() + acquire.timeout());
         waiterQueue.add(waiter);
         timers.put(commit.index(), getScheduler().schedule(acquire.timeout(), TimeUnit.MILLISECONDS, () -> {
           timers.remove(commit.index());
@@ -147,11 +147,11 @@ public class DistributedSemaphoreService extends AbstractPrimitiveService<Distri
         fail(commit.session().sessionId().id(), acquire.id(), acquire.permits(), commit.index());
       } else {
         waiterQueue.add(new Waiter(
-                commit.session().sessionId().id(),
-                commit.index(),
-                acquire.id(),
-                acquire.permits(),
-                0));
+            commit.session().sessionId().id(),
+            commit.index(),
+            acquire.id(),
+            acquire.permits(),
+            0));
       }
     }
   }
@@ -230,14 +230,14 @@ public class DistributedSemaphoreService extends AbstractPrimitiveService<Distri
   }
 
   private void success(long sessionId, long operationId, int acquirePermits, long version) {
-    PrimitiveSession session = getSessions().getSession(sessionId);
+    PrimitiveSession session = getSession(sessionId);
     if (session != null && session.getState().active()) {
       session.publish(DistributedSemaphoreEvents.SUCCESS, new SemaphoreEvent(operationId, version, acquirePermits));
     }
   }
 
   private void fail(long sessionId, long operationId, int acquirePermits, long version) {
-    PrimitiveSession session = getSessions().getSession(sessionId);
+    PrimitiveSession session = getSession(sessionId);
     if (session != null && session.getState().active()) {
       session.publish(DistributedSemaphoreEvents.FAILED, new SemaphoreEvent(operationId, version, acquirePermits));
     }
@@ -312,9 +312,9 @@ public class DistributedSemaphoreService extends AbstractPrimitiveService<Distri
       if (o == null || getClass() != o.getClass()) return false;
       Waiter waiter = (Waiter) o;
       return session == waiter.session &&
-              index == waiter.index &&
-              id == waiter.id &&
-              acquirePermits == waiter.acquirePermits;
+          index == waiter.index &&
+          id == waiter.id &&
+          acquirePermits == waiter.acquirePermits;
     }
 
     @Override
@@ -325,12 +325,12 @@ public class DistributedSemaphoreService extends AbstractPrimitiveService<Distri
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
-              .add("session", session)
-              .add("index", index)
-              .add("id", id)
-              .add("acquirePermits", acquirePermits)
-              .add("expire", expire)
-              .toString();
+          .add("session", session)
+          .add("index", index)
+          .add("id", id)
+          .add("acquirePermits", acquirePermits)
+          .add("expire", expire)
+          .toString();
     }
   }
 }
