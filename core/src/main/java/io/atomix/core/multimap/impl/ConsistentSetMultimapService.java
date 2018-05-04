@@ -40,6 +40,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.misc.Match;
@@ -118,6 +119,10 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
   private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
   private Map<String, MapEntryValue> backingMap = Maps.newHashMap();
 
+  public ConsistentSetMultimapService(ServiceConfig config) {
+    super(config);
+  }
+
   @Override
   public Serializer serializer() {
     return serializer;
@@ -136,7 +141,7 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
 
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(serializer::decode)) {
-      listeners.put(sessionId, getSessions().getSession(sessionId));
+      listeners.put(sessionId, getSession(sessionId));
     }
 
     backingMap = reader.readObject(serializer::decode);

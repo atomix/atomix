@@ -38,6 +38,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.misc.ArraySizeHashPrinter;
@@ -85,6 +86,10 @@ public class LeaderElectorService extends AbstractPrimitiveService {
   private Map<String, ElectionState> elections = new HashMap<>();
   private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
 
+  public LeaderElectorService(ServiceConfig config) {
+    super(config);
+  }
+
   @Override
   public Serializer serializer() {
     return SERIALIZER;
@@ -102,7 +107,7 @@ public class LeaderElectorService extends AbstractPrimitiveService {
   public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject()) {
-      listeners.put(sessionId, getSessions().getSession(sessionId));
+      listeners.put(sessionId, getSession(sessionId));
     }
     termCounters = reader.readObject();
     elections = reader.readObject();

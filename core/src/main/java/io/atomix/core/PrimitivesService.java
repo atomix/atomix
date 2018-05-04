@@ -45,6 +45,9 @@ import io.atomix.core.multimap.ConsistentMultimapType;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueBuilder;
 import io.atomix.core.queue.WorkQueueType;
+import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetType;
@@ -59,8 +62,8 @@ import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.Collection;
 
@@ -340,6 +343,27 @@ public interface PrimitivesService {
   }
 
   /**
+   * Creates a new DistributedSemaphoreBuilder.
+   *
+   * @param name the primitive name
+   * @param protocol the primitive protocol
+   * @return distributed semaphore builder
+   */
+  default DistributedSemaphoreBuilder semaphoreBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedSemaphoreType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedSemaphoreBuilder.
+   *
+   * @param name the primitive name
+   * @return distributed semaphore builder
+   */
+  default DistributedSemaphoreBuilder semaphoreBuilder(String name) {
+    return primitiveBuilder(name, DistributedSemaphoreType.instance());
+  }
+
+  /**
    * Creates a new WorkQueueBuilder.
    *
    * @param name the primitive name
@@ -485,6 +509,14 @@ public interface PrimitivesService {
   DistributedLock getLock(String name);
 
   /**
+   * Creates a new DistributedSemaphore.
+   *
+   * @param name the primitive name
+   * @return DistributedSemaphore
+   */
+  DistributedSemaphore getSemaphore(String name);
+
+  /**
    * Creates a new WorkQueueBuilder.
    *
    * @param name the primitive name
@@ -512,7 +544,10 @@ public interface PrimitivesService {
    * @param <P>             the primitive type
    * @return the primitive instance
    */
-  <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig);
+  <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(
+      String name,
+      PrimitiveType<?, C, P, ?> primitiveType,
+      C primitiveConfig);
 
   /**
    * Returns a primitive builder of the given type.
@@ -525,7 +560,7 @@ public interface PrimitivesService {
    */
   <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, C, P> primitiveType);
+      PrimitiveType<B, C, P, ?> primitiveType);
 
   /**
    * Returns a primitive builder of the given type.
@@ -539,7 +574,7 @@ public interface PrimitivesService {
    */
   default <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, C, P> primitiveType,
+      PrimitiveType<B, C, P, ?> primitiveType,
       PrimitiveProtocol protocol) {
     return primitiveBuilder(name, primitiveType).withProtocol(protocol);
   }

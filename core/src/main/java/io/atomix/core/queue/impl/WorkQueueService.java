@@ -30,6 +30,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -46,6 +47,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -78,6 +80,10 @@ public class WorkQueueService extends AbstractPrimitiveService {
   private Map<String, TaskAssignment> assignments = Maps.newHashMap();
   private Map<Long, PrimitiveSession> registeredWorkers = Maps.newHashMap();
 
+  public WorkQueueService(ServiceConfig config) {
+    super(config);
+  }
+
   @Override
   public Serializer serializer() {
     return SERIALIZER;
@@ -95,7 +101,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
   public void restore(BackupInput reader) {
     registeredWorkers = Maps.newHashMap();
     for (Long sessionId : reader.<Set<Long>>readObject()) {
-      registeredWorkers.put(sessionId, getSessions().getSession(sessionId));
+      registeredWorkers.put(sessionId, getSession(sessionId));
     }
     assignments = reader.readObject();
     unassignedTasks = reader.readObject();
@@ -105,7 +111,7 @@ public class WorkQueueService extends AbstractPrimitiveService {
   @Override
   protected void configure(ServiceExecutor executor) {
     executor.register(STATS, this::stats);
-    executor.register(REGISTER, this::register);
+    executor.register(REGISTER, (Consumer<Commit<Void>>) this::register);
     executor.register(UNREGISTER, this::unregister);
     executor.register(ADD, this::add);
     executor.register(TAKE, this::take);

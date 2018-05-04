@@ -15,15 +15,8 @@
  */
 package io.atomix.primitive.resource;
 
-import io.atomix.primitive.DistributedPrimitive;
-
 /**
  * Primitive resource.
  */
-public abstract class PrimitiveResource<P extends DistributedPrimitive> {
-  protected final P primitive;
-
-  protected PrimitiveResource(P primitive) {
-    this.primitive = primitive;
-  }
+public interface PrimitiveResource {
 }

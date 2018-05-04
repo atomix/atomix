@@ -20,16 +20,15 @@ import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
-
-import java.util.function.Supplier;
+import io.atomix.primitive.service.ServiceConfig;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Transaction primitive type.
  */
-public class TransactionType implements PrimitiveType<TransactionBuilder, TransactionConfig, Transaction> {
-  private static final String NAME = "TRANSACTION";
+public class TransactionType implements PrimitiveType<TransactionBuilder, TransactionConfig, Transaction, ServiceConfig> {
+  private static final String NAME = "transaction";
   private static final TransactionType INSTANCE = new TransactionType();
 
   /**
@@ -47,7 +46,7 @@ public class TransactionType implements PrimitiveType<TransactionBuilder, Transa
   }
 
   @Override
-  public Supplier<PrimitiveService> serviceFactory() {
+  public PrimitiveService newService(ServiceConfig config) {
     throw new UnsupportedOperationException();
   }
 

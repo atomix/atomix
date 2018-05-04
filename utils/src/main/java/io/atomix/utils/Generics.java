@@ -34,9 +34,13 @@ public class Generics {
   public static Type getGenericClassType(Object instance, Class<?> clazz, int position) {
     Class<?> type = instance.getClass();
     while (type != Object.class) {
-      ParameterizedType genericSuperclass = (ParameterizedType) type.getGenericSuperclass();
-      if (genericSuperclass.getRawType() == clazz) {
-        return genericSuperclass.getActualTypeArguments()[position];
+      if (type.getGenericSuperclass() instanceof ParameterizedType) {
+        ParameterizedType genericSuperclass = (ParameterizedType) type.getGenericSuperclass();
+        if (genericSuperclass.getRawType() == clazz) {
+          return genericSuperclass.getActualTypeArguments()[position];
+        } else {
+          type = type.getSuperclass();
+        }
       } else {
         type = type.getSuperclass();
       }
@@ -56,9 +60,11 @@ public class Generics {
     Class<?> type = instance.getClass();
     while (type != Object.class) {
       for (Type genericType : type.getGenericInterfaces()) {
-        ParameterizedType parameterizedType = (ParameterizedType) genericType;
-        if (parameterizedType.getRawType() == iface) {
-          return parameterizedType.getActualTypeArguments()[position];
+        if (genericType instanceof ParameterizedType) {
+          ParameterizedType parameterizedType = (ParameterizedType) genericType;
+          if (parameterizedType.getRawType() == iface) {
+            return parameterizedType.getActualTypeArguments()[position];
+          }
         }
       }
       type = type.getSuperclass();

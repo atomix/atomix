@@ -15,6 +15,23 @@
  */
 package io.atomix.cluster.impl;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -38,23 +55,6 @@ import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.LogicalTimestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
@@ -104,7 +104,7 @@ public class DefaultPersistentMetadataService
         node.zone(),
         node.rack(),
         node.host(),
-        node.tags(),
+        node.metadata(),
         new LogicalTimestamp(0),
         false)));
     this.messagingService = messagingService;
@@ -131,7 +131,7 @@ public class DefaultPersistentMetadataService
             member.zone(),
             member.rack(),
             member.host(),
-            member.tags(),
+            member.metadata(),
             timestamp,
             false);
         nodes.put(replicatedNode.id(), replicatedNode);
@@ -153,7 +153,7 @@ public class DefaultPersistentMetadataService
           member.zone(),
           member.rack(),
           member.host(),
-          member.tags(),
+          member.metadata(),
           timestamp,
           true);
       nodes.put(replicatedNode.id(), replicatedNode);
@@ -315,7 +315,7 @@ public class DefaultPersistentMetadataService
                 node.zone(),
                 node.rack(),
                 node.host(),
-                node.tags(),
+                node.metadata(),
                 digest.timestamp(),
                 true));
             post(new ClusterMetadataEvent(ClusterMetadataEvent.Type.METADATA_CHANGED, getMetadata()));

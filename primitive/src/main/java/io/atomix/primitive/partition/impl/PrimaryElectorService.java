@@ -27,6 +27,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
@@ -69,6 +70,10 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
   private Scheduled rebalanceTimer;
 
+  public PrimaryElectorService(ServiceConfig config) {
+    super(config);
+  }
+
   @Override
   public Serializer serializer() {
     return SERIALIZER;
@@ -85,7 +90,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(SERIALIZER::decode)) {
-      listeners.put(sessionId, getSessions().getSession(sessionId));
+      listeners.put(sessionId, getSession(sessionId));
     }
     elections = reader.readObject(SERIALIZER::decode);
     elections.values().forEach(e -> e.elections = elections);

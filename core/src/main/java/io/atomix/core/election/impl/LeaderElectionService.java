@@ -33,6 +33,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.misc.ArraySizeHashPrinter;
@@ -78,6 +79,10 @@ public class LeaderElectionService extends AbstractPrimitiveService {
   private AtomicLong termCounter = new AtomicLong();
   private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
 
+  public LeaderElectionService(ServiceConfig config) {
+    super(config);
+  }
+
   @Override
   public Serializer serializer() {
     return SERIALIZER;
@@ -103,7 +108,7 @@ public class LeaderElectionService extends AbstractPrimitiveService {
     registrations = reader.readObject();
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject()) {
-      listeners.put(sessionId, getSessions().getSession(sessionId));
+      listeners.put(sessionId, getSession(sessionId));
     }
     getLogger().debug("Reinstated state machine from snapshot");
   }

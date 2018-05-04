@@ -44,6 +44,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
@@ -118,7 +119,8 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   protected Map<TransactionId, TransactionScope> activeTransactions = Maps.newHashMap();
   protected long currentVersion;
 
-  public ConsistentMapService() {
+  public ConsistentMapService(ServiceConfig config) {
+    super(config);
     map = createMap();
   }
 
@@ -148,7 +150,7 @@ public class ConsistentMapService extends AbstractPrimitiveService {
   public void restore(BackupInput reader) {
     listeners = new LinkedHashMap<>();
     for (Long sessionId : reader.<Set<Long>>readObject(serializer()::decode)) {
-      listeners.put(sessionId, getSessions().getSession(sessionId));
+      listeners.put(sessionId, getSession(sessionId));
     }
     preparedKeys = reader.readObject(serializer()::decode);
     map = reader.readObject(serializer()::decode);

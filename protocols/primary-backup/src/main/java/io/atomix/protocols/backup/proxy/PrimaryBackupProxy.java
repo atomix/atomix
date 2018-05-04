@@ -174,23 +174,23 @@ public class PrimaryBackupProxy implements PartitionProxy {
           log.trace("Received {}", response);
           if (response.status() == Status.OK) {
             future.complete(response.result());
+          } else if (this.term.term() > term.term()) {
+            execute(operation).whenComplete(future);
           } else {
-            if (this.term.term() > term.term()) {
-              execute(operation).whenComplete(future);
-            } else {
-              primaryElection.getTerm().whenComplete((newTerm, termError) -> {
-                if (termError == null) {
-                  if (newTerm.term() > term.term() && newTerm.primary() != null) {
-                    execute(operation).whenComplete(future);
-                  } else {
-                    future.completeExceptionally(new PrimitiveException.Unavailable());
-                  }
+            primaryElection.getTerm().whenComplete((newTerm, termError) -> {
+              if (termError == null) {
+                if (newTerm.term() > term.term() && newTerm.primary() != null) {
+                  execute(operation).whenComplete(future);
                 } else {
                   future.completeExceptionally(new PrimitiveException.Unavailable());
                 }
-              });
-            }
+              } else {
+                future.completeExceptionally(new PrimitiveException.Unavailable());
+              }
+            });
           }
+        } else if (this.term.term() > term.term()) {
+          execute(operation).whenComplete(future);
         } else {
           Throwable cause = Throwables.getRootCause(error);
           if (cause instanceof PrimitiveException.Unavailable) {

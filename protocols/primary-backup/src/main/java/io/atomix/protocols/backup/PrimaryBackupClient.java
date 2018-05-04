@@ -25,6 +25,7 @@ import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.BlockingAwarePartitionProxy;
 import io.atomix.primitive.proxy.impl.RecoveringPartitionProxy;
 import io.atomix.primitive.proxy.impl.RetryingPartitionProxy;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionIdService;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
@@ -34,6 +35,7 @@ import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
@@ -85,7 +87,8 @@ public class PrimaryBackupClient implements ProxyClient {
   }
 
   @Override
-  public PrimaryBackupProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType) {
+  public PrimaryBackupProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+    byte[] configBytes = Serializer.using(primitiveType.namespace()).encode(serviceConfig);
     return new PrimaryBackupProxy.Builder() {
       @Override
       public PartitionProxy build() {
@@ -97,6 +100,7 @@ public class PrimaryBackupClient implements ProxyClient {
             new PrimitiveDescriptor(
                 primitiveName,
                 primitiveType.id(),
+                configBytes,
                 numBackups,
                 replication),
             clusterMembershipService,

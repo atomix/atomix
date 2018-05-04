@@ -394,7 +394,7 @@ public enum ConsistentTreeMapOperations implements OperationId {
       return MoreObjects.toStringHelper(getClass())
           .add("getFromKey", fromKey)
           .add("getToKey", toKey)
-          .add("inclusiveFrotBound", inclusiveFrom)
+          .add("inclusiveFromBound", inclusiveFrom)
           .add("inclusiveToBound", inclusiveTo)
           .toString();
     }

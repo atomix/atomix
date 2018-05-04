@@ -55,6 +55,14 @@ public interface ServiceContext {
   PrimitiveType serviceType();
 
   /**
+   * Returns the service configuration.
+   *
+   * @param <C> the configuration type
+   * @return the service configuration
+   */
+  <C extends ServiceConfig> C serviceConfig();
+
+  /**
    * Returns the current state machine index.
    * <p>
    * The state index is indicative of the index of the current operation
@@ -92,12 +100,5 @@ public interface ServiceContext {
    * @return The state machine's wall clock.
    */
   WallClock wallClock();
-
-  /**
-   * Returns the state machine sessions.
-   *
-   * @return The state machine sessions.
-   */
-  PrimitiveSessions sessions();
 
 }

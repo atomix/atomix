@@ -27,13 +27,13 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.partition.impl.PrimaryElectorService;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftClient;
@@ -58,7 +58,6 @@ import io.atomix.protocols.raft.protocol.KeepAliveRequest;
 import io.atomix.protocols.raft.protocol.KeepAliveResponse;
 import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.LeaveResponse;
-import io.atomix.protocols.raft.test.protocol.LocalRaftProtocolFactory;
 import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
@@ -68,10 +67,8 @@ import io.atomix.protocols.raft.protocol.PollResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
-import io.atomix.protocols.raft.test.protocol.RaftClientMessagingProtocol;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.test.protocol.RaftServerMessagingProtocol;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
@@ -89,6 +86,9 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
+import io.atomix.protocols.raft.test.protocol.LocalRaftProtocolFactory;
+import io.atomix.protocols.raft.test.protocol.RaftClientMessagingProtocol;
+import io.atomix.protocols.raft.test.protocol.RaftServerMessagingProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.Scheduler;
@@ -122,7 +122,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.atomix.primitive.operation.PrimitiveOperation.operation;
@@ -624,7 +623,7 @@ public class RaftFuzzTest implements Runnable {
    * Creates a test session.
    */
   private PartitionProxy createProxy(RaftClient client, ReadConsistency consistency) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE)
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build()
@@ -649,8 +648,8 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public Supplier<PrimitiveService> serviceFactory() {
-      return PrimaryElectorService::new;
+    public PrimitiveService newService(ServiceConfig config) {
+      return new FuzzStateMachine(config);
     }
 
     @Override
@@ -669,6 +668,10 @@ public class RaftFuzzTest implements Runnable {
    */
   public static class FuzzStateMachine extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
+
+    public FuzzStateMachine(ServiceConfig config) {
+      super(config);
+    }
 
     @Override
     public Serializer serializer() {

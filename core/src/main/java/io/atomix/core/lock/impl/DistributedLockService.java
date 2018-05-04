@@ -21,6 +21,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
@@ -55,6 +56,10 @@ public class DistributedLockService extends AbstractPrimitiveService {
   private Queue<LockHolder> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
+  public DistributedLockService(ServiceConfig config) {
+    super(config);
+  }
+
   @Override
   public Serializer serializer() {
     return SERIALIZER;
@@ -86,7 +91,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
         timers.put(holder.index, getScheduler().schedule(Duration.ofMillis(holder.expire - getWallClock().getTime().unixTimestamp()), () -> {
           timers.remove(holder.index);
           queue.remove(holder);
-          PrimitiveSession session = getSessions().getSession(holder.session);
+          PrimitiveSession session = getSession(holder.session);
           if (session != null && session.getState().active()) {
             session.publish(FAILED, new LockEvent(holder.id, holder.index));
           }
@@ -184,7 +189,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
 
         // If the lock session is for some reason inactive, continue on to the next waiter. Otherwise,
         // publish a LOCKED event to the new lock holder's session.
-        PrimitiveSession session = getSessions().getSession(lock.session);
+        PrimitiveSession session = getSession(lock.session);
         if (session == null || !session.getState().active()) {
           lock = queue.poll();
         } else {
@@ -221,7 +226,7 @@ public class DistributedLockService extends AbstractPrimitiveService {
 
         // If the lock session is inactive, continue on to the next waiter. Otherwise,
         // publish a LOCKED event to the new lock holder's session.
-        PrimitiveSession lockSession = getSessions().getSession(lock.session);
+        PrimitiveSession lockSession = getSession(lock.session);
         if (lockSession == null || !lockSession.getState().active()) {
           lock = queue.poll();
         } else {

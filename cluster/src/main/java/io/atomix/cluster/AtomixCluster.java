@@ -52,7 +52,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster configuration.
  */
-public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
+public class AtomixCluster implements Managed<Void> {
 
   /**
    * Returns a new Atomix cluster builder.
@@ -92,7 +92,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterMessagingService clusterMessagingService;
   protected final ManagedClusterEventingService clusterEventingService;
-  protected volatile CompletableFuture openFuture;
+  protected volatile CompletableFuture<Void> openFuture;
   protected volatile CompletableFuture<Void> closeFuture;
   private final ThreadContext threadContext = new SingleThreadContext("atomix-cluster-%d");
   private final AtomicBoolean started = new AtomicBoolean();
@@ -144,7 +144,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized CompletableFuture<T> start() {
+  public synchronized CompletableFuture<Void> start() {
     if (closeFuture != null) {
       return Futures.exceptionalFuture(new IllegalStateException("AtomixCluster instance " +
           (closeFuture.isDone() ? "shutdown" : "shutting down")));
@@ -156,8 +156,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
 
     openFuture = startServices()
         .thenComposeAsync(v -> joinCluster(), threadContext)
-        .thenComposeAsync(v -> completeStartup(), threadContext)
-        .thenApply(v -> this);
+        .thenComposeAsync(v -> completeStartup(), threadContext);
 
     return openFuture;
   }
@@ -337,7 +336,7 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
   /**
    * Cluster builder.
    */
-  public static class Builder<T extends AtomixCluster<T>> implements io.atomix.utils.Builder<AtomixCluster<T>> {
+  public static class Builder implements io.atomix.utils.Builder<AtomixCluster> {
     protected final ClusterConfig config;
 
     protected Builder() {
@@ -356,6 +355,17 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
      */
     public Builder withClusterName(String clusterName) {
       config.setName(clusterName);
+      return this;
+    }
+
+    /**
+     * Sets the local member name.
+     *
+     * @param localMember the local member name
+     * @return the cluster builder
+     */
+    public Builder withLocalMember(String localMember) {
+      config.setLocalMemberId(localMember);
       return this;
     }
 
@@ -423,8 +433,8 @@ public class AtomixCluster<T extends AtomixCluster<T>> implements Managed<T> {
     }
 
     @Override
-    public AtomixCluster<T> build() {
-      return new AtomixCluster<>(config);
+    public AtomixCluster build() {
+      return new AtomixCluster(config);
     }
   }
 }

@@ -31,6 +31,7 @@ import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.queue.WorkQueue;
+import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
@@ -47,7 +48,6 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionGroups;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
-import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -72,7 +72,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Atomix!
  */
-public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, Managed<Atomix> {
+public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix builder.
@@ -175,7 +175,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   @Override
   public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, C, P> primitiveType) {
+      PrimitiveType<B, C, P, ?> primitiveType) {
     return primitives.primitiveBuilder(name, primitiveType);
   }
 
@@ -240,12 +240,17 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   }
 
   @Override
+  public DistributedSemaphore getSemaphore(String name) {
+    return primitives.getSemaphore(name);
+  }
+
+  @Override
   public <E> WorkQueue<E> getWorkQueue(String name) {
     return primitives.getWorkQueue(name);
   }
 
   @Override
-  public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
+  public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P, ?> primitiveType, C primitiveConfig) {
     return primitives.getPrimitive(name, primitiveType, primitiveConfig);
   }
 
@@ -274,26 +279,23 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
    * @return a future to be completed once the instance has completed startup
    */
   @Override
-  @SuppressWarnings("unchecked")
-  public synchronized CompletableFuture<Atomix> start() {
+  public synchronized CompletableFuture<Void> start() {
     if (closeFuture != null) {
       return Futures.exceptionalFuture(new IllegalStateException("Atomix instance " +
           (closeFuture.isDone() ? "shutdown" : "shutting down")));
     }
 
-    return super.start().thenApply(atomix -> {
+    return super.start().thenRun(() -> {
       if (enableShutdownHook) {
         if (shutdownHook == null) {
           shutdownHook = new Thread(() -> super.stop().join());
           Runtime.getRuntime().addShutdownHook(shutdownHook);
         }
       }
-      return atomix;
     });
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   protected CompletableFuture<Void> startServices() {
     return super.startServices()
         .thenComposeAsync(v -> partitions.start(), threadContext)
@@ -381,7 +383,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
   /**
    * Atomix builder.
    */
-  public static class Builder extends AtomixCluster.Builder<Atomix> {
+  public static class Builder extends AtomixCluster.Builder {
     private final AtomixConfig config;
 
     private Builder() {
@@ -451,7 +453,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @param systemManagementGroup the system management partition group
      * @return the Atomix builder
      */
-    public Builder withManagementGroup(ManagedPartitionGroup<?> systemManagementGroup) {
+    public Builder withManagementGroup(ManagedPartitionGroup systemManagementGroup) {
       config.setManagementGroup(systemManagementGroup.config());
       return this;
     }
@@ -463,7 +465,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @return the Atomix builder
      * @throws NullPointerException if the partition groups are null
      */
-    public Builder withPartitionGroups(ManagedPartitionGroup<?>... partitionGroups) {
+    public Builder withPartitionGroups(ManagedPartitionGroup... partitionGroups) {
       return withPartitionGroups(Arrays.asList(checkNotNull(partitionGroups, "partitionGroups cannot be null")));
     }
 
@@ -474,7 +476,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @return the Atomix builder
      * @throws NullPointerException if the partition groups are null
      */
-    public Builder withPartitionGroups(Collection<ManagedPartitionGroup<?>> partitionGroups) {
+    public Builder withPartitionGroups(Collection<ManagedPartitionGroup> partitionGroups) {
       partitionGroups.forEach(group -> config.addPartitionGroup(group.config()));
       return this;
     }
@@ -486,7 +488,7 @@ public class Atomix extends AtomixCluster<Atomix> implements PrimitivesService, 
      * @return the Atomix builder
      * @throws NullPointerException if the partition group is null
      */
-    public Builder addPartitionGroup(ManagedPartitionGroup<?> partitionGroup) {
+    public Builder addPartitionGroup(ManagedPartitionGroup partitionGroup) {
       config.addPartitionGroup(partitionGroup.config());
       return this;
     }
