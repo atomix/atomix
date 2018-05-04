@@ -17,7 +17,10 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.hash.Hashing;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterMessagingService;
 import io.atomix.primitive.partition.GroupMember;
@@ -67,6 +70,7 @@ public class HashBasedPrimaryElection
   private final ClusterMembershipService clusterMembershipService;
   private final PartitionGroupMembershipService groupMembershipService;
   private final ClusterMessagingService clusterMessagingService;
+  private final ClusterMembershipEventListener clusterMembershipEventListener = this::handleClusterMembershipEvent;
   private final Map<MemberId, Integer> counters = Maps.newConcurrentMap();
   private final String subject;
   private final ScheduledFuture<?> broadcastFuture;
@@ -97,6 +101,7 @@ public class HashBasedPrimaryElection
     this.subject = String.format("primary-election-counter-%s-%d", partitionId.group(), partitionId.id());
     recomputeTerm(groupMembershipService.getMembership(partitionId.group()));
     groupMembershipService.addListener(groupMembershipEventListener);
+    clusterMembershipService.addListener(clusterMembershipEventListener);
     clusterMessagingService.subscribe(subject, SERIALIZER::decode, this::updateCounters, executor);
     broadcastFuture = executor.scheduleAtFixedRate(this::broadcastCounters, BROADCAST_INTERVAL, BROADCAST_INTERVAL, TimeUnit.MILLISECONDS);
   }
@@ -109,6 +114,15 @@ public class HashBasedPrimaryElection
   @Override
   public CompletableFuture<PrimaryTerm> getTerm() {
     return CompletableFuture.completedFuture(currentTerm);
+  }
+
+  /**
+   * Handles a cluster membership event.
+   */
+  private void handleClusterMembershipEvent(ClusterMembershipEvent event) {
+    if (event.type() == ClusterMembershipEvent.Type.MEMBER_ACTIVATED || event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED) {
+      recomputeTerm(groupMembershipService.getMembership(partitionId.group()));
+    }
   }
 
   /**
@@ -164,7 +178,10 @@ public class HashBasedPrimaryElection
     // Create a list of candidates based on the availability of members in the group.
     List<GroupMember> candidates = new ArrayList<>();
     for (MemberId memberId : membership.members()) {
-      candidates.add(new GroupMember(memberId, MemberGroupId.from(memberId.id())));
+      Member member = clusterMembershipService.getMember(memberId);
+      if (member != null && member.getState() == Member.State.ACTIVE) {
+        candidates.add(new GroupMember(memberId, MemberGroupId.from(memberId.id())));
+      }
     }
 
     // Sort the candidates by a hash of their member ID.
@@ -184,7 +201,10 @@ public class HashBasedPrimaryElection
     candidates = candidates.isEmpty() ? Collections.emptyList() : candidates.subList(1, candidates.size());
 
     // If the primary has changed, increment the term. Otherwise, use the current term from the replicated counter.
-    long term = currentTerm != null && currentTerm.primary().equals(primary) && currentTerm.candidates().equals(candidates) ? currentTerm() : incrementTerm();
+    long term = currentTerm != null
+        && Objects.equals(currentTerm.primary(), primary)
+        && Objects.equals(currentTerm.candidates(), candidates)
+        ? currentTerm() : incrementTerm();
 
     // Create the new primary term. If the term has changed update the term and trigger an event.
     PrimaryTerm newTerm = new PrimaryTerm(term, primary, candidates);
@@ -202,5 +222,6 @@ public class HashBasedPrimaryElection
   void close() {
     broadcastFuture.cancel(false);
     groupMembershipService.removeListener(groupMembershipEventListener);
+    clusterMembershipService.removeListener(clusterMembershipEventListener);
   }
 }
