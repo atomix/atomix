@@ -191,8 +191,15 @@ public class DefaultPartitionGroupMembershipService
    */
   @SuppressWarnings("unchecked")
   private CompletableFuture<Void> bootstrap(Member member) {
+    return bootstrap(member, new CompletableFuture<>());
+  }
+
+  /**
+   * Bootstraps the service from the given node.
+   */
+  @SuppressWarnings("unchecked")
+  private CompletableFuture<Void> bootstrap(Member member, CompletableFuture<Void> future) {
     LOGGER.debug("{} - Bootstrapping from member {}", membershipService.getLocalMember().id(), member);
-    CompletableFuture<Void> future = new CompletableFuture<>();
     messagingService.<MemberId, PartitionGroupInfo>send(
         BOOTSTRAP_SUBJECT,
         membershipService.getLocalMember().id(),
@@ -246,7 +253,7 @@ public class DefaultPartitionGroupMembershipService
           } else {
             error = Throwables.getRootCause(error);
             if (error instanceof MessagingException.NoRemoteHandler || error instanceof TimeoutException) {
-              threadContext.schedule(Duration.ofSeconds(1), () -> bootstrap(member));
+              threadContext.schedule(Duration.ofSeconds(1), () -> bootstrap(member, future));
             } else {
               future.complete(null);
             }
