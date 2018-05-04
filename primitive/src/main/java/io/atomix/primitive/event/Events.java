@@ -15,8 +15,6 @@
  */
 package io.atomix.primitive.event;
 
-import io.atomix.utils.config.ConfigurationException;
-
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +32,11 @@ public final class Events {
    */
   public static Map<Method, EventType> getMethodMap(Class<?> serviceInterface) {
     if (!serviceInterface.isInterface()) {
-      throw new ConfigurationException("Service type must be an interface");
+      Map<Method, EventType> events = new HashMap<>();
+      for (Class<?> iface : serviceInterface.getInterfaces()) {
+        events.putAll(findMethods(iface));
+      }
+      return events;
     }
     return findMethods(serviceInterface);
   }
@@ -68,7 +70,11 @@ public final class Events {
    */
   public static Map<EventType, Method> getEventMap(Class<?> serviceInterface) {
     if (!serviceInterface.isInterface()) {
-      throw new ConfigurationException("Service type must be an interface");
+      Map<EventType, Method> events = new HashMap<>();
+      for (Class<?> iface : serviceInterface.getInterfaces()) {
+        events.putAll(findEvents(iface));
+      }
+      return events;
     }
     return findEvents(serviceInterface);
   }

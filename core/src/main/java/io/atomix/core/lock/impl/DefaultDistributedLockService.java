@@ -37,7 +37,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Raft atomic value service.
  */
-public class DefaultDistributedLockService extends AbstractPrimitiveService<DistributedLockService, DistributedLockClient, ServiceConfig> implements DistributedLockService {
+public class DefaultDistributedLockService extends AbstractPrimitiveService<DistributedLockClient, ServiceConfig> implements DistributedLockService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register((KryoNamespace) DistributedLockType.instance().namespace())
       .register(LockHolder.class)
@@ -49,7 +49,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
   public DefaultDistributedLockService(ServiceConfig config) {
-    super(DistributedLockService.class, DistributedLockClient.class, config);
+    super(DistributedLockClient.class, config);
   }
 
   @Override

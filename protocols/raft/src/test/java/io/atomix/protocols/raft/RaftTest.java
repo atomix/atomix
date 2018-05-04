@@ -1415,14 +1415,14 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   public static class TestPrimitiveImpl
-      extends AbstractAsyncPrimitiveProxy<TestPrimitive, TestPrimitiveClient, TestPrimitiveService>
+      extends AbstractAsyncPrimitiveProxy<TestPrimitive, TestPrimitiveService>
       implements TestPrimitive, TestPrimitiveClient {
     private final Set<Consumer<Long>> eventListeners = Sets.newCopyOnWriteArraySet();
     private final Set<Consumer<String>> expireListeners = Sets.newCopyOnWriteArraySet();
     private final Set<Consumer<String>> closeListeners = Sets.newCopyOnWriteArraySet();
 
     public TestPrimitiveImpl(PrimitiveProxy proxy, PrimitiveRegistry registry) {
-      super(TestPrimitiveClient.class, TestPrimitiveService.class, proxy, registry);
+      super(TestPrimitiveService.class, proxy, registry);
     }
 
     @Override
@@ -1487,12 +1487,12 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveServiceImpl extends AbstractPrimitiveService<TestPrimitiveService, TestPrimitiveClient, ServiceConfig> implements TestPrimitiveService {
+  public static class TestPrimitiveServiceImpl extends AbstractPrimitiveService<TestPrimitiveClient, ServiceConfig> implements TestPrimitiveService {
     private SessionId expire;
     private SessionId close;
 
     public TestPrimitiveServiceImpl(ServiceConfig config) {
-      super(TestPrimitiveService.class, TestPrimitiveClient.class, config);
+      super(TestPrimitiveClient.class, config);
     }
 
     @Override

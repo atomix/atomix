@@ -504,7 +504,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveService extends AbstractPrimitiveService<Object, Object, ServiceConfig> {
+  public static class TestPrimitiveService extends AbstractPrimitiveService<Object, ServiceConfig> {
     private Commit<Void> expire;
     private Commit<Void> close;
 

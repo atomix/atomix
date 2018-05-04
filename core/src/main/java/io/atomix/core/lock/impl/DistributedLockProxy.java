@@ -42,7 +42,7 @@ import static io.atomix.utils.concurrent.Futures.orderedFuture;
  * Raft lock.
  */
 public class DistributedLockProxy
-    extends AbstractAsyncPrimitiveProxy<AsyncDistributedLock, DistributedLockClient, DistributedLockService>
+    extends AbstractAsyncPrimitiveProxy<AsyncDistributedLock, DistributedLockService>
     implements AsyncDistributedLock, DistributedLockClient {
   private final ScheduledExecutorService scheduledExecutor;
   private final Executor orderedExecutor;
@@ -51,7 +51,7 @@ public class DistributedLockProxy
   private final AtomicInteger lock = new AtomicInteger();
 
   public DistributedLockProxy(PrimitiveProxy proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
-    super(DistributedLockClient.class, DistributedLockService.class, proxy, registry);
+    super(DistributedLockService.class, proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
     this.orderedExecutor = new OrderedExecutor(scheduledExecutor);
   }
