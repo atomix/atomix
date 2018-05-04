@@ -59,6 +59,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
 
   @BeforeClass
   public static void setupAtomix() throws Exception {
+    AbstractAtomixTest.setupAtomix();
     Function<Atomix.Builder, Atomix> build = builder ->
         builder.withManagementGroup(RaftPartitionGroup.builder("system")
             .withNumPartitions(1)
@@ -72,7 +73,6 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
                 .withNumPartitions(7)
                 .build())
             .build();
-    AbstractAtomixTest.setupAtomix();
     instances = new ArrayList<>();
     instances.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), build));
     instances.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), build));
