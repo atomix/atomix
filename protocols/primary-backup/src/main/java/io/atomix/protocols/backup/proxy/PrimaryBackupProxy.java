@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -168,6 +169,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
   private void execute(PrimitiveOperation operation, int attempt, ComposableFuture<byte[]> future) {
     if (attempt > MAX_ATTEMPTS) {
       future.completeExceptionally(new PrimitiveException.Unavailable());
+      return;
     }
 
     ExecuteRequest request = ExecuteRequest.request(descriptor, sessionId.id(), clusterMembershipService.getLocalMember().id(), operation);
@@ -190,7 +192,12 @@ public class PrimaryBackupProxy implements PartitionProxy {
                   threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
                 }
               } else {
-                future.completeExceptionally(new PrimitiveException.Unavailable());
+                Throwable cause = Throwables.getRootCause(error);
+                if (cause instanceof PrimitiveException.Unavailable || cause instanceof TimeoutException) {
+                  threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
+                } else {
+                  future.completeExceptionally(new PrimitiveException.Unavailable());
+                }
               }
             });
           }
@@ -198,7 +205,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
           execute(operation).whenComplete(future);
         } else {
           Throwable cause = Throwables.getRootCause(error);
-          if (cause instanceof PrimitiveException.Unavailable) {
+          if (cause instanceof PrimitiveException.Unavailable || cause instanceof TimeoutException) {
             threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
           } else {
             future.completeExceptionally(error);
@@ -258,26 +265,44 @@ public class PrimaryBackupProxy implements PartitionProxy {
   public CompletableFuture<PartitionProxy> connect() {
     CompletableFuture<PartitionProxy> future = new CompletableFuture<>();
     threadContext.execute(() -> {
-      primaryElection.getTerm().whenCompleteAsync((term, error) -> {
-        if (error == null) {
-          if (term.primary() == null) {
-            future.completeExceptionally(new PrimitiveException.Unavailable());
-          } else {
-            this.term = term;
-            protocol.registerEventListener(sessionId, this::handleEvent, threadContext);
-            future.complete(this);
-          }
+      connect(1, future);
+    });
+    return future;
+  }
+
+  /**
+   * Recursively connects to the partition.
+   */
+  private void connect(int attempt, CompletableFuture<PartitionProxy> future) {
+    if (attempt > MAX_ATTEMPTS) {
+      future.completeExceptionally(new PrimitiveException.Unavailable());
+      return;
+    }
+
+    primaryElection.getTerm().whenCompleteAsync((term, error) -> {
+      if (error == null) {
+        if (term.primary() == null) {
+          future.completeExceptionally(new PrimitiveException.Unavailable());
+        } else {
+          this.term = term;
+          protocol.registerEventListener(sessionId, this::handleEvent, threadContext);
+          future.complete(this);
+        }
+      } else {
+        Throwable cause = Throwables.getRootCause(error);
+        if (cause instanceof PrimitiveException.Unavailable || cause instanceof TimeoutException) {
+          threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> connect(attempt + 1, future));
         } else {
           future.completeExceptionally(new PrimitiveException.Unavailable());
         }
-      }, threadContext);
-    });
-    return future;
+      }
+    }, threadContext);
   }
 
   @Override
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
+    PrimaryTerm term = this.term;
     if (term.primary() != null) {
       protocol.close(term.primary().memberId(), new CloseRequest(descriptor, sessionId.id()))
           .whenCompleteAsync((response, error) -> {
