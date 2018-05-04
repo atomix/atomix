@@ -45,15 +45,15 @@ import java.util.stream.Stream;
 /**
  * Abstract asynchronous primitive that provides proxies.
  */
-public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, C, S> extends AbstractAsyncPrimitive<A> {
+public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, S> extends AbstractAsyncPrimitive<A> {
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final Map<PartitionId, ServiceProxy<S>> serviceProxies = Maps.newConcurrentMap();
 
   @SuppressWarnings("unchecked")
-  public AbstractAsyncPrimitiveProxy(Class<C> clientType, Class<S> serviceType, PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public AbstractAsyncPrimitiveProxy(Class<S> serviceType, PrimitiveProxy proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
     registerOperations(serviceType);
-    registerEvents(clientType);
+    registerEvents(getClass());
   }
 
   /**
@@ -71,7 +71,7 @@ public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, C, S
   /**
    * Registers event listeners on each partition.
    */
-  private void registerEvents(Class<C> clientType) {
+  private void registerEvents(Class<?> clientType) {
     Events.getEventMap(clientType).forEach((eventType, method) -> {
       for (PartitionProxy partition : getPartitions()) {
         partition.addEventListener(eventType, event -> {

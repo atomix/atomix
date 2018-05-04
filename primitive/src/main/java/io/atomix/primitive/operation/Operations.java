@@ -15,8 +15,6 @@
  */
 package io.atomix.primitive.operation;
 
-import io.atomix.utils.config.ConfigurationException;
-
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +32,11 @@ public final class Operations {
    */
   public static Map<Method, OperationId> getMethodMap(Class<?> serviceInterface) {
     if (!serviceInterface.isInterface()) {
-      throw new ConfigurationException("Service type must be an interface");
+      Map<Method, OperationId> operations = new HashMap<>();
+      for (Class<?> iface : serviceInterface.getInterfaces()) {
+        operations.putAll(findMethods(iface));
+      }
+      return operations;
     }
     return findMethods(serviceInterface);
   }
@@ -68,7 +70,11 @@ public final class Operations {
    */
   public static Map<OperationId, Method> getOperationMap(Class<?> serviceInterface) {
     if (!serviceInterface.isInterface()) {
-      throw new ConfigurationException("Service type must be an interface");
+      Map<OperationId, Method> operations = new HashMap<>();
+      for (Class<?> iface : serviceInterface.getInterfaces()) {
+        operations.putAll(findOperations(iface));
+      }
+      return operations;
     }
     return findOperations(serviceInterface);
   }
