@@ -192,7 +192,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
                   threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
                 }
               } else {
-                Throwable cause = Throwables.getRootCause(error);
+                Throwable cause = Throwables.getRootCause(termError);
                 if (cause instanceof PrimitiveException.Unavailable || cause instanceof TimeoutException) {
                   threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
                 } else {
