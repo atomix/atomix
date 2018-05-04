@@ -268,7 +268,7 @@ public class DefaultPartitionGroupMembershipService
 
   @Override
   public CompletableFuture<PartitionGroupMembershipService> start() {
-    threadContext = new SingleThreadContext(namedThreads("atomix-partition-service-%d", LOGGER));
+    threadContext = new SingleThreadContext(namedThreads("atomix-partition-group-membership-service-%d", LOGGER));
     membershipService.addListener(membershipEventListener);
     messagingService.subscribe(BOOTSTRAP_SUBJECT, serializer::decode, this::handleBootstrap, serializer::encode, threadContext);
     return bootstrap().thenApply(v -> {

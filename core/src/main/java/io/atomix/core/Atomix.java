@@ -329,6 +329,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   protected CompletableFuture<Void> completeShutdown() {
     executorService.shutdownNow();
+    threadContext.close();
     return super.completeShutdown();
   }
 

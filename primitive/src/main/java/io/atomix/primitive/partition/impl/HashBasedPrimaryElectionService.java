@@ -85,6 +85,7 @@ public class HashBasedPrimaryElectionService
     if (started.compareAndSet(true, false)) {
       elections.values().forEach(election -> election.close());
     }
+    executor.shutdownNow();
     return CompletableFuture.completedFuture(null);
   }
 }
