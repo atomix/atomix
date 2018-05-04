@@ -77,7 +77,7 @@ public class DefaultPartitionGroupMembershipService
   private final Map<String, PartitionGroupMembership> groups = Maps.newConcurrentMap();
   private final ClusterMembershipEventListener membershipEventListener = this::handleMembershipChange;
   private final AtomicBoolean started = new AtomicBoolean();
-  private ThreadContext threadContext;
+  private volatile ThreadContext threadContext;
 
   @SuppressWarnings("unchecked")
   public DefaultPartitionGroupMembershipService(
@@ -268,8 +268,8 @@ public class DefaultPartitionGroupMembershipService
 
   @Override
   public CompletableFuture<PartitionGroupMembershipService> start() {
-    membershipService.addListener(membershipEventListener);
     threadContext = new SingleThreadContext(namedThreads("atomix-partition-service-%d", LOGGER));
+    membershipService.addListener(membershipEventListener);
     messagingService.subscribe(BOOTSTRAP_SUBJECT, serializer::decode, this::handleBootstrap, serializer::encode, threadContext);
     return bootstrap().thenApply(v -> {
       LOGGER.info("Started");
