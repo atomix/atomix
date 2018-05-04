@@ -135,10 +135,10 @@ public class DefaultPartitionGroupMembershipService
    * Handles a cluster membership change.
    */
   private void handleMembershipChange(ClusterMembershipEvent event) {
-    threadContext.execute(() -> {
-      if (event.type() == ClusterMembershipEvent.Type.MEMBER_ACTIVATED) {
-        bootstrap(event.subject());
-      } else if (event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED) {
+    if (event.type() == ClusterMembershipEvent.Type.MEMBER_ACTIVATED) {
+      bootstrap(event.subject());
+    } else if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
+      threadContext.execute(() -> {
         PartitionGroupMembership systemGroup = this.systemGroup;
         if (systemGroup != null && systemGroup.members().contains(event.subject().id())) {
           Set<MemberId> newMembers = Sets.newHashSet(systemGroup.members());
@@ -157,8 +157,8 @@ public class DefaultPartitionGroupMembershipService
             post(new PartitionGroupMembershipEvent(MEMBERS_CHANGED, newMembership));
           }
         });
-      }
-    });
+      });
+    }
   }
 
   /**
