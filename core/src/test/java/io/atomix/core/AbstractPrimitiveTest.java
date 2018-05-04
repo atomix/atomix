@@ -51,7 +51,8 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
    * @return a new Atomix instance.
    */
   protected Atomix atomix() throws Exception {
-    Atomix instance = createAtomix(Member.Type.EPHEMERAL, id++, Arrays.asList(1, 2, 3), Arrays.asList()).start().get(10, TimeUnit.SECONDS);
+    Atomix instance = createAtomix(Member.Type.EPHEMERAL, id++, Arrays.asList(1, 2, 3), Arrays.asList());
+    instance.start().get(10, TimeUnit.SECONDS);
     instances.add(instance);
     return instance;
   }
@@ -76,7 +77,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
     instances.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), build));
     instances.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), build));
     instances.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), build));
-    List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::start).collect(Collectors.toList());
+    List<CompletableFuture<Atomix>> futures = instances.stream().map(a -> a.start().thenApply(v -> a)).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }
 

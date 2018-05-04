@@ -91,10 +91,10 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
 
   @Override
   public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig, PartitionService partitionService) {
-    Collection<PartitionProxy> partitions = partitionService.<PrimaryBackupPartition>getPartitionGroup(this)
+    Collection<PartitionProxy> partitions = partitionService.getPartitionGroup(this)
         .getPartitions()
         .stream()
-        .map(partition -> partition.getProxyClient().proxyBuilder(primitiveName, primitiveType, serviceConfig)
+        .map(partition -> ((PrimaryBackupClient) partition.getProxyClient()).proxyBuilder(primitiveName, primitiveType, serviceConfig)
             .withConsistency(config.getConsistency())
             .withReplication(config.getReplication())
             .withRecovery(config.getRecovery())

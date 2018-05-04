@@ -90,10 +90,10 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
 
   @Override
   public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig, PartitionService partitionService) {
-    Collection<PartitionProxy> partitions = partitionService.<RaftPartition>getPartitionGroup(this)
+    Collection<PartitionProxy> partitions = partitionService.getPartitionGroup(this)
         .getPartitions()
         .stream()
-        .map(partition -> partition.getProxyClient().proxyBuilder(primitiveName, primitiveType, serviceConfig)
+        .map(partition -> ((RaftClient) partition.getProxyClient()).proxyBuilder(primitiveName, primitiveType, serviceConfig)
             .withMinTimeout(config.getMinTimeout())
             .withMaxTimeout(config.getMaxTimeout())
             .withReadConsistency(config.getReadConsistency())

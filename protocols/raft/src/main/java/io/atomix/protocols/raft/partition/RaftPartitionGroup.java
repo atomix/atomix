@@ -56,7 +56,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft partition group.
  */
-public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> {
+public class RaftPartitionGroup implements ManagedPartitionGroup {
   public static final PartitionGroup.Type TYPE = new Type();
 
   /**
@@ -148,8 +148,8 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
 
   @Override
   @SuppressWarnings("unchecked")
-  public Collection<RaftPartition> getPartitions() {
-    return partitions.values();
+  public Collection<Partition> getPartitions() {
+    return (Collection) partitions.values();
   }
 
   @Override
@@ -158,7 +158,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup<RaftPartition>> join(PartitionManagementService managementService) {
+  public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
     // Ensure the Raft group membership intersects with persistent cluster membership.
     if (!validateMembership(managementService.getMembershipService())) {
       return Futures.exceptionalFuture(new ConfigurationException("Raft partition group must be configured with persistent membership"));
@@ -178,7 +178,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup<RaftPartition> 
   }
 
   @Override
-  public CompletableFuture<ManagedPartitionGroup<RaftPartition>> connect(PartitionManagementService managementService) {
+  public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
     return join(managementService);
   }
 
