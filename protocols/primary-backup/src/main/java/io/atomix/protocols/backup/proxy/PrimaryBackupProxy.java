@@ -63,7 +63,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Primary-backup proxy.
  */
 public class PrimaryBackupProxy implements PartitionProxy {
-  private static final int MAX_ATTEMPTS = 3;
+  private static final int MAX_ATTEMPTS = 50;
   private static final int RETRY_DELAY = 100;
   private Logger log;
   private final PrimitiveType primitiveType;
