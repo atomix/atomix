@@ -147,7 +147,6 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   private static final long HISTORY_EXPIRE_MILLIS = Duration.ofMinutes(1).toMillis();
-  private static final long MIN_TIMEOUT_MILLIS = 500;
   private static final long MIN_TIMEOUT_MILLIS = 100;
   private static final long TIMEOUT_INTERVAL = 50;
   private static final int WINDOW_SIZE = 10;
