@@ -16,11 +16,12 @@
 package io.atomix.core;
 
 import io.atomix.cluster.Member;
-import io.atomix.cluster.MemberId;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import java.util.ArrayList;
@@ -35,7 +36,8 @@ import java.util.stream.Collectors;
  * Base Atomix test.
  */
 public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
-  private static List<Atomix> instances;
+  private static List<Atomix> servers;
+  private static List<Atomix> clients;
   private static int id = 10;
 
   /**
@@ -51,13 +53,15 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
    * @return a new Atomix instance.
    */
   protected Atomix atomix() throws Exception {
-    Atomix instance = createAtomix(Member.Type.EPHEMERAL, id++, Arrays.asList(1, 2, 3), Arrays.asList()).start().get(10, TimeUnit.SECONDS);
-    instances.add(instance);
+    Atomix instance = createAtomix(Member.Type.EPHEMERAL, id++, Arrays.asList(1, 2, 3), Arrays.asList());
+    clients.add(instance);
+    instance.start().get(30, TimeUnit.SECONDS);
     return instance;
   }
 
   @BeforeClass
-  public static void setupAtomix() throws Exception {
+  public static void setupCluster() throws Exception {
+    AbstractAtomixTest.setupAtomix();
     Function<Atomix.Builder, Atomix> build = builder ->
         builder.withManagementGroup(RaftPartitionGroup.builder("system")
             .withNumPartitions(1)
@@ -71,23 +75,38 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
                 .withNumPartitions(7)
                 .build())
             .build();
-    AbstractAtomixTest.setupAtomix();
-    instances = new ArrayList<>();
-    instances.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), build));
-    instances.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), build));
-    instances.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), build));
-    List<CompletableFuture<Atomix>> futures = instances.stream().map(Atomix::start).collect(Collectors.toList());
+    servers = new ArrayList<>();
+    servers.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), build));
+    servers.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), build));
+    servers.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), build));
+    List<CompletableFuture<Atomix>> futures = servers.stream().map(a -> a.start().thenApply(v -> a)).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }
 
   @AfterClass
-  public static void teardownAtomix() throws Exception {
-    List<CompletableFuture<Void>> futures = instances.stream().map(Atomix::stop).collect(Collectors.toList());
+  public static void teardownCluster() throws Exception {
+    List<CompletableFuture<Void>> futures = servers.stream().map(Atomix::stop).collect(Collectors.toList());
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
     } catch (Exception e) {
       // Do nothing
     }
     AbstractAtomixTest.teardownAtomix();
+  }
+
+  @Before
+  public void setupTest() throws Exception {
+    clients = new ArrayList<>();
+    id = 10;
+  }
+
+  @After
+  public void teardownTest() throws Exception {
+    List<CompletableFuture<Void>> futures = clients.stream().map(Atomix::stop).collect(Collectors.toList());
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+    } catch (Exception e) {
+      // Do nothing
+    }
   }
 }

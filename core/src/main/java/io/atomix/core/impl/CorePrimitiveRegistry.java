@@ -145,9 +145,9 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
 
   @Override
   public CompletableFuture<Void> stop() {
-    if (started.compareAndSet(true, false)) {
-      return primitives.close()
-          .exceptionally(e -> null);
+    if (started.get()) {
+      primitives.close();
+      started.set(false);
     }
     return CompletableFuture.completedFuture(null);
   }

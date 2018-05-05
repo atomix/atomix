@@ -15,14 +15,18 @@
  */
 package io.atomix.primitive.service;
 
+import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.event.EventType;
+import io.atomix.primitive.event.Events;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.primitive.session.PrimitiveSessions;
+import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -32,28 +36,31 @@ import io.atomix.utils.time.WallClock;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Raft service.
  */
-public abstract class AbstractPrimitiveService<S, C extends ServiceConfig> implements PrimitiveService {
-  private final Class<S> serviceInterface;
-  private final C config;
+public abstract class AbstractPrimitiveService<C, F extends ServiceConfig> implements PrimitiveService {
+  private final Class<C> clientInterface;
+  private final F config;
   private Logger log;
   private ServiceContext context;
   private ServiceExecutor executor;
+  private final Map<SessionId, SessionProxy> sessions = Maps.newHashMap();
 
-  protected AbstractPrimitiveService(C config) {
+  protected AbstractPrimitiveService(F config) {
     this(null, config);
   }
 
-  protected AbstractPrimitiveService(Class<S> serviceInterface, C config) {
-    this.serviceInterface = serviceInterface;
+  protected AbstractPrimitiveService(Class<C> clientInterface, F config) {
+    this.clientInterface = clientInterface;
     this.config = config;
   }
 
@@ -80,7 +87,7 @@ public abstract class AbstractPrimitiveService<S, C extends ServiceConfig> imple
   }
 
   @Override
-  public void init(ServiceContext context) {
+  public final void init(ServiceContext context) {
     this.context = context;
     this.executor = new DefaultServiceExecutor(context, serializer());
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
@@ -92,12 +99,12 @@ public abstract class AbstractPrimitiveService<S, C extends ServiceConfig> imple
   }
 
   @Override
-  public void tick(WallClockTimestamp timestamp) {
+  public final void tick(WallClockTimestamp timestamp) {
     executor.tick(timestamp);
   }
 
   @Override
-  public byte[] apply(Commit<byte[]> commit) {
+  public final byte[] apply(Commit<byte[]> commit) {
     return executor.apply(commit);
   }
 
@@ -111,10 +118,7 @@ public abstract class AbstractPrimitiveService<S, C extends ServiceConfig> imple
    * @param executor The state machine executor.
    */
   protected void configure(ServiceExecutor executor) {
-    checkNotNull(serviceInterface);
-    for (Map.Entry<OperationId, Method> entry : Operations.getOperationMap(serviceInterface).entrySet()) {
-      configure(entry.getKey(), entry.getValue(), executor);
-    }
+    Operations.getOperationMap(getClass()).forEach(((operationId, method) -> configure(operationId, method, executor)));
   }
 
   /**
@@ -214,7 +218,7 @@ public abstract class AbstractPrimitiveService<S, C extends ServiceConfig> imple
    *
    * @return the service configuration
    */
-  protected C getServiceConfig() {
+  protected F getServiceConfig() {
     return config;
   }
 
@@ -264,26 +268,205 @@ public abstract class AbstractPrimitiveService<S, C extends ServiceConfig> imple
   }
 
   /**
-   * Returns the sessions registered with the state machines.
+   * Returns the session with the given identifier.
    *
-   * @return The state machine's sessions.
+   * @param sessionId the session identifier
+   * @return the primitive session
    */
-  protected PrimitiveSessions getSessions() {
-    return context.sessions();
+  protected PrimitiveSession getSession(long sessionId) {
+    return getSession(SessionId.from(sessionId));
+  }
+
+  /**
+   * Returns the session with the given identifier.
+   *
+   * @param sessionId the session identifier
+   * @return the primitive session
+   */
+  protected PrimitiveSession getSession(SessionId sessionId) {
+    SessionProxy sessionProxy = sessions.get(sessionId);
+    return sessionProxy != null ? sessionProxy.session : null;
+  }
+
+  /**
+   * Returns the collection of open sessions.
+   *
+   * @return the collection of open sessions
+   */
+  protected Collection<PrimitiveSession> getSessions() {
+    return sessions.values().stream().map(sessionProxy -> sessionProxy.session).collect(Collectors.toList());
+  }
+
+  /**
+   * Publishes an event to the given session.
+   *
+   * @param session the session to which to publish the event
+   * @param event   the event to publish
+   */
+  protected void acceptOn(PrimitiveSession session, Consumer<C> event) {
+    acceptOn(session.sessionId(), event);
+  }
+
+  /**
+   * Publishes an event to the given session.
+   *
+   * @param sessionId the session to which to publish the event
+   * @param event     the event to publish
+   */
+  protected void acceptOn(SessionId sessionId, Consumer<C> event) {
+    SessionProxy sessionProxy = sessions.get(sessionId);
+    if (sessionProxy != null) {
+      sessionProxy.accept(event);
+    }
+  }
+
+  /**
+   * Publishes an event to all sessions.
+   *
+   * @param event the event to publish
+   */
+  protected void acceptAll(Consumer<C> event) {
+    for (SessionProxy sessionProxy : sessions.values()) {
+      sessionProxy.accept(event);
+    }
   }
 
   @Override
-  public void onOpen(PrimitiveSession session) {
-
+  @SuppressWarnings("unchecked")
+  public final void register(PrimitiveSession session) {
+    SessionProxyHandler sessionProxyHandler = new SessionProxyHandler(session);
+    if (clientInterface != null) {
+      C sessionProxy = (C) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{clientInterface}, sessionProxyHandler);
+      sessions.put(session.sessionId(), new SessionProxy(session, sessionProxy));
+    } else {
+      sessions.put(session.sessionId(), new SessionProxy(session, null));
+    }
+    onOpen(session);
   }
 
   @Override
-  public void onExpire(PrimitiveSession session) {
-
+  public final void expire(SessionId sessionId) {
+    SessionProxy session = sessions.remove(sessionId);
+    if (session != null) {
+      onExpire(session.session);
+    }
   }
 
   @Override
-  public void onClose(PrimitiveSession session) {
+  public final void close(SessionId sessionId) {
+    SessionProxy session = sessions.remove(sessionId);
+    if (session != null) {
+      onClose(session.session);
+    }
+  }
 
+  /**
+   * Called when a new session is registered.
+   * <p>
+   * A session is registered when a new client connects to the cluster or an existing client recovers its
+   * session after being partitioned from the cluster. It's important to note that when this method is called,
+   * the {@link PrimitiveSession} is <em>not yet open</em> and so events cannot be {@link PrimitiveSession#publish(PrimitiveEvent) published}
+   * to the registered session. This is because clients cannot reliably track messages pushed from server state machines
+   * to the client until the session has been fully registered. Session event messages may still be published to
+   * other already-registered sessions in reaction to a session being registered.
+   * <p>
+   * To push session event messages to a client through its session upon registration, state machines can
+   * use an asynchronous callback or schedule a callback to send a message.
+   * <pre>
+   *   {@code
+   *   public void onOpen(RaftSession session) {
+   *     executor.execute(() -> session.publish("foo", "Hello world!"));
+   *   }
+   *   }
+   * </pre>
+   * Sending a session event message in an asynchronous callback allows the server time to register the session
+   * and notify the client before the event message is sent. Published event messages sent via this method will
+   * be sent the next time an operation is applied to the state machine.
+   *
+   * @param session The session that was registered. State machines <em>cannot</em> {@link PrimitiveSession#publish(PrimitiveEvent)} session
+   *                events to this session.
+   */
+  protected void onOpen(PrimitiveSession session) {
+
+  }
+
+  /**
+   * Called when a session is expired by the system.
+   * <p>
+   * This method is called when a client fails to keep its session alive with the cluster. If the leader hasn't heard
+   * from a client for a configurable time interval, the leader will expire the session to free the related memory.
+   * This method will always be called for a given session before {@link #onClose(PrimitiveSession)}, and {@link #onClose(PrimitiveSession)}
+   * will always be called following this method.
+   * <p>
+   * State machines are free to {@link PrimitiveSession#publish(PrimitiveEvent)} session event messages to any session except
+   * the one that expired. Session event messages sent to the session that expired will be lost since the session is closed once this
+   * method call completes.
+   *
+   * @param session The session that was expired. State machines <em>cannot</em> {@link PrimitiveSession#publish(PrimitiveEvent)} session
+   *                events to this session.
+   */
+  protected void onExpire(PrimitiveSession session) {
+
+  }
+
+  /**
+   * Called when a session was closed by the client.
+   * <p>
+   * This method is called when a client explicitly closes a session.
+   * <p>
+   * State machines are free to {@link PrimitiveSession#publish(PrimitiveEvent)} session event messages to any session except
+   * the one that was closed. Session event messages sent to the session that was closed will be lost since the session is closed once this
+   * method call completes.
+   *
+   * @param session The session that was closed. State machines <em>cannot</em> {@link PrimitiveSession#publish(PrimitiveEvent)} session
+   *                events to this session.
+   */
+  protected void onClose(PrimitiveSession session) {
+
+  }
+
+  /**
+   * Session proxy.
+   */
+  private final class SessionProxy {
+    private final PrimitiveSession session;
+    private final C proxy;
+
+    public SessionProxy(PrimitiveSession session, C proxy) {
+      this.session = session;
+      this.proxy = proxy;
+    }
+
+    /**
+     * Publishes an event to the session.
+     *
+     * @param event the event to publish
+     */
+    void accept(Consumer<C> event) {
+      event.accept(proxy);
+    }
+  }
+
+  /**
+   * Session proxy invocation handler.
+   */
+  private final class SessionProxyHandler implements InvocationHandler {
+    private final PrimitiveSession session;
+    private final Map<Method, EventType> events;
+
+    private SessionProxyHandler(PrimitiveSession session) {
+      this.session = session;
+      this.events = clientInterface != null ? Events.getMethodMap(clientInterface) : Maps.newHashMap();
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      EventType eventType = events.get(method);
+      if (eventType == null) {
+        throw new PrimitiveException.ServiceException("Cannot invoke unknown event type: " + method.getName());
+      }
+      session.publish(PrimitiveEvent.event(eventType, encode(args)));
+      return null;
+    }
   }
 }

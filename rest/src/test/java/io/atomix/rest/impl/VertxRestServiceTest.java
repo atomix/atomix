@@ -231,7 +231,7 @@ public class VertxRestServiceTest {
     instances = new ArrayList<>(3);
     for (int i = 1; i <= 3; i++) {
       Atomix atomix = buildAtomix(i);
-      instanceFutures.add(atomix.start());
+      instanceFutures.add(atomix.start().thenApply(v -> atomix));
       instances.add(atomix);
     }
     CompletableFuture.allOf(instanceFutures.toArray(new CompletableFuture[instanceFutures.size()])).get(30, TimeUnit.SECONDS);

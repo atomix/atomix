@@ -241,6 +241,7 @@ public class NettyBroadcastService implements ManagedBroadcastService {
       CompletableFuture<Void> future = new CompletableFuture<>();
       clientChannel.leaveGroup(groupAddress, iface).addListener(f -> {
         started.set(false);
+        group.shutdownGracefully();
         future.complete(null);
       });
       return future;

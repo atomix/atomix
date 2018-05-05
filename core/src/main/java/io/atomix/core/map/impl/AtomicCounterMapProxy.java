@@ -30,7 +30,7 @@ import io.atomix.core.map.impl.AtomicCounterMapOperations.Remove;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.RemoveValue;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Replace;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
