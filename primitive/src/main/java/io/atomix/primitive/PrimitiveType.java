@@ -75,7 +75,7 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
    */
   @SuppressWarnings("unchecked")
   default Class<? extends ServiceConfig> serviceConfigClass() {
-    Class<? extends ServiceConfig> serviceConfigClass = (Class<? extends ServiceConfig>) Generics.getGenericInterfaceType(this, ServiceConfig.class, 3);
+    Class<? extends ServiceConfig> serviceConfigClass = (Class<? extends ServiceConfig>) Generics.getGenericInterfaceType(this, PrimitiveType.class, 3);
     return serviceConfigClass != null ? serviceConfigClass : ServiceConfig.class;
   }
 

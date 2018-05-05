@@ -43,6 +43,8 @@ import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimapType;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueType;
+import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.transaction.ManagedTransactionService;
@@ -174,6 +176,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
+  public DistributedSemaphore getSemaphore(String name) {
+    return getPrimitive(name, DistributedSemaphoreType.instance(), config.getPrimitive(name));
+  }
+
+  @Override
   public <E> WorkQueue<E> getWorkQueue(String name) {
     return getPrimitive(name, WorkQueueType.<E>instance(), config.getPrimitive(name));
   }
@@ -251,6 +258,9 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   public CompletableFuture<Void> stop() {
     return transactionService.stop()
         .thenCompose(v -> primitiveRegistry.stop())
-        .whenComplete((r, e) -> started.set(false));
+        .whenComplete((r, e) -> {
+          started.set(false);
+          LOGGER.info("Stopped");
+        });
   }
 }

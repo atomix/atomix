@@ -19,6 +19,10 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,6 +30,7 @@ import static org.junit.Assert.assertEquals;
  * Atomix cluster test.
  */
 public class AtomixClusterTest {
+
   @Test
   public void testMembers() throws Exception {
     Collection<Member> members = Arrays.asList(
@@ -65,5 +70,13 @@ public class AtomixClusterTest {
     cluster3.start().join();
 
     assertEquals("baz", cluster3.membershipService().getLocalMember().id().id());
+
+    List<CompletableFuture<Void>> futures = Stream.of(cluster1, cluster2, cluster3).map(AtomixCluster::stop)
+        .collect(Collectors.toList());
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+    } catch (Exception e) {
+      // Do nothing
+    }
   }
 }

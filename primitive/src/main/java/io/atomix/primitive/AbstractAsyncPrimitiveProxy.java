@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.impl;
+package io.atomix.primitive;
 
 import com.google.common.base.Defaults;
 import com.google.common.collect.Maps;
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.event.Events;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -27,8 +25,11 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.concurrent.Futures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
@@ -42,16 +43,43 @@ import java.util.stream.Stream;
  * Abstract asynchronous primitive that provides proxies.
  */
 public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, S> extends AbstractAsyncPrimitive<A> {
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final Map<PartitionId, ServiceProxy<S>> serviceProxies = Maps.newConcurrentMap();
 
   @SuppressWarnings("unchecked")
   public AbstractAsyncPrimitiveProxy(Class<S> serviceType, PrimitiveProxy proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
-    for (PartitionProxy partition : proxy.getPartitions()) {
+    registerOperations(serviceType);
+    registerEvents(getClass());
+  }
+
+  /**
+   * Registers service/operation proxies for each partition.
+   */
+  @SuppressWarnings("unchecked")
+  private void registerOperations(Class<S> serviceType) {
+    for (PartitionProxy partition : getPartitions()) {
       ServiceProxyHandler serviceProxyHandler = new ServiceProxyHandler(serviceType, partition);
       S serviceProxy = (S) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{serviceType}, serviceProxyHandler);
       serviceProxies.put(partition.partitionId(), new ServiceProxy<>(serviceProxy, serviceProxyHandler));
     }
+  }
+
+  /**
+   * Registers event listeners on each partition.
+   */
+  private void registerEvents(Class<?> clientType) {
+    Events.getEventMap(clientType).forEach((eventType, method) -> {
+      for (PartitionProxy partition : getPartitions()) {
+        partition.addEventListener(eventType, event -> {
+          try {
+            method.invoke(this, (Object[]) decode(event.value()));
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            log.warn("Failed to handle event", e);
+          }
+        });
+      }
+    });
   }
 
   /**

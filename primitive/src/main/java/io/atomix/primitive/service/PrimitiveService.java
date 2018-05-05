@@ -15,7 +15,8 @@
  */
 package io.atomix.primitive.service;
 
-import io.atomix.primitive.session.SessionListener;
+import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.WallClockTimestamp;
 
@@ -26,7 +27,7 @@ import io.atomix.utils.time.WallClockTimestamp;
  * @see ServiceContext
  * @see ServiceExecutor
  */
-public interface PrimitiveService extends SessionListener {
+public interface PrimitiveService {
 
   /**
    * Initializes the state machine.
@@ -71,6 +72,27 @@ public interface PrimitiveService extends SessionListener {
    * @return the commit result
    */
   byte[] apply(Commit<byte[]> commit);
+
+  /**
+   * Registers a primitive session.
+   *
+   * @param session the session to register
+   */
+  void register(PrimitiveSession session);
+
+  /**
+   * Expires the session with the given identifier.
+   *
+   * @param sessionId the session identifier
+   */
+  void expire(SessionId sessionId);
+
+  /**
+   * Closes the session with the given identifier.
+   *
+   * @param sessionId the session identifier
+   */
+  void close(SessionId sessionId);
 
   /**
    * Closes the state machine.

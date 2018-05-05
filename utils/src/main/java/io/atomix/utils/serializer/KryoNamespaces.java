@@ -21,12 +21,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.sun.jmx.remote.internal.ArrayQueue;
 import io.atomix.utils.serializer.serializers.ArraysAsListSerializer;
 import io.atomix.utils.serializer.serializers.ImmutableListSerializer;
 import io.atomix.utils.serializer.serializers.ImmutableMapSerializer;
 import io.atomix.utils.serializer.serializers.ImmutableSetSerializer;
 
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,10 +70,13 @@ public final class KryoNamespaces {
       .register(HashMap.class)
       .register(ConcurrentHashMap.class)
       .register(CopyOnWriteArraySet.class)
-      .register(ArrayList.class,
+      .register(
+          ArrayList.class,
           LinkedList.class,
           HashSet.class,
-          LinkedHashSet.class
+          LinkedHashSet.class,
+          ArrayQueue.class,
+          ArrayDeque.class
       )
       .register(HashMultiset.class)
       .register(Sets.class)

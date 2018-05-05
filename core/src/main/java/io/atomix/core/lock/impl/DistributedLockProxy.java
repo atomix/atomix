@@ -18,16 +18,11 @@ package io.atomix.core.lock.impl;
 import com.google.common.collect.Maps;
 import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.core.lock.DistributedLock;
-import io.atomix.core.lock.impl.DistributedLockOperations.Lock;
-import io.atomix.core.lock.impl.DistributedLockOperations.Unlock;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.OrderedExecutor;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Version;
 
 import java.time.Duration;
@@ -41,22 +36,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static io.atomix.core.lock.impl.DistributedLockEvents.FAILED;
-import static io.atomix.core.lock.impl.DistributedLockEvents.LOCKED;
-import static io.atomix.core.lock.impl.DistributedLockOperations.LOCK;
-import static io.atomix.core.lock.impl.DistributedLockOperations.UNLOCK;
 import static io.atomix.utils.concurrent.Futures.orderedFuture;
 
 /**
  * Raft lock.
  */
-public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistributedLock> implements AsyncDistributedLock {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .register(DistributedLockOperations.NAMESPACE)
-      .register(DistributedLockEvents.NAMESPACE)
-      .build());
-
+public class DistributedLockProxy
+    extends AbstractAsyncPrimitiveProxy<AsyncDistributedLock, DistributedLockService>
+    implements AsyncDistributedLock, DistributedLockClient {
   private final ScheduledExecutorService scheduledExecutor;
   private final Executor orderedExecutor;
   private final Map<Integer, LockAttempt> attempts = Maps.newConcurrentMap();
@@ -64,39 +51,26 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistribute
   private final AtomicInteger lock = new AtomicInteger();
 
   public DistributedLockProxy(PrimitiveProxy proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
-    super(proxy, registry);
+    super(DistributedLockService.class, proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
     this.orderedExecutor = new OrderedExecutor(scheduledExecutor);
   }
 
   @Override
-  protected Serializer serializer() {
-    return SERIALIZER;
-  }
-
-  /**
-   * Handles a {@code LOCKED} event.
-   *
-   * @param event the event to handle
-   */
-  private void handleLocked(LockEvent event) {
+  public void locked(int id, long version) {
     // Remove the LockAttempt from the attempts map and complete it with the lock version if it exists.
     // If the attempt no longer exists, it likely was expired by a client-side timer.
-    LockAttempt attempt = attempts.remove(event.id());
+    LockAttempt attempt = attempts.remove(id);
     if (attempt != null) {
-      attempt.complete(new Version(event.version()));
+      attempt.complete(new Version(version));
     }
   }
 
-  /**
-   * Handles a {@code FAILED} event.
-   *
-   * @param event the event to handle
-   */
-  private void handleFailed(LockEvent event) {
+  @Override
+  public void failed(int id) {
     // Remove the LockAttempt from the attempts map and complete it with a null value if it exists.
     // If the attempt no longer exists, it likely was expired by a client-side timer.
-    LockAttempt attempt = attempts.remove(event.id());
+    LockAttempt attempt = attempts.remove(id);
     if (attempt != null) {
       attempt.complete(null);
     }
@@ -106,7 +80,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistribute
   public CompletableFuture<Version> lock() {
     // Create and register a new attempt and invoke the LOCK operation on the replicated state machine.
     LockAttempt attempt = new LockAttempt();
-    invokeBy(getPartitionKey(), LOCK, new Lock(attempt.id(), -1)).whenComplete((result, error) -> {
+    acceptBy(getPartitionKey(), service -> service.lock(attempt.id(), -1)).whenComplete((result, error) -> {
       if (error != null) {
         attempt.completeExceptionally(error);
       }
@@ -128,7 +102,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistribute
     // a 0 timeout. The timeout will cause the state machine to immediately reject the request if the lock is
     // already owned by another process.
     LockAttempt attempt = new LockAttempt();
-    invokeBy(getPartitionKey(), LOCK, new Lock(attempt.id(), 0)).whenComplete((result, error) -> {
+    acceptBy(getPartitionKey(), service -> service.lock(attempt.id(), 0)).whenComplete((result, error) -> {
       if (error != null) {
         attempt.completeExceptionally(error);
       }
@@ -151,14 +125,14 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistribute
     // lock call also granted to this process.
     LockAttempt attempt = new LockAttempt(timeout, a -> {
       a.complete(null);
-      invokeBy(getPartitionKey(), UNLOCK, new Unlock(a.id()));
+      acceptBy(getPartitionKey(), service -> service.unlock(a.id()));
     });
 
     // Invoke the LOCK operation on the replicated state machine with the given timeout. If the lock is currently
     // held by another process, the state machine will add the attempt to a queue and publish a FAILED event if
     // the timer expires before this process can be granted the lock. If the client cannot reach the Raft cluster,
     // the client-side timer will expire the attempt.
-    invokeBy(getPartitionKey(), LOCK, new Lock(attempt.id(), timeout.toMillis()))
+    acceptBy(getPartitionKey(), service -> service.lock(attempt.id(), timeout.toMillis()))
         .whenComplete((result, error) -> {
           if (error != null) {
             attempt.completeExceptionally(error);
@@ -176,7 +150,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistribute
     int lock = this.lock.getAndSet(0);
     if (lock != 0) {
       return orderedFuture(
-          invokeBy(getPartitionKey(), UNLOCK, new Unlock(lock)),
+          acceptBy(getPartitionKey(), service -> service.unlock(lock)),
           orderedExecutor,
           scheduledExecutor);
     }
@@ -187,10 +161,7 @@ public class DistributedLockProxy extends AbstractAsyncPrimitive<AsyncDistribute
   public CompletableFuture<AsyncDistributedLock> connect() {
     return super.connect()
         .thenCompose(v -> getPartition(getPartitionKey()).connect())
-        .thenRun(() -> {
-          listenBy(getPartitionKey(), LOCKED, this::handleLocked);
-          listenBy(getPartitionKey(), FAILED, this::handleFailed);
-        }).thenApply(v -> this);
+        .thenApply(v -> this);
   }
 
   @Override

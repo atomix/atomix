@@ -70,7 +70,6 @@ public class AtomixTest extends AbstractAtomixTest {
   }
 
 
-
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, Map<String, String> metadata, Profile... profiles) {
     return startAtomix(type, id, persistentNodes, Arrays.asList(), metadata, profiles);
   }
@@ -78,7 +77,6 @@ public class AtomixTest extends AbstractAtomixTest {
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes, Profile... profiles) {
     return startAtomix(type, id, persistentNodes, ephemeralNodes, b -> b.withProfiles(profiles).build());
   }
-
 
 
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentNodes, List<Integer> ephemeralNodes, Map<String, String> metadata, Profile... profiles) {
@@ -98,7 +96,7 @@ public class AtomixTest extends AbstractAtomixTest {
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Function<Atomix.Builder, Atomix> builderFunction) {
     Atomix atomix = createAtomix(type, id, persistentIds, ephemeralIds, builderFunction);
     instances.add(atomix);
-    return atomix.start();
+    return atomix.start().thenApply(v -> atomix);
   }
 
   /**
@@ -107,7 +105,7 @@ public class AtomixTest extends AbstractAtomixTest {
   protected CompletableFuture<Atomix> startAtomix(Member.Type type, int id, List<Integer> persistentIds, List<Integer> ephemeralIds, Map<String, String> metadata, Function<Atomix.Builder, Atomix> builderFunction) {
     Atomix atomix = createAtomix(type, id, persistentIds, ephemeralIds, metadata, builderFunction);
     instances.add(atomix);
-    return atomix.start();
+    return atomix.start().thenApply(v -> atomix);
   }
 
   /**
@@ -203,11 +201,23 @@ public class AtomixTest extends AbstractAtomixTest {
    * Tests a client joining and leaving the cluster.
    */
   @Test
-  public void testClientJoinLeaveCore() throws Exception {
+  public void testClientJoinLeaveDataGrid() throws Exception {
+    testClientJoinLeave(Profile.DATA_GRID);
+  }
+
+  /**
+   * Tests a client joining and leaving the cluster.
+   */
+  @Test
+  public void testClientJoinLeaveConsensus() throws Exception {
+    testClientJoinLeave(Profile.CONSENSUS);
+  }
+
+  private void testClientJoinLeave(Profile profile) throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
-    futures.add(startAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
-    futures.add(startAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
+    futures.add(startAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), profile));
+    futures.add(startAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), profile));
+    futures.add(startAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), profile));
     Futures.allOf(futures).join();
 
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
@@ -257,8 +267,6 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
   }
 
-
-
   /**
    * Tests a client metadata.
    */
@@ -282,11 +290,11 @@ public class AtomixTest extends AbstractAtomixTest {
     event1 = dataListener.event();
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, event1.type());
 
-    Member meber = event1.subject();
+    Member member = event1.subject();
 
-    assertNotNull(meber.metadata());
-    assertEquals(1, meber.metadata().size());
-    assertEquals("a-value", meber.metadata().get("a-key"));
+    assertNotNull(member.metadata());
+    assertEquals(1, member.metadata().size());
+    assertEquals("a-value", member.metadata().get("a-key"));
   }
 
   private static class TestClusterMembershipEventListener implements ClusterMembershipEventListener {

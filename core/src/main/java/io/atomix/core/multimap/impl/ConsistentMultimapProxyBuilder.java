@@ -46,15 +46,18 @@ public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuil
         managementService.getPartitionService());
     return new ConsistentSetMultimapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(multimap -> {
+        .thenApply(rawMultimap -> {
           Serializer serializer = serializer();
-          return new TranscodingAsyncConsistentMultimap<K, V, String, byte[]>(
-              multimap,
+          AsyncConsistentMultimap<K, V> multimap = new TranscodingAsyncConsistentMultimap<>(
+              rawMultimap,
               key -> BaseEncoding.base16().encode(serializer.encode(key)),
               string -> serializer.decode(BaseEncoding.base16().decode(string)),
               value -> serializer.encode(value),
-              bytes -> serializer.decode(bytes))
-              .sync();
+              bytes -> serializer.decode(bytes));
+          if (config.isCacheEnabled()) {
+            multimap = new CachingAsyncConsistentMultimap<>(multimap);
+          }
+          return multimap.sync();
         });
   }
 }

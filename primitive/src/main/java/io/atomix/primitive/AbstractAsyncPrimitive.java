@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.impl;
+package io.atomix.primitive;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;

@@ -82,6 +82,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -147,12 +148,14 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   private static final long HISTORY_EXPIRE_MILLIS = Duration.ofMinutes(1).toMillis();
   private static final long MIN_TIMEOUT_MILLIS = 500;
-  private static final long MAX_TIMEOUT_MILLIS = 15000;
+  private static final long MIN_TIMEOUT_MILLIS = 100;
   private static final long TIMEOUT_INTERVAL = 50;
-  private static final int WINDOW_SIZE = 100;
+  private static final int WINDOW_SIZE = 10;
+  private static final int WINDOW_UPDATE_SAMPLE_SIZE = 100;
+  private static final long WINDOW_UPDATE_MILLIS = 60000;
   private static final int MIN_SAMPLES = 25;
   private static final double PHI_FACTOR = 1.0 / Math.log(10.0);
-  private static final int PHI_FAILURE_THRESHOLD = 5;
+  private static final int PHI_FAILURE_THRESHOLD = 12;
   private static final int CHANNEL_POOL_SIZE = 8;
 
   private static final byte[] EMPTY_PAYLOAD = new byte[0];
@@ -880,14 +883,24 @@ public class NettyMessagingService implements ManagedMessagingService {
       while (iterator.hasNext()) {
         Callback callback = iterator.next().getValue();
         try {
-          RequestMonitor requestMonitor = requestMonitors.get(callback.type, RequestMonitor::new);
           long elapsedTime = currentTime - callback.time;
-          if ((callback.timeout > 0 && elapsedTime > callback.timeout)
-              || (callback.timeout == 0 && (elapsedTime > MAX_TIMEOUT_MILLIS || (elapsedTime > MIN_TIMEOUT_MILLIS && requestMonitor.isTimedOut(elapsedTime))))) {
+
+          // If a timeout for the callback was provided and the timeout elapsed, timeout the future but don't
+          // record the response time.
+          if (callback.timeout > 0 && elapsedTime > callback.timeout) {
             iterator.remove();
-            requestMonitor.addReplyTime(elapsedTime);
             callback.completeExceptionally(
                 new TimeoutException("Request timed out in " + elapsedTime + " milliseconds"));
+          } else {
+            // If no timeout was provided, use the RequestMonitor to calculate the dynamic timeout and determine
+            // whether to timeout the response future.
+            RequestMonitor requestMonitor = requestMonitors.get(callback.type, RequestMonitor::new);
+            if (callback.timeout == 0 && (elapsedTime > MAX_TIMEOUT_MILLIS || (elapsedTime > MIN_TIMEOUT_MILLIS && requestMonitor.isTimedOut(elapsedTime)))) {
+              iterator.remove();
+              requestMonitor.addReplyTime(elapsedTime);
+              callback.completeExceptionally(
+                  new TimeoutException("Request timed out in " + elapsedTime + " milliseconds"));
+            }
           }
         } catch (ExecutionException e) {
           throw new AssertionError();
@@ -1111,6 +1124,9 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   private static final class RequestMonitor {
     private final DescriptiveStatistics samples = new SynchronizedDescriptiveStatistics(WINDOW_SIZE);
+    private final AtomicLong max = new AtomicLong();
+    private volatile int replyCount;
+    private volatile long lastUpdate = System.currentTimeMillis();
 
     /**
      * Adds a reply time to the history.
@@ -1118,7 +1134,24 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @param replyTime the reply time to add to the history
      */
     void addReplyTime(long replyTime) {
-      samples.addValue(replyTime);
+      max.accumulateAndGet(replyTime, Math::max);
+      replyCount++;
+
+      // If at least WINDOW_UPDATE_SAMPLE_SIZE response times have been recorded, and at least WINDOW_UPDATE_MILLIS
+      // have passed since the last update, record the maximum response time in the samples.
+      if (replyCount >= WINDOW_UPDATE_SAMPLE_SIZE && System.currentTimeMillis() - lastUpdate > WINDOW_UPDATE_MILLIS) {
+        synchronized (this) {
+          if (replyCount >= WINDOW_UPDATE_SAMPLE_SIZE && System.currentTimeMillis() - lastUpdate > WINDOW_UPDATE_MILLIS) {
+            long lastMax = max.get();
+            if (lastMax > 0) {
+              samples.addValue(lastMax);
+              lastUpdate = System.currentTimeMillis();
+              replyCount = 0;
+              max.set(0);
+            }
+          }
+        }
+      }
     }
 
     /**
@@ -1128,7 +1161,7 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @return indicates whether the request should be timed out
      */
     boolean isTimedOut(long elapsedTime) {
-      return phi(elapsedTime) >= PHI_FAILURE_THRESHOLD;
+      return samples.getN() == WINDOW_SIZE && phi(elapsedTime) >= PHI_FAILURE_THRESHOLD;
     }
 
     /**

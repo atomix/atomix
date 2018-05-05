@@ -39,7 +39,7 @@ public class ReplicatedSessionIdService implements ManagedSessionIdService {
       .build());
   private static final String PRIMITIVE_NAME = "session-id";
 
-  private final PartitionGroup<?> systemPartitionGroup;
+  private final PartitionGroup systemPartitionGroup;
   private PartitionProxy proxy;
   private final AtomicBoolean started = new AtomicBoolean();
 

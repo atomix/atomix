@@ -19,11 +19,13 @@ import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.GroupMembershipConfig;
+import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.TestPersistentMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
+import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.messaging.MessagingService;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static org.junit.Assert.assertEquals;
@@ -71,42 +74,42 @@ public class DefaultClusterEventingServiceTest {
 
     Member localMember1 = buildNode(1, Member.Type.PERSISTENT);
     MessagingService messagingService1 = messagingServiceFactory.newMessagingService(localMember1.address()).start().join();
-    ClusterMembershipService clusterMembershipService1 = new DefaultClusterMembershipService(
+    ManagedClusterMembershipService clusterService1 = new DefaultClusterMembershipService(
         localMember1,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingService1,
         broadcastServiceFactory.newBroadcastService().start().join(),
-        new GroupMembershipConfig())
-        .start()
-        .join();
-    ClusterEventingService eventService1 = new DefaultClusterEventingService(clusterMembershipService1, messagingService1).start().join();
+        new GroupMembershipConfig());
+    ClusterMembershipService clusterMembershipService1 = clusterService1.start().join();
+    ManagedClusterEventingService clusterEventingService1 = new DefaultClusterEventingService(clusterMembershipService1, messagingService1);
+    ClusterEventingService eventService1 = clusterEventingService1.start().join();
 
     Member localMember2 = buildNode(2, Member.Type.PERSISTENT);
     MessagingService messagingService2 = messagingServiceFactory.newMessagingService(localMember2.address()).start().join();
-    ClusterMembershipService clusterMembershipService2 = new DefaultClusterMembershipService(
+    ManagedClusterMembershipService clusterService2 = new DefaultClusterMembershipService(
         localMember2,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingService2,
         broadcastServiceFactory.newBroadcastService().start().join(),
-        new GroupMembershipConfig())
-        .start()
-        .join();
-    ClusterEventingService eventService2 = new DefaultClusterEventingService(clusterMembershipService2, messagingService2).start().join();
+        new GroupMembershipConfig());
+    ClusterMembershipService clusterMembershipService2 = clusterService2.start().join();
+    ManagedClusterEventingService clusterEventingService2 = new DefaultClusterEventingService(clusterMembershipService2, messagingService2);
+    ClusterEventingService eventService2 = clusterEventingService2.start().join();
 
     Member localMember3 = buildNode(3, Member.Type.PERSISTENT);
     MessagingService messagingService3 = messagingServiceFactory.newMessagingService(localMember3.address()).start().join();
-    ClusterMembershipService clusterMembershipService3 = new DefaultClusterMembershipService(
+    ManagedClusterMembershipService clusterService3 = new DefaultClusterMembershipService(
         localMember3,
         new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
         new TestPersistentMetadataService(clusterMetadata),
         messagingService3,
         broadcastServiceFactory.newBroadcastService().start().join(),
-        new GroupMembershipConfig())
-        .start()
-        .join();
-    ClusterEventingService eventService3 = new DefaultClusterEventingService(clusterMembershipService3, messagingService3).start().join();
+        new GroupMembershipConfig());
+    ClusterMembershipService clusterMembershipService3 = clusterService3.start().join();
+    ManagedClusterEventingService clusterEventingService3 = new DefaultClusterEventingService(clusterMembershipService3, messagingService3);
+    ClusterEventingService eventService3 = clusterEventingService3.start().join();
 
     Thread.sleep(100);
 
@@ -180,5 +183,11 @@ public class DefaultClusterEventingServiceTest {
     assertEquals("Hello world!", eventService3.send("test2", "Hello world!").join());
     assertEquals(1, events.size());
     assertTrue(events.contains(1));
+
+    CompletableFuture.allOf(new CompletableFuture[]{clusterEventingService1.stop(), clusterEventingService2.stop(),
+            clusterEventingService3.stop()}).join();
+
+    CompletableFuture.allOf(new CompletableFuture[]{clusterService1.stop(), clusterService2.stop(),
+            clusterService3.stop()}).join();
   }
 }

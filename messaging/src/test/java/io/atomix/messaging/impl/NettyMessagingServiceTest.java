@@ -23,10 +23,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.Arrays;
@@ -46,11 +46,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Netty messaging service test.
  */
 public class NettyMessagingServiceTest {
+
+  private static final Logger LOGGER = getLogger(NettyMessagingServiceTest.class);
 
   ManagedMessagingService netty1;
   ManagedMessagingService netty2;
@@ -91,11 +94,19 @@ public class NettyMessagingServiceTest {
   @After
   public void tearDown() throws Exception {
     if (netty1 != null) {
-      netty1.stop();
+      try {
+        netty1.stop().join();
+      } catch (Exception e) {
+        LOGGER.warn("Failed stopping netty1", e);
+      }
     }
 
     if (netty2 != null) {
-      netty2.stop();
+      try {
+        netty2.stop().join();
+      } catch (Exception e) {
+        LOGGER.warn("Failed stopping netty2", e);
+      }
     }
   }
 

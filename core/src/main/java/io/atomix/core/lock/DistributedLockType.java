@@ -15,9 +15,9 @@
  */
 package io.atomix.core.lock;
 
+import io.atomix.core.lock.impl.DefaultDistributedLockService;
 import io.atomix.core.lock.impl.DistributedLockProxyBuilder;
 import io.atomix.core.lock.impl.DistributedLockResource;
-import io.atomix.core.lock.impl.DistributedLockService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
@@ -48,7 +48,7 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DistributedLockService(config);
+    return new DefaultDistributedLockService(config);
   }
 
   @Override

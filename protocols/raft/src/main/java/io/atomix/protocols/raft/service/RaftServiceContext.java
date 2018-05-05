@@ -29,13 +29,13 @@ import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.primitive.session.PrimitiveSessions;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.session.RaftSessionRegistry;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.buffer.Bytes;
@@ -65,7 +65,7 @@ public class RaftServiceContext implements ServiceContext {
   private final ServiceConfig config;
   private final PrimitiveService service;
   private final RaftContext raft;
-  private final RaftSessions sessions;
+  private final RaftSessionRegistry sessions;
   private final ThreadContextFactory threadContextFactory;
   private long currentIndex;
   private PrimitiveSession currentSession;
@@ -98,21 +98,13 @@ public class RaftServiceContext implements ServiceContext {
     this.config = checkNotNull(config);
     this.service = checkNotNull(service);
     this.raft = checkNotNull(raft);
-    this.sessions = new RaftSessions(primitiveId, raft.getSessions());
+    this.sessions = raft.getSessions();
     this.threadContextFactory = threadContextFactory;
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
         .addValue(primitiveId)
         .add("type", primitiveType)
         .add("name", serviceName)
         .build());
-    init();
-  }
-
-  /**
-   * Initializes the state machine.
-   */
-  private void init() {
-    sessions.addListener(service);
     service.init(this);
   }
 
@@ -166,11 +158,6 @@ public class RaftServiceContext implements ServiceContext {
     return wallClock;
   }
 
-  @Override
-  public PrimitiveSessions sessions() {
-    return sessions;
-  }
-
   /**
    * Sets the current state machine operation type.
    *
@@ -198,10 +185,14 @@ public class RaftServiceContext implements ServiceContext {
    */
   private void expireSessions(long timestamp) {
     // Iterate through registered sessions.
-    for (RaftSession session : sessions.getSessions()) {
+    for (RaftSession session : sessions.getSessions(primitiveId)) {
       if (session.isTimedOut(timestamp)) {
         log.debug("Session expired in {} milliseconds: {}", timestamp - session.getLastUpdated(), session);
-        sessions.expireSession(session);
+        session = sessions.removeSession(session.sessionId());
+        if (session != null) {
+          session.expire();
+          service.expire(session.sessionId());
+        }
       }
     }
   }
@@ -245,7 +236,7 @@ public class RaftServiceContext implements ServiceContext {
       session.setLastCompleted(reader.readLong());
       session.setLastApplied(reader.snapshot().index());
       session.setLastUpdated(sessionTimestamp);
-      sessions.openSession(session);
+      service.register(sessions.addSession(session));
     }
     currentIndex = reader.snapshot().index();
     currentTimestamp = reader.snapshot().timestamp().unixTimestamp();
@@ -298,7 +289,8 @@ public class RaftServiceContext implements ServiceContext {
     expireSessions(currentTimestamp);
 
     // Add the session to the sessions list.
-    sessions.openSession(session);
+    session.open();
+    service.register(sessions.addSession(session));
 
     // Commit the index, causing events to be sent to clients if necessary.
     commit();
@@ -382,7 +374,7 @@ public class RaftServiceContext implements ServiceContext {
     this.currentIndex = index;
     this.currentTimestamp = Math.max(currentTimestamp, timestamp);
 
-    for (RaftSession session : sessions.getSessions()) {
+    for (RaftSession session : sessions.getSessions(primitiveId)) {
       session.setLastUpdated(timestamp);
     }
   }
@@ -409,9 +401,17 @@ public class RaftServiceContext implements ServiceContext {
 
     // Remove the session from the sessions list.
     if (expired) {
-      sessions.expireSession(session);
+      session = sessions.removeSession(session.sessionId());
+      if (session != null) {
+        session.expire();
+        service.expire(session.sessionId());
+      }
     } else {
-      sessions.closeSession(session);
+      session = sessions.removeSession(session.sessionId());
+      if (session != null) {
+        session.close();
+        service.close(session.sessionId());
+      }
     }
 
     // Commit the index, causing events to be sent to clients if necessary.
@@ -602,7 +602,7 @@ public class RaftServiceContext implements ServiceContext {
   @SuppressWarnings("unchecked")
   private void commit() {
     long index = this.currentIndex;
-    for (RaftSession session : sessions.getSessions()) {
+    for (RaftSession session : sessions.getSessions(primitiveId)) {
       session.commit(index);
     }
   }
