@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.impl;
+package io.atomix.primitive;
 
 import com.google.common.base.Defaults;
 import com.google.common.collect.Maps;
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.event.Events;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;

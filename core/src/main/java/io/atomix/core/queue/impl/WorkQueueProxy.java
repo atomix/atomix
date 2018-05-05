@@ -24,7 +24,7 @@ import io.atomix.core.queue.impl.WorkQueueOperations.Add;
 import io.atomix.core.queue.impl.WorkQueueOperations.Complete;
 import io.atomix.core.queue.impl.WorkQueueOperations.Take;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.AbstractAccumulator;

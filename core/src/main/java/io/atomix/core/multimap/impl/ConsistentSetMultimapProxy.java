@@ -35,7 +35,7 @@ import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.Put;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.RemoveAll;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.Replace;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
