@@ -27,7 +27,7 @@ import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.event.Event;
-import io.atomix.primitive.impl.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.operation.Operation;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;

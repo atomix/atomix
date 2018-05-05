@@ -31,7 +31,7 @@ import io.atomix.core.tree.impl.DocumentTreeOperations.Listen;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Unlisten;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
