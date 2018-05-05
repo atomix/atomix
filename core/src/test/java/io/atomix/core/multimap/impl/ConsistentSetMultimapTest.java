@@ -54,7 +54,7 @@ public abstract class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
   public void testSize() throws Throwable {
     AsyncConsistentMultimap<String, String> map = createMultimap("testOneMap");
     //Simplest operation case
-    map.isEmpty().thenAccept(result -> assertTrue(result));
+    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
     map.put(one, one).
         thenAccept(result -> assertTrue(result)).join();
     map.isEmpty().thenAccept(result -> assertFalse(result));

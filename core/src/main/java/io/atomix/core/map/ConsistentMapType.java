@@ -15,25 +15,14 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.ConsistentMapEvents;
-import io.atomix.core.map.impl.ConsistentMapOperations;
 import io.atomix.core.map.impl.ConsistentMapProxyBuilder;
 import io.atomix.core.map.impl.ConsistentMapResource;
 import io.atomix.core.map.impl.ConsistentMapService;
-import io.atomix.core.transaction.TransactionId;
-import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
-import io.atomix.primitive.resource.PrimitiveResourceFactory;
 import io.atomix.primitive.service.PrimitiveService;
-import io.atomix.primitive.service.PrimitiveServiceFactory;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Namespace;
-
-import java.util.HashMap;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 

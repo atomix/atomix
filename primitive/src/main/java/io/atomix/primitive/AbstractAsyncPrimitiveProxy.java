@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.impl;
+package io.atomix.primitive;
 
 import com.google.common.base.Defaults;
 import com.google.common.collect.Maps;
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.event.Events;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;
@@ -45,15 +42,15 @@ import java.util.stream.Stream;
 /**
  * Abstract asynchronous primitive that provides proxies.
  */
-public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, C, S> extends AbstractAsyncPrimitive<A> {
+public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, S> extends AbstractAsyncPrimitive<A> {
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final Map<PartitionId, ServiceProxy<S>> serviceProxies = Maps.newConcurrentMap();
 
   @SuppressWarnings("unchecked")
-  public AbstractAsyncPrimitiveProxy(Class<C> clientType, Class<S> serviceType, PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public AbstractAsyncPrimitiveProxy(Class<S> serviceType, PrimitiveProxy proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
     registerOperations(serviceType);
-    registerEvents(clientType);
+    registerEvents(getClass());
   }
 
   /**
@@ -71,7 +68,7 @@ public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, C, S
   /**
    * Registers event listeners on each partition.
    */
-  private void registerEvents(Class<C> clientType) {
+  private void registerEvents(Class<?> clientType) {
     Events.getEventMap(clientType).forEach((eventType, method) -> {
       for (PartitionProxy partition : getPartitions()) {
         partition.addEventListener(eventType, event -> {

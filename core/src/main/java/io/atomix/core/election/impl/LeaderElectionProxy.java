@@ -27,7 +27,7 @@ import io.atomix.core.election.impl.LeaderElectionOperations.Promote;
 import io.atomix.core.election.impl.LeaderElectionOperations.Run;
 import io.atomix.core.election.impl.LeaderElectionOperations.Withdraw;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.Proxy;

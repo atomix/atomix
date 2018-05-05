@@ -44,13 +44,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Raft service.
  */
-public abstract class AbstractPrimitiveService<S, C, F extends ServiceConfig> implements PrimitiveService {
-  private final Class<S> serviceInterface;
+public abstract class AbstractPrimitiveService<C, F extends ServiceConfig> implements PrimitiveService {
   private final Class<C> clientInterface;
   private final F config;
   private Logger log;
@@ -59,11 +56,10 @@ public abstract class AbstractPrimitiveService<S, C, F extends ServiceConfig> im
   private final Map<SessionId, SessionProxy> sessions = Maps.newHashMap();
 
   protected AbstractPrimitiveService(F config) {
-    this(null, null, config);
+    this(null, config);
   }
 
-  protected AbstractPrimitiveService(Class<S> serviceInterface, Class<C> clientInterface, F config) {
-    this.serviceInterface = serviceInterface;
+  protected AbstractPrimitiveService(Class<C> clientInterface, F config) {
     this.clientInterface = clientInterface;
     this.config = config;
   }
@@ -122,8 +118,7 @@ public abstract class AbstractPrimitiveService<S, C, F extends ServiceConfig> im
    * @param executor The state machine executor.
    */
   protected void configure(ServiceExecutor executor) {
-    checkNotNull(serviceInterface);
-    Operations.getOperationMap(serviceInterface).forEach(((operationId, method) -> configure(operationId, method, executor)));
+    Operations.getOperationMap(getClass()).forEach(((operationId, method) -> configure(operationId, method, executor)));
   }
 
   /**
@@ -300,6 +295,16 @@ public abstract class AbstractPrimitiveService<S, C, F extends ServiceConfig> im
    */
   protected Collection<PrimitiveSession> getSessions() {
     return sessions.values().stream().map(sessionProxy -> sessionProxy.session).collect(Collectors.toList());
+  }
+
+  /**
+   * Publishes an event to the given session.
+   *
+   * @param session the session to which to publish the event
+   * @param event   the event to publish
+   */
+  protected void acceptOn(PrimitiveSession session, Consumer<C> event) {
+    acceptOn(session.sessionId(), event);
   }
 
   /**

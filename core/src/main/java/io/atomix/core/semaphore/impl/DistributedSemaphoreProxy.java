@@ -24,7 +24,7 @@ import io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.Increase;
 import io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.Reduce;
 import io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.Release;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;

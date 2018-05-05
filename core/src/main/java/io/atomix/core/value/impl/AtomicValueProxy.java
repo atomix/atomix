@@ -22,7 +22,7 @@ import io.atomix.core.value.AtomicValueEventListener;
 import io.atomix.core.value.impl.AtomicValueOperations.CompareAndSet;
 import io.atomix.core.value.impl.AtomicValueOperations.GetAndSet;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.impl.AbstractAsyncPrimitive;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;

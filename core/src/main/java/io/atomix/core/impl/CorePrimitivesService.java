@@ -258,6 +258,9 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   public CompletableFuture<Void> stop() {
     return transactionService.stop()
         .thenCompose(v -> primitiveRegistry.stop())
-        .whenComplete((r, e) -> started.set(false));
+        .whenComplete((r, e) -> {
+          started.set(false);
+          LOGGER.info("Stopped");
+        });
   }
 }
