@@ -33,6 +33,7 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   private Set<String> members = new HashSet<>();
   private int partitionSize;
   private String storageLevel = StorageLevel.MAPPED.name();
+  private boolean flushOnCommit = true;
   private String dataDirectory;
 
   @Override
@@ -103,6 +104,26 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   public RaftPartitionGroupConfig setStorageLevel(String storageLevel) {
     StorageLevel.valueOf(storageLevel.toUpperCase());
     this.storageLevel = storageLevel;
+    return this;
+  }
+
+  /**
+   * Returns whether to flush logs to disk on commit.
+   *
+   * @return whether to flush logs to disk on commit
+   */
+  public boolean isFlushOnCommit() {
+    return flushOnCommit;
+  }
+
+  /**
+   * Sets whether to flush logs to disk on commit.
+   *
+   * @param flushOnCommit whether to flush logs to disk on commit
+   * @return the Raft partition group configuration
+   */
+  public RaftPartitionGroupConfig setFlushOnCommit(boolean flushOnCommit) {
+    this.flushOnCommit = flushOnCommit;
     return this;
   }
 
