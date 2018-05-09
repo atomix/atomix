@@ -44,17 +44,17 @@ public class BlockingDistributedLock extends Synchronous<AsyncDistributedLock> i
 
   @Override
   public Version lock() {
-    return complete(asyncLock.lock());
+    return asyncLock.lock().join();
   }
 
   @Override
   public Optional<Version> tryLock() {
-    return complete(asyncLock.tryLock());
+    return asyncLock.tryLock().join();
   }
 
   @Override
   public Optional<Version> tryLock(Duration timeout) {
-    return complete(asyncLock.tryLock(timeout));
+    return asyncLock.tryLock(timeout).join();
   }
 
   @Override

@@ -18,6 +18,7 @@ package io.atomix.core.lock.impl;
 import com.google.common.collect.Maps;
 import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.core.lock.DistributedLock;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
@@ -54,6 +55,16 @@ public class DistributedLockProxy
     super(DistributedLockService.class, proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
     this.orderedExecutor = new OrderedExecutor(scheduledExecutor);
+    proxy.addStateChangeListener(this::onStateChange);
+  }
+
+  private void onStateChange(Proxy.State state) {
+    if (state != Proxy.State.CONNECTED) {
+      for (LockAttempt attempt : attempts.values()) {
+        acceptBy(getPartitionKey(), service -> service.unlock(attempt.id()));
+        attempt.completeExceptionally(new PrimitiveException.Unavailable());
+      }
+    }
   }
 
   @Override
