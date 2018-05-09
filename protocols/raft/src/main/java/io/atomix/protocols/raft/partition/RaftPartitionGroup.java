@@ -90,6 +90,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
       partitions.add(new RaftPartition(
           PartitionId.from(config.getName(), i + 1),
           StorageLevel.valueOf(config.getStorageLevel().toUpperCase()),
+          config.isFlushOnCommit(),
           new File(partitionsDir, String.valueOf(i + 1))));
     }
     return partitions;
