@@ -97,7 +97,7 @@ public class DefaultPersistentMetadataService
   private ScheduledFuture<?> metadataFuture;
 
   public DefaultPersistentMetadataService(ClusterMetadata metadata, MessagingService messagingService) {
-    metadata.nodes().forEach(node -> nodes.put(node.id(), new ReplicatedMember(
+    metadata.members().forEach(node -> nodes.put(node.id(), new ReplicatedMember(
         node.id(),
         node.type(),
         node.address(),
