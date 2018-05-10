@@ -43,20 +43,20 @@ final class ClusterHeartbeat {
   }
 
   /**
-   * Returns the identifier of the node that sent the heartbeat.
+   * Returns the identifier of the member that sent the heartbeat.
    *
-   * @return the identifier of the node that sent the heartbeat
+   * @return the identifier of the member that sent the heartbeat
    */
   public MemberId memberId() {
     return memberId;
   }
 
   /**
-   * Returns the type of the node that sent the heartbeat.
+   * Returns the type of the member that sent the heartbeat.
    *
-   * @return the node type
+   * @return the member type
    */
-  public Member.Type nodeType() {
+  public Member.Type memberType() {
     return type;
   }
 
@@ -88,9 +88,9 @@ final class ClusterHeartbeat {
   }
 
   /**
-   * Returns the node metadata.
+   * Returns the member metadata.
    *
-   * @return the node metadata
+   * @return the member metadata
    */
   public Map<String, String> metadata() {
     return metadata;

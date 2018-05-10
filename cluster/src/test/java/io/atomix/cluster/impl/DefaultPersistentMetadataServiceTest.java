@@ -49,7 +49,7 @@ public class DefaultPersistentMetadataServiceTest {
 
     metadataService1.start().join();
 
-    assertEquals(1, metadataService1.getMetadata().nodes().size());
+    assertEquals(1, metadataService1.getMetadata().members().size());
 
     Member localMember2 = buildNode(2, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService2 = new DefaultPersistentMetadataService(
@@ -57,7 +57,7 @@ public class DefaultPersistentMetadataServiceTest {
     metadataService2.start().join();
     metadataService2.addMember(localMember2);
 
-    assertEquals(2, metadataService2.getMetadata().nodes().size());
+    assertEquals(2, metadataService2.getMetadata().members().size());
   }
 
   @Test
@@ -84,16 +84,16 @@ public class DefaultPersistentMetadataServiceTest {
     futures.add(metadataService3.start());
     Futures.allOf(futures).join();
 
-    assertEquals(3, metadataService1.getMetadata().nodes().size());
-    assertEquals(3, metadataService2.getMetadata().nodes().size());
-    assertEquals(3, metadataService3.getMetadata().nodes().size());
+    assertEquals(3, metadataService1.getMetadata().members().size());
+    assertEquals(3, metadataService2.getMetadata().members().size());
+    assertEquals(3, metadataService3.getMetadata().members().size());
 
     Member localMember4 = buildNode(4, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService4 = new DefaultPersistentMetadataService(
         clusterMetadata, messagingServiceFactory.newMessagingService(localMember4.address()).start().join());
     metadataService4.start().join();
 
-    assertEquals(3, metadataService4.getMetadata().nodes().size());
+    assertEquals(3, metadataService4.getMetadata().members().size());
 
     TestClusterMetadataEventListener localEventListener = new TestClusterMetadataEventListener();
     metadataService4.addListener(localEventListener);
@@ -106,23 +106,23 @@ public class DefaultPersistentMetadataServiceTest {
     metadataService3.addListener(remoteEventListener3);
 
     metadataService4.addMember(localMember4);
-    assertEquals(4, metadataService4.getMetadata().nodes().size());
-    assertEquals(4, localEventListener.event().subject().nodes().size());
+    assertEquals(4, metadataService4.getMetadata().members().size());
+    assertEquals(4, localEventListener.event().subject().members().size());
 
-    assertEquals(4, remoteEventListener1.event().subject().nodes().size());
-    assertEquals(4, metadataService1.getMetadata().nodes().size());
+    assertEquals(4, remoteEventListener1.event().subject().members().size());
+    assertEquals(4, metadataService1.getMetadata().members().size());
 
-    assertEquals(4, remoteEventListener2.event().subject().nodes().size());
-    assertEquals(4, metadataService2.getMetadata().nodes().size());
+    assertEquals(4, remoteEventListener2.event().subject().members().size());
+    assertEquals(4, metadataService2.getMetadata().members().size());
 
-    assertEquals(4, remoteEventListener3.event().subject().nodes().size());
-    assertEquals(4, metadataService3.getMetadata().nodes().size());
+    assertEquals(4, remoteEventListener3.event().subject().members().size());
+    assertEquals(4, metadataService3.getMetadata().members().size());
 
     Member localMember5 = buildNode(5, Member.Type.PERSISTENT);
     ManagedPersistentMetadataService metadataService5 = new DefaultPersistentMetadataService(
         clusterMetadata, messagingServiceFactory.newMessagingService(localMember5.address()).start().join());
     metadataService5.start().join();
-    assertEquals(4, metadataService5.getMetadata().nodes().size());
+    assertEquals(4, metadataService5.getMetadata().members().size());
   }
 
   private Member buildNode(int memberId, Member.Type type) {

@@ -137,7 +137,7 @@ public class DefaultClusterMembershipService
   public Set<Member> getMembers() {
     return ImmutableSet.copyOf(members.values()
         .stream()
-        .filter(node -> node.type() == Member.Type.PERSISTENT || node.getState() == State.ACTIVE)
+        .filter(member -> member.type() == Member.Type.PERSISTENT || member.getState() == State.ACTIVE)
         .collect(Collectors.toList()));
   }
 
@@ -148,7 +148,7 @@ public class DefaultClusterMembershipService
   }
 
   /**
-   * Broadcasts this node's identity.
+   * Broadcasts this member's identity.
    */
   private void broadcastIdentity() {
     broadcastService.broadcast(SERIALIZER.encode(localMember));
@@ -158,10 +158,10 @@ public class DefaultClusterMembershipService
    * Handles a broadcast message.
    */
   private void handleBroadcastMessage(byte[] message) {
-    StatefulMember node = SERIALIZER.decode(message);
-    if (members.putIfAbsent(node.id(), node) == null) {
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, node));
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, node));
+    StatefulMember member = SERIALIZER.decode(message);
+    if (members.putIfAbsent(member.id(), member) == null) {
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, member));
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, member));
       sendHeartbeats();
     }
   }
@@ -170,22 +170,22 @@ public class DefaultClusterMembershipService
    * Sends heartbeats to all peers.
    */
   private CompletableFuture<Void> sendHeartbeats() {
-    Stream<StatefulMember> clusterNodes = this.members.values()
+    Stream<StatefulMember> clusterMembers = this.members.values()
         .stream()
-        .filter(node -> !node.id().equals(getLocalMember().id()));
+        .filter(member -> !member.id().equals(getLocalMember().id()));
 
-    Stream<StatefulMember> bootstrapNodes = bootstrapMetadataService.getMetadata()
-        .nodes()
+    Stream<StatefulMember> bootstrapMembers = bootstrapMetadataService.getMetadata()
+        .members()
         .stream()
-        .filter(node -> !node.id().equals(getLocalMember().id()) && !members.containsKey(node.id()))
-        .map(node -> new StatefulMember(
-            node.id(),
-            node.type(),
-            node.address(),
-            node.zone(),
-            node.rack(),
-            node.host(),
-            node.metadata()));
+        .filter(member -> !member.id().equals(getLocalMember().id()) && !members.containsKey(member.id()))
+        .map(member -> new StatefulMember(
+            member.id(),
+            member.type(),
+            member.address(),
+            member.zone(),
+            member.rack(),
+            member.host(),
+            member.metadata()));
 
     byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
         localMember.id(),
@@ -194,18 +194,18 @@ public class DefaultClusterMembershipService
         localMember.rack(),
         localMember.host(),
         localMember.metadata()));
-    return Futures.allOf(Stream.concat(clusterNodes, bootstrapNodes).map(node -> {
-      LOGGER.trace("{} - Sending heartbeat: {}", localMember.id(), node.id());
-      CompletableFuture<Void> future = sendHeartbeat(node.address(), payload);
-      PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
+    return Futures.allOf(Stream.concat(clusterMembers, bootstrapMembers).map(member -> {
+      LOGGER.trace("{} - Sending heartbeat: {}", localMember.id(), member.id());
+      CompletableFuture<Void> future = sendHeartbeat(member.address(), payload);
+      PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector());
       double phi = failureDetector.phi();
       if (phi >= phiFailureThreshold || (phi == 0.0 && failureDetector.lastUpdated() > 0 && System.currentTimeMillis() - failureDetector.lastUpdated() > failureTimeout)) {
-        if (node.getState() == State.ACTIVE) {
-          deactivateNode(node);
+        if (member.getState() == State.ACTIVE) {
+          deactivateMember(member);
         }
       } else {
-        if (node.getState() == State.INACTIVE) {
-          activateNode(node);
+        if (member.getState() == State.INACTIVE) {
+          activateMember(member);
         }
       }
       return future.exceptionally(v -> null);
@@ -219,12 +219,12 @@ public class DefaultClusterMembershipService
   private CompletableFuture<Void> sendHeartbeat(Address address, byte[] payload) {
     return messagingService.sendAndReceive(address, HEARTBEAT_MESSAGE, payload).whenComplete((response, error) -> {
       if (error == null) {
-        Collection<StatefulMember> nodes = SERIALIZER.decode(response);
+        Collection<StatefulMember> members = SERIALIZER.decode(response);
         boolean sendHeartbeats = false;
-        for (StatefulMember node : nodes) {
-          if (this.members.putIfAbsent(node.id(), node) == null) {
-            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, node));
-            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, node));
+        for (StatefulMember member : members) {
+          if (this.members.putIfAbsent(member.id(), member) == null) {
+            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, member));
+            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, member));
             sendHeartbeats = true;
           }
         }
@@ -245,30 +245,30 @@ public class DefaultClusterMembershipService
     ClusterHeartbeat heartbeat = SERIALIZER.decode(message);
     LOGGER.trace("{} - Received heartbeat: {}", localMember.id(), heartbeat.memberId());
     failureDetectors.computeIfAbsent(heartbeat.memberId(), n -> new PhiAccrualFailureDetector()).report();
-    activateNode(new StatefulMember(
+    activateMember(new StatefulMember(
         heartbeat.memberId(),
-        heartbeat.nodeType(),
+        heartbeat.memberType(),
         address,
         heartbeat.zone(),
         heartbeat.rack(),
         heartbeat.host(),
         heartbeat.metadata()));
     return SERIALIZER.encode(members.values().stream()
-        .filter(node -> node.type() == Member.Type.EPHEMERAL)
+        .filter(member -> member.type() == Member.Type.EPHEMERAL)
         .collect(Collectors.toList()));
   }
 
   /**
-   * Activates the given node.
+   * Activates the given member.
    */
-  private void activateNode(Member member) {
-    if (member.type() == Member.Type.PERSISTENT && !persistentMetadataService.getMetadata().nodes().contains(member)) {
+  private void activateMember(Member member) {
+    if (member.type() == Member.Type.PERSISTENT && !persistentMetadataService.getMetadata().members().contains(member)) {
       return;
     }
 
-    StatefulMember existingNode = members.get(member.id());
-    if (existingNode == null) {
-      StatefulMember statefulNode = new StatefulMember(
+    StatefulMember existingMember = members.get(member.id());
+    if (existingMember == null) {
+      StatefulMember statefulMember = new StatefulMember(
           member.id(),
           member.type(),
           member.address(),
@@ -276,11 +276,11 @@ public class DefaultClusterMembershipService
           member.rack(),
           member.host(),
           member.metadata());
-      LOGGER.info("{} - Node activated: {}", localMember.id(), statefulNode);
-      statefulNode.setState(State.ACTIVE);
-      members.put(statefulNode.id(), statefulNode);
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, statefulNode));
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, statefulNode));
+      LOGGER.info("{} - Member activated: {}", localMember.id(), statefulMember);
+      statefulMember.setState(State.ACTIVE);
+      members.put(statefulMember.id(), statefulMember);
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, statefulMember));
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, statefulMember));
       sendHeartbeat(member.address(), SERIALIZER.encode(new ClusterHeartbeat(
           localMember.id(),
           localMember.type(),
@@ -288,28 +288,28 @@ public class DefaultClusterMembershipService
           localMember.rack(),
           localMember.host(),
           localMember.metadata())));
-    } else if (existingNode.getState() == State.INACTIVE) {
-      LOGGER.info("{} - Node activated: {}", localMember.id(), existingNode);
-      existingNode.setState(State.ACTIVE);
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, existingNode));
+    } else if (existingMember.getState() == State.INACTIVE) {
+      LOGGER.info("{} - Member activated: {}", localMember.id(), existingMember);
+      existingMember.setState(State.ACTIVE);
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ACTIVATED, existingMember));
     }
   }
 
   /**
-   * Deactivates the given node.
+   * Deactivates the given member.
    */
-  private void deactivateNode(Member member) {
-    StatefulMember existingNode = members.get(member.id());
-    if (existingNode != null && existingNode.getState() == State.ACTIVE) {
-      LOGGER.info("{} - Node deactivated: {}", localMember.id(), existingNode);
-      existingNode.setState(State.INACTIVE);
-      switch (existingNode.type()) {
+  private void deactivateMember(Member member) {
+    StatefulMember existingMember = members.get(member.id());
+    if (existingMember != null && existingMember.getState() == State.ACTIVE) {
+      LOGGER.info("{} - Member deactivated: {}", localMember.id(), existingMember);
+      existingMember.setState(State.INACTIVE);
+      switch (existingMember.type()) {
         case PERSISTENT:
-          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingNode));
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingMember));
           break;
         case EPHEMERAL:
-          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingNode));
-          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, existingNode));
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingMember));
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, existingMember));
           break;
         default:
           throw new AssertionError();
@@ -321,46 +321,46 @@ public class DefaultClusterMembershipService
    * Handles a cluster metadata change event.
    */
   private void handleMetadataEvent(ClusterMetadataEvent event) {
-    // Iterate through all bootstrap nodes and add any missing data nodes, triggering NODE_ADDED events.
-    // Collect the bootstrap node IDs into a set.
-    Set<MemberId> bootstrapNodes = event.subject().nodes().stream()
-        .map(node -> {
-          StatefulMember existingNode = members.get(node.id());
-          if (existingNode == null) {
+    // Iterate through all bootstrap members and add any missing data members, triggering member_ADDED events.
+    // Collect the bootstrap member IDs into a set.
+    Set<MemberId> bootstrapMembers = event.subject().members().stream()
+        .map(member -> {
+          StatefulMember existingMember = members.get(member.id());
+          if (existingMember == null) {
             StatefulMember newMember = new StatefulMember(
-                node.id(),
-                node.type(),
-                node.address(),
-                node.zone(),
-                node.rack(),
-                node.host(),
-                node.metadata());
+                member.id(),
+                member.type(),
+                member.address(),
+                member.zone(),
+                member.rack(),
+                member.host(),
+                member.metadata());
             members.put(newMember.id(), newMember);
-            LOGGER.info("{} - Node added: {}", localMember.id(), newMember);
+            LOGGER.info("{} - Member added: {}", localMember.id(), newMember);
             post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, newMember));
           }
-          return node.id();
+          return member.id();
         }).collect(Collectors.toSet());
 
-    // Filter the set of core node IDs from the local node information.
-    Set<MemberId> dataNodes = members.entrySet().stream()
+    // Filter the set of core member IDs from the local member information.
+    Set<MemberId> dataMembers = members.entrySet().stream()
         .filter(entry -> entry.getValue().type() == Member.Type.PERSISTENT)
         .map(entry -> entry.getKey())
         .collect(Collectors.toSet());
 
-    // Compute the set of local data nodes missing in the set of bootstrap nodes.
-    Set<MemberId> missingNodes = Sets.difference(dataNodes, bootstrapNodes);
+    // Compute the set of local data members missing in the set of bootstrap members.
+    Set<MemberId> missingMembers = Sets.difference(dataMembers, bootstrapMembers);
 
-    // For each missing data node, remove the node and trigger a NODE_REMOVED event.
-    for (MemberId memberId : missingNodes) {
-      StatefulMember existingNode = members.remove(memberId);
-      if (existingNode != null) {
-        if (existingNode.getState() == State.ACTIVE) {
-          LOGGER.info("{} - Node deactivated: {}", localMember.id(), existingNode);
-          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingNode));
+    // For each missing data member, remove the member and trigger a member_REMOVED event.
+    for (MemberId memberId : missingMembers) {
+      StatefulMember existingMember = members.remove(memberId);
+      if (existingMember != null) {
+        if (existingMember.getState() == State.ACTIVE) {
+          LOGGER.info("{} - Member deactivated: {}", localMember.id(), existingMember);
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingMember));
         }
-        LOGGER.info("{} - Node removed: {}", localMember.id(), existingNode);
-        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, existingNode));
+        LOGGER.info("{} - Member removed: {}", localMember.id(), existingMember);
+        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, existingMember));
       }
     }
   }
@@ -370,18 +370,18 @@ public class DefaultClusterMembershipService
     if (started.compareAndSet(false, true)) {
       persistentMetadataService.addListener(metadataEventListener);
       broadcastService.addListener(broadcastListener);
-      LOGGER.info("{} - Node activated: {}", localMember.id(), localMember);
+      LOGGER.info("{} - Member activated: {}", localMember.id(), localMember);
       localMember.setState(State.ACTIVE);
       members.put(localMember.id(), localMember);
-      persistentMetadataService.getMetadata().nodes()
-          .forEach(node -> members.putIfAbsent(node.id(), new StatefulMember(
-              node.id(),
-              node.type(),
-              node.address(),
-              node.zone(),
-              node.rack(),
-              node.host(),
-              node.metadata())));
+      persistentMetadataService.getMetadata().members()
+          .forEach(member -> members.putIfAbsent(member.id(), new StatefulMember(
+              member.id(),
+              member.type(),
+              member.address(),
+              member.zone(),
+              member.rack(),
+              member.host(),
+              member.metadata())));
       messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
 
       ComposableFuture<Void> future = new ComposableFuture<>();
@@ -413,7 +413,7 @@ public class DefaultClusterMembershipService
     if (started.compareAndSet(true, false)) {
       heartbeatScheduler.shutdownNow();
       heartbeatExecutor.shutdownNow();
-      LOGGER.info("{} - Node deactivated: {}", localMember.id(), localMember);
+      LOGGER.info("{} - Member deactivated: {}", localMember.id(), localMember);
       localMember.setState(State.INACTIVE);
       members.clear();
       heartbeatFuture.cancel(true);

@@ -42,18 +42,18 @@ public class ClusterMetadata {
   }
 
   /**
-   * Returns the collection of bootstrap nodes.
+   * Returns the collection of members.
    *
-   * @return the collection of bootstrap nodes
+   * @return the collection of members
    */
-  public Collection<Member> nodes() {
+  public Collection<Member> members() {
     return members;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("nodes", members)
+        .add("members", members)
         .toString();
   }
 
