@@ -192,8 +192,23 @@ public class AtomixTest extends AbstractAtomixTest {
     futures.add(startAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), Profile.DATA_GRID));
     futures.add(startAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), Profile.DATA_GRID));
     Futures.allOf(futures).join();
+    TestClusterMembershipEventListener eventListener1 = new TestClusterMembershipEventListener();
+    instances.get(0).membershipService().addListener(eventListener1);
+    TestClusterMembershipEventListener eventListener2 = new TestClusterMembershipEventListener();
+    instances.get(1).membershipService().addListener(eventListener2);
+    TestClusterMembershipEventListener eventListener3 = new TestClusterMembershipEventListener();
+    instances.get(2).membershipService().addListener(eventListener3);
     instances.get(0).stop().join();
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, eventListener2.event().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener2.event().type());
+    assertEquals(2, instances.get(1).membershipService().getMembers().size());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, eventListener3.event().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener3.event().type());
+    assertEquals(2, instances.get(2).membershipService().getMembers().size());
     instances.get(1).stop().join();
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, eventListener3.event().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener3.event().type());
+    assertEquals(1, instances.get(2).membershipService().getMembers().size());
     instances.get(2).stop().join();
   }
 
