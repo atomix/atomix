@@ -162,8 +162,8 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  private final ClientConnection localClientConnection = new LocalClientConnection();
-  private final ServerConnection localServerConnection = new LocalServerConnection(null);
+  private final LocalClientConnection localClientConnection = new LocalClientConnection();
+  private final LocalServerConnection localServerConnection = new LocalServerConnection(null);
 
   //TODO CONFIG_DIR is duplicated from ConfigFileBasedClusterMetadataProvider
   private static final String CONFIG_DIR = "../config";
@@ -333,6 +333,7 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   private void timeoutAllCallbacks() {
     // Iterate through all connections and time out callbacks.
+    localClientConnection.timeoutCallbacks();
     for (RemoteClientConnection connection : clientConnections.values()) {
       connection.timeoutCallbacks();
     }
