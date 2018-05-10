@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -41,6 +42,7 @@ public class DistributedLockResource implements PrimitiveResource {
   }
 
   @POST
+  @Path("/lock")
   @Produces(MediaType.APPLICATION_JSON)
   public void lock(@Suspended AsyncResponse response) {
     lock.lock().whenComplete((result, error) -> {
@@ -54,6 +56,7 @@ public class DistributedLockResource implements PrimitiveResource {
   }
 
   @DELETE
+  @Path("/lock")
   public void unlock(@Suspended AsyncResponse response) {
     lock.unlock().whenComplete((result, error) -> {
       if (error == null) {
