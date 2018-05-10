@@ -262,6 +262,10 @@ public class DefaultClusterMembershipService
    * Activates the given node.
    */
   private void activateNode(Member member) {
+    if (member.type() == Member.Type.PERSISTENT && !persistentMetadataService.getMetadata().nodes().contains(member)) {
+      return;
+    }
+
     StatefulMember existingNode = members.get(member.id());
     if (existingNode == null) {
       StatefulMember statefulNode = new StatefulMember(
@@ -332,6 +336,7 @@ public class DefaultClusterMembershipService
                 node.host(),
                 node.metadata());
             members.put(newMember.id(), newMember);
+            LOGGER.info("{} - Node added: {}", localMember.id(), newMember);
             post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, newMember));
           }
           return node.id();
@@ -350,6 +355,11 @@ public class DefaultClusterMembershipService
     for (MemberId memberId : missingNodes) {
       StatefulMember existingNode = members.remove(memberId);
       if (existingNode != null) {
+        if (existingNode.getState() == State.ACTIVE) {
+          LOGGER.info("{} - Node deactivated: {}", localMember.id(), existingNode);
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_DEACTIVATED, existingNode));
+        }
+        LOGGER.info("{} - Node removed: {}", localMember.id(), existingNode);
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, existingNode));
       }
     }
