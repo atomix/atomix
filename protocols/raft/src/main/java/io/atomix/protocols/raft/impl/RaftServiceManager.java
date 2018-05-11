@@ -349,6 +349,7 @@ public class RaftServiceManager implements AutoCloseable {
         }
         CompletableFuture future = futures.remove(index);
         apply(entry).whenComplete((r, e) -> {
+          raft.setLastApplied(index);
           if (future != null) {
             if (e == null) {
               future.complete(r);
@@ -359,8 +360,6 @@ public class RaftServiceManager implements AutoCloseable {
         });
       } catch (Exception e) {
         logger.error("Failed to apply {}: {}", entry, e);
-      } finally {
-        raft.setLastApplied(index);
       }
     } else {
       CompletableFuture future = futures.remove(index);
