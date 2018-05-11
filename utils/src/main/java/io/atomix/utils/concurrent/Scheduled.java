@@ -19,7 +19,7 @@ package io.atomix.utils.concurrent;
 /**
  * Scheduled task.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Scheduled {
 

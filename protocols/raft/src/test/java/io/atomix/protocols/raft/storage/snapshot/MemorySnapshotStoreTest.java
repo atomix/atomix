@@ -21,7 +21,7 @@ import io.atomix.storage.StorageLevel;
 /**
  * Memory snapshot store test.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemorySnapshotStoreTest extends AbstractSnapshotStoreTest {
 

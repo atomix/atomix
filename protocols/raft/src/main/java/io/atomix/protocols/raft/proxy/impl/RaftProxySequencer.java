@@ -55,7 +55,7 @@ import java.util.Queue;
  * occurred concurrently with any other operation. If requests for the session are outstanding, the event is placed
  * in a queue and the algorithm for checking sequenced responses is run again.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 final class RaftProxySequencer {
   private final Logger log;

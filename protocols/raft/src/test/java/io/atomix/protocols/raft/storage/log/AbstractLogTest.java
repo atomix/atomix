@@ -57,7 +57,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Log test.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractLogTest {
   protected static final int MAX_ENTRIES_PER_SEGMENT = 10;

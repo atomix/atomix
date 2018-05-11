@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
 /**
  * Segmented journal reader.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SegmentedJournalReader<E> implements JournalReader<E> {
   private final SegmentedJournal<E> journal;

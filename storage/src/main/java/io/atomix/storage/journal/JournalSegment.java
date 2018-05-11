@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Log segment.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class JournalSegment<E> implements AutoCloseable {
   private static final int ENTRY_CACHE_SIZE = 1024;

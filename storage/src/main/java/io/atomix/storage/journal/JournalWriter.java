@@ -18,7 +18,7 @@ package io.atomix.storage.journal;
 /**
  * Log writer.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface JournalWriter<E> extends AutoCloseable {
 

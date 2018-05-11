@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNull;
 /**
  * Snapshot store test.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractSnapshotStoreTest {
 

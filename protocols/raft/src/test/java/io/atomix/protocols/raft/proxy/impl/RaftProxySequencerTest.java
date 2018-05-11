@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Client sequencer test.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftProxySequencerTest {
 

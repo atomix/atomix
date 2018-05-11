@@ -20,7 +20,7 @@ import java.nio.BufferOverflowException;
 /**
  * Log writer.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SegmentedJournalWriter<E> implements JournalWriter<E> {
   private final SegmentedJournal<E> journal;
