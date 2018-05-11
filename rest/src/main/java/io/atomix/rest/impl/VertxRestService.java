@@ -140,6 +140,7 @@ public class VertxRestService implements ManagedRestService {
   private ObjectMapper createObjectMapper() {
     ObjectMapper mapper = new ObjectMapper();
 
+    mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
     mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
