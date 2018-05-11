@@ -49,10 +49,10 @@
 
     <!-- Core dependencies -->
     <guava.version>22.0</guava.version>
-    <kryo.version>4.0.1</kryo.version>
-    <commons.lang3.version>3.5</commons.lang3.version>
+    <kryo.version>4.0.2</kryo.version>
+    <commons.lang3.version>3.7</commons.lang3.version>
     <commons.math3.version>3.6.1</commons.math3.version>
-    <netty.version>4.1.22.Final</netty.version>
+    <netty.version>4.1.24.Final</netty.version>
     <vertx.version>3.5.0</vertx.version>
     <jaxrs.version>2.0</jaxrs.version>
     <jackson.version>2.9.5</jackson.version>
@@ -268,12 +268,12 @@
       <plugin>
         <groupId>org.eluder.coveralls</groupId>
         <artifactId>coveralls-maven-plugin</artifactId>
-        <version>4.0.0</version>
+        <version>4.3.0</version>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.7.5.201505241946</version>
+        <version>0.8.1</version>
         <executions>
           <execution>
             <id>prepare-agent</id>
