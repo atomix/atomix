@@ -282,13 +282,56 @@ public class VertxRestServiceTest {
   }
 
   @Test
+  public void testValue() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
+        .put("type", "value")
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test-value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-value/value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.TEXT)
+        .body("Hello world!")
+        .when()
+        .post("primitives/test-value/value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-value/value")
+        .then()
+        .statusCode(200)
+        .body(equalTo("Hello world!"));
+  }
+
+  @Test
   public void testMap() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
         .put("type", "consistent-map")
-        .put("cacheEnabled", true)
-        .put("nullValues", false)
-        .set("protocolConfig", jsonFactory.objectNode()
+        .put("cache-enabled", true)
+        .put("null-values", false)
+        .set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
 
