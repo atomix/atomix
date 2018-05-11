@@ -21,16 +21,16 @@ import io.atomix.protocols.raft.service.impl.DefaultServiceContext;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Raft service registry.
  */
 public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
-  private final Map<String, SortedMap<Integer, DefaultServiceContext>> services = new ConcurrentHashMap<>();
+  private final Map<String, List<DefaultServiceContext>> services = new ConcurrentHashMap<>();
 
   /**
    * Registers a new service.
@@ -38,20 +38,24 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
    * @param service the service to register
    */
   public void registerService(DefaultServiceContext service) {
-    services.computeIfAbsent(service.serviceName(), name -> new ConcurrentSkipListMap<>())
-        .put(service.revision().revision(), service);
+    services.computeIfAbsent(service.serviceName(), name -> new CopyOnWriteArrayList<>()).add(service);
   }
 
   /**
    * Gets a registered service by revision.
    *
-   * @param name the service name
+   * @param name     the service name
    * @param revision the service revision
    * @return the registered service
    */
   public DefaultServiceContext getRevision(String name, ServiceRevision revision) {
-    Map<Integer, DefaultServiceContext> revisions = services.get(name);
-    return revisions != null ? revisions.get(revision.revision()) : null;
+    List<DefaultServiceContext> revisions = services.get(name);
+    return revisions != null
+        ? revisions.stream()
+        .filter(s -> s.revision().revision() == revision.revision())
+        .findFirst()
+        .orElse(null)
+        : null;
   }
 
   /**
@@ -61,16 +65,50 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
    * @return the current revision for the given service
    */
   public DefaultServiceContext getCurrentRevision(String name) {
-    SortedMap<Integer, DefaultServiceContext> revisions = services.get(name);
-    if (revisions == null) {
-      return null;
-    }
+    List<DefaultServiceContext> revisions = services.get(name);
+    return revisions != null && !revisions.isEmpty() ? revisions.get(revisions.size() - 1) : null;
+  }
 
-    Integer lastKey = revisions.lastKey();
-    if (lastKey == null) {
-      return null;
+  /**
+   * Returns the revision prior to the given revision or null.
+   *
+   * @param name     the service name
+   * @param revision the revision number
+   * @return the service context
+   */
+  public DefaultServiceContext getPreviousRevision(String name, ServiceRevision revision) {
+    List<DefaultServiceContext> revisions = services.get(name);
+    for (int i = 0; i < revisions.size(); i++) {
+      DefaultServiceContext service = revisions.get(i);
+      if (service.revision().revision() == revision.revision()) {
+        if (i > 0) {
+          return revisions.get(i - 1);
+        }
+        return null;
+      }
     }
-    return revisions.get(lastKey);
+    return null;
+  }
+
+  /**
+   * Returns the revision following to the given revision or null.
+   *
+   * @param name     the service name
+   * @param revision the revision number
+   * @return the service context
+   */
+  public DefaultServiceContext getNextRevision(String name, ServiceRevision revision) {
+    List<DefaultServiceContext> revisions = services.get(name);
+    for (int i = 0; i < revisions.size(); i++) {
+      DefaultServiceContext service = revisions.get(i);
+      if (service.revision().revision() == revision.revision()) {
+        if (i < revisions.size()) {
+          return revisions.get(i + 1);
+        }
+        return null;
+      }
+    }
+    return null;
   }
 
   /**
@@ -80,14 +118,14 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
    * @return a collection of revisions for the given service
    */
   public Collection<DefaultServiceContext> getRevisions(String name) {
-    SortedMap<Integer, DefaultServiceContext> revisions = services.get(name);
-    return revisions != null ? revisions.values() : Collections.emptyList();
+    List<DefaultServiceContext> revisions = services.get(name);
+    return revisions != null ? revisions : Collections.emptyList();
   }
 
   @Override
   public Iterator<DefaultServiceContext> iterator() {
     return services.values().stream()
-        .flatMap(s -> s.values().stream())
+        .flatMap(s -> s.stream())
         .iterator();
   }
 }
