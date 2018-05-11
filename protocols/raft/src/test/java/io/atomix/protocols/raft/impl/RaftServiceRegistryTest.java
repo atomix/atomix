@@ -28,6 +28,8 @@ import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -44,6 +46,12 @@ public class RaftServiceRegistryTest {
     registry.registerService(createService("foo", 2));
     assertEquals(2, registry.getCurrentRevision("foo").revision().revision());
     assertEquals(2, registry.getRevisions("foo").size());
+
+    assertNull(registry.getPreviousRevision("foo", new ServiceRevision(1, PropagationStrategy.NONE)));
+    assertNotNull(registry.getPreviousRevision("foo", new ServiceRevision(2, PropagationStrategy.NONE)));
+
+    assertNotNull(registry.getPreviousRevision("foo", new ServiceRevision(2, PropagationStrategy.NONE)));
+    assertNull(registry.getPreviousRevision("foo", new ServiceRevision(1, PropagationStrategy.NONE)));
   }
 
   private DefaultServiceContext createService(String name, int revision) {

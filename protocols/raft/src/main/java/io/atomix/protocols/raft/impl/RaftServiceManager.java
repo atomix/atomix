@@ -503,6 +503,16 @@ public class RaftServiceManager implements AutoCloseable {
         new ServiceRevision(revision, propagationStrategy));
     if (service != null) {
       service.installSnapshot(reader);
+
+      DefaultServiceContext previousService = raft.getServices().getPreviousRevision(service.serviceName(), service.revision());
+      if (previousService != null) {
+        previousService.setNextRevision(service);
+      }
+
+      DefaultServiceContext nextService = raft.getServices().getNextRevision(service.serviceName(), service.revision());
+      if (nextService != null) {
+        service.setNextRevision(nextService);
+      }
     }
   }
 
