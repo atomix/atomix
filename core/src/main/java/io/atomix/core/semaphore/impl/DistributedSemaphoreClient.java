@@ -15,27 +15,17 @@
  */
 package io.atomix.core.semaphore.impl;
 
-import io.atomix.primitive.event.EventType;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.primitive.event.Event;
 
-public enum DistributedSemaphoreEvents implements EventType {
-  SUCCESS("success"),
-  FAILED("failed");
+/**
+ * Distributed semaphore client.
+ */
+public interface DistributedSemaphoreClient {
 
-  private final String id;
+  @Event("succeeded")
+  void succeeded(long id, long version, int permits);
 
-  DistributedSemaphoreEvents(String id) {
-    this.id = id;
-  }
+  @Event("failed")
+  void failed(long id);
 
-  @Override
-  public String id() {
-    return id;
-  }
-
-  public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
-          .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
-          .register(SemaphoreEvent.class)
-          .build(DistributedSemaphoreEvents.class.getSimpleName());
 }

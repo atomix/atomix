@@ -209,6 +209,79 @@ public class VertxRestServiceTest {
   }
 
   @Test
+  public void testSemaphore() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
+        .put("type", "semaphore")
+        .put("initial-capacity", 2)
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test-semaphore")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .statusCode(200)
+        .body(equalTo("2"));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/acquire")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/acquire")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(2))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("0"));
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/release")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("1"));
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("1"));
+  }
+
+  @Test
   public void testMap() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()

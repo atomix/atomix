@@ -20,8 +20,10 @@ import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.QueueStatus;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
+import io.atomix.utils.time.Version;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -40,33 +42,33 @@ public class BlockingDistributedSemaphore extends Synchronous<AsyncDistributedSe
   }
 
   @Override
-  public void acquire() {
-    complete(asyncSemaphore.acquire(), 1);
+  public Version acquire() {
+    return complete(asyncSemaphore.acquire(), 1);
   }
 
   @Override
-  public void acquire(int permits) {
-    complete(asyncSemaphore.acquire(permits), permits);
+  public Version acquire(int permits) {
+    return complete(asyncSemaphore.acquire(permits), permits);
   }
 
   @Override
-  public boolean tryAcquire() {
-    return complete(asyncSemaphore.tryAcquire(), 1).isPresent();
+  public Optional<Version> tryAcquire() {
+    return complete(asyncSemaphore.tryAcquire(), 1);
   }
 
   @Override
-  public boolean tryAcquire(int permits) {
-    return complete(asyncSemaphore.tryAcquire(permits), permits).isPresent();
+  public Optional<Version> tryAcquire(int permits) {
+    return complete(asyncSemaphore.tryAcquire(permits), permits);
   }
 
   @Override
-  public boolean tryAcquire(Duration timeout) {
-    return complete(asyncSemaphore.tryAcquire(timeout), 1).isPresent();
+  public Optional<Version> tryAcquire(Duration timeout) {
+    return complete(asyncSemaphore.tryAcquire(timeout), 1);
   }
 
   @Override
-  public boolean tryAcquire(int permits, Duration timeout) {
-    return complete(asyncSemaphore.tryAcquire(permits, timeout), permits).isPresent();
+  public Optional<Version> tryAcquire(int permits, Duration timeout) {
+    return complete(asyncSemaphore.tryAcquire(permits, timeout), permits);
   }
 
   @Override
@@ -81,27 +83,27 @@ public class BlockingDistributedSemaphore extends Synchronous<AsyncDistributedSe
 
   @Override
   public int availablePermits() {
-    return complete(asyncSemaphore.availablePermits()).value();
+    return complete(asyncSemaphore.availablePermits());
   }
 
   @Override
   public int drainPermits() {
-    return complete(asyncSemaphore.drainPermits()).value();
+    return complete(asyncSemaphore.drainPermits());
   }
 
   @Override
   public int increase(int permits) {
-    return complete(asyncSemaphore.increase(permits)).value();
+    return complete(asyncSemaphore.increase(permits));
   }
 
   @Override
   public int reduce(int permits) {
-    return complete(asyncSemaphore.reduce(permits)).value();
+    return complete(asyncSemaphore.reduce(permits));
   }
 
   @Override
   public QueueStatus queueStatus() {
-    return complete(asyncSemaphore.queueStatus()).value();
+    return complete(asyncSemaphore.queueStatus());
   }
 
   @Override
@@ -121,12 +123,13 @@ public class BlockingDistributedSemaphore extends Synchronous<AsyncDistributedSe
   private <T> T complete(CompletableFuture<T> future, int acquirePermits) {
     AtomicBoolean needRelease = new AtomicBoolean(false);
     try {
-      return future.whenComplete((version, error) -> {
+      return future.thenApply(version -> {
         if (needRelease.get() && version != null) {
           if (acquirePermits > 0) {
             asyncSemaphore.release(acquirePermits);
           }
         }
+        return version;
       }).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       needRelease.set(acquirePermits > 0);

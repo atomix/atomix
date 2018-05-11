@@ -15,18 +15,24 @@
  */
 package io.atomix.core.semaphore;
 
+import io.atomix.core.semaphore.impl.DefaultDistributedSemaphoreService;
 import io.atomix.core.semaphore.impl.DistributedSemaphoreProxyBuilder;
-import io.atomix.core.semaphore.impl.DistributedSemaphoreService;
+import io.atomix.core.semaphore.impl.DistributedSemaphoreResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.time.Version;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
+/**
+ * Distributed semaphore primitive type.
+ */
 public class DistributedSemaphoreType implements PrimitiveType<DistributedSemaphoreBuilder, DistributedSemaphoreConfig, DistributedSemaphore> {
   private static final String NAME = "semaphore";
   private static final DistributedSemaphoreType INSTANCE = new DistributedSemaphoreType();
@@ -50,12 +56,14 @@ public class DistributedSemaphoreType implements PrimitiveType<DistributedSemaph
     return KryoNamespace.builder()
         .register(KryoNamespaces.BASIC)
         .register(DistributedSemaphoreServiceConfig.class)
+        .register(Version.class)
+        .register(QueueStatus.class)
         .build();
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DistributedSemaphoreService((DistributedSemaphoreServiceConfig) config);
+    return new DefaultDistributedSemaphoreService((DistributedSemaphoreServiceConfig) config);
   }
 
   @Override
@@ -66,6 +74,11 @@ public class DistributedSemaphoreType implements PrimitiveType<DistributedSemaph
   @Override
   public DistributedSemaphoreBuilder newBuilder(String name, DistributedSemaphoreConfig config, PrimitiveManagementService managementService) {
     return new DistributedSemaphoreProxyBuilder(name, config, managementService);
+  }
+
+  @Override
+  public PrimitiveResource newResource(DistributedSemaphore primitive) {
+    return new DistributedSemaphoreResource(primitive.async());
   }
 
   @Override

@@ -57,81 +57,81 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
   public void testInit() throws Exception {
     Atomix atomix = atomix();
     AsyncDistributedSemaphore semaphore100 = atomix.semaphoreBuilder("test-semaphore-init-100", protocol())
-            .withInitialCapacity(100)
-            .build()
-            .async();
+        .withInitialCapacity(100)
+        .build()
+        .async();
     AsyncDistributedSemaphore semaphore0 = atomix.semaphoreBuilder("test-semaphore-init-0", protocol())
-            .build()
-            .async();
-    assertEquals(100, semaphore100.availablePermits().get().value().intValue());
-    assertEquals(0, semaphore0.availablePermits().get().value().intValue());
+        .build()
+        .async();
+    assertEquals(100, semaphore100.availablePermits().get().intValue());
+    assertEquals(0, semaphore0.availablePermits().get().intValue());
 
     AsyncDistributedSemaphore semaphoreNoInit = atomix.semaphoreBuilder("test-semaphore-init-100", protocol())
-            .build()
-            .async();
-    assertEquals(100, semaphoreNoInit.availablePermits().get().value().intValue());
+        .build()
+        .async();
+    assertEquals(100, semaphoreNoInit.availablePermits().get().intValue());
   }
 
   @Test
   public void testAcquireRelease() throws Exception {
     Atomix atomix = atomix();
     AsyncDistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-base", protocol())
-            .withInitialCapacity(10)
-            .build()
-            .async();
+        .withInitialCapacity(10)
+        .build()
+        .async();
 
-    assertEquals(10, semaphore.availablePermits().get().value().intValue());
+    assertEquals(10, semaphore.availablePermits().get().intValue());
     semaphore.acquire().join();
-    assertEquals(9, semaphore.availablePermits().get().value().intValue());
+    assertEquals(9, semaphore.availablePermits().get().intValue());
     semaphore.acquire(9).join();
-    assertEquals(0, semaphore.availablePermits().get().value().intValue());
+    assertEquals(0, semaphore.availablePermits().get().intValue());
 
     semaphore.release().join();
-    assertEquals(1, semaphore.availablePermits().get().value().intValue());
+    assertEquals(1, semaphore.availablePermits().get().intValue());
     semaphore.release(100).join();
-    assertEquals(101, semaphore.availablePermits().get().value().intValue());
+    assertEquals(101, semaphore.availablePermits().get().intValue());
   }
 
   @Test
   public void testIncreaseReduceDrain() throws Exception {
     Atomix atomix = atomix();
     AsyncDistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-ird", protocol())
-            .withInitialCapacity(-10)
-            .build()
-            .async();
+        .withInitialCapacity(-10)
+        .build()
+        .async();
 
-    assertEquals(-10, semaphore.availablePermits().get().value().intValue());
-    assertEquals(10, semaphore.increase(20).get().value().intValue());
-    assertEquals(-10, semaphore.reduce(20).get().value().intValue());
-    assertEquals(-10, semaphore.drainPermits().get().value().intValue());
-    assertEquals(0, semaphore.availablePermits().get().value().intValue());
+    assertEquals(-10, semaphore.availablePermits().get().intValue());
+    assertEquals(10, semaphore.increase(20).get().intValue());
+    assertEquals(-10, semaphore.reduce(20).get().intValue());
+    assertEquals(-10, semaphore.drainPermits().get().intValue());
+    assertEquals(0, semaphore.availablePermits().get().intValue());
   }
 
   @Test
   public void testOverflow() throws Exception {
     Atomix atomix = atomix();
     AsyncDistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-overflow", protocol())
-            .withInitialCapacity(Integer.MAX_VALUE)
-            .build()
-            .async();
+        .withInitialCapacity(Integer.MAX_VALUE)
+        .build()
+        .async();
 
-    assertEquals(Integer.MAX_VALUE, semaphore.increase(10).get().value().intValue());
+    assertEquals(Integer.MAX_VALUE, semaphore.increase(10).get().intValue());
     semaphore.release(10).join();
-    assertEquals(Integer.MAX_VALUE, semaphore.availablePermits().get().value().intValue());
-    assertEquals(Integer.MAX_VALUE, semaphore.drainPermits().get().value().intValue());
+    assertEquals(Integer.MAX_VALUE, semaphore.availablePermits().get().intValue());
+    assertEquals(Integer.MAX_VALUE, semaphore.drainPermits().get().intValue());
 
     semaphore.reduce(Integer.MAX_VALUE).join();
     semaphore.reduce(Integer.MAX_VALUE).join();
-    assertEquals(Integer.MIN_VALUE, semaphore.availablePermits().get().value().intValue());
+    assertEquals(Integer.MIN_VALUE, semaphore.availablePermits().get().intValue());
   }
 
   @Test(timeout = 10000)
   public void testTimeout() throws Exception {
     Atomix atomix = atomix();
     AsyncDistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-timeout", protocol())
-            .withInitialCapacity(10)
-            .build()
-            .async();
+        .withInitialCapacity(10)
+        .build()
+        .async();
 
     assertFalse(semaphore.tryAcquire(11).join().isPresent());
     assertTrue(semaphore.tryAcquire(10).join().isPresent());
@@ -158,28 +158,28 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
   public void testReleaseSession() throws Exception {
     Atomix atomix = atomix();
     DistributedSemaphoreProxy semaphore =
-            (DistributedSemaphoreProxy) (atomix.semaphoreBuilder("test-semaphore-releaseSession", protocol())
-                    .withInitialCapacity(10)
-                    .build()
-                    .async());
+        (DistributedSemaphoreProxy) (atomix.semaphoreBuilder("test-semaphore-releaseSession", protocol())
+            .withInitialCapacity(10)
+            .build()
+            .async());
 
     DistributedSemaphoreProxy semaphore2 =
-            (DistributedSemaphoreProxy) (atomix.semaphoreBuilder("test-semaphore-releaseSession", protocol())
-                    .withInitialCapacity(10)
-                    .build()
-                    .async());
+        (DistributedSemaphoreProxy) (atomix.semaphoreBuilder("test-semaphore-releaseSession", protocol())
+            .withInitialCapacity(10)
+            .build()
+            .async());
 
-    assertEquals(10, semaphore2.drainPermits().join().value().intValue());
+    assertEquals(10, semaphore2.drainPermits().join().intValue());
 
-    Map<Long, Integer> status = semaphore.holderStatus().get().value();
+    Map<Long, Integer> status = semaphore.holderStatus().get();
     assertEquals(1, status.size());
     status.values().forEach(permits -> assertEquals(10, permits.intValue()));
 
     semaphore2.close().join();
 
-    Map<Long, Integer> status2 = semaphore.holderStatus().get().value();
+    Map<Long, Integer> status2 = semaphore.holderStatus().get();
     assertEquals(0, status2.size());
-    assertEquals(10, semaphore.availablePermits().get().value().intValue());
+    assertEquals(10, semaphore.availablePermits().get().intValue());
 
   }
 
@@ -187,45 +187,45 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
   public void testHolderStatus() throws Exception {
     Atomix atomix = atomix();
     DistributedSemaphoreProxy semaphore =
-            (DistributedSemaphoreProxy) (atomix.semaphoreBuilder("test-semaphore-holders", protocol())
-                    .withInitialCapacity(10)
-                    .build()
-                    .async());
+        (DistributedSemaphoreProxy) (atomix.semaphoreBuilder("test-semaphore-holders", protocol())
+            .withInitialCapacity(10)
+            .build()
+            .async());
 
     DistributedSemaphoreProxy semaphore2 =
-            (DistributedSemaphoreProxy) (atomix.semaphoreBuilder("test-semaphore-holders", protocol())
-                    .withInitialCapacity(10)
-                    .build()
-                    .async());
+        (DistributedSemaphoreProxy) (atomix.semaphoreBuilder("test-semaphore-holders", protocol())
+            .withInitialCapacity(10)
+            .build()
+            .async());
 
-    assertEquals(0, semaphore.holderStatus().get().value().size());
+    assertEquals(0, semaphore.holderStatus().get().size());
 
     semaphore.acquire().join();
     semaphore2.acquire().join();
 
-    Map<Long, Integer> status = semaphore.holderStatus().get().value();
+    Map<Long, Integer> status = semaphore.holderStatus().get();
     assertEquals(2, status.size());
     status.values().forEach(permits -> assertEquals(1, permits.intValue()));
 
     semaphore.acquire().join();
     semaphore2.acquire().join();
 
-    Map<Long, Integer> status2 = semaphore.holderStatus().get().value();
+    Map<Long, Integer> status2 = semaphore.holderStatus().get();
     assertEquals(2, status2.size());
     status2.values().forEach(permits -> assertEquals(2, permits.intValue()));
 
     semaphore.release(2).join();
     semaphore2.release(2).join();
-    assertEquals(0, semaphore.holderStatus().get().value().size());
+    assertEquals(0, semaphore.holderStatus().get().size());
   }
 
   @Test
   public void testBlocking() throws Exception {
     Atomix atomix = atomix();
     DistributedSemaphore semaphore =
-            atomix.semaphoreBuilder("test-semaphore-blocking", protocol())
-                    .withInitialCapacity(10)
-                    .build();
+        atomix.semaphoreBuilder("test-semaphore-blocking", protocol())
+            .withInitialCapacity(10)
+            .build();
 
     semaphore.acquire();
     assertEquals(9, semaphore.availablePermits());
@@ -239,16 +239,16 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
     semaphore.reduce(10);
     assertEquals(10, semaphore.availablePermits());
 
-    assertFalse(semaphore.tryAcquire(11));
-    assertFalse(semaphore.tryAcquire(11, Duration.ofMillis(1)));
-    assertTrue(semaphore.tryAcquire(5));
+    assertFalse(semaphore.tryAcquire(11).isPresent());
+    assertFalse(semaphore.tryAcquire(11, Duration.ofMillis(1)).isPresent());
+    assertTrue(semaphore.tryAcquire(5).isPresent());
 
     assertEquals(5, semaphore.drainPermits());
 
     DistributedSemaphore semaphore2 =
-            atomix.semaphoreBuilder("test-semaphore-blocking", protocol())
-                    .withInitialCapacity(10)
-                    .build();
+        atomix.semaphoreBuilder("test-semaphore-blocking", protocol())
+            .withInitialCapacity(10)
+            .build();
 
     assertEquals(0, semaphore2.availablePermits());
     semaphore.close();
@@ -259,10 +259,10 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
   public void testQueue() throws Exception {
     Atomix atomix = atomix();
     AsyncDistributedSemaphore semaphore =
-            atomix.semaphoreBuilder("test-semaphore-queue", protocol())
-                    .withInitialCapacity(10)
-                    .build()
-                    .async();
+        atomix.semaphoreBuilder("test-semaphore-queue", protocol())
+            .withInitialCapacity(10)
+            .build()
+            .async();
 
     CompletableFuture<Version> future20 = semaphore.acquire(20);
     CompletableFuture<Version> future11 = semaphore.acquire(11);
@@ -270,7 +270,7 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
     semaphore.increase(1);
     assertNotNull(future11.join());
     assertFalse(future20.isDone());
-    assertEquals(0, semaphore.availablePermits().get().value().intValue());
+    assertEquals(0, semaphore.availablePermits().get().intValue());
 
     CompletableFuture<Version> future21 = semaphore.acquire(21);
     CompletableFuture<Version> future5 = semaphore.acquire(5);
@@ -286,29 +286,29 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
   public void testExpire() throws Exception {
     Atomix atomix = atomix();
     AsyncDistributedSemaphore semaphore =
-            atomix.semaphoreBuilder("test-semaphore-expire", protocol())
-                    .withInitialCapacity(10)
-                    .build()
-                    .async();
+        atomix.semaphoreBuilder("test-semaphore-expire", protocol())
+            .withInitialCapacity(10)
+            .build()
+            .async();
 
-    assertEquals(10, semaphore.availablePermits().get().value().intValue());
+    assertEquals(10, semaphore.availablePermits().get().intValue());
 
     CompletableFuture<Optional<Version>> future = semaphore.tryAcquire(11, Duration.ofMillis(500));
     Thread.sleep(500);
     assertFalse(future.join().isPresent());
-    assertEquals(10, semaphore.availablePermits().get().value().intValue());
+    assertEquals(10, semaphore.availablePermits().get().intValue());
   }
 
   @Test(timeout = 10000)
   public void testInterrupt() throws Exception {
     Atomix atomix = atomix();
     DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-interrupt", protocol())
-            .withInitialCapacity(10)
-            .build();
+        .withInitialCapacity(10)
+        .build();
 
     DistributedSemaphore semaphore2 = atomix.semaphoreBuilder("test-semaphore-interrupt", protocol())
-            .withInitialCapacity(10)
-            .build();
+        .withInitialCapacity(10)
+        .build();
 
     AtomicBoolean interrupted = new AtomicBoolean();
 
@@ -340,12 +340,12 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
   public void testBlockTimeout() throws Exception {
     Atomix atomix = atomix();
     DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-block-timeout", protocol())
-            .withInitialCapacity(10)
-            .build();
+        .withInitialCapacity(10)
+        .build();
 
     DistributedSemaphore semaphore2 = atomix.semaphoreBuilder("test-semaphore-block-timeout", protocol())
-            .withInitialCapacity(10)
-            .build();
+        .withInitialCapacity(10)
+        .build();
 
     Object timedout = new Object();
 
@@ -387,10 +387,10 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
     for (int i = 0; i < threads; i++) {
       taskFuture.add(executorService.submit(() -> {
         AsyncDistributedSemaphore semaphore =
-                atomix.semaphoreBuilder("test-semaphore-race", protocol())
-                        .withInitialCapacity(TEST_COUNT)
-                        .build()
-                        .async();
+            atomix.semaphoreBuilder("test-semaphore-race", protocol())
+                .withInitialCapacity(TEST_COUNT)
+                .build()
+                .async();
         while (acquired.get() < TEST_COUNT) {
           semaphore.tryAcquire(Duration.ofMillis(1)).join().ifPresent(v -> acquired.incrementAndGet());
         }
@@ -407,16 +407,16 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
   @Test
   @Ignore
   public void testSnapshot() throws Exception {
-    DistributedSemaphoreService service = new DistributedSemaphoreService(
-            new DistributedSemaphoreServiceConfig().setInitialCapacity(10));
+    DefaultDistributedSemaphoreService service = new DefaultDistributedSemaphoreService(
+        new DistributedSemaphoreServiceConfig().setInitialCapacity(10));
 
-    Field available = DistributedSemaphoreService.class.getDeclaredField("available");
+    Field available = DefaultDistributedSemaphoreService.class.getDeclaredField("available");
     available.setAccessible(true);
-    Field holders = DistributedSemaphoreService.class.getDeclaredField("holders");
+    Field holders = DefaultDistributedSemaphoreService.class.getDeclaredField("holders");
     holders.setAccessible(true);
-    Field waiterQueue = DistributedSemaphoreService.class.getDeclaredField("waiterQueue");
+    Field waiterQueue = DefaultDistributedSemaphoreService.class.getDeclaredField("waiterQueue");
     waiterQueue.setAccessible(true);
-    Field timers = DistributedSemaphoreService.class.getDeclaredField("timers");
+    Field timers = DefaultDistributedSemaphoreService.class.getDeclaredField("timers");
     timers.setAccessible(true);
 
     available.set(service, 10);
@@ -436,8 +436,8 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    DistributedSemaphoreService serviceRestore = new DistributedSemaphoreService(
-            new DistributedSemaphoreServiceConfig().setInitialCapacity(10));
+    DefaultDistributedSemaphoreService serviceRestore = new DefaultDistributedSemaphoreService(
+        new DistributedSemaphoreServiceConfig().setInitialCapacity(10));
     serviceRestore.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     assertEquals(10, available.get(serviceRestore));

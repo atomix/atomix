@@ -16,8 +16,10 @@
 package io.atomix.core.semaphore;
 
 import io.atomix.primitive.SyncPrimitive;
+import io.atomix.utils.time.Version;
 
 import java.time.Duration;
+import java.util.Optional;
 
 
 /**
@@ -27,7 +29,7 @@ public interface DistributedSemaphore extends SyncPrimitive {
   /**
    * Acquires a permit from this semaphore.
    */
-  void acquire();
+  Version acquire();
 
   /**
    * Acquires the given number of permits from this semaphore,
@@ -35,14 +37,14 @@ public interface DistributedSemaphore extends SyncPrimitive {
    *
    * @param permits permits to acquire
    */
-  void acquire(int permits);
+  Version acquire(int permits);
 
   /**
    * Acquires a permit, if one is available and returns immediately.
    *
    * @return {@code true} if a permit was acquired and {@code false} otherwise
    */
-  boolean tryAcquire();
+  Optional<Version> tryAcquire();
 
   /**
    * Acquires the given number of permits, if they are available and returns immediately.
@@ -50,7 +52,7 @@ public interface DistributedSemaphore extends SyncPrimitive {
    * @param permits permits to acquire
    * @return {@code true} if a permit was acquired and {@code false} otherwise
    */
-  boolean tryAcquire(int permits);
+  Optional<Version> tryAcquire(int permits);
 
   /**
    * Acquires a permit from this semaphore if one becomes available within the given waiting time.
@@ -58,7 +60,7 @@ public interface DistributedSemaphore extends SyncPrimitive {
    * @param timeout the maximum time to wait for a permit
    * @return {@code true} if a permit was acquired and {@code false} otherwise
    */
-  boolean tryAcquire(Duration timeout);
+  Optional<Version> tryAcquire(Duration timeout);
 
   /**
    * Acquires the given number of permits, if they are available within the given waiting time.
@@ -67,7 +69,7 @@ public interface DistributedSemaphore extends SyncPrimitive {
    * @param timeout the maximum time to wait for a permit
    * @return {@code true} if a permit was acquired and {@code false} otherwise
    */
-  boolean tryAcquire(int permits, Duration timeout);
+  Optional<Version> tryAcquire(int permits, Duration timeout);
 
   /**
    * Releases a permit.
