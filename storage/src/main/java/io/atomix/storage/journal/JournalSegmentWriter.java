@@ -39,7 +39,7 @@ import java.util.zip.Checksum;
  * <li>n-bit entry bytes</li>
  * </ul>
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class JournalSegmentWriter<E> implements JournalWriter<E> {
   private final JournalSegmentDescriptor descriptor;

@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNull;
 /**
  * File snapshot store test.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   private String testId;

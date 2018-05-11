@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
 /**
  * Client session submitter test.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftProxyInvokerTest {
   private static final OperationId COMMAND = OperationId.command("command");

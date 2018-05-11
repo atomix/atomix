@@ -136,7 +136,7 @@ import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 /**
  * Copycat performance test.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftPerformanceTest implements Runnable {
 

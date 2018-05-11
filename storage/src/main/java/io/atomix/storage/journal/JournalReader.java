@@ -20,7 +20,7 @@ import java.util.Iterator;
 /**
  * Log reader.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
 

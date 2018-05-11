@@ -43,7 +43,7 @@ import static com.google.common.base.Preconditions.checkState;
  *
  *  Segmented journal implementation.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SegmentedJournal<E> implements Journal<E> {
 

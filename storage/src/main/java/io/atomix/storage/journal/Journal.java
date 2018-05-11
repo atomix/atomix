@@ -20,7 +20,7 @@ import java.io.Closeable;
 /**
  * Journal.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Journal<E> extends Closeable {
 
