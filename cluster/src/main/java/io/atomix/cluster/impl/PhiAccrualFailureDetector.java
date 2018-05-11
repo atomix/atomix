@@ -36,43 +36,19 @@ public class PhiAccrualFailureDetector {
     return new Builder();
   }
 
-  // Default value
   private static final int DEFAULT_WINDOW_SIZE = 250;
   private static final int DEFAULT_MIN_SAMPLES = 25;
-  private static final double DEFAULT_PHI_FACTOR = 1.0 / Math.log(10.0);
+  private static final long MIN_STANDARD_DEVIATION_MILLIS = 25;
 
   private final int minSamples;
-  private final double phiFactor;
-  private final History history;
+  private final long minStandardDeviationMillis;
+  private final DescriptiveStatistics samples;
+  private long lastHeartbeatTime = -1;
 
-  /**
-   * Creates a new failure detector with the default configuration.
-   */
-  public PhiAccrualFailureDetector() {
-    this(DEFAULT_MIN_SAMPLES, DEFAULT_PHI_FACTOR, DEFAULT_WINDOW_SIZE);
-  }
-
-  /**
-   * Creates a new failure detector.
-   *
-   * @param minSamples the minimum number of samples required to compute phi
-   * @param phiFactor  the phi factor
-   */
-  public PhiAccrualFailureDetector(int minSamples, double phiFactor) {
-    this(minSamples, phiFactor, DEFAULT_WINDOW_SIZE);
-  }
-
-  /**
-   * Creates a new failure detector.
-   *
-   * @param minSamples the minimum number of samples required to compute phi
-   * @param phiFactor  the phi factor
-   * @param windowSize the phi accrual window size
-   */
-  public PhiAccrualFailureDetector(int minSamples, double phiFactor, int windowSize) {
+  private PhiAccrualFailureDetector(int minSamples, int windowSize, long minStandardDeviationMillis) {
     this.minSamples = minSamples;
-    this.phiFactor = phiFactor;
-    this.history = new History(windowSize);
+    this.minStandardDeviationMillis = minStandardDeviationMillis;
+    this.samples = new DescriptiveStatistics(windowSize);
   }
 
   /**
@@ -81,7 +57,7 @@ public class PhiAccrualFailureDetector {
    * @return the last time a heartbeat was reported
    */
   public long lastUpdated() {
-    return history.latestHeartbeatTime();
+    return lastHeartbeatTime;
   }
 
   /**
@@ -98,11 +74,11 @@ public class PhiAccrualFailureDetector {
    */
   public void report(long arrivalTime) {
     checkArgument(arrivalTime >= 0, "arrivalTime must not be negative");
-    long latestHeartbeat = history.latestHeartbeatTime();
+    long latestHeartbeat = this.lastHeartbeatTime;
     if (latestHeartbeat != -1) {
-      history.samples().addValue(arrivalTime - latestHeartbeat);
+      samples.addValue(arrivalTime - latestHeartbeat);
     }
-    history.setLatestHeartbeatTime(arrivalTime);
+    this.lastHeartbeatTime = arrivalTime;
   }
 
   /**
@@ -111,19 +87,14 @@ public class PhiAccrualFailureDetector {
    * @return phi value
    */
   public double phi() {
-    long latestHeartbeat = history.latestHeartbeatTime();
-    DescriptiveStatistics samples = history.samples();
-    if (latestHeartbeat == -1 || samples.getN() < minSamples) {
+    if (lastHeartbeatTime == -1 || samples.getN() < minSamples) {
       return 0.0;
     }
-    return computePhi(samples, latestHeartbeat, System.currentTimeMillis());
+    return computePhi(samples, lastHeartbeatTime, System.currentTimeMillis());
   }
 
   /**
    * Computes the phi value from the given samples.
-   * <p>
-   *The original phi value in Hayashibara's paper is calculated based on a normal distribution.
-   *Here, we calculate it based on an exponential distribution.
    *
    * @param samples       the samples from which to compute phi
    * @param lastHeartbeat the last heartbeat
@@ -131,34 +102,14 @@ public class PhiAccrualFailureDetector {
    * @return phi
    */
   private double computePhi(DescriptiveStatistics samples, long lastHeartbeat, long currentTime) {
-    long size = samples.getN();
-    long t = currentTime - lastHeartbeat;
-    return (size > 0)
-        ? phiFactor * t / samples.getMean()
-        : 100;
-  }
-
-  /**
-   * Stores the history of heartbeats for a node.
-   */
-  private static class History {
-    private final DescriptiveStatistics samples;
-    long lastHeartbeatTime = -1;
-
-    private History(int windowSize) {
-      this.samples = new DescriptiveStatistics(windowSize);
-    }
-
-    DescriptiveStatistics samples() {
-      return samples;
-    }
-
-    long latestHeartbeatTime() {
-      return lastHeartbeatTime;
-    }
-
-    void setLatestHeartbeatTime(long value) {
-      lastHeartbeatTime = value;
+    long elapsedTime = currentTime - lastHeartbeat;
+    double meanMillis = samples.getMean();
+    double y = (elapsedTime - meanMillis) / Math.max(samples.getStandardDeviation(), minStandardDeviationMillis);
+    double e = Math.exp(-y * (1.5976 + 0.070566 * y * y));
+    if (elapsedTime > meanMillis) {
+      return -Math.log10(e / (1.0 + e));
+    } else {
+      return -Math.log10(1.0 - 1.0 / (1.0 + e));
     }
   }
 
@@ -167,8 +118,8 @@ public class PhiAccrualFailureDetector {
    */
   public static class Builder implements io.atomix.utils.Builder<PhiAccrualFailureDetector> {
     private int minSamples = DEFAULT_MIN_SAMPLES;
-    private double phiFactor = DEFAULT_PHI_FACTOR;
     private int windowSize = DEFAULT_WINDOW_SIZE;
+    private long minStandardDeviationMillis = MIN_STANDARD_DEVIATION_MILLIS;
 
     /**
      * Sets the minimum number of samples required to compute phi.
@@ -179,17 +130,6 @@ public class PhiAccrualFailureDetector {
     public Builder withMinSamples(int minSamples) {
       checkArgument(minSamples > 0, "minSamples must be positive");
       this.minSamples = minSamples;
-      return this;
-    }
-
-    /**
-     * Sets the phi factor.
-     *
-     * @param phiFactor the phi factor
-     * @return the phi accrual failure detector builder
-     */
-    public Builder withPhiFactor(double phiFactor) {
-      this.phiFactor = phiFactor;
       return this;
     }
 
@@ -205,9 +145,21 @@ public class PhiAccrualFailureDetector {
       return this;
     }
 
+    /**
+     * Sets the minimum milliseconds to use in standard deviation.
+     *
+     * @param minStandardDeviationMillis the minimum standard deviation in milliseconds
+     * @return the phi accrual failure detector builder
+     */
+    public Builder withMinStandardDeviationMillis(long minStandardDeviationMillis) {
+      checkArgument(minStandardDeviationMillis > 0, "minStandardDeviationMillis must be positive");
+      this.minStandardDeviationMillis = minStandardDeviationMillis;
+      return this;
+    }
+
     @Override
     public PhiAccrualFailureDetector build() {
-      return new PhiAccrualFailureDetector(minSamples, phiFactor, windowSize);
+      return new PhiAccrualFailureDetector(minSamples, windowSize, minStandardDeviationMillis);
     }
   }
 }

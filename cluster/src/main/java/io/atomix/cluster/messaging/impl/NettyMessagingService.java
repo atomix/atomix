@@ -153,7 +153,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   private static final int WINDOW_UPDATE_SAMPLE_SIZE = 100;
   private static final long WINDOW_UPDATE_MILLIS = 60000;
   private static final int MIN_SAMPLES = 25;
-  private static final double PHI_FACTOR = 1.0 / Math.log(10.0);
+  private static final int MIN_STANDARD_DEVIATION = 50;
   private static final int PHI_FAILURE_THRESHOLD = 12;
   private static final int CHANNEL_POOL_SIZE = 8;
 
@@ -1184,7 +1184,14 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @return phi
      */
     private double computePhi(DescriptiveStatistics samples, long elapsedTime) {
-      return (samples.getN() > 0) ? PHI_FACTOR * elapsedTime / samples.getMean() : 100;
+      double meanMillis = samples.getMean();
+      double y = (elapsedTime - meanMillis) / Math.max(samples.getStandardDeviation(), MIN_STANDARD_DEVIATION);
+      double e = Math.exp(-y * (1.5976 + 0.070566 * y * y));
+      if (elapsedTime > meanMillis) {
+        return -Math.log10(e / (1.0 + e));
+      } else {
+        return -Math.log10(1.0 - 1.0 / (1.0 + e));
+      }
     }
   }
 }
