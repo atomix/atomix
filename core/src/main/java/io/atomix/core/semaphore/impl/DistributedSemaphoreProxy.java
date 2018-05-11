@@ -18,19 +18,10 @@ package io.atomix.core.semaphore.impl;
 import io.atomix.core.semaphore.AsyncDistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.QueueStatus;
-import io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.Acquire;
-import io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.Drain;
-import io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.Increase;
-import io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.Reduce;
-import io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.Release;
+import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Version;
-import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Map;
@@ -43,60 +34,35 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.ACQUIRE;
-import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.AVAILABLE;
-import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.DRAIN;
-import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.HOLDER_STATUS;
-import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.INCREASE;
-import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.QUEUE_STATUS;
-import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.REDUCE;
-import static io.atomix.core.semaphore.impl.DistributedSemaphoreOperations.RELEASE;
-
-public class DistributedSemaphoreProxy extends AbstractAsyncPrimitive<AsyncDistributedSemaphore> implements AsyncDistributedSemaphore {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-          .register(KryoNamespaces.BASIC)
-          .register(DistributedSemaphoreOperations.NAMESPACE)
-          .register(DistributedSemaphoreEvents.NAMESPACE)
-          .register(QueueStatus.class)
-          .register(Versioned.class)
-          .build());
+public class DistributedSemaphoreProxy extends AbstractAsyncPrimitiveProxy<AsyncDistributedSemaphore, DistributedSemaphoreService> implements AsyncDistributedSemaphore, DistributedSemaphoreClient {
   private static Duration NO_TIMEOUT = Duration.ofMillis(-1);
 
   private final ScheduledExecutorService scheduledExecutor;
   private final Map<Long, AcquireAttempt> attempts = new ConcurrentHashMap<>();
-  private final AtomicLong operationId = new AtomicLong();
+  private final AtomicLong attemptId = new AtomicLong();
 
   public DistributedSemaphoreProxy(PrimitiveProxy proxy,
                                    PrimitiveRegistry registry,
                                    ScheduledExecutorService scheduledExecutor) {
-    super(proxy, registry);
+    super(DistributedSemaphoreService.class, proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
   }
 
   @Override
-  public CompletableFuture<AsyncDistributedSemaphore> connect() {
-    return super.connect()
-            .thenCompose(v -> getPartition(getPartitionKey()).connect())
-            .thenRun(() -> {
-              listenBy(getPartitionKey(), DistributedSemaphoreEvents.SUCCESS, this::onSucceeded);
-              listenBy(getPartitionKey(), DistributedSemaphoreEvents.FAILED, this::onFailed);
-            })
-            .thenApply(v -> this);
-  }
-
-  private void onSucceeded(SemaphoreEvent event) {
-    AcquireAttempt attempt = attempts.remove(event.id());
+  public void succeeded(long id, long version, int permits) {
+    AcquireAttempt attempt = attempts.remove(id);
 
     // If the requested is null, indicate that onExpired has been called, we just release these permits.
     if (attempt == null) {
-      release(event.permits());
+      release(permits);
     } else {
-      attempt.complete(new Version(event.version()));
+      attempt.complete(new Version(version));
     }
   }
 
-  private void onFailed(SemaphoreEvent event) {
-    onExpired(event.id());
+  @Override
+  public void failed(long id) {
+    onExpired(id);
   }
 
   private void onExpired(long id) {
@@ -135,17 +101,17 @@ public class DistributedSemaphoreProxy extends AbstractAsyncPrimitive<AsyncDistr
   public CompletableFuture<Optional<Version>> tryAcquire(int permits, Duration timeout) {
     if (permits < 0) throw new IllegalArgumentException();
 
-    long id = operationId.incrementAndGet();
+    long id = attemptId.incrementAndGet();
     AcquireAttempt attempt = new AcquireAttempt(id, permits, timeout, a -> onExpired(a.id()));
 
     attempts.put(id, attempt);
-    invokeBy(getPartitionKey(), ACQUIRE, new Acquire(attempt.id(), permits, timeout.toMillis()))
-            .whenComplete((result, error) -> {
-              if (error != null) {
-                attempts.remove(id);
-                attempt.complete(null);
-              }
-            });
+    acceptBy(getPartitionKey(), service -> service.acquire(attempt.id(), permits, timeout.toMillis()))
+        .whenComplete((result, error) -> {
+          if (error != null) {
+            attempts.remove(id);
+            attempt.complete(null);
+          }
+        });
     return attempt.thenApply(Optional::ofNullable);
   }
 
@@ -158,33 +124,32 @@ public class DistributedSemaphoreProxy extends AbstractAsyncPrimitive<AsyncDistr
   @Override
   public CompletableFuture<Void> release(int permits) {
     if (permits < 0) throw new IllegalArgumentException();
-    return invokeBy(getPartitionKey(), RELEASE, new Release(operationId.incrementAndGet(), permits));
+    return acceptBy(getPartitionKey(), service -> service.release(permits));
   }
 
   @Override
-  public CompletableFuture<Versioned<Integer>> availablePermits() {
-    return invokeBy(getPartitionKey(), AVAILABLE);
+  public CompletableFuture<Integer> availablePermits() {
+    return applyBy(getPartitionKey(), service -> service.available());
   }
 
   @Override
-  public CompletableFuture<Versioned<Integer>> drainPermits() {
-    return invokeBy(getPartitionKey(), DRAIN, new Drain(operationId.incrementAndGet()));
+  public CompletableFuture<Integer> drainPermits() {
+    return applyBy(getPartitionKey(), service -> service.drain());
   }
 
   @Override
-  public CompletableFuture<Versioned<Integer>> increase(int permits) {
-    return invokeBy(getPartitionKey(), INCREASE, new Increase(operationId.incrementAndGet(), permits)
-    );
+  public CompletableFuture<Integer> increase(int permits) {
+    return applyBy(getPartitionKey(), service -> service.increase(permits));
   }
 
   @Override
-  public CompletableFuture<Versioned<Integer>> reduce(int permits) {
-    return invokeBy(getPartitionKey(), REDUCE, new Reduce(operationId.incrementAndGet(), permits));
+  public CompletableFuture<Integer> reduce(int permits) {
+    return applyBy(getPartitionKey(), service -> service.reduce(permits));
   }
 
   @Override
-  public CompletableFuture<Versioned<QueueStatus>> queueStatus() {
-    return invokeBy(getPartitionKey(), QUEUE_STATUS);
+  public CompletableFuture<QueueStatus> queueStatus() {
+    return applyBy(getPartitionKey(), service -> service.queueStatus());
   }
 
   @Override
@@ -198,13 +163,8 @@ public class DistributedSemaphoreProxy extends AbstractAsyncPrimitive<AsyncDistr
    *
    * @return CompletableFuture that is completed with the current permit holders
    */
-  CompletableFuture<Versioned<Map<Long, Integer>>> holderStatus() {
-    return invokeBy(getPartitionKey(), HOLDER_STATUS);
-  }
-
-  @Override
-  protected Serializer serializer() {
-    return SERIALIZER;
+  CompletableFuture<Map<Long, Integer>> holderStatus() {
+    return applyBy(getPartitionKey(), service -> service.holderStatus());
   }
 
   private class AcquireAttempt extends CompletableFuture<Version> {
@@ -220,8 +180,8 @@ public class DistributedSemaphoreProxy extends AbstractAsyncPrimitive<AsyncDistr
     public AcquireAttempt(long id, int permits, Duration timeout, Consumer<AcquireAttempt> callback) {
       this(id, permits);
       this.scheduledFuture = timeout != null && callback != null && timeout.toMillis() > 0
-              ? scheduledExecutor.schedule(() -> callback.accept(this), timeout.toMillis(), TimeUnit.MILLISECONDS)
-              : null;
+          ? scheduledExecutor.schedule(() -> callback.accept(this), timeout.toMillis(), TimeUnit.MILLISECONDS)
+          : null;
     }
 
     public long id() {
