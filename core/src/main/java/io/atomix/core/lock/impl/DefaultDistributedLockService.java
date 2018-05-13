@@ -145,8 +145,19 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
   @Override
   public void unlock(int id) {
     if (lock != null) {
-      // If the commit's session does not match the current lock holder, ignore the request.
+      // If the commit's session does not match the current lock holder,
+      // traverse the queue to cancel previous queued Lock request.
       if (!lock.session.equals(getCurrentSession().sessionId())) {
+        for (LockHolder lockHolder : queue) {
+          if (lockHolder.session.equals(getCurrentSession().sessionId())
+                  && lockHolder.id == id) {
+            queue.remove(lockHolder);
+            Scheduled timer = timers.remove(lockHolder.index);
+            if (timer != null) {
+              timer.cancel();
+            }
+          }
+        }
         return;
       }
 
