@@ -186,7 +186,7 @@ public class DefaultClusterMembershipService
     return Futures.allOf(Stream.concat(clusterMembers, bootstrapMembers).map(member -> {
       LOGGER.trace("{} - Sending heartbeat: {}", localMember.id(), member.id());
       CompletableFuture<Void> future = sendHeartbeat(member.address(), payload);
-      PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector());
+      PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector.Builder().build());
       double phi = failureDetector.phi();
       if (phi >= phiFailureThreshold || (phi == 0.0 && failureDetector.lastUpdated() > 0 && System.currentTimeMillis() - failureDetector.lastUpdated() > failureTimeout)) {
         if (member.getState() == State.ACTIVE) {
@@ -232,7 +232,7 @@ public class DefaultClusterMembershipService
   private byte[] handleHeartbeat(Address address, byte[] message) {
     ClusterHeartbeat heartbeat = SERIALIZER.decode(message);
     LOGGER.trace("{} - Received heartbeat: {}", localMember.id(), heartbeat.memberId());
-    failureDetectors.computeIfAbsent(heartbeat.memberId(), n -> new PhiAccrualFailureDetector()).report();
+    failureDetectors.computeIfAbsent(heartbeat.memberId(), n -> new PhiAccrualFailureDetector.Builder().build()).report();
     activateMember(new StatefulMember(
         heartbeat.memberId(),
         address,
