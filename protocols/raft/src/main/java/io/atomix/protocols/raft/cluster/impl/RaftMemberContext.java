@@ -37,6 +37,7 @@ public final class RaftMemberContext {
   private int nextSnapshotOffset;
   private long matchIndex;
   private long heartbeatTime;
+  private long responseTime;
   private int appending;
   private boolean appendSucceeded;
   private long appendTime;
@@ -60,6 +61,7 @@ public final class RaftMemberContext {
     nextSnapshotOffset = 0;
     matchIndex = 0;
     heartbeatTime = 0;
+    responseTime = 0;
     appending = 0;
     timeStats.clear();
     configuring = false;
@@ -334,6 +336,24 @@ public final class RaftMemberContext {
    */
   public void setHeartbeatTime(long heartbeatTime) {
     this.heartbeatTime = Math.max(this.heartbeatTime, heartbeatTime);
+  }
+
+  /**
+   * Returns the member response time.
+   *
+   * @return The member response time.
+   */
+  public long getResponseTime() {
+    return responseTime;
+  }
+
+  /**
+   * Sets the member response time.
+   *
+   * @param heartbeatTime The member response time.
+   */
+  public void setResponseTime(long responseTime) {
+    this.responseTime = Math.max(this.responseTime, responseTime);
   }
 
   /**
