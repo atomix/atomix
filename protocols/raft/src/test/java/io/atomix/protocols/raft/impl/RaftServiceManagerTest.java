@@ -122,7 +122,7 @@ public class RaftServiceManagerTest {
     assertEquals(1, raft.getServices().getCurrentRevision("test").revision().revision());
     assertEquals(2, (long) raft.getServices().getCurrentRevision("test").sessions().getSession(2).sessionId().id());
 
-    Snapshot snapshot = manager.snapshot(2);
+    Snapshot snapshot = manager.snapshot();
     assertEquals(2, snapshot.index());
     assertTrue(snapshotTaken.get());
 
@@ -158,7 +158,7 @@ public class RaftServiceManagerTest {
     assertEquals(1, raft.getServices().getCurrentRevision("test").revision().revision());
     assertEquals(2, (long) raft.getServices().getCurrentRevision("test").sessions().getSession(2).sessionId().id());
 
-    Snapshot snapshot = manager.snapshot(2);
+    Snapshot snapshot = manager.snapshot();
     assertEquals(2, snapshot.index());
     assertTrue(snapshotTaken.get());
 
