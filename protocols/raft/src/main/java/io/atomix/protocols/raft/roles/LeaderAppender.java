@@ -232,6 +232,14 @@ final class LeaderAppender extends AbstractAppender {
     return System.currentTimeMillis();
   }
 
+  private long computeResponseTime() {
+    int quorumIndex = getQuorumIndex();
+    if (quorumIndex >= 0) {
+      return raft.getCluster().getActiveMemberStates((m1, m2) -> Long.compare(m2.getResponseTime(), m1.getResponseTime())).get(quorumIndex).getResponseTime();
+    }
+    return System.currentTimeMillis();
+  }
+
   /**
    * Records a completed heartbeat to the given member.
    */
@@ -240,6 +248,7 @@ final class LeaderAppender extends AbstractAppender {
 
     // Update the member's heartbeat time. This will be used when calculating the quorum heartbeat time.
     member.setHeartbeatTime(timestamp);
+    member.setResponseTime(System.currentTimeMillis());
 
     // Compute the quorum heartbeat time.
     long heartbeatTime = computeHeartbeatTime();
@@ -428,7 +437,7 @@ final class LeaderAppender extends AbstractAppender {
     // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
     // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
     // that a partition occurred and transition back to the FOLLOWER state.
-    if (member.getFailureCount() >= MIN_STEP_DOWN_FAILURE_COUNT && System.currentTimeMillis() - Math.max(computeHeartbeatTime(), leaderTime) > electionTimeout * 2) {
+    if (member.getFailureCount() >= MIN_STEP_DOWN_FAILURE_COUNT && System.currentTimeMillis() - Math.max(computeResponseTime(), leaderTime) > electionTimeout * 2) {
       log.warn("Suspected network partition. Stepping down");
       raft.setLeader(null);
       raft.transition(RaftServer.Role.FOLLOWER);
