@@ -438,6 +438,7 @@ public class RaftServiceManager implements AutoCloseable {
       }
     } catch (Exception e) {
       snapshot.close();
+      logger.error("Failed to snapshot services", e);
       throw e;
     }
     return snapshot;
@@ -455,7 +456,11 @@ public class RaftServiceManager implements AutoCloseable {
     writer.writeString(service.serviceName());
     writer.writeInt(service.revision().revision());
     writer.writeByte(service.revision().propagationStrategy().ordinal());
-    service.takeSnapshot(writer);
+    try {
+      service.takeSnapshot(writer);
+    } catch (Exception e) {
+      logger.error("Failed to take snapshot of service {}", service.serviceId(), e);
+    }
   }
 
   /**
@@ -471,11 +476,15 @@ public class RaftServiceManager implements AutoCloseable {
       logger.debug("Installing snapshot {}", snapshot);
       try (SnapshotReader reader = snapshot.openReader()) {
         while (reader.hasRemaining()) {
-          int length = reader.readInt();
-          if (length > 0) {
-            SnapshotReader serviceReader = new SnapshotReader(reader.buffer().slice(length), reader.snapshot());
-            installService(serviceReader);
-            reader.skip(length);
+          try {
+            int length = reader.readInt();
+            if (length > 0) {
+              SnapshotReader serviceReader = new SnapshotReader(reader.buffer().slice(length), reader.snapshot());
+              installService(serviceReader);
+              reader.skip(length);
+            }
+          } catch (Exception e) {
+            logger.error("Failed to read snapshot", e);
           }
         }
       }
@@ -501,7 +510,11 @@ public class RaftServiceManager implements AutoCloseable {
         serviceName,
         new ServiceRevision(revision, propagationStrategy));
     if (service != null) {
-      service.installSnapshot(reader);
+      try {
+        service.installSnapshot(reader);
+      } catch (Exception e) {
+        logger.error("Failed to install snapshot for service {}", serviceId, e);
+      }
 
       DefaultServiceContext previousService = raft.getServices().getPreviousRevision(service.serviceName(), service.revision());
       if (previousService != null) {
