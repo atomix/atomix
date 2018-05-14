@@ -102,7 +102,7 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
     for (int i = 0; i < revisions.size(); i++) {
       DefaultServiceContext service = revisions.get(i);
       if (service.revision().revision() == revision.revision()) {
-        if (i < revisions.size()) {
+        if (i < revisions.size() - 1) {
           return revisions.get(i + 1);
         }
         return null;

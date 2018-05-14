@@ -50,8 +50,8 @@ public class RaftServiceRegistryTest {
     assertNull(registry.getPreviousRevision("foo", new ServiceRevision(1, PropagationStrategy.NONE)));
     assertNotNull(registry.getPreviousRevision("foo", new ServiceRevision(2, PropagationStrategy.NONE)));
 
-    assertNotNull(registry.getPreviousRevision("foo", new ServiceRevision(2, PropagationStrategy.NONE)));
-    assertNull(registry.getPreviousRevision("foo", new ServiceRevision(1, PropagationStrategy.NONE)));
+    assertNotNull(registry.getNextRevision("foo", new ServiceRevision(1, PropagationStrategy.NONE)));
+    assertNull(registry.getNextRevision("foo", new ServiceRevision(2, PropagationStrategy.NONE)));
   }
 
   private DefaultServiceContext createService(String name, int revision) {
