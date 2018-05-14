@@ -84,7 +84,6 @@ public class RaftServiceManager implements AutoCloseable {
   private final Logger logger;
   private final RaftContext raft;
   private final ThreadContext stateContext;
-  private final ThreadContext compactionContext;
   private final ThreadContextFactory threadContextFactory;
   private final RaftLogReader reader;
   private final Map<Long, CompletableFuture> futures = Maps.newHashMap();
@@ -92,11 +91,10 @@ public class RaftServiceManager implements AutoCloseable {
   private long lastEnqueued;
   private long lastCompacted;
 
-  public RaftServiceManager(RaftContext raft, ThreadContext stateContext, ThreadContext compactionContext, ThreadContextFactory threadContextFactory) {
+  public RaftServiceManager(RaftContext raft, ThreadContext stateContext, ThreadContextFactory threadContextFactory) {
     this.raft = checkNotNull(raft, "state cannot be null");
     this.reader = raft.getLog().openReader(1, RaftLogReader.Mode.COMMITS);
     this.stateContext = stateContext;
-    this.compactionContext = compactionContext;
     this.threadContextFactory = threadContextFactory;
     this.logger = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(raft.getName())
@@ -188,11 +186,11 @@ public class RaftServiceManager implements AutoCloseable {
       compactFuture = new OrderedFuture<>();
 
       // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
-      takeSnapshots(lastApplied).whenCompleteAsync((snapshot, error) -> {
+      takeSnapshots().whenCompleteAsync((snapshot, error) -> {
         if (error == null) {
           scheduleCompletion(snapshot.persist());
         }
-      }, compactionContext);
+      });
 
       // Reschedule snapshots after completion if necessary.
       if (rescheduleAfterCompletion) {
@@ -212,14 +210,13 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Takes and persists snapshots of provided services.
    *
-   * @param index the compaction index
    * @return future to be completed once all snapshots have been completed
    */
-  private CompletableFuture<Snapshot> takeSnapshots(long index) {
+  private CompletableFuture<Snapshot> takeSnapshots() {
     ComposableFuture<Snapshot> future = new ComposableFuture<>();
     stateContext.execute(() -> {
       try {
-        future.complete(snapshot(index));
+        future.complete(snapshot());
       } catch (Exception e) {
         future.completeExceptionally(e);
       }
@@ -423,11 +420,9 @@ public class RaftServiceManager implements AutoCloseable {
 
   /**
    * Takes snapshots for the given index.
-   *
-   * @param index the index for which to take snapshots
    */
-  Snapshot snapshot(long index) {
-    Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(index, new WallClockTimestamp());
+  Snapshot snapshot() {
+    Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(raft.getLastApplied(), new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       for (DefaultServiceContext service : raft.getServices()) {
         writer.buffer().mark();
