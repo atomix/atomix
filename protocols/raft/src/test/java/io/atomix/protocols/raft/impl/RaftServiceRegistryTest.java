@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 
@@ -52,6 +53,10 @@ public class RaftServiceRegistryTest {
 
     assertNotNull(registry.getNextRevision("foo", new ServiceRevision(1, PropagationStrategy.NONE)));
     assertNull(registry.getNextRevision("foo", new ServiceRevision(2, PropagationStrategy.NONE)));
+
+    DefaultServiceContext existing = registry.getRevision("foo", new ServiceRevision(2, PropagationStrategy.NONE));
+    registry.registerService(createService("foo", 2));
+    assertNotSame(existing, registry.getRevision("foo", new ServiceRevision(2, PropagationStrategy.NONE)));
   }
 
   private DefaultServiceContext createService(String name, int revision) {

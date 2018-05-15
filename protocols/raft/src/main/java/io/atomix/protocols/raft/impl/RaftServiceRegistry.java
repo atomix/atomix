@@ -38,7 +38,9 @@ public class RaftServiceRegistry implements Iterable<DefaultServiceContext> {
    * @param service the service to register
    */
   public void registerService(DefaultServiceContext service) {
-    services.computeIfAbsent(service.serviceName(), name -> new CopyOnWriteArrayList<>()).add(service);
+    List<DefaultServiceContext> revisions = services.computeIfAbsent(service.serviceName(), name -> new CopyOnWriteArrayList<>());
+    revisions.removeIf(revision -> revision.revision().revision() == service.revision().revision());
+    revisions.add(service);
   }
 
   /**
