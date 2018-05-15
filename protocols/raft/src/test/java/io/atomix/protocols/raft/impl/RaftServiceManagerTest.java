@@ -126,11 +126,11 @@ public class RaftServiceManagerTest {
     assertEquals(2, snapshot.index());
     assertTrue(snapshotTaken.get());
 
-    snapshot.persist().complete();
+    snapshot = snapshot.persist().complete();
 
     assertEquals(2, raft.getSnapshotStore().getCurrentSnapshot().index());
 
-    manager.install(3);
+    manager.install(snapshot);
     assertTrue(snapshotInstalled.get());
   }
 
