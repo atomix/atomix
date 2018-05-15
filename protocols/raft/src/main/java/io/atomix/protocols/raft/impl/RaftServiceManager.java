@@ -204,7 +204,7 @@ public class RaftServiceManager implements AutoCloseable {
       compactFuture = new OrderedFuture<>();
 
       // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
-      takeSnapshots().whenCompleteAsync((snapshot, error) -> {
+      takeSnapshots().whenComplete((snapshot, error) -> {
         if (error == null) {
           scheduleCompletion(snapshot.persist());
         }
@@ -408,7 +408,18 @@ public class RaftServiceManager implements AutoCloseable {
             }
           });
         } else {
-          install(entry.index());
+          // Get the current snapshot. If the snapshot is for a higher index then skip this operation.
+          // If the snapshot is for the prior index, install it.
+          Snapshot snapshot = raft.getSnapshotStore().getCurrentSnapshot();
+          if (snapshot != null) {
+            if (snapshot.index() >= entry.index()) {
+              future.complete(null);
+              return;
+            } else if (snapshot.index() == entry.index() - 1) {
+              install(snapshot);
+            }
+          }
+
           if (entry.type() == CommandEntry.class) {
             future.complete((T) applyCommand(entry.cast()));
           } else if (entry.type() == OpenSessionEntry.class) {
@@ -478,26 +489,21 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Prepares sessions for the given index.
    *
-   * @param index the index for which to install snapshots
+   * @param snapshot the snapshot to install
    */
-  void install(long index) {
-    Snapshot snapshot = raft.getSnapshotStore().getSnapshot(index - 1);
-
-    // If snapshots exist for the prior index, iterate through snapshots and populate services/sessions.
-    if (snapshot != null) {
-      logger.debug("Installing snapshot {}", snapshot);
-      try (SnapshotReader reader = snapshot.openReader()) {
-        while (reader.hasRemaining()) {
-          try {
-            int length = reader.readInt();
-            if (length > 0) {
-              SnapshotReader serviceReader = new SnapshotReader(reader.buffer().slice(length), reader.snapshot());
-              installService(serviceReader);
-              reader.skip(length);
-            }
-          } catch (Exception e) {
-            logger.error("Failed to read snapshot", e);
+  void install(Snapshot snapshot) {
+    logger.debug("Installing snapshot {}", snapshot);
+    try (SnapshotReader reader = snapshot.openReader()) {
+      while (reader.hasRemaining()) {
+        try {
+          int length = reader.readInt();
+          if (length > 0) {
+            SnapshotReader serviceReader = new SnapshotReader(reader.buffer().slice(length), reader.snapshot());
+            installService(serviceReader);
+            reader.skip(length);
           }
+        } catch (Exception e) {
+          logger.error("Failed to read snapshot", e);
         }
       }
     }
