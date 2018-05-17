@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,52 +47,34 @@ public class AtomixAgent {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
-    Function<Member.Type, ArgumentType<MemberConfig>> memberArgumentType = (type) -> (ArgumentParser argumentParser, Argument argument, String value) -> {
-      return new MemberConfig()
-          .setId(parseMemberId(value))
-          .setType(type)
-          .setAddress(parseAddress(value));
-    };
+    ArgumentType<MemberConfig> memberArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> new MemberConfig()
+        .setId(parseMemberId(value))
+        .setAddress(parseAddress(value));
 
-    ArgumentType<Member.Type> typeArgumentType = (argumentParser, argument, value) -> Member.Type.valueOf(value.toUpperCase());
     ArgumentType<Address> addressArgumentType = (argumentParser, argument, value) -> Address.from(value);
 
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
         .description("Atomix server");
     parser.addArgument("member")
-        .type(memberArgumentType.apply(Member.Type.PERSISTENT))
+        .type(memberArgumentType)
         .nargs("?")
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The member info for the local member. This should be in the format [NAME@]HOST[:PORT]. " +
             "If no name is provided, the member name will default to the host. " +
             "If no port is provided, the port will default to 5679.");
-    parser.addArgument("--type", "-t")
-        .type(typeArgumentType)
-        .metavar("TYPE")
-        .choices(Member.Type.PERSISTENT, Member.Type.EPHEMERAL)
-        .setDefault(Member.Type.PERSISTENT)
-        .help("Indicates the local member type.");
     parser.addArgument("--config", "-c")
         .metavar("FILE|JSON|YAML")
         .required(false)
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
-    parser.addArgument("--persistent-members", "-n")
+    parser.addArgument("--bootstrap", "-b")
         .nargs("*")
-        .type(memberArgumentType.apply(Member.Type.PERSISTENT))
+        .type(memberArgumentType)
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The set of core members, if any. When bootstrapping a new cluster, if the local member is a core member " +
             "then it should be present in the core configuration as well.");
-    parser.addArgument("--ephemeral-members", "-b")
-        .nargs("*")
-        .type(memberArgumentType.apply(Member.Type.EPHEMERAL))
-        .metavar("NAME@HOST:PORT")
-        .required(false)
-        .help("The set of bootstrap members. If core members are provided, the cluster will be bootstrapped from the " +
-            "core members. For clusters without core members, at least one bootstrap member must be provided unless " +
-            "using multicast discovery or bootstrapping a new cluster.");
     parser.addArgument("--multicast", "-m")
         .action(new StoreTrueArgumentAction())
         .setDefault(false)
@@ -119,7 +100,6 @@ public class AtomixAgent {
 
     final String configString = namespace.get("config");
     final MemberConfig localMember = namespace.get("member");
-    final Member.Type localMemberType = namespace.get("type");
     final List<MemberConfig> persistentMembers = namespace.getList("persistent_members");
     final List<MemberConfig> ephemeralMembers = namespace.getList("ephemeral_members");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
@@ -135,9 +115,6 @@ public class AtomixAgent {
             .filter(member -> member.getId().equals(localMember.getId()))
             .findAny()
             .ifPresent(localMemberConfig -> {
-              if (localMemberType == null) {
-                localMember.setType(localMemberConfig.getType());
-              }
               localMember.setAddress(localMemberConfig.getAddress());
               localMember.setZone(localMemberConfig.getZone());
               localMember.setRack(localMemberConfig.getRack());
@@ -153,7 +130,6 @@ public class AtomixAgent {
 
     // If a local member was provided, add the local member to the builder.
     if (localMember != null) {
-      localMember.setType(localMemberType);
       Member member = new Member(localMember);
       builder.withLocalMember(member);
       LOGGER.info("member: {}", member);
@@ -165,7 +141,6 @@ public class AtomixAgent {
           persistentMembers != null ? persistentMembers.stream() : Stream.empty(),
           ephemeralMembers != null ? ephemeralMembers.stream() : Stream.empty())
           .map(member -> Member.builder(member.getId())
-              .withType(member.getType())
               .withAddress(member.getAddress())
               .build())
           .collect(Collectors.toList());
@@ -220,9 +195,10 @@ public class AtomixAgent {
       return MemberId.from(address.substring(0, endIndex));
     } else {
       try {
-        return MemberId.from(Address.from(address).host());
+        Address.from(address);
+        return null;
       } catch (MalformedAddressException e) {
-        return MemberId.from(address);
+        return MemberId.memberId(address);
       }
     }
   }

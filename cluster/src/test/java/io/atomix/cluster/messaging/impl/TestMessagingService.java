@@ -78,12 +78,12 @@ public class TestMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
-    return getHandler(address, type).apply(address, payload).thenApply(v -> null);
+    return getHandler(address, type).apply(this.address, payload).thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload) {
-    return getHandler(address, type).apply(address, payload);
+    return getHandler(address, type).apply(this.address, payload);
   }
 
   @Override
@@ -95,7 +95,7 @@ public class TestMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout) {
-    return getHandler(address, type).apply(address, payload);
+    return getHandler(address, type).apply(this.address, payload);
   }
 
   @Override

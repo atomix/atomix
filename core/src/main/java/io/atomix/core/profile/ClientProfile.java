@@ -15,7 +15,6 @@
  */
 package io.atomix.core.profile;
 
-import io.atomix.cluster.Member;
 import io.atomix.core.AtomixConfig;
 
 /**
@@ -31,6 +30,6 @@ public class ClientProfile implements NamedProfile {
 
   @Override
   public void configure(AtomixConfig config) {
-    config.getClusterConfig().getLocalMember().setType(Member.Type.EPHEMERAL);
+    // Do nothing! This profile is just for code readability.
   }
 }

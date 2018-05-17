@@ -35,15 +35,12 @@ public class AtomixClusterTest {
   public void testMembers() throws Exception {
     Collection<Member> members = Arrays.asList(
         Member.builder("foo")
-            .withType(Member.Type.EPHEMERAL)
             .withAddress("localhost:5000")
             .build(),
         Member.builder("bar")
-            .withType(Member.Type.EPHEMERAL)
             .withAddress("localhost:5001")
             .build(),
         Member.builder("baz")
-            .withType(Member.Type.EPHEMERAL)
             .withAddress("localhost:5002")
             .build());
 

@@ -226,14 +226,6 @@ public class ClusterResource extends AbstractRestResource {
     public int getPort() {
       return member.address().port();
     }
-
-    public Member.Type getType() {
-      return member.type();
-    }
-
-    public Member.State getStatus() {
-      return member.getState();
-    }
   }
 
   /**

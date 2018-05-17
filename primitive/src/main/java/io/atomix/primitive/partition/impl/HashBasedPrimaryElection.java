@@ -64,6 +64,7 @@ public class HashBasedPrimaryElection
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .build());
 
   private final PartitionId partitionId;
@@ -120,7 +121,7 @@ public class HashBasedPrimaryElection
    * Handles a cluster membership event.
    */
   private void handleClusterMembershipEvent(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_ACTIVATED || event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED) {
+    if (event.type() == ClusterMembershipEvent.Type.MEMBER_ADDED || event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
       recomputeTerm(groupMembershipService.getMembership(partitionId.group()));
     }
   }

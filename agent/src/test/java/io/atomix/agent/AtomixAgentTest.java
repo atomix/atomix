@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Atomix agent runner test.
@@ -48,11 +49,11 @@ public class AtomixAgentTest {
 
   @Test
   public void testParseMemberId() throws Exception {
-    assertEquals(MemberId.from("127.0.0.1"), AtomixAgent.parseMemberId("127.0.0.1"));
-    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo"));
-    assertEquals(MemberId.from("127.0.0.1"), AtomixAgent.parseMemberId("127.0.0.1:1234"));
-    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1:1234"));
-    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1"));
+    assertNull(AtomixAgent.parseMemberId("127.0.0.1"));
+    assertEquals(MemberId.memberId("foo"), AtomixAgent.parseMemberId("foo"));
+    assertNull(AtomixAgent.parseMemberId("127.0.0.1:1234"));
+    assertEquals(MemberId.memberId("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1:1234"));
+    assertEquals(MemberId.memberId("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1"));
   }
 
   @Test
@@ -114,7 +115,6 @@ public class AtomixAgentTest {
 
     Atomix client1 = Atomix.builder(path)
         .withLocalMember(Member.builder("client1")
-            .withType(Member.Type.EPHEMERAL)
             .withAddress("localhost:5003")
             .build())
         .build();
@@ -122,7 +122,6 @@ public class AtomixAgentTest {
 
     Atomix client2 = Atomix.builder(path)
         .withLocalMember(Member.builder("client2")
-            .withType(Member.Type.EPHEMERAL)
             .withAddress("localhost:5004")
             .build())
         .build();
@@ -194,7 +193,6 @@ public class AtomixAgentTest {
 
     Atomix client1 = Atomix.builder(Joiner.on('\n').join(config))
         .withLocalMember(Member.builder("client1")
-            .withType(Member.Type.EPHEMERAL)
             .withAddress("localhost:5003")
             .build())
         .build();
@@ -202,7 +200,6 @@ public class AtomixAgentTest {
 
     Atomix client2 = Atomix.builder(Joiner.on('\n').join(config))
         .withLocalMember(Member.builder("client2")
-            .withType(Member.Type.EPHEMERAL)
             .withAddress("localhost:5004")
             .build())
         .build();

@@ -71,7 +71,7 @@ public final class FollowerRole extends ActiveRole {
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
     RaftMember leader = raft.getLeader();
-    if (leader != null && event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED && event.subject().id().equals(leader.memberId())) {
+    if (leader != null && event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED && event.subject().id().equals(leader.memberId())) {
       sendPollRequests();
     }
   }

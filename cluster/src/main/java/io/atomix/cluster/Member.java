@@ -15,12 +15,12 @@
  */
 package io.atomix.cluster;
 
-import java.util.Map;
-import java.util.Objects;
-
 import com.google.common.collect.ImmutableMap;
 import io.atomix.utils.config.Configured;
 import io.atomix.utils.net.Address;
+
+import java.util.Map;
+import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -58,33 +58,51 @@ public class Member implements Configured<MemberConfig> {
    * @throws NullPointerException if the member ID is null
    */
   public static Builder builder(MemberId memberId) {
-    return new Builder(checkNotNull(memberId, "memberId cannot be null"));
+    return builder().withId(memberId);
   }
 
   /**
-   * Returns a new persistent node.
+   * Returns a new anonymous cluster member.
    *
-   * @param memberId  the persistent node ID
-   * @param address the persistent node address
-   * @return a new persistent node
+   * @param address the member address
+   * @return the member
    */
-  public static Member persistent(MemberId memberId, Address address) {
-    return builder(memberId)
-        .withType(Type.PERSISTENT)
+  public static Member member(String address) {
+    return member(Address.from(address));
+  }
+
+  /**
+   * Returns a new named cluster member.
+   *
+   * @param name    the member identifier
+   * @param address the member address
+   * @return the member
+   */
+  public static Member member(String name, String address) {
+    return member(MemberId.from(name), Address.from(address));
+  }
+
+  /**
+   * Returns a new anonymous cluster member.
+   *
+   * @param address the member address
+   * @return the member
+   */
+  public static Member member(Address address) {
+    return builder()
         .withAddress(address)
         .build();
   }
 
   /**
-   * Returns a new ephemeral node.
+   * Returns a new named cluster member.
    *
-   * @param memberId  the ephemeral node ID
-   * @param address the ephemeral node address
-   * @return a new ephemeral node
+   * @param memberId the member identifier
+   * @param address  the member address
+   * @return the member
    */
-  public static Member ephemeral(MemberId memberId, Address address) {
+  public static Member member(MemberId memberId, Address address) {
     return builder(memberId)
-        .withType(Type.EPHEMERAL)
         .withAddress(address)
         .build();
   }
@@ -92,6 +110,7 @@ public class Member implements Configured<MemberConfig> {
   /**
    * Node type.
    */
+  @Deprecated
   public enum Type {
 
     /**
@@ -123,7 +142,6 @@ public class Member implements Configured<MemberConfig> {
   }
 
   private final MemberId id;
-  private final Type type;
   private final Address address;
   private final String zone;
   private final String rack;
@@ -131,8 +149,7 @@ public class Member implements Configured<MemberConfig> {
   private final Map<String, String> metadata;
 
   public Member(MemberConfig config) {
-    this.id = checkNotNull(config.getId(), "id cannot be null");
-    this.type = checkNotNull(config.getType(), "type cannot be null");
+    this.id = config.getId();
     this.address = checkNotNull(config.getAddress(), "address cannot be null");
     this.zone = config.getZone();
     this.rack = config.getRack();
@@ -140,9 +157,8 @@ public class Member implements Configured<MemberConfig> {
     this.metadata = ImmutableMap.copyOf(config.getMetadata());
   }
 
-  protected Member(MemberId id, Type type, Address address, String zone, String rack, String host, Map<String, String> metadata) {
+  protected Member(MemberId id, Address address, String zone, String rack, String host, Map<String, String> metadata) {
     this.id = checkNotNull(id, "id cannot be null");
-    this.type = checkNotNull(type, "type cannot be null");
     this.address = checkNotNull(address, "address cannot be null");
     this.zone = zone;
     this.rack = rack;
@@ -164,8 +180,16 @@ public class Member implements Configured<MemberConfig> {
    *
    * @return the node type
    */
+  @Deprecated
   public Type type() {
-    return type;
+    switch (id().type()) {
+      case IDENTIFIED:
+        return Type.PERSISTENT;
+      case ANONYMOUS:
+        return Type.EPHEMERAL;
+      default:
+        throw new AssertionError();
+    }
   }
 
   /**
@@ -226,7 +250,6 @@ public class Member implements Configured<MemberConfig> {
   public MemberConfig config() {
     return new MemberConfig()
         .setId(id)
-        .setType(type)
         .setAddress(address)
         .setZone(zone)
         .setRack(rack)
@@ -248,7 +271,6 @@ public class Member implements Configured<MemberConfig> {
   public String toString() {
     return toStringHelper(this)
         .add("id", id)
-        .add("type", type)
         .add("address", address)
         .add("zone", zone)
         .add("rack", rack)
@@ -258,20 +280,32 @@ public class Member implements Configured<MemberConfig> {
   }
 
   /**
-   * Node builder.
+   * Member builder.
    */
   public static class Builder implements io.atomix.utils.Builder<Member> {
     protected final MemberConfig config = new MemberConfig();
 
     protected Builder(MemberId id) {
-      config.setId(id);
+      if (id != null) {
+        config.setId(id);
+      }
     }
 
     /**
-     * Sets the node identifier.
+     * Sets the member identifier.
      *
-     * @param id the node identifier
-     * @return the node builder
+     * @param id the member identifier
+     * @return the member builder
+     */
+    public Builder withId(String id) {
+      return withId(MemberId.memberId(id));
+    }
+
+    /**
+     * Sets the member identifier.
+     *
+     * @param id the member identifier
+     * @return the member builder
      */
     public Builder withId(MemberId id) {
       config.setId(id);
@@ -285,16 +319,16 @@ public class Member implements Configured<MemberConfig> {
      * @return the node builder
      * @throws NullPointerException if the node type is null
      */
+    @Deprecated
     public Builder withType(Type type) {
-      config.setType(type);
       return this;
     }
 
     /**
-     * Sets the node address.
+     * Sets the member address.
      *
      * @param address a host:port tuple
-     * @return the node builder
+     * @return the member builder
      * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
      */
     public Builder withAddress(String address) {
@@ -302,11 +336,11 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Sets the node host/port.
+     * Sets the member host/port.
      *
      * @param host the host name
      * @param port the port number
-     * @return the node builder
+     * @return the member builder
      * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
      */
     public Builder withAddress(String host, int port) {
@@ -314,10 +348,10 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Sets the node address using local host.
+     * Sets the member address using local host.
      *
      * @param port the port number
-     * @return the node builder
+     * @return the member builder
      * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
      */
     public Builder withAddress(int port) {
@@ -325,10 +359,10 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Sets the node address.
+     * Sets the member address.
      *
-     * @param address the node address
-     * @return the node builder
+     * @param address the member address
+     * @return the member builder
      */
     public Builder withAddress(Address address) {
       config.setAddress(address);
@@ -336,10 +370,10 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Sets the zone to which the node belongs.
+     * Sets the zone to which the member belongs.
      *
-     * @param zone the zone to which the node belongs
-     * @return the node builder
+     * @param zone the zone to which the member belongs
+     * @return the member builder
      */
     public Builder withZone(String zone) {
       config.setZone(zone);
@@ -347,10 +381,10 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Sets the rack to which the node belongs.
+     * Sets the rack to which the member belongs.
      *
-     * @param rack the rack to which the node belongs
-     * @return the node builder
+     * @param rack the rack to which the member belongs
+     * @return the member builder
      */
     public Builder withRack(String rack) {
       config.setRack(rack);
@@ -358,10 +392,10 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Sets the host to which the node belongs.
+     * Sets the host to which the member belongs.
      *
-     * @param host the host to which the node belongs
-     * @return the node builder
+     * @param host the host to which the member belongs
+     * @return the member builder
      */
     public Builder withHost(String host) {
       config.setHost(host);
@@ -369,10 +403,10 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Sets the node metadata.
+     * Sets the member metadata.
      *
-     * @param metadata the node metadata
-     * @return the node builder
+     * @param metadata the member metadata
+     * @return the member builder
      * @throws NullPointerException if the tags are null
      */
     public Builder withMetadata(Map<String, String> metadata) {
@@ -381,11 +415,11 @@ public class Member implements Configured<MemberConfig> {
     }
 
     /**
-     * Adds metadata to the node.
+     * Adds metadata to the member.
      *
-     * @param key the metadata key to add
+     * @param key   the metadata key to add
      * @param value the metadata value to add
-     * @return the node builder
+     * @return the member builder
      * @throws NullPointerException if the tag is null
      */
     public Builder addMetadata(String key, String value) {

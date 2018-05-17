@@ -34,8 +34,7 @@ public interface Profile {
   DataGridProfile DATA_GRID = new DataGridProfile();
 
   /**
-   * The client profile configures the local member as a {@link io.atomix.cluster.Member.Type#EPHEMERAL} member and
-   * does not configure any system or primitive partition groups.
+   * The client profile does not change the configuration of a node. It is intended only for code clarity.
    */
   ClientProfile CLIENT = new ClientProfile();
 

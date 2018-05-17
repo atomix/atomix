@@ -102,6 +102,7 @@ public class DefaultPartitionGroupMembershipService
     KryoNamespace.Builder builder = KryoNamespace.builder()
         .register(KryoNamespaces.BASIC)
         .register(MemberId.class)
+        .register(MemberId.Type.class)
         .register(PartitionGroupMembership.class)
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)
@@ -135,7 +136,7 @@ public class DefaultPartitionGroupMembershipService
    * Handles a cluster membership change.
    */
   private void handleMembershipChange(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_ACTIVATED) {
+    if (event.type() == ClusterMembershipEvent.Type.MEMBER_ADDED) {
       bootstrap(event.subject());
     } else if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
       threadContext.execute(() -> {

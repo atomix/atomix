@@ -15,7 +15,6 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.Member;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
@@ -53,7 +52,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
    * @return a new Atomix instance.
    */
   protected Atomix atomix() throws Exception {
-    Atomix instance = createAtomix(Member.Type.EPHEMERAL, id++, Arrays.asList(1, 2, 3), Arrays.asList());
+    Atomix instance = createAtomix(id++, Arrays.asList(1, 2, 3));
     clients.add(instance);
     instance.start().get(30, TimeUnit.SECONDS);
     return instance;
@@ -76,9 +75,9 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
                 .build())
             .build();
     servers = new ArrayList<>();
-    servers.add(createAtomix(Member.Type.PERSISTENT, 1, Arrays.asList(1, 2, 3), Arrays.asList(), build));
-    servers.add(createAtomix(Member.Type.PERSISTENT, 2, Arrays.asList(1, 2, 3), Arrays.asList(), build));
-    servers.add(createAtomix(Member.Type.PERSISTENT, 3, Arrays.asList(1, 2, 3), Arrays.asList(), build));
+    servers.add(createAtomix(1, Arrays.asList(1, 2, 3), build));
+    servers.add(createAtomix(2, Arrays.asList(1, 2, 3), build));
+    servers.add(createAtomix(3, Arrays.asList(1, 2, 3), build));
     List<CompletableFuture<Atomix>> futures = servers.stream().map(a -> a.start().thenApply(v -> a)).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }

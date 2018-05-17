@@ -21,7 +21,7 @@
         </encoder>
     </appender>
 
-    <logger name="io.atomix" level="${root.logging.level:-DEBUG}" />
+    <logger name="io.atomix" level="${root.logging.level:-TRACE}" />
     <logger name="io.atomix.messaging" level="INFO" />
 
     <root level="${root.logging.level:-INFO}">
