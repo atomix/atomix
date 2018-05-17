@@ -82,7 +82,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -140,7 +139,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     @Override
     public ManagedMessagingService build() {
       if (address == null) {
-        address = Address.empty();
+        address = Address.all();
       }
       return new NettyMessagingService(name.hashCode(), address);
     }

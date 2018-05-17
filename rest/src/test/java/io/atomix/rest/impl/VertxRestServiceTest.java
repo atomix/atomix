@@ -86,19 +86,15 @@ public class VertxRestServiceTest {
         .statusCode(200)
         .assertThat()
         .body("id", equalTo("1"))
-        .body("type", equalTo("EPHEMERAL"))
         .body("host", equalTo(instances.get(0).membershipService().getLocalMember().address().host()))
-        .body("port", equalTo(instances.get(0).membershipService().getLocalMember().address().port()))
-        .body("status", equalTo("ACTIVE"));
+        .body("port", equalTo(instances.get(0).membershipService().getLocalMember().address().port()));
 
     given()
         .spec(specs.get(0))
         .when()
         .get("cluster/nodes")
         .then()
-        .statusCode(200)
-        .assertThat()
-        .body("[0].id", equalTo("1"));
+        .statusCode(200);
   }
 
   @Test
@@ -275,7 +271,6 @@ public class VertxRestServiceTest {
 
   protected Atomix buildAtomix(int memberId) {
     Member localMember = Member.builder(String.valueOf(memberId))
-        .withType(Member.Type.EPHEMERAL)
         .withAddress("localhost", findAvailablePort(BASE_PORT))
         .build();
 

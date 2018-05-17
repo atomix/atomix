@@ -564,7 +564,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED) {
+    if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
       for (PrimitiveSession session : sessions.values()) {
         if (session.memberId().equals(event.subject().id())) {
           role.expire((PrimaryBackupSession) session);

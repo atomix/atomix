@@ -16,14 +16,11 @@
 package io.atomix.cluster.messaging.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
-import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
-import io.atomix.cluster.impl.TestPersistentMetadataService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
 import io.atomix.messaging.MessagingService;
@@ -32,7 +29,7 @@ import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -47,22 +44,20 @@ import static org.junit.Assert.assertTrue;
 public class DefaultClusterEventingServiceTest {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
-  private Member buildNode(int memberId, Member.Type type) {
+  private Member buildNode(int memberId) {
     return Member.builder(String.valueOf(memberId))
-        .withType(type)
         .withAddress("localhost", memberId)
         .build();
   }
 
-  private ClusterMetadata buildClusterMetadata(Integer... bootstrapNodes) {
-    List<Member> bootstrap = new ArrayList<>();
+  private Collection<Member> buildBootstrapMembers(Integer... bootstrapNodes) {
+    List<Member> bootstrap = new ArrayList<>(bootstrapNodes.length);
     for (int bootstrapNode : bootstrapNodes) {
       bootstrap.add(Member.builder(String.valueOf(bootstrapNode))
-          .withType(Member.Type.PERSISTENT)
           .withAddress("localhost", bootstrapNode)
           .build());
     }
-    return ClusterMetadata.builder().withNodes(bootstrap).build();
+    return bootstrap;
   }
 
   @Test
@@ -70,14 +65,13 @@ public class DefaultClusterEventingServiceTest {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
     TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
-    ClusterMetadata clusterMetadata = buildClusterMetadata(1, 1, 2, 3);
+    Collection<Member> bootstrapMembers = buildBootstrapMembers(1, 2, 3);
 
-    Member localMember1 = buildNode(1, Member.Type.PERSISTENT);
+    Member localMember1 = buildNode(1);
     MessagingService messagingService1 = messagingServiceFactory.newMessagingService(localMember1.address()).start().join();
     ManagedClusterMembershipService clusterService1 = new DefaultClusterMembershipService(
         localMember1,
-        new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestPersistentMetadataService(clusterMetadata),
+        bootstrapMembers,
         messagingService1,
         broadcastServiceFactory.newBroadcastService().start().join(),
         new GroupMembershipConfig());
@@ -85,12 +79,11 @@ public class DefaultClusterEventingServiceTest {
     ManagedClusterEventingService clusterEventingService1 = new DefaultClusterEventingService(clusterMembershipService1, messagingService1);
     ClusterEventingService eventService1 = clusterEventingService1.start().join();
 
-    Member localMember2 = buildNode(2, Member.Type.PERSISTENT);
+    Member localMember2 = buildNode(2);
     MessagingService messagingService2 = messagingServiceFactory.newMessagingService(localMember2.address()).start().join();
     ManagedClusterMembershipService clusterService2 = new DefaultClusterMembershipService(
         localMember2,
-        new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestPersistentMetadataService(clusterMetadata),
+        bootstrapMembers,
         messagingService2,
         broadcastServiceFactory.newBroadcastService().start().join(),
         new GroupMembershipConfig());
@@ -98,12 +91,11 @@ public class DefaultClusterEventingServiceTest {
     ManagedClusterEventingService clusterEventingService2 = new DefaultClusterEventingService(clusterMembershipService2, messagingService2);
     ClusterEventingService eventService2 = clusterEventingService2.start().join();
 
-    Member localMember3 = buildNode(3, Member.Type.PERSISTENT);
+    Member localMember3 = buildNode(3);
     MessagingService messagingService3 = messagingServiceFactory.newMessagingService(localMember3.address()).start().join();
     ManagedClusterMembershipService clusterService3 = new DefaultClusterMembershipService(
         localMember3,
-        new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-        new TestPersistentMetadataService(clusterMetadata),
+        bootstrapMembers,
         messagingService3,
         broadcastServiceFactory.newBroadcastService().start().join(),
         new GroupMembershipConfig());
@@ -185,9 +177,9 @@ public class DefaultClusterEventingServiceTest {
     assertTrue(events.contains(1));
 
     CompletableFuture.allOf(new CompletableFuture[]{clusterEventingService1.stop(), clusterEventingService2.stop(),
-            clusterEventingService3.stop()}).join();
+        clusterEventingService3.stop()}).join();
 
     CompletableFuture.allOf(new CompletableFuture[]{clusterService1.stop(), clusterService2.stop(),
-            clusterService3.stop()}).join();
+        clusterService3.stop()}).join();
   }
 }

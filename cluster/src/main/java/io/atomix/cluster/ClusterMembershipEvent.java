@@ -38,16 +38,6 @@ public class ClusterMembershipEvent extends AbstractEvent<ClusterMembershipEvent
      * Signifies that a member has been removed.
      */
     MEMBER_REMOVED,
-
-    /**
-     * Signifies that a member became active.
-     */
-    MEMBER_ACTIVATED,
-
-    /**
-     * Signifies that a member became inactive.
-     */
-    MEMBER_DEACTIVATED
   }
 
   /**

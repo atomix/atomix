@@ -69,6 +69,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(LogicalTimestamp.class)
       .register(WallClockTimestamp.class)
       .register(InternalSubscriptionInfo.class)

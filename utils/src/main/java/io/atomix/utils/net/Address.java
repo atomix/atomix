@@ -35,11 +35,11 @@ public final class Address {
   }
 
   /**
-   * Returns an empty address.
+   * Returns an address that binds to all interfaces.
    *
    * @return the address
    */
-  public static Address empty() {
+  public static Address all() {
     return from("0.0.0.0", DEFAULT_PORT);
   }
 
@@ -49,7 +49,41 @@ public final class Address {
    * @param address the address string
    * @return the address
    */
+  @Deprecated
   public static Address from(String address) {
+    return address(address);
+  }
+
+  /**
+   * Returns an address for the given host/port.
+   *
+   * @param host the host name
+   * @param port the port
+   * @return a new address
+   */
+  @Deprecated
+  public static Address from(String host, int port) {
+    return address(host, port);
+  }
+
+  /**
+   * Returns an address for the local host and the given port.
+   *
+   * @param port the port
+   * @return a new address
+   */
+  @Deprecated
+  public static Address from(int port) {
+    return address(port);
+  }
+
+  /**
+   * Returns the address from the given host:port string.
+   *
+   * @param address the address string
+   * @return the address
+   */
+  public static Address address(String address) {
     int lastColon = address.lastIndexOf(':');
     int openBracket = address.indexOf('[');
     int closeBracket = address.indexOf(']');
@@ -88,7 +122,7 @@ public final class Address {
    * @param port the port
    * @return a new address
    */
-  public static Address from(String host, int port) {
+  public static Address address(String host, int port) {
     try {
       return new Address(host, port, InetAddress.getByName(host));
     } catch (UnknownHostException e) {
@@ -102,7 +136,7 @@ public final class Address {
    * @param port the port
    * @return a new address
    */
-  public static Address from(int port) {
+  public static Address address(int port) {
     try {
       InetAddress address = getLocalAddress();
       return new Address(address.getHostName(), port, address);

@@ -16,13 +16,10 @@
 package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
-import io.atomix.cluster.impl.DefaultPersistentMetadataService;
 import io.atomix.messaging.BroadcastService;
 import io.atomix.messaging.ManagedMessagingService;
 import io.atomix.messaging.MessagingService;
@@ -215,6 +212,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
@@ -238,6 +236,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -435,10 +434,9 @@ public class RaftPerformanceTest implements Runnable {
    *
    * @return The next unique member identifier.
    */
-  private Member nextNode(Member.Type type) {
+  private Member nextNode() {
     Address address = Address.from("localhost", ++port);
     Member member = Member.builder(MemberId.from(String.valueOf(++nextId)))
-        .withType(type)
         .withAddress(address)
         .build();
     addressMap.put(member.id(), address);
@@ -452,7 +450,7 @@ public class RaftPerformanceTest implements Runnable {
     List<RaftServer> servers = new ArrayList<>();
 
     for (int i = 0; i < nodes; i++) {
-      members.add(nextNode(Member.Type.PERSISTENT));
+      members.add(nextNode());
     }
 
     CountDownLatch latch = new CountDownLatch(nodes);
@@ -490,8 +488,7 @@ public class RaftPerformanceTest implements Runnable {
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .withMembershipService(new DefaultClusterMembershipService(
             member,
-            new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-            new DefaultPersistentMetadataService(new ClusterMetadata(members), messagingService),
+            members,
             messagingService,
             new BroadcastServiceAdapter(),
             new GroupMembershipConfig()))
@@ -513,7 +510,7 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a Raft client.
    */
   private RaftClient createClient() throws Exception {
-    Member member = nextNode(Member.Type.EPHEMERAL);
+    Member member = nextNode();
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {

@@ -16,6 +16,7 @@
 package io.atomix.core.profile;
 
 import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberId;
 import io.atomix.core.AtomixConfig;
 import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 
@@ -45,13 +46,13 @@ public class ConsensusProfile implements NamedProfile {
         .setPartitionSize((int) config.getClusterConfig().getMembers()
             .values()
             .stream()
-            .filter(node -> node.getType() == Member.Type.PERSISTENT)
+            .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
             .count())
         .setPartitions(1)
         .setMembers(config.getClusterConfig().getMembers()
             .values()
             .stream()
-            .filter(node -> node.getType() == Member.Type.PERSISTENT)
+            .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
             .map(node -> node.getId().id())
             .collect(Collectors.toSet()))
         .setDataDirectory(String.format("%s/%s", DATA_PATH, SYSTEM_GROUP_NAME)));
@@ -62,7 +63,7 @@ public class ConsensusProfile implements NamedProfile {
         .setMembers(config.getClusterConfig().getMembers()
             .values()
             .stream()
-            .filter(node -> node.getType() == Member.Type.PERSISTENT)
+            .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
             .map(node -> node.getId().id())
             .collect(Collectors.toSet()))
         .setDataDirectory(String.format("%s/%s", DATA_PATH, GROUP_NAME)));

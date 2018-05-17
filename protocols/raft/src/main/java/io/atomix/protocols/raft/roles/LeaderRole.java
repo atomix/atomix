@@ -189,7 +189,7 @@ public final class LeaderRole extends ActiveRole {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED) {
+    if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
       log.debug("Node {} deactivated", event.subject().id());
       raft.getSessions().getSessions().stream()
           .filter(session -> session.memberId().equals(event.subject().id()))

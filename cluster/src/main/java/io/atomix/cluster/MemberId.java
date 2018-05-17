@@ -17,25 +17,21 @@ package io.atomix.cluster;
 
 import io.atomix.utils.AbstractIdentifier;
 
+import java.util.Objects;
+import java.util.UUID;
+
 /**
  * Controller cluster identity.
  */
 public final class MemberId extends AbstractIdentifier<String> implements Comparable<MemberId> {
 
   /**
-   * Constructor for serialization.
-   */
-  private MemberId() {
-    super("");
-  }
-
-  /**
    * Creates a new cluster node identifier from the specified string.
    *
-   * @param id string identifier
+   * @return node id
    */
-  public MemberId(String id) {
-    super(id);
+  public static MemberId memberId() {
+    return new MemberId(UUID.randomUUID().toString(), Type.ANONYMOUS);
   }
 
   /**
@@ -44,8 +40,69 @@ public final class MemberId extends AbstractIdentifier<String> implements Compar
    * @param id string identifier
    * @return node id
    */
+  public static MemberId memberId(String id) {
+    return new MemberId(id, Type.IDENTIFIED);
+  }
+
+  /**
+   * Creates a new cluster node identifier from the specified string.
+   *
+   * @param id string identifier
+   * @return node id
+   */
+  @Deprecated
   public static MemberId from(String id) {
-    return new MemberId(id);
+    return new MemberId(id, Type.IDENTIFIED);
+  }
+
+  /**
+   * Member ID type.
+   */
+  public enum Type {
+    IDENTIFIED,
+    ANONYMOUS,
+  }
+
+  private final Type type;
+
+  /**
+   * Constructor for serialization.
+   */
+  private MemberId() {
+    this("", Type.ANONYMOUS);
+  }
+
+  /**
+   * Creates a new cluster node identifier from the specified string.
+   *
+   * @param id string identifier
+   */
+  public MemberId(String id, Type type) {
+    super(id);
+    this.type = type;
+  }
+
+  /**
+   * Returns the member identifier type.
+   *
+   * @return the member identifier type
+   */
+  public Type type() {
+    return type;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id(), type());
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof MemberId) {
+      MemberId memberId = (MemberId) object;
+      return memberId.id().equals(id()) && memberId.type() == type();
+    }
+    return false;
   }
 
   @Override
