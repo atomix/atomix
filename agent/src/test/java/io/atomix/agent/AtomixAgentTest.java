@@ -50,10 +50,10 @@ public class AtomixAgentTest {
   @Test
   public void testParseMemberId() throws Exception {
     assertNull(AtomixAgent.parseMemberId("127.0.0.1"));
-    assertEquals(MemberId.memberId("foo"), AtomixAgent.parseMemberId("foo"));
+    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo"));
     assertNull(AtomixAgent.parseMemberId("127.0.0.1:1234"));
-    assertEquals(MemberId.memberId("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1:1234"));
-    assertEquals(MemberId.memberId("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1"));
+    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1:1234"));
+    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1"));
   }
 
   @Test

@@ -298,7 +298,7 @@ public class Member implements Configured<MemberConfig> {
      * @return the member builder
      */
     public Builder withId(String id) {
-      return withId(MemberId.memberId(id));
+      return withId(MemberId.from(id));
     }
 
     /**

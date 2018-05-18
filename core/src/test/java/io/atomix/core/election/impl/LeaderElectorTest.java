@@ -37,9 +37,9 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class LeaderElectorTest extends AbstractPrimitiveTest {
 
-  MemberId node1 = MemberId.memberId("4");
-  MemberId node2 = MemberId.memberId("5");
-  MemberId node3 = MemberId.memberId("6");
+  MemberId node1 = MemberId.from("4");
+  MemberId node2 = MemberId.from("5");
+  MemberId node3 = MemberId.from("6");
 
   @Test
   public void testRun() throws Throwable {
