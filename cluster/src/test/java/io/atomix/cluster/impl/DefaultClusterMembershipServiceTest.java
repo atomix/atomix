@@ -84,9 +84,9 @@ public class DefaultClusterMembershipServiceTest {
         broadcastServiceFactory.newBroadcastService().start().join(),
         new GroupMembershipConfig());
 
-    assertNull(clusterService1.getMember(MemberId.memberId("1")));
-    assertNull(clusterService1.getMember(MemberId.memberId("2")));
-    assertNull(clusterService1.getMember(MemberId.memberId("3")));
+    assertNull(clusterService1.getMember(MemberId.from("1")));
+    assertNull(clusterService1.getMember(MemberId.from("2")));
+    assertNull(clusterService1.getMember(MemberId.from("3")));
 
     CompletableFuture.allOf(new CompletableFuture[]{clusterService1.start(), clusterService2.start(),
         clusterService3.start()}).join();
@@ -98,14 +98,14 @@ public class DefaultClusterMembershipServiceTest {
     assertEquals(3, clusterService3.getMembers().size());
 
     assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getLocalMember().id().type());
-    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.memberId("1")).id().type());
-    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.memberId("2")).id().type());
-    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.memberId("3")).id().type());
+    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.from("1")).id().type());
+    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.from("2")).id().type());
+    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.from("3")).id().type());
 
     assertEquals(State.ACTIVE, clusterService1.getLocalMember().getState());
-    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.memberId("1")).getState());
-    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.memberId("2")).getState());
-    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.memberId("3")).getState());
+    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.from("1")).getState());
+    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.from("2")).getState());
+    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.from("3")).getState());
 
     Member anonymousMember = buildMember(4);
 
@@ -118,11 +118,11 @@ public class DefaultClusterMembershipServiceTest {
 
     assertEquals(State.INACTIVE, ephemeralClusterService.getLocalMember().getState());
 
-    assertNull(ephemeralClusterService.getMember(MemberId.memberId("1")));
-    assertNull(ephemeralClusterService.getMember(MemberId.memberId("2")));
-    assertNull(ephemeralClusterService.getMember(MemberId.memberId("3")));
-    assertNull(ephemeralClusterService.getMember(MemberId.memberId("4")));
-    assertNull(ephemeralClusterService.getMember(MemberId.memberId("5")));
+    assertNull(ephemeralClusterService.getMember(MemberId.from("1")));
+    assertNull(ephemeralClusterService.getMember(MemberId.from("2")));
+    assertNull(ephemeralClusterService.getMember(MemberId.from("3")));
+    assertNull(ephemeralClusterService.getMember(MemberId.from("4")));
+    assertNull(ephemeralClusterService.getMember(MemberId.from("5")));
 
     ephemeralClusterService.start().join();
 
@@ -139,29 +139,29 @@ public class DefaultClusterMembershipServiceTest {
 
     assertEquals(3, clusterService2.getMembers().size());
 
-    assertNull(clusterService2.getMember(MemberId.memberId("1")));
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.memberId("2")).getState());
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.memberId("3")).getState());
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.memberId("4")).getState());
+    assertNull(clusterService2.getMember(MemberId.from("1")));
+    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("2")).getState());
+    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("3")).getState());
+    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("4")).getState());
 
     ephemeralClusterService.stop().join();
 
     Thread.sleep(15000);
 
     assertEquals(2, clusterService2.getMembers().size());
-    assertNull(clusterService2.getMember(MemberId.memberId("1")));
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.memberId("2")).getState());
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.memberId("3")).getState());
-    assertNull(clusterService2.getMember(MemberId.memberId("4")));
+    assertNull(clusterService2.getMember(MemberId.from("1")));
+    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("2")).getState());
+    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("3")).getState());
+    assertNull(clusterService2.getMember(MemberId.from("4")));
 
     Thread.sleep(2500);
 
     assertEquals(2, clusterService2.getMembers().size());
 
-    assertNull(clusterService2.getMember(MemberId.memberId("1")));
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.memberId("2")).getState());
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.memberId("3")).getState());
-    assertNull(clusterService2.getMember(MemberId.memberId("4")));
+    assertNull(clusterService2.getMember(MemberId.from("1")));
+    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("2")).getState());
+    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("3")).getState());
+    assertNull(clusterService2.getMember(MemberId.from("4")));
 
     CompletableFuture.allOf(new CompletableFuture[]{clusterService1.stop(), clusterService2.stop(),
         clusterService3.stop()}).join();

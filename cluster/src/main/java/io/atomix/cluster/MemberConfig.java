@@ -25,7 +25,7 @@ import java.util.Map;
  * Node configuration.
  */
 public class MemberConfig implements Config {
-  private MemberId id = MemberId.memberId();
+  private MemberId id = MemberId.anonymous();
   private Address address;
   private String zone;
   private String rack;

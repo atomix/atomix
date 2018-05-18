@@ -198,7 +198,7 @@ public class AtomixAgent {
         Address.from(address);
         return null;
       } catch (MalformedAddressException e) {
-        return MemberId.memberId(address);
+        return MemberId.from(address);
       }
     }
   }

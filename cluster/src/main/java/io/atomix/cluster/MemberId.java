@@ -30,7 +30,7 @@ public final class MemberId extends AbstractIdentifier<String> implements Compar
    *
    * @return node id
    */
-  public static MemberId memberId() {
+  public static MemberId anonymous() {
     return new MemberId(UUID.randomUUID().toString(), Type.ANONYMOUS);
   }
 
@@ -40,17 +40,6 @@ public final class MemberId extends AbstractIdentifier<String> implements Compar
    * @param id string identifier
    * @return node id
    */
-  public static MemberId memberId(String id) {
-    return new MemberId(id, Type.IDENTIFIED);
-  }
-
-  /**
-   * Creates a new cluster node identifier from the specified string.
-   *
-   * @param id string identifier
-   * @return node id
-   */
-  @Deprecated
   public static MemberId from(String id) {
     return new MemberId(id, Type.IDENTIFIED);
   }
@@ -59,7 +48,15 @@ public final class MemberId extends AbstractIdentifier<String> implements Compar
    * Member ID type.
    */
   public enum Type {
+
+    /**
+     * Represents a user-provided member identifier.
+     */
     IDENTIFIED,
+
+    /**
+     * Represents a randomly generated member identifier.
+     */
     ANONYMOUS,
   }
 
