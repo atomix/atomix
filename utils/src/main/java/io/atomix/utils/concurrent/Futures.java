@@ -88,13 +88,13 @@ public final class Futures {
   /**
    * Returns a wrapped future that will be completed on the given executor.
    *
-   * @param future the future to be completed on the given executor
+   * @param future   the future to be completed on the given executor
    * @param executor the executor with which to complete the future
-   * @param <T> the future value type
+   * @param <T>      the future value type
    * @return a wrapped future to be completed on the given executor
    */
   public static <T> CompletableFuture<T> asyncFuture(CompletableFuture<T> future, Executor executor) {
-    CompletableFuture<T> newFuture = new CompletableFuture<>();
+    CompletableFuture<T> newFuture = new AtomixFuture<>();
     future.whenComplete((result, error) -> {
       executor.execute(() -> {
         if (error == null) {
@@ -106,44 +106,4 @@ public final class Futures {
     });
     return newFuture;
   }
-
-  /**
-   * Returns a future that's completed using the given {@code orderedExecutor} if the future is not blocked or the
-   * given {@code threadPoolExecutor} if the future is blocked.
-   * <p>
-   * This method allows futures to maintain single-thread semantics via the provided {@code orderedExecutor} while
-   * ensuring user code can block without blocking completion of futures. When the returned future or any of its
-   * descendants is blocked on a {@link CompletableFuture#get()} or {@link CompletableFuture#join()} call, completion
-   * of the returned future will be done using the provided {@code threadPoolExecutor}.
-   *
-   * @param future             the future to convert into an asynchronous future
-   * @param executor    the executor with which to attempt to complete the future
-   * @param <T>                future value type
-   * @return a new completable future to be completed using the provided {@code executor} once the provided
-   * {@code future} is complete
-   */
-  public static <T> CompletableFuture<T> blockingAwareFuture(CompletableFuture<T> future, Executor executor) {
-    if (future.isDone()) {
-      return future;
-    }
-
-    BlockingAwareFuture<T> newFuture = new BlockingAwareFuture<T>();
-    future.whenComplete((result, error) -> {
-      if (newFuture.isBlocked()) {
-        if (error == null) {
-          newFuture.complete(result);
-        } else {
-          newFuture.completeExceptionally(error);
-        }
-      } else {
-        if (error == null) {
-          executor.execute(() -> newFuture.complete(result));
-        } else {
-          executor.execute(() -> newFuture.completeExceptionally(error));
-        }
-      }
-    });
-    return newFuture;
-  }
-
 }

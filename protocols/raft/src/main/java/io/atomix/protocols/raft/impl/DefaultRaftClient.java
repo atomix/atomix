@@ -37,7 +37,6 @@ import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -161,6 +160,7 @@ public class DefaultRaftClient implements RaftClient {
       RaftProxyClient client;
 
       // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
+      ThreadContext context = threadContextFactory.createContext();
       if (recoveryStrategy == RecoveryStrategy.RECOVER) {
         client = new RecoveringRaftProxyClient(
             clientId,
@@ -168,19 +168,17 @@ public class DefaultRaftClient implements RaftClient {
             serviceType,
             new ServiceRevision(revision, propagationStrategy),
             clientBuilder,
-            threadContextFactory.createContext());
+            context);
       } else {
         client = clientBuilder.build();
       }
 
       // If max retries is set, wrap the client in a retrying proxy client.
       if (maxRetries > 0) {
-        client = new RetryingRaftProxyClient(client, threadContextFactory.createContext(), maxRetries, retryDelay);
+        client = new RetryingRaftProxyClient(client, context, maxRetries, retryDelay);
       }
 
-      // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
-      Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-      client = new BlockingAwareRaftProxyClient(client, executor);
+      client = new BlockingAwareRaftProxyClient(client, context);
 
       // Create the proxy.
       return new DelegatingRaftProxy(client);

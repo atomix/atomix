@@ -25,6 +25,7 @@ import io.atomix.protocols.raft.service.RaftService;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.concurrent.ThreadModel;
 
 import java.time.Duration;
 import java.util.Arrays;

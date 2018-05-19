@@ -22,8 +22,9 @@ import io.atomix.protocols.raft.operation.OperationType;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.storage.buffer.HeapBytes;
 import io.atomix.time.WallClockTimestamp;
-import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.Scheduler;
 
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -67,7 +68,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see RaftService
  * @see ServiceContext
  */
-public interface RaftServiceExecutor extends ThreadContext {
+public interface RaftServiceExecutor extends Scheduler, Executor {
 
   /**
    * Increments the service clock.
@@ -88,7 +89,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * Registers a operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   void handle(OperationId operationId, Function<Commit<byte[]>, byte[]> callback);
@@ -97,7 +98,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * Registers a operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   default void register(OperationId operationId, Runnable callback) {
@@ -113,8 +114,8 @@ public interface RaftServiceExecutor extends ThreadContext {
    * Registers a no argument operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
-   * @param encoder result encoder
+   * @param callback    the operation callback
+   * @param encoder     result encoder
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   default <R> void register(OperationId operationId, Supplier<R> callback, Function<R, byte[]> encoder) {
@@ -127,7 +128,7 @@ public interface RaftServiceExecutor extends ThreadContext {
    * Registers a operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   default void register(OperationId operationId, Consumer<Commit<Void>> callback) {
@@ -143,8 +144,8 @@ public interface RaftServiceExecutor extends ThreadContext {
    * Registers a operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
-   * @param encoder result encoder
+   * @param callback    the operation callback
+   * @param encoder     result encoder
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   default <R> void register(OperationId operationId, Function<Commit<Void>, R> callback, Function<R, byte[]> encoder) {
@@ -158,8 +159,8 @@ public interface RaftServiceExecutor extends ThreadContext {
    * Registers a operation callback.
    *
    * @param operationId the operation identifier
-   * @param decoder the operation decoder
-   * @param callback the operation callback
+   * @param decoder     the operation decoder
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   default <T> void register(OperationId operationId, Function<byte[], T> decoder, Consumer<Commit<T>> callback) {
@@ -176,9 +177,9 @@ public interface RaftServiceExecutor extends ThreadContext {
    * Registers an operation callback.
    *
    * @param operationId the operation identifier
-   * @param decoder the operation decoder
-   * @param callback the operation callback
-   * @param encoder the output encoder
+   * @param decoder     the operation decoder
+   * @param callback    the operation callback
+   * @param encoder     the output encoder
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   default <T, R> void register(OperationId operationId, Function<byte[], T> decoder, Function<Commit<T>, R> callback, Function<R, byte[]> encoder) {
@@ -187,9 +188,5 @@ public interface RaftServiceExecutor extends ThreadContext {
     checkNotNull(callback, "callback cannot be null");
     checkNotNull(encoder, "encoder cannot be null");
     handle(operationId, commit -> encoder.apply(callback.apply(commit.map(decoder))));
-  }
-
-  @Override
-  default void close() {
   }
 }

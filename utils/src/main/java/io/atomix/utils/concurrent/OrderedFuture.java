@@ -33,9 +33,9 @@ import java.util.function.Function;
  */
 public class OrderedFuture<T> extends CompletableFuture<T> {
   private final Queue<CompletableFuture<T>> orderedFutures = new LinkedList<>();
-  private boolean complete;
-  private T result;
-  private Throwable error;
+  private volatile boolean complete;
+  private volatile T result;
+  private volatile Throwable error;
 
   public OrderedFuture() {
     super.whenComplete(this::complete);
@@ -45,18 +45,21 @@ public class OrderedFuture<T> extends CompletableFuture<T> {
    * Adds a new ordered future.
    */
   private CompletableFuture<T> orderedFuture() {
-    synchronized (orderedFutures) {
-      if (complete) {
-        if (error == null) {
-          return CompletableFuture.completedFuture(result);
-        } else {
-          return Futures.exceptionalFuture(error);
+    if (!complete) {
+      synchronized (orderedFutures) {
+        if (!complete) {
+          CompletableFuture<T> future = new AtomixFuture<>();
+          orderedFutures.add(future);
+          return future;
         }
-      } else {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        orderedFutures.add(future);
-        return future;
       }
+    }
+
+    // Completed
+    if (error == null) {
+      return AtomixFuture.wrap(CompletableFuture.completedFuture(result));
+    } else {
+      return AtomixFuture.wrap(Futures.exceptionalFuture(error));
     }
   }
 
@@ -65,9 +68,9 @@ public class OrderedFuture<T> extends CompletableFuture<T> {
    */
   private void complete(T result, Throwable error) {
     synchronized (orderedFutures) {
-      this.complete = true;
       this.result = result;
       this.error = error;
+      this.complete = true;
       if (error == null) {
         for (CompletableFuture<T> future : orderedFutures) {
           future.complete(result);
@@ -77,6 +80,7 @@ public class OrderedFuture<T> extends CompletableFuture<T> {
           future.completeExceptionally(error);
         }
       }
+      orderedFutures.clear();
     }
   }
 
