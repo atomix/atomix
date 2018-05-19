@@ -85,6 +85,7 @@ import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.concurrent.ThreadModel;
 
 import java.io.File;
 import java.io.IOException;

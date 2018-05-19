@@ -20,6 +20,7 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.operation.RaftOperation;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.RaftProxyClient;
+import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -71,7 +72,7 @@ public class RetryingRaftProxyClient extends DelegatingRaftProxyClient {
     if (getState() == RaftProxy.State.CLOSED) {
       return Futures.exceptionalFuture(new RaftException.Unavailable("Cluster is unavailable"));
     }
-    CompletableFuture<byte[]> future = new CompletableFuture<>();
+    CompletableFuture<byte[]> future = new AtomixFuture<>();
     execute(operation, 1, future);
     return future;
   }

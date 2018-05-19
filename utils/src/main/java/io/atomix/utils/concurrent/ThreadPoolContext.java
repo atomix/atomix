@@ -36,9 +36,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ThreadPoolContext implements ThreadContext {
+public class ThreadPoolContext extends AbstractThreadContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(ThreadPoolContext.class);
-  private final ScheduledExecutorService parent;
+  protected final ScheduledExecutorService parent;
   private final Runnable runner;
   private final LinkedList<Runnable> tasks = new LinkedList<>();
   private boolean running;

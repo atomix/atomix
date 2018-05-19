@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
+package io.atomix.utils.concurrent;
 
-import io.atomix.utils.concurrent.SingleThreadContextFactory;
-import io.atomix.utils.concurrent.ThreadContextFactory;
-import io.atomix.utils.concurrent.ThreadPoolContextFactory;
 import org.slf4j.Logger;
 
 /**
@@ -31,7 +28,7 @@ public enum ThreadModel {
   SHARED_THREAD_POOL {
     @Override
     public ThreadContextFactory factory(String nameFormat, int threadPoolSize, Logger logger) {
-      return new ThreadPoolContextFactory(nameFormat, threadPoolSize, logger);
+      return new BlockingAwareThreadPoolContextFactory(nameFormat, threadPoolSize, logger);
     }
   },
 
@@ -41,16 +38,16 @@ public enum ThreadModel {
   THREAD_PER_SERVICE {
     @Override
     public ThreadContextFactory factory(String nameFormat, int threadPoolSize, Logger logger) {
-      return new SingleThreadContextFactory(nameFormat, logger);
+      return new BlockingAwareSingleThreadContextFactory(nameFormat, threadPoolSize, logger);
     }
   };
 
   /**
    * Returns a thread context factory.
    *
-   * @param nameFormat the thread name format
+   * @param nameFormat     the thread name format
    * @param threadPoolSize the thread pool size
-   * @param logger the thread logger
+   * @param logger         the thread logger
    * @return the thread context factory
    */
   public abstract ThreadContextFactory factory(String nameFormat, int threadPoolSize, Logger logger);

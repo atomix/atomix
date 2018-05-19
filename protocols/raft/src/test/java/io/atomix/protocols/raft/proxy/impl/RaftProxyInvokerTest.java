@@ -307,6 +307,21 @@ public class RaftProxyInvokerTest {
     public void execute(Runnable command) {
       command.run();
     }
+
+    @Override
+    public boolean isBlocked() {
+      return false;
+    }
+
+    @Override
+    public void block() {
+
+    }
+
+    @Override
+    public void unblock() {
+
+    }
   }
 
 }

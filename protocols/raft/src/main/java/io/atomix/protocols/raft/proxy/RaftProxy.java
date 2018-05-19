@@ -19,13 +19,12 @@ import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.event.EventType;
 import io.atomix.protocols.raft.operation.OperationId;
 import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.protocols.raft.service.PropagationStrategy;
+import io.atomix.protocols.raft.service.ServiceType;
 import io.atomix.utils.Managed;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -194,7 +193,6 @@ public interface RaftProxy extends RaftProxyExecutor, Managed<RaftProxy> {
     protected ReadConsistency readConsistency = ReadConsistency.LINEARIZABLE;
     protected int maxRetries = 0;
     protected Duration retryDelay = Duration.ofMillis(100);
-    protected Executor executor;
     protected CommunicationStrategy communicationStrategy = CommunicationStrategy.LEADER;
     protected RecoveryStrategy recoveryStrategy = RecoveryStrategy.RECOVER;
     protected Duration minTimeout = Duration.ofMillis(250);
@@ -283,7 +281,7 @@ public interface RaftProxy extends RaftProxyExecutor, Managed<RaftProxy> {
      * Sets the operation retry delay.
      *
      * @param retryDelay the delay between operation retries
-     * @param timeUnit the delay time unit
+     * @param timeUnit   the delay time unit
      * @return the proxy builder
      * @throws NullPointerException if the time unit is null
      */
@@ -387,18 +385,6 @@ public interface RaftProxy extends RaftProxyExecutor, Managed<RaftProxy> {
     public Builder withMaxTimeout(Duration timeout) {
       checkArgument(!checkNotNull(timeout).isNegative(), "timeout must be positive");
       this.maxTimeout = timeout;
-      return this;
-    }
-
-    /**
-     * Sets the executor with which to complete proxy futures.
-     *
-     * @param executor The executor with which to complete proxy futures.
-     * @return The proxy builder.
-     * @throws NullPointerException if the executor is null
-     */
-    public Builder withExecutor(Executor executor) {
-      this.executor = checkNotNull(executor, "executor cannot be null");
       return this;
     }
 

@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ThreadModel;
+import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
