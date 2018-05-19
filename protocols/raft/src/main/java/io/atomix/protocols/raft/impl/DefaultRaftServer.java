@@ -21,6 +21,7 @@ import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.storage.RaftStorage;
+import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -104,7 +105,7 @@ public class DefaultRaftServer implements RaftServer {
     if (openFuture == null) {
       synchronized (this) {
         if (openFuture == null) {
-          CompletableFuture<RaftServer> future = new CompletableFuture<>();
+          CompletableFuture<RaftServer> future = new AtomixFuture<>();
           openFuture = future;
           joiner.get().whenComplete((result, error) -> {
             if (error == null) {
@@ -153,7 +154,7 @@ public class DefaultRaftServer implements RaftServer {
       return Futures.exceptionalFuture(new IllegalStateException("context not open"));
     }
 
-    CompletableFuture<Void> future = new CompletableFuture<>();
+    CompletableFuture<Void> future = new AtomixFuture<>();
     context.getThreadContext().execute(() -> {
       started = false;
       context.transition(Role.INACTIVE);
@@ -179,7 +180,7 @@ public class DefaultRaftServer implements RaftServer {
     if (closeFuture == null) {
       synchronized (this) {
         if (closeFuture == null) {
-          closeFuture = new CompletableFuture<>();
+          closeFuture = new AtomixFuture<>();
           if (openFuture == null) {
             cluster().leave().whenComplete((leaveResult, leaveError) -> {
               shutdown().whenComplete((shutdownResult, shutdownError) -> {

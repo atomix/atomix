@@ -29,7 +29,7 @@ import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.Scheduled;
-import io.atomix.utils.concurrent.Scheduler;
+import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -52,7 +52,7 @@ public class RecoveringSessionClient implements SessionClient {
   private final String name;
   private final PrimitiveType primitiveType;
   private final Supplier<SessionClient> proxyFactory;
-  private final Scheduler scheduler;
+  private final ThreadContext context;
   private Logger log;
   private volatile OrderedFuture<SessionClient> clientFuture;
   private volatile SessionClient proxy;
@@ -62,12 +62,18 @@ public class RecoveringSessionClient implements SessionClient {
   private Scheduled recoverTask;
   private volatile boolean connected = false;
 
-  public RecoveringSessionClient(String clientId, PartitionId partitionId, String name, PrimitiveType primitiveType, Supplier<SessionClient> proxyFactory, Scheduler scheduler) {
+  public RecoveringSessionClient(
+      String clientId,
+      PartitionId partitionId,
+      String name,
+      PrimitiveType primitiveType,
+      Supplier<SessionClient> proxyFactory,
+      ThreadContext context) {
     this.partitionId = checkNotNull(partitionId);
     this.name = checkNotNull(name);
     this.primitiveType = checkNotNull(primitiveType);
     this.proxyFactory = checkNotNull(proxyFactory);
-    this.scheduler = checkNotNull(scheduler);
+    this.context = checkNotNull(context);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
         .addValue(clientId)
         .build());
@@ -92,6 +98,11 @@ public class RecoveringSessionClient implements SessionClient {
   @Override
   public PrimitiveType type() {
     return primitiveType;
+  }
+
+  @Override
+  public ThreadContext context() {
+    return context;
   }
 
   @Override
@@ -181,7 +192,7 @@ public class RecoveringSessionClient implements SessionClient {
       if (error == null) {
         future.complete(proxy);
       } else {
-        recoverTask = scheduler.schedule(Duration.ofSeconds(1), () -> openProxy(future));
+        recoverTask = context.schedule(Duration.ofSeconds(1), () -> openProxy(future));
       }
     });
   }

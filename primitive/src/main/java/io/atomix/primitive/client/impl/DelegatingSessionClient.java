@@ -24,6 +24,7 @@ import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +51,11 @@ public class DelegatingSessionClient implements SessionClient {
   @Override
   public PartitionId partitionId() {
     return proxy.partitionId();
+  }
+
+  @Override
+  public ThreadContext context() {
+    return proxy.context();
   }
 
   @Override

@@ -26,7 +26,6 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -111,7 +110,6 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
             .withNumBackups(config.getBackups())
             .withMaxRetries(config.getMaxRetries())
             .withRetryDelay(config.getRetryDelay())
-            .withExecutor(config.getExecutor())
             .build())
         .collect(Collectors.toList());
     return new DefaultProxyClient<>(primitiveName, primitiveType, serviceType, partitions, config.getPartitioner());
@@ -241,8 +239,8 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      * @return The proxy builder.
      * @throws NullPointerException if the executor is null
      */
+    @Deprecated
     public Builder withExecutor(Executor executor) {
-      config.setExecutor(executor);
       return this;
     }
 

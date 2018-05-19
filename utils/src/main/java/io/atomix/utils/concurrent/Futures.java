@@ -95,13 +95,13 @@ public final class Futures {
   /**
    * Returns a wrapped future that will be completed on the given executor.
    *
-   * @param future the future to be completed on the given executor
+   * @param future   the future to be completed on the given executor
    * @param executor the executor with which to complete the future
-   * @param <T> the future value type
+   * @param <T>      the future value type
    * @return a wrapped future to be completed on the given executor
    */
   public static <T> CompletableFuture<T> asyncFuture(CompletableFuture<T> future, Executor executor) {
-    CompletableFuture<T> newFuture = new CompletableFuture<>();
+    CompletableFuture<T> newFuture = new AtomixFuture<>();
     future.whenComplete((result, error) -> {
       executor.execute(() -> {
         if (error == null) {
@@ -115,100 +115,18 @@ public final class Futures {
   }
 
   /**
-   * Returns a future that's completed using the given {@code orderedExecutor} if the future is not blocked or the
-   * given {@code threadPoolExecutor} if the future is blocked.
-   * <p>
-   * This method allows futures to maintain single-thread semantics via the provided {@code orderedExecutor} while
-   * ensuring user code can block without blocking completion of futures. When the returned future or any of its
-   * descendants is blocked on a {@link CompletableFuture#get()} or {@link CompletableFuture#join()} call, completion
-   * of the returned future will be done using the provided {@code threadPoolExecutor}.
-   *
-   * @param future the future to convert into an asynchronous future
-   * @param orderedExecutor the ordered executor with which to attempt to complete the future
-   * @param threadPoolExecutor the backup executor with which to complete blocked futures
-   * @param <T> future value type
-   * @return a new completable future to be completed using the provided {@code executor} once the provided
-   * {@code future} is complete
-   */
-  public static <T> CompletableFuture<T> orderedFuture(
-      CompletableFuture<T> future,
-      Executor orderedExecutor,
-      Executor threadPoolExecutor) {
-    if (future.isDone()) {
-      return future;
-    }
-
-    BlockingAwareFuture<T> newFuture = new BlockingAwareFuture<>();
-    future.whenComplete((result, error) -> {
-      Runnable completer = () -> {
-        if (future.isCompletedExceptionally()) {
-          newFuture.completeExceptionally(error);
-        } else {
-          newFuture.complete(result);
-        }
-      };
-
-      if (newFuture.isBlocked()) {
-        threadPoolExecutor.execute(completer);
-      } else {
-        orderedExecutor.execute(completer);
-      }
-    });
-    return newFuture;
-  }
-
-  /**
-   * Returns a future that's completed using the given {@code orderedExecutor} if the future is not blocked or the
-   * given {@code threadPoolExecutor} if the future is blocked.
-   * <p>
-   * This method allows futures to maintain single-thread semantics via the provided {@code orderedExecutor} while
-   * ensuring user code can block without blocking completion of futures. When the returned future or any of its
-   * descendants is blocked on a {@link CompletableFuture#get()} or {@link CompletableFuture#join()} call, completion
-   * of the returned future will be done using the provided {@code threadPoolExecutor}.
-   *
-   * @param future             the future to convert into an asynchronous future
-   * @param executor    the executor with which to attempt to complete the future
-   * @param <T>                future value type
-   * @return a new completable future to be completed using the provided {@code executor} once the provided
-   * {@code future} is complete
-   */
-  public static <T> CompletableFuture<T> blockingAwareFuture(CompletableFuture<T> future, Executor executor) {
-    if (future.isDone()) {
-      return future;
-    }
-
-    BlockingAwareFuture<T> newFuture = new BlockingAwareFuture<T>();
-    future.whenComplete((result, error) -> {
-      if (newFuture.isBlocked()) {
-        if (error == null) {
-          newFuture.complete(result);
-        } else {
-          newFuture.completeExceptionally(error);
-        }
-      } else {
-        if (error == null) {
-          executor.execute(() -> newFuture.complete(result));
-        } else {
-          executor.execute(() -> newFuture.completeExceptionally(error));
-        }
-      }
-    });
-    return newFuture;
-  }
-
-  /**
    * Returns a new CompletableFuture completed with a list of computed values
    * when all of the given CompletableFuture complete.
    *
    * @param futures the CompletableFutures
-   * @param <T> value type of CompletableFuture
+   * @param <T>     value type of CompletableFuture
    * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
    */
   @SuppressWarnings("unchecked")
   public static <T> CompletableFuture<Stream<T>> allOf(Stream<CompletableFuture<T>> futures) {
     CompletableFuture<T>[] futuresArray = futures.toArray(CompletableFuture[]::new);
-    return CompletableFuture.allOf(futuresArray)
-        .thenApply(v -> Stream.of(futuresArray).map(CompletableFuture::join));
+    return AtomixFuture.wrap(CompletableFuture.allOf(futuresArray)
+        .thenApply(v -> Stream.of(futuresArray).map(CompletableFuture::join)));
   }
 
   /**
@@ -216,25 +134,24 @@ public final class Futures {
    * when all of the given CompletableFuture complete.
    *
    * @param futures the CompletableFutures
-   * @param <T> value type of CompletableFuture
+   * @param <T>     value type of CompletableFuture
    * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
    */
   public static <T> CompletableFuture<List<T>> allOf(List<CompletableFuture<T>> futures) {
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
+    return AtomixFuture.wrap(CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
         .thenApply(v -> futures.stream()
             .map(CompletableFuture::join)
-            .collect(Collectors.toList())
-        );
+            .collect(Collectors.toList())));
   }
 
   /**
    * Returns a new CompletableFuture completed by reducing a list of computed values
    * when all of the given CompletableFuture complete.
    *
-   * @param futures the CompletableFutures
-   * @param reducer reducer for computing the result
+   * @param futures    the CompletableFutures
+   * @param reducer    reducer for computing the result
    * @param emptyValue zero value to be returned if the input future list is empty
-   * @param <T> value type of CompletableFuture
+   * @param <T>        value type of CompletableFuture
    * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
    */
   public static <T> CompletableFuture<T> allOf(List<CompletableFuture<T>> futures,
@@ -247,10 +164,10 @@ public final class Futures {
    * Returns a new CompletableFuture completed by with the first positive result from a list of
    * input CompletableFutures.
    *
-   * @param futures the input list of CompletableFutures
+   * @param futures               the input list of CompletableFutures
    * @param positiveResultMatcher matcher to identify a positive result
-   * @param negativeResult value to complete with if none of the futures complete with a positive result
-   * @param <T> value type of CompletableFuture
+   * @param negativeResult        value to complete with if none of the futures complete with a positive result
+   * @param <T>                   value type of CompletableFuture
    * @return a new CompletableFuture
    */
   public static <T> CompletableFuture<T> firstOf(List<CompletableFuture<T>> futures,

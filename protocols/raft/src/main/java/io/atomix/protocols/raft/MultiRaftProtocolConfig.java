@@ -36,7 +36,6 @@ public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftPr
   private Recovery recoveryStrategy = Recovery.RECOVER;
   private int maxRetries = 0;
   private Duration retryDelay = Duration.ofMillis(100);
-  private Executor executor;
 
   @Override
   public PrimitiveProtocol.Type getType() {
@@ -218,8 +217,9 @@ public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftPr
    *
    * @return the executor
    */
+  @Deprecated
   public Executor getExecutor() {
-    return executor;
+    return null;
   }
 
   /**
@@ -228,8 +228,8 @@ public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftPr
    * @param executor the executor
    * @return the protocol configuration
    */
+  @Deprecated
   public MultiRaftProtocolConfig setExecutor(Executor executor) {
-    this.executor = executor;
-    return this;
+    throw new UnsupportedOperationException();
   }
 }

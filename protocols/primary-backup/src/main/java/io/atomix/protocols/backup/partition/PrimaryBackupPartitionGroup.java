@@ -31,7 +31,7 @@ import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.utils.concurrent.ThreadContextFactory;
-import io.atomix.utils.concurrent.ThreadPoolContextFactory;
+import io.atomix.utils.concurrent.BlockingAwareThreadPoolContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,7 +158,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
-    threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
+    threadFactory = new BlockingAwareThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.join(managementService, threadFactory))
         .collect(Collectors.toList());
@@ -170,7 +170,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
-    threadFactory = new ThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
+    threadFactory = new BlockingAwareThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.connect(managementService, threadFactory))
         .collect(Collectors.toList());

@@ -111,7 +111,6 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
             .withRecoveryStrategy(config.getRecoveryStrategy())
             .withMaxRetries(config.getMaxRetries())
             .withRetryDelay(config.getRetryDelay())
-            .withExecutor(config.getExecutor())
             .build())
         .collect(Collectors.toList());
     return new DefaultProxyClient<>(primitiveName, primitiveType, serviceType, partitions, config.getPartitioner());
@@ -243,8 +242,8 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
      * @return The proxy builder.
      * @throws NullPointerException if the executor is null
      */
+    @Deprecated
     public Builder withExecutor(Executor executor) {
-      config.setExecutor(executor);
       return this;
     }
 

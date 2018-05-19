@@ -114,6 +114,11 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
   }
 
   @Override
+  public ThreadContext context() {
+    return context;
+  }
+
+  @Override
   public SessionId sessionId() {
     return state != null ? state.getSessionId() : null;
   }

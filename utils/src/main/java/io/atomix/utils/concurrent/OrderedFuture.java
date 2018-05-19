@@ -48,7 +48,7 @@ public class OrderedFuture<T> extends CompletableFuture<T> {
     if (!complete) {
       synchronized (orderedFutures) {
         if (!complete) {
-          CompletableFuture<T> future = new CompletableFuture<>();
+          CompletableFuture<T> future = new AtomixFuture<>();
           orderedFutures.add(future);
           return future;
         }
@@ -57,9 +57,9 @@ public class OrderedFuture<T> extends CompletableFuture<T> {
 
     // Completed
     if (error == null) {
-      return CompletableFuture.completedFuture(result);
+      return AtomixFuture.wrap(CompletableFuture.completedFuture(result));
     } else {
-      return Futures.exceptionalFuture(error);
+      return AtomixFuture.wrap(Futures.exceptionalFuture(error));
     }
   }
 

@@ -34,6 +34,7 @@ import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
+import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -176,7 +177,7 @@ public class RaftProxyManager {
         .withMaxTimeout(maxTimeout.toMillis())
         .build();
 
-    CompletableFuture<RaftProxyState> future = new CompletableFuture<>();
+    CompletableFuture<RaftProxyState> future = new AtomixFuture<>();
     ThreadContext proxyContext = threadContextFactory.createContext();
     connection.openSession(request).whenCompleteAsync((response, error) -> {
       if (error == null) {
@@ -227,7 +228,7 @@ public class RaftProxyManager {
         .withSession(sessionId.id())
         .build();
 
-    CompletableFuture<Void> future = new CompletableFuture<>();
+    CompletableFuture<Void> future = new AtomixFuture<>();
     connection.closeSession(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
@@ -285,7 +286,7 @@ public class RaftProxyManager {
       return Futures.exceptionalFuture(new IllegalArgumentException("Unknown session: " + sessionId));
     }
 
-    CompletableFuture<Void> future = new CompletableFuture<>();
+    CompletableFuture<Void> future = new AtomixFuture<>();
 
     KeepAliveRequest request = KeepAliveRequest.builder()
         .withSessionIds(new long[]{sessionId.id()})
@@ -434,7 +435,7 @@ public class RaftProxyManager {
    */
   public CompletableFuture<Void> close() {
     if (open.compareAndSet(true, false)) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
+      CompletableFuture<Void> future = new AtomixFuture<>();
       threadContext.execute(() -> {
         synchronized (this) {
           for (Scheduled keepAliveFuture : keepAliveTimers.values()) {

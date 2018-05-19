@@ -15,8 +15,12 @@
  */
 package io.atomix.utils.concurrent;
 
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -26,73 +30,91 @@ import java.util.function.Function;
  * A {@link CompletableFuture} that tracks whether the future or one of its descendants has been blocked on
  * a {@link CompletableFuture#get()} or {@link CompletableFuture#join()} call.
  */
-public class BlockingAwareFuture<T> extends CompletableFuture<T> {
-  private final AtomicBoolean blocked;
-
-  public BlockingAwareFuture() {
-    this(new AtomicBoolean());
-  }
-
-  private BlockingAwareFuture(AtomicBoolean blocked) {
-    this.blocked = blocked;
-  }
-
-  /**
-   * Returns a boolean indicating whether the future is blocked.
-   *
-   * @return indicates whether the future is blocked
-   */
-  public boolean isBlocked() {
-    return blocked.get();
-  }
-
-  @Override
-  public T get() throws InterruptedException, ExecutionException {
-    blocked.set(true);
-    try {
-      return super.get();
-    } finally {
-      blocked.set(false);
-    }
-  }
-
-  @Override
-  public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-    blocked.set(true);
-    try {
-      return super.get(timeout, unit);
-    } finally {
-      blocked.set(false);
-    }
-  }
-
-  @Override
-  public synchronized T join() {
-    blocked.set(true);
-    try {
-      return super.join();
-    } finally {
-      blocked.set(false);
-    }
-  }
+public class AtomixFuture<T> extends CompletableFuture<T> {
 
   /**
    * Wraps the given future in a new blockable future.
    *
    * @param future the future to wrap
-   * @param <U>    the future value type
+   * @param <T>    the future value type
    * @return a new blockable future
    */
-  private <U> CompletableFuture<U> wrap(CompletableFuture<U> future) {
-    BlockingAwareFuture<U> blockingFuture = new BlockingAwareFuture<U>(blocked);
+  public static <T> AtomixFuture<T> wrap(CompletableFuture<T> future) {
+    AtomixFuture<T> newFuture = new AtomixFuture<>();
     future.whenComplete((result, error) -> {
       if (error == null) {
-        blockingFuture.complete(result);
+        newFuture.complete(result);
       } else {
-        blockingFuture.completeExceptionally(error);
+        newFuture.completeExceptionally(error);
       }
     });
-    return blockingFuture;
+    return newFuture;
+  }
+
+  /**
+   * Returns a new completed Atomix future.
+   *
+   * @param result the future result
+   * @param <T>    the future result type
+   * @return the completed future
+   */
+  public static <T> CompletableFuture<T> completedFuture(T result) {
+    CompletableFuture<T> future = new AtomixFuture<>();
+    future.complete(result);
+    return future;
+  }
+
+  /**
+   * Returns a new exceptionally completed Atomix future.
+   *
+   * @param t   the future exception
+   * @param <T> the future result type
+   * @return the completed future
+   */
+  public static <T> CompletableFuture<T> exceptionalFuture(Throwable t) {
+    CompletableFuture<T> future = new AtomixFuture<>();
+    future.completeExceptionally(t);
+    return future;
+  }
+
+  private static ThreadContext NULL_CONTEXT = new NullThreadContext();
+
+  private ThreadContext getThreadContext() {
+    ThreadContext context = ThreadContext.currentContext();
+    return context != null ? context : NULL_CONTEXT;
+  }
+
+  @Override
+  public T get() throws InterruptedException, ExecutionException {
+    ThreadContext context = getThreadContext();
+    context.block();
+    try {
+      return super.get();
+    } finally {
+      context.unblock();
+    }
+  }
+
+  @Override
+  public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    ThreadContext context = getThreadContext();
+    context.block();
+    try {
+      return super.get(timeout, unit);
+    } finally {
+      context.unblock();
+    }
+  }
+
+  @Override
+  public synchronized T join() {
+    ThreadContext context = getThreadContext();
+    context.block();
+    try {
+      return super.join();
+    } finally {
+      context.unblock();
+    }
   }
 
   @Override

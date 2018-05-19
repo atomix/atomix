@@ -22,6 +22,7 @@ import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -65,6 +66,13 @@ public interface SessionClient {
    * @return the partition identifier.
    */
   PartitionId partitionId();
+
+  /**
+   * Returns the partition thread context.
+   *
+   * @return the partition thread context
+   */
+  ThreadContext context();
 
   /**
    * Executes an operation to the cluster.

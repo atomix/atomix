@@ -25,6 +25,7 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +66,11 @@ public class DefaultProxySession<S> implements ProxySession<S> {
   @Override
   public PrimitiveType type() {
     return session.type();
+  }
+
+  @Override
+  public ThreadContext context() {
+    return session.context();
   }
 
   @Override
