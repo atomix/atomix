@@ -40,6 +40,7 @@ import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -57,6 +58,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Raft session.
  */
 public class RaftSessionContext implements RaftSession {
+  private static final int EVENT_BATCH_SIZE = 1024 * 1024 * 32;
   private final Logger log;
   private final SessionId sessionId;
   private final MemberId member;
@@ -408,7 +410,7 @@ public class RaftSessionContext implements RaftSession {
   /**
    * Registers a pending command.
    *
-   * @param sequence the pending command sequence number
+   * @param sequence       the pending command sequence number
    * @param pendingCommand the pending command to register
    */
   public void registerCommand(long sequence, PendingCommand pendingCommand) {
@@ -618,17 +620,58 @@ public class RaftSessionContext implements RaftSession {
     // Only send events to the client if this server is the leader.
     if (server.isLeader()) {
       eventExecutor.execute(() -> {
-        PublishRequest request = PublishRequest.newBuilder()
-            .withSession(sessionId().id())
-            .withEventIndex(event.eventIndex)
-            .withPreviousIndex(event.previousIndex)
-            .withEvents(event.events)
-            .build();
+        // Optimize for single event indexes.
+        if (event.events.size() == 1) {
+          PublishRequest request = PublishRequest.newBuilder()
+              .withSession(sessionId().id())
+              .withEventIndex(event.eventIndex)
+              .withBatchIndex(0)
+              .withBatchCount(1)
+              .withPreviousIndex(event.previousIndex)
+              .withEvents(event.events)
+              .build();
 
-        log.trace("Sending {}", request);
-        protocol.publish(member, request);
+          log.trace("Sending {}", request);
+          protocol.publish(member, request);
+        } else {
+          // If more than one event exists, batch and send the events.
+          List<List<RaftEvent>> batches = createBatches(event.events);
+          int i = 0;
+          for (List<RaftEvent> batch : batches) {
+            PublishRequest request = PublishRequest.newBuilder()
+                .withSession(sessionId().id())
+                .withEventIndex(event.eventIndex)
+                .withBatchIndex(i++)
+                .withBatchCount(batches.size())
+                .withPreviousIndex(event.previousIndex)
+                .withEvents(batch)
+                .build();
+
+            log.trace("Sending {}", request);
+            protocol.publish(member, request);
+          }
+        }
       });
     }
+  }
+
+  private List<List<RaftEvent>> createBatches(List<RaftEvent> events) {
+    List<List<RaftEvent>> batches = new ArrayList<>(1);
+    List<RaftEvent> currentBatch = new ArrayList<>(8);
+    int currentBatchSize = 0;
+    for (RaftEvent raftEvent : events) {
+      if (currentBatchSize + raftEvent.value().length > EVENT_BATCH_SIZE && !currentBatch.isEmpty()) {
+        batches.add(currentBatch);
+        currentBatch = new ArrayList<>(8);
+        currentBatchSize = 0;
+      }
+      currentBatch.add(raftEvent);
+    }
+
+    if (!currentBatch.isEmpty()) {
+      batches.add(currentBatch);
+    }
+    return batches;
   }
 
   /**
