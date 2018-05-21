@@ -115,8 +115,25 @@ final class RaftProxyListener {
       return;
     }
 
+    // If the request batch index does not match the next batch index, reject the request.
+    if (request.batchIndex() != state.getNextBatchIndex()) {
+      log.trace("Inconsistent batch index: {}", request.batchIndex());
+      ResetRequest resetRequest = ResetRequest.newBuilder()
+          .withSession(state.getSessionId().id())
+          .withIndex(eventIndex)
+          .build();
+      log.trace("Sending {}", resetRequest);
+      protocol.reset(memberSelector.members(), resetRequest);
+      return;
+    }
+
     // Store the event index. This will be used to verify that events are received in sequential order.
-    state.setEventIndex(request.eventIndex());
+    if (request.batchIndex() == request.batchCount() - 1) {
+      state.setEventIndex(request.eventIndex());
+      state.setNextBatchIndex(0);
+    } else {
+      state.setNextBatchIndex(state.getNextBatchIndex() + 1);
+    }
 
     sequencer.sequenceEvent(request, () -> {
       for (RaftEvent event : request.events()) {

@@ -42,6 +42,7 @@ public final class RaftProxyState {
   private volatile long commandResponse;
   private volatile long responseIndex;
   private volatile long eventIndex;
+  private int nextBatchIndex;
   private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
 
   RaftProxyState(String clientId, SessionId sessionId, String serviceName, ServiceType serviceType, ServiceRevision revision, long timeout) {
@@ -238,5 +239,23 @@ public final class RaftProxyState {
    */
   public long getEventIndex() {
     return eventIndex;
+  }
+
+  /**
+   * Sets the next batch index.
+   *
+   * @param nextBatchIndex the next batch index
+   */
+  public void setNextBatchIndex(int nextBatchIndex) {
+    this.nextBatchIndex = nextBatchIndex;
+  }
+
+  /**
+   * Returns the next batch index.
+   *
+   * @return the next batch index
+   */
+  public int getNextBatchIndex() {
+    return nextBatchIndex;
   }
 }

@@ -47,12 +47,16 @@ public class PublishRequest extends SessionRequest {
   }
 
   private final long eventIndex;
+  private final int batchIndex;
+  private final int batchCount;
   private final long previousIndex;
   private final List<RaftEvent> events;
 
-  public PublishRequest(long session, long eventIndex, long previousIndex, List<RaftEvent> events) {
+  public PublishRequest(long session, long eventIndex, int batchIndex, int batchCount, long previousIndex, List<RaftEvent> events) {
     super(session);
     this.eventIndex = eventIndex;
+    this.batchIndex = batchIndex;
+    this.batchCount = batchCount;
     this.previousIndex = previousIndex;
     this.events = events;
   }
@@ -64,6 +68,24 @@ public class PublishRequest extends SessionRequest {
    */
   public long eventIndex() {
     return eventIndex;
+  }
+
+  /**
+   * Returns the batch index.
+   *
+   * @return the batch index
+   */
+  public int batchIndex() {
+    return batchIndex;
+  }
+
+  /**
+   * Returns the batch count.
+   *
+   * @return the batch count
+   */
+  public int batchCount() {
+    return batchCount;
   }
 
   /**
@@ -106,6 +128,8 @@ public class PublishRequest extends SessionRequest {
     return toStringHelper(this)
         .add("session", session)
         .add("eventIndex", eventIndex)
+        .add("batchIndex", batchIndex)
+        .add("batchCount", batchCount)
         .add("previousIndex", previousIndex)
         .add("events", events)
         .toString();
@@ -116,6 +140,8 @@ public class PublishRequest extends SessionRequest {
    */
   public static class Builder extends SessionRequest.Builder<Builder, PublishRequest> {
     private long eventIndex;
+    private int batchIndex;
+    private int batchCount;
     private long previousIndex;
     private List<RaftEvent> events;
 
@@ -129,6 +155,32 @@ public class PublishRequest extends SessionRequest {
     public Builder withEventIndex(long eventIndex) {
       checkArgument(eventIndex > 0, "eventIndex must be positive");
       this.eventIndex = eventIndex;
+      return this;
+    }
+
+    /**
+     * Sets the batch index.
+     *
+     * @param batchIndex the batch index
+     * @return the request builder
+     * @throws IllegalArgumentException if the batch index is not positive
+     */
+    public Builder withBatchIndex(int batchIndex) {
+      checkArgument(batchIndex >= 0, "batchIndex must be positive");
+      this.batchIndex = batchIndex;
+      return this;
+    }
+
+    /**
+     * Sets the batch count.
+     *
+     * @param batchCount the batch count
+     * @return the request builder
+     * @throws IllegalArgumentException if the batch count is not positive
+     */
+    public Builder withBatchCount(int batchCount) {
+      checkArgument(batchCount > 0, "batchCount must be positive");
+      this.batchCount = batchCount;
       return this;
     }
 
@@ -170,6 +222,8 @@ public class PublishRequest extends SessionRequest {
     protected void validate() {
       super.validate();
       checkArgument(eventIndex > 0, "eventIndex must be positive");
+      checkArgument(batchIndex >= 0, "batchIndex must be positive");
+      checkArgument(batchCount > 0, "batchCount must be positive");
       checkArgument(previousIndex >= 0, "previousIndex must be positive");
       checkNotNull(events, "events cannot be null");
     }
@@ -180,7 +234,7 @@ public class PublishRequest extends SessionRequest {
     @Override
     public PublishRequest build() {
       validate();
-      return new PublishRequest(session, eventIndex, previousIndex, events);
+      return new PublishRequest(session, eventIndex, batchIndex, batchCount, previousIndex, events);
     }
   }
 }
