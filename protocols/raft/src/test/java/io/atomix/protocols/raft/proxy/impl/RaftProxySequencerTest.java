@@ -59,6 +59,8 @@ public class RaftProxySequencerTest {
     PublishRequest request = PublishRequest.newBuilder()
         .withSession(1)
         .withEventIndex(1)
+        .withBatchIndex(0)
+        .withBatchCount(1)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
@@ -93,6 +95,8 @@ public class RaftProxySequencerTest {
     PublishRequest request = PublishRequest.newBuilder()
         .withSession(1)
         .withEventIndex(1)
+        .withBatchIndex(0)
+        .withBatchCount(1)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
@@ -127,6 +131,8 @@ public class RaftProxySequencerTest {
     PublishRequest request = PublishRequest.newBuilder()
         .withSession(1)
         .withEventIndex(2)
+        .withBatchIndex(0)
+        .withBatchCount(1)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
@@ -161,6 +167,8 @@ public class RaftProxySequencerTest {
     PublishRequest request1 = PublishRequest.newBuilder()
         .withSession(1)
         .withEventIndex(2)
+        .withBatchIndex(0)
+        .withBatchCount(1)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
@@ -168,6 +176,8 @@ public class RaftProxySequencerTest {
     PublishRequest request2 = PublishRequest.newBuilder()
         .withSession(1)
         .withEventIndex(3)
+        .withBatchIndex(0)
+        .withBatchCount(1)
         .withPreviousIndex(2)
         .withEvents(Collections.emptyList())
         .build();
@@ -202,6 +212,8 @@ public class RaftProxySequencerTest {
     PublishRequest request1 = PublishRequest.newBuilder()
         .withSession(1)
         .withEventIndex(2)
+        .withBatchIndex(0)
+        .withBatchCount(1)
         .withPreviousIndex(0)
         .withEvents(Collections.emptyList())
         .build();
@@ -209,6 +221,8 @@ public class RaftProxySequencerTest {
     PublishRequest request2 = PublishRequest.newBuilder()
         .withSession(1)
         .withEventIndex(3)
+        .withBatchIndex(0)
+        .withBatchCount(1)
         .withPreviousIndex(2)
         .withEvents(Collections.emptyList())
         .build();
