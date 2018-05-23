@@ -246,20 +246,13 @@ public class DefaultClusterMembershipService
   /**
    * Activates the given member.
    */
-  private void activateMember(Member member) {
+  private void activateMember(StatefulMember member) {
     StatefulMember existingMember = members.get(member.id());
     if (existingMember == null) {
-      StatefulMember statefulMember = new StatefulMember(
-          member.id(),
-          member.address(),
-          member.zone(),
-          member.rack(),
-          member.host(),
-          member.metadata());
-      LOGGER.info("{} - Member activated: {}", localMember.id(), statefulMember);
-      statefulMember.setState(State.ACTIVE);
-      members.put(statefulMember.id(), statefulMember);
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, statefulMember));
+      member.setState(State.ACTIVE);
+      LOGGER.info("{} - Member activated: {}", localMember.id(), member);
+      members.put(member.id(), member);
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, member));
       sendHeartbeat(member.address(), SERIALIZER.encode(new ClusterHeartbeat(
           localMember.id(),
           localMember.zone(),
@@ -270,6 +263,11 @@ public class DefaultClusterMembershipService
       LOGGER.info("{} - Member activated: {}", localMember.id(), existingMember);
       existingMember.setState(State.ACTIVE);
       post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, existingMember));
+    } else if (!existingMember.metadata().equals(member.metadata())) {
+      member.setState(State.ACTIVE);
+      LOGGER.info("{} - Member updated: {}", localMember.id(), member);
+      members.put(member.id(), member);
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_UPDATED, member));
     }
   }
 
