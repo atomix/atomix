@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.messaging.impl;
+package io.atomix.cluster.messaging.impl;
 
-import io.atomix.messaging.ManagedBroadcastService;
+import io.atomix.cluster.messaging.ManagedBroadcastService;
 import io.atomix.utils.net.Address;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.After;

@@ -17,7 +17,7 @@ package io.atomix.protocols.backup.partition.impl;
 
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.BackupRequest;
@@ -37,14 +37,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
- * Raft server protocol that uses a {@link ClusterMessagingService}.
+ * Raft server protocol that uses a {@link ClusterCommunicationService}.
  */
 public class PrimaryBackupServerCommunicator implements PrimaryBackupServerProtocol {
   private final PrimaryBackupMessageContext context;
   private final Serializer serializer;
-  private final ClusterMessagingService clusterCommunicator;
+  private final ClusterCommunicationService clusterCommunicator;
 
-  public PrimaryBackupServerCommunicator(String prefix, Serializer serializer, ClusterMessagingService clusterCommunicator) {
+  public PrimaryBackupServerCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this.context = new PrimaryBackupMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");

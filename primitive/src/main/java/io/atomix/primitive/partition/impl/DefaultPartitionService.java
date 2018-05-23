@@ -17,7 +17,7 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionGroupMembershipService;
@@ -53,7 +53,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionService.class);
 
   private final ClusterMembershipService clusterMembershipService;
-  private final ClusterMessagingService clusterMessagingService;
+  private final ClusterCommunicationService communicationService;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
   private final ManagedPartitionGroupMembershipService groupMembershipService;
   private ManagedPartitionGroup systemGroup;
@@ -66,12 +66,12 @@ public class DefaultPartitionService implements ManagedPartitionService {
   @SuppressWarnings("unchecked")
   public DefaultPartitionService(
       ClusterMembershipService membershipService,
-      ClusterMessagingService messagingService,
+      ClusterCommunicationService messagingService,
       PrimitiveTypeRegistry primitiveTypeRegistry,
       ManagedPartitionGroup systemGroup,
       Collection<ManagedPartitionGroup> groups) {
     this.clusterMembershipService = membershipService;
-    this.clusterMessagingService = messagingService;
+    this.communicationService = messagingService;
     this.primitiveTypeRegistry = primitiveTypeRegistry;
     this.groupMembershipService = new DefaultPartitionGroupMembershipService(membershipService, messagingService, systemGroup, groups);
     this.systemGroup = systemGroup;
@@ -135,12 +135,12 @@ public class DefaultPartitionService implements ManagedPartitionService {
             if (systemGroup == null) {
               systemGroup = PartitionGroups.createGroup(systemGroupMembership.config());
             }
-            electionService = new HashBasedPrimaryElectionService(clusterMembershipService, groupMembershipService, clusterMessagingService);
+            electionService = new HashBasedPrimaryElectionService(clusterMembershipService, groupMembershipService, communicationService);
             return electionService.start()
                 .thenCompose(s -> {
                   PartitionManagementService managementService = new DefaultPartitionManagementService(
                       clusterMembershipService,
-                      clusterMessagingService,
+                      communicationService,
                       primitiveTypeRegistry,
                       electionService,
                       new DefaultSessionIdService());
@@ -161,7 +161,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
               .thenCompose(v2 -> systemSessionIdService.start())
               .thenApply(v2 -> new DefaultPartitionManagementService(
                   clusterMembershipService,
-                  clusterMessagingService,
+                  communicationService,
                   primitiveTypeRegistry,
                   systemElectionService,
                   systemSessionIdService));

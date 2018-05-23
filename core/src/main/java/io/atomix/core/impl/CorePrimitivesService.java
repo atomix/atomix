@@ -19,7 +19,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.AtomixConfig;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
@@ -94,7 +94,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   public CorePrimitivesService(
       ScheduledExecutorService executorService,
       ClusterMembershipService membershipService,
-      ClusterMessagingService communicationService,
+      ClusterCommunicationService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
       AtomixConfig config) {

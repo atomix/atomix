@@ -31,7 +31,7 @@ import static io.atomix.utils.serializer.serializers.DefaultSerializers.BASIC;
 /**
  * Service for assisting communications between controller cluster nodes.
  */
-public interface ClusterMessagingService {
+public interface ClusterCommunicationService {
 
   /**
    * Broadcasts a message to all controller nodes.

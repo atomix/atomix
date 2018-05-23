@@ -22,7 +22,7 @@ import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroupId;
 import io.atomix.primitive.partition.PartitionGroupMembership;
@@ -70,7 +70,7 @@ public class HashBasedPrimaryElection
   private final PartitionId partitionId;
   private final ClusterMembershipService clusterMembershipService;
   private final PartitionGroupMembershipService groupMembershipService;
-  private final ClusterMessagingService clusterMessagingService;
+  private final ClusterCommunicationService communicationService;
   private final ClusterMembershipEventListener clusterMembershipEventListener = this::handleClusterMembershipEvent;
   private final Map<MemberId, Integer> counters = Maps.newConcurrentMap();
   private final String subject;
@@ -93,17 +93,17 @@ public class HashBasedPrimaryElection
       PartitionId partitionId,
       ClusterMembershipService clusterMembershipService,
       PartitionGroupMembershipService groupMembershipService,
-      ClusterMessagingService clusterMessagingService,
+      ClusterCommunicationService communicationService,
       ScheduledExecutorService executor) {
     this.partitionId = partitionId;
     this.clusterMembershipService = clusterMembershipService;
     this.groupMembershipService = groupMembershipService;
-    this.clusterMessagingService = clusterMessagingService;
+    this.communicationService = communicationService;
     this.subject = String.format("primary-election-counter-%s-%d", partitionId.group(), partitionId.id());
     recomputeTerm(groupMembershipService.getMembership(partitionId.group()));
     groupMembershipService.addListener(groupMembershipEventListener);
     clusterMembershipService.addListener(clusterMembershipEventListener);
-    clusterMessagingService.subscribe(subject, SERIALIZER::decode, this::updateCounters, executor);
+    communicationService.subscribe(subject, SERIALIZER::decode, this::updateCounters, executor);
     broadcastFuture = executor.scheduleAtFixedRate(this::broadcastCounters, BROADCAST_INTERVAL, BROADCAST_INTERVAL, TimeUnit.MILLISECONDS);
   }
 
@@ -159,7 +159,7 @@ public class HashBasedPrimaryElection
   }
 
   private void broadcastCounters() {
-    clusterMessagingService.broadcast(subject, counters, SERIALIZER::encode);
+    communicationService.broadcast(subject, counters, SERIALIZER::encode);
   }
 
   private void updateTerm(long term) {

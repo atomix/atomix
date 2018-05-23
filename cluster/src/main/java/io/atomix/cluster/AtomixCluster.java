@@ -16,18 +16,18 @@
 package io.atomix.cluster;
 
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
+import io.atomix.cluster.messaging.BroadcastService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ManagedBroadcastService;
+import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
-import io.atomix.cluster.messaging.ManagedClusterMessagingService;
+import io.atomix.cluster.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
-import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
-import io.atomix.messaging.BroadcastService;
-import io.atomix.messaging.ManagedBroadcastService;
-import io.atomix.messaging.ManagedMessagingService;
-import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.impl.NettyBroadcastService;
-import io.atomix.messaging.impl.NettyMessagingService;
+import io.atomix.cluster.messaging.impl.NettyBroadcastService;
+import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -86,8 +86,8 @@ public class AtomixCluster implements Managed<Void> {
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
   protected final ManagedClusterMembershipService membershipService;
-  protected final ManagedClusterMessagingService clusterMessagingService;
-  protected final ManagedClusterEventingService clusterEventingService;
+  protected final ManagedClusterCommunicationService communicationService;
+  protected final ManagedClusterEventingService eventingService;
   protected volatile CompletableFuture<Void> openFuture;
   protected volatile CompletableFuture<Void> closeFuture;
   private final ThreadContext threadContext = new SingleThreadContext("atomix-cluster-%d");
@@ -105,8 +105,26 @@ public class AtomixCluster implements Managed<Void> {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
     this.membershipService = buildClusterMembershipService(config, messagingService, broadcastService);
-    this.clusterMessagingService = buildClusterMessagingService(membershipService, messagingService);
-    this.clusterEventingService = buildClusterEventService(membershipService, messagingService);
+    this.communicationService = buildClusterMessagingService(membershipService, messagingService);
+    this.eventingService = buildClusterEventService(membershipService, messagingService);
+  }
+
+  /**
+   * Returns the broadcast service.
+   *
+   * @return the broadcast service
+   */
+  public BroadcastService broadcastService() {
+    return broadcastService;
+  }
+
+  /**
+   * Returns the messaging service.
+   *
+   * @return the messaging service
+   */
+  public MessagingService messagingService() {
+    return messagingService;
   }
 
   /**
@@ -119,12 +137,12 @@ public class AtomixCluster implements Managed<Void> {
   }
 
   /**
-   * Returns the cluster messaging service.
+   * Returns the cluster communication service.
    *
-   * @return the cluster messaging service
+   * @return the cluster communication service
    */
-  public ClusterMessagingService messagingService() {
-    return clusterMessagingService;
+  public ClusterCommunicationService communicationService() {
+    return communicationService;
   }
 
   /**
@@ -133,7 +151,7 @@ public class AtomixCluster implements Managed<Void> {
    * @return the cluster event service
    */
   public ClusterEventingService eventingService() {
-    return clusterEventingService;
+    return eventingService;
   }
 
   @Override
@@ -158,8 +176,8 @@ public class AtomixCluster implements Managed<Void> {
     return messagingService.start()
         .thenComposeAsync(v -> broadcastService.start(), threadContext)
         .thenComposeAsync(v -> membershipService.start(), threadContext)
-        .thenComposeAsync(v -> clusterMessagingService.start(), threadContext)
-        .thenComposeAsync(v -> clusterEventingService.start(), threadContext)
+        .thenComposeAsync(v -> communicationService.start(), threadContext)
+        .thenComposeAsync(v -> eventingService.start(), threadContext)
         .thenApply(v -> null);
   }
 
@@ -186,9 +204,9 @@ public class AtomixCluster implements Managed<Void> {
   }
 
   protected CompletableFuture<Void> stopServices() {
-    return clusterMessagingService.stop()
+    return communicationService.stop()
         .exceptionally(e -> null)
-        .thenComposeAsync(v -> clusterEventingService.stop(), threadContext)
+        .thenComposeAsync(v -> eventingService.stop(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> membershipService.stop(), threadContext)
         .exceptionally(e -> null)
@@ -266,9 +284,9 @@ public class AtomixCluster implements Managed<Void> {
   /**
    * Builds a cluster messaging service.
    */
-  protected static ManagedClusterMessagingService buildClusterMessagingService(
+  protected static ManagedClusterCommunicationService buildClusterMessagingService(
       ClusterMembershipService membershipService, MessagingService messagingService) {
-    return new DefaultClusterMessagingService(membershipService, messagingService);
+    return new DefaultClusterCommunicationService(membershipService, messagingService);
   }
 
   /**

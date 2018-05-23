@@ -105,7 +105,6 @@
     <module>cluster</module>
     <module>config</module>
     <module>core</module>
-    <module>messaging</module>
     <module>primitive</module>
     <module>protocols</module>
     <module>rest</module>

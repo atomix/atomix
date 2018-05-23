@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.messaging.impl;
+package io.atomix.cluster.messaging.impl;
 
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
@@ -21,9 +21,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.messaging.ManagedMessagingService;
-import io.atomix.messaging.MessagingException;
-import io.atomix.messaging.MessagingService;
+import io.atomix.cluster.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.MessagingException;
+import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;

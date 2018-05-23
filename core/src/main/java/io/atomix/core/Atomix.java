@@ -18,7 +18,7 @@ package io.atomix.core;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElector;
@@ -138,11 +138,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
     this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
-    this.partitions = buildPartitionService(config, membershipService(), messagingService(), primitiveTypes);
+    this.partitions = buildPartitionService(config, membershipService(), communicationService(), primitiveTypes);
     this.primitives = new CorePrimitivesService(
         executorService,
         membershipService(),
-        messagingService(),
+        communicationService(),
         eventingService(),
         partitions,
         config);
@@ -372,7 +372,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   private static ManagedPartitionService buildPartitionService(
       AtomixConfig config,
       ClusterMembershipService clusterMembershipService,
-      ClusterMessagingService messagingService,
+      ClusterCommunicationService messagingService,
       PrimitiveTypeRegistry primitiveTypeRegistry) {
     List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups().values()) {
