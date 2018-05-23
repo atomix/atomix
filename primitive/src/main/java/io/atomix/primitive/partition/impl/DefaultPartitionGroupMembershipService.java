@@ -25,8 +25,8 @@ import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterMessagingService;
-import io.atomix.messaging.MessagingException;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionGroupMembershipService;
 import io.atomix.primitive.partition.MemberGroupStrategy;
@@ -71,7 +71,7 @@ public class DefaultPartitionGroupMembershipService
   private static final String BOOTSTRAP_SUBJECT = "partition-group-bootstrap";
 
   private final ClusterMembershipService membershipService;
-  private final ClusterMessagingService messagingService;
+  private final ClusterCommunicationService messagingService;
   private final Serializer serializer;
   private volatile PartitionGroupMembership systemGroup;
   private final Map<String, PartitionGroupMembership> groups = Maps.newConcurrentMap();
@@ -82,7 +82,7 @@ public class DefaultPartitionGroupMembershipService
   @SuppressWarnings("unchecked")
   public DefaultPartitionGroupMembershipService(
       ClusterMembershipService membershipService,
-      ClusterMessagingService messagingService,
+      ClusterCommunicationService messagingService,
       ManagedPartitionGroup systemGroup,
       Collection<ManagedPartitionGroup> groups) {
     this.membershipService = membershipService;

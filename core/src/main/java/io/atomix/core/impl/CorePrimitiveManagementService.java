@@ -17,7 +17,7 @@ package io.atomix.core.impl;
 
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.partition.PartitionService;
@@ -30,7 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class CorePrimitiveManagementService implements PrimitiveManagementService {
   private final ScheduledExecutorService executorService;
   private final ClusterMembershipService membershipService;
-  private final ClusterMessagingService communicationService;
+  private final ClusterCommunicationService communicationService;
   private final ClusterEventingService eventService;
   private final PartitionService partitionService;
   private final PrimitiveRegistry primitiveRegistry;
@@ -38,7 +38,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   public CorePrimitiveManagementService(
       ScheduledExecutorService executorService,
       ClusterMembershipService membershipService,
-      ClusterMessagingService communicationService,
+      ClusterCommunicationService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
       PrimitiveRegistry primitiveRegistry) {
@@ -61,7 +61,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   }
 
   @Override
-  public ClusterMessagingService getCommunicationService() {
+  public ClusterCommunicationService getCommunicationService() {
     return communicationService;
   }
 

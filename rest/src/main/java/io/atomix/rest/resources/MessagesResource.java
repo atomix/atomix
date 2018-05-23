@@ -17,7 +17,7 @@ package io.atomix.rest.resources;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.utils.EventLog;
 import io.atomix.core.utils.EventManager;
 import org.slf4j.Logger;
@@ -59,7 +59,7 @@ public class MessagesResource {
   @POST
   @Path("/{subject}")
   @Consumes(MediaType.TEXT_PLAIN)
-  public Response publish(@PathParam("subject") String subject, @Context ClusterMessagingService communicationService, String body) {
+  public Response publish(@PathParam("subject") String subject, @Context ClusterCommunicationService communicationService, String body) {
     communicationService.broadcast(subject, body);
     return Response.ok().build();
   }
@@ -67,7 +67,7 @@ public class MessagesResource {
   @POST
   @Path("/{subject}/{node}")
   @Consumes(MediaType.TEXT_PLAIN)
-  public void send(@PathParam("subject") String subject, @PathParam("node") String node, @Context ClusterMessagingService communicationService, String body, @Suspended AsyncResponse response) {
+  public void send(@PathParam("subject") String subject, @PathParam("node") String node, @Context ClusterCommunicationService communicationService, String body, @Suspended AsyncResponse response) {
     communicationService.unicast(subject, body, MemberId.from(node)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
@@ -81,9 +81,9 @@ public class MessagesResource {
   @GET
   @Path("/{subject}")
   @Produces(MediaType.TEXT_PLAIN)
-  public void next(@PathParam("subject") String subject, @Context ClusterMessagingService communicationService, @Context EventManager events, @Suspended AsyncResponse response) {
+  public void next(@PathParam("subject") String subject, @Context ClusterCommunicationService communicationService, @Context EventManager events, @Suspended AsyncResponse response) {
     EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
-        ClusterMessagingService.class, subject, l -> e -> l.addEvent(e));
+        ClusterCommunicationService.class, subject, l -> e -> l.addEvent(e));
     CompletableFuture<Void> openFuture;
     if (eventLog.open()) {
       openFuture = communicationService.subscribe(subject, eventLog.listener(), MoreExecutors.directExecutor());
@@ -109,8 +109,8 @@ public class MessagesResource {
 
   @DELETE
   @Path("/{subject}")
-  public Response delete(@PathParam("subject") String subject, @Context ClusterMessagingService communicationService, @Context EventManager events) {
-    EventLog<Consumer<String>, String> eventLog = events.removeEventLog(ClusterMessagingService.class, subject);
+  public Response delete(@PathParam("subject") String subject, @Context ClusterCommunicationService communicationService, @Context EventManager events) {
+    EventLog<Consumer<String>, String> eventLog = events.removeEventLog(ClusterCommunicationService.class, subject);
     if (eventLog != null && eventLog.close()) {
       communicationService.unsubscribe(subject);
     }
@@ -121,7 +121,7 @@ public class MessagesResource {
   @Path("/{subject}/subscribers")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getSubscribers(@PathParam("subject") String subject, @Context EventManager events) {
-    return Response.ok(events.getEventLogNames(ClusterMessagingService.class)
+    return Response.ok(events.getEventLogNames(ClusterCommunicationService.class)
         .stream()
         .filter(name -> name.length() == subject.length() + 1 + UUID_STRING_LENGTH && name.substring(0, name.length() - UUID_STRING_LENGTH - 1).equals(subject))
         .map(name -> name.substring(subject.length()))
@@ -132,10 +132,10 @@ public class MessagesResource {
   @Path("/{subject}/subscribers")
   @Consumes(MediaType.TEXT_PLAIN)
   @Produces(MediaType.TEXT_PLAIN)
-  public void subscribe(@PathParam("subject") String subject, @Context ClusterMessagingService communicationService, @Context EventManager events, @Suspended AsyncResponse response) {
+  public void subscribe(@PathParam("subject") String subject, @Context ClusterCommunicationService communicationService, @Context EventManager events, @Suspended AsyncResponse response) {
     String id = UUID.randomUUID().toString();
     EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
-        ClusterMessagingService.class, getEventLogName(subject, id), l -> e -> l.addEvent(e));
+        ClusterCommunicationService.class, getEventLogName(subject, id), l -> e -> l.addEvent(e));
     communicationService.subscribe(subject, eventLog.listener(), MoreExecutors.directExecutor())
         .whenComplete((result, error) -> {
           if (error == null) {
@@ -151,7 +151,7 @@ public class MessagesResource {
   @Path("/{subject}/subscribers/{id}")
   @Produces(MediaType.TEXT_PLAIN)
   public void nextSession(@PathParam("subject") String subject, @PathParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
-    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterMessagingService.class, getEventLogName(subject, id));
+    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterCommunicationService.class, getEventLogName(subject, id));
     if (eventLog == null) {
       LOGGER.warn("Unknown subscriber {}", id);
       response.resume(Response.status(Status.NOT_FOUND).build());
@@ -170,8 +170,8 @@ public class MessagesResource {
 
   @DELETE
   @Path("/{subject}/subscribers/{id}")
-  public Response unsubscribe(@PathParam("subject") String subject, @PathParam("id") String id, @Context ClusterMessagingService communicationService, @Context EventManager events) {
-    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterMessagingService.class, getEventLogName(subject, id));
+  public Response unsubscribe(@PathParam("subject") String subject, @PathParam("id") String id, @Context ClusterCommunicationService communicationService, @Context EventManager events) {
+    EventLog<Consumer<String>, String> eventLog = events.getEventLog(ClusterCommunicationService.class, getEventLogName(subject, id));
     if (eventLog != null && eventLog.close()) {
       communicationService.unsubscribe(subject);
     }

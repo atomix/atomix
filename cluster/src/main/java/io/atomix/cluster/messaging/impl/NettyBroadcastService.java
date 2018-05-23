@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.messaging.impl;
+package io.atomix.cluster.messaging.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.messaging.BroadcastService;
-import io.atomix.messaging.ManagedBroadcastService;
+import io.atomix.cluster.messaging.BroadcastService;
+import io.atomix.cluster.messaging.ManagedBroadcastService;
 import io.atomix.utils.AtomixRuntimeException;
 import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;

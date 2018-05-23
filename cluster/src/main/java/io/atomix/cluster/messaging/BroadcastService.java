@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.messaging;
-
-import io.atomix.utils.Builder;
+package io.atomix.cluster.messaging;
 
 import java.util.function.Consumer;
 

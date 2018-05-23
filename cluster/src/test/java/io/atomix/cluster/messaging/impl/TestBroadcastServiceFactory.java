@@ -16,7 +16,7 @@
 package io.atomix.cluster.messaging.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.messaging.ManagedBroadcastService;
+import io.atomix.cluster.messaging.ManagedBroadcastService;
 
 import java.util.Set;
 

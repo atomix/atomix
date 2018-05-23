@@ -23,7 +23,7 @@ import io.atomix.cluster.Member;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ManagedClusterEventingService;
-import io.atomix.messaging.MessagingService;
+import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;

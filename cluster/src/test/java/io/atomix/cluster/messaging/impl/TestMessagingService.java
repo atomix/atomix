@@ -16,9 +16,9 @@
 package io.atomix.cluster.messaging.impl;
 
 import io.atomix.utils.net.Address;
-import io.atomix.messaging.ManagedMessagingService;
-import io.atomix.messaging.MessagingException.NoRemoteHandler;
-import io.atomix.messaging.MessagingService;
+import io.atomix.cluster.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.MessagingException.NoRemoteHandler;
+import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 

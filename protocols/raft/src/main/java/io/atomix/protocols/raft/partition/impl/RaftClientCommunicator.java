@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.partition.impl;
 
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.CloseSessionResponse;
@@ -50,13 +50,13 @@ import java.util.function.Function;
 public class RaftClientCommunicator implements RaftClientProtocol {
   private final RaftMessageContext context;
   private final Serializer serializer;
-  private final ClusterMessagingService clusterCommunicator;
+  private final ClusterCommunicationService clusterCommunicator;
 
-  public RaftClientCommunicator(Serializer serializer, ClusterMessagingService clusterCommunicator) {
+  public RaftClientCommunicator(Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this(null, serializer, clusterCommunicator);
   }
 
-  public RaftClientCommunicator(String prefix, Serializer serializer, ClusterMessagingService clusterCommunicator) {
+  public RaftClientCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this.context = new RaftMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");

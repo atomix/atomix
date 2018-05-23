@@ -19,9 +19,9 @@ import com.google.common.base.Objects;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterMessagingService;
-import io.atomix.cluster.messaging.ManagedClusterMessagingService;
-import io.atomix.messaging.MessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
+import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
@@ -44,7 +44,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster communication service implementation.
  */
-public class DefaultClusterMessagingService implements ManagedClusterMessagingService {
+public class DefaultClusterCommunicationService implements ManagedClusterCommunicationService {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
   private static final Exception CONNECT_EXCEPTION = new ConnectException();
@@ -57,7 +57,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
   protected final MessagingService messagingService;
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public DefaultClusterMessagingService(ClusterMembershipService membershipService, MessagingService messagingService) {
+  public DefaultClusterCommunicationService(ClusterMembershipService membershipService, MessagingService messagingService) {
     this.membershipService = checkNotNull(membershipService, "clusterService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
   }
@@ -194,7 +194,7 @@ public class DefaultClusterMessagingService implements ManagedClusterMessagingSe
   }
 
   @Override
-  public CompletableFuture<ClusterMessagingService> start() {
+  public CompletableFuture<ClusterCommunicationService> start() {
     if (started.compareAndSet(false, true)) {
       log.info("Started");
     }

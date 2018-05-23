@@ -17,8 +17,8 @@ package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.MemberId;
-import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.impl.NettyMessagingService;
+import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
