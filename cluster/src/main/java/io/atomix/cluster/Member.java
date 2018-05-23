@@ -15,10 +15,10 @@
  */
 package io.atomix.cluster;
 
-import com.google.common.collect.ImmutableMap;
 import io.atomix.utils.config.Configured;
 import io.atomix.utils.net.Address;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -154,7 +154,7 @@ public class Member implements Configured<MemberConfig> {
     this.zone = config.getZone();
     this.rack = config.getRack();
     this.host = config.getHost();
-    this.metadata = ImmutableMap.copyOf(config.getMetadata());
+    this.metadata = new HashMap<>(config.getMetadata());
   }
 
   protected Member(MemberId id, Address address, String zone, String rack, String host, Map<String, String> metadata) {
@@ -163,7 +163,7 @@ public class Member implements Configured<MemberConfig> {
     this.zone = zone;
     this.rack = rack;
     this.host = host;
-    this.metadata = ImmutableMap.copyOf(metadata);
+    this.metadata = new HashMap<>(metadata);
   }
 
   /**

@@ -15,6 +15,8 @@
  */
 package io.atomix.cluster.impl;
 
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
@@ -27,6 +29,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
@@ -163,7 +167,33 @@ public class DefaultClusterMembershipServiceTest {
     assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("3")).getState());
     assertNull(clusterService2.getMember(MemberId.from("4")));
 
+    TestClusterMembershipEventListener eventListener = new TestClusterMembershipEventListener();
+    clusterService2.addListener(eventListener);
+
+    clusterService3.getLocalMember().metadata().put("foo", "bar");
+
+    ClusterMembershipEvent event = eventListener.nextEvent();
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_UPDATED, event.type());
+    assertEquals("bar", event.subject().metadata().get("foo"));
+
     CompletableFuture.allOf(new CompletableFuture[]{clusterService1.stop(), clusterService2.stop(),
         clusterService3.stop()}).join();
+  }
+
+  private class TestClusterMembershipEventListener implements ClusterMembershipEventListener {
+    private BlockingQueue<ClusterMembershipEvent> queue = new ArrayBlockingQueue<ClusterMembershipEvent>(10);
+
+    @Override
+    public void onEvent(ClusterMembershipEvent event) {
+      queue.add(event);
+    }
+
+    ClusterMembershipEvent nextEvent() {
+      try {
+        return queue.take();
+      } catch (InterruptedException e) {
+        return null;
+      }
+    }
   }
 }
