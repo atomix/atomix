@@ -61,7 +61,7 @@
               io.atomix.utils.*
             </Export-Package>
             <Import-Package>
-              sun.nio.ch;resolution:=optional,sun.misc;resolution:=optional,*
+              sun.nio.ch;resolution:=optional,sun.misc;resolution:=optional,com.sun.jmx.remote.internal;resolution:=optional,*
             </Import-Package>
           </instructions>
         </configuration>
