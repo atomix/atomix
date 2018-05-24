@@ -19,8 +19,8 @@ import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Cluster configuration.
@@ -33,7 +33,7 @@ public class ClusterConfig implements Config {
   private String name = DEFAULT_CLUSTER_NAME;
   private String localMemberId;
   private MemberConfig localMember;
-  private Map<String, MemberConfig> members = new HashMap<>();
+  private List<MemberConfig> members = new ArrayList<>();
   private boolean multicastEnabled = false;
   private Address multicastAddress;
   private GroupMembershipConfig membershipConfig = new GroupMembershipConfig();
@@ -94,7 +94,10 @@ public class ClusterConfig implements Config {
   public MemberConfig getLocalMember() {
     MemberConfig member = localMember;
     if (member == null && localMemberId != null) {
-      member = members.get(localMemberId);
+      member = members.stream()
+          .filter(m -> m.getId().id().equals(localMemberId))
+          .findFirst()
+          .orElse(null);
     }
     return member;
   }
@@ -115,7 +118,7 @@ public class ClusterConfig implements Config {
    *
    * @return the cluster nodes
    */
-  public Map<String, MemberConfig> getMembers() {
+  public List<MemberConfig> getMembers() {
     return members;
   }
 
@@ -125,8 +128,7 @@ public class ClusterConfig implements Config {
    * @param members the cluster nodes
    * @return the cluster configuration
    */
-  public ClusterConfig setMembers(Map<String, MemberConfig> members) {
-    members.forEach((id, member) -> member.setId(id));
+  public ClusterConfig setMembers(List<MemberConfig> members) {
     this.members = members;
     return this;
   }
@@ -138,7 +140,7 @@ public class ClusterConfig implements Config {
    * @return the cluster configuration
    */
   public ClusterConfig addMember(MemberConfig member) {
-    members.put(member.getId().id(), member);
+    members.add(member);
     return this;
   }
 

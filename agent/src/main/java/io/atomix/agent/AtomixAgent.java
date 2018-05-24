@@ -111,7 +111,7 @@ public class AtomixAgent {
     if (configString != null) {
       AtomixConfig config = loadConfig(configString);
       if (localMember != null) {
-        config.getClusterConfig().getMembers().values().stream()
+        config.getClusterConfig().getMembers().stream()
             .filter(member -> member.getId().equals(localMember.getId()))
             .findAny()
             .ifPresent(localMemberConfig -> {

@@ -15,7 +15,6 @@
  */
 package io.atomix.core.profile;
 
-import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.AtomixConfig;
 import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
@@ -44,13 +43,11 @@ public class ConsensusProfile implements NamedProfile {
     config.setManagementGroup(new RaftPartitionGroupConfig()
         .setName(SYSTEM_GROUP_NAME)
         .setPartitionSize((int) config.getClusterConfig().getMembers()
-            .values()
             .stream()
             .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
             .count())
         .setPartitions(1)
         .setMembers(config.getClusterConfig().getMembers()
-            .values()
             .stream()
             .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
             .map(node -> node.getId().id())
@@ -61,7 +58,6 @@ public class ConsensusProfile implements NamedProfile {
         .setPartitionSize(PARTITION_SIZE)
         .setPartitions(NUM_PARTITIONS)
         .setMembers(config.getClusterConfig().getMembers()
-            .values()
             .stream()
             .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
             .map(node -> node.getId().id())
