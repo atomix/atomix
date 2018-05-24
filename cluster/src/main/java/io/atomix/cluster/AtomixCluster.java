@@ -275,7 +275,6 @@ public class AtomixCluster implements Managed<Void> {
     return new DefaultClusterMembershipService(
         localMember,
         config.getMembers()
-            .values()
             .stream()
             .map(Member::new)
             .collect(Collectors.toList()), messagingService, broadcastService, config.getMembershipConfig());
