@@ -15,7 +15,6 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberConfig;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
@@ -37,8 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Atomix agent runner.
@@ -57,7 +54,7 @@ public class AtomixAgent {
         .defaultHelp(true)
         .description("Atomix server");
     parser.addArgument("member")
-        .type(memberArgumentType)
+        .type(String.class)
         .nargs("?")
         .metavar("NAME@HOST:PORT")
         .required(false)
@@ -99,63 +96,71 @@ public class AtomixAgent {
     }
 
     final String configString = namespace.get("config");
-    final MemberConfig localMember = namespace.get("member");
-    final List<MemberConfig> persistentMembers = namespace.getList("persistent_members");
-    final List<MemberConfig> ephemeralMembers = namespace.getList("ephemeral_members");
+    final String localMemberInfo = namespace.get("member");
+    final List<MemberConfig> bootstrapMembers = namespace.getList("bootstrap");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
     final Address multicastAddress = namespace.get("multicast_address");
     final Integer httpPort = namespace.getInt("http_port");
 
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
-    final Atomix.Builder builder;
+    AtomixConfig config;
     if (configString != null) {
-      AtomixConfig config = loadConfig(configString);
-      if (localMember != null) {
-        config.getClusterConfig().getMembers().stream()
-            .filter(member -> member.getId().equals(localMember.getId()))
-            .findAny()
-            .ifPresent(localMemberConfig -> {
-              localMember.setAddress(localMemberConfig.getAddress());
-              localMember.setZone(localMemberConfig.getZone());
-              localMember.setRack(localMemberConfig.getRack());
-              localMember.setHost(localMemberConfig.getHost());
-            });
-      }
-      builder = Atomix.builder(config);
+      config = loadConfig(configString);
     } else {
-      builder = Atomix.builder();
+      config = new AtomixConfig();
     }
 
-    builder.withShutdownHook(true);
+    // If the local member info is specified, attempt to look up the member in the members list.
+    // Otherwise, create a new member.
+    MemberConfig localMember = null;
+    if (localMemberInfo != null) {
+      MemberId localMemberId = parseMemberId(localMemberInfo);
+      if (localMemberId != null) {
+        localMember = config.getClusterConfig().getMembers().stream()
+            .filter(member -> member.getId().equals(localMemberId))
+            .findFirst()
+            .orElse(null);
+        if (localMember == null && bootstrapMembers != null) {
+          localMember = bootstrapMembers.stream()
+              .filter(member -> member.getId().equals(localMemberId))
+              .findFirst()
+              .orElse(null);
+        }
+      } else {
+        Address localMemberAddress = parseAddress(localMemberInfo);
+        localMember = config.getClusterConfig().getMembers().stream()
+            .filter(member -> member.getAddress().equals(localMemberAddress))
+            .findFirst()
+            .orElse(null);
+        if (localMember == null && bootstrapMembers != null) {
+          localMember = bootstrapMembers.stream()
+              .filter(member -> member.getAddress().equals(localMemberAddress))
+              .findFirst()
+              .orElse(null);
+        }
+      }
 
-    // If a local member was provided, add the local member to the builder.
-    if (localMember != null) {
-      Member member = new Member(localMember);
-      builder.withLocalMember(member);
-      LOGGER.info("member: {}", member);
-    }
-
-    // If a cluster configuration was provided, add all the cluster members to the builder.
-    if (persistentMembers != null || ephemeralMembers != null) {
-      List<Member> members = Stream.concat(
-          persistentMembers != null ? persistentMembers.stream() : Stream.empty(),
-          ephemeralMembers != null ? ephemeralMembers.stream() : Stream.empty())
-          .map(member -> Member.builder(member.getId())
-              .withAddress(member.getAddress())
-              .build())
-          .collect(Collectors.toList());
-      builder.withMembers(members);
-    }
-
-    // Enable multicast if provided.
-    if (multicastEnabled) {
-      builder.withMulticastEnabled();
-      if (multicastAddress != null) {
-        builder.withMulticastAddress(multicastAddress);
+      if (localMember == null) {
+        localMember = new MemberConfig()
+            .setId(parseMemberId(localMemberInfo))
+            .setAddress(parseAddress(localMemberInfo));
       }
     }
 
-    Atomix atomix = builder.build();
+    if (localMember != null) {
+      config.getClusterConfig().setLocalMember(localMember);
+    }
+
+    if (bootstrapMembers != null) {
+      config.getClusterConfig().setMembers(bootstrapMembers);
+    }
+
+    if (multicastEnabled) {
+      config.getClusterConfig().setMulticastEnabled(true);
+      config.getClusterConfig().setMulticastAddress(multicastAddress);
+    }
+
+    Atomix atomix = Atomix.builder(config).withShutdownHookEnabled().build();
 
     atomix.start().join();
 
@@ -193,14 +198,8 @@ public class AtomixAgent {
     int endIndex = address.indexOf('@');
     if (endIndex > 0) {
       return MemberId.from(address.substring(0, endIndex));
-    } else {
-      try {
-        Address.from(address);
-        return null;
-      } catch (MalformedAddressException e) {
-        return MemberId.from(address);
-      }
     }
+    return null;
   }
 
   static Address parseAddress(String address) {
@@ -209,7 +208,7 @@ public class AtomixAgent {
       try {
         return Address.from(address);
       } catch (MalformedAddressException e) {
-        return Address.from("0.0.0.0");
+        return Address.local();
       }
     } else {
       return Address.from(address.substring(startIndex + 1));
