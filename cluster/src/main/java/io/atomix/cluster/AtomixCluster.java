@@ -267,7 +267,7 @@ public class AtomixCluster implements Managed<Void> {
     // If the local node has not be configured, create a default node.
     Member localMember;
     if (config.getLocalMember() == null) {
-      Address address = Address.all();
+      Address address = Address.local();
       localMember = Member.member(address);
     } else {
       localMember = new Member(config.getLocalMember());

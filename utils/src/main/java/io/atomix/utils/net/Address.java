@@ -39,8 +39,8 @@ public final class Address {
    *
    * @return the address
    */
-  public static Address all() {
-    return from("0.0.0.0", DEFAULT_PORT);
+  public static Address local() {
+    return from(DEFAULT_PORT);
   }
 
   /**

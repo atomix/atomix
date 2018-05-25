@@ -50,7 +50,7 @@ public class AtomixAgentTest {
   @Test
   public void testParseMemberId() throws Exception {
     assertNull(AtomixAgent.parseMemberId("127.0.0.1"));
-    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo"));
+    assertNull(AtomixAgent.parseMemberId("foo"));
     assertNull(AtomixAgent.parseMemberId("127.0.0.1:1234"));
     assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1:1234"));
     assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1"));
@@ -58,7 +58,7 @@ public class AtomixAgentTest {
 
   @Test
   public void testParseAddress() throws Exception {
-    assertEquals("0.0.0.0:5679", AtomixAgent.parseAddress("foo").toString());
+    assertEquals(5679, AtomixAgent.parseAddress("foo").port());
     assertEquals("127.0.0.1:5679", AtomixAgent.parseAddress("127.0.0.1").toString());
     assertEquals("127.0.0.1:5679", AtomixAgent.parseAddress("foo@127.0.0.1").toString());
     assertEquals("127.0.0.1:1234", AtomixAgent.parseAddress("127.0.0.1:1234").toString());
