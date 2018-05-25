@@ -38,8 +38,8 @@ public final class Services {
    * @return the registered service of the given type
    */
   @SuppressWarnings("unchecked")
-  public static <T> T load(Class<T> serviceClass) {
-    return (T) services.computeIfAbsent(serviceClass, s -> ServiceLoader.load(serviceClass).iterator().next());
+  public static <T> T load(Class<T> serviceClass, ClassLoader classLoader) {
+    return (T) services.computeIfAbsent(serviceClass, s -> ServiceLoader.load(serviceClass, classLoader).iterator().next());
   }
 
   /**
@@ -49,9 +49,9 @@ public final class Services {
    * @param <T> the service type
    * @return the registered services of the given type
    */
-  public static <T> Collection<T> loadAll(Class<T> serviceClass) {
+  public static <T> Collection<T> loadAll(Class<T> serviceClass, ClassLoader classLoader) {
     List<T> services = new ArrayList<>();
-    Iterator<T> iterator = ServiceLoader.load(serviceClass).iterator();
+    Iterator<T> iterator = ServiceLoader.load(serviceClass, classLoader).iterator();
     while (iterator.hasNext()) {
       services.add(iterator.next());
     }

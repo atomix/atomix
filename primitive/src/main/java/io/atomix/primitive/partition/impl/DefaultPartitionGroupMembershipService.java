@@ -72,6 +72,7 @@ public class DefaultPartitionGroupMembershipService
 
   private final ClusterMembershipService membershipService;
   private final ClusterCommunicationService messagingService;
+  private final ClassLoader classLoader;
   private final Serializer serializer;
   private volatile PartitionGroupMembership systemGroup;
   private final Map<String, PartitionGroupMembership> groups = Maps.newConcurrentMap();
@@ -83,10 +84,12 @@ public class DefaultPartitionGroupMembershipService
   public DefaultPartitionGroupMembershipService(
       ClusterMembershipService membershipService,
       ClusterCommunicationService messagingService,
+      ClassLoader classLoader,
       ManagedPartitionGroup systemGroup,
       Collection<ManagedPartitionGroup> groups) {
     this.membershipService = membershipService;
     this.messagingService = messagingService;
+    this.classLoader = classLoader;
     this.systemGroup = systemGroup != null
         ? new PartitionGroupMembership(
         systemGroup.name(),
@@ -107,7 +110,7 @@ public class DefaultPartitionGroupMembershipService
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)
         .register(MemberGroupStrategy.class);
-    for (PartitionGroupFactory factory : PartitionGroups.getGroupFactories()) {
+    for (PartitionGroupFactory factory : PartitionGroups.getGroupFactories(classLoader)) {
       builder.register(factory.configClass());
     }
     serializer = Serializer.using(builder.build());
@@ -220,6 +223,7 @@ public class DefaultPartitionGroupMembershipService
             if (error instanceof MessagingException.NoRemoteHandler || error instanceof TimeoutException) {
               threadContext.schedule(Duration.ofSeconds(1), () -> bootstrap(member, future));
             } else {
+              LOGGER.debug("{} - Failed to bootstrap from member {}", membershipService.getLocalMember().id(), member, error);
               future.complete(null);
             }
           }

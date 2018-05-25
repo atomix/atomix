@@ -30,8 +30,8 @@ public class PrimitiveProtocols {
    * @return the protocol instance for the given configuration
    */
   @SuppressWarnings("unchecked")
-  public static PrimitiveProtocol createProtocol(PrimitiveProtocolConfig config) {
-    for (PrimitiveProtocolFactory factory : Services.loadAll(PrimitiveProtocolFactory.class)) {
+  public static PrimitiveProtocol createProtocol(PrimitiveProtocolConfig config, ClassLoader classLoader) {
+    for (PrimitiveProtocolFactory factory : Services.loadAll(PrimitiveProtocolFactory.class, classLoader)) {
       if (factory.type().equals(config.getType())) {
         return factory.create(config);
       }
@@ -45,8 +45,8 @@ public class PrimitiveProtocols {
    * @param type the type for which to return the factory
    * @return the protocol factory for the given type
    */
-  public static PrimitiveProtocolFactory getProtocolFactory(String type) {
-    for (PrimitiveProtocolFactory factory : Services.loadAll(PrimitiveProtocolFactory.class)) {
+  public static PrimitiveProtocolFactory getProtocolFactory(String type, ClassLoader classLoader) {
+    for (PrimitiveProtocolFactory factory : Services.loadAll(PrimitiveProtocolFactory.class, classLoader)) {
       if (factory.type().name().equals(type)) {
         return factory;
       }

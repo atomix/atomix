@@ -32,9 +32,9 @@ public final class Configs {
    * @param <C> the configuration type
    * @return the configuration instance
    */
-  public static <C extends Config> C load(String config, Class<C> type) {
+  public static <C extends Config> C load(String config, Class<C> type, ClassLoader classLoader) {
     Exception error = null;
-    for (ConfigProvider provider : Services.loadAll(ConfigProvider.class)) {
+    for (ConfigProvider provider : Services.loadAll(ConfigProvider.class, classLoader)) {
       try {
         return provider.load(config, type);
       } catch (Exception e) {
@@ -52,8 +52,8 @@ public final class Configs {
    * @param <C> the configuration type
    * @return the configuration instance
    */
-  public static <C extends Config> C load(File file, Class<C> type) {
-    for (ConfigProvider provider : Services.loadAll(ConfigProvider.class)) {
+  public static <C extends Config> C load(File file, Class<C> type, ClassLoader classLoader) {
+    for (ConfigProvider provider : Services.loadAll(ConfigProvider.class, classLoader)) {
       if (provider.isConfigFile(file)) {
         return provider.load(file, type);
       }

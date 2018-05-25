@@ -97,15 +97,17 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterCommunicationService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
-      AtomixConfig config) {
-    this.primitiveRegistry = new CorePrimitiveRegistry(partitionService);
+      AtomixConfig config,
+      ClassLoader classLoader) {
+    this.primitiveRegistry = new CorePrimitiveRegistry(partitionService, classLoader);
     this.managementService = new CorePrimitiveManagementService(
         executorService,
         membershipService,
         communicationService,
         eventService,
         partitionService,
-        primitiveRegistry);
+        primitiveRegistry,
+        classLoader);
     this.transactionService = new CoreTransactionService(managementService);
     this.config = checkNotNull(config);
   }

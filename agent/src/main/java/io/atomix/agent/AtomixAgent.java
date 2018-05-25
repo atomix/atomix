@@ -188,9 +188,9 @@ public class AtomixAgent {
   private static AtomixConfig loadConfig(String config) {
     File configFile = new File(config);
     if (configFile.exists()) {
-      return Configs.load(configFile, AtomixConfig.class);
+      return Configs.load(configFile, AtomixConfig.class, Thread.currentThread().getContextClassLoader());
     } else {
-      return Configs.load(config, AtomixConfig.class);
+      return Configs.load(config, AtomixConfig.class, Thread.currentThread().getContextClassLoader());
     }
   }
 

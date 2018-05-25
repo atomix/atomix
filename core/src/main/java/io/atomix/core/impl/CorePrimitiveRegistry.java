@@ -50,11 +50,13 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
   private final PartitionService partitionService;
+  private final ClassLoader classLoader;
   private final AtomicBoolean started = new AtomicBoolean();
   private AsyncConsistentMap<String, String> primitives;
 
-  public CorePrimitiveRegistry(PartitionService partitionService) {
+  public CorePrimitiveRegistry(PartitionService partitionService, ClassLoader classLoader) {
     this.partitionService = checkNotNull(partitionService);
+    this.classLoader = checkNotNull(classLoader);
   }
 
   @Override
@@ -79,7 +81,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
       return primitives.entrySet()
           .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
           .stream()
-          .map(entry -> new PrimitiveInfo(entry.getKey(), PrimitiveTypes.getPrimitiveType(entry.getValue().value())))
+          .map(entry -> new PrimitiveInfo(entry.getKey(), PrimitiveTypes.getPrimitiveType(entry.getValue().value(), classLoader)))
           .collect(Collectors.toList());
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -103,7 +105,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   public PrimitiveInfo getPrimitive(String name) {
     try {
       return primitives.get(name)
-          .thenApply(value -> value == null ? null : value.map(type -> new PrimitiveInfo(name, PrimitiveTypes.getPrimitiveType(type))).value())
+          .thenApply(value -> value == null ? null : value.map(type -> new PrimitiveInfo(name, PrimitiveTypes.getPrimitiveType(type, classLoader))).value())
           .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

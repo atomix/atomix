@@ -23,7 +23,7 @@ import io.atomix.primitive.protocol.PrimitiveProtocols;
  */
 public class PrimitiveProtocolDeserializer extends PolymorphicTypeDeserializer<PrimitiveProtocolConfig> {
   @SuppressWarnings("unchecked")
-  public PrimitiveProtocolDeserializer() {
-    super(PrimitiveProtocolConfig.class, type -> PrimitiveProtocols.getProtocolFactory(type).configClass());
+  public PrimitiveProtocolDeserializer(ClassLoader classLoader) {
+    super(PrimitiveProtocolConfig.class, type -> PrimitiveProtocols.getProtocolFactory(type, classLoader).configClass());
   }
 }

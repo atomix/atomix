@@ -69,4 +69,11 @@ public interface PrimitiveManagementService {
    */
   PrimitiveRegistry getPrimitiveRegistry();
 
+  /**
+   * Returns the class loader.
+   *
+   * @return the class loader
+   */
+  ClassLoader getClassLoader();
+
 }

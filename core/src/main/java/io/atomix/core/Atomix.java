@@ -132,20 +132,25 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   public Atomix(AtomixConfig config) {
+    this(config, Thread.currentThread().getContextClassLoader());
+  }
+
+  private Atomix(AtomixConfig config, ClassLoader classLoader) {
     super(config.getClusterConfig());
     config.getProfiles().forEach(profile -> profile.configure(config));
     this.executorService = Executors.newScheduledThreadPool(
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
-    this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes());
-    this.partitions = buildPartitionService(config, membershipService(), communicationService(), primitiveTypes);
+    this.primitiveTypes = new PrimitiveTypeRegistry(config.getPrimitiveTypes(), classLoader);
+    this.partitions = buildPartitionService(config, membershipService(), communicationService(), classLoader, primitiveTypes);
     this.primitives = new CorePrimitivesService(
         executorService,
         membershipService(),
         communicationService(),
         eventingService(),
         partitions,
-        config);
+        config,
+        classLoader);
     this.enableShutdownHook = config.isEnableShutdownHook();
   }
 
@@ -346,9 +351,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   private static AtomixConfig loadConfig(String config) {
     File configFile = new File(config);
     if (configFile.exists()) {
-      return Configs.load(configFile, AtomixConfig.class);
+      return Configs.load(configFile, AtomixConfig.class, Thread.currentThread().getContextClassLoader());
     } else {
-      return Configs.load(config, AtomixConfig.class);
+      return Configs.load(config, AtomixConfig.class, Thread.currentThread().getContextClassLoader());
     }
   }
 
@@ -356,14 +361,14 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * Loads a configuration from the given file.
    */
   private static AtomixConfig loadConfig(File config) {
-    return Configs.load(config, AtomixConfig.class);
+    return Configs.load(config, AtomixConfig.class, Thread.currentThread().getContextClassLoader());
   }
 
   /**
    * Builds the core partition group.
    */
-  private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
-    return config.getManagementGroup() != null ? PartitionGroups.createGroup(config.getManagementGroup()) : null;
+  private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config, ClassLoader classLoader) {
+    return config.getManagementGroup() != null ? PartitionGroups.createGroup(config.getManagementGroup(), classLoader) : null;
   }
 
   /**
@@ -373,12 +378,19 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
       AtomixConfig config,
       ClusterMembershipService clusterMembershipService,
       ClusterCommunicationService messagingService,
+      ClassLoader classLoader,
       PrimitiveTypeRegistry primitiveTypeRegistry) {
     List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups().values()) {
-      partitionGroups.add(PartitionGroups.createGroup(partitionGroupConfig));
+      partitionGroups.add(PartitionGroups.createGroup(partitionGroupConfig, classLoader));
     }
-    return new DefaultPartitionService(clusterMembershipService, messagingService, primitiveTypeRegistry, buildSystemPartitionGroup(config), partitionGroups);
+    return new DefaultPartitionService(
+        clusterMembershipService,
+        messagingService,
+        classLoader,
+        primitiveTypeRegistry,
+        buildSystemPartitionGroup(config, classLoader),
+        partitionGroups);
   }
 
   /**
@@ -386,6 +398,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public static class Builder extends AtomixCluster.Builder {
     private final AtomixConfig config;
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Builder() {
       this(new AtomixConfig());
@@ -394,6 +407,17 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     private Builder(AtomixConfig config) {
       super(config.getClusterConfig());
       this.config = checkNotNull(config);
+    }
+
+    /**
+     * Sets the Atomix class loader.
+     *
+     * @param classLoader the class loader
+     * @return the Atomix builder
+     */
+    public Builder withClassLoader(ClassLoader classLoader) {
+      this.classLoader = checkNotNull(classLoader, "classLoader cannot be null");
+      return this;
     }
 
     /**

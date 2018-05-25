@@ -30,7 +30,7 @@ public final class Profiles {
    * @return the Atomix profile for the given name
    */
   public static NamedProfile getNamedProfile(String profileName) {
-    for (NamedProfile type : Services.loadAll(NamedProfile.class)) {
+    for (NamedProfile type : Services.loadAll(NamedProfile.class, Thread.currentThread().getContextClassLoader())) {
       if (type.name().replace("_", "-").equalsIgnoreCase(profileName.replace("_", "-"))) {
         return type;
       }

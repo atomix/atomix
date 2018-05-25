@@ -32,8 +32,8 @@ public class PartitionGroups {
    * @return the protocol instance for the given configuration
    */
   @SuppressWarnings("unchecked")
-  public static ManagedPartitionGroup createGroup(PartitionGroupConfig config) {
-    for (PartitionGroupFactory factory : Services.loadAll(PartitionGroupFactory.class)) {
+  public static ManagedPartitionGroup createGroup(PartitionGroupConfig config, ClassLoader classLoader) {
+    for (PartitionGroupFactory factory : Services.loadAll(PartitionGroupFactory.class, classLoader)) {
       if (factory.configClass().isAssignableFrom(config.getClass())) {
         return factory.createGroup(config);
       }
@@ -47,8 +47,8 @@ public class PartitionGroups {
    * @param type the type for which to return the factory
    * @return the partition group factory for the given type
    */
-  public static PartitionGroupFactory getGroupFactory(String type) {
-    for (PartitionGroupFactory factory : Services.loadAll(PartitionGroupFactory.class)) {
+  public static PartitionGroupFactory getGroupFactory(String type, ClassLoader classLoader) {
+    for (PartitionGroupFactory factory : Services.loadAll(PartitionGroupFactory.class, classLoader)) {
       if (factory.type().name().equals(type)) {
         return factory;
       }
@@ -61,8 +61,8 @@ public class PartitionGroups {
    *
    * @return the partition group factories
    */
-  public static Collection<PartitionGroupFactory> getGroupFactories() {
-    return Services.loadAll(PartitionGroupFactory.class);
+  public static Collection<PartitionGroupFactory> getGroupFactories(ClassLoader classLoader) {
+    return Services.loadAll(PartitionGroupFactory.class, classLoader);
   }
 
   private PartitionGroups() {
