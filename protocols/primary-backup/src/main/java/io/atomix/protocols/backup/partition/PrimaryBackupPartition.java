@@ -61,6 +61,16 @@ public class PrimaryBackupPartition implements Partition {
   }
 
   @Override
+  public Collection<MemberId> members() {
+    return election.getTerm()
+        .join()
+        .candidates()
+        .stream()
+        .map(GroupMember::memberId)
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public MemberId primary() {
     return election.getTerm()
         .join()
