@@ -68,7 +68,7 @@ public class AtomixCluster implements Managed<Void> {
    * @return a new Atomix cluster builder
    */
   public static Builder builder(File configFile) {
-    return new Builder(loadConfig(configFile));
+    return new Builder(loadConfig(configFile, Thread.currentThread().getContextClassLoader()));
   }
 
   /**
@@ -94,11 +94,11 @@ public class AtomixCluster implements Managed<Void> {
   private final AtomicBoolean started = new AtomicBoolean();
 
   public AtomixCluster(String configFile) {
-    this(loadConfig(new File(System.getProperty("user.dir"), configFile)));
+    this(loadConfig(new File(System.getProperty("user.dir"), configFile), Thread.currentThread().getContextClassLoader()));
   }
 
   public AtomixCluster(File configFile) {
-    this(loadConfig(configFile));
+    this(loadConfig(configFile, Thread.currentThread().getContextClassLoader()));
   }
 
   public AtomixCluster(ClusterConfig config) {
@@ -232,8 +232,8 @@ public class AtomixCluster implements Managed<Void> {
   /**
    * Loads a configuration from the given file.
    */
-  private static ClusterConfig loadConfig(File config) {
-    return Configs.load(config, ClusterConfig.class);
+  private static ClusterConfig loadConfig(File config, ClassLoader classLoader) {
+    return Configs.load(config, ClusterConfig.class, classLoader);
   }
 
   /**

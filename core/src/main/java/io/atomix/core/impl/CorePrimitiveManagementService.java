@@ -34,6 +34,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   private final ClusterEventingService eventService;
   private final PartitionService partitionService;
   private final PrimitiveRegistry primitiveRegistry;
+  private final ClassLoader classLoader;
 
   public CorePrimitiveManagementService(
       ScheduledExecutorService executorService,
@@ -41,13 +42,15 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
       ClusterCommunicationService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
-      PrimitiveRegistry primitiveRegistry) {
+      PrimitiveRegistry primitiveRegistry,
+      ClassLoader classLoader) {
     this.executorService = executorService;
     this.membershipService = membershipService;
     this.communicationService = communicationService;
     this.eventService = eventService;
     this.partitionService = partitionService;
     this.primitiveRegistry = primitiveRegistry;
+    this.classLoader = classLoader;
   }
 
   @Override
@@ -78,5 +81,10 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   @Override
   public PrimitiveRegistry getPrimitiveRegistry() {
     return primitiveRegistry;
+  }
+
+  @Override
+  public ClassLoader getClassLoader() {
+    return classLoader;
   }
 }

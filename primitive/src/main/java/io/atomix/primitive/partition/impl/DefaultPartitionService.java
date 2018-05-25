@@ -54,6 +54,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
 
   private final ClusterMembershipService clusterMembershipService;
   private final ClusterCommunicationService communicationService;
+  private final ClassLoader classLoader;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
   private final ManagedPartitionGroupMembershipService groupMembershipService;
   private ManagedPartitionGroup systemGroup;
@@ -67,13 +68,15 @@ public class DefaultPartitionService implements ManagedPartitionService {
   public DefaultPartitionService(
       ClusterMembershipService membershipService,
       ClusterCommunicationService messagingService,
+      ClassLoader classLoader,
       PrimitiveTypeRegistry primitiveTypeRegistry,
       ManagedPartitionGroup systemGroup,
       Collection<ManagedPartitionGroup> groups) {
     this.clusterMembershipService = membershipService;
     this.communicationService = messagingService;
+    this.classLoader = classLoader;
     this.primitiveTypeRegistry = primitiveTypeRegistry;
-    this.groupMembershipService = new DefaultPartitionGroupMembershipService(membershipService, messagingService, systemGroup, groups);
+    this.groupMembershipService = new DefaultPartitionGroupMembershipService(membershipService, messagingService, classLoader, systemGroup, groups);
     this.systemGroup = systemGroup;
     groups.forEach(group -> this.groups.put(group.name(), group));
   }
@@ -112,7 +115,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
       synchronized (groups) {
         ManagedPartitionGroup group = groups.get(event.membership().group());
         if (group == null) {
-          group = PartitionGroups.createGroup(event.membership().config());
+          group = PartitionGroups.createGroup(event.membership().config(), classLoader);
           groups.put(event.membership().group(), group);
           if (event.membership().members().contains(clusterMembershipService.getLocalMember().id())) {
             group.join(partitionManagementService);
@@ -133,7 +136,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
           PartitionGroupMembership systemGroupMembership = groupMembershipService.getSystemMembership();
           if (systemGroupMembership != null) {
             if (systemGroup == null) {
-              systemGroup = PartitionGroups.createGroup(systemGroupMembership.config());
+              systemGroup = PartitionGroups.createGroup(systemGroupMembership.config(), classLoader);
             }
             electionService = new HashBasedPrimaryElectionService(clusterMembershipService, groupMembershipService, communicationService);
             return electionService.start()
@@ -174,7 +177,7 @@ public class DefaultPartitionService implements ManagedPartitionService {
                 synchronized (groups) {
                   group = groups.get(membership.group());
                   if (group == null) {
-                    group = PartitionGroups.createGroup(membership.config());
+                    group = PartitionGroups.createGroup(membership.config(), classLoader);
                     groups.put(group.name(), group);
                   }
                 }

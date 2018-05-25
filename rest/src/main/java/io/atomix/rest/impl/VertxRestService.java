@@ -151,9 +151,9 @@ public class VertxRestService implements ManagedRestService {
     mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
 
     SimpleModule module = new SimpleModule("PolymorphicTypes");
-    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
-    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
-    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
+    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer(getClass().getClassLoader()));
+    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer(getClass().getClassLoader()));
+    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer(getClass().getClassLoader()));
     mapper.registerModule(module);
 
     return mapper;

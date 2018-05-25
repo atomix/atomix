@@ -28,12 +28,12 @@ import java.util.Map;
 public class PrimitiveTypeRegistry {
   private final Map<String, PrimitiveType> types = Maps.newConcurrentMap();
 
-  public PrimitiveTypeRegistry() {
-    this(new ArrayList<>());
+  public PrimitiveTypeRegistry(ClassLoader classLoader) {
+    this(new ArrayList<>(), classLoader);
   }
 
-  public PrimitiveTypeRegistry(Collection<Class<? extends PrimitiveType>> types) {
-    for (PrimitiveType type : PrimitiveTypes.getPrimitiveTypes()) {
+  public PrimitiveTypeRegistry(Collection<Class<? extends PrimitiveType>> types, ClassLoader classLoader) {
+    for (PrimitiveType type : PrimitiveTypes.getPrimitiveTypes(classLoader)) {
       this.types.put(type.id(), type);
     }
     for (Class<? extends PrimitiveType> typeClass : types) {

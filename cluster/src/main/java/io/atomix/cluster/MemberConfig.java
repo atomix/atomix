@@ -61,7 +61,7 @@ public class MemberConfig implements Config {
    * @return the node configuration
    */
   public MemberConfig setId(MemberId id) {
-    this.id = id;
+    this.id = id != null ? id : MemberId.anonymous();
     return this;
   }
 

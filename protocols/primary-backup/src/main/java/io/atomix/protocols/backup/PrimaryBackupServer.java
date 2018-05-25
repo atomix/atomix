@@ -105,10 +105,11 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
    */
   public static class Builder implements io.atomix.utils.Builder<PrimaryBackupServer> {
     protected String serverName = "atomix";
+    protected ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     protected ClusterMembershipService membershipService;
     protected PrimaryBackupServerProtocol protocol;
     protected PrimaryElection primaryElection;
-    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
+    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(classLoader);
     protected MemberGroupProvider memberGroupProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
@@ -123,6 +124,18 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
      */
     public Builder withServerName(String serverName) {
       this.serverName = checkNotNull(serverName, "server cannot be null");
+      return this;
+    }
+
+    /**
+     * Sets the class loader.
+     *
+     * @param classLoader the class loader
+     * @return the server builder
+     */
+    public Builder withClassLoader(ClassLoader classLoader) {
+      this.classLoader = checkNotNull(classLoader, "classLoader cannot be null");
+      primitiveTypes = new PrimitiveTypeRegistry(classLoader);
       return this;
     }
 

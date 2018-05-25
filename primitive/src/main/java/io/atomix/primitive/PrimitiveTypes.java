@@ -30,8 +30,8 @@ public class PrimitiveTypes {
    *
    * @return a collection of all registered primitive types
    */
-  public static Collection<PrimitiveType> getPrimitiveTypes() {
-    return Services.loadAll(PrimitiveType.class);
+  public static Collection<PrimitiveType> getPrimitiveTypes(ClassLoader classLoader) {
+    return Services.loadAll(PrimitiveType.class, classLoader);
   }
 
   /**
@@ -40,8 +40,8 @@ public class PrimitiveTypes {
    * @param typeName the type name for which to return the primitive type
    * @return the primitive type for the given type
    */
-  public static PrimitiveType getPrimitiveType(String typeName) {
-    for (PrimitiveType type : Services.loadAll(PrimitiveType.class)) {
+  public static PrimitiveType getPrimitiveType(String typeName, ClassLoader classLoader) {
+    for (PrimitiveType type : Services.loadAll(PrimitiveType.class, classLoader)) {
       if (type.id().replace("_", "-").equalsIgnoreCase(typeName.replace("_", "-"))) {
         return type;
       }

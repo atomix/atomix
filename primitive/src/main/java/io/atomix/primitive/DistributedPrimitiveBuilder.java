@@ -174,7 +174,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
           throw new ConfigurationException(String.format("Primitive protocol is ambiguous: %d partition groups found (%s)", partitionGroups.size(), groups));
         }
       } else {
-        protocol = PrimitiveProtocols.createProtocol(protocolConfig);
+        protocol = PrimitiveProtocols.createProtocol(protocolConfig, managementService.getClassLoader());
       }
     }
     return protocol;

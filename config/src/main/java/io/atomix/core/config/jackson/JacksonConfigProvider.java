@@ -143,9 +143,9 @@ public class JacksonConfigProvider implements ConfigProvider {
     mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
 
     SimpleModule module = new SimpleModule("PolymorphicTypes");
-    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
-    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
-    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
+    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer(getClass().getClassLoader()));
+    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer(getClass().getClassLoader()));
+    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer(getClass().getClassLoader()));
     module.addDeserializer(Profile.class, new ProfileDeserializer());
     mapper.registerModule(module);
   }
