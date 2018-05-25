@@ -40,6 +40,13 @@ public interface Partition {
   long term();
 
   /**
+   * Returns the collection of all members in the partition.
+   *
+   * @return the collection of all members in the partition
+   */
+  Collection<MemberId> members();
+
+  /**
    * Returns the partition's current primary.
    *
    * @return the partition's current primary

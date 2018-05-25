@@ -90,11 +90,7 @@ public class RaftPartition implements Partition {
         .collect(Collectors.toSet());
   }
 
-  /**
-   * Returns the identifiers of partition members.
-   *
-   * @return partition member instance ids
-   */
+  @Override
   public Collection<MemberId> members() {
     return partition != null ? partition.members() : Collections.emptyList();
   }
