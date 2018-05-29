@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.partition;
 
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.memory.MemorySize;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -31,6 +32,7 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   private Set<String> members = new HashSet<>();
   private int partitionSize;
   private String storageLevel = StorageLevel.MAPPED.name();
+  private MemorySize segmentSize = MemorySize.from(1024 * 1024 * 32);
   private boolean flushOnCommit = true;
   private String dataDirectory;
 
@@ -102,6 +104,26 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   public RaftPartitionGroupConfig setStorageLevel(String storageLevel) {
     StorageLevel.valueOf(storageLevel.toUpperCase());
     this.storageLevel = storageLevel;
+    return this;
+  }
+
+  /**
+   * Returns the Raft log segment size.
+   *
+   * @return the Raft log segment size
+   */
+  public MemorySize getSegmentSize() {
+    return segmentSize;
+  }
+
+  /**
+   * Sets the Raft log segment size.
+   *
+   * @param segmentSize the Raft log segment size
+   * @return the partition group configuration
+   */
+  public RaftPartitionGroupConfig setSegmentSize(MemorySize segmentSize) {
+    this.segmentSize = segmentSize;
     return this;
   }
 

@@ -145,6 +145,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         .withStorage(RaftStorage.builder()
             .withPrefix(partition.name())
             .withStorageLevel(partition.storageLevel())
+            .withMaxSegmentSize((int) partition.segmentSize())
             .withFlushOnCommit(partition.flushOnCommit())
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .withDirectory(partition.dataDirectory())

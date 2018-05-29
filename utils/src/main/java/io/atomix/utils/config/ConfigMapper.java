@@ -24,8 +24,8 @@ import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigMemorySize;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
-import com.typesafe.config.ConfigValueType;
 import io.atomix.utils.Named;
+import io.atomix.utils.memory.MemorySize;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -240,8 +240,9 @@ public class ConfigMapper {
       return config.getString(configPropName);
     } else if (parameterClass == Duration.class) {
       return config.getDuration(configPropName);
-    } else if (parameterClass == ConfigMemorySize.class) {
-      return config.getMemorySize(configPropName);
+    } else if (parameterClass == MemorySize.class) {
+      ConfigMemorySize size = config.getMemorySize(configPropName);
+      return new MemorySize(size.toBytes());
     } else if (parameterClass == Object.class) {
       return config.getAnyRef(configPropName);
     } else if (parameterClass == List.class) {
@@ -323,16 +324,13 @@ public class ConfigMapper {
       return config.getStringList(configPropName);
     } else if (elementType == Duration.class) {
       return config.getDurationList(configPropName);
-    } else if (elementType == ConfigMemorySize.class) {
-      return config.getMemorySizeList(configPropName);
+    } else if (elementType == MemorySize.class) {
+      List<ConfigMemorySize> sizes = config.getMemorySizeList(configPropName);
+      return sizes.stream()
+          .map(size -> new MemorySize(size.toBytes()))
+          .collect(Collectors.toList());
     } else if (elementType == Object.class) {
       return config.getAnyRefList(configPropName);
-    } else if (elementType == Config.class) {
-      return config.getConfigList(configPropName);
-    } else if (elementType == ConfigObject.class) {
-      return config.getObjectList(configPropName);
-    } else if (elementType == ConfigValue.class) {
-      return config.getList(configPropName);
     } else if (((Class<?>) elementType).isEnum()) {
       @SuppressWarnings("unchecked")
       List<Enum> enumValues = config.getEnumList((Class<Enum>) elementType, configPropName);
@@ -356,34 +354,17 @@ public class ConfigMapper {
     return polymorphicTypeMappers.containsKey(clazz);
   }
 
-  private static ConfigValueType getValueTypeOrNull(Class<?> parameterClass) {
-    if (parameterClass == Boolean.class || parameterClass == boolean.class) {
-      return ConfigValueType.BOOLEAN;
-    } else if (parameterClass == Integer.class || parameterClass == int.class) {
-      return ConfigValueType.NUMBER;
-    } else if (parameterClass == Double.class || parameterClass == double.class) {
-      return ConfigValueType.NUMBER;
-    } else if (parameterClass == Long.class || parameterClass == long.class) {
-      return ConfigValueType.NUMBER;
-    } else if (parameterClass == String.class) {
-      return ConfigValueType.STRING;
-    } else if (parameterClass == Duration.class) {
-      return null;
-    } else if (parameterClass == ConfigMemorySize.class) {
-      return null;
-    } else if (parameterClass == List.class) {
-      return ConfigValueType.LIST;
-    } else if (parameterClass == Map.class) {
-      return ConfigValueType.OBJECT;
-    } else if (parameterClass == Config.class) {
-      return ConfigValueType.OBJECT;
-    } else if (parameterClass == ConfigObject.class) {
-      return ConfigValueType.OBJECT;
-    } else if (parameterClass == ConfigList.class) {
-      return ConfigValueType.LIST;
-    } else {
-      return null;
-    }
+  private static boolean isSimpleType(Class<?> parameterClass) {
+    return parameterClass == Boolean.class || parameterClass == boolean.class
+        || parameterClass == Integer.class || parameterClass == int.class
+        || parameterClass == Double.class || parameterClass == double.class
+        || parameterClass == Long.class || parameterClass == long.class
+        || parameterClass == String.class
+        || parameterClass == Duration.class
+        || parameterClass == MemorySize.class
+        || parameterClass == List.class
+        || parameterClass == Map.class
+        || parameterClass == Class.class;
   }
 
   private static String toCamelCase(String originalName) {
@@ -423,8 +404,8 @@ public class ConfigMapper {
 
         SetterDescriptor descriptor = descriptors.get(name);
         if (descriptor != null) {
-          Class<?> type = descriptor.setter.getParameterTypes()[0];
-          if (getValueTypeOrNull(type) == null && type != Class.class) {
+          Class<?> type = method.getParameterTypes()[0];
+          if (isSimpleType(type)) {
             descriptors.put(name, new SetterDescriptor(name, method));
           }
         } else {
