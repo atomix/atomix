@@ -87,27 +87,6 @@ public class ConfigMapper {
   }
 
   /**
-   * Loads the given resources using the configuration mapper.
-   *
-   * @param type         the type to load
-   * @param configString the initial configuration string
-   * @param resources    the resources to load
-   * @param <T>          the resulting type
-   * @return the loaded configuration
-   */
-  public <T> T loadStringAndResources(Class<T> type, String configString, String... resources) {
-    Config config = ConfigFactory.parseString(configString);
-    for (String resource : resources) {
-      if (config == null) {
-        config = ConfigFactory.load(resource);
-      } else {
-        config = config.withFallback(ConfigFactory.load(resource));
-      }
-    }
-    return map(config, type);
-  }
-
-  /**
    * Applies the given configuration to the given type.
    *
    * @param config the configuration to apply
@@ -136,10 +115,10 @@ public class ConfigMapper {
 
       String typeName = config.getString(typeMapper.getTypedPath());
       String typePath = typeMapper.getTypePath(typeName);
-      Config typeConfig = rootConfig.getConfig(typePath);
-      if (typeConfig == null) {
+      if (!rootConfig.hasPath(typePath)) {
         throw new ConfigurationException("Unknown type definition " + typePath);
       }
+      Config typeConfig = rootConfig.getConfig(typePath);
       type = (io.atomix.utils.Type) map(typeConfig, typePath, typeName, typeMapper.getTypeClass(), rootConfig);
       Class<? extends TypedConfig<?>> concreteClass = typeMapper.getConcreteTypedClass(type);
       try {

@@ -105,7 +105,7 @@ public class AtomixAgent {
     if (configString != null) {
       config = Atomix.config(configString);
     } else {
-      config = new AtomixConfig();
+      config = Atomix.config();
     }
 
     // If the local member info is specified, attempt to look up the member in the members list.
