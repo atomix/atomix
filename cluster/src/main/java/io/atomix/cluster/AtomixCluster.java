@@ -53,7 +53,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Cluster configuration.
  */
 public class AtomixCluster implements Managed<Void> {
-  static final String[] DEFAULT_RESOURCES = new String[]{"cluster.conf", "cluster.json", "cluster.properties"};
+  static final String[] DEFAULT_RESOURCES = new String[]{"cluster"};
 
   private static String[] withDefaultResources(String config) {
     return Streams.concat(Stream.of(config), Stream.of(DEFAULT_RESOURCES)).toArray(String[]::new);

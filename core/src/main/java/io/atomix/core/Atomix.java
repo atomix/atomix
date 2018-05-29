@@ -84,7 +84,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Atomix!
  */
 public class Atomix extends AtomixCluster implements PrimitivesService {
-  static final String[] DEFAULT_RESOURCES = new String[]{"atomix.conf", "atomix.json", "atomix.properties", "defaults.conf"};
+  static final String[] DEFAULT_RESOURCES = new String[]{"atomix", "defaults"};
 
   private static String[] withDefaultResources(String config) {
     return Streams.concat(Stream.of(config), Stream.of(DEFAULT_RESOURCES)).toArray(String[]::new);
