@@ -15,6 +15,7 @@
  */
 package io.atomix.cluster;
 
+import com.google.common.collect.Streams;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
@@ -43,6 +44,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -51,31 +53,68 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Cluster configuration.
  */
 public class AtomixCluster implements Managed<Void> {
+  static final String[] DEFAULT_RESOURCES = new String[]{"cluster.conf", "cluster.json", "cluster.properties"};
+
+  private static String[] withDefaultResources(String config) {
+    return Streams.concat(Stream.of(config), Stream.of(DEFAULT_RESOURCES)).toArray(String[]::new);
+  }
 
   /**
-   * Returns a new Atomix cluster builder.
+   * Returns a new Atomix configuration from the given resources.
    *
-   * @return a new Atomix cluster builder
+   * @param resources   the resources from which to return a new Atomix configuration
+   * @param classLoader the class loader
+   * @return a new Atomix configuration from the given resource
+   */
+  private static ClusterConfig config(String[] resources, ClassLoader classLoader) {
+    return new ConfigMapper(classLoader).loadResources(ClusterConfig.class, resources);
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @return a new Atomix builder
    */
   public static Builder builder() {
-    return new Builder();
+    return builder(Thread.currentThread().getContextClassLoader());
   }
 
   /**
-   * Returns a new Atomix cluster builder.
+   * Returns a new Atomix builder.
    *
-   * @param configFile the configuration file with which to initialize the builder
-   * @return a new Atomix cluster builder
+   * @param classLoader the class loader
+   * @return a new Atomix builder
    */
-  public static Builder builder(File configFile) {
-    return new Builder(loadConfig(configFile, Thread.currentThread().getContextClassLoader()));
+  public static Builder builder(ClassLoader classLoader) {
+    return builder(config(DEFAULT_RESOURCES, classLoader));
   }
 
   /**
-   * Returns a new Atomix cluster builder.
+   * Returns a new Atomix builder.
    *
-   * @param config the Atomix cluster configuration
-   * @return a new Atomix cluster builder
+   * @param config the Atomix configuration
+   * @return a new Atomix builder
+   */
+  public static Builder builder(String config) {
+    return builder(config, Thread.currentThread().getContextClassLoader());
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param config      the Atomix configuration
+   * @param classLoader the class loader
+   * @return a new Atomix builder
+   */
+  public static Builder builder(String config, ClassLoader classLoader) {
+    return new Builder(config(withDefaultResources(config), classLoader));
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param config the Atomix configuration
+   * @return a new Atomix builder
    */
   public static Builder builder(ClusterConfig config) {
     return new Builder(config);
