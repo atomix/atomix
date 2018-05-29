@@ -15,16 +15,16 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.core.set.DistributedSetType;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Transactional set builder.
  */
 public abstract class TransactionalSetBuilder<E>
     extends DistributedPrimitiveBuilder<TransactionalSetBuilder<E>, TransactionalSetConfig, TransactionalSet<E>> {
-  protected TransactionalSetBuilder(String name, TransactionalSetConfig config, PrimitiveManagementService managementService) {
-    super(DistributedSetType.instance(), name, config, managementService);
+  protected TransactionalSetBuilder(PrimitiveType type, String name, TransactionalSetConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 }

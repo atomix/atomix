@@ -15,8 +15,8 @@
  */
 package io.atomix.core.impl;
 
+import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.map.AsyncConsistentMap;
-import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.impl.ConsistentMapProxy;
 import io.atomix.core.map.impl.TranscodingAsyncConsistentMap;
 import io.atomix.primitive.DistributedPrimitive;
@@ -25,7 +25,7 @@ import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.PrimitiveTypes;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.PrimitiveProxy;
@@ -50,23 +50,23 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
   private final PartitionService partitionService;
-  private final ClassLoader classLoader;
+  private final PrimitiveTypeRegistry primitiveTypeRegistry;
   private final AtomicBoolean started = new AtomicBoolean();
   private AsyncConsistentMap<String, String> primitives;
 
-  public CorePrimitiveRegistry(PartitionService partitionService, ClassLoader classLoader) {
+  public CorePrimitiveRegistry(PartitionService partitionService, PrimitiveTypeRegistry primitiveTypeRegistry) {
     this.partitionService = checkNotNull(partitionService);
-    this.classLoader = checkNotNull(classLoader);
+    this.primitiveTypeRegistry = checkNotNull(primitiveTypeRegistry);
   }
 
   @Override
   public CompletableFuture<PrimitiveInfo> createPrimitive(String name, PrimitiveType type) {
     PrimitiveInfo info = new PrimitiveInfo(name, type);
     CompletableFuture<PrimitiveInfo> future = new CompletableFuture<>();
-    primitives.putIfAbsent(name, type.id()).whenComplete((result, error) -> {
+    primitives.putIfAbsent(name, type.name()).whenComplete((result, error) -> {
       if (error != null) {
         future.completeExceptionally(error);
-      } else if (result == null || result.value().equals(type.id())) {
+      } else if (result == null || result.value().equals(type.name())) {
         future.complete(info);
       } else {
         future.completeExceptionally(new PrimitiveException("A different primitive with the same name already exists"));
@@ -81,7 +81,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
       return primitives.entrySet()
           .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
           .stream()
-          .map(entry -> new PrimitiveInfo(entry.getKey(), PrimitiveTypes.getPrimitiveType(entry.getValue().value(), classLoader)))
+          .map(entry -> new PrimitiveInfo(entry.getKey(), primitiveTypeRegistry.getPrimitiveType(entry.getValue().value())))
           .collect(Collectors.toList());
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -105,7 +105,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   public PrimitiveInfo getPrimitive(String name) {
     try {
       return primitives.get(name)
-          .thenApply(value -> value == null ? null : value.map(type -> new PrimitiveInfo(name, PrimitiveTypes.getPrimitiveType(type, classLoader))).value())
+          .thenApply(value -> value == null ? null : value.map(type -> new PrimitiveInfo(name, primitiveTypeRegistry.getPrimitiveType(type))).value())
           .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -123,7 +123,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
     PrimitiveProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
     PrimitiveProxy proxy = protocol.newProxy(
         "primitives",
-        ConsistentMapType.instance(),
+        primitiveTypeRegistry.getPrimitiveType(PrimitiveTypes.consistentMap().name()),
         new ServiceConfig(),
         partitionService);
     return proxy.connect()

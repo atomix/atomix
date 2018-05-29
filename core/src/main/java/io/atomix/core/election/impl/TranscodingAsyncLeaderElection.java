@@ -16,12 +16,12 @@
 package io.atomix.core.election.impl;
 
 import com.google.common.collect.Maps;
-
 import io.atomix.core.election.AsyncLeaderElection;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
+import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.Map;
@@ -49,6 +49,11 @@ public class TranscodingAsyncLeaderElection<V1, V2> implements AsyncLeaderElecti
   @Override
   public String name() {
     return backingElection.name();
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
+    return backingElection.primitiveType();
   }
 
   @Override

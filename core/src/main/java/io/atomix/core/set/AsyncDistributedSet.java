@@ -18,7 +18,6 @@ package io.atomix.core.set;
 import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -35,11 +34,6 @@ import java.util.concurrent.CompletableFuture;
  * @param <E> set entry type
  */
 public interface AsyncDistributedSet<E> extends AsyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return DistributedSetType.instance();
-  }
 
   /**
    * Registers the specified listener to be notified whenever

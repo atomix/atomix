@@ -18,9 +18,6 @@ package io.atomix.primitive;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationId;
@@ -63,7 +60,6 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
 
   private final PrimitiveProxy proxy;
   private final PrimitiveRegistry registry;
-  private final Serializer serializer;
   private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Map<EventType, Map<PartitionId, Map<Object, Consumer>>> eventListeners = Maps.newIdentityHashMap();
   private final Map<BiConsumer<PartitionId, Proxy.State>, Map<PartitionId, Consumer<Proxy.State>>> stateChangeListeners =
@@ -72,7 +68,6 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
   public AbstractAsyncPrimitive(PrimitiveProxy proxy, PrimitiveRegistry registry) {
     this.proxy = checkNotNull(proxy, "proxy cannot be null");
     this.registry = checkNotNull(registry, "registry cannot be null");
-    this.serializer = Serializer.using(proxy.type().namespace());
     proxy.addStateChangeListener(this::onStateChange);
   }
 
@@ -92,7 +87,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @return the serializer for the primitive operations
    */
   protected Serializer serializer() {
-    return serializer;
+    return primitiveType().serializer();
   }
 
   /**

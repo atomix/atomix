@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolFactory;
 
 /**
@@ -23,12 +22,7 @@ import io.atomix.primitive.protocol.PrimitiveProtocolFactory;
  */
 public class MultiRaftProtocolFactory implements PrimitiveProtocolFactory<MultiRaftProtocolConfig, MultiRaftProtocol> {
   @Override
-  public PrimitiveProtocol.Type type() {
-    return MultiRaftProtocol.TYPE;
-  }
-
-  @Override
-  public MultiRaftProtocol create(MultiRaftProtocolConfig config) {
+  public MultiRaftProtocol createProtocol(MultiRaftProtocolConfig config) {
     return new MultiRaftProtocol(config);
   }
 }

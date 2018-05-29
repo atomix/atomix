@@ -19,6 +19,7 @@ import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterBuilder;
 import io.atomix.core.counter.AtomicCounterConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -28,8 +29,8 @@ import java.util.concurrent.CompletableFuture;
  * Atomic counter proxy builder.
  */
 public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
-  public AtomicCounterProxyBuilder(String name, AtomicCounterConfig config, PrimitiveManagementService managementService) {
-    super(name, config, managementService);
+  public AtomicCounterProxyBuilder(PrimitiveType type, String name, AtomicCounterConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 
   @Override

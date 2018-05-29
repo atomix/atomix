@@ -20,6 +20,7 @@ import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMapBuilder;
 import io.atomix.core.map.ConsistentTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -32,8 +33,8 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> type for map value
  */
 public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V> {
-  public ConsistentTreeMapProxyBuilder(String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
-    super(name, config, managementService);
+  public ConsistentTreeMapProxyBuilder(PrimitiveType type, String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 
   @Override

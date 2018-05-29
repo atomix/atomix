@@ -16,8 +16,6 @@
 package io.atomix.protocols.raft.partition;
 
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
 
 import java.util.HashSet;
@@ -37,8 +35,8 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   private String dataDirectory;
 
   @Override
-  public PrimitiveProtocol.Type getType() {
-    return MultiRaftProtocol.TYPE;
+  public String getType() {
+    return "raft";
   }
 
   @Override

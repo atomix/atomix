@@ -24,19 +24,12 @@ import java.util.stream.Collectors;
 /**
  * Consensus profile.
  */
-public class ConsensusProfile implements NamedProfile {
-  private static final String NAME = "consensus";
-
+public class ConsensusProfile implements Profile {
   private static final String DATA_PATH = ".data";
   private static final String SYSTEM_GROUP_NAME = "system";
   private static final String GROUP_NAME = "raft";
   private static final int PARTITION_SIZE = 3;
   private static final int NUM_PARTITIONS = 7;
-
-  @Override
-  public String name() {
-    return NAME;
-  }
 
   @Override
   public void configure(AtomixConfig config) {

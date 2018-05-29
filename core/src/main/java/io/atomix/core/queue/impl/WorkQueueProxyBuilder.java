@@ -19,6 +19,7 @@ import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueBuilder;
 import io.atomix.core.queue.WorkQueueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -29,8 +30,8 @@ import java.util.concurrent.CompletableFuture;
  * Default work queue builder implementation.
  */
 public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
-  public WorkQueueProxyBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
-    super(name, config, managementService);
+  public WorkQueueProxyBuilder(PrimitiveType type, String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 
   @Override

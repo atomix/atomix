@@ -17,6 +17,8 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.partition.ManagedPrimaryElection;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
@@ -48,6 +50,10 @@ import static io.atomix.primitive.partition.impl.PrimaryElectorEvents.CHANGE;
  */
 public class DefaultPrimaryElectionService implements ManagedPrimaryElectionService {
   private static final String PRIMITIVE_NAME = "atomix-primary-elector";
+  private static final PrimitiveType PRIMITIVE_TYPE = PrimitiveType.builder()
+      .withName("PRIMARY_ELECTOR")
+      .withServiceClass(PrimaryElectorService.class)
+      .build();
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(PrimaryElectorOperations.NAMESPACE)
@@ -64,8 +70,9 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   private final AtomicBoolean started = new AtomicBoolean();
   private PartitionProxy proxy;
 
-  public DefaultPrimaryElectionService(PartitionGroup partitionGroup) {
+  public DefaultPrimaryElectionService(PartitionGroup partitionGroup, PrimitiveTypeRegistry primitiveTypeRegistry) {
     this.partitions = checkNotNull(partitionGroup);
+    primitiveTypeRegistry.addPrimitiveType(PRIMITIVE_TYPE);
   }
 
   @Override
@@ -88,7 +95,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimaryElectionService> start() {
     return partitions.getPartitions().iterator().next().getProxyClient()
-        .proxyBuilder(PRIMITIVE_NAME, PrimaryElectorType.instance(), new ServiceConfig())
+        .proxyBuilder(PRIMITIVE_NAME, PRIMITIVE_TYPE, new ServiceConfig())
         .build()
         .connect()
         .thenAccept(proxy -> {

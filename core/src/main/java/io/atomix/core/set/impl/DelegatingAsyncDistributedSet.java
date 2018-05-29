@@ -26,7 +26,7 @@ import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.SetEvent;
 import io.atomix.core.set.SetEventListener;
-import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
+import io.atomix.primitive.DelegatingAsyncPrimitive;
 import io.atomix.utils.concurrent.Futures;
 
 import java.time.Duration;

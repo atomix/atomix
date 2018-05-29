@@ -95,7 +95,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   public CompletableFuture<Set<SessionMetadata>> getSessions(PrimitiveType primitiveType) {
     return getMetadata().thenApply(response -> response.sessions()
         .stream()
-        .filter(s -> s.primitiveType().equals(primitiveType.id()))
+        .filter(s -> s.primitiveType().equals(primitiveType.name()))
         .collect(Collectors.toSet()));
   }
 
@@ -103,7 +103,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   public CompletableFuture<Set<SessionMetadata>> getSessions(PrimitiveType primitiveType, String serviceName) {
     return getMetadata().thenApply(response -> response.sessions()
         .stream()
-        .filter(s -> s.primitiveType().equals(primitiveType.id()) && s.primitiveName().equals(serviceName))
+        .filter(s -> s.primitiveType().equals(primitiveType.name()) && s.primitiveName().equals(serviceName))
         .collect(Collectors.toSet()));
   }
 }

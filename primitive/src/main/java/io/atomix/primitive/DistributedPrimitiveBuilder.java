@@ -19,7 +19,6 @@ import com.google.common.base.Joiner;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
-import io.atomix.primitive.protocol.PrimitiveProtocols;
 import io.atomix.utils.Builder;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -169,12 +168,12 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
           protocol = partitionGroups.iterator().next().newProtocol();
         } else {
           String groups = Joiner.on(", ").join(partitionGroups.stream()
-              .map(group -> String.format("%s:%s", group.type().name(), group.name()))
+              .map(group -> group.name())
               .collect(Collectors.toList()));
           throw new ConfigurationException(String.format("Primitive protocol is ambiguous: %d partition groups found (%s)", partitionGroups.size(), groups));
         }
       } else {
-        protocol = PrimitiveProtocols.createProtocol(protocolConfig, managementService.getClassLoader());
+        protocol = managementService.getProtocolTypeRegistry().createProtocol(protocolConfig);
       }
     }
     return protocol;

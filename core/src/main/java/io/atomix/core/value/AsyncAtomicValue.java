@@ -17,7 +17,6 @@ package io.atomix.core.value;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -33,11 +32,6 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> value type
  */
 public interface AsyncAtomicValue<V> extends AsyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return AtomicValueType.instance();
-  }
 
   /**
    * Atomically sets the value to the given updated value if the current value is equal to the expected value.

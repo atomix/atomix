@@ -16,32 +16,33 @@
 package io.atomix.primitive;
 
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import io.atomix.utils.config.NamedConfig;
+import io.atomix.utils.config.TypedConfig;
 import io.atomix.utils.serializer.SerializerConfig;
 
 /**
  * Primitive configuration.
  */
-public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> {
+public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> implements TypedConfig<C>, NamedConfig<C> {
   private static final int DEFAULT_CACHE_SIZE = 1000;
 
-  private final PrimitiveType primitiveType;
+  private String name;
   private SerializerConfig serializerConfig;
   private PrimitiveProtocolConfig protocolConfig;
   private boolean cacheEnabled = false;
   private int cacheSize = DEFAULT_CACHE_SIZE;
   private boolean readOnly = false;
 
-  protected PrimitiveConfig(PrimitiveType primitiveType) {
-    this.primitiveType = primitiveType;
+  @Override
+  public String getName() {
+    return name;
   }
 
-  /**
-   * Returns the primitive type.
-   *
-   * @return the primitive type
-   */
-  public PrimitiveType getType() {
-    return primitiveType;
+  @Override
+  @SuppressWarnings("unchecked")
+  public C setName(String name) {
+    this.name = name;
+    return (C) this;
   }
 
   /**

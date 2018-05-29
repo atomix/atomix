@@ -19,6 +19,7 @@ import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -70,10 +71,17 @@ public interface PrimitiveManagementService {
   PrimitiveRegistry getPrimitiveRegistry();
 
   /**
-   * Returns the class loader.
+   * Returns the primitive type registry.
    *
-   * @return the class loader
+   * @return the primitive type registry
    */
-  ClassLoader getClassLoader();
+  PrimitiveTypeRegistry getPrimitiveTypeRegistry();
+
+  /**
+   * Returns the primitive protocol type registry.
+   *
+   * @return the primitive protocol type registry
+   */
+  PrimitiveProtocolTypeRegistry getProtocolTypeRegistry();
 
 }

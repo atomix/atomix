@@ -17,12 +17,13 @@ package io.atomix.core.queue;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Work queue builder.
  */
 public abstract class WorkQueueBuilder<E> extends DistributedPrimitiveBuilder<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>> {
-  public WorkQueueBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
-    super(WorkQueueType.instance(), name, config, managementService);
+  public WorkQueueBuilder(PrimitiveType type, String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 }

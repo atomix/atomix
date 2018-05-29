@@ -56,6 +56,7 @@
     <vertx.version>3.5.0</vertx.version>
     <jaxrs.version>2.0</jaxrs.version>
     <jackson.version>2.9.5</jackson.version>
+    <config.version>1.3.2</config.version>
     <resteasy.version>3.1.4.Final</resteasy.version>
     <rest-assured.version>3.0.7</rest-assured.version>
     <argparse4j.version>0.7.0</argparse4j.version>
@@ -103,7 +104,6 @@
   <modules>
     <module>agent</module>
     <module>cluster</module>
-    <module>config</module>
     <module>core</module>
     <module>primitive</module>
     <module>protocols</module>

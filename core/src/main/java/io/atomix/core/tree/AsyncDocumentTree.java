@@ -18,10 +18,8 @@ package io.atomix.core.tree;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
-import javax.annotation.concurrent.NotThreadSafe;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -31,13 +29,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <V> document tree value type
  */
-@NotThreadSafe
 public interface AsyncDocumentTree<V> extends AsyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return DocumentTreeType.instance();
-  }
 
   /**
    * Returns the {@link DocumentPath path} to root of the tree.

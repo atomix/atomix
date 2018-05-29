@@ -15,18 +15,12 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.core.set.DistributedSetType;
 import io.atomix.primitive.SyncPrimitive;
 
 /**
  * Transactional set.
  */
 public interface TransactionalSet<E> extends SyncPrimitive {
-
-  @Override
-  default DistributedSetType<E> primitiveType() {
-    return DistributedSetType.instance();
-  }
 
   /**
    * Adds the specified element to this set if it is not already present

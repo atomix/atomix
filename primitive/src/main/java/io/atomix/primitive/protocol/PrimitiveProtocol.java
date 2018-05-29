@@ -26,23 +26,11 @@ import io.atomix.primitive.service.ServiceConfig;
 public interface PrimitiveProtocol {
 
   /**
-   * Primitive protocol type.
-   */
-  interface Type {
-    /**
-     * Returns the protocol type name.
-     *
-     * @return the protocol type name
-     */
-    String name();
-  }
-
-  /**
    * Returns the protocol type.
    *
    * @return the protocol type
    */
-  Type type();
+  String type();
 
   /**
    * Returns the protocol group name.

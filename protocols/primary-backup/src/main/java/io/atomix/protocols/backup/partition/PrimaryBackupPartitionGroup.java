@@ -29,6 +29,7 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolType;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadPoolContextFactory;
@@ -51,7 +52,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Primary-backup partition group.
  */
 public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
-  public static final PartitionGroup.Type TYPE = new Type();
 
   /**
    * Returns a new primary-backup partition group builder.
@@ -61,18 +61,6 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
    */
   public static Builder builder(String name) {
     return new Builder(new PrimaryBackupPartitionGroupConfig().setName(name));
-  }
-
-  /**
-   * The primary-backup partition group type.
-   */
-  public static class Type implements PartitionGroup.Type {
-    private static final String NAME = "primary-backup";
-
-    @Override
-    public String name() {
-      return NAME;
-    }
   }
 
   private static Collection<PrimaryBackupPartition> buildPartitions(PrimaryBackupPartitionGroupConfig config) {
@@ -86,6 +74,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   private static final Logger LOGGER = LoggerFactory.getLogger(PrimaryBackupPartitionGroup.class);
 
   private final String name;
+  private final String type;
   private final PrimaryBackupPartitionGroupConfig config;
   private final Map<PartitionId, PrimaryBackupPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
@@ -94,6 +83,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   public PrimaryBackupPartitionGroup(PrimaryBackupPartitionGroupConfig config) {
     this.config = config;
     this.name = checkNotNull(config.getName());
+    this.type = config.getType();
     buildPartitions(config).forEach(p -> {
       this.partitions.put(p.id(), p);
       this.sortedPartitionIds.add(p.id());
@@ -107,13 +97,16 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public PartitionGroup.Type type() {
-    return TYPE;
+  public String type() {
+    return type;
   }
 
   @Override
-  public PrimitiveProtocol.Type protocol() {
-    return MultiPrimaryProtocol.TYPE;
+  public PrimitiveProtocolType protocol() {
+    return PrimitiveProtocolType.builder()
+        .withName(MultiPrimaryProtocol.NAME)
+        .withProtocolClass(MultiPrimaryProtocol.class)
+        .build();
   }
 
   @Override

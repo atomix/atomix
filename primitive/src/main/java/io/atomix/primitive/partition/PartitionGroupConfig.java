@@ -15,37 +15,22 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.utils.config.Config;
+import io.atomix.utils.config.NamedConfig;
+import io.atomix.utils.config.TypedConfig;
 
 /**
  * Partition group configuration.
  */
-public abstract class PartitionGroupConfig<C extends PartitionGroupConfig<C>> implements Config {
+public abstract class PartitionGroupConfig<C extends PartitionGroupConfig<C>> implements TypedConfig<C>, NamedConfig<C> {
   private String name;
   private int partitions = getDefaultPartitions();
 
-  /**
-   * Returns the primitive protocol type supported by the partition group.
-   *
-   * @return the primitive protocol type supported by the partition group
-   */
-  public abstract PrimitiveProtocol.Type getType();
-
-  /**
-   * Returns the partition group name.
-   *
-   * @return the partition group name
-   */
+  @Override
   public String getName() {
     return name;
   }
 
-  /**
-   * Sets the partition group name.
-   *
-   * @param name the partition group name
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public C setName(String name) {
     this.name = name;

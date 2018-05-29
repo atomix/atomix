@@ -21,7 +21,7 @@ import com.google.common.collect.Multiset;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEventListener;
-import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
+import io.atomix.primitive.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;

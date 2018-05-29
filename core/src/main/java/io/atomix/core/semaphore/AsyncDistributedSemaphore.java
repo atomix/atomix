@@ -17,7 +17,6 @@ package io.atomix.core.semaphore;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Version;
 import io.atomix.utils.time.Versioned;
 
@@ -30,10 +29,6 @@ import java.util.concurrent.CompletableFuture;
  * Distributed implementation of {@link java.util.concurrent.Semaphore}.
  */
 public interface AsyncDistributedSemaphore extends AsyncPrimitive {
-  @Override
-  default PrimitiveType primitiveType() {
-    return DistributedSemaphoreType.instance();
-  }
 
   /**
    * Acquires a permit from this semaphore.

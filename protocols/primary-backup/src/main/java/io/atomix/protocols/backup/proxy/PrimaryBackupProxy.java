@@ -102,7 +102,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
     primaryElection.addListener(primaryElectionListener);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
         .addValue(clientName)
-        .add("type", primitiveType.id())
+        .add("type", primitiveType.name())
         .add("name", descriptor.name())
         .build());
   }

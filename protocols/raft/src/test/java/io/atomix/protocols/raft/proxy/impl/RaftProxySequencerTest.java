@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.protocol.CommandResponse;
 import io.atomix.protocols.raft.protocol.PublishRequest;
@@ -37,13 +38,16 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftProxySequencerTest {
+  private static final PrimitiveType TEST_PRIMITIVE_TYPE = PrimitiveType.builder()
+      .withName("test")
+      .build();
 
   /**
    * Tests sequencing an event that arrives before a command response.
    */
   @Test
   public void testSequenceEventBeforeCommand() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), new TestPrimitiveType(), 1000));
+    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TEST_PRIMITIVE_TYPE, 1000));
     long sequence = sequencer.nextRequest();
 
     PublishRequest request = PublishRequest.builder()
@@ -70,7 +74,7 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventAfterCommand() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), new TestPrimitiveType(), 1000));
+    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TEST_PRIMITIVE_TYPE, 1000));
     long sequence = sequencer.nextRequest();
 
     PublishRequest request = PublishRequest.builder()
@@ -97,7 +101,7 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventAtCommand() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), new TestPrimitiveType(), 1000));
+    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TEST_PRIMITIVE_TYPE, 1000));
     long sequence = sequencer.nextRequest();
 
     PublishRequest request = PublishRequest.builder()
@@ -124,7 +128,7 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventAfterAllCommands() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), new TestPrimitiveType(), 1000));
+    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TEST_PRIMITIVE_TYPE, 1000));
     long sequence = sequencer.nextRequest();
 
     PublishRequest request1 = PublishRequest.builder()
@@ -159,7 +163,7 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceEventAbsentCommand() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), new TestPrimitiveType(), 1000));
+    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TEST_PRIMITIVE_TYPE, 1000));
 
     PublishRequest request1 = PublishRequest.builder()
         .withSession(1)
@@ -186,7 +190,7 @@ public class RaftProxySequencerTest {
    */
   @Test
   public void testSequenceResponses() throws Throwable {
-    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), new TestPrimitiveType(), 1000));
+    RaftProxySequencer sequencer = new RaftProxySequencer(new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TEST_PRIMITIVE_TYPE, 1000));
     long sequence1 = sequencer.nextRequest();
     long sequence2 = sequencer.nextRequest();
     assertTrue(sequence2 == sequence1 + 1);

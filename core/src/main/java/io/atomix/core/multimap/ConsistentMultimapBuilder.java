@@ -18,13 +18,14 @@ package io.atomix.core.multimap;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * A builder class for {@code AsyncConsistentMultimap}.
  */
 public abstract class ConsistentMultimapBuilder<K, V>
     extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>, ConsistentMultimapConfig, ConsistentMultimap<K, V>> {
-  public ConsistentMultimapBuilder(String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
-    super(ConsistentMultimapType.instance(), name, config, managementService);
+  public ConsistentMultimapBuilder(PrimitiveType type, String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 }

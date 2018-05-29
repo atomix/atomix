@@ -18,13 +18,14 @@ package io.atomix.core.map;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Builder for {@link ConsistentTreeMap}.
  */
 public abstract class ConsistentTreeMapBuilder<V>
     extends DistributedPrimitiveBuilder<ConsistentTreeMapBuilder<V>, ConsistentTreeMapConfig, ConsistentTreeMap<V>> {
-  public ConsistentTreeMapBuilder(String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
-    super(ConsistentTreeMapType.instance(), name, config, managementService);
+  public ConsistentTreeMapBuilder(PrimitiveType type, String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 }

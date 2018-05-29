@@ -21,7 +21,6 @@ import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
-import io.atomix.utils.config.Configs;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -34,7 +33,6 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -105,7 +103,7 @@ public class AtomixAgent {
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
     AtomixConfig config;
     if (configString != null) {
-      config = loadConfig(configString);
+      config = Atomix.config(configString);
     } else {
       config = new AtomixConfig();
     }
@@ -179,18 +177,6 @@ public class AtomixAgent {
       while (atomix.isRunning()) {
         Atomix.class.wait();
       }
-    }
-  }
-
-  /**
-   * Loads a configuration from the given file.
-   */
-  private static AtomixConfig loadConfig(String config) {
-    File configFile = new File(config);
-    if (configFile.exists()) {
-      return Configs.load(configFile, AtomixConfig.class, Thread.currentThread().getContextClassLoader());
-    } else {
-      return Configs.load(config, AtomixConfig.class, Thread.currentThread().getContextClassLoader());
     }
   }
 

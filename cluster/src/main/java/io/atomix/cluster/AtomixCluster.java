@@ -32,7 +32,7 @@ import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.utils.config.Configs;
+import io.atomix.utils.config.ConfigMapper;
 import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,7 +233,7 @@ public class AtomixCluster implements Managed<Void> {
    * Loads a configuration from the given file.
    */
   private static ClusterConfig loadConfig(File config, ClassLoader classLoader) {
-    return Configs.load(config, ClusterConfig.class, classLoader);
+    return new ConfigMapper(classLoader).loadResources(ClusterConfig.class, config.getAbsolutePath());
   }
 
   /**

@@ -18,13 +18,14 @@ package io.atomix.core.tree;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Builder for {@link DocumentTree}.
  */
 public abstract class DocumentTreeBuilder<V>
     extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
-  protected DocumentTreeBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
-    super(DocumentTreeType.instance(), name, config, managementService);
+  protected DocumentTreeBuilder(PrimitiveType type, String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 }

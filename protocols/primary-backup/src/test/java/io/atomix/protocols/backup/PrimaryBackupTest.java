@@ -17,9 +17,6 @@ package io.atomix.protocols.backup;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.TestClusterMembershipService;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Replication;
 import io.atomix.primitive.event.EventType;
@@ -33,7 +30,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
@@ -416,7 +412,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
         .withMembershipService(new TestClusterMembershipService(memberId, nodes))
         .withMemberGroupProvider(MemberGroupStrategy.NODE_AWARE)
         .withPrimaryElection(election)
-        .addPrimitiveType(TestPrimitiveType.INSTANCE)
+        .addPrimitiveType(TEST_PRIMITIVE_TYPE)
         .build();
     servers.add(server);
     return server;
@@ -443,7 +439,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    * Creates a new primary-backup proxy.
    */
   private PartitionProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+    return client.proxyBuilder("test", TEST_PRIMITIVE_TYPE, new ServiceConfig())
         .withNumBackups(backups)
         .withReplication(replication)
         .build()
@@ -474,32 +470,10 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   private static final EventType EXPIRE_EVENT = EventType.from("expire");
   private static final EventType CLOSE_EVENT = EventType.from("close");
 
-  /**
-   * Test primitive type.
-   */
-  private static class TestPrimitiveType implements PrimitiveType {
-    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
-
-    @Override
-    public String id() {
-      return "test";
-    }
-
-    @Override
-    public PrimitiveService newService(ServiceConfig config) {
-      return new TestPrimitiveService(config);
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
-    }
-  }
+  private static final PrimitiveType TEST_PRIMITIVE_TYPE = PrimitiveType.builder()
+      .withName("test")
+      .withServiceClass(TestPrimitiveService.class)
+      .build();
 
   /**
    * Test state machine.
