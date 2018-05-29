@@ -106,6 +106,8 @@ public class ConfigMapper {
   @SuppressWarnings("unchecked")
   private <T> T map(Config config, String path, String name, Class<T> clazz, Config rootConfig) {
     T instance;
+
+    // If the class is a polymorphic type, look up the type mapper and get the concrete type.
     io.atomix.utils.Type type = null;
     if (isPolymorphicType(clazz)) {
       PolymorphicTypeMapper typeMapper = polymorphicTypeMappers.get(clazz);
@@ -134,6 +136,7 @@ public class ConfigMapper {
       }
     }
 
+    // Map config property names to bean properties.
     Map<String, String> propertyNames = new HashMap<>();
     for (Map.Entry<String, ConfigValue> configProp : config.root().entrySet()) {
       String originalName = configProp.getKey();
@@ -148,9 +151,11 @@ public class ConfigMapper {
       }
     }
 
+    // First use setters and then fall back to fields.
     mapSetters(instance, clazz, type, path, name, propertyNames, config, rootConfig);
     mapFields(instance, clazz, type, path, name, propertyNames, config, rootConfig);
 
+    // If any properties present in the configuration were not found on config beans, throw an exception.
     if (path != null && !propertyNames.isEmpty()) {
       Set<String> cleanNames = propertyNames.keySet()
           .stream()
@@ -219,14 +224,6 @@ public class ConfigMapper {
     }
   }
 
-  // we could magically make this work in many cases by doing
-  // getAnyRef() (or getValue().unwrapped()), but anytime we
-  // rely on that, we aren't doing the type conversions Config
-  // usually does, and we will throw ClassCastException instead
-  // of a nicer error message giving the name of the bad
-  // setting. So, instead, we only support a limited number of
-  // types plus you can always use Object, ConfigValue, Config,
-  // ConfigObject, etc.  as an escape hatch.
   private Object getValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName, Config rootConfig) {
     if (parameterClass == Boolean.class || parameterClass == boolean.class) {
       return config.getBoolean(configPropName);
@@ -394,14 +391,20 @@ public class ConfigMapper {
           && name.substring(0, 3).equals("set")
           && name.charAt(3) >= 'A'
           && name.charAt(3) <= 'Z') {
+
+        // Strip the "set" prefix from the property name.
         name = method.getName().substring(3);
         name = name.length() > 1
             ? name.substring(0, 1).toLowerCase() + name.substring(1)
             : name.toLowerCase();
+
+        // Strip the "Config" suffix from the property name.
         if (name.endsWith("Config")) {
           name = name.substring(0, name.length() - "Config".length());
         }
 
+        // If a setter with this property name has already been registered, determine whether to override it.
+        // We favor simpler types over more complex types (i.e. beans).
         SetterDescriptor descriptor = descriptors.get(name);
         if (descriptor != null) {
           Class<?> type = method.getParameterTypes()[0];
@@ -421,10 +424,12 @@ public class ConfigMapper {
     Map<String, FieldDescriptor> descriptors = Maps.newHashMap();
     while (clazz != Object.class) {
       for (Field field : clazz.getDeclaredFields()) {
+        // If the field is static or transient, ignore it.
         if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
           continue;
         }
 
+        // If the field has a setter, ignore it and use the setter.
         Method method = Stream.of(clazz.getMethods())
             .filter(m -> m.getName().equals(toSetterName(field.getName())))
             .findFirst()
@@ -433,6 +438,7 @@ public class ConfigMapper {
           continue;
         }
 
+        // Strip the "Config" suffix from the field.
         String name = field.getName();
         if (name.endsWith("Config")) {
           name = name.substring(0, name.length() - "Config".length());
