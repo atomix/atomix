@@ -32,7 +32,7 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   private Set<String> members = new HashSet<>();
   private int partitionSize;
   private String storageLevel = StorageLevel.MAPPED.name();
-  private MemorySize segmentSize = MemorySize.from(1024 * 1024 * 32);
+  private long segmentSize = 1024 * 1024 * 32;
   private boolean flushOnCommit = true;
   private String dataDirectory;
 
@@ -113,7 +113,7 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    * @return the Raft log segment size
    */
   public MemorySize getSegmentSize() {
-    return segmentSize;
+    return MemorySize.from(segmentSize);
   }
 
   /**
@@ -123,7 +123,7 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    * @return the partition group configuration
    */
   public RaftPartitionGroupConfig setSegmentSize(MemorySize segmentSize) {
-    this.segmentSize = segmentSize;
+    this.segmentSize = segmentSize.bytes();
     return this;
   }
 
