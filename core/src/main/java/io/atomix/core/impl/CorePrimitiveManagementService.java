@@ -16,11 +16,13 @@
 package io.atomix.core.impl;
 
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -34,7 +36,8 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   private final ClusterEventingService eventService;
   private final PartitionService partitionService;
   private final PrimitiveRegistry primitiveRegistry;
-  private final ClassLoader classLoader;
+  private final PrimitiveTypeRegistry primitiveTypeRegistry;
+  private final PrimitiveProtocolTypeRegistry protocolTypeRegistry;
 
   public CorePrimitiveManagementService(
       ScheduledExecutorService executorService,
@@ -43,14 +46,16 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
       ClusterEventingService eventService,
       PartitionService partitionService,
       PrimitiveRegistry primitiveRegistry,
-      ClassLoader classLoader) {
+      PrimitiveTypeRegistry primitiveTypeRegistry,
+      PrimitiveProtocolTypeRegistry protocolTypeRegistry) {
     this.executorService = executorService;
     this.membershipService = membershipService;
     this.communicationService = communicationService;
     this.eventService = eventService;
     this.partitionService = partitionService;
     this.primitiveRegistry = primitiveRegistry;
-    this.classLoader = classLoader;
+    this.primitiveTypeRegistry = primitiveTypeRegistry;
+    this.protocolTypeRegistry = protocolTypeRegistry;
   }
 
   @Override
@@ -84,7 +89,12 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   }
 
   @Override
-  public ClassLoader getClassLoader() {
-    return classLoader;
+  public PrimitiveTypeRegistry getPrimitiveTypeRegistry() {
+    return primitiveTypeRegistry;
+  }
+
+  @Override
+  public PrimitiveProtocolTypeRegistry getProtocolTypeRegistry() {
+    return protocolTypeRegistry;
   }
 }

@@ -25,6 +25,7 @@ import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -37,8 +38,8 @@ import java.util.concurrent.CompletableFuture;
  * @param <E> type for set elements
  */
 public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
-  public DelegatingDistributedSetBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
-    super(name, config, managementService);
+  public DelegatingDistributedSetBuilder(PrimitiveType type, String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 
   @Override

@@ -15,8 +15,8 @@
  */
 package io.atomix.core.queue.impl;
 
+import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.queue.Task;
-import io.atomix.core.queue.WorkQueueType;
 import io.atomix.core.queue.impl.WorkQueueOperations.Add;
 import io.atomix.core.queue.impl.WorkQueueOperations.Take;
 import io.atomix.primitive.PrimitiveId;
@@ -49,7 +49,7 @@ public class WorkQueueServiceTest {
   @Test
   public void testSnapshot() throws Exception {
     ServiceContext context = mock(ServiceContext.class);
-    when(context.serviceType()).thenReturn(WorkQueueType.instance());
+    when(context.serviceType()).thenReturn(PrimitiveTypes.workQueue());
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
 

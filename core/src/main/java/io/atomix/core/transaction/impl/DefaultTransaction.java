@@ -16,7 +16,7 @@
 package io.atomix.core.transaction.impl;
 
 import com.google.common.collect.Sets;
-
+import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.transaction.AsyncTransaction;
 import io.atomix.core.transaction.CommitStatus;
 import io.atomix.core.transaction.Isolation;
@@ -29,6 +29,7 @@ import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.concurrent.Futures;
 
 import java.time.Duration;
@@ -60,6 +61,11 @@ public class DefaultTransaction implements AsyncTransaction {
   @Override
   public String name() {
     return null;
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
+    return PrimitiveTypes.TRANSACTION;
   }
 
   @Override
@@ -141,13 +147,13 @@ public class DefaultTransaction implements AsyncTransaction {
   @Override
   public <K, V> TransactionalMapBuilder<K, V> mapBuilder(String name) {
     checkState(isOpen(), "transaction not open");
-    return new DefaultTransactionalMapBuilder<>(name, new TransactionalMapConfig(), managementService, this);
+    return new DefaultTransactionalMapBuilder<>(PrimitiveTypes.consistentMap(), name, new TransactionalMapConfig(), managementService, this);
   }
 
   @Override
   public <E> TransactionalSetBuilder<E> setBuilder(String name) {
     checkState(isOpen(), "transaction not open");
-    return new DefaultTransactionalSetBuilder<>(name, new TransactionalSetConfig(), managementService, this);
+    return new DefaultTransactionalSetBuilder<>(PrimitiveTypes.set(), name, new TransactionalSetConfig(), managementService, this);
   }
 
   @Override

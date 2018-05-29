@@ -16,11 +16,11 @@
 package io.atomix.core.value.impl;
 
 import com.google.common.collect.Maps;
-
 import io.atomix.core.value.AsyncAtomicValue;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueEvent;
 import io.atomix.core.value.AtomicValueEventListener;
+import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.Map;
@@ -48,6 +48,11 @@ public class TranscodingAsyncAtomicValue<V1, V2> implements AsyncAtomicValue<V1>
   @Override
   public String name() {
     return backingValue.name();
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
+    return backingValue.primitiveType();
   }
 
   @Override

@@ -15,7 +15,6 @@
  */
 package io.atomix.primitive.session;
 
-import io.atomix.primitive.TestPrimitiveType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -29,6 +28,6 @@ public class SessionMetadataTest {
     SessionMetadata metadata = new SessionMetadata(1, "foo", "test");
     assertEquals(SessionId.from(1), metadata.sessionId());
     assertEquals("foo", metadata.primitiveName());
-    assertEquals(new TestPrimitiveType().id(), metadata.primitiveType());
+    assertEquals("test", metadata.primitiveType());
   }
 }

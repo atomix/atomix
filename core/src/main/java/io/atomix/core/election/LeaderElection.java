@@ -15,7 +15,6 @@
  */
 package io.atomix.core.election;
 
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 
 /**
@@ -23,11 +22,6 @@ import io.atomix.primitive.SyncPrimitive;
  * the only difference that all its methods block until the corresponding operation completes.
  */
 public interface LeaderElection<T> extends SyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return LeaderElectionType.instance();
-  }
 
   /**
    * Attempts to become leader for a topic.

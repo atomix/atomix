@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,44 +18,94 @@ package io.atomix.primitive;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.Generics;
-import io.atomix.utils.Identifier;
+import io.atomix.utils.AbstractNamed;
+import io.atomix.utils.Type;
+import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.SerializerConfig;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Raft service type.
+ * Primitive type.
  */
-public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive, S extends ServiceConfig>
-    extends Identifier<String> {
+public class PrimitiveType<
+    B extends DistributedPrimitiveBuilder,
+    C extends PrimitiveConfig,
+    P extends DistributedPrimitive>
+    extends AbstractNamed implements Type {
 
   /**
-   * Returns the primitive type name.
+   * Returns a new primitive type builder.
    *
-   * @return the primitive type name
+   * @return a new primitive type builder
    */
-  @Override
-  String id();
-
-  /**
-   * Returns the primitive type builder class.
-   *
-   * @return the primitive type builder class
-   */
-  @SuppressWarnings("unchecked")
-  default Class<? extends DistributedPrimitiveBuilder> builderClass() {
-    return (Class<? extends DistributedPrimitiveBuilder>) Generics.getGenericInterfaceType(this, PrimitiveType.class, 0);
+  public static Builder builder() {
+    return new Builder(null);
   }
 
   /**
-   * Returns the primitive type configuration class.
+   * Returns a new primitive type builder.
    *
-   * @return the primitive type configuration class
+   * @param name the primitive type name
+   * @return a new primitive type builder
    */
-  @SuppressWarnings("unchecked")
-  default Class<? extends PrimitiveConfig> primitiveConfigClass() {
-    return (Class<? extends PrimitiveConfig>) Generics.getGenericInterfaceType(this, PrimitiveType.class, 1);
+  public static Builder builder(String name) {
+    return new Builder(name);
+  }
+
+  private Class<B> builderClass;
+  private Class<C> configClass;
+  private Class<P> primitiveClass;
+  private Class<? extends PrimitiveService> serviceClass;
+  private Class<? extends ServiceConfig> serviceConfigClass = ServiceConfig.class;
+  private Class<? extends PrimitiveResource> resourceClass;
+  private SerializerConfig namespace;
+  private transient volatile Serializer serializer;
+
+  public PrimitiveType() {
+    this(null, null, null, null, null, null, null);
+  }
+
+  private PrimitiveType(
+      String name,
+      Class<B> builderClass,
+      Class<C> configClass,
+      Class<P> primitiveClass,
+      Class<? extends PrimitiveService> serviceClass,
+      Class<? extends ServiceConfig> serviceConfigClass,
+      Class<? extends PrimitiveResource> resourceClass) {
+    super(name);
+    this.builderClass = builderClass;
+    this.configClass = configClass;
+    this.primitiveClass = primitiveClass;
+    this.serviceClass = serviceClass;
+    this.serviceConfigClass = serviceConfigClass != null ? serviceConfigClass : ServiceConfig.class;
+    this.resourceClass = resourceClass;
+  }
+
+  /**
+   * Returns the primitive builder class.
+   *
+   * @return the primitive builder class
+   */
+  public Class<B> builderClass() {
+    return builderClass;
+  }
+
+  /**
+   * Returns the primitive configuration class.
+   *
+   * @return the primitive configuration class
+   */
+  public Class<C> configClass() {
+    return configClass;
   }
 
   /**
@@ -63,9 +113,17 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
    *
    * @return the primitive class
    */
-  @SuppressWarnings("unchecked")
-  default Class<? extends DistributedPrimitive> primitiveClass() {
-    return (Class<? extends DistributedPrimitive>) Generics.getGenericInterfaceType(this, PrimitiveType.class, 2);
+  public Class<P> primitiveClass() {
+    return primitiveClass;
+  }
+
+  /**
+   * Returns the primitive service class.
+   *
+   * @return the primitive service class
+   */
+  public Class<? extends PrimitiveService> serviceClass() {
+    return serviceClass;
   }
 
   /**
@@ -73,59 +131,261 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder<B, C, P>, C
    *
    * @return the service configuration class
    */
-  @SuppressWarnings("unchecked")
-  default Class<? extends ServiceConfig> serviceConfigClass() {
-    Class<? extends ServiceConfig> serviceConfigClass = (Class<? extends ServiceConfig>) Generics.getGenericInterfaceType(this, PrimitiveType.class, 3);
-    return serviceConfigClass != null ? serviceConfigClass : ServiceConfig.class;
+  public Class<? extends ServiceConfig> serviceConfigClass() {
+    return serviceConfigClass;
   }
 
   /**
-   * Returns the primitive namespace.
+   * Returns the primitive resource class.
    *
-   * @return the primitive namespace
+   * @return the primitive resource class
    */
-  default Namespace namespace() {
-    return KryoNamespace.builder()
-        .register(KryoNamespaces.BASIC)
-        .register(serviceConfigClass())
-        .build();
+  public Class<? extends PrimitiveResource> resourceClass() {
+    return resourceClass;
   }
 
   /**
-   * Returns the primitive service factory.
+   * Returns the primitive type serializer.
    *
-   * @param config the primitive service configuration
-   * @return the primitive service factory.
+   * @return the primitive type serializer
    */
-  PrimitiveService newService(S config);
-
-  /**
-   * Returns the primitive resource factory.
-   *
-   * @param primitive the primitive instance
-   * @return the primitive resource factory
-   */
-  default PrimitiveResource newResource(P primitive) {
-    return null;
+  public Serializer serializer() {
+    if (serializer == null) {
+      synchronized (this) {
+        if (serializer == null) {
+          if (namespace != null) {
+            serializer = Serializer.using(KryoNamespace.builder()
+                .register(KryoNamespaces.BASIC)
+                .register(serviceConfigClass())
+                .register(new KryoNamespace(namespace))
+                .build());
+          } else {
+            serializer = Serializer.using(KryoNamespace.builder()
+                .register(KryoNamespaces.BASIC)
+                .register(serviceConfigClass())
+                .build());
+          }
+        }
+      }
+    }
+    return serializer;
   }
 
   /**
-   * Returns a new primitive builder for the given partition.
+   * Returns a new configuration for the primitive type.
    *
-   * @param name              the primitive name
+   * @return a new primitive configuration
+   */
+  public C newConfig() {
+    if (configClass == null) {
+      throw new ConfigurationException("No configuration class specified for primitive type " + name());
+    }
+
+    try {
+      return configClass.newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException("Failed to instantiate configuration for primitive type " + name() + ". Must provide a no-arg constructor", e);
+    }
+  }
+
+  /**
+   * Returns a new primitive builder.
+   *
+   * @param primitiveName     the primitive name
    * @param managementService the primitive management service
-   * @return the primitive builder
+   * @return a new primitive builder
    */
-  B newPrimitiveBuilder(String name, PrimitiveManagementService managementService);
+  public B newBuilder(String primitiveName, PrimitiveManagementService managementService) {
+    return newBuilder(primitiveName, newConfig(), managementService);
+  }
 
   /**
-   * Returns a new primitive builder for the given partition.
+   * Returns a new primitive builder.
    *
-   * @param name              the primitive name
+   * @param primitiveName     the primitive name
    * @param config            the primitive configuration
    * @param managementService the primitive management service
-   * @return the primitive builder
+   * @return a new primitive builder
    */
-  B newPrimitiveBuilder(String name, C config, PrimitiveManagementService managementService);
+  public B newBuilder(String primitiveName, C config, PrimitiveManagementService managementService) {
+    if (builderClass == null) {
+      throw new ConfigurationException("No builder class configured for primitive type " + name());
+    }
 
+    try {
+      Constructor<? extends B> constructor = builderClass.getConstructor(PrimitiveType.class, String.class, configClass, PrimitiveManagementService.class);
+      return constructor.newInstance(this, primitiveName, config, managementService);
+    } catch (NoSuchMethodException e) {
+      throw new ConfigurationException("No valid constructor found for builder class " + builderClass.getName(), e);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new ConfigurationException("Failed to instantiate primitive builder class " + builderClass.getName(), e);
+    }
+  }
+
+  /**
+   * Creates a new service instance from the given configuration.
+   *
+   * @param config the service configuration
+   * @return the service instance
+   */
+  public PrimitiveService newService(ServiceConfig config) {
+    if (serviceClass == null) {
+      throw new ConfigurationException("No service class configured");
+    }
+
+    try {
+      Constructor<? extends PrimitiveService> configConstructor = serviceClass.getConstructor(serviceConfigClass);
+      try {
+        return configConstructor.newInstance(config);
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new ConfigurationException("Failed to instantiate primitive service using config constructor", e);
+      }
+    } catch (NoSuchMethodException e) {
+      try {
+        Constructor<? extends PrimitiveService> noArgConstructor = serviceClass.getConstructor();
+        try {
+          return noArgConstructor.newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e2) {
+          throw new ConfigurationException("Failed to instantiate primitive service using no-arg constructor", e2);
+        }
+      } catch (NoSuchMethodException e2) {
+        throw new ConfigurationException("Failed to instantiate primitive service: no valid constructor found", e);
+      }
+    }
+  }
+
+  /**
+   * Creates a new resource for the given primitive.
+   *
+   * @param primitive the primitive instance
+   * @return a new resource for the given primitive instance
+   */
+  public PrimitiveResource newResource(P primitive) {
+    if (resourceClass == null) {
+      throw new ConfigurationException("No resource class configured for primitive type " + name());
+    }
+
+    try {
+      return resourceClass.getConstructor(primitiveClass).newInstance(primitive);
+    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new ConfigurationException("Failed to instantiate resource class for primitive type " + name(), e);
+    }
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name());
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof PrimitiveType && Objects.equals(((PrimitiveType) object).name(), name());
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("name", name())
+        .toString();
+  }
+
+  /**
+   * Primitive type builder.
+   */
+  public static class Builder implements io.atomix.utils.Builder<PrimitiveType> {
+    private String name;
+    private Class<? extends DistributedPrimitiveBuilder> builderClass;
+    private Class<? extends PrimitiveConfig> configClass;
+    private Class<? extends DistributedPrimitive> primitiveClass;
+    private Class<? extends PrimitiveService> serviceClass;
+    private Class<? extends ServiceConfig> serviceConfigClass = ServiceConfig.class;
+    private Class<? extends PrimitiveResource> resourceClass;
+
+    private Builder(String name) {
+      this.name = name;
+    }
+
+    /**
+     * Sets the primitive type name.
+     *
+     * @param name the primitive type name
+     * @return the primitive type builder
+     */
+    public Builder withName(String name) {
+      this.name = name;
+      return this;
+    }
+
+    /**
+     * Sets the primitive builder class.
+     *
+     * @param builderClass the primitive builder class
+     * @return the primitive type builder
+     */
+    public Builder withBuilderClass(Class<? extends DistributedPrimitiveBuilder> builderClass) {
+      this.builderClass = builderClass;
+      return this;
+    }
+
+    /**
+     * Sets the primitive configuration class.
+     *
+     * @param configClass the primitive configuration class
+     * @return the primitive type builder
+     */
+    public Builder withConfigClass(Class<? extends PrimitiveConfig> configClass) {
+      this.configClass = configClass;
+      return this;
+    }
+
+    /**
+     * Sets the primitive class.
+     *
+     * @param primitiveClass the builder class
+     * @return the primitive type builder
+     */
+    public Builder withPrimitiveClass(Class<? extends DistributedPrimitive> primitiveClass) {
+      this.primitiveClass = primitiveClass;
+      return this;
+    }
+
+    /**
+     * Sets the primitive service class.
+     *
+     * @param serviceClass the primitive service class
+     * @return the primitive type builder
+     */
+    public Builder withServiceClass(Class<? extends PrimitiveService> serviceClass) {
+      this.serviceClass = serviceClass;
+      return this;
+    }
+
+    /**
+     * Sets the primitive service configuration class.
+     *
+     * @param serviceConfigClass the primitive service configuration class
+     * @return the primitive type builder
+     */
+    public Builder withServiceConfigClass(Class<? extends ServiceConfig> serviceConfigClass) {
+      this.serviceConfigClass = serviceConfigClass;
+      return this;
+    }
+
+    /**
+     * Sets the primitive resource class.
+     *
+     * @param resourceClass the primitive resource class
+     * @return the primitive type builder
+     */
+    public Builder withResourceClass(Class<? extends PrimitiveResource> resourceClass) {
+      this.resourceClass = resourceClass;
+      return this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public PrimitiveType build() {
+      return new PrimitiveType(name, builderClass, configClass, primitiveClass, serviceClass, serviceConfigClass, resourceClass);
+    }
+  }
 }

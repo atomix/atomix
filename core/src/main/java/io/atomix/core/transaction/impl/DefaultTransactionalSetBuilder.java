@@ -20,6 +20,7 @@ import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -29,14 +30,14 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E> {
   private final DefaultTransaction transaction;
 
-  public DefaultTransactionalSetBuilder(String name, TransactionalSetConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
-    super(name, config, managementService);
+  public DefaultTransactionalSetBuilder(PrimitiveType type, String name, TransactionalSetConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
+    super(type, name, config, managementService);
     this.transaction = transaction;
   }
 
   @Override
   public CompletableFuture<TransactionalSet<E>> buildAsync() {
-    return new DefaultTransactionalMapBuilder<E, Boolean>(name(), new TransactionalMapConfig(), managementService, transaction)
+    return new DefaultTransactionalMapBuilder<E, Boolean>(type, name(), new TransactionalMapConfig(), managementService, transaction)
         .buildAsync()
         .thenApply(map -> new DefaultTransactionalSet<>(map.async()).sync());
   }

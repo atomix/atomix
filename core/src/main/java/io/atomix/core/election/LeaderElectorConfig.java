@@ -15,13 +15,15 @@
  */
 package io.atomix.core.election;
 
+import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveConfig;
 
 /**
  * Leader elector configuration.
  */
 public class LeaderElectorConfig extends PrimitiveConfig<LeaderElectorConfig> {
-  public LeaderElectorConfig() {
-    super(LeaderElectorType.instance());
+  @Override
+  public String getType() {
+    return PrimitiveTypes.leaderElector().name();
   }
 }

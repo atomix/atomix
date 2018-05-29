@@ -17,7 +17,6 @@ package io.atomix.core.election;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.Map;
@@ -34,11 +33,6 @@ import java.util.concurrent.CompletableFuture;
  * will be automatically granted access to the resource.
  */
 public interface AsyncLeaderElector<T> extends AsyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return LeaderElectorType.instance();
-  }
 
   /**
    * Attempts to become leader for a topic.

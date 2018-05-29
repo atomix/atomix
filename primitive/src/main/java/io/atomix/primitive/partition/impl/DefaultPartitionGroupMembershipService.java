@@ -31,12 +31,12 @@ import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionGroupMembershipService;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.primitive.partition.PartitionGroupFactory;
 import io.atomix.primitive.partition.PartitionGroupMembership;
 import io.atomix.primitive.partition.PartitionGroupMembershipEvent;
 import io.atomix.primitive.partition.PartitionGroupMembershipEventListener;
 import io.atomix.primitive.partition.PartitionGroupMembershipService;
-import io.atomix.primitive.partition.PartitionGroups;
+import io.atomix.primitive.partition.PartitionGroupType;
+import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -72,7 +72,7 @@ public class DefaultPartitionGroupMembershipService
 
   private final ClusterMembershipService membershipService;
   private final ClusterCommunicationService messagingService;
-  private final ClassLoader classLoader;
+  private final PartitionGroupTypeRegistry groupTypeRegistry;
   private final Serializer serializer;
   private volatile PartitionGroupMembership systemGroup;
   private final Map<String, PartitionGroupMembership> groups = Maps.newConcurrentMap();
@@ -84,12 +84,12 @@ public class DefaultPartitionGroupMembershipService
   public DefaultPartitionGroupMembershipService(
       ClusterMembershipService membershipService,
       ClusterCommunicationService messagingService,
-      ClassLoader classLoader,
       ManagedPartitionGroup systemGroup,
-      Collection<ManagedPartitionGroup> groups) {
+      Collection<ManagedPartitionGroup> groups,
+      PartitionGroupTypeRegistry groupTypeRegistry) {
     this.membershipService = membershipService;
     this.messagingService = messagingService;
-    this.classLoader = classLoader;
+    this.groupTypeRegistry = groupTypeRegistry;
     this.systemGroup = systemGroup != null
         ? new PartitionGroupMembership(
         systemGroup.name(),
@@ -110,8 +110,8 @@ public class DefaultPartitionGroupMembershipService
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)
         .register(MemberGroupStrategy.class);
-    for (PartitionGroupFactory factory : PartitionGroups.getGroupFactories(classLoader)) {
-      builder.register(factory.configClass());
+    for (PartitionGroupType groupType : groupTypeRegistry.getGroupTypes()) {
+      builder.register(groupType.configClass());
     }
     serializer = Serializer.using(builder.build());
   }

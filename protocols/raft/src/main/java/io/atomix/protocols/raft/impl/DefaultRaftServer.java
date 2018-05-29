@@ -224,7 +224,7 @@ public class DefaultRaftServer implements RaftServer {
 
     @Override
     public RaftServer build() {
-      if (primitiveTypes.size() == 0) {
+      if (primitiveTypes.getPrimitiveTypes().isEmpty()) {
         throw new IllegalStateException("No primitive services registered");
       }
 

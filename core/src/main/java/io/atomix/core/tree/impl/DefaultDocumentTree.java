@@ -19,7 +19,6 @@ package io.atomix.core.tree.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
-
 import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
@@ -28,6 +27,7 @@ import io.atomix.core.tree.DocumentTreeNode;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.primitive.Ordering;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Iterator;
@@ -64,6 +64,11 @@ public class DefaultDocumentTree<V> implements DocumentTree<V> {
 
   @Override
   public String name() {
+    return null;
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
     return null;
   }
 

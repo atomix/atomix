@@ -17,7 +17,6 @@ package io.atomix.core.election;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -42,11 +41,6 @@ import java.util.concurrent.CompletableFuture;
  * {@link CompletableFuture#complete completed} when the operation finishes.
  */
 public interface AsyncLeaderElection<T> extends AsyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return LeaderElectionType.instance();
-  }
 
   /**
    * Attempts to become leader for a topic.

@@ -18,7 +18,6 @@ package io.atomix.core.multimap;
 
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
@@ -33,11 +32,6 @@ import java.util.concurrent.Executor;
  * blocks until the future completes then returns the result.
  */
 public interface ConsistentMultimap<K, V> extends SyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return ConsistentMultimapType.instance();
-  }
 
   /**
    * Returns the number of key-value pairs in this multimap.

@@ -21,7 +21,7 @@ import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeListener;
-import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
+import io.atomix.primitive.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;

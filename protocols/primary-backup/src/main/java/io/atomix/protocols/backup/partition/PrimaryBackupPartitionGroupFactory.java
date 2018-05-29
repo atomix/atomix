@@ -15,18 +15,12 @@
  */
 package io.atomix.protocols.backup.partition;
 
-import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupFactory;
 
 /**
  * Primary-backup partition group factory.
  */
 public class PrimaryBackupPartitionGroupFactory implements PartitionGroupFactory<PrimaryBackupPartitionGroupConfig, PrimaryBackupPartitionGroup> {
-  @Override
-  public PartitionGroup.Type type() {
-    return PrimaryBackupPartitionGroup.TYPE;
-  }
-
   @Override
   public PrimaryBackupPartitionGroup createGroup(PrimaryBackupPartitionGroupConfig config) {
     return new PrimaryBackupPartitionGroup(config);

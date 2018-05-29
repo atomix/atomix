@@ -16,6 +16,7 @@
 package io.atomix.primitive.partition;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolType;
 
 import java.util.Collection;
 
@@ -46,9 +47,9 @@ public interface PartitionService {
    * @return the first partition group that matches the given primitive type
    */
   @SuppressWarnings("unchecked")
-  default PartitionGroup getPartitionGroup(PrimitiveProtocol.Type type) {
+  default PartitionGroup getPartitionGroup(PrimitiveProtocolType type) {
     return getPartitionGroups().stream()
-        .filter(group -> group.protocol().equals(type))
+        .filter(group -> group.protocol().name().equals(type.name()))
         .findFirst()
         .orElse(null);
   }
@@ -71,7 +72,13 @@ public interface PartitionService {
         return systemGroup;
       }
     }
-    return getPartitionGroup(protocol.type());
+
+    for (PartitionGroup partitionGroup : getPartitionGroups()) {
+      if (partitionGroup.protocol().name().equals(protocol.type())) {
+        return partitionGroup;
+      }
+    }
+    return null;
   }
 
   /**

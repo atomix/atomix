@@ -15,39 +15,10 @@
  */
 package io.atomix.primitive.partition;
 
-import io.atomix.utils.Generics;
-
 /**
  * Partition group factory.
  */
 public interface PartitionGroupFactory<C extends PartitionGroupConfig<C>, P extends ManagedPartitionGroup> {
-
-  /**
-   * Returns the partition group protocol type.
-   *
-   * @return the partition group protocol type
-   */
-  PartitionGroup.Type type();
-
-  /**
-   * Returns the partition group configuration class.
-   *
-   * @return the partition group configuration class
-   */
-  @SuppressWarnings("unchecked")
-  default Class<? extends PartitionGroupConfig> configClass() {
-    return (Class<? extends PartitionGroupConfig>) Generics.getGenericInterfaceType(this, PartitionGroupFactory.class, 0);
-  }
-
-  /**
-   * Returns the partition group class.
-   *
-   * @return the partition group class
-   */
-  @SuppressWarnings("unchecked")
-  default Class<? extends ManagedPartitionGroup> groupClass() {
-    return (Class<? extends ManagedPartitionGroup>) Generics.getGenericInterfaceType(this, PartitionGroupFactory.class, 1);
-  }
 
   /**
    * Creates a new partition group.

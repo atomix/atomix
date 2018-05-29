@@ -15,6 +15,7 @@
  */
 package io.atomix.core.transaction.impl;
 
+import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.transaction.Transaction;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionConfig;
@@ -36,7 +37,7 @@ public class DefaultTransactionBuilder extends TransactionBuilder {
       TransactionConfig config,
       PrimitiveManagementService managementService,
       TransactionService transactionService) {
-    super(name, config, managementService);
+    super(PrimitiveTypes.TRANSACTION, name, config, managementService);
     this.transactionService = checkNotNull(transactionService);
   }
 

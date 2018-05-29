@@ -19,11 +19,11 @@ package io.atomix.core.multimap.impl;
 import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
-
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -91,6 +91,11 @@ public class TranscodingAsyncConsistentMultimap<K1, V1, K2, V2> implements Async
             v.creationTime());
     this.valueCollectionEncode = v -> v == null ? null :
         v.stream().map(valueEncoder).collect(Collectors.toSet());
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
+    return backingMap.primitiveType();
   }
 
   @Override

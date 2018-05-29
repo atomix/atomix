@@ -15,18 +15,12 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 
 /**
  * Distributed version of com.google.common.util.concurrent.AtomicLongMap.
  */
 public interface AtomicCounterMap<K> extends SyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return AtomicCounterMapType.instance();
-  }
 
   /**
    * Increments by one the value currently associated with key, and returns the new value.

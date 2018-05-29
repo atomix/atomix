@@ -26,7 +26,6 @@ import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -40,19 +39,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Multi-primary protocol.
  */
 public class MultiPrimaryProtocol implements PrimitiveProtocol {
-  public static final Type TYPE = new Type();
-
-  /**
-   * The multi-primary protocol type.
-   */
-  public static class Type implements PrimitiveProtocol.Type {
-    private static final String NAME = "multi-primary";
-
-    @Override
-    public String name() {
-      return NAME;
-    }
-  }
+  public static final String NAME = "multi-primary";
 
   /**
    * Returns a new multi-primary protocol builder.
@@ -80,8 +67,8 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
   }
 
   @Override
-  public PrimitiveProtocol.Type type() {
-    return TYPE;
+  public String type() {
+    return config.getType();
   }
 
   @Override

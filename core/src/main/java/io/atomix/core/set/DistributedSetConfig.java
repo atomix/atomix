@@ -15,13 +15,15 @@
  */
 package io.atomix.core.set;
 
+import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveConfig;
 
 /**
  * Distributed set configuration.
  */
 public class DistributedSetConfig extends PrimitiveConfig<DistributedSetConfig> {
-  public DistributedSetConfig() {
-    super(DistributedSetType.instance());
+  @Override
+  public String getType() {
+    return PrimitiveTypes.set().name();
   }
 }

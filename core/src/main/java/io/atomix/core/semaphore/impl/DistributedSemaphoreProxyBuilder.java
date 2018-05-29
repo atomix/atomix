@@ -21,30 +21,30 @@ import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
 import io.atomix.core.semaphore.DistributedSemaphoreConfig;
 import io.atomix.core.semaphore.DistributedSemaphoreServiceConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 
 import java.util.concurrent.CompletableFuture;
 
-
 public class DistributedSemaphoreProxyBuilder extends DistributedSemaphoreBuilder {
-  public DistributedSemaphoreProxyBuilder(String name, DistributedSemaphoreConfig config, PrimitiveManagementService managementService) {
-    super(name, config, managementService);
+  public DistributedSemaphoreProxyBuilder(PrimitiveType type, String name, DistributedSemaphoreConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public CompletableFuture<DistributedSemaphore> buildAsync() {
     PrimitiveProxy proxy = protocol().newProxy(
-            name(),
-            primitiveType(),
-            new DistributedSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
-            managementService.getPartitionService());
+        name(),
+        primitiveType(),
+        new DistributedSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
+        managementService.getPartitionService());
 
     return new DistributedSemaphoreProxy(
-            proxy,
-            managementService.getPrimitiveRegistry(),
-            managementService.getExecutorService())
-            .connect()
-            .thenApply(AsyncDistributedSemaphore::sync);
+        proxy,
+        managementService.getPrimitiveRegistry(),
+        managementService.getExecutorService())
+        .connect()
+        .thenApply(AsyncDistributedSemaphore::sync);
   }
 }

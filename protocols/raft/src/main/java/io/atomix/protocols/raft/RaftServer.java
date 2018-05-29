@@ -19,6 +19,7 @@ import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.impl.DefaultPrimitiveTypeRegistry;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.protocols.raft.cluster.RaftCluster;
@@ -556,14 +557,13 @@ public interface RaftServer {
 
     protected String name;
     protected MemberId localMemberId;
-    protected ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     protected ClusterMembershipService membershipService;
     protected RaftServerProtocol protocol;
     protected RaftStorage storage;
     protected Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(classLoader);
+    protected PrimitiveTypeRegistry primitiveTypes = new DefaultPrimitiveTypeRegistry();
     protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
@@ -581,18 +581,6 @@ public interface RaftServer {
      */
     public Builder withName(String name) {
       this.name = checkNotNull(name, "name cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the class loader.
-     *
-     * @param classLoader the class loader
-     * @return the server builder
-     */
-    public Builder withClassLoader(ClassLoader classLoader) {
-      this.classLoader = checkNotNull(classLoader, "classLoader cannot be null");
-      this.primitiveTypes = new PrimitiveTypeRegistry(classLoader);
       return this;
     }
 
@@ -672,7 +660,7 @@ public interface RaftServer {
      * @throws NullPointerException if the {@code primitiveType} is {@code null}
      */
     public Builder addPrimitiveType(PrimitiveType primitiveType) {
-      primitiveTypes.register(primitiveType);
+      primitiveTypes.addPrimitiveType(primitiveType);
       return this;
     }
 

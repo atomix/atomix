@@ -21,6 +21,7 @@ import io.atomix.core.transaction.AsyncTransactionalMap;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionParticipant;
 import io.atomix.core.transaction.TransactionalMap;
+import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -43,6 +44,11 @@ public abstract class TransactionalMapParticipant<K, V> implements AsyncTransact
   @Override
   public String name() {
     return consistentMap.name();
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
+    return consistentMap.primitiveType();
   }
 
   @Override

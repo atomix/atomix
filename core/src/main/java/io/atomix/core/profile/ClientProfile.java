@@ -20,14 +20,7 @@ import io.atomix.core.AtomixConfig;
 /**
  * Client profile.
  */
-public class ClientProfile implements NamedProfile {
-  private static final String NAME = "client";
-
-  @Override
-  public String name() {
-    return NAME;
-  }
-
+public class ClientProfile implements Profile {
   @Override
   public void configure(AtomixConfig config) {
     // Do nothing! This profile is just for code readability.

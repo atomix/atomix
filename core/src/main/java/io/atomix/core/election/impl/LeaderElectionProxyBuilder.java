@@ -19,6 +19,7 @@ import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElectionBuilder;
 import io.atomix.core.election.LeaderElectionConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -29,8 +30,8 @@ import java.util.concurrent.CompletableFuture;
  * Default implementation of {@code LeaderElectorBuilder}.
  */
 public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
-  public LeaderElectionProxyBuilder(String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
-    super(name, config, managementService);
+  public LeaderElectionProxyBuilder(PrimitiveType type, String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 
   @Override

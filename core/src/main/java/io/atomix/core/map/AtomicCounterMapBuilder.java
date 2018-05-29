@@ -17,13 +17,14 @@ package io.atomix.core.map;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Builder for AtomicCounterMap.
  */
 public abstract class AtomicCounterMapBuilder<K>
     extends DistributedPrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMapConfig, AtomicCounterMap<K>> {
-  public AtomicCounterMapBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
-    super(AtomicCounterMapType.instance(), name, config, managementService);
+  public AtomicCounterMapBuilder(PrimitiveType type, String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
+    super(type, name, config, managementService);
   }
 }

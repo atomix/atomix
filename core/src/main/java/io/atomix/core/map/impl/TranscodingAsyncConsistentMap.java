@@ -18,13 +18,13 @@ package io.atomix.core.map.impl;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -78,6 +78,11 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   @Override
   public String name() {
     return backingMap.name();
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
+    return backingMap.primitiveType();
   }
 
   @Override

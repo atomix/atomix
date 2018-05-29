@@ -15,39 +15,10 @@
  */
 package io.atomix.primitive.protocol;
 
-import io.atomix.utils.Generics;
-
 /**
  * Primitive protocol factory.
  */
 public interface PrimitiveProtocolFactory<C extends PrimitiveProtocolConfig<C>, P extends PrimitiveProtocol> {
-
-  /**
-   * Returns the protocol type.
-   *
-   * @return the protocol type
-   */
-  PrimitiveProtocol.Type type();
-
-  /**
-   * Returns the protocol configuration class.
-   *
-   * @return the protocol configuration class
-   */
-  @SuppressWarnings("unchecked")
-  default Class<? extends PrimitiveProtocolConfig> configClass() {
-    return (Class<? extends PrimitiveProtocolConfig>) Generics.getGenericInterfaceType(this, PrimitiveProtocolFactory.class, 0);
-  }
-
-  /**
-   * Returns the protocol class.
-   *
-   * @return the protocol class
-   */
-  @SuppressWarnings("unchecked")
-  default Class<? extends PrimitiveProtocol> protocolClass() {
-    return (Class<? extends PrimitiveProtocol>) Generics.getGenericInterfaceType(this, PrimitiveProtocolFactory.class, 1);
-  }
 
   /**
    * Creates a new primitive protocol.
@@ -55,6 +26,6 @@ public interface PrimitiveProtocolFactory<C extends PrimitiveProtocolConfig<C>, 
    * @param config the protocol configuration
    * @return the primitive protocol
    */
-  P create(C config);
+  P createProtocol(C config);
 
 }

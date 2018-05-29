@@ -20,18 +20,14 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterEventingService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
-import io.atomix.core.config.jackson.impl.ConfigPropertyNamingStrategy;
-import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
-import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
-import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
 import io.atomix.core.utils.EventManager;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;
@@ -144,16 +140,15 @@ public class VertxRestService implements ManagedRestService {
   private ObjectMapper createObjectMapper() {
     ObjectMapper mapper = new ObjectMapper();
 
-    mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
     mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
     mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
 
     SimpleModule module = new SimpleModule("PolymorphicTypes");
-    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer(getClass().getClassLoader()));
-    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer(getClass().getClassLoader()));
-    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer(getClass().getClassLoader()));
+    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer(atomix.registryService()));
+    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer(atomix.registryService()));
+    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer(atomix.registryService()));
     mapper.registerModule(module);
 
     return mapper;
