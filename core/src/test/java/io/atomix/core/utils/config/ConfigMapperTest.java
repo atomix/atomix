@@ -39,7 +39,7 @@ public class ConfigMapperTest {
   @Test
   public void testDefaults() throws Exception {
     ConfigMapper mapper = getMapper();
-    AtomixConfig config = mapper.loadResources(AtomixConfig.class, "defaults.conf");
+    AtomixConfig config = mapper.loadResources(AtomixConfig.class, "defaults");
     assertEquals("raft", config.getRegistry().getPartitionGroupTypes().get("raft").name());
     assertEquals("primary-backup", config.getRegistry().getPartitionGroupTypes().get("primary-backup").name());
     assertEquals("multi-raft", config.getRegistry().getProtocolTypes().get("multi-raft").name());
@@ -49,7 +49,7 @@ public class ConfigMapperTest {
   @Test
   public void testOverrides() throws Exception {
     ConfigMapper mapper = getMapper();
-    AtomixConfig config = mapper.loadResources(AtomixConfig.class, "test.conf", "defaults.conf");
+    AtomixConfig config = mapper.loadResources(AtomixConfig.class, "test", "defaults");
     assertEquals("raft", config.getRegistry().getPartitionGroupTypes().get("raft").name());
     assertEquals("primary-backup", config.getRegistry().getPartitionGroupTypes().get("primary-backup").name());
     assertEquals("multi-raft", config.getRegistry().getProtocolTypes().get("multi-raft").name());
