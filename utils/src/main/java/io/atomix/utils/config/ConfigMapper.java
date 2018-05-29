@@ -78,9 +78,9 @@ public class ConfigMapper {
     Config config = null;
     for (String resource : resources) {
       if (config == null) {
-        config = ConfigFactory.load(resource);
+        config = ConfigFactory.load(classLoader, resource);
       } else {
-        config = config.withFallback(ConfigFactory.load(resource));
+        config = config.withFallback(ConfigFactory.load(classLoader, resource));
       }
     }
     return map(config, type);
