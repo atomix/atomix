@@ -36,6 +36,7 @@ import io.atomix.core.profile.Profile;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.registry.RegistryService;
 import io.atomix.core.registry.impl.DefaultRegistryService;
+import io.atomix.core.registry.impl.ImmutableRegistryService;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
@@ -228,7 +229,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     this.executorService = Executors.newScheduledThreadPool(
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
-    this.registry = new DefaultRegistryService(config.getRegistry());
+    RegistryService registry = new DefaultRegistryService(config.getRegistry());
+    this.registry = new ImmutableRegistryService(registry);
     this.config = new DefaultConfigService(config.getPrimitives().values());
     this.partitions = buildPartitionService(config, membershipService(), communicationService(), registry);
     this.primitives = new CorePrimitivesService(
@@ -237,7 +239,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         communicationService(),
         eventingService(),
         partitionService(),
-        registryService(),
+        registry,
         configService());
     this.enableShutdownHook = config.isEnableShutdownHook();
   }
