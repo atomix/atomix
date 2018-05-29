@@ -16,6 +16,7 @@
 package io.atomix.core.utils.config;
 
 import io.atomix.core.AtomixConfig;
+import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 import io.atomix.utils.config.ConfigMapper;
 import org.junit.Test;
 
@@ -61,5 +62,6 @@ public class ConfigMapperTest {
     assertEquals("primary-backup", config.getPartitionGroups().get("two").getType());
     assertEquals(32, config.getPartitionGroups().get("two").getPartitions());
     assertEquals(2, config.getProfiles().size());
+    assertEquals(1024 * 1024 * 16, ((RaftPartitionGroupConfig) config.getManagementGroup()).getSegmentSize().bytes());
   }
 }

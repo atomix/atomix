@@ -42,15 +42,17 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public class RaftPartition implements Partition {
   private final PartitionId partitionId;
   private final StorageLevel storageLevel;
+  private final long segmentSize;
   private final boolean flushOnCommit;
   private final File dataDirectory;
   private PartitionMetadata partition;
   private RaftPartitionClient client;
   private RaftPartitionServer server;
 
-  public RaftPartition(PartitionId partitionId, StorageLevel storageLevel, boolean flushOnCommit, File dataDirectory) {
+  public RaftPartition(PartitionId partitionId, StorageLevel storageLevel, long segmentSize, boolean flushOnCommit, File dataDirectory) {
     this.partitionId = partitionId;
     this.storageLevel = storageLevel;
+    this.segmentSize = segmentSize;
     this.flushOnCommit = flushOnCommit;
     this.dataDirectory = dataDirectory;
   }
@@ -102,6 +104,15 @@ public class RaftPartition implements Partition {
    */
   public StorageLevel storageLevel() {
     return storageLevel;
+  }
+
+  /**
+   * Returns the log segment size.
+   *
+   * @return the log segment size
+   */
+  public long segmentSize() {
+    return segmentSize;
   }
 
   /**
