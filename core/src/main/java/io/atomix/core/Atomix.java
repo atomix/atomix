@@ -20,6 +20,8 @@ import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.core.config.ConfigService;
+import io.atomix.core.config.impl.DefaultConfigService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElector;
@@ -197,6 +199,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   private final ScheduledExecutorService executorService;
   private final RegistryService registry;
+  private final ConfigService config;
   private final ManagedPartitionService partitions;
   private final ManagedPrimitivesService primitives;
   private final boolean enableShutdownHook;
@@ -226,6 +229,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
     this.registry = new DefaultRegistryService(config.getRegistry());
+    this.config = new DefaultConfigService(config.getPrimitives().values());
     this.partitions = buildPartitionService(config, membershipService(), communicationService(), registry);
     this.primitives = new CorePrimitivesService(
         executorService(),
@@ -234,7 +238,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         eventingService(),
         partitionService(),
         registryService(),
-        config);
+        configService());
     this.enableShutdownHook = config.isEnableShutdownHook();
   }
 
@@ -254,6 +258,15 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public RegistryService registryService() {
     return registry;
+  }
+
+  /**
+   * Returns the primitive configuration service.
+   *
+   * @return the primitive configuration service
+   */
+  public ConfigService configService() {
+    return config;
   }
 
   /**
