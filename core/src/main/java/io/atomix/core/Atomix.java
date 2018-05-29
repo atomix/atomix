@@ -521,7 +521,6 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public static class Builder extends AtomixCluster.Builder {
     private final AtomixConfig config;
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Builder() {
       this(new AtomixConfig());
@@ -530,17 +529,6 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     private Builder(AtomixConfig config) {
       super(config.getClusterConfig());
       this.config = checkNotNull(config);
-    }
-
-    /**
-     * Sets the Atomix class loader.
-     *
-     * @param classLoader the class loader
-     * @return the Atomix builder
-     */
-    public Builder withClassLoader(ClassLoader classLoader) {
-      this.classLoader = checkNotNull(classLoader, "classLoader cannot be null");
-      return this;
     }
 
     /**
