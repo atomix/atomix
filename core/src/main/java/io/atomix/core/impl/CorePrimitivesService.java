@@ -20,10 +20,10 @@ import com.google.common.cache.CacheBuilder;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.core.AtomixConfig;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.PrimitivesService;
+import io.atomix.core.config.ConfigService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElector;
@@ -73,7 +73,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   private final PrimitiveManagementService managementService;
   private final ManagedPrimitiveRegistry primitiveRegistry;
   private final ManagedTransactionService transactionService;
-  private final AtomixConfig config;
+  private final ConfigService configService;
   private final Cache<String, DistributedPrimitive> cache = CacheBuilder.newBuilder()
       .maximumSize(CACHE_SIZE)
       .build();
@@ -86,7 +86,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterEventingService eventService,
       PartitionService partitionService,
       RegistryService registryService,
-      AtomixConfig config) {
+      ConfigService configService) {
     this.primitiveRegistry = new CorePrimitiveRegistry(partitionService, registryService.primitiveTypes());
     this.managementService = new CorePrimitiveManagementService(
         executorService,
@@ -98,7 +98,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         registryService.primitiveTypes(),
         registryService.protocolTypes());
     this.transactionService = new CoreTransactionService(managementService);
-    this.config = checkNotNull(config);
+    this.configService = checkNotNull(configService);
   }
 
   @Override
@@ -108,72 +108,72 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   @Override
   public <K, V> ConsistentMap<K, V> getConsistentMap(String name) {
-    return getPrimitive(name, PrimitiveTypes.consistentMap(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.consistentMap(), configService.getConfig(name));
   }
 
   @Override
   public <V> DocumentTree<V> getDocumentTree(String name) {
-    return getPrimitive(name, PrimitiveTypes.documentTree(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.documentTree(), configService.getConfig(name));
   }
 
   @Override
   public <V> ConsistentTreeMap<V> getTreeMap(String name) {
-    return getPrimitive(name, PrimitiveTypes.consistentTreeMap(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.consistentTreeMap(), configService.getConfig(name));
   }
 
   @Override
   public <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name) {
-    return getPrimitive(name, PrimitiveTypes.consistentMultimap(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.consistentMultimap(), configService.getConfig(name));
   }
 
   @Override
   public <K> AtomicCounterMap<K> getAtomicCounterMap(String name) {
-    return getPrimitive(name, PrimitiveTypes.atomicCounterMap(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.atomicCounterMap(), configService.getConfig(name));
   }
 
   @Override
   public <E> DistributedSet<E> getSet(String name) {
-    return getPrimitive(name, PrimitiveTypes.set(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.set(), configService.getConfig(name));
   }
 
   @Override
   public AtomicCounter getAtomicCounter(String name) {
-    return getPrimitive(name, PrimitiveTypes.atomicCounter(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.atomicCounter(), configService.getConfig(name));
   }
 
   @Override
   public AtomicIdGenerator getAtomicIdGenerator(String name) {
-    return getPrimitive(name, PrimitiveTypes.atomicIdGenerator(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.atomicIdGenerator(), configService.getConfig(name));
   }
 
   @Override
   public <V> AtomicValue<V> getAtomicValue(String name) {
-    return getPrimitive(name, PrimitiveTypes.atomicValue(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.atomicValue(), configService.getConfig(name));
   }
 
   @Override
   public <T> LeaderElection<T> getLeaderElection(String name) {
-    return getPrimitive(name, PrimitiveTypes.leaderElection(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.leaderElection(), configService.getConfig(name));
   }
 
   @Override
   public <T> LeaderElector<T> getLeaderElector(String name) {
-    return getPrimitive(name, PrimitiveTypes.leaderElector(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.leaderElector(), configService.getConfig(name));
   }
 
   @Override
   public DistributedLock getLock(String name) {
-    return getPrimitive(name, PrimitiveTypes.lock(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.lock(), configService.getConfig(name));
   }
 
   @Override
   public DistributedSemaphore getSemaphore(String name) {
-    return getPrimitive(name, PrimitiveTypes.semaphore(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.semaphore(), configService.getConfig(name));
   }
 
   @Override
   public <E> WorkQueue<E> getWorkQueue(String name) {
-    return getPrimitive(name, PrimitiveTypes.workQueue(), config.getPrimitive(name));
+    return getPrimitive(name, PrimitiveTypes.workQueue(), configService.getConfig(name));
   }
 
   @Override
@@ -192,7 +192,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
           return null;
         }
 
-        PrimitiveConfig primitiveConfig = config.getPrimitive(name);
+        PrimitiveConfig primitiveConfig = configService.getConfig(name);
         if (primitiveConfig == null) {
           primitiveConfig = info.type().newConfig();
         }
