@@ -40,4 +40,9 @@ public class ImmutableProfileTypeRegistry implements ProfileTypeRegistry {
   public ProfileType getProfileType(String name) {
     return profileTypes.getProfileType(name);
   }
+
+  @Override
+  public void addProfileType(ProfileType type) {
+    throw new UnsupportedOperationException();
+  }
 }

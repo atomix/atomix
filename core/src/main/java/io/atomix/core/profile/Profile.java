@@ -39,6 +39,13 @@ public interface Profile {
   Profile CLIENT = new ClientProfile();
 
   /**
+   * Returns the profile type.
+   *
+   * @return the profile type
+   */
+  ProfileType type();
+
+  /**
    * Configures the Atomix instance.
    *
    * @param config the Atomix configuration

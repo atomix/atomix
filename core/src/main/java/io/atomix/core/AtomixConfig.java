@@ -16,7 +16,6 @@
 package io.atomix.core;
 
 import io.atomix.cluster.ClusterConfig;
-import io.atomix.core.profile.Profile;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.utils.config.Config;
@@ -39,7 +38,7 @@ public class AtomixConfig implements Config {
   private PartitionGroupConfig managementGroup;
   private Map<String, PartitionGroupConfig> partitionGroups = new HashMap<>();
   private Map<String, PrimitiveConfig> primitives = new HashMap<>();
-  private List<Profile> profiles = new ArrayList<>();
+  private List<String> profiles = new ArrayList<>();
 
   /**
    * Returns the cluster configuration.
@@ -183,7 +182,7 @@ public class AtomixConfig implements Config {
    *
    * @return the Atomix profile
    */
-  public List<Profile> getProfiles() {
+  public List<String> getProfiles() {
     return profiles;
   }
 
@@ -193,7 +192,7 @@ public class AtomixConfig implements Config {
    * @param profiles the profiles
    * @return the Atomix configuration
    */
-  public AtomixConfig setProfiles(List<Profile> profiles) {
+  public AtomixConfig setProfiles(List<String> profiles) {
     this.profiles = profiles;
     return this;
   }
@@ -204,7 +203,7 @@ public class AtomixConfig implements Config {
    * @param profile the profile to add
    * @return the Atomix configuration
    */
-  public AtomixConfig addProfile(Profile profile) {
+  public AtomixConfig addProfile(String profile) {
     profiles.add(checkNotNull(profile, "profile cannot be null"));
     return this;
   }

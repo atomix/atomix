@@ -37,4 +37,11 @@ public interface ProfileTypeRegistry {
    */
   ProfileType getProfileType(String name);
 
+  /**
+   * Adds a new profile type to the registry.
+   *
+   * @param type the profile type to add
+   */
+  void addProfileType(ProfileType type);
+
 }

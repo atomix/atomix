@@ -21,15 +21,28 @@ import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 
 import java.util.stream.Collectors;
 
+import static io.atomix.core.profile.AbstractProfile.findProfileType;
+
 /**
  * Consensus profile.
  */
 public class ConsensusProfile implements Profile {
+
+  /**
+   * The consensus profile type.
+   */
+  private static final ProfileType TYPE = findProfileType(ConsensusProfile.class);
+
   private static final String DATA_PATH = ".data";
   private static final String SYSTEM_GROUP_NAME = "system";
   private static final String GROUP_NAME = "raft";
   private static final int PARTITION_SIZE = 3;
   private static final int NUM_PARTITIONS = 7;
+
+  @Override
+  public ProfileType type() {
+    return TYPE;
+  }
 
   @Override
   public void configure(AtomixConfig config) {

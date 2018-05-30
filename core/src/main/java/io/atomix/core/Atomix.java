@@ -189,6 +189,27 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     return new Builder(config(withDefaultResources(config), classLoader, registry), registry);
   }
 
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param config the Atomix configuration
+   * @return the Atomix builder
+   */
+  public static Builder builder(AtomixConfig config) {
+    return builder(config, Thread.currentThread().getContextClassLoader());
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param config      the Atomix configuration
+   * @param classLoader the class loader with which to load the Atomix registry
+   * @return the Atomix builder
+   */
+  public static Builder builder(AtomixConfig config, ClassLoader classLoader) {
+    return new Builder(config, AtomixRegistry.registry(classLoader));
+  }
+
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
 
   private final ScheduledExecutorService executorService;
@@ -218,7 +239,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   private Atomix(AtomixConfig config, AtomixRegistry registry) {
     super(config.getClusterConfig());
-    config.getProfiles().forEach(profile -> profile.configure(config));
+    config.getProfiles().forEach(profile -> registry.profileTypes().getProfileType(profile).newProfile().configure(config));
     this.executorService = Executors.newScheduledThreadPool(
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
@@ -237,21 +258,21 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   /**
+   * Returns the type registry service.
+   *
+   * @return the type registry service
+   */
+  public AtomixRegistry registry() {
+    return registry;
+  }
+
+  /**
    * Returns the core Atomix executor service.
    *
    * @return the core Atomix executor service
    */
   public ScheduledExecutorService executorService() {
     return executorService;
-  }
-
-  /**
-   * Returns the type registry service.
-   *
-   * @return the type registry service
-   */
-  public AtomixRegistry registryService() {
-    return registry;
   }
 
   /**
@@ -558,7 +579,10 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
      * @return the Atomix builder
      */
     public Builder withProfiles(Collection<Profile> profiles) {
-      profiles.forEach(config::addProfile);
+      profiles.forEach(profile -> {
+        registry.profileTypes().addProfileType(profile.type());
+        config.addProfile(profile.type().name());
+      });
       return this;
     }
 
@@ -569,7 +593,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
      * @return the Atomix builder
      */
     public Builder addProfile(Profile profile) {
-      config.addProfile(profile);
+      registry.profileTypes().addProfileType(profile.type());
+      config.addProfile(profile.type().name());
       return this;
     }
 

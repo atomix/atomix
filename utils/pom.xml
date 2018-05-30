@@ -63,7 +63,7 @@
         <configuration>
           <instructions>
             <Export-Package>
-              io.atomix.utils.*;com.typesafe.config.*
+              io.atomix.utils.*
             </Export-Package>
             <Import-Package>
               sun.nio.ch;resolution:=optional,sun.misc;resolution:=optional,com.sun.jmx.remote.internal;resolution:=optional,*

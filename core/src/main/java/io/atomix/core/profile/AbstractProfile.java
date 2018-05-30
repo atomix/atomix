@@ -15,27 +15,26 @@
  */
 package io.atomix.core.profile;
 
-import io.atomix.core.AtomixConfig;
-
-import static io.atomix.core.profile.AbstractProfile.findProfileType;
+import io.atomix.core.registry.AtomixRegistry;
 
 /**
- * Client profile.
+ * Abstract profile.
  */
-public class ClientProfile implements Profile {
+public abstract class AbstractProfile implements Profile {
 
   /**
-   * The client profile type.
+   * Finds the profile type for the given profile class.
+   *
+   * @param profileClass the profile class
+   * @return the profile type
    */
-  private static final ProfileType TYPE = findProfileType(ClientProfile.class);
-
-  @Override
-  public ProfileType type() {
-    return TYPE;
-  }
-
-  @Override
-  public void configure(AtomixConfig config) {
-    // Do nothing! This profile is just for code readability.
+  protected static ProfileType findProfileType(Class<? extends Profile> profileClass) {
+    return AtomixRegistry.registry(profileClass.getClassLoader())
+        .profileTypes()
+        .getProfileTypes()
+        .stream()
+        .filter(type -> type.profileClass() == profileClass)
+        .findFirst()
+        .orElse(null);
   }
 }
