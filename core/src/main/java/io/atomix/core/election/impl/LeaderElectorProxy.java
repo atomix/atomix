@@ -29,8 +29,8 @@ import io.atomix.core.election.impl.LeaderElectorOperations.GetLeadership;
 import io.atomix.core.election.impl.LeaderElectorOperations.Promote;
 import io.atomix.core.election.impl.LeaderElectorOperations.Run;
 import io.atomix.core.election.impl.LeaderElectorOperations.Withdraw;
-import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.AbstractAsyncPrimitive;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.Proxy;
@@ -63,7 +63,8 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive<AsyncLeaderElecto
       .register(LeaderElectorEvents.NAMESPACE)
       .build());
 
-  private final Map<String, Set<LeadershipEventListener<byte[]>>> leadershipChangeListeners = Maps.newConcurrentMap();
+  private final Set<LeadershipEventListener<byte[]>> leadershipChangeListeners = Sets.newCopyOnWriteArraySet();
+  private final Map<String, Set<LeadershipEventListener<byte[]>>> topicListeners = Maps.newConcurrentMap();
 
   public LeaderElectorProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
@@ -71,7 +72,8 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive<AsyncLeaderElecto
 
   private void handleEvent(PartitionId partitionId, List<LeadershipEvent<byte[]>> changes) {
     changes.forEach(change -> {
-      Set<LeadershipEventListener<byte[]>> listenerSet = leadershipChangeListeners.get(change.topic());
+      leadershipChangeListeners.forEach(l -> l.onEvent(change));
+      Set<LeadershipEventListener<byte[]>> listenerSet = topicListeners.get(change.topic());
       if (listenerSet != null) {
         listenerSet.forEach(l -> l.onEvent(change));
       }
@@ -124,9 +126,23 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive<AsyncLeaderElecto
   }
 
   @Override
+  public synchronized CompletableFuture<Void> addListener(LeadershipEventListener<byte[]> listener) {
+    leadershipChangeListeners.add(listener);
+    return invokeAll(ADD_LISTENER).thenApply(v -> null);
+  }
+
+  @Override
+  public synchronized CompletableFuture<Void> removeListener(LeadershipEventListener<byte[]> listener) {
+    if (leadershipChangeListeners.remove(listener)) {
+      return invokeAll(REMOVE_LISTENER).thenApply(v -> null);
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public synchronized CompletableFuture<Void> addListener(String topic, LeadershipEventListener<byte[]> listener) {
-    boolean empty = leadershipChangeListeners.isEmpty();
-    leadershipChangeListeners.compute(topic, (t, s) -> {
+    boolean empty = topicListeners.isEmpty();
+    topicListeners.compute(topic, (t, s) -> {
       if (s == null) {
         s = Sets.newCopyOnWriteArraySet();
       }
@@ -142,18 +158,18 @@ public class LeaderElectorProxy extends AbstractAsyncPrimitive<AsyncLeaderElecto
 
   @Override
   public synchronized CompletableFuture<Void> removeListener(String topic, LeadershipEventListener<byte[]> listener) {
-    leadershipChangeListeners.computeIfPresent(topic, (t, s) -> {
+    topicListeners.computeIfPresent(topic, (t, s) -> {
       s.remove(listener);
       return s.size() == 0 ? null : s;
     });
-    if (leadershipChangeListeners.isEmpty()) {
+    if (topicListeners.isEmpty()) {
       return invokeBy(topic, REMOVE_LISTENER).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
 
   private boolean isListening() {
-    return !leadershipChangeListeners.isEmpty();
+    return !topicListeners.isEmpty();
   }
 
   @Override
