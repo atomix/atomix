@@ -17,6 +17,7 @@ package io.atomix.core.profile;
 
 import io.atomix.utils.AbstractNamed;
 import io.atomix.utils.Type;
+import io.atomix.utils.config.ConfigurationException;
 
 import java.util.Objects;
 
@@ -43,6 +44,19 @@ public class ProfileType extends AbstractNamed implements Type {
    */
   public Class<? extends Profile> profileClass() {
     return profileClass;
+  }
+
+  /**
+   * Creates a new profile instance.
+   *
+   * @return a new profile instance
+   */
+  public Profile newProfile() {
+    try {
+      return profileClass.newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException("Failed to instantiate profile type " + name(), e);
+    }
   }
 
   @Override

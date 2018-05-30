@@ -41,4 +41,9 @@ public class DefaultProfileTypeRegistry implements ProfileTypeRegistry {
   public ProfileType getProfileType(String name) {
     return profileTypes.get(name);
   }
+
+  @Override
+  public void addProfileType(ProfileType type) {
+    profileTypes.putIfAbsent(type.name(), type);
+  }
 }
