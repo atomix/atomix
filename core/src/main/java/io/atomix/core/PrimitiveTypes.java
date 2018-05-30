@@ -45,7 +45,7 @@ import io.atomix.core.multimap.ConsistentMultimapConfig;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueBuilder;
 import io.atomix.core.queue.WorkQueueConfig;
-import io.atomix.core.registry.RegistryConfig;
+import io.atomix.core.registry.AtomixRegistry;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
 import io.atomix.core.semaphore.DistributedSemaphoreConfig;
@@ -55,16 +55,11 @@ import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeBuilder;
 import io.atomix.core.tree.DocumentTreeConfig;
-import io.atomix.core.utils.config.PartitionGroupConfigMapper;
-import io.atomix.core.utils.config.PrimitiveConfigMapper;
-import io.atomix.core.utils.config.PrimitiveProtocolConfigMapper;
-import io.atomix.core.utils.config.ProfileMapper;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueConfig;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.utils.config.ConfigMapper;
 
 /**
  * Atomix core primitive types.
@@ -88,8 +83,9 @@ public final class PrimitiveTypes {
 
   public static final PrimitiveType TRANSACTION = PrimitiveType.builder("transaction").build();
 
-  private static PrimitiveType findPrimitiveType(Class<? extends DistributedPrimitive> primitiveClass, RegistryConfig registry) {
-    return registry.getPrimitiveTypes().values()
+  private static PrimitiveType findPrimitiveType(Class<? extends DistributedPrimitive> primitiveClass, AtomixRegistry registry) {
+    return registry.primitiveTypes()
+        .getPrimitiveTypes()
         .stream()
         .filter(type -> primitiveClass == type.primitiveClass())
         .findFirst()
@@ -97,14 +93,8 @@ public final class PrimitiveTypes {
   }
 
   static {
-    ConfigMapper mapper = new ConfigMapper(
-        PrimitiveTypes.class.getClassLoader(),
-        new PartitionGroupConfigMapper(),
-        new PrimitiveConfigMapper(),
-        new PrimitiveProtocolConfigMapper(),
-        new ProfileMapper());
-    AtomixConfig defaultConfig = mapper.loadResources(AtomixConfig.class, Atomix.DEFAULT_RESOURCES);
-    RegistryConfig registry = defaultConfig.getRegistry();
+    ClassLoader classLoader = PrimitiveTypes.class.getClassLoader();
+    AtomixRegistry registry = AtomixRegistry.registry(classLoader);
     CONSISTENT_MAP = findPrimitiveType(ConsistentMap.class, registry);
     DOCUMENT_TREE = findPrimitiveType(DocumentTree.class, registry);
     CONSISTENT_TREE_MAP = findPrimitiveType(ConsistentTreeMap.class, registry);

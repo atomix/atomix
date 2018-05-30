@@ -15,26 +15,20 @@
  */
 package io.atomix.core.utils.config;
 
+import io.atomix.core.registry.AtomixRegistry;
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.primitive.partition.PartitionGroupType;
-import io.atomix.utils.config.PolymorphicTypeMapper;
 
 /**
  * Partition group mapper.
  */
-public class PartitionGroupConfigMapper extends PolymorphicTypeMapper<PartitionGroupConfig<?>, PartitionGroupType> {
+public class PartitionGroupConfigMapper extends PolymorphicTypeMapper<PartitionGroupConfig<?>> {
   public PartitionGroupConfigMapper() {
-    super(PartitionGroupConfig.class, PartitionGroupType.class);
-  }
-
-  @Override
-  public String getTypePath(String typeName) {
-    return String.format("registry.partitionGroupTypes.%s", typeName);
+    super(PartitionGroupConfig.class);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Class<? extends PartitionGroupConfig<?>> getConcreteTypedClass(PartitionGroupType type) {
-    return (Class<? extends PartitionGroupConfig<?>>) type.configClass();
+  public Class<? extends PartitionGroupConfig<?>> getConcreteClass(AtomixRegistry registry, String type) {
+    return (Class<? extends PartitionGroupConfig<?>>) registry.partitionGroupTypes().getGroupType(type).configClass();
   }
 }

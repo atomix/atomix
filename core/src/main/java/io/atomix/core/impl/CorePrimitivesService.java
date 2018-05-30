@@ -34,7 +34,7 @@ import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.queue.WorkQueue;
-import io.atomix.core.registry.RegistryService;
+import io.atomix.core.registry.AtomixRegistry;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.ManagedTransactionService;
@@ -85,9 +85,9 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterCommunicationService communicationService,
       ClusterEventingService eventService,
       PartitionService partitionService,
-      RegistryService registryService,
+      AtomixRegistry registry,
       ConfigService configService) {
-    this.primitiveRegistry = new CorePrimitiveRegistry(partitionService, registryService.primitiveTypes());
+    this.primitiveRegistry = new CorePrimitiveRegistry(partitionService, registry.primitiveTypes());
     this.managementService = new CorePrimitiveManagementService(
         executorService,
         membershipService,
@@ -95,8 +95,8 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         eventService,
         partitionService,
         primitiveRegistry,
-        registryService.primitiveTypes(),
-        registryService.protocolTypes());
+        registry.primitiveTypes(),
+        registry.protocolTypes());
     this.transactionService = new CoreTransactionService(managementService);
     this.configService = checkNotNull(configService);
   }

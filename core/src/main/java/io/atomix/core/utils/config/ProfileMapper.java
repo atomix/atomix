@@ -16,24 +16,18 @@
 package io.atomix.core.utils.config;
 
 import io.atomix.core.profile.Profile;
-import io.atomix.core.profile.ProfileType;
-import io.atomix.utils.config.PolymorphicTypeMapper;
+import io.atomix.core.registry.AtomixRegistry;
 
 /**
  * Profile configuration mapper.
  */
-public class ProfileMapper extends PolymorphicTypeMapper<Profile, ProfileType> {
+public class ProfileMapper extends PolymorphicTypeMapper<Profile> {
   public ProfileMapper() {
-    super(Profile.class, ProfileType.class);
+    super(Profile.class);
   }
 
   @Override
-  public String getTypePath(String typeName) {
-    return String.format("registry.profileTypes.%s", typeName);
-  }
-
-  @Override
-  public Class<? extends Profile> getConcreteTypedClass(ProfileType type) {
-    return type.profileClass();
+  public Class<? extends Profile> getConcreteClass(AtomixRegistry registry, String type) {
+    return registry.profileTypes().getProfileType(type).profileClass();
   }
 }

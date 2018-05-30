@@ -15,26 +15,20 @@
  */
 package io.atomix.core.utils.config;
 
+import io.atomix.core.registry.AtomixRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
-import io.atomix.primitive.protocol.PrimitiveProtocolType;
-import io.atomix.utils.config.PolymorphicTypeMapper;
 
 /**
  * Primitive configuration mapper.
  */
-public class PrimitiveProtocolConfigMapper extends PolymorphicTypeMapper<PrimitiveProtocolConfig<?>, PrimitiveProtocolType> {
+public class PrimitiveProtocolConfigMapper extends PolymorphicTypeMapper<PrimitiveProtocolConfig<?>> {
   public PrimitiveProtocolConfigMapper() {
-    super(PrimitiveProtocolConfig.class, PrimitiveProtocolType.class);
-  }
-
-  @Override
-  public String getTypePath(String typeName) {
-    return String.format("registry.protocolTypes.%s", typeName);
+    super(PrimitiveProtocolConfig.class);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Class<? extends PrimitiveProtocolConfig<?>> getConcreteTypedClass(PrimitiveProtocolType type) {
-    return (Class<PrimitiveProtocolConfig<?>>) type.configClass();
+  public Class<? extends PrimitiveProtocolConfig<?>> getConcreteClass(AtomixRegistry registry, String type) {
+    return (Class<? extends PrimitiveProtocolConfig<?>>) registry.protocolTypes().getProtocolType(type).configClass();
   }
 }

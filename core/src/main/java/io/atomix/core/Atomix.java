@@ -34,14 +34,14 @@ import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.queue.WorkQueue;
-import io.atomix.core.registry.RegistryService;
-import io.atomix.core.registry.impl.DefaultRegistryService;
-import io.atomix.core.registry.impl.ImmutableRegistryService;
+import io.atomix.core.registry.AtomixRegistry;
+import io.atomix.core.registry.impl.ImmutableAtomixRegistry;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.utils.config.PartitionGroupConfigMapper;
+import io.atomix.core.utils.config.PolymorphicConfigMapper;
 import io.atomix.core.utils.config.PrimitiveConfigMapper;
 import io.atomix.core.utils.config.PrimitiveProtocolConfigMapper;
 import io.atomix.core.utils.config.ProfileMapper;
@@ -105,7 +105,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @return a new Atomix configuration
    */
   public static AtomixConfig config(ClassLoader classLoader) {
-    return config(DEFAULT_RESOURCES, classLoader);
+    return config(DEFAULT_RESOURCES, classLoader, AtomixRegistry.registry(classLoader));
   }
 
   /**
@@ -126,7 +126,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @return a new Atomix configuration from the given resource
    */
   public static AtomixConfig config(String resource, ClassLoader classLoader) {
-    return config(withDefaultResources(resource), classLoader);
+    return config(withDefaultResources(resource), classLoader, AtomixRegistry.registry(classLoader));
   }
 
   /**
@@ -136,9 +136,10 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @param classLoader the class loader
    * @return a new Atomix configuration from the given resource
    */
-  private static AtomixConfig config(String[] resources, ClassLoader classLoader) {
-    ConfigMapper mapper = new ConfigMapper(
+  private static AtomixConfig config(String[] resources, ClassLoader classLoader, AtomixRegistry registry) {
+    ConfigMapper mapper = new PolymorphicConfigMapper(
         classLoader,
+        registry,
         new PartitionGroupConfigMapper(),
         new PrimitiveConfigMapper(),
         new PrimitiveProtocolConfigMapper(),
@@ -162,7 +163,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @return a new Atomix builder
    */
   public static Builder builder(ClassLoader classLoader) {
-    return builder(config(DEFAULT_RESOURCES, classLoader));
+    AtomixRegistry registry = AtomixRegistry.registry(classLoader);
+    return new Builder(config(DEFAULT_RESOURCES, classLoader, registry), registry);
   }
 
   /**
@@ -183,23 +185,14 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @return a new Atomix builder
    */
   public static Builder builder(String config, ClassLoader classLoader) {
-    return new Builder(config(withDefaultResources(config), classLoader));
-  }
-
-  /**
-   * Returns a new Atomix builder.
-   *
-   * @param config the Atomix configuration
-   * @return a new Atomix builder
-   */
-  public static Builder builder(AtomixConfig config) {
-    return new Builder(config);
+    AtomixRegistry registry = AtomixRegistry.registry(classLoader);
+    return new Builder(config(withDefaultResources(config), classLoader, registry), registry);
   }
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
 
   private final ScheduledExecutorService executorService;
-  private final RegistryService registry;
+  private final AtomixRegistry registry;
   private final ConfigService config;
   private final ManagedPartitionService partitions;
   private final ManagedPrimitivesService primitives;
@@ -212,7 +205,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   public Atomix(String configFile, ClassLoader classLoader) {
-    this(config(withDefaultResources(configFile), classLoader));
+    this(config(withDefaultResources(configFile), classLoader, AtomixRegistry.registry(classLoader)), AtomixRegistry.registry(classLoader));
   }
 
   public Atomix(File configFile) {
@@ -223,14 +216,13 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     this(configFile.getAbsolutePath(), classLoader);
   }
 
-  private Atomix(AtomixConfig config) {
+  private Atomix(AtomixConfig config, AtomixRegistry registry) {
     super(config.getClusterConfig());
     config.getProfiles().forEach(profile -> profile.configure(config));
     this.executorService = Executors.newScheduledThreadPool(
         Runtime.getRuntime().availableProcessors(),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
-    RegistryService registry = new DefaultRegistryService(config.getRegistry());
-    this.registry = new ImmutableRegistryService(registry);
+    this.registry = new ImmutableAtomixRegistry(registry);
     this.config = new DefaultConfigService(config.getPrimitives().values());
     this.partitions = buildPartitionService(config, membershipService(), communicationService(), registry);
     this.primitives = new CorePrimitivesService(
@@ -258,7 +250,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    *
    * @return the type registry service
    */
-  public RegistryService registryService() {
+  public AtomixRegistry registryService() {
     return registry;
   }
 
@@ -476,13 +468,13 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * Builds the core partition group.
    */
   @SuppressWarnings("unchecked")
-  private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config) {
+  private static ManagedPartitionGroup buildSystemPartitionGroup(AtomixConfig config, AtomixRegistry registry) {
     PartitionGroupConfig partitionGroupConfig = config.getManagementGroup();
     if (partitionGroupConfig == null) {
       return null;
     }
 
-    PartitionGroupType partitionGroupType = config.getRegistry().getPartitionGroupTypes().get(partitionGroupConfig.getType());
+    PartitionGroupType partitionGroupType = registry.partitionGroupTypes().getGroupType(partitionGroupConfig.getType());
     if (partitionGroupType == null) {
       throw new ConfigurationException("Unknown partition group type " + partitionGroupConfig.getType());
     }
@@ -497,10 +489,10 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
       AtomixConfig config,
       ClusterMembershipService clusterMembershipService,
       ClusterCommunicationService messagingService,
-      RegistryService registryService) {
+      AtomixRegistry registry) {
     List<ManagedPartitionGroup> partitionGroups = new ArrayList<>();
     for (PartitionGroupConfig partitionGroupConfig : config.getPartitionGroups().values()) {
-      PartitionGroupType partitionGroupType = config.getRegistry().getPartitionGroupTypes().get(partitionGroupConfig.getType());
+      PartitionGroupType partitionGroupType = registry.partitionGroupTypes().getGroupType(partitionGroupConfig.getType());
       if (partitionGroupType == null) {
         throw new ConfigurationException("Unknown partition group type " + partitionGroupConfig.getType());
       }
@@ -510,10 +502,10 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     return new DefaultPartitionService(
         clusterMembershipService,
         messagingService,
-        registryService.primitiveTypes(),
-        buildSystemPartitionGroup(config),
+        registry.primitiveTypes(),
+        buildSystemPartitionGroup(config, registry),
         partitionGroups,
-        registryService.partitionGroupTypes());
+        registry.partitionGroupTypes());
   }
 
   /**
@@ -521,14 +513,12 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public static class Builder extends AtomixCluster.Builder {
     private final AtomixConfig config;
+    private final AtomixRegistry registry;
 
-    private Builder() {
-      this(new AtomixConfig());
-    }
-
-    private Builder(AtomixConfig config) {
+    private Builder(AtomixConfig config, AtomixRegistry registry) {
       super(config.getClusterConfig());
       this.config = checkNotNull(config);
+      this.registry = checkNotNull(registry);
     }
 
     /**
@@ -648,7 +638,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
      * @throws NullPointerException if the primitive types is {@code null}
      */
     public Builder withPrimitiveTypes(Collection<PrimitiveType> primitiveTypes) {
-      primitiveTypes.forEach(type -> config.getRegistry().addPrimitiveType(type));
+      primitiveTypes.forEach(type -> registry.primitiveTypes().addPrimitiveType(type));
       return this;
     }
 
@@ -660,7 +650,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
      * @throws NullPointerException if the primitive type is {@code null}
      */
     public Builder addPrimitiveType(PrimitiveType primitiveType) {
-      config.getRegistry().addPrimitiveType(primitiveType);
+      registry.primitiveTypes().addPrimitiveType(primitiveType);
       return this;
     }
 
@@ -713,7 +703,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
      */
     @Override
     public Atomix build() {
-      return new Atomix(config);
+      return new Atomix(config, registry);
     }
   }
 }

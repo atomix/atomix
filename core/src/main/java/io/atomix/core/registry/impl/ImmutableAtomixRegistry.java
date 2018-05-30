@@ -15,27 +15,30 @@
  */
 package io.atomix.core.registry.impl;
 
-import io.atomix.core.registry.RegistryConfig;
-import io.atomix.core.registry.RegistryService;
+import io.atomix.core.profile.ProfileTypeRegistry;
+import io.atomix.core.profile.impl.ImmutableProfileTypeRegistry;
+import io.atomix.core.registry.AtomixRegistry;
 import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.impl.DefaultPrimitiveTypeRegistry;
+import io.atomix.primitive.impl.ImmutablePrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
-import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
+import io.atomix.primitive.partition.impl.ImmutablePartitionGroupTypeRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
-import io.atomix.primitive.protocol.impl.DefaultPrimitiveProtocolTypeRegistry;
+import io.atomix.primitive.protocol.impl.ImmutablePrimitiveProtocolTypeRegistry;
 
 /**
- * Default registry service.
+ * Immutable registry service.
  */
-public class DefaultRegistryService implements RegistryService {
+public class ImmutableAtomixRegistry implements AtomixRegistry {
   private final PartitionGroupTypeRegistry partitionGroupTypes;
   private final PrimitiveTypeRegistry primitiveTypes;
   private final PrimitiveProtocolTypeRegistry protocolTypes;
+  private final ProfileTypeRegistry profileTypes;
 
-  public DefaultRegistryService(RegistryConfig config) {
-    this.partitionGroupTypes = new DefaultPartitionGroupTypeRegistry(config.getPartitionGroupTypes().values());
-    this.primitiveTypes = new DefaultPrimitiveTypeRegistry(config.getPrimitiveTypes().values());
-    this.protocolTypes = new DefaultPrimitiveProtocolTypeRegistry(config.getProtocolTypes().values());
+  public ImmutableAtomixRegistry(AtomixRegistry registry) {
+    this.partitionGroupTypes = new ImmutablePartitionGroupTypeRegistry(registry.partitionGroupTypes());
+    this.primitiveTypes = new ImmutablePrimitiveTypeRegistry(registry.primitiveTypes());
+    this.protocolTypes = new ImmutablePrimitiveProtocolTypeRegistry(registry.protocolTypes());
+    this.profileTypes = new ImmutableProfileTypeRegistry(registry.profileTypes());
   }
 
   @Override
@@ -51,5 +54,10 @@ public class DefaultRegistryService implements RegistryService {
   @Override
   public PrimitiveProtocolTypeRegistry protocolTypes() {
     return protocolTypes;
+  }
+
+  @Override
+  public ProfileTypeRegistry profileTypes() {
+    return profileTypes;
   }
 }

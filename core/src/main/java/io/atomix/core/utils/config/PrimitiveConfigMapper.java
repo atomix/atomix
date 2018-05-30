@@ -15,26 +15,20 @@
  */
 package io.atomix.core.utils.config;
 
+import io.atomix.core.registry.AtomixRegistry;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.utils.config.PolymorphicTypeMapper;
 
 /**
  * Primitive configuration mapper.
  */
-public class PrimitiveConfigMapper extends PolymorphicTypeMapper<PrimitiveConfig<?>, PrimitiveType> {
+public class PrimitiveConfigMapper extends PolymorphicTypeMapper<PrimitiveConfig<?>> {
   public PrimitiveConfigMapper() {
-    super(PrimitiveConfig.class, PrimitiveType.class);
-  }
-
-  @Override
-  public String getTypePath(String typeName) {
-    return String.format("registry.primitiveTypes.%s", typeName);
+    super(PrimitiveConfig.class);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Class<? extends PrimitiveConfig<?>> getConcreteTypedClass(PrimitiveType type) {
-    return type.configClass();
+  public Class<? extends PrimitiveConfig<?>> getConcreteClass(AtomixRegistry registry, String type) {
+    return registry.primitiveTypes().getPrimitiveType(type).configClass();
   }
 }

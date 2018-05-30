@@ -35,9 +35,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,19 +48,9 @@ import java.util.stream.Stream;
  * Utility for applying Typesafe configurations to Atomix configuration objects.
  */
 public class ConfigMapper {
-  private final Map<Type, PolymorphicTypeMapper> polymorphicTypeMappers = Maps.newHashMap();
   private final ClassLoader classLoader;
 
   public ConfigMapper(ClassLoader classLoader) {
-    this(classLoader, Collections.emptyList());
-  }
-
-  public ConfigMapper(ClassLoader classLoader, PolymorphicTypeMapper... polymorphicTypeMappers) {
-    this(classLoader, Arrays.asList(polymorphicTypeMappers));
-  }
-
-  public ConfigMapper(ClassLoader classLoader, Collection<PolymorphicTypeMapper> polymorphicTypeMappers) {
-    polymorphicTypeMappers.forEach(mapper -> this.polymorphicTypeMappers.put(mapper.getTypedClass(), mapper));
     this.classLoader = classLoader;
   }
 
@@ -92,8 +80,16 @@ public class ConfigMapper {
    * @param config the configuration to apply
    * @param clazz  the class to which to apply the configuration
    */
-  private <T> T map(Config config, Class<T> clazz) {
-    return map(config, null, null, clazz, config);
+  protected <T> T map(Config config, Class<T> clazz) {
+    return map(config, null, null, clazz);
+  }
+
+  protected <T> T newInstance(Config config, Class<T> clazz) {
+    try {
+      return clazz.newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException(clazz.getName() + " needs a public no-args constructor to be used as a bean", e);
+    }
   }
 
   /**
@@ -101,40 +97,10 @@ public class ConfigMapper {
    *
    * @param config     the configuration to apply
    * @param clazz      the class to which to apply the configuration
-   * @param rootConfig the root configuration
    */
   @SuppressWarnings("unchecked")
-  private <T> T map(Config config, String path, String name, Class<T> clazz, Config rootConfig) {
-    T instance;
-
-    // If the class is a polymorphic type, look up the type mapper and get the concrete type.
-    io.atomix.utils.Type type = null;
-    if (isPolymorphicType(clazz)) {
-      PolymorphicTypeMapper typeMapper = polymorphicTypeMappers.get(clazz);
-      if (typeMapper == null) {
-        throw new ConfigurationException("Cannot instantiate abstract type " + clazz.getName());
-      }
-
-      String typeName = config.getString(typeMapper.getTypedPath());
-      String typePath = typeMapper.getTypePath(typeName);
-      if (!rootConfig.hasPath(typePath)) {
-        throw new ConfigurationException("Unknown type definition " + typePath);
-      }
-      Config typeConfig = rootConfig.getConfig(typePath);
-      type = (io.atomix.utils.Type) map(typeConfig, typePath, typeName, typeMapper.getTypeClass(), rootConfig);
-      Class<? extends TypedConfig<?>> concreteClass = typeMapper.getConcreteTypedClass(type);
-      try {
-        instance = (T) concreteClass.newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException(concreteClass.getName() + " needs a public no-args constructor to be used as a bean", e);
-      }
-    } else {
-      try {
-        instance = clazz.newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException(clazz.getName() + " needs a public no-args constructor to be used as a bean", e);
-      }
-    }
+  protected <T> T map(Config config, String path, String name, Class<T> clazz) {
+    T instance = newInstance(config, clazz);
 
     // Map config property names to bean properties.
     Map<String, String> propertyNames = new HashMap<>();
@@ -152,24 +118,27 @@ public class ConfigMapper {
     }
 
     // First use setters and then fall back to fields.
-    mapSetters(instance, clazz, type, path, name, propertyNames, config, rootConfig);
-    mapFields(instance, clazz, type, path, name, propertyNames, config, rootConfig);
+    mapSetters(instance, clazz, path, name, propertyNames, config);
+    mapFields(instance, clazz, path, name, propertyNames, config);
 
     // If any properties present in the configuration were not found on config beans, throw an exception.
     if (path != null && !propertyNames.isEmpty()) {
-      Set<String> cleanNames = propertyNames.keySet()
-          .stream()
-          .filter(propertyName -> !isPolymorphicType(clazz) || !propertyName.equals(polymorphicTypeMappers.get(clazz).getTypedPath()))
-          .map(propertyName -> toPath(toPath(path, name), propertyName))
-          .collect(Collectors.toSet());
-      if (!cleanNames.isEmpty()) {
-        throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames));
-      }
+      checkRemainingProperties(propertyNames.keySet(), toPath(path, name), clazz);
     }
     return instance;
   }
 
-  private <T> void mapSetters(T instance, Class<T> clazz, io.atomix.utils.Type type, String path, String name, Map<String, String> propertyNames, Config config, Config rootConfig) {
+  protected void checkRemainingProperties(Set<String> propertyNames, String path, Class<?> clazz) {
+    Set<String> cleanNames = propertyNames
+        .stream()
+        .map(propertyName -> toPath(path, propertyName))
+        .collect(Collectors.toSet());
+    if (!cleanNames.isEmpty()) {
+      throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames));
+    }
+  }
+
+  private <T> void mapSetters(T instance, Class<T> clazz, String path, String name, Map<String, String> propertyNames, Config config) {
     try {
       for (SetterDescriptor descriptor : getSetterDescriptors(instance.getClass())) {
         Method setter = descriptor.setter;
@@ -185,7 +154,7 @@ public class ConfigMapper {
           continue;
         }
 
-        Object value = getValue(instance.getClass(), parameterType, parameterClass, config, toPath(path, name), configPropName, rootConfig);
+        Object value = getValue(instance.getClass(), parameterType, parameterClass, config, toPath(path, name), configPropName);
         if (value != null) {
           setter.invoke(instance, value);
         }
@@ -197,7 +166,7 @@ public class ConfigMapper {
     }
   }
 
-  private <T> void mapFields(T instance, Class<T> clazz, io.atomix.utils.Type type, String path, String name, Map<String, String> propertyNames, Config config, Config rootConfig) {
+  private <T> void mapFields(T instance, Class<T> clazz, String path, String name, Map<String, String> propertyNames, Config config) {
     try {
       for (FieldDescriptor descriptor : getFieldDescriptors(instance.getClass())) {
         Field field = descriptor.field;
@@ -214,7 +183,7 @@ public class ConfigMapper {
           continue;
         }
 
-        Object value = getValue(instance.getClass(), genericType, fieldClass, config, toPath(path, name), configPropName, rootConfig);
+        Object value = getValue(instance.getClass(), genericType, fieldClass, config, toPath(path, name), configPropName);
         if (value != null) {
           field.set(instance, value);
         }
@@ -224,7 +193,7 @@ public class ConfigMapper {
     }
   }
 
-  private Object getValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName, Config rootConfig) {
+  protected Object getValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName) {
     if (parameterClass == Boolean.class || parameterClass == boolean.class) {
       return config.getBoolean(configPropName);
     } else if (parameterClass == Integer.class || parameterClass == int.class) {
@@ -243,11 +212,11 @@ public class ConfigMapper {
     } else if (parameterClass == Object.class) {
       return config.getAnyRef(configPropName);
     } else if (parameterClass == List.class) {
-      return getListValue(beanClass, parameterType, parameterClass, config, configPath, configPropName, rootConfig);
+      return getListValue(beanClass, parameterType, parameterClass, config, configPath, configPropName);
     } else if (parameterClass == Set.class) {
-      return getSetValue(beanClass, parameterType, parameterClass, config, configPath, configPropName, rootConfig);
+      return getSetValue(beanClass, parameterType, parameterClass, config, configPath, configPropName);
     } else if (parameterClass == Map.class) {
-      return getMapValue(beanClass, parameterType, parameterClass, config, configPath, configPropName, rootConfig);
+      return getMapValue(beanClass, parameterType, parameterClass, config, configPath, configPropName);
     } else if (parameterClass == Config.class) {
       return config.getConfig(configPropName);
     } else if (parameterClass == ConfigObject.class) {
@@ -268,11 +237,11 @@ public class ConfigMapper {
       Enum enumValue = config.getEnum((Class<Enum>) parameterClass, configPropName);
       return enumValue;
     } else {
-      return map(config.getConfig(configPropName), configPath, configPropName, parameterClass, rootConfig);
+      return map(config.getConfig(configPropName), configPath, configPropName, parameterClass);
     }
   }
 
-  private Map getMapValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName, Config rootConfig) {
+  protected Map getMapValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName) {
     Type[] typeArgs = ((ParameterizedType) parameterType).getActualTypeArguments();
     Type keyType = typeArgs[0];
     Type valueType = typeArgs[1];
@@ -280,13 +249,13 @@ public class ConfigMapper {
     Map<Object, Object> map = new HashMap<>();
     Config childConfig = config.getConfig(configPropName);
     for (String key : config.getObject(configPropName).unwrapped().keySet()) {
-      Object value = getValue(Map.class, valueType, (Class) valueType, childConfig, toPath(configPath, configPropName), key, rootConfig);
+      Object value = getValue(Map.class, valueType, (Class) valueType, childConfig, toPath(configPath, configPropName), key);
       map.put(getKeyValue(keyType, key), value);
     }
     return map;
   }
 
-  private Object getKeyValue(Type keyType, String key) {
+  protected Object getKeyValue(Type keyType, String key) {
     if (keyType == Boolean.class || keyType == boolean.class) {
       return Boolean.parseBoolean(key);
     } else if (keyType == Integer.class || keyType == int.class) {
@@ -302,11 +271,11 @@ public class ConfigMapper {
     }
   }
 
-  private Object getSetValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName, Config rootConfig) {
-    return new HashSet((List) getListValue(beanClass, parameterType, parameterClass, config, configPath, configPropName, rootConfig));
+  protected Object getSetValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName) {
+    return new HashSet((List) getListValue(beanClass, parameterType, parameterClass, config, configPath, configPropName));
   }
 
-  private Object getListValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName, Config rootConfig) {
+  protected Object getListValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName) {
     Type elementType = ((ParameterizedType) parameterType).getActualTypeArguments()[0];
 
     if (elementType == Boolean.class) {
@@ -337,21 +306,17 @@ public class ConfigMapper {
       List<? extends Config> configList = config.getConfigList(configPropName);
       int i = 0;
       for (Config listMember : configList) {
-        beanList.add(map(listMember, toPath(configPath, configPropName), String.valueOf(i), (Class<?>) elementType, rootConfig));
+        beanList.add(map(listMember, toPath(configPath, configPropName), String.valueOf(i), (Class<?>) elementType));
       }
       return beanList;
     }
   }
 
-  private String toPath(String path, String name) {
+  protected String toPath(String path, String name) {
     return path != null ? String.format("%s.%s", path, name) : name;
   }
 
-  private boolean isPolymorphicType(Class<?> clazz) {
-    return polymorphicTypeMappers.containsKey(clazz);
-  }
-
-  private static boolean isSimpleType(Class<?> parameterClass) {
+  protected static boolean isSimpleType(Class<?> parameterClass) {
     return parameterClass == Boolean.class || parameterClass == boolean.class
         || parameterClass == Integer.class || parameterClass == int.class
         || parameterClass == Double.class || parameterClass == double.class
@@ -364,7 +329,7 @@ public class ConfigMapper {
         || parameterClass == Class.class;
   }
 
-  private static String toCamelCase(String originalName) {
+  protected static String toCamelCase(String originalName) {
     String[] words = originalName.split("-+");
     StringBuilder nameBuilder = new StringBuilder(originalName.length());
     for (String word : words) {
@@ -378,11 +343,11 @@ public class ConfigMapper {
     return nameBuilder.toString();
   }
 
-  private static String toSetterName(String name) {
+  protected static String toSetterName(String name) {
     return "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
   }
 
-  private static Collection<SetterDescriptor> getSetterDescriptors(Class<?> clazz) {
+  protected static Collection<SetterDescriptor> getSetterDescriptors(Class<?> clazz) {
     Map<String, SetterDescriptor> descriptors = Maps.newHashMap();
     for (Method method : clazz.getMethods()) {
       String name = method.getName();
@@ -419,7 +384,7 @@ public class ConfigMapper {
     return descriptors.values();
   }
 
-  private static Collection<FieldDescriptor> getFieldDescriptors(Class<?> type) {
+  protected static Collection<FieldDescriptor> getFieldDescriptors(Class<?> type) {
     Class<?> clazz = type;
     Map<String, FieldDescriptor> descriptors = Maps.newHashMap();
     while (clazz != Object.class) {
@@ -450,7 +415,7 @@ public class ConfigMapper {
     return Lists.newArrayList(descriptors.values());
   }
 
-  private static class SetterDescriptor {
+  protected static class SetterDescriptor {
     private final String name;
     private final Method setter;
 
@@ -460,7 +425,7 @@ public class ConfigMapper {
     }
   }
 
-  private static class FieldDescriptor {
+  protected static class FieldDescriptor {
     private final String name;
     private final Field field;
 

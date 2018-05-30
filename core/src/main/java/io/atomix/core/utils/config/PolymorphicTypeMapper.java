@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.utils.config;
+package io.atomix.core.utils.config;
 
-import io.atomix.utils.Type;
+import io.atomix.core.registry.AtomixRegistry;
 
 /**
  * Polymorphic type mapper.
  */
-public abstract class PolymorphicTypeMapper<T, U extends Type> {
+public abstract class PolymorphicTypeMapper<T> {
   private final Class<? super T> typedClass;
-  private final Class<? super U> typeClass;
 
-  protected PolymorphicTypeMapper(Class<? super T> typedClass, Class<? super U> typeClass) {
+  protected PolymorphicTypeMapper(Class<? super T> typedClass) {
     this.typedClass = typedClass;
-    this.typeClass = typeClass;
   }
 
   /**
@@ -39,36 +37,20 @@ public abstract class PolymorphicTypeMapper<T, U extends Type> {
   }
 
   /**
-   * Returns the type class.
-   *
-   * @return the type class
-   */
-  public Class<? super U> getTypeClass() {
-    return typeClass;
-  }
-
-  /**
    * Returns the type path.
    *
    * @return the type path
    */
-  public String getTypedPath() {
+  public String getTypePath() {
     return "type";
   }
 
   /**
-   * Returns the type path.
-   *
-   * @param typeName the type name
-   * @return the type path
-   */
-  public abstract String getTypePath(String typeName);
-
-  /**
    * Returns the concrete configuration class.
    *
-   * @param type the type instance
+   * @param registry the Atomix type registry
+   * @param type     the type name
    * @return the concrete configuration class
    */
-  public abstract Class<? extends T> getConcreteTypedClass(U type);
+  public abstract Class<? extends T> getConcreteClass(AtomixRegistry registry, String type);
 }
