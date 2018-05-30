@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.impl;
 
-import io.atomix.core.registry.RegistryService;
+import io.atomix.core.registry.AtomixRegistry;
 import io.atomix.primitive.PrimitiveConfig;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.primitive.PrimitiveConfig;
  */
 public class PrimitiveConfigDeserializer extends PolymorphicTypeDeserializer<PrimitiveConfig> {
   @SuppressWarnings("unchecked")
-  public PrimitiveConfigDeserializer(RegistryService registry) {
+  public PrimitiveConfigDeserializer(AtomixRegistry registry) {
     super(PrimitiveConfig.class, type -> registry.primitiveTypes().getPrimitiveType(type).configClass());
   }
 }

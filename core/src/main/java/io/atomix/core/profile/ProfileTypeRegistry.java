@@ -13,36 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.registry;
+package io.atomix.core.profile;
 
-import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
-import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
+import java.util.Collection;
 
 /**
- * Atomix registry.
+ * Profile type registry.
  */
-public interface RegistryService {
+public interface ProfileTypeRegistry {
 
   /**
-   * Returns the partition group types.
+   * Returns the collection of all registered profile types.
    *
-   * @return the partition group types
+   * @return the collection of all registered profile types
    */
-  PartitionGroupTypeRegistry partitionGroupTypes();
+  Collection<ProfileType> getProfileTypes();
 
   /**
-   * Returns the primitive types.
+   * Returns the profile type for the given name.
    *
-   * @return the primitive types
+   * @param name the profile type name
+   * @return the profile type
    */
-  PrimitiveTypeRegistry primitiveTypes();
-
-  /**
-   * Returns the primitive protocol types.
-   *
-   * @return the primitive protocol types
-   */
-  PrimitiveProtocolTypeRegistry protocolTypes();
+  ProfileType getProfileType(String name);
 
 }

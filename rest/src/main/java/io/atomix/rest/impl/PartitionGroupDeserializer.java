@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.impl;
 
-import io.atomix.core.registry.RegistryService;
+import io.atomix.core.registry.AtomixRegistry;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 
@@ -24,7 +24,7 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
  */
 public class PartitionGroupDeserializer extends PolymorphicTypeDeserializer<PartitionGroupConfig> {
   @SuppressWarnings("unchecked")
-  public PartitionGroupDeserializer(RegistryService registry) {
+  public PartitionGroupDeserializer(AtomixRegistry registry) {
     super(PartitionGroup.class, type -> registry.partitionGroupTypes().getGroupType(type).configClass());
   }
 }
