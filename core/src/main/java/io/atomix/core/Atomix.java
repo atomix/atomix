@@ -39,6 +39,7 @@ import io.atomix.core.registry.impl.ImmutableAtomixRegistry;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
+import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.utils.config.PartitionGroupConfigMapper;
 import io.atomix.core.utils.config.PolymorphicConfigMapper;
@@ -216,7 +217,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   private final AtomixRegistry registry;
   private final ConfigService config;
   private final ManagedPartitionService partitions;
-  private final ManagedPrimitivesService primitives;
+  private final CorePrimitivesService primitives;
   private final boolean enableShutdownHook;
   private final ThreadContext threadContext = new SingleThreadContext("atomix-%d");
   private Thread shutdownHook = null;
@@ -300,6 +301,15 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public PrimitivesService primitivesService() {
     return primitives;
+  }
+
+  /**
+   * Returns the transaction service.
+   *
+   * @return the transaction service
+   */
+  public TransactionService transactionService() {
+    return primitives.transactionService();
   }
 
   @Override

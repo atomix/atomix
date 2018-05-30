@@ -40,6 +40,7 @@ import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionConfig;
+import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.value.AtomicValue;
@@ -99,6 +100,15 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         registry.protocolTypes());
     this.transactionService = new CoreTransactionService(managementService);
     this.configService = checkNotNull(configService);
+  }
+
+  /**
+   * Returns the primitive transaction service.
+   *
+   * @return the primitive transaction service
+   */
+  public TransactionService transactionService() {
+    return transactionService;
   }
 
   @Override
