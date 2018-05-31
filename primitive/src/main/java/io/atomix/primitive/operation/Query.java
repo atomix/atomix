@@ -13,40 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.lock.impl;
+package io.atomix.primitive.operation;
 
-import io.atomix.primitive.operation.Command;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Distributed lock service.
+ * Query annotation.
  */
-public interface DistributedLockService {
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Query {
 
   /**
-   * Attempts to acquire a lock.
-   *
-   * @param lockId the lock identifier
+   * The operation name.
    */
-  @Command("lock")
-  default void lock(int lockId) {
-    lock(lockId, -1);
-  }
-
-  /**
-   * Attempts to acquire a lock.
-   *
-   * @param lockId  the lock identifier
-   * @param timeout the lock to acquire
-   */
-  @Command("lockWithTimeout")
-  void lock(int lockId, long timeout);
-
-  /**
-   * Unlocks an owned lock.
-   *
-   * @param lockId the lock identifier
-   */
-  @Command("unlock")
-  void unlock(int lockId);
+  String value() default "";
 
 }
