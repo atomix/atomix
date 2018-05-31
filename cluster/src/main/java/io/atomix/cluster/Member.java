@@ -275,6 +275,7 @@ public class Member implements Configured<MemberConfig> {
         .add("zone", zone)
         .add("rack", rack)
         .add("host", host)
+        .add("metadata", metadata)
         .omitNullValues()
         .toString();
   }
