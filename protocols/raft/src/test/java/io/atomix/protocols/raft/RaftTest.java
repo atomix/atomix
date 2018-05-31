@@ -25,9 +25,10 @@ import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.event.Event;
-import io.atomix.primitive.operation.Operation;
+import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.primitive.operation.Query;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
@@ -1373,19 +1374,19 @@ public class RaftTest extends ConcurrentTestCase {
    * Test primitive service interface.
    */
   public interface TestPrimitiveService {
-    @Operation(value = "write", type = OperationType.COMMAND)
+    @Command
     long write(String value);
 
-    @Operation(value = "read", type = OperationType.QUERY)
+    @Query
     long read();
 
-    @Operation(value = "sendEvent", type = OperationType.COMMAND)
+    @Command
     long sendEvent(boolean sender);
 
-    @Operation(value = "onExpire", type = OperationType.COMMAND)
+    @Command
     void onExpire();
 
-    @Operation(value = "onClose", type = OperationType.COMMAND)
+    @Command
     void onClose();
   }
 
