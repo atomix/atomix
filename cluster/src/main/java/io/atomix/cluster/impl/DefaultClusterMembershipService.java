@@ -91,6 +91,7 @@ public class DefaultClusterMembershipService
 
   private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulMember localMember;
+  private volatile Map<String, String> localMetadata;
   private final Map<MemberId, StatefulMember> members = Maps.newConcurrentMap();
   private final Map<MemberId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
   private final Consumer<byte[]> broadcastListener = this::handleBroadcastMessage;
@@ -163,12 +164,22 @@ public class DefaultClusterMembershipService
    * Sends heartbeats to all peers.
    */
   private CompletableFuture<Void> sendHeartbeats() {
+    Member localMember = getLocalMember();
+    if (!localMember.metadata().equals(localMetadata)) {
+      synchronized (this) {
+        if (!localMember.metadata().equals(localMetadata)) {
+          localMetadata = localMember.metadata();
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_UPDATED, localMember));
+        }
+      }
+    }
+
     Stream<StatefulMember> clusterMembers = this.members.values()
         .stream()
-        .filter(member -> !member.id().equals(getLocalMember().id()));
+        .filter(member -> !member.id().equals(localMember.id()));
 
     Stream<StatefulMember> bootstrapMembers = this.bootstrapMembers.stream()
-        .filter(member -> !member.id().equals(getLocalMember().id()) && !members.containsKey(member.id()))
+        .filter(member -> !member.id().equals(localMember.id()) && !members.containsKey(member.id()))
         .map(member -> new StatefulMember(
             member.id(),
             member.address(),
@@ -246,7 +257,7 @@ public class DefaultClusterMembershipService
   /**
    * Activates the given member.
    */
-  private void activateMember(StatefulMember member) {
+  private synchronized void activateMember(StatefulMember member) {
     StatefulMember existingMember = members.get(member.id());
     if (existingMember == null) {
       member.setState(State.ACTIVE);
@@ -274,7 +285,7 @@ public class DefaultClusterMembershipService
   /**
    * Deactivates the given member.
    */
-  private void deactivateMember(Member member) {
+  private synchronized void deactivateMember(Member member) {
     StatefulMember existingMember = members.get(member.id());
     if (existingMember != null && existingMember.getState() == State.ACTIVE) {
       LOGGER.info("{} - Member deactivated: {}", localMember.id(), existingMember);
