@@ -19,8 +19,8 @@ import com.google.common.base.Throwables;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapBackedJavaMap;
-import io.atomix.core.map.ConsistentMapException;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.concurrent.Retries;
 import io.atomix.utils.time.Versioned;
@@ -117,7 +117,7 @@ public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<
                                 Predicate<? super V> condition,
                                 BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return Retries.retryable(() -> complete(asyncMap.computeIf(key, condition, remappingFunction)),
-        ConsistentMapException.ConcurrentModification.class,
+        PrimitiveException.ConcurrentModification.class,
         Integer.MAX_VALUE,
         MAX_DELAY_BETWEEN_RETRY_MILLS).get();
   }
@@ -237,12 +237,12 @@ public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new ConsistentMapException.Interrupted();
+      throw new PrimitiveException.Interrupted();
     } catch (TimeoutException e) {
-      throw new ConsistentMapException.Timeout(name());
+      throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
       Throwables.propagateIfPossible(e.getCause());
-      throw new ConsistentMapException(e.getCause());
+      throw new PrimitiveException(e.getCause());
     }
   }
 }

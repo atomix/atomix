@@ -18,11 +18,10 @@ package io.atomix.core.multimap.impl;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Multiset;
-
-import io.atomix.core.map.ConsistentMapException;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;
 
@@ -167,12 +166,12 @@ public class BlockingConsistentMultimap<K, V>
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new ConsistentMapException.Interrupted();
+      throw new PrimitiveException.Interrupted();
     } catch (TimeoutException e) {
-      throw new ConsistentMapException.Timeout();
+      throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
       Throwables.propagateIfPossible(e.getCause());
-      throw new ConsistentMapException(e.getCause());
+      throw new PrimitiveException(e.getCause());
     }
   }
 }
