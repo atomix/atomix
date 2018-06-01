@@ -18,72 +18,55 @@ package io.atomix.core.value.impl;
 import com.google.common.collect.Sets;
 import io.atomix.core.value.AsyncAtomicValue;
 import io.atomix.core.value.AtomicValue;
+import io.atomix.core.value.AtomicValueEvent;
 import io.atomix.core.value.AtomicValueEventListener;
-import io.atomix.core.value.impl.AtomicValueOperations.CompareAndSet;
-import io.atomix.core.value.impl.AtomicValueOperations.GetAndSet;
+import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
 
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static io.atomix.core.value.impl.AtomicValueOperations.ADD_LISTENER;
-import static io.atomix.core.value.impl.AtomicValueOperations.COMPARE_AND_SET;
-import static io.atomix.core.value.impl.AtomicValueOperations.GET;
-import static io.atomix.core.value.impl.AtomicValueOperations.GET_AND_SET;
-import static io.atomix.core.value.impl.AtomicValueOperations.REMOVE_LISTENER;
-import static io.atomix.core.value.impl.AtomicValueOperations.SET;
-
 /**
  * Atomix counter implementation.
  */
-public class AtomicValueProxy extends AbstractAsyncPrimitive<AsyncAtomicValue<byte[]>> implements AsyncAtomicValue<byte[]> {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .register(AtomicValueOperations.NAMESPACE)
-      .register(AtomicValueEvents.NAMESPACE)
-      .build());
-
+public class AtomicValueProxy extends AbstractAsyncPrimitiveProxy<AsyncAtomicValue<byte[]>, AtomicValueService> implements AsyncAtomicValue<byte[]>, AtomicValueClient {
   private final Set<AtomicValueEventListener<byte[]>> eventListeners = Sets.newConcurrentHashSet();
 
   public AtomicValueProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
-    super(proxy, registry);
+    super(AtomicValueService.class, proxy, registry);
   }
 
   @Override
-  protected Serializer serializer() {
-    return SERIALIZER;
+  public void change(byte[] newValue, byte[] oldValue) {
+    eventListeners.forEach(l -> l.event(new AtomicValueEvent<>(newValue, oldValue)));
   }
 
   @Override
   public CompletableFuture<byte[]> get() {
-    return invokeBy(getPartitionKey(), GET);
+    return applyBy(getPartitionKey(), service -> service.get());
   }
 
   @Override
   public CompletableFuture<Void> set(byte[] value) {
-    return invokeBy(getPartitionKey(), SET, new AtomicValueOperations.Set(value));
+    return acceptBy(getPartitionKey(), service -> service.set(value));
   }
 
   @Override
   public CompletableFuture<Boolean> compareAndSet(byte[] expect, byte[] update) {
-    return invokeBy(getPartitionKey(), COMPARE_AND_SET, new CompareAndSet(expect, update));
+    return applyBy(getPartitionKey(), service -> service.compareAndSet(expect, update));
   }
 
   @Override
   public CompletableFuture<byte[]> getAndSet(byte[] value) {
-    return invokeBy(getPartitionKey(), GET_AND_SET, new GetAndSet(value));
+    return applyBy(getPartitionKey(), service -> service.getAndSet(value));
   }
 
   @Override
   public CompletableFuture<Void> addListener(AtomicValueEventListener<byte[]> listener) {
     if (eventListeners.isEmpty()) {
-      return invokeBy(getPartitionKey(), ADD_LISTENER).thenRun(() -> eventListeners.add(listener));
+      return acceptBy(getPartitionKey(), service -> service.addListener()).thenRun(() -> eventListeners.add(listener));
     } else {
       eventListeners.add(listener);
       return CompletableFuture.completedFuture(null);
@@ -93,7 +76,7 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive<AsyncAtomicValue<by
   @Override
   public CompletableFuture<Void> removeListener(AtomicValueEventListener<byte[]> listener) {
     if (eventListeners.remove(listener) && eventListeners.isEmpty()) {
-      return invokeBy(getPartitionKey(), REMOVE_LISTENER).thenApply(v -> null);
+      return acceptBy(getPartitionKey(), service -> service.removeListener()).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
