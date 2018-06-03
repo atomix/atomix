@@ -15,31 +15,20 @@
  */
 package io.atomix.core.profile.impl;
 
-import com.google.common.collect.Maps;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.profile.ProfileRegistry;
-import io.atomix.utils.Services;
 
 import java.util.Collection;
 import java.util.Map;
 
 /**
- * Profile type registry that scans the classpath for available profile types.
+ * Profile type registry.
  */
-public class ClasspathScanningProfileRegistry implements ProfileRegistry {
-  private final Map<String, Profile> profileTypes = Maps.newConcurrentMap();
+public class DefaultProfileRegistry implements ProfileRegistry {
+  private final Map<String, Profile> profileTypes;
 
-  public ClasspathScanningProfileRegistry(ClassLoader classLoader) {
-    init(classLoader);
-  }
-
-  /**
-   * Initializes the registry by scanning the classpath.
-   */
-  private void init(ClassLoader classLoader) {
-    for (Profile profileType : Services.loadTypes(Profile.class, classLoader)) {
-      profileTypes.put(profileType.name(), profileType);
-    }
+  public DefaultProfileRegistry(Map<String, Profile> profileTypes) {
+    this.profileTypes = profileTypes;
   }
 
   @Override

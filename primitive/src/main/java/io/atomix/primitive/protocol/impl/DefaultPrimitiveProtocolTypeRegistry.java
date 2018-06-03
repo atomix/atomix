@@ -15,31 +15,20 @@
  */
 package io.atomix.primitive.protocol.impl;
 
-import com.google.common.collect.Maps;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
-import io.atomix.utils.Services;
 
 import java.util.Collection;
 import java.util.Map;
 
 /**
- * Primitive protocol type registry that scans the classpath for protocol implementations.
+ * Primitive protocol type registry.
  */
-public class ClasspathScanningPrimitiveProtocolTypeRegistry implements PrimitiveProtocolTypeRegistry {
-  private final Map<String, PrimitiveProtocol.Type> protocolTypes = Maps.newConcurrentMap();
+public class DefaultPrimitiveProtocolTypeRegistry implements PrimitiveProtocolTypeRegistry {
+  private final Map<String, PrimitiveProtocol.Type> protocolTypes;
 
-  public ClasspathScanningPrimitiveProtocolTypeRegistry(ClassLoader classLoader) {
-    init(classLoader);
-  }
-
-  /**
-   * Initializes the registry by scanning the classpath.
-   */
-  private void init(ClassLoader classLoader) {
-    for (PrimitiveProtocol.Type protocolType : Services.loadTypes(PrimitiveProtocol.Type.class, classLoader)) {
-      protocolTypes.put(protocolType.name(), protocolType);
-    }
+  public DefaultPrimitiveProtocolTypeRegistry(Map<String, PrimitiveProtocol.Type> protocolTypes) {
+    this.protocolTypes = protocolTypes;
   }
 
   @Override

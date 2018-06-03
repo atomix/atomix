@@ -108,7 +108,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     protected ClusterMembershipService membershipService;
     protected PrimaryBackupServerProtocol protocol;
     protected PrimaryElection primaryElection;
-    protected PrimitiveTypeRegistry primitiveTypes = new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader());
+    protected PrimitiveTypeRegistry primitiveTypes;
     protected MemberGroupProvider memberGroupProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
@@ -233,7 +233,8 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
           new DefaultMemberGroupService(membershipService, memberGroupProvider),
           protocol,
           threadContextFactory,
-          primitiveTypes,
+          primitiveTypes != null ? primitiveTypes :
+                  new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader()),
           primaryElection));
     }
   }

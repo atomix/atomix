@@ -15,31 +15,20 @@
  */
 package io.atomix.primitive.partition.impl;
 
-import com.google.common.collect.Maps;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
-import io.atomix.utils.Services;
 
 import java.util.Collection;
 import java.util.Map;
 
 /**
- * Partition group type registry that scans the classpath for available group types.
+ * Partition group type registry.
  */
-public class ClasspathScanningPartitionGroupTypeRegistry implements PartitionGroupTypeRegistry {
-  private final Map<String, PartitionGroup.Type> partitionGroupTypes = Maps.newConcurrentMap();
+public class DefaultPartitionGroupTypeRegistry implements PartitionGroupTypeRegistry {
+  private final Map<String, PartitionGroup.Type> partitionGroupTypes;
 
-  public ClasspathScanningPartitionGroupTypeRegistry(ClassLoader classLoader) {
-    init(classLoader);
-  }
-
-  /**
-   * Initializes the registry by scanning the classpath.
-   */
-  private void init(ClassLoader classLoader) {
-    for (PartitionGroup.Type partitionGroupType : Services.loadTypes(PartitionGroup.Type.class, classLoader)) {
-      partitionGroupTypes.put(partitionGroupType.name(), partitionGroupType);
-    }
+  public DefaultPartitionGroupTypeRegistry(Map<String, PartitionGroup.Type> partitionGroupTypes) {
+    this.partitionGroupTypes = partitionGroupTypes;
   }
 
   @Override

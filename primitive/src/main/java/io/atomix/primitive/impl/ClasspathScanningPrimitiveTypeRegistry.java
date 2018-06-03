@@ -15,31 +15,45 @@
  */
 package io.atomix.primitive.impl;
 
-import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.utils.ServiceException;
-import io.atomix.utils.Services;
+import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Classpath scanning primitive type registry.
  */
 public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegistry {
-  private final Map<String, PrimitiveType> primitiveTypes = Maps.newConcurrentMap();
+  private final Map<String, PrimitiveType> primitiveTypes = new ConcurrentHashMap<>();
 
   public ClasspathScanningPrimitiveTypeRegistry(ClassLoader classLoader) {
-    init(classLoader);
+    new FastClasspathScanner().addClassLoader(classLoader).matchClassesImplementing(PrimitiveType.class, type -> {
+      if (!Modifier.isAbstract(type.getModifiers()) && !Modifier.isPrivate(type.getModifiers())) {
+        PrimitiveType primitiveType = newInstance(type);
+        primitiveTypes.put(primitiveType.name(), primitiveType);
+      }
+    }).scan();
   }
 
   /**
-   * Initializes the registry.
+   * Instantiates the given type using a no-argument constructor.
+   *
+   * @param type the type to instantiate
+   * @param <T>  the generic type
+   * @return the instantiated object
+   * @throws ServiceException if the type cannot be instantiated
    */
-  private void init(ClassLoader classLoader) {
-    for (PrimitiveType primitiveType : Services.loadTypes(PrimitiveType.class, classLoader)) {
-      primitiveTypes.put(primitiveType.name(), primitiveType);
+  @SuppressWarnings("unchecked")
+  private static <T> T newInstance(Class<?> type) {
+    try {
+      return (T) type.newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ServiceException("Cannot instantiate service class " + type, e);
     }
   }
 

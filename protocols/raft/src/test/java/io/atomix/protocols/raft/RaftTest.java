@@ -1337,7 +1337,7 @@ public class RaftTest extends ConcurrentTestCase {
     protocolFactory = new TestRaftProtocolFactory(context);
   }
 
-  private static class TestPrimitiveType implements PrimitiveType {
+  public static class TestPrimitiveType implements PrimitiveType {
     private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
 
     @Override
@@ -1364,7 +1364,7 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Test primitive.
    */
-  private interface TestPrimitive extends AsyncPrimitive {
+  public interface TestPrimitive extends AsyncPrimitive {
     CompletableFuture<Long> write(String value);
 
     CompletableFuture<Long> read();
