@@ -442,7 +442,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    * Creates a new primary-backup proxy.
    */
   private PartitionProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+    return client.proxyBuilder("primary-backup-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withNumBackups(backups)
         .withReplication(replication)
         .build()
@@ -473,12 +473,12 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   private static final EventType EXPIRE_EVENT = EventType.from("expire");
   private static final EventType CLOSE_EVENT = EventType.from("close");
 
-  private static class TestPrimitiveType implements PrimitiveType {
+  public static class TestPrimitiveType implements PrimitiveType {
     private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
 
     @Override
     public String name() {
-      return "test";
+      return "primary-backup-test";
     }
 
     @Override
