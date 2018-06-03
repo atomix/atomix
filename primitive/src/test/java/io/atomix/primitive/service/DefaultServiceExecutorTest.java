@@ -16,7 +16,7 @@
 package io.atomix.primitive.service;
 
 import io.atomix.primitive.PrimitiveId;
-import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.TestPrimitiveType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultCommit;
@@ -95,7 +95,7 @@ public class DefaultServiceExecutorTest {
   private ServiceExecutor executor() {
     ServiceContext context = mock(ServiceContext.class);
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
-    when(context.serviceType()).thenReturn(PrimitiveType.builder("test").build());
+    when(context.serviceType()).thenReturn(TestPrimitiveType.instance());
     when(context.serviceName()).thenReturn("test");
     when(context.currentOperation()).thenReturn(OperationType.COMMAND);
     return new DefaultServiceExecutor(context, Serializer.using(KryoNamespaces.BASIC));

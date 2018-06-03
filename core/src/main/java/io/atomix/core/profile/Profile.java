@@ -16,11 +16,12 @@
 package io.atomix.core.profile;
 
 import io.atomix.core.AtomixConfig;
+import io.atomix.utils.NamedType;
 
 /**
  * Atomix profile.
  */
-public interface Profile {
+public interface Profile extends NamedType {
 
   /**
    * The consensus profile configures an Atomix instance with a Raft system partition and a multi-Raft data partition group.
@@ -37,13 +38,6 @@ public interface Profile {
    * The client profile does not change the configuration of a node. It is intended only for code clarity.
    */
   Profile CLIENT = new ClientProfile();
-
-  /**
-   * Returns the profile type.
-   *
-   * @return the profile type
-   */
-  ProfileType type();
 
   /**
    * Configures the Atomix instance.

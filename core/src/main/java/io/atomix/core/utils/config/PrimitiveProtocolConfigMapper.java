@@ -15,7 +15,7 @@
  */
 package io.atomix.core.utils.config;
 
-import io.atomix.core.registry.AtomixRegistry;
+import io.atomix.core.AtomixRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 /**
@@ -29,6 +29,6 @@ public class PrimitiveProtocolConfigMapper extends PolymorphicTypeMapper<Primiti
   @Override
   @SuppressWarnings("unchecked")
   public Class<? extends PrimitiveProtocolConfig<?>> getConcreteClass(AtomixRegistry registry, String type) {
-    return (Class<? extends PrimitiveProtocolConfig<?>>) registry.protocolTypes().getProtocolType(type).configClass();
+    return (Class<? extends PrimitiveProtocolConfig<?>>) registry.protocolTypes().getProtocolType(type).newConfig().getClass();
   }
 }

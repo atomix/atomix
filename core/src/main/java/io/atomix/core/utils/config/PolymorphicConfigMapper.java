@@ -18,7 +18,7 @@ package io.atomix.core.utils.config;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.typesafe.config.Config;
-import io.atomix.core.registry.AtomixRegistry;
+import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.config.ConfigMapper;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.config.TypedConfig;
@@ -66,7 +66,7 @@ public class PolymorphicConfigMapper extends ConfigMapper {
       }
 
       String typeName = config.getString(typeMapper.getTypePath());
-      Class<? extends TypedConfig<?>> concreteClass = typeMapper.getConcreteClass(registry, typeName);
+      Class<? extends TypedConfig<?, ?>> concreteClass = typeMapper.getConcreteClass(registry, typeName);
       try {
         instance = (T) concreteClass.newInstance();
       } catch (InstantiationException | IllegalAccessException e) {

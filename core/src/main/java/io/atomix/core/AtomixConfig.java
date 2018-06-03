@@ -36,7 +36,7 @@ public class AtomixConfig implements Config {
   private ClusterConfig cluster = new ClusterConfig();
   private boolean enableShutdownHook;
   private PartitionGroupConfig managementGroup;
-  private Map<String, PartitionGroupConfig> partitionGroups = new HashMap<>();
+  private Map<String, PartitionGroupConfig<?>> partitionGroups = new HashMap<>();
   private Map<String, PrimitiveConfig> primitives = new HashMap<>();
   private List<String> profiles = new ArrayList<>();
 
@@ -85,7 +85,7 @@ public class AtomixConfig implements Config {
    *
    * @return the system management partition group
    */
-  public PartitionGroupConfig getManagementGroup() {
+  public PartitionGroupConfig<?> getManagementGroup() {
     return managementGroup;
   }
 
@@ -95,7 +95,7 @@ public class AtomixConfig implements Config {
    * @param managementGroup the system management partition group
    * @return the Atomix configuration
    */
-  public AtomixConfig setManagementGroup(PartitionGroupConfig managementGroup) {
+  public AtomixConfig setManagementGroup(PartitionGroupConfig<?> managementGroup) {
     managementGroup.setName(MANAGEMENT_GROUP_NAME);
     this.managementGroup = managementGroup;
     return this;
@@ -106,7 +106,7 @@ public class AtomixConfig implements Config {
    *
    * @return the partition group configurations
    */
-  public Map<String, PartitionGroupConfig> getPartitionGroups() {
+  public Map<String, PartitionGroupConfig<?>> getPartitionGroups() {
     return partitionGroups;
   }
 
@@ -116,7 +116,7 @@ public class AtomixConfig implements Config {
    * @param partitionGroups the partition group configurations
    * @return the Atomix configuration
    */
-  public AtomixConfig setPartitionGroups(Map<String, PartitionGroupConfig> partitionGroups) {
+  public AtomixConfig setPartitionGroups(Map<String, PartitionGroupConfig<?>> partitionGroups) {
     partitionGroups.forEach((name, group) -> group.setName(name));
     this.partitionGroups = partitionGroups;
     return this;

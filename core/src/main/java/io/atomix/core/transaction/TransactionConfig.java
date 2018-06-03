@@ -15,8 +15,8 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -27,8 +27,8 @@ public class TransactionConfig extends PrimitiveConfig<TransactionConfig> {
   private Isolation isolation = Isolation.READ_COMMITTED;
 
   @Override
-  public String getType() {
-    return PrimitiveTypes.TRANSACTION.name();
+  public PrimitiveType getType() {
+    return TransactionType.instance();
   }
 
   /**

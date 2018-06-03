@@ -24,6 +24,9 @@ import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
+import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
@@ -34,6 +37,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
+import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.SessionId;
@@ -494,8 +498,7 @@ public class RaftPerformanceTest implements Runnable {
             .withSerializer(storageSerializer)
             .withMaxEntriesPerSegment(32768)
             .withMaxSegmentSize(1024 * 1024)
-            .build())
-        .addPrimitiveType(TEST_PRIMITIVE_TYPE);
+            .build());
 
     RaftServer server = builder.build();
     servers.add(server);
@@ -531,7 +534,7 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a test session.
    */
   private PartitionProxy createProxy(RaftClient client) {
-    return client.proxyBuilder("test", TEST_PRIMITIVE_TYPE, new ServiceConfig())
+    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build();
@@ -542,10 +545,29 @@ public class RaftPerformanceTest implements Runnable {
   private static final OperationId REMOVE = OperationId.command("remove");
   private static final OperationId INDEX = OperationId.command("index");
 
-  private static final PrimitiveType TEST_PRIMITIVE_TYPE = PrimitiveType.builder()
-      .withName("test")
-      .withServiceClass(PerformanceService.class)
-      .build();
+  private static class TestPrimitiveType implements PrimitiveType {
+    private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+
+    @Override
+    public String name() {
+      return "test";
+    }
+
+    @Override
+    public PrimitiveConfig newConfig() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PrimitiveService newService(ServiceConfig config) {
+      return new PerformanceService(config);
+    }
+  }
 
   /**
    * Performance test state machine.

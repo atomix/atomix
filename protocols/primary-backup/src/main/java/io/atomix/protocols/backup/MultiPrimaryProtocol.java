@@ -39,7 +39,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Multi-primary protocol.
  */
 public class MultiPrimaryProtocol implements PrimitiveProtocol {
-  public static final String NAME = "multi-primary";
+  public static final Type TYPE = new Type();
 
   /**
    * Returns a new multi-primary protocol builder.
@@ -60,6 +60,28 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     return new Builder(new MultiPrimaryProtocolConfig().setGroup(group));
   }
 
+  /**
+   * Multi-primary protocol type.
+   */
+  public static final class Type implements PrimitiveProtocol.Type<MultiPrimaryProtocolConfig> {
+    private static final String NAME = "multi-primary";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
+
+    @Override
+    public MultiPrimaryProtocolConfig newConfig() {
+      return new MultiPrimaryProtocolConfig();
+    }
+
+    @Override
+    public PrimitiveProtocol newProtocol(MultiPrimaryProtocolConfig config) {
+      return new MultiPrimaryProtocol(config);
+    }
+  }
+
   protected final MultiPrimaryProtocolConfig config;
 
   protected MultiPrimaryProtocol(MultiPrimaryProtocolConfig config) {
@@ -67,8 +89,8 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
   }
 
   @Override
-  public String type() {
-    return config.getType();
+  public PrimitiveProtocol.Type type() {
+    return TYPE;
   }
 
   @Override

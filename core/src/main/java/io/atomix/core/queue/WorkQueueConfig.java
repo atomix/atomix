@@ -15,15 +15,15 @@
  */
 package io.atomix.core.queue;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Work queue configuration.
  */
 public class WorkQueueConfig extends PrimitiveConfig<WorkQueueConfig> {
   @Override
-  public String getType() {
-    return PrimitiveTypes.workQueue().name();
+  public PrimitiveType getType() {
+    return WorkQueueType.instance();
   }
 }

@@ -19,6 +19,7 @@ import io.atomix.primitive.Consistency;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.Partitioner;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 import java.time.Duration;
@@ -38,8 +39,8 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
   private Executor executor;
 
   @Override
-  public String getType() {
-    return "multi-primary";
+  public PrimitiveProtocol.Type getType() {
+    return MultiPrimaryProtocol.TYPE;
   }
 
   /**

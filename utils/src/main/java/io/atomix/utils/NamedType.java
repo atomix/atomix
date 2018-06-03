@@ -13,16 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup.partition;
-
-import io.atomix.primitive.partition.PartitionGroupFactory;
+package io.atomix.utils;
 
 /**
- * Primary-backup partition group factory.
+ * Named type.
  */
-public class PrimaryBackupPartitionGroupFactory implements PartitionGroupFactory<PrimaryBackupPartitionGroupConfig, PrimaryBackupPartitionGroup> {
-  @Override
-  public PrimaryBackupPartitionGroup createGroup(PrimaryBackupPartitionGroupConfig config) {
-    return new PrimaryBackupPartitionGroup(config);
-  }
+public interface NamedType extends Named, Type {
 }

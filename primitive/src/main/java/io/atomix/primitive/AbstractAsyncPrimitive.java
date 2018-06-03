@@ -60,6 +60,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
 
   private final PrimitiveProxy proxy;
   private final PrimitiveRegistry registry;
+  private final Serializer serializer;
   private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Map<EventType, Map<PartitionId, Map<Object, Consumer>>> eventListeners = Maps.newIdentityHashMap();
   private final Map<BiConsumer<PartitionId, Proxy.State>, Map<PartitionId, Consumer<Proxy.State>>> stateChangeListeners =
@@ -68,6 +69,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
   public AbstractAsyncPrimitive(PrimitiveProxy proxy, PrimitiveRegistry registry) {
     this.proxy = checkNotNull(proxy, "proxy cannot be null");
     this.registry = checkNotNull(registry, "registry cannot be null");
+    this.serializer = Serializer.using(proxy.type().namespace());
     proxy.addStateChangeListener(this::onStateChange);
   }
 
@@ -87,7 +89,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @return the serializer for the primitive operations
    */
   protected Serializer serializer() {
-    return primitiveType().serializer();
+    return serializer;
   }
 
   /**

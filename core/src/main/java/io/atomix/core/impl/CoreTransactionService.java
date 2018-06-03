@@ -15,9 +15,9 @@
  */
 package io.atomix.core.impl;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.map.AsyncConsistentMap;
-import io.atomix.core.map.ConsistentMapBuilder;
+import io.atomix.core.map.ConsistentMapConfig;
+import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionService;
@@ -102,10 +102,9 @@ public class CoreTransactionService implements ManagedTransactionService {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<TransactionService> start() {
-    ConsistentMapBuilder<TransactionId, TransactionState> builder = (ConsistentMapBuilder) managementService.getPrimitiveTypeRegistry()
-        .getPrimitiveType(PrimitiveTypes.consistentMap().name())
-        .newBuilder("atomix-transactions", managementService);
-    return builder.withProtocol(managementService.getPartitionService().getSystemPartitionGroup().newProtocol())
+    return ConsistentMapType.<TransactionId, TransactionState>instance()
+        .newBuilder("atomix-transactions", new ConsistentMapConfig(), managementService)
+        .withProtocol(managementService.getPartitionService().getSystemPartitionGroup().newProtocol())
         .withSerializer(SERIALIZER)
         .buildAsync()
         .thenApply(transactions -> {

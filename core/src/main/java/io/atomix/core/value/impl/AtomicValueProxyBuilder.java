@@ -19,7 +19,6 @@ import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -32,8 +31,8 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> value type
  */
 public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
-  public AtomicValueProxyBuilder(PrimitiveType type, String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
-    super(type, name, config, managementService);
+  public AtomicValueProxyBuilder(String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
+    super(name, config, managementService);
   }
 
   @Override

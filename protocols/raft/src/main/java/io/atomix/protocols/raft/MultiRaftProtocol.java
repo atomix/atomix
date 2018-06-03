@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Multi-Raft protocol.
  */
 public class MultiRaftProtocol implements PrimitiveProtocol {
-  public static final String NAME = "multi-raft";
+  public static Type TYPE = new Type();
 
   /**
    * Returns a new multi-Raft protocol builder.
@@ -59,6 +59,28 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
     return new Builder(new MultiRaftProtocolConfig().setGroup(group));
   }
 
+  /**
+   * Multi-Raft protocol type.
+   */
+  public static final class Type implements PrimitiveProtocol.Type<MultiRaftProtocolConfig> {
+    private static final String NAME = "multi-raft";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
+
+    @Override
+    public MultiRaftProtocolConfig newConfig() {
+      return new MultiRaftProtocolConfig();
+    }
+
+    @Override
+    public PrimitiveProtocol newProtocol(MultiRaftProtocolConfig config) {
+      return new MultiRaftProtocol(config);
+    }
+  }
+
   private final MultiRaftProtocolConfig config;
 
   protected MultiRaftProtocol(MultiRaftProtocolConfig config) {
@@ -66,8 +88,8 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
   }
 
   @Override
-  public String type() {
-    return config.getType();
+  public PrimitiveProtocol.Type type() {
+    return TYPE;
   }
 
   @Override

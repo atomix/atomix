@@ -15,8 +15,8 @@
  */
 package io.atomix.core.impl;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.core.map.AsyncConsistentMap;
+import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.impl.ConsistentMapProxy;
 import io.atomix.core.map.impl.TranscodingAsyncConsistentMap;
 import io.atomix.primitive.DistributedPrimitive;
@@ -123,7 +123,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
     PrimitiveProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
     PrimitiveProxy proxy = protocol.newProxy(
         "primitives",
-        primitiveTypeRegistry.getPrimitiveType(PrimitiveTypes.consistentMap().name()),
+        ConsistentMapType.instance(),
         new ServiceConfig(),
         partitionService);
     return proxy.connect()

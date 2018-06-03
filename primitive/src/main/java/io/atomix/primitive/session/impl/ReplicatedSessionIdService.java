@@ -15,8 +15,6 @@
  */
 package io.atomix.primitive.session.impl;
 
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.ServiceConfig;
@@ -40,18 +38,13 @@ public class ReplicatedSessionIdService implements ManagedSessionIdService {
       .register(SessionIdGeneratorOperations.NAMESPACE)
       .build());
   private static final String PRIMITIVE_NAME = "session-id";
-  private static final PrimitiveType PRIMITIVE_TYPE = PrimitiveType.builder()
-      .withName("SESSION_ID_GENERATOR")
-      .withServiceClass(SessionIdGeneratorService.class)
-      .build();
 
   private final PartitionGroup systemPartitionGroup;
   private PartitionProxy proxy;
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public ReplicatedSessionIdService(PartitionGroup systemPartitionGroup, PrimitiveTypeRegistry primitiveTypeRegistry) {
+  public ReplicatedSessionIdService(PartitionGroup systemPartitionGroup) {
     this.systemPartitionGroup = systemPartitionGroup;
-    primitiveTypeRegistry.addPrimitiveType(PRIMITIVE_TYPE);
   }
 
   @Override
@@ -64,7 +57,7 @@ public class ReplicatedSessionIdService implements ManagedSessionIdService {
   @Override
   public CompletableFuture<SessionIdService> start() {
     return systemPartitionGroup.getPartitions().iterator().next().getProxyClient()
-        .proxyBuilder(PRIMITIVE_NAME, PRIMITIVE_TYPE, new ServiceConfig())
+        .proxyBuilder(PRIMITIVE_NAME, SessionIdGeneratorType.instance(), new ServiceConfig())
         .build()
         .connect()
         .thenApply(proxy -> {

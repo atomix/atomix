@@ -52,6 +52,11 @@
       <artifactId>config</artifactId>
       <version>${config.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.github.lukehutch</groupId>
+      <artifactId>fast-classpath-scanner</artifactId>
+      <version>${fast-classpath-scanner.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

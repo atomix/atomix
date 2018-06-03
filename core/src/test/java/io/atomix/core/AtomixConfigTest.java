@@ -36,7 +36,7 @@ public class AtomixConfigTest {
   public void testAtomixConfig() throws Exception {
     AtomixConfig config = Atomix.config("test");
     assertEquals(3, config.getClusterConfig().getMembers().size());
-    assertEquals("raft", config.getManagementGroup().getType());
+    assertEquals("raft", config.getManagementGroup().getType().name());
     assertEquals(2, config.getPartitionGroups().size());
     assertEquals(2, config.getProfiles().size());
   }

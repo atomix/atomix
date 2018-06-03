@@ -23,7 +23,7 @@ import io.atomix.utils.serializer.SerializerConfig;
 /**
  * Primitive configuration.
  */
-public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> implements TypedConfig<C>, NamedConfig<C> {
+public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> implements TypedConfig<C, PrimitiveType>, NamedConfig<C> {
   private static final int DEFAULT_CACHE_SIZE = 1000;
 
   private String name;

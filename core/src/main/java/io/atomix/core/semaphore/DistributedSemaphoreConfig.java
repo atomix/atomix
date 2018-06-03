@@ -15,8 +15,8 @@
  */
 package io.atomix.core.semaphore;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Semaphore configuration.
@@ -25,8 +25,8 @@ public class DistributedSemaphoreConfig extends PrimitiveConfig<DistributedSemap
   private int initialCapacity;
 
   @Override
-  public String getType() {
-    return PrimitiveTypes.semaphore().name();
+  public PrimitiveType getType() {
+    return DistributedSemaphoreType.instance();
   }
 
   /**

@@ -17,6 +17,7 @@ package io.atomix.protocols.backup.partition;
 
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.MemberGroupStrategy;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 
 /**
@@ -28,8 +29,8 @@ public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<Prim
   private MemberGroupProvider memberGroupProvider = MemberGroupStrategy.NODE_AWARE;
 
   @Override
-  public String getType() {
-    return "primary-backup";
+  public PartitionGroup.Type getType() {
+    return PrimaryBackupPartitionGroup.TYPE;
   }
 
   @Override

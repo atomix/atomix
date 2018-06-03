@@ -35,7 +35,6 @@ import io.atomix.primitive.partition.PartitionGroupMembership;
 import io.atomix.primitive.partition.PartitionGroupMembershipEvent;
 import io.atomix.primitive.partition.PartitionGroupMembershipEventListener;
 import io.atomix.primitive.partition.PartitionGroupMembershipService;
-import io.atomix.primitive.partition.PartitionGroupType;
 import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -101,19 +100,16 @@ public class DefaultPartitionGroupMembershipService
           group.config(),
           ImmutableSet.of(membershipService.getLocalMember().id()), false));
     });
-
-    KryoNamespace.Builder builder = KryoNamespace.builder()
+    serializer = Serializer.using(KryoNamespace.builder()
         .register(KryoNamespaces.BASIC)
         .register(MemberId.class)
         .register(MemberId.Type.class)
         .register(PartitionGroupMembership.class)
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)
-        .register(MemberGroupStrategy.class);
-    for (PartitionGroupType groupType : groupTypeRegistry.getGroupTypes()) {
-      builder.register(groupType.configClass());
-    }
-    serializer = Serializer.using(builder.build());
+        .register(MemberGroupStrategy.class)
+        .setRegistrationRequired(false)
+        .build());
   }
 
   @Override

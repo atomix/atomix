@@ -15,7 +15,7 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.PrimitiveTypes;
+import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.transaction.AsyncTransactionalMap;
 import io.atomix.core.transaction.AsyncTransactionalSet;
 import io.atomix.core.transaction.TransactionalSet;
@@ -41,7 +41,7 @@ public class DefaultTransactionalSet<E> implements AsyncTransactionalSet<E> {
 
   @Override
   public PrimitiveType primitiveType() {
-    return PrimitiveTypes.set();
+    return DistributedSetType.instance();
   }
 
   @Override

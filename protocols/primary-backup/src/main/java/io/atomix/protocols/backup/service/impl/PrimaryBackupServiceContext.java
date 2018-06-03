@@ -55,6 +55,7 @@ import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClock;
@@ -128,7 +129,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
     this.serverName = checkNotNull(serverName);
     this.primitiveId = checkNotNull(primitiveId);
     this.primitiveType = checkNotNull(primitiveType);
-    this.serviceConfig = primitiveType.serializer().decode(descriptor.config());
+    this.serviceConfig = Serializer.using(primitiveType.namespace()).decode(descriptor.config());
     this.descriptor = checkNotNull(descriptor);
     this.service = primitiveType.newService(serviceConfig);
     this.threadContext = checkNotNull(threadContext);
