@@ -19,6 +19,8 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.utils.ServiceException;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -29,13 +31,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * Classpath scanning primitive type registry.
  */
 public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegistry {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningPrimitiveTypeRegistry.class);
+
   private final Map<String, PrimitiveType> primitiveTypes = new ConcurrentHashMap<>();
 
   public ClasspathScanningPrimitiveTypeRegistry(ClassLoader classLoader) {
     new FastClasspathScanner().addClassLoader(classLoader).matchClassesImplementing(PrimitiveType.class, type -> {
       if (!Modifier.isAbstract(type.getModifiers()) && !Modifier.isPrivate(type.getModifiers())) {
         PrimitiveType primitiveType = newInstance(type);
-        primitiveTypes.put(primitiveType.name(), primitiveType);
+        PrimitiveType oldPrimitiveType = primitiveTypes.put(primitiveType.name(), primitiveType);
+        if (oldPrimitiveType != null) {
+          LOGGER.warn("Found multiple primitives types name={}, classes=[{}, {}]", primitiveType.name(),
+                  oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
+        }
       }
     }).scan();
   }

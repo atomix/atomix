@@ -153,9 +153,9 @@ public class RaftTest extends ConcurrentTestCase {
     assertEquals(2, typeSessions.size());
     typeSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE).join();
     assertEquals(2, typeSessions.size());
-    Set<SessionMetadata> serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "test").join();
+    Set<SessionMetadata> serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "raft-test").join();
     assertEquals(2, serviceSessions.size());
-    serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "test").join();
+    serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "raft-test").join();
     assertEquals(2, serviceSessions.size());
   }
 
@@ -1259,7 +1259,7 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a test session.
    */
   private PartitionProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+    return client.proxyBuilder("raft-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(consistency)
         .withMinTimeout(Duration.ofMillis(250))
         .withMaxTimeout(Duration.ofSeconds(5))
@@ -1285,7 +1285,7 @@ public class RaftTest extends ConcurrentTestCase {
     when(proxy.getPartitions()).thenReturn(Collections.singletonList(partition));
     when(proxy.getPartitionId(any(String.class))).thenReturn(partition.partitionId());
     PrimitiveRegistry registry = mock(PrimitiveRegistry.class);
-    when(registry.createPrimitive(any(String.class), any(PrimitiveType.class))).thenReturn(CompletableFuture.completedFuture(new PrimitiveInfo("test", TestPrimitiveType.INSTANCE)));
+    when(registry.createPrimitive(any(String.class), any(PrimitiveType.class))).thenReturn(CompletableFuture.completedFuture(new PrimitiveInfo("raft-test", TestPrimitiveType.INSTANCE)));
     return new TestPrimitiveImpl(proxy, registry);
   }
 
@@ -1342,7 +1342,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     @Override
     public String name() {
-      return "test";
+      return "raft-test";
     }
 
     @Override

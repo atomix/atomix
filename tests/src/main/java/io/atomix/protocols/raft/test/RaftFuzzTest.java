@@ -624,7 +624,7 @@ public class RaftFuzzTest implements Runnable {
    * Creates a test session.
    */
   private PartitionProxy createProxy(RaftClient client, ReadConsistency consistency) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+    return client.proxyBuilder("raft-fuzz-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build()
@@ -637,12 +637,12 @@ public class RaftFuzzTest implements Runnable {
   private static final OperationId REMOVE = OperationId.command("remove");
   private static final OperationId INDEX = OperationId.command("index");
 
-  private static class TestPrimitiveType implements PrimitiveType {
+  public static class TestPrimitiveType implements PrimitiveType {
     private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
 
     @Override
     public String name() {
-      return "test";
+      return "raft-fuzz-test";
     }
 
     @Override
