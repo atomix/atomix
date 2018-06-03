@@ -15,39 +15,45 @@
  */
 package io.atomix.primitive.impl;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.utils.ServiceException;
+import io.atomix.utils.Services;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
- * Immutable primitive type registry.
+ * Classpath scanning primitive type registry.
  */
-public class ImmutablePrimitiveTypeRegistry implements PrimitiveTypeRegistry {
-  private final PrimitiveTypeRegistry primitiveTypes;
+public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegistry {
+  private final Map<String, PrimitiveType> primitiveTypes = Maps.newConcurrentMap();
 
-  public ImmutablePrimitiveTypeRegistry(PrimitiveTypeRegistry primitiveTypes) {
-    this.primitiveTypes = primitiveTypes;
+  public ClasspathScanningPrimitiveTypeRegistry(ClassLoader classLoader) {
+    init(classLoader);
   }
 
-  @Override
-  public void addPrimitiveType(PrimitiveType type) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void removePrimitiveType(PrimitiveType type) {
-    throw new UnsupportedOperationException();
+  /**
+   * Initializes the registry.
+   */
+  private void init(ClassLoader classLoader) {
+    for (PrimitiveType primitiveType : Services.loadTypes(PrimitiveType.class, classLoader)) {
+      primitiveTypes.put(primitiveType.name(), primitiveType);
+    }
   }
 
   @Override
   public Collection<PrimitiveType> getPrimitiveTypes() {
-    return ImmutableList.copyOf(primitiveTypes.getPrimitiveTypes());
+    return primitiveTypes.values();
   }
 
   @Override
   public PrimitiveType getPrimitiveType(String typeName) {
-    return primitiveTypes.getPrimitiveType(typeName);
+    PrimitiveType type = primitiveTypes.get(typeName);
+    if (type == null) {
+      throw new ServiceException("Unknown primitive type " + typeName);
+    }
+    return type;
   }
 }

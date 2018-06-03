@@ -20,7 +20,6 @@ import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockBuilder;
 import io.atomix.core.lock.DistributedLockConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -30,8 +29,8 @@ import java.util.concurrent.CompletableFuture;
  * Default distributed lock builder implementation.
  */
 public class DistributedLockProxyBuilder extends DistributedLockBuilder {
-  public DistributedLockProxyBuilder(PrimitiveType type, String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
-    super(type, name, config, managementService);
+  public DistributedLockProxyBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
+    super(name, config, managementService);
   }
 
   @Override

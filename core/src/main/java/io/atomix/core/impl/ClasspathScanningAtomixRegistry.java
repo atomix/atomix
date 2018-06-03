@@ -13,32 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.registry.impl;
+package io.atomix.core.impl;
 
-import io.atomix.core.profile.ProfileTypeRegistry;
-import io.atomix.core.profile.impl.ImmutableProfileTypeRegistry;
-import io.atomix.core.registry.AtomixRegistry;
+import io.atomix.core.AtomixRegistry;
+import io.atomix.core.profile.ProfileRegistry;
+import io.atomix.core.profile.impl.ClasspathScanningProfileRegistry;
 import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.impl.ImmutablePrimitiveTypeRegistry;
+import io.atomix.primitive.impl.ClasspathScanningPrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
-import io.atomix.primitive.partition.impl.ImmutablePartitionGroupTypeRegistry;
+import io.atomix.primitive.partition.impl.ClasspathScanningPartitionGroupTypeRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
-import io.atomix.primitive.protocol.impl.ImmutablePrimitiveProtocolTypeRegistry;
+import io.atomix.primitive.protocol.impl.ClasspathScanningPrimitiveProtocolTypeRegistry;
 
 /**
- * Immutable registry service.
+ * Atomix registry that scans the classpath for registered objects.
  */
-public class ImmutableAtomixRegistry implements AtomixRegistry {
+public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
   private final PartitionGroupTypeRegistry partitionGroupTypes;
   private final PrimitiveTypeRegistry primitiveTypes;
   private final PrimitiveProtocolTypeRegistry protocolTypes;
-  private final ProfileTypeRegistry profileTypes;
+  private final ProfileRegistry profileTypes;
 
-  public ImmutableAtomixRegistry(AtomixRegistry registry) {
-    this.partitionGroupTypes = new ImmutablePartitionGroupTypeRegistry(registry.partitionGroupTypes());
-    this.primitiveTypes = new ImmutablePrimitiveTypeRegistry(registry.primitiveTypes());
-    this.protocolTypes = new ImmutablePrimitiveProtocolTypeRegistry(registry.protocolTypes());
-    this.profileTypes = new ImmutableProfileTypeRegistry(registry.profileTypes());
+  public ClasspathScanningAtomixRegistry(ClassLoader classLoader) {
+    this.partitionGroupTypes = new ClasspathScanningPartitionGroupTypeRegistry(classLoader);
+    this.primitiveTypes = new ClasspathScanningPrimitiveTypeRegistry(classLoader);
+    this.protocolTypes = new ClasspathScanningPrimitiveProtocolTypeRegistry(classLoader);
+    this.profileTypes = new ClasspathScanningProfileRegistry(classLoader);
   }
 
   @Override
@@ -57,7 +57,7 @@ public class ImmutableAtomixRegistry implements AtomixRegistry {
   }
 
   @Override
-  public ProfileTypeRegistry profileTypes() {
+  public ProfileRegistry profiles() {
     return profileTypes;
   }
 }

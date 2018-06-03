@@ -23,20 +23,6 @@ import java.util.Collection;
 public interface PrimitiveTypeRegistry {
 
   /**
-   * Registers a primitive type.
-   *
-   * @param type the primitive type
-   */
-  void addPrimitiveType(PrimitiveType type);
-
-  /**
-   * Unregisters a primitive type.
-   *
-   * @param type the primitive type
-   */
-  void removePrimitiveType(PrimitiveType type);
-
-  /**
    * Returns the collection of registered primitive types.
    *
    * @return the collection of registered primitive types

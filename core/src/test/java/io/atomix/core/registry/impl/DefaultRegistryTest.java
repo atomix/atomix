@@ -15,7 +15,7 @@
  */
 package io.atomix.core.registry.impl;
 
-import io.atomix.core.registry.AtomixRegistry;
+import io.atomix.core.AtomixRegistry;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -29,12 +29,12 @@ public class DefaultRegistryTest {
   public void testRegistry() throws Exception {
     AtomixRegistry registry = AtomixRegistry.registry();
     assertFalse(registry.primitiveTypes().getPrimitiveTypes().isEmpty());
-    assertEquals("map", registry.primitiveTypes().getPrimitiveType("map").name());
+    assertEquals("consistent-map", registry.primitiveTypes().getPrimitiveType("consistent-map").name());
     assertFalse(registry.partitionGroupTypes().getGroupTypes().isEmpty());
     assertEquals("raft", registry.partitionGroupTypes().getGroupType("raft").name());
     assertFalse(registry.protocolTypes().getProtocolTypes().isEmpty());
     assertEquals("multi-raft", registry.protocolTypes().getProtocolType("multi-raft").name());
-    assertEquals(3, registry.profileTypes().getProfileTypes().size());
-    assertEquals("client", registry.profileTypes().getProfileType("client").name());
+    assertEquals(3, registry.profiles().getProfiles().size());
+    assertEquals("client", registry.profiles().getProfile("client").name());
   }
 }

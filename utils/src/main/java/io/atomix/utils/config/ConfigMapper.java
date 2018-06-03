@@ -248,8 +248,9 @@ public class ConfigMapper {
 
     Map<Object, Object> map = new HashMap<>();
     Config childConfig = config.getConfig(configPropName);
+    Class valueClass = (Class) (valueType instanceof ParameterizedType ? ((ParameterizedType) valueType).getRawType() : valueType);
     for (String key : config.getObject(configPropName).unwrapped().keySet()) {
-      Object value = getValue(Map.class, valueType, (Class) valueType, childConfig, toPath(configPath, configPropName), key);
+      Object value = getValue(Map.class, valueType, valueClass, childConfig, toPath(configPath, configPropName), key);
       map.put(getKeyValue(keyType, key), value);
     }
     return map;

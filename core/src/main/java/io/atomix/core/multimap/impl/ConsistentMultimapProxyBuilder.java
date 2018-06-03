@@ -22,7 +22,6 @@ import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimapBuilder;
 import io.atomix.core.multimap.ConsistentMultimapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -33,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
  * Default {@link AsyncConsistentMultimap} builder.
  */
 public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuilder<K, V> {
-  public ConsistentMultimapProxyBuilder(PrimitiveType type, String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
-    super(type, name, config, managementService);
+  public ConsistentMultimapProxyBuilder(String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
+    super(name, config, managementService);
   }
 
   @Override

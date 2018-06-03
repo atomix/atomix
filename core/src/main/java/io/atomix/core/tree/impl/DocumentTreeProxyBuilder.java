@@ -20,7 +20,6 @@ import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeBuilder;
 import io.atomix.core.tree.DocumentTreeConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -33,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> type for document tree value
  */
 public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
-  public DocumentTreeProxyBuilder(PrimitiveType type, String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
-    super(type, name, config, managementService);
+  public DocumentTreeProxyBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
+    super(name, config, managementService);
   }
 
   @Override

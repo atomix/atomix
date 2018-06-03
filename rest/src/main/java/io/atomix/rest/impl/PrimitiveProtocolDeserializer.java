@@ -15,7 +15,7 @@
  */
 package io.atomix.rest.impl;
 
-import io.atomix.core.registry.AtomixRegistry;
+import io.atomix.core.AtomixRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 /**
@@ -24,6 +24,6 @@ import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 public class PrimitiveProtocolDeserializer extends PolymorphicTypeDeserializer<PrimitiveProtocolConfig> {
   @SuppressWarnings("unchecked")
   public PrimitiveProtocolDeserializer(AtomixRegistry registry) {
-    super(PrimitiveProtocolConfig.class, type -> registry.protocolTypes().getProtocolType(type).configClass());
+    super(PrimitiveProtocolConfig.class, type -> registry.protocolTypes().getProtocolType(type).newConfig().getClass());
   }
 }

@@ -52,6 +52,7 @@ import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
@@ -453,7 +454,7 @@ public class RaftServiceManager implements AutoCloseable {
     writer.writeLong(service.serviceId().id());
     writer.writeString(service.serviceType().name());
     writer.writeString(service.serviceName());
-    byte[] config = service.serviceType().serializer().encode(service.serviceConfig());
+    byte[] config = Serializer.using(service.serviceType().namespace()).encode(service.serviceConfig());
     writer.writeInt(config.length).writeBytes(config);
     service.takeSnapshot(writer);
   }
@@ -620,7 +621,7 @@ public class RaftServiceManager implements AutoCloseable {
   @SuppressWarnings("unchecked")
   private RaftServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName, byte[] config) {
     RaftServiceContext oldService = raft.getServices().getService(serviceName);
-    ServiceConfig serviceConfig = primitiveType.serializer().decode(config);
+    ServiceConfig serviceConfig = Serializer.using(primitiveType.namespace()).decode(config);
     RaftServiceContext service = new RaftServiceContext(
         primitiveId,
         serviceName,

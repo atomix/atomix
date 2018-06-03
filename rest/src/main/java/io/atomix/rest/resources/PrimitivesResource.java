@@ -51,9 +51,9 @@ public class PrimitivesResource extends AbstractRestResource {
   @Path("/{name}")
   @Consumes(MediaType.APPLICATION_JSON)
   @SuppressWarnings("unchecked")
-  public Response createPrimitive(@PathParam("name") String name, PrimitiveConfig config, @Context PrimitivesService primitives) {
+  public Response createPrimitive(@PathParam("name") String name, PrimitiveConfig<?> config, @Context PrimitivesService primitives) {
     try {
-      primitives.getPrimitive(name, config.getType(), config);
+      primitives.getPrimitive(name, config.getType(), (PrimitiveConfig) config);
       return Response.ok().build();
     } catch (Exception e) {
       return Response.status(Response.Status.NOT_ACCEPTABLE).build();

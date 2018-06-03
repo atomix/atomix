@@ -13,19 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol;
+package io.atomix.core.profile;
+
+import java.util.Collection;
 
 /**
- * Primitive protocol factory.
+ * Profile type registry.
  */
-public interface PrimitiveProtocolFactory<C extends PrimitiveProtocolConfig<C>, P extends PrimitiveProtocol> {
+public interface ProfileRegistry {
 
   /**
-   * Creates a new primitive protocol.
+   * Returns the collection of all registered profiles.
    *
-   * @param config the protocol configuration
-   * @return the primitive protocol
+   * @return the collection of all registered profiles
    */
-  P createProtocol(C config);
+  Collection<Profile> getProfiles();
+
+  /**
+   * Returns the profile for the given name.
+   *
+   * @param name the profile name
+   * @return the profile
+   */
+  Profile getProfile(String name);
 
 }

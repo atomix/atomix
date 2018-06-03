@@ -17,9 +17,8 @@ package io.atomix.protocols.raft;
 
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.impl.DefaultPrimitiveTypeRegistry;
+import io.atomix.primitive.impl.ClasspathScanningPrimitiveTypeRegistry;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.protocols.raft.cluster.RaftCluster;
@@ -563,7 +562,7 @@ public interface RaftServer {
     protected Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    protected PrimitiveTypeRegistry primitiveTypes = new DefaultPrimitiveTypeRegistry();
+    protected PrimitiveTypeRegistry primitiveTypes = new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader());
     protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
@@ -649,18 +648,6 @@ public interface RaftServer {
      */
     public Builder withPrimitiveTypes(PrimitiveTypeRegistry primitiveTypes) {
       this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
-      return this;
-    }
-
-    /**
-     * Adds a primitive type to the registry.
-     *
-     * @param primitiveType the primitive type to add
-     * @return the Raft server builder
-     * @throws NullPointerException if the {@code primitiveType} is {@code null}
-     */
-    public Builder addPrimitiveType(PrimitiveType primitiveType) {
-      primitiveTypes.addPrimitiveType(primitiveType);
       return this;
     }
 

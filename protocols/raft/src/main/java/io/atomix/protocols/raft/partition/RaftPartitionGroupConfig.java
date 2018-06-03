@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.partition;
 
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.memory.MemorySize;
@@ -37,8 +38,8 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   private String dataDirectory;
 
   @Override
-  public String getType() {
-    return "raft";
+  public PartitionGroup.Type getType() {
+    return RaftPartitionGroup.TYPE;
   }
 
   @Override

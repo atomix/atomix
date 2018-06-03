@@ -27,7 +27,7 @@ public interface PartitionGroupTypeRegistry {
    *
    * @return the collection of partition group type configurations
    */
-  Collection<PartitionGroupType> getGroupTypes();
+  Collection<PartitionGroup.Type> getGroupTypes();
 
   /**
    * Returns the partition group type with the given name.
@@ -35,14 +35,6 @@ public interface PartitionGroupTypeRegistry {
    * @param name the partition group type name
    * @return the group type
    */
-  PartitionGroupType getGroupType(String name);
-
-  /**
-   * Creates a new partition group.
-   *
-   * @param config the partition group configuration
-   * @return the partition group
-   */
-  ManagedPartitionGroup createGroup(PartitionGroupConfig config);
+  PartitionGroup.Type getGroupType(String name);
 
 }

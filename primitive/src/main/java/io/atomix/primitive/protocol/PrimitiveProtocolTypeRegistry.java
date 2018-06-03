@@ -27,7 +27,7 @@ public interface PrimitiveProtocolTypeRegistry {
    *
    * @return the collection of registered protocol types
    */
-  Collection<PrimitiveProtocolType> getProtocolTypes();
+  Collection<PrimitiveProtocol.Type> getProtocolTypes();
 
   /**
    * Returns the protocol type for the given configuration.
@@ -35,14 +35,6 @@ public interface PrimitiveProtocolTypeRegistry {
    * @param type the type name for which to return the protocol type
    * @return the protocol type for the given configuration
    */
-  PrimitiveProtocolType getProtocolType(String type);
-
-  /**
-   * Creates a new protocol instance.
-   *
-   * @param config the protocol configuration
-   * @return the protocol instance
-   */
-  PrimitiveProtocol createProtocol(PrimitiveProtocolConfig config);
+  PrimitiveProtocol.Type getProtocolType(String type);
 
 }

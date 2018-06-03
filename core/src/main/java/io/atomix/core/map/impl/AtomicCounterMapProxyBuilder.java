@@ -20,7 +20,6 @@ import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapBuilder;
 import io.atomix.core.map.AtomicCounterMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -31,8 +30,8 @@ import java.util.concurrent.CompletableFuture;
  * Default {@code AtomicCounterMapBuilder}.
  */
 public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> {
-  public AtomicCounterMapProxyBuilder(PrimitiveType type, String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
-    super(type, name, config, managementService);
+  public AtomicCounterMapProxyBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
+    super(name, config, managementService);
   }
 
   @Override

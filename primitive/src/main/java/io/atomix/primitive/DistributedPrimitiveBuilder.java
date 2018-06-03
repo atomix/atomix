@@ -161,7 +161,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   public PrimitiveProtocol protocol() {
     PrimitiveProtocol protocol = this.protocol;
     if (protocol == null) {
-      PrimitiveProtocolConfig protocolConfig = config.getProtocolConfig();
+      PrimitiveProtocolConfig<?> protocolConfig = config.getProtocolConfig();
       if (protocolConfig == null) {
         Collection<PartitionGroup> partitionGroups = managementService.getPartitionService().getPartitionGroups();
         if (partitionGroups.size() == 1) {
@@ -173,7 +173,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
           throw new ConfigurationException(String.format("Primitive protocol is ambiguous: %d partition groups found (%s)", partitionGroups.size(), groups));
         }
       } else {
-        protocol = managementService.getProtocolTypeRegistry().createProtocol(protocolConfig);
+        protocol = protocolConfig.getType().newProtocol(protocolConfig);
       }
     }
     return protocol;

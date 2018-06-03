@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.utils.config;
-
-import io.atomix.core.profile.Profile;
-import io.atomix.core.registry.AtomixRegistry;
+package io.atomix.utils;
 
 /**
- * Profile configuration mapper.
+ * Service exception.
  */
-public class ProfileMapper extends PolymorphicTypeMapper<Profile> {
-  public ProfileMapper() {
-    super(Profile.class);
+public class ServiceException extends AtomixRuntimeException {
+  public ServiceException() {
   }
 
-  @Override
-  public Class<? extends Profile> getConcreteClass(AtomixRegistry registry, String type) {
-    return registry.profileTypes().getProfileType(type).profileClass();
+  public ServiceException(String message) {
+    super(message);
+  }
+
+  public ServiceException(String message, Throwable cause) {
+    super(message, cause);
   }
 }

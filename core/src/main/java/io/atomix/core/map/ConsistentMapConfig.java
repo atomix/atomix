@@ -15,8 +15,8 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.PrimitiveTypes;
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Consistent map configuration.
@@ -25,8 +25,8 @@ public class ConsistentMapConfig extends PrimitiveConfig<ConsistentMapConfig> {
   private boolean nullValues = false;
 
   @Override
-  public String getType() {
-    return PrimitiveTypes.consistentMap().name();
+  public PrimitiveType getType() {
+    return ConsistentMapType.instance();
   }
 
   /**

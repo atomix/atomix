@@ -35,6 +35,7 @@ import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
@@ -87,7 +88,7 @@ public class PrimaryBackupClient implements ProxyClient {
 
   @Override
   public PrimaryBackupProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
-    byte[] configBytes = primitiveType.serializer().encode(serviceConfig);
+    byte[] configBytes = Serializer.using(primitiveType.namespace()).encode(serviceConfig);
     return new PrimaryBackupProxy.Builder() {
       @Override
       public PartitionProxy build() {

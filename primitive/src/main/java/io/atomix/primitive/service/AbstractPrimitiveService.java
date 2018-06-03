@@ -30,7 +30,6 @@ import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Clock;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.WallClock;
@@ -63,11 +62,6 @@ public abstract class AbstractPrimitiveService<C, F extends ServiceConfig> imple
   protected AbstractPrimitiveService(Class<C> clientInterface, F config) {
     this.clientInterface = clientInterface;
     this.config = config;
-  }
-
-  @Override
-  public Serializer serializer() {
-    return getPrimitiveType().serializer();
   }
 
   /**

@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.registry;
+package io.atomix.core;
 
-import io.atomix.core.profile.ProfileTypeRegistry;
-import io.atomix.core.registry.impl.DefaultAtomixRegistry;
+import io.atomix.core.impl.ClasspathScanningAtomixRegistry;
+import io.atomix.core.profile.ProfileRegistry;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
-import io.atomix.utils.config.ConfigMapper;
 
 /**
  * Atomix registry.
@@ -43,9 +42,7 @@ public interface AtomixRegistry {
    * @return the registry instance
    */
   static AtomixRegistry registry(ClassLoader classLoader) {
-    ConfigMapper mapper = new ConfigMapper(classLoader);
-    RegistryConfig config = mapper.loadResources(RegistryConfig.class, "registry");
-    return new DefaultAtomixRegistry(config);
+    return new ClasspathScanningAtomixRegistry(classLoader);
   }
 
   /**
@@ -74,6 +71,6 @@ public interface AtomixRegistry {
    *
    * @return the registered profile types
    */
-  ProfileTypeRegistry profileTypes();
+  ProfileRegistry profiles();
 
 }

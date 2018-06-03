@@ -15,7 +15,7 @@
  */
 package io.atomix.core.utils.config;
 
-import io.atomix.core.registry.AtomixRegistry;
+import io.atomix.core.AtomixRegistry;
 
 /**
  * Polymorphic type mapper.

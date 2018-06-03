@@ -15,7 +15,7 @@
  */
 package io.atomix.core.utils.config;
 
-import io.atomix.core.registry.AtomixRegistry;
+import io.atomix.core.AtomixRegistry;
 import io.atomix.primitive.PrimitiveConfig;
 
 /**
@@ -29,6 +29,6 @@ public class PrimitiveConfigMapper extends PolymorphicTypeMapper<PrimitiveConfig
   @Override
   @SuppressWarnings("unchecked")
   public Class<? extends PrimitiveConfig<?>> getConcreteClass(AtomixRegistry registry, String type) {
-    return registry.primitiveTypes().getPrimitiveType(type).configClass();
+    return (Class<? extends PrimitiveConfig<?>>) registry.primitiveTypes().getPrimitiveType(type).newConfig().getClass();
   }
 }

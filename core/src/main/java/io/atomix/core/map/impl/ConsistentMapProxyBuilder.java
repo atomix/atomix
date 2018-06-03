@@ -21,7 +21,6 @@ import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapBuilder;
 import io.atomix.core.map.ConsistentMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -35,8 +34,8 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> type for map value
  */
 public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> {
-  public ConsistentMapProxyBuilder(PrimitiveType type, String name, ConsistentMapConfig config, PrimitiveManagementService managementService) {
-    super(type, name, config, managementService);
+  public ConsistentMapProxyBuilder(String name, ConsistentMapConfig config, PrimitiveManagementService managementService) {
+    super(name, config, managementService);
   }
 
   @Override

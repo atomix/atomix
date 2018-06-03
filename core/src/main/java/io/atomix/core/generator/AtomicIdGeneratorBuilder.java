@@ -17,14 +17,13 @@ package io.atomix.core.generator;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 
 /**
  * Builder for AtomicIdGenerator.
  */
 public abstract class AtomicIdGeneratorBuilder
     extends DistributedPrimitiveBuilder<AtomicIdGeneratorBuilder, AtomicIdGeneratorConfig, AtomicIdGenerator> {
-  protected AtomicIdGeneratorBuilder(PrimitiveType type, String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
-    super(type, name, config, managementService);
+  protected AtomicIdGeneratorBuilder(String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
+    super(AtomicIdGeneratorType.instance(), name, config, managementService);
   }
 }

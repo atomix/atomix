@@ -20,7 +20,6 @@ import io.atomix.core.generator.AtomicIdGenerator;
 import io.atomix.core.generator.AtomicIdGeneratorBuilder;
 import io.atomix.core.generator.AtomicIdGeneratorConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -30,8 +29,8 @@ import java.util.concurrent.CompletableFuture;
  * Default implementation of AtomicIdGeneratorBuilder.
  */
 public class DelegatingAtomicIdGeneratorBuilder extends AtomicIdGeneratorBuilder {
-  public DelegatingAtomicIdGeneratorBuilder(PrimitiveType type, String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
-    super(type, name, config, managementService);
+  public DelegatingAtomicIdGeneratorBuilder(String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
+    super(name, config, managementService);
   }
 
   @Override

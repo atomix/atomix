@@ -40,6 +40,7 @@ import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -169,7 +170,7 @@ public class RaftProxyManager {
         .withMemberId(memberId)
         .withServiceName(serviceName)
         .withServiceType(primitiveType)
-        .withServiceConfig(primitiveType.serializer().encode(config))
+        .withServiceConfig(Serializer.using(primitiveType.namespace()).encode(config))
         .withReadConsistency(readConsistency)
         .withMinTimeout(minTimeout.toMillis())
         .withMaxTimeout(maxTimeout.toMillis())

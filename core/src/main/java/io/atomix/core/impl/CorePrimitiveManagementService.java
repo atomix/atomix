@@ -22,7 +22,6 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionService;
-import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -37,7 +36,6 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   private final PartitionService partitionService;
   private final PrimitiveRegistry primitiveRegistry;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
-  private final PrimitiveProtocolTypeRegistry protocolTypeRegistry;
 
   public CorePrimitiveManagementService(
       ScheduledExecutorService executorService,
@@ -46,8 +44,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
       ClusterEventingService eventService,
       PartitionService partitionService,
       PrimitiveRegistry primitiveRegistry,
-      PrimitiveTypeRegistry primitiveTypeRegistry,
-      PrimitiveProtocolTypeRegistry protocolTypeRegistry) {
+      PrimitiveTypeRegistry primitiveTypeRegistry) {
     this.executorService = executorService;
     this.membershipService = membershipService;
     this.communicationService = communicationService;
@@ -55,7 +52,6 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
     this.partitionService = partitionService;
     this.primitiveRegistry = primitiveRegistry;
     this.primitiveTypeRegistry = primitiveTypeRegistry;
-    this.protocolTypeRegistry = protocolTypeRegistry;
   }
 
   @Override
@@ -91,10 +87,5 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   @Override
   public PrimitiveTypeRegistry getPrimitiveTypeRegistry() {
     return primitiveTypeRegistry;
-  }
-
-  @Override
-  public PrimitiveProtocolTypeRegistry getProtocolTypeRegistry() {
-    return protocolTypeRegistry;
   }
 }
