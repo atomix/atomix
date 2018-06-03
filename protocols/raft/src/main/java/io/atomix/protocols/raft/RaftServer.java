@@ -562,7 +562,7 @@ public interface RaftServer {
     protected Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    protected PrimitiveTypeRegistry primitiveTypes = new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader());
+    protected PrimitiveTypeRegistry primitiveTypes;
     protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
