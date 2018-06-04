@@ -179,9 +179,9 @@ public class VertxRestServiceTest {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
         .put("type", "consistent-map")
-        .put("cache-enabled", true)
-        .put("null-values", false)
-        .set("protocol", jsonFactory.objectNode()
+        .put("cacheEnabled", true)
+        .put("nullValues", false)
+        .set("protocolConfig", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
 
