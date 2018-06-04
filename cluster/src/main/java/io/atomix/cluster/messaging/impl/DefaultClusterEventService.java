@@ -21,8 +21,8 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.cluster.messaging.ManagedClusterEventingService;
+import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.Subscription;
 import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.cluster.messaging.MessagingService;
@@ -63,8 +63,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Cluster event service.
  */
-public class DefaultClusterEventingService implements ManagedClusterEventingService {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClusterEventingService.class);
+public class DefaultClusterEventService implements ManagedClusterEventService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClusterEventService.class);
 
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
@@ -91,7 +91,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   private final Map<String, InternalTopic> topics = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public DefaultClusterEventingService(ClusterMembershipService membershipService, MessagingService messagingService) {
+  public DefaultClusterEventService(ClusterMembershipService membershipService, MessagingService messagingService) {
     this.membershipService = membershipService;
     this.messagingService = messagingService;
     this.localMemberId = membershipService.getLocalMember().id();
@@ -289,7 +289,7 @@ public class DefaultClusterEventingService implements ManagedClusterEventingServ
   }
 
   @Override
-  public CompletableFuture<ClusterEventingService> start() {
+  public CompletableFuture<ClusterEventService> start() {
     if (started.compareAndSet(false, true)) {
       gossipExecutor = Executors.newSingleThreadScheduledExecutor(
           namedThreads("atomix-cluster-event-executor-%d", LOGGER));

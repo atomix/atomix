@@ -21,8 +21,8 @@ import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
-import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.cluster.messaging.ManagedClusterEventingService;
+import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Cluster event service test.
  */
-public class DefaultClusterEventingServiceTest {
+public class DefaultClusterEventServiceTest {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
 
   private Member buildNode(int memberId) {
@@ -76,8 +76,8 @@ public class DefaultClusterEventingServiceTest {
         broadcastServiceFactory.newBroadcastService().start().join(),
         new GroupMembershipConfig());
     ClusterMembershipService clusterMembershipService1 = clusterService1.start().join();
-    ManagedClusterEventingService clusterEventingService1 = new DefaultClusterEventingService(clusterMembershipService1, messagingService1);
-    ClusterEventingService eventService1 = clusterEventingService1.start().join();
+    ManagedClusterEventService clusterEventingService1 = new DefaultClusterEventService(clusterMembershipService1, messagingService1);
+    ClusterEventService eventService1 = clusterEventingService1.start().join();
 
     Member localMember2 = buildNode(2);
     MessagingService messagingService2 = messagingServiceFactory.newMessagingService(localMember2.address()).start().join();
@@ -88,8 +88,8 @@ public class DefaultClusterEventingServiceTest {
         broadcastServiceFactory.newBroadcastService().start().join(),
         new GroupMembershipConfig());
     ClusterMembershipService clusterMembershipService2 = clusterService2.start().join();
-    ManagedClusterEventingService clusterEventingService2 = new DefaultClusterEventingService(clusterMembershipService2, messagingService2);
-    ClusterEventingService eventService2 = clusterEventingService2.start().join();
+    ManagedClusterEventService clusterEventingService2 = new DefaultClusterEventService(clusterMembershipService2, messagingService2);
+    ClusterEventService eventService2 = clusterEventingService2.start().join();
 
     Member localMember3 = buildNode(3);
     MessagingService messagingService3 = messagingServiceFactory.newMessagingService(localMember3.address()).start().join();
@@ -100,8 +100,8 @@ public class DefaultClusterEventingServiceTest {
         broadcastServiceFactory.newBroadcastService().start().join(),
         new GroupMembershipConfig());
     ClusterMembershipService clusterMembershipService3 = clusterService3.start().join();
-    ManagedClusterEventingService clusterEventingService3 = new DefaultClusterEventingService(clusterMembershipService3, messagingService3);
-    ClusterEventingService eventService3 = clusterEventingService3.start().join();
+    ManagedClusterEventService clusterEventingService3 = new DefaultClusterEventService(clusterMembershipService3, messagingService3);
+    ClusterEventService eventService3 = clusterEventingService3.start().join();
 
     Thread.sleep(100);
 

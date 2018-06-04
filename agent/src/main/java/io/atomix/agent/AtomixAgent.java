@@ -162,16 +162,16 @@ public class AtomixAgent {
 
     atomix.start().join();
 
-    LOGGER.info("Atomix listening at {}:{}", atomix.membershipService().getLocalMember().address().host(), atomix.membershipService().getLocalMember().address().port());
+    LOGGER.info("Atomix listening at {}:{}", atomix.getMembershipService().getLocalMember().address().host(), atomix.getMembershipService().getLocalMember().address().port());
 
     ManagedRestService rest = RestService.builder()
         .withAtomix(atomix)
-        .withAddress(Address.from(atomix.membershipService().getLocalMember().address().host(), httpPort))
+        .withAddress(Address.from(atomix.getMembershipService().getLocalMember().address().host(), httpPort))
         .build();
 
     rest.start().join();
 
-    LOGGER.info("HTTP server listening at {}:{}", atomix.membershipService().getLocalMember().address().address().getHostAddress(), httpPort);
+    LOGGER.info("HTTP server listening at {}:{}", atomix.getMembershipService().getLocalMember().address().address().getHostAddress(), httpPort);
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {

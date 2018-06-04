@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventingService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
 import io.atomix.core.utils.EventManager;
@@ -84,13 +84,13 @@ public class VertxRestService implements ManagedRestService {
     deployment.start();
 
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterMembershipService.class, atomix.membershipService());
+        .put(ClusterMembershipService.class, atomix.getMembershipService());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterCommunicationService.class, atomix.communicationService());
+        .put(ClusterCommunicationService.class, atomix.getCommunicationService());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterEventingService.class, atomix.eventingService());
+        .put(ClusterEventService.class, atomix.getEventingService());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(PrimitivesService.class, atomix.primitivesService());
+        .put(PrimitivesService.class, atomix.getPrimitivesService());
     deployment.getDispatcher().getDefaultContextObjects()
         .put(EventManager.class, new EventManager());
 
@@ -146,9 +146,9 @@ public class VertxRestService implements ManagedRestService {
     mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
 
     SimpleModule module = new SimpleModule("PolymorphicTypes");
-    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer(atomix.registry()));
-    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer(atomix.registry()));
-    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer(atomix.registry()));
+    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer(atomix.getRegistry()));
+    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer(atomix.getRegistry()));
+    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer(atomix.getRegistry()));
     mapper.registerModule(module);
 
     return mapper;

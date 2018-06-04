@@ -50,7 +50,7 @@ public class AtomixClusterTest {
         .build();
     cluster1.start().join();
 
-    assertEquals("foo", cluster1.membershipService().getLocalMember().id().id());
+    assertEquals("foo", cluster1.getMembershipService().getLocalMember().id().id());
 
     AtomixCluster cluster2 = AtomixCluster.builder()
         .withLocalMember("bar")
@@ -58,7 +58,7 @@ public class AtomixClusterTest {
         .build();
     cluster2.start().join();
 
-    assertEquals("bar", cluster2.membershipService().getLocalMember().id().id());
+    assertEquals("bar", cluster2.getMembershipService().getLocalMember().id().id());
 
     AtomixCluster cluster3 = AtomixCluster.builder()
         .withLocalMember("baz")
@@ -66,7 +66,7 @@ public class AtomixClusterTest {
         .build();
     cluster3.start().join();
 
-    assertEquals("baz", cluster3.membershipService().getLocalMember().id().id());
+    assertEquals("baz", cluster3.getMembershipService().getLocalMember().id().id());
 
     List<CompletableFuture<Void>> futures = Stream.of(cluster1, cluster2, cluster3).map(AtomixCluster::stop)
         .collect(Collectors.toList());

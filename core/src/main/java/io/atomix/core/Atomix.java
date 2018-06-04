@@ -241,15 +241,15 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
     this.registry = registry;
     this.config = new DefaultConfigService(config.getPrimitives().values());
-    this.partitions = buildPartitionService(config, membershipService(), communicationService(), registry);
+    this.partitions = buildPartitionService(config, getMembershipService(), getCommunicationService(), registry);
     this.primitives = new CorePrimitivesService(
-        executorService(),
-        membershipService(),
-        communicationService(),
-        eventingService(),
-        partitionService(),
+        getExecutorService(),
+        getMembershipService(),
+        getCommunicationService(),
+        getEventingService(),
+        getPartitionService(),
         registry,
-        configService());
+        getConfigService());
     this.enableShutdownHook = config.isEnableShutdownHook();
   }
 
@@ -258,7 +258,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    *
    * @return the type registry service
    */
-  public AtomixRegistry registry() {
+  public AtomixRegistry getRegistry() {
     return registry;
   }
 
@@ -267,7 +267,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    *
    * @return the core Atomix executor service
    */
-  public ScheduledExecutorService executorService() {
+  public ScheduledExecutorService getExecutorService() {
     return executorService;
   }
 
@@ -276,7 +276,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    *
    * @return the primitive configuration service
    */
-  public ConfigService configService() {
+  public ConfigService getConfigService() {
     return config;
   }
 
@@ -285,7 +285,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    *
    * @return the partition service
    */
-  public PartitionService partitionService() {
+  public PartitionService getPartitionService() {
     return partitions;
   }
 
@@ -294,7 +294,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    *
    * @return the primitives service
    */
-  public PrimitivesService primitivesService() {
+  public PrimitivesService getPrimitivesService() {
     return primitives;
   }
 
@@ -303,7 +303,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    *
    * @return the transaction service
    */
-  public TransactionService transactionService() {
+  public TransactionService getTransactionService() {
     return primitives.transactionService();
   }
 
@@ -481,7 +481,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("partitions", partitionService())
+        .add("partitions", getPartitionService())
         .toString();
   }
 
