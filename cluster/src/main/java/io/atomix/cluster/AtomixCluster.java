@@ -19,14 +19,14 @@ import com.google.common.collect.Streams;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventingService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedBroadcastService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
-import io.atomix.cluster.messaging.ManagedClusterEventingService;
+import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
-import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
+import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.cluster.messaging.impl.NettyBroadcastService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.utils.Managed;
@@ -126,7 +126,7 @@ public class AtomixCluster implements Managed<Void> {
   protected final ManagedBroadcastService broadcastService;
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterCommunicationService communicationService;
-  protected final ManagedClusterEventingService eventingService;
+  protected final ManagedClusterEventService eventingService;
   protected volatile CompletableFuture<Void> openFuture;
   protected volatile CompletableFuture<Void> closeFuture;
   private final ThreadContext threadContext = new SingleThreadContext("atomix-cluster-%d");
@@ -153,7 +153,7 @@ public class AtomixCluster implements Managed<Void> {
    *
    * @return the broadcast service
    */
-  public BroadcastService broadcastService() {
+  public BroadcastService getBroadcastService() {
     return broadcastService;
   }
 
@@ -162,7 +162,7 @@ public class AtomixCluster implements Managed<Void> {
    *
    * @return the messaging service
    */
-  public MessagingService messagingService() {
+  public MessagingService getMessagingService() {
     return messagingService;
   }
 
@@ -171,7 +171,7 @@ public class AtomixCluster implements Managed<Void> {
    *
    * @return the cluster service
    */
-  public ClusterMembershipService membershipService() {
+  public ClusterMembershipService getMembershipService() {
     return membershipService;
   }
 
@@ -180,7 +180,7 @@ public class AtomixCluster implements Managed<Void> {
    *
    * @return the cluster communication service
    */
-  public ClusterCommunicationService communicationService() {
+  public ClusterCommunicationService getCommunicationService() {
     return communicationService;
   }
 
@@ -189,7 +189,7 @@ public class AtomixCluster implements Managed<Void> {
    *
    * @return the cluster event service
    */
-  public ClusterEventingService eventingService() {
+  public ClusterEventService getEventingService() {
     return eventingService;
   }
 
@@ -330,9 +330,9 @@ public class AtomixCluster implements Managed<Void> {
   /**
    * Builds a cluster event service.
    */
-  protected static ManagedClusterEventingService buildClusterEventService(
+  protected static ManagedClusterEventService buildClusterEventService(
       ClusterMembershipService membershipService, MessagingService messagingService) {
-    return new DefaultClusterEventingService(membershipService, messagingService);
+    return new DefaultClusterEventService(membershipService, messagingService);
   }
 
   /**

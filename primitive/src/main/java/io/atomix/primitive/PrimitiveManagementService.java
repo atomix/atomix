@@ -17,7 +17,7 @@ package io.atomix.primitive;
 
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventingService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.primitive.partition.PartitionService;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,7 +53,7 @@ public interface PrimitiveManagementService {
    *
    * @return the cluster event service
    */
-  ClusterEventingService getEventService();
+  ClusterEventService getEventService();
 
   /**
    * Returns the partition service.

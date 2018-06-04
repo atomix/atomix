@@ -17,7 +17,7 @@ package io.atomix.core.impl;
 
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.cluster.messaging.ClusterEventingService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveTypeRegistry;
@@ -32,7 +32,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   private final ScheduledExecutorService executorService;
   private final ClusterMembershipService membershipService;
   private final ClusterCommunicationService communicationService;
-  private final ClusterEventingService eventService;
+  private final ClusterEventService eventService;
   private final PartitionService partitionService;
   private final PrimitiveRegistry primitiveRegistry;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
@@ -41,7 +41,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
       ScheduledExecutorService executorService,
       ClusterMembershipService membershipService,
       ClusterCommunicationService communicationService,
-      ClusterEventingService eventService,
+      ClusterEventService eventService,
       PartitionService partitionService,
       PrimitiveRegistry primitiveRegistry,
       PrimitiveTypeRegistry primitiveTypeRegistry) {
@@ -70,7 +70,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   }
 
   @Override
-  public ClusterEventingService getEventService() {
+  public ClusterEventService getEventService() {
     return eventService;
   }
 

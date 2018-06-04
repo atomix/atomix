@@ -86,8 +86,8 @@ public class VertxRestServiceTest {
         .statusCode(200)
         .assertThat()
         .body("id", equalTo("1"))
-        .body("host", equalTo(instances.get(0).membershipService().getLocalMember().address().host()))
-        .body("port", equalTo(instances.get(0).membershipService().getLocalMember().address().port()));
+        .body("host", equalTo(instances.get(0).getMembershipService().getLocalMember().address().host()))
+        .body("port", equalTo(instances.get(0).getMembershipService().getLocalMember().address().port()));
 
     given()
         .spec(specs.get(0))
@@ -160,7 +160,7 @@ public class VertxRestServiceTest {
         .spec(specs.get(1))
         .body("Hello world again!")
         .when()
-        .post("messages/test/" + instances.get(0).membershipService().getLocalMember().id())
+        .post("messages/test/" + instances.get(0).getMembershipService().getLocalMember().id())
         .then()
         .statusCode(200);
 
@@ -274,7 +274,7 @@ public class VertxRestServiceTest {
         .withAddress("localhost", findAvailablePort(BASE_PORT))
         .build();
 
-    Collection<Member> members = Stream.concat(Stream.of(localMember), instances.stream().map(instance -> instance.membershipService().getLocalMember()))
+    Collection<Member> members = Stream.concat(Stream.of(localMember), instances.stream().map(instance -> instance.getMembershipService().getLocalMember()))
         .collect(Collectors.toList());
 
     return Atomix.builder()
