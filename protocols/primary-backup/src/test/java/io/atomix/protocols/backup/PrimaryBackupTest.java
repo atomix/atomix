@@ -493,19 +493,19 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
 
     @Override
     public PrimitiveService newService(ServiceConfig config) {
-      return new TestPrimitiveService(config);
+      return new TestPrimitiveService();
     }
   }
 
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveService extends AbstractPrimitiveService<Object, ServiceConfig> {
+  public static class TestPrimitiveService extends AbstractPrimitiveService<Object> {
     private Commit<Void> expire;
     private Commit<Void> close;
 
-    public TestPrimitiveService(ServiceConfig config) {
-      super(config);
+    public TestPrimitiveService() {
+      super(TestPrimitiveType.INSTANCE);
     }
 
     @Override

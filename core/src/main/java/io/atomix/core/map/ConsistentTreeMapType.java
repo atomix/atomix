@@ -50,7 +50,7 @@ public class ConsistentTreeMapType<V>
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentTreeMapService(config);
+    return new ConsistentTreeMapService();
   }
 
   @Override

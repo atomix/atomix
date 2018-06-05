@@ -49,7 +49,7 @@ public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBu
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AtomicCounterMapService(config);
+    return new AtomicCounterMapService();
   }
 
   @Override

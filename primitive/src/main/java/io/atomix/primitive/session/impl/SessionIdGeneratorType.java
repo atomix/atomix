@@ -47,7 +47,7 @@ public class SessionIdGeneratorType implements PrimitiveType {
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new SessionIdGeneratorService(config);
+    return new SessionIdGeneratorService();
   }
 
   @Override

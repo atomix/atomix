@@ -29,7 +29,6 @@ import io.atomix.core.map.impl.ConsistentTreeMapOperations.SubMap;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -76,10 +75,6 @@ public class ConsistentTreeMapService extends ConsistentMapService {
       .register(new HashMap().keySet().getClass())
       .register(TreeMap.class)
       .build());
-
-  public ConsistentTreeMapService(ServiceConfig config) {
-    super(config);
-  }
 
   @Override
   protected TreeMap<String, MapEntryValue> createMap() {

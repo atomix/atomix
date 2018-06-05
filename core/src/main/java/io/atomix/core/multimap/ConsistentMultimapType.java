@@ -50,7 +50,7 @@ public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMul
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentSetMultimapService(config);
+    return new ConsistentSetMultimapService();
   }
 
   @Override

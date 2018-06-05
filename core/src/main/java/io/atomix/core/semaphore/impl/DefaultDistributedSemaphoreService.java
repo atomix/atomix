@@ -36,7 +36,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class DefaultDistributedSemaphoreService extends AbstractPrimitiveService<DistributedSemaphoreClient, DistributedSemaphoreServiceConfig> implements DistributedSemaphoreService {
+public class DefaultDistributedSemaphoreService extends AbstractPrimitiveService<DistributedSemaphoreClient> implements DistributedSemaphoreService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register((KryoNamespace) DistributedSemaphoreType.instance().namespace())
       .register(Waiter.class)
@@ -48,7 +48,7 @@ public class DefaultDistributedSemaphoreService extends AbstractPrimitiveService
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
   public DefaultDistributedSemaphoreService(DistributedSemaphoreServiceConfig config) {
-    super(DistributedSemaphoreClient.class, config);
+    super(DistributedSemaphoreType.instance(), DistributedSemaphoreClient.class);
     this.available = config.initialCapacity();
   }
 
