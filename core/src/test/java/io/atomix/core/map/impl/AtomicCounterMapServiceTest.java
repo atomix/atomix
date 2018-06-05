@@ -17,7 +17,6 @@ package io.atomix.core.map.impl;
 
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Get;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Put;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
@@ -37,7 +36,7 @@ import static org.mockito.Mockito.mock;
 public class AtomicCounterMapServiceTest {
   @Test
   public void testSnapshot() throws Exception {
-    AtomicCounterMapService service = new AtomicCounterMapService(new ServiceConfig());
+    AtomicCounterMapService service = new AtomicCounterMapService();
     service.put(new DefaultCommit<>(
         2,
         PUT,
@@ -48,7 +47,7 @@ public class AtomicCounterMapServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new AtomicCounterMapService(new ServiceConfig());
+    service = new AtomicCounterMapService();
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     long value = service.get(new DefaultCommit<>(

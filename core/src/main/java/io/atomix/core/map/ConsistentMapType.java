@@ -53,7 +53,7 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentMapService(config);
+    return new ConsistentMapService();
   }
 
   @Override

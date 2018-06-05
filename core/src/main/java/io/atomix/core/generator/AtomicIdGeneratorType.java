@@ -49,7 +49,7 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AtomicCounterService(config);
+    return new AtomicCounterService();
   }
 
   @Override

@@ -34,7 +34,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-public class DistributedSemaphoreProxy extends AbstractAsyncPrimitiveProxy<AsyncDistributedSemaphore, DistributedSemaphoreService> implements AsyncDistributedSemaphore, DistributedSemaphoreClient {
+public class DistributedSemaphoreProxy
+    extends AbstractAsyncPrimitiveProxy<AsyncDistributedSemaphore, DistributedSemaphoreService>
+    implements AsyncDistributedSemaphore, DistributedSemaphoreClient {
   private static Duration NO_TIMEOUT = Duration.ofMillis(-1);
 
   private final ScheduledExecutorService scheduledExecutor;

@@ -51,7 +51,7 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentMapService(config);
+    return new ConsistentMapService();
   }
 
   @Override

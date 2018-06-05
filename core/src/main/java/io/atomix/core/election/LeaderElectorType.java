@@ -49,7 +49,7 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new LeaderElectorService(config);
+    return new LeaderElectorService();
   }
 
   @Override

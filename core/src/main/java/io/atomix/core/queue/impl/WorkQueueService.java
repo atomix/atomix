@@ -23,6 +23,7 @@ import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueueStats;
+import io.atomix.core.queue.WorkQueueType;
 import io.atomix.core.queue.impl.WorkQueueOperations.Add;
 import io.atomix.core.queue.impl.WorkQueueOperations.Complete;
 import io.atomix.core.queue.impl.WorkQueueOperations.Take;
@@ -30,7 +31,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -80,8 +80,8 @@ public class WorkQueueService extends AbstractPrimitiveService {
   private Map<String, TaskAssignment> assignments = Maps.newHashMap();
   private Map<Long, PrimitiveSession> registeredWorkers = Maps.newHashMap();
 
-  public WorkQueueService(ServiceConfig config) {
-    super(config);
+  public WorkQueueService() {
+    super(WorkQueueType.instance());
   }
 
   @Override

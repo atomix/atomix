@@ -49,7 +49,7 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultDistributedLockService(config);
+    return new DefaultDistributedLockService();
   }
 
   @Override

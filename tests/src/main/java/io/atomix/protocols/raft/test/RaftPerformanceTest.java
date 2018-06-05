@@ -565,7 +565,7 @@ public class RaftPerformanceTest implements Runnable {
 
     @Override
     public PrimitiveService newService(ServiceConfig config) {
-      return new PerformanceService(config);
+      return new PerformanceService();
     }
   }
 
@@ -575,8 +575,8 @@ public class RaftPerformanceTest implements Runnable {
   public static class PerformanceService extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
 
-    public PerformanceService(ServiceConfig config) {
-      super(config);
+    public PerformanceService() {
+      super(TestPrimitiveType.INSTANCE);
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package io.atomix.core.map.impl;
 
+import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.AddAndGet;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.DecrementAndGet;
 import io.atomix.core.map.impl.AtomicCounterMapOperations.Get;
@@ -31,7 +32,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -73,8 +73,8 @@ public class AtomicCounterMapService extends AbstractPrimitiveService {
 
   private Map<String, Long> map = new HashMap<>();
 
-  public AtomicCounterMapService(ServiceConfig config) {
-    super(config);
+  public AtomicCounterMapService() {
+    super(AtomicCounterMapType.instance());
   }
 
   @Override

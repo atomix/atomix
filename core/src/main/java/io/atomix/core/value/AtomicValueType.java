@@ -51,7 +51,7 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultAtomicValueService(config);
+    return new DefaultAtomicValueService();
   }
 
   @Override

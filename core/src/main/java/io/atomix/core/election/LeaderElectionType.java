@@ -51,7 +51,7 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new LeaderElectionService(config);
+    return new LeaderElectionService();
   }
 
   @Override

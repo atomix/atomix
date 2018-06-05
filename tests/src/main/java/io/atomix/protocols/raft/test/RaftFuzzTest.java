@@ -657,7 +657,7 @@ public class RaftFuzzTest implements Runnable {
 
     @Override
     public PrimitiveService newService(ServiceConfig config) {
-      return new FuzzStateMachine(config);
+      return new FuzzStateMachine();
     }
   }
 
@@ -667,8 +667,8 @@ public class RaftFuzzTest implements Runnable {
   public static class FuzzStateMachine extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
 
-    public FuzzStateMachine(ServiceConfig config) {
-      super(config);
+    public FuzzStateMachine() {
+      super(TestPrimitiveType.INSTANCE);
     }
 
     @Override

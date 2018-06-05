@@ -51,7 +51,7 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new WorkQueueService(config);
+    return new WorkQueueService();
   }
 
   @Override

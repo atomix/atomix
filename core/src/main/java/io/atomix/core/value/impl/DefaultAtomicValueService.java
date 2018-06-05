@@ -16,10 +16,10 @@
 package io.atomix.core.value.impl;
 
 import com.google.common.collect.Sets;
+import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -31,7 +31,7 @@ import java.util.HashSet;
 /**
  * Raft atomic value service.
  */
-public class DefaultAtomicValueService extends AbstractPrimitiveService<AtomicValueClient, ServiceConfig> implements AtomicValueService {
+public class DefaultAtomicValueService extends AbstractPrimitiveService<AtomicValueClient> implements AtomicValueService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register(KryoNamespaces.BASIC)
       .register(AtomicValueOperations.NAMESPACE)
@@ -41,8 +41,8 @@ public class DefaultAtomicValueService extends AbstractPrimitiveService<AtomicVa
   private byte[] value;
   private java.util.Set<PrimitiveSession> listeners = Sets.newHashSet();
 
-  public DefaultAtomicValueService(ServiceConfig config) {
-    super(AtomicValueClient.class, config);
+  public DefaultAtomicValueService() {
+    super(AtomicValueType.instance(), AtomicValueClient.class);
   }
 
   @Override

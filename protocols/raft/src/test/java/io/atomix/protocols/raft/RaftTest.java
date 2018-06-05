@@ -1485,12 +1485,12 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveServiceImpl extends AbstractPrimitiveService<TestPrimitiveClient, ServiceConfig> implements TestPrimitiveService {
+  public static class TestPrimitiveServiceImpl extends AbstractPrimitiveService<TestPrimitiveClient> implements TestPrimitiveService {
     private SessionId expire;
     private SessionId close;
 
     public TestPrimitiveServiceImpl(ServiceConfig config) {
-      super(TestPrimitiveClient.class, config);
+      super(TestPrimitiveType.INSTANCE, TestPrimitiveClient.class);
     }
 
     @Override

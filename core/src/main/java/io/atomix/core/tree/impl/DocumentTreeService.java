@@ -27,6 +27,7 @@ import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeEvent.Type;
+import io.atomix.core.tree.DocumentTreeType;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.core.tree.impl.DocumentTreeOperations.Get;
@@ -41,7 +42,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.misc.Match;
@@ -119,8 +119,8 @@ public class DocumentTreeService extends AbstractPrimitiveService {
   private DocumentTree<byte[]> docTree;
   private Set<DocumentPath> preparedKeys = Sets.newHashSet();
 
-  public DocumentTreeService(ServiceConfig config) {
-    super(config);
+  public DocumentTreeService() {
+    super(DocumentTreeType.instance());
     this.docTree = new DefaultDocumentTree<>(versionCounter::incrementAndGet, Ordering.NATURAL);
   }
 

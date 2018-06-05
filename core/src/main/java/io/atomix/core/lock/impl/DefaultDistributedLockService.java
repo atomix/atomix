@@ -19,7 +19,6 @@ import io.atomix.core.lock.DistributedLockType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Scheduled;
@@ -37,7 +36,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Raft atomic value service.
  */
-public class DefaultDistributedLockService extends AbstractPrimitiveService<DistributedLockClient, ServiceConfig> implements DistributedLockService {
+public class DefaultDistributedLockService extends AbstractPrimitiveService<DistributedLockClient> implements DistributedLockService {
   private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
       .register((KryoNamespace) DistributedLockType.instance().namespace())
       .register(LockHolder.class)
@@ -48,8 +47,8 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
   private Queue<LockHolder> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
-  public DefaultDistributedLockService(ServiceConfig config) {
-    super(DistributedLockClient.class, config);
+  public DefaultDistributedLockService() {
+    super(DistributedLockType.instance(), DistributedLockClient.class);
   }
 
   @Override

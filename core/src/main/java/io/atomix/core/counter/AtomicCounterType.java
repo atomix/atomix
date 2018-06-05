@@ -49,7 +49,7 @@ public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, At
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AtomicCounterService(config);
+    return new AtomicCounterService();
   }
 
   @Override

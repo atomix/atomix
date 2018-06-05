@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
+import io.atomix.core.multimap.ConsistentMultimapType;
 import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.ContainsEntry;
 import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.ContainsKey;
@@ -40,7 +41,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.misc.Match;
@@ -119,8 +119,8 @@ public class ConsistentSetMultimapService extends AbstractPrimitiveService {
   private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
   private Map<String, MapEntryValue> backingMap = Maps.newHashMap();
 
-  public ConsistentSetMultimapService(ServiceConfig config) {
-    super(config);
+  public ConsistentSetMultimapService() {
+    super(ConsistentMultimapType.instance());
   }
 
   @Override

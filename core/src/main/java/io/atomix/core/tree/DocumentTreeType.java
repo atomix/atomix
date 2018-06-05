@@ -51,7 +51,7 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DocumentTreeService(config);
+    return new DocumentTreeService();
   }
 
   @Override

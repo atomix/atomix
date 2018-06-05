@@ -18,7 +18,6 @@ package io.atomix.primitive.session.impl;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -34,8 +33,8 @@ public class SessionIdGeneratorService extends AbstractPrimitiveService {
 
   private long id;
 
-  public SessionIdGeneratorService(ServiceConfig config) {
-    super(config);
+  public SessionIdGeneratorService() {
+    super(SessionIdGeneratorType.instance());
   }
 
   @Override
