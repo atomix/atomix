@@ -29,7 +29,7 @@ public interface LeaderElection<T> extends SyncPrimitive {
    * @param identifier candidate identifier
    * @return current Leadership state of the topic
    */
-  Leadership run(T identifier);
+  Leadership<T> run(T identifier);
 
   /**
    * Withdraws from leadership race for a topic.

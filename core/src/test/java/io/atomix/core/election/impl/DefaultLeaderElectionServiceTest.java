@@ -17,12 +17,10 @@ package io.atomix.core.election.impl;
 
 import io.atomix.core.election.LeaderElectionType;
 import io.atomix.core.election.Leadership;
-import io.atomix.core.election.impl.LeaderElectionOperations.Run;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
-import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.storage.buffer.Buffer;
@@ -30,7 +28,6 @@ import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.time.WallClock;
 import org.junit.Test;
 
-import static io.atomix.core.election.impl.LeaderElectionOperations.RUN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -39,7 +36,7 @@ import static org.mockito.Mockito.when;
 /**
  * Leader elector service test.
  */
-public class LeaderElectionServiceTest {
+public class DefaultLeaderElectionServiceTest {
   @Test
   public void testSnapshot() throws Exception {
     ServiceContext context = mock(ServiceContext.class);
@@ -50,22 +47,18 @@ public class LeaderElectionServiceTest {
 
     PrimitiveSession session = mock(PrimitiveSession.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
+    when(context.currentSession()).thenReturn(session);
 
-    LeaderElectionService service = new LeaderElectionService();
+    DefaultLeaderElectionService service = new DefaultLeaderElectionService();
     service.init(context);
 
     byte[] id = "a".getBytes();
-    service.run(new DefaultCommit<>(
-        2,
-        RUN,
-        new Run(id),
-        session,
-        System.currentTimeMillis()));
+    service.run(id);
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new LeaderElectionService();
+    service = new DefaultLeaderElectionService();
     service.init(context);
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
