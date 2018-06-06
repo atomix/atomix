@@ -29,8 +29,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Consistent map primitive type.
  */
-public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuilder<K, V>, ConsistentMapConfig, ConsistentMap<K, V>, ServiceConfig> {
+public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuilder<K, V>, ConsistentMapConfig, ConsistentMap<K, V>> {
   private static final String NAME = "consistent-map";
+
+  private static final ConsistentMapType INSTANCE = new ConsistentMapType();
 
   /**
    * Returns a new consistent map type.
@@ -39,18 +41,24 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
    * @param <V> the value type
    * @return a new consistent map type
    */
+  @SuppressWarnings("unchecked")
   public static <K, V> ConsistentMapType<K, V> instance() {
-    return new ConsistentMapType<>();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentMapService(config);
+    return new ConsistentMapService();
+  }
+
+  @Override
+  public ConsistentMapConfig newConfig() {
+    return new ConsistentMapConfig();
   }
 
   @Override
@@ -60,19 +68,14 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
   }
 
   @Override
-  public ConsistentMapBuilder<K, V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new ConsistentMapConfig(), managementService);
-  }
-
-  @Override
-  public ConsistentMapBuilder<K, V> newPrimitiveBuilder(String name, ConsistentMapConfig config, PrimitiveManagementService managementService) {
+  public ConsistentMapBuilder<K, V> newBuilder(String name, ConsistentMapConfig config, PrimitiveManagementService managementService) {
     return new ConsistentMapProxyBuilder<>(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

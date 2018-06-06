@@ -49,6 +49,7 @@ public enum PrimaryElectorEvents implements EventType {
       .register(PrimaryTerm.class)
       .register(GroupMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(MemberGroupId.class)
       .register(PartitionId.class)
       .build(PrimaryElectorEvents.class.getSimpleName());

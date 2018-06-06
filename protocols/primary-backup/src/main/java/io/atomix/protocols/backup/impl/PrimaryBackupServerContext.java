@@ -18,9 +18,10 @@ package io.atomix.protocols.backup.impl;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.partition.ManagedMemberGroupService;
 import io.atomix.primitive.partition.GroupMember;
+import io.atomix.primitive.partition.ManagedMemberGroupService;
 import io.atomix.primitive.partition.MemberGroup;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
@@ -139,10 +140,11 @@ public class PrimaryBackupServerContext implements Managed<Void> {
    */
   private CompletableFuture<PrimaryBackupServiceContext> getService(PrimitiveRequest request) {
     return services.computeIfAbsent(request.primitive().name(), n -> {
+      PrimitiveType primitiveType = primitiveTypes.getPrimitiveType(request.primitive().type());
       PrimaryBackupServiceContext service = new PrimaryBackupServiceContext(
           serverName,
           PrimitiveId.from(request.primitive().name()),
-          primitiveTypes.get(request.primitive().type()),
+          primitiveType,
           request.primitive(),
           threadContextFactory.createContext(),
           clusterMembershipService,
@@ -167,7 +169,7 @@ public class PrimaryBackupServerContext implements Managed<Void> {
    */
   private CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
     return CompletableFuture.completedFuture(MetadataResponse.ok(services.entrySet().stream()
-        .filter(entry -> entry.getValue().join().serviceType().id().equals(request.primitiveType()))
+        .filter(entry -> entry.getValue().join().serviceType().name().equals(request.primitiveType()))
         .map(entry -> entry.getKey())
         .collect(Collectors.toSet())));
   }

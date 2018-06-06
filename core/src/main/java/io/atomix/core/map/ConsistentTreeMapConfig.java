@@ -16,12 +16,14 @@
 package io.atomix.core.map;
 
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Consistent tree-map configuration.
  */
 public class ConsistentTreeMapConfig extends PrimitiveConfig<ConsistentTreeMapConfig> {
-  public ConsistentTreeMapConfig() {
-    super(ConsistentTreeMapType.instance());
+  @Override
+  public PrimitiveType getType() {
+    return ConsistentTreeMapType.instance();
   }
 }

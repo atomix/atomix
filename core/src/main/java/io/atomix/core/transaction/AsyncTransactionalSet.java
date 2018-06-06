@@ -15,7 +15,6 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.core.set.DistributedSetType;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 
@@ -26,11 +25,6 @@ import java.util.concurrent.CompletableFuture;
  * Transactional set.
  */
 public interface AsyncTransactionalSet<E> extends AsyncPrimitive {
-
-  @Override
-  default DistributedSetType<E> primitiveType() {
-    return DistributedSetType.instance();
-  }
 
   /**
    * Adds the specified element to this set if it is not already present

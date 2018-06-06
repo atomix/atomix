@@ -28,8 +28,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Consistent tree map primitive type.
  */
 public class ConsistentTreeMapType<V>
-    implements PrimitiveType<ConsistentTreeMapBuilder<V>, ConsistentTreeMapConfig, ConsistentTreeMap<V>, ServiceConfig> {
+    implements PrimitiveType<ConsistentTreeMapBuilder<V>, ConsistentTreeMapConfig, ConsistentTreeMap<V>> {
   private static final String NAME = "consistent-tree-map";
+  private static final ConsistentTreeMapType INSTANCE = new ConsistentTreeMapType();
 
   /**
    * Returns a new consistent tree map type.
@@ -37,34 +38,35 @@ public class ConsistentTreeMapType<V>
    * @param <V> the value type
    * @return a new consistent tree map type
    */
+  @SuppressWarnings("unchecked")
   public static <V> ConsistentTreeMapType<V> instance() {
-    return new ConsistentTreeMapType<>();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentTreeMapService(config);
+    return new ConsistentTreeMapService();
   }
 
   @Override
-  public ConsistentTreeMapBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new ConsistentTreeMapConfig(), managementService);
+  public ConsistentTreeMapConfig newConfig() {
+    return new ConsistentTreeMapConfig();
   }
 
   @Override
-  public ConsistentTreeMapBuilder<V> newPrimitiveBuilder(String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
+  public ConsistentTreeMapBuilder<V> newBuilder(String name, ConsistentTreeMapConfig config, PrimitiveManagementService managementService) {
     return new ConsistentTreeMapProxyBuilder<>(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

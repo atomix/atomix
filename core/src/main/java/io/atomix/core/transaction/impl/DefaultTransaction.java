@@ -16,7 +16,6 @@
 package io.atomix.core.transaction.impl;
 
 import com.google.common.collect.Sets;
-
 import io.atomix.core.transaction.AsyncTransaction;
 import io.atomix.core.transaction.CommitStatus;
 import io.atomix.core.transaction.Isolation;
@@ -24,11 +23,13 @@ import io.atomix.core.transaction.Transaction;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionParticipant;
 import io.atomix.core.transaction.TransactionService;
+import io.atomix.core.transaction.TransactionType;
 import io.atomix.core.transaction.TransactionalMapBuilder;
 import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.concurrent.Futures;
 
 import java.time.Duration;
@@ -60,6 +61,11 @@ public class DefaultTransaction implements AsyncTransaction {
   @Override
   public String name() {
     return null;
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
+    return TransactionType.instance();
   }
 
   @Override

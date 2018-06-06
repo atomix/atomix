@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.backup.partition.impl;
 
-import io.atomix.cluster.Member;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.backup.PrimaryBackupServer;
@@ -55,19 +54,14 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
 
   @Override
   public CompletableFuture<PrimaryBackupPartitionServer> start() {
-    Member.Type localNodeType = managementService.getMembershipService().getLocalMember().type();
-    if (localNodeType == Member.Type.PERSISTENT || localNodeType == Member.Type.EPHEMERAL) {
-      synchronized (this) {
-        server = buildServer();
-      }
-      return server.start().thenApply(s -> {
-        log.info("Successfully started server for {}", partition.id());
-        started.set(true);
-        return this;
-      });
+    synchronized (this) {
+      server = buildServer();
     }
-    started.set(true);
-    return CompletableFuture.completedFuture(this);
+    return server.start().thenApply(s -> {
+      log.info("Successfully started server for {}", partition.id());
+      started.set(true);
+      return this;
+    });
   }
 
   @Override

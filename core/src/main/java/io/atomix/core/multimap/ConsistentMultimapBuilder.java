@@ -24,7 +24,7 @@ import io.atomix.primitive.PrimitiveManagementService;
  */
 public abstract class ConsistentMultimapBuilder<K, V>
     extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>, ConsistentMultimapConfig, ConsistentMultimap<K, V>> {
-  public ConsistentMultimapBuilder(String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
+  public ConsistentMultimapBuilder( String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
     super(ConsistentMultimapType.instance(), name, config, managementService);
   }
 }

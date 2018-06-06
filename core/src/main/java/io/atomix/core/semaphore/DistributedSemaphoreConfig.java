@@ -16,16 +16,18 @@
 package io.atomix.core.semaphore;
 
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Semaphore configuration.
  */
 public class DistributedSemaphoreConfig extends PrimitiveConfig<DistributedSemaphoreConfig> {
-  protected DistributedSemaphoreConfig() {
-    super(DistributedSemaphoreType.instance());
-  }
-
   private int initialCapacity;
+
+  @Override
+  public PrimitiveType getType() {
+    return DistributedSemaphoreType.instance();
+  }
 
   /**
    * Initialize this semaphore with the given permit count.

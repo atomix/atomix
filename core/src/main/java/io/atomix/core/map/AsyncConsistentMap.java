@@ -21,7 +21,6 @@ import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.transaction.Transactional;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -61,11 +60,6 @@ import java.util.function.Predicate;
  * operation finishes.
  */
 public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<MapUpdate<K, V>> {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return ConsistentMapType.instance();
-  }
 
   @Override
   default CompletableFuture<Void> delete() {

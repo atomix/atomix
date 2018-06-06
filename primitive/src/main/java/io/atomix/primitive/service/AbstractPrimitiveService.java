@@ -30,6 +30,7 @@ import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Clock;
 import io.atomix.utils.time.LogicalClock;
 import io.atomix.utils.time.WallClock;
@@ -47,21 +48,28 @@ import java.util.stream.Collectors;
 /**
  * Raft service.
  */
-public abstract class AbstractPrimitiveService<C, F extends ServiceConfig> implements PrimitiveService {
+public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
+  private final PrimitiveType primitiveType;
   private final Class<C> clientInterface;
-  private final F config;
+  private final Serializer serializer;
   private Logger log;
   private ServiceContext context;
   private ServiceExecutor executor;
   private final Map<SessionId, SessionProxy> sessions = Maps.newHashMap();
 
-  protected AbstractPrimitiveService(F config) {
-    this(null, config);
+  protected AbstractPrimitiveService(PrimitiveType primitiveType) {
+    this(primitiveType, null);
   }
 
-  protected AbstractPrimitiveService(Class<C> clientInterface, F config) {
+  protected AbstractPrimitiveService(PrimitiveType primitiveType, Class<C> clientInterface) {
+    this.primitiveType = primitiveType;
     this.clientInterface = clientInterface;
-    this.config = config;
+    this.serializer = Serializer.using(primitiveType.namespace());
+  }
+
+  @Override
+  public Serializer serializer() {
+    return serializer;
   }
 
   /**
@@ -174,7 +182,7 @@ public abstract class AbstractPrimitiveService<C, F extends ServiceConfig> imple
    * @return the primitive type
    */
   protected PrimitiveType getPrimitiveType() {
-    return context.serviceType();
+    return primitiveType;
   }
 
   /**
@@ -211,15 +219,6 @@ public abstract class AbstractPrimitiveService<C, F extends ServiceConfig> imple
    */
   protected String getServiceName() {
     return context.serviceName();
-  }
-
-  /**
-   * Returns the service configuration.
-   *
-   * @return the service configuration
-   */
-  protected F getServiceConfig() {
-    return config;
   }
 
   /**

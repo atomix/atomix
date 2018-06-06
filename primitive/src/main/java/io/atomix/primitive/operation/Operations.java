@@ -50,10 +50,12 @@ public final class Operations {
   private static Map<Method, OperationId> findMethods(Class<?> type) {
     Map<Method, OperationId> operations = new HashMap<>();
     for (Method method : type.getDeclaredMethods()) {
-      Operation operation = method.getAnnotation(Operation.class);
-      if (operation != null) {
-        String name = operation.value().equals("") ? method.getName() : operation.value();
-        operations.put(method, OperationId.from(name, operation.type()));
+      OperationId operationId = getOperationId(method);
+      if (operationId != null) {
+        if (operations.values().stream().anyMatch(operation -> operation.id().equals(operationId.id()))) {
+          throw new IllegalStateException("Duplicate operation name '" + operationId.id() + "'");
+        }
+        operations.put(method, operationId);
       }
     }
     for (Class<?> iface : type.getInterfaces()) {
@@ -88,16 +90,43 @@ public final class Operations {
   private static Map<OperationId, Method> findOperations(Class<?> type) {
     Map<OperationId, Method> operations = new HashMap<>();
     for (Method method : type.getDeclaredMethods()) {
-      Operation operation = method.getAnnotation(Operation.class);
-      if (operation != null) {
-        String name = operation.value().equals("") ? method.getName() : operation.value();
-        operations.put(OperationId.from(name, operation.type()), method);
+      OperationId operationId = getOperationId(method);
+      if (operationId != null) {
+        if (operations.keySet().stream().anyMatch(operation -> operation.id().equals(operationId.id()))) {
+          throw new IllegalStateException("Duplicate operation name '" + operationId.id() + "'");
+        }
+        operations.put(operationId, method);
       }
     }
     for (Class<?> iface : type.getInterfaces()) {
       operations.putAll(findOperations(iface));
     }
     return operations;
+  }
+
+  /**
+   * Returns the operation ID for the given method.
+   *
+   * @param method the method for which to lookup the operation ID
+   * @return the operation ID for the given method or null if the method is not annotated
+   */
+  private static OperationId getOperationId(Method method) {
+    Command command = method.getAnnotation(Command.class);
+    if (command != null) {
+      String name = command.value().equals("") ? method.getName() : command.value();
+      return OperationId.from(name, OperationType.COMMAND);
+    }
+    Query query = method.getAnnotation(Query.class);
+    if (query != null) {
+      String name = query.value().equals("") ? method.getName() : query.value();
+      return OperationId.from(name, OperationType.QUERY);
+    }
+    Operation operation = method.getAnnotation(Operation.class);
+    if (operation != null) {
+      String name = operation.value().equals("") ? method.getName() : operation.value();
+      return OperationId.from(name, operation.type());
+    }
+    return null;
   }
 
   private Operations() {

@@ -19,10 +19,10 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.TestPrimitiveType;
 import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.impl.RaftServiceManager;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.proxy.impl.TestPrimitiveType;
 import io.atomix.protocols.raft.service.RaftServiceContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -40,7 +40,6 @@ import static org.mockito.Mockito.when;
  * Raft session manager test.
  */
 public class RaftSessionRegistryTest {
-
   @Test
   public void testAddRemoveSession() throws Exception {
     RaftSessionRegistry sessionManager = new RaftSessionRegistry();
@@ -56,7 +55,7 @@ public class RaftSessionRegistryTest {
 
   private RaftSession createSession(long sessionId) {
     RaftServiceContext context = mock(RaftServiceContext.class);
-    when(context.serviceType()).thenReturn(new TestPrimitiveType());
+    when(context.serviceType()).thenReturn(TestPrimitiveType.instance());
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
 
@@ -70,7 +69,7 @@ public class RaftSessionRegistryTest {
         SessionId.from(sessionId),
         MemberId.from("1"),
         "test",
-        new TestPrimitiveType(),
+        TestPrimitiveType.instance(),
         ReadConsistency.LINEARIZABLE,
         100,
         5000,

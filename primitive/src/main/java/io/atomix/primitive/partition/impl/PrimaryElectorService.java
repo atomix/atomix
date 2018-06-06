@@ -27,7 +27,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.concurrent.Scheduled;
@@ -70,8 +69,8 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
   private Scheduled rebalanceTimer;
 
-  public PrimaryElectorService(ServiceConfig config) {
-    super(config);
+  public PrimaryElectorService() {
+    super(PrimaryElectorType.instance());
   }
 
   @Override

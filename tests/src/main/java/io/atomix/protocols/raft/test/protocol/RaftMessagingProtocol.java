@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.test.protocol;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
-import io.atomix.messaging.MessagingService;
+import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 

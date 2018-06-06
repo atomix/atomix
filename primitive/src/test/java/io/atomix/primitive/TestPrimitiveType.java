@@ -22,8 +22,19 @@ import io.atomix.primitive.service.ServiceConfig;
  * Test primitive type.
  */
 public class TestPrimitiveType implements PrimitiveType {
+  private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+
+  /**
+   * Returns a singleton instance.
+   *
+   * @return a singleton primitive type instance
+   */
+  public static TestPrimitiveType instance() {
+    return INSTANCE;
+  }
+
   @Override
-  public String id() {
+  public String name() {
     return "test";
   }
 
@@ -33,12 +44,12 @@ public class TestPrimitiveType implements PrimitiveType {
   }
 
   @Override
-  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
+  public PrimitiveConfig newConfig() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
+  public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
     throw new UnsupportedOperationException();
   }
 }

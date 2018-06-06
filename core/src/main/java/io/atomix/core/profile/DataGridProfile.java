@@ -22,9 +22,8 @@ import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroupConfig;
 /**
  * In-memory data grid profile.
  */
-public class DataGridProfile implements NamedProfile {
+public class DataGridProfile implements Profile {
   private static final String NAME = "data-grid";
-
   private static final String SYSTEM_GROUP_NAME = "system";
   private static final String GROUP_NAME = "data";
   private static final int NUM_PARTITIONS = 71;

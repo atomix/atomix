@@ -34,7 +34,7 @@ import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.utils.net.Address;
-import io.atomix.messaging.MessagingService;
+import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Serializer;
 

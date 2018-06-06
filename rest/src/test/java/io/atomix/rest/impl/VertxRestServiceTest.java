@@ -86,19 +86,15 @@ public class VertxRestServiceTest {
         .statusCode(200)
         .assertThat()
         .body("id", equalTo("1"))
-        .body("type", equalTo("EPHEMERAL"))
-        .body("host", equalTo(instances.get(0).membershipService().getLocalMember().address().host()))
-        .body("port", equalTo(instances.get(0).membershipService().getLocalMember().address().port()))
-        .body("status", equalTo("ACTIVE"));
+        .body("host", equalTo(instances.get(0).getMembershipService().getLocalMember().address().host()))
+        .body("port", equalTo(instances.get(0).getMembershipService().getLocalMember().address().port()));
 
     given()
         .spec(specs.get(0))
         .when()
         .get("cluster/nodes")
         .then()
-        .statusCode(200)
-        .assertThat()
-        .body("[0].id", equalTo("1"));
+        .statusCode(200);
   }
 
   @Test
@@ -164,7 +160,7 @@ public class VertxRestServiceTest {
         .spec(specs.get(1))
         .body("Hello world again!")
         .when()
-        .post("messages/test/" + instances.get(0).membershipService().getLocalMember().id())
+        .post("messages/test/" + instances.get(0).getMembershipService().getLocalMember().id())
         .then()
         .statusCode(200);
 
@@ -176,6 +172,156 @@ public class VertxRestServiceTest {
         .statusCode(200)
         .assertThat()
         .body(equalTo("Hello world again!"));
+  }
+
+  @Test
+  public void testLock() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
+        .put("type", "lock")
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test-lock")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .post("primitives/test-lock/lock")
+        .then()
+        .statusCode(200)
+        .body(equalTo("1"));
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .delete("primitives/test-lock/lock")
+        .then()
+        .statusCode(200);
+  }
+
+  @Test
+  public void testSemaphore() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
+        .put("type", "semaphore")
+        .put("initial-capacity", 2)
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test-semaphore")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .statusCode(200)
+        .body(equalTo("2"));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/acquire")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/acquire")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(2))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("0"));
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/release")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("1"));
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("1"));
+  }
+
+  @Test
+  public void testValue() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
+        .put("type", "value")
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test-value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-value/value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.TEXT)
+        .body("Hello world!")
+        .when()
+        .post("primitives/test-value/value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-value/value")
+        .then()
+        .statusCode(200)
+        .body(equalTo("Hello world!"));
   }
 
   @Test
@@ -275,11 +421,10 @@ public class VertxRestServiceTest {
 
   protected Atomix buildAtomix(int memberId) {
     Member localMember = Member.builder(String.valueOf(memberId))
-        .withType(Member.Type.EPHEMERAL)
         .withAddress("localhost", findAvailablePort(BASE_PORT))
         .build();
 
-    Collection<Member> members = Stream.concat(Stream.of(localMember), instances.stream().map(instance -> instance.membershipService().getLocalMember()))
+    Collection<Member> members = Stream.concat(Stream.of(localMember), instances.stream().map(instance -> instance.getMembershipService().getLocalMember()))
         .collect(Collectors.toList());
 
     return Atomix.builder()

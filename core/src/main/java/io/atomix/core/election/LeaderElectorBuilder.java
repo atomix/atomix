@@ -41,11 +41,13 @@ public abstract class LeaderElectorBuilder<T>
         serializer = Serializer.using(KryoNamespace.builder()
             .register(KryoNamespaces.BASIC)
             .register(MemberId.class)
+            .register(MemberId.Type.class)
             .build());
       } else {
         serializer = Serializer.using(KryoNamespace.builder()
             .register(KryoNamespaces.BASIC)
             .register(MemberId.class)
+            .register(MemberId.Type.class)
             .register(new KryoNamespace(config))
             .build());
       }

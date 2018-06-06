@@ -20,7 +20,6 @@ import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -39,11 +38,6 @@ import java.util.concurrent.Executor;
  * structure and have been labeled as such.
  */
 public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return ConsistentMultimapType.instance();
-  }
 
   @Override
   default CompletableFuture<Void> delete() {

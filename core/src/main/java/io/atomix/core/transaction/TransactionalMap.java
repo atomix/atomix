@@ -15,17 +15,12 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.core.map.ConsistentMapType;
 import io.atomix.primitive.SyncPrimitive;
 
 /**
  * Transactional map.
  */
 public interface TransactionalMap<K, V> extends SyncPrimitive {
-  @Override
-  default ConsistentMapType<K, V> primitiveType() {
-    return ConsistentMapType.instance();
-  }
 
   /**
    * Returns the value to which the specified key is mapped, or null if this

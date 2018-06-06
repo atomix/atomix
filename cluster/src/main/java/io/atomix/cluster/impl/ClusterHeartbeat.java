@@ -15,10 +15,9 @@
  */
 package io.atomix.cluster.impl;
 
-import java.util.Map;
-
-import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+
+import java.util.Map;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -27,15 +26,13 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 final class ClusterHeartbeat {
   private final MemberId memberId;
-  private final Member.Type type;
   private final String zone;
   private final String rack;
   private final String host;
   private final Map<String, String> metadata;
 
-  ClusterHeartbeat(MemberId memberId, Member.Type type, String zone, String rack, String host, Map<String, String> metadata) {
+  ClusterHeartbeat(MemberId memberId, String zone, String rack, String host, Map<String, String> metadata) {
     this.memberId = memberId;
-    this.type = type;
     this.zone = zone;
     this.rack = rack;
     this.host = host;
@@ -49,15 +46,6 @@ final class ClusterHeartbeat {
    */
   public MemberId memberId() {
     return memberId;
-  }
-
-  /**
-   * Returns the type of the member that sent the heartbeat.
-   *
-   * @return the member type
-   */
-  public Member.Type memberType() {
-    return type;
   }
 
   /**
@@ -100,7 +88,6 @@ final class ClusterHeartbeat {
   public String toString() {
     return toStringHelper(this)
         .add("memberId", memberId)
-        .add("type", type)
         .toString();
   }
 }

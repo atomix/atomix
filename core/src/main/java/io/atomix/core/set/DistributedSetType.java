@@ -29,8 +29,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Distributed set primitive type.
  */
-public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>, ServiceConfig> {
+public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>> {
   private static final String NAME = "set";
+  private static final DistributedSetType INSTANCE = new DistributedSetType();
 
   /**
    * Returns a new distributed set type.
@@ -38,18 +39,19 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
    * @param <E> the set element type
    * @return a new distributed set type
    */
+  @SuppressWarnings("unchecked")
   public static <E> DistributedSetType<E> instance() {
-    return new DistributedSetType<>();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentMapService(config);
+    return new ConsistentMapService();
   }
 
   @Override
@@ -59,19 +61,19 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
   }
 
   @Override
-  public DistributedSetBuilder<E> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new DistributedSetConfig(), managementService);
+  public DistributedSetConfig newConfig() {
+    return new DistributedSetConfig();
   }
 
   @Override
-  public DistributedSetBuilder<E> newPrimitiveBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
+  public DistributedSetBuilder<E> newBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
     return new DelegatingDistributedSetBuilder<>(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

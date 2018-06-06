@@ -18,6 +18,7 @@ package io.atomix.protocols.raft;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
+import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
@@ -27,10 +28,10 @@ import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.event.Event;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
-import io.atomix.primitive.operation.Operation;
+import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.primitive.operation.Query;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
@@ -120,6 +121,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -151,9 +153,9 @@ public class RaftTest extends ConcurrentTestCase {
     assertEquals(2, typeSessions.size());
     typeSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE).join();
     assertEquals(2, typeSessions.size());
-    Set<SessionMetadata> serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "test").join();
+    Set<SessionMetadata> serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "raft-test").join();
     assertEquals(2, serviceSessions.size());
-    serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "test").join();
+    serviceSessions = client.metadata().getSessions(TestPrimitiveType.INSTANCE, "raft-test").join();
     assertEquals(2, serviceSessions.size());
   }
 
@@ -1223,8 +1225,7 @@ public class RaftTest extends ConcurrentTestCase {
             .withSerializer(storageSerializer)
             .withMaxSegmentSize(1024 * 10)
             .withMaxEntriesPerSegment(10)
-            .build())
-        .addPrimitiveType(TestPrimitiveType.INSTANCE);
+            .build());
 
     RaftServer server = builder.build();
     servers.add(server);
@@ -1258,13 +1259,13 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a test session.
    */
   private PartitionProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+    return client.proxyBuilder("raft-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(consistency)
         .withMinTimeout(Duration.ofMillis(250))
         .withMaxTimeout(Duration.ofSeconds(5))
         .build()
         .connect()
-        .get(5, TimeUnit.SECONDS);
+        .get(10, TimeUnit.SECONDS);
   }
 
   /**
@@ -1284,7 +1285,7 @@ public class RaftTest extends ConcurrentTestCase {
     when(proxy.getPartitions()).thenReturn(Collections.singletonList(partition));
     when(proxy.getPartitionId(any(String.class))).thenReturn(partition.partitionId());
     PrimitiveRegistry registry = mock(PrimitiveRegistry.class);
-    when(registry.createPrimitive(any(String.class), any(PrimitiveType.class))).thenReturn(CompletableFuture.completedFuture(new PrimitiveInfo("test", TestPrimitiveType.INSTANCE)));
+    when(registry.createPrimitive(any(String.class), any(PrimitiveType.class))).thenReturn(CompletableFuture.completedFuture(new PrimitiveInfo("raft-test", TestPrimitiveType.INSTANCE)));
     return new TestPrimitiveImpl(proxy, registry);
   }
 
@@ -1336,37 +1337,34 @@ public class RaftTest extends ConcurrentTestCase {
     protocolFactory = new TestRaftProtocolFactory(context);
   }
 
-  /**
-   * Test primitive type.
-   */
-  private static class TestPrimitiveType implements PrimitiveType {
-    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+  public static class TestPrimitiveType implements PrimitiveType {
+    private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
 
     @Override
-    public String id() {
-      return "test";
+    public String name() {
+      return "raft-test";
+    }
+
+    @Override
+    public PrimitiveConfig newConfig() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+      throw new UnsupportedOperationException();
     }
 
     @Override
     public PrimitiveService newService(ServiceConfig config) {
       return new TestPrimitiveServiceImpl(config);
     }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
-    }
   }
 
   /**
    * Test primitive.
    */
-  private interface TestPrimitive extends AsyncPrimitive {
+  public interface TestPrimitive extends AsyncPrimitive {
     CompletableFuture<Long> write(String value);
 
     CompletableFuture<Long> read();
@@ -1398,19 +1396,19 @@ public class RaftTest extends ConcurrentTestCase {
    * Test primitive service interface.
    */
   public interface TestPrimitiveService {
-    @Operation(value = "write", type = OperationType.COMMAND)
+    @Command
     long write(String value);
 
-    @Operation(value = "read", type = OperationType.QUERY)
+    @Query
     long read();
 
-    @Operation(value = "sendEvent", type = OperationType.COMMAND)
+    @Command
     long sendEvent(boolean sender);
 
-    @Operation(value = "onExpire", type = OperationType.COMMAND)
+    @Command
     void onExpire();
 
-    @Operation(value = "onClose", type = OperationType.COMMAND)
+    @Command
     void onClose();
   }
 
@@ -1487,12 +1485,12 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveServiceImpl extends AbstractPrimitiveService<TestPrimitiveClient, ServiceConfig> implements TestPrimitiveService {
+  public static class TestPrimitiveServiceImpl extends AbstractPrimitiveService<TestPrimitiveClient> implements TestPrimitiveService {
     private SessionId expire;
     private SessionId close;
 
     public TestPrimitiveServiceImpl(ServiceConfig config) {
-      super(TestPrimitiveClient.class, config);
+      super(TestPrimitiveType.INSTANCE, TestPrimitiveClient.class);
     }
 
     @Override

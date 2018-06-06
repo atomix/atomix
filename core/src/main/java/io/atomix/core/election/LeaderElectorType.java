@@ -27,8 +27,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Leader elector primitive type.
  */
-public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<T>, LeaderElectorConfig, LeaderElector<T>, ServiceConfig> {
+public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<T>, LeaderElectorConfig, LeaderElector<T>> {
   private static final String NAME = "leader-elector";
+  private static final LeaderElectorType INSTANCE = new LeaderElectorType();
 
   /**
    * Returns a new leader elector type.
@@ -36,34 +37,35 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
    * @param <T> the election candidate type
    * @return a new leader elector type
    */
+  @SuppressWarnings("unchecked")
   public static <T> LeaderElectorType<T> instance() {
-    return new LeaderElectorType<>();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new LeaderElectorService(config);
+    return new LeaderElectorService();
   }
 
   @Override
-  public LeaderElectorBuilder<T> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new LeaderElectorConfig(), managementService);
+  public LeaderElectorConfig newConfig() {
+    return new LeaderElectorConfig();
   }
 
   @Override
-  public LeaderElectorBuilder<T> newPrimitiveBuilder(String name, LeaderElectorConfig config, PrimitiveManagementService managementService) {
+  public LeaderElectorBuilder<T> newBuilder(String name, LeaderElectorConfig config, PrimitiveManagementService managementService) {
     return new LeaderElectorProxyBuilder<>(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

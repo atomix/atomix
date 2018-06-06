@@ -99,7 +99,7 @@ public class PrimaryBackupClient implements ProxyClient {
             primitiveType,
             new PrimitiveDescriptor(
                 primitiveName,
-                primitiveType.id(),
+                primitiveType.name(),
                 configBytes,
                 numBackups,
                 replication),

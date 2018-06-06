@@ -16,12 +16,12 @@
 package io.atomix.core.election.impl;
 
 import com.google.common.collect.Maps;
-
 import io.atomix.core.election.AsyncLeaderElector;
 import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
+import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.Map;
@@ -49,6 +49,11 @@ public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector
   @Override
   public String name() {
     return backingElector.name();
+  }
+
+  @Override
+  public PrimitiveType primitiveType() {
+    return backingElector.primitiveType();
   }
 
   @Override
@@ -87,6 +92,27 @@ public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector
   public CompletableFuture<Map<String, Leadership<V1>>> getLeaderships() {
     return backingElector.getLeaderships()
         .thenApply(leaderships -> Maps.transformValues(leaderships, leadership -> leadership.map(valueDecoder)));
+  }
+
+  @Override
+  public CompletableFuture<Void> addListener(LeadershipEventListener<V1> listener) {
+    synchronized (listeners) {
+      InternalLeadershipEventListener internalListener =
+          listeners.computeIfAbsent(listener, k -> new InternalLeadershipEventListener(listener));
+      return backingElector.addListener(internalListener);
+    }
+  }
+
+  @Override
+  public CompletableFuture<Void> removeListener(LeadershipEventListener<V1> listener) {
+    synchronized (listeners) {
+      InternalLeadershipEventListener internalListener = listeners.remove(listener);
+      if (internalListener != null) {
+        return backingElector.removeListener(internalListener);
+      } else {
+        return CompletableFuture.completedFuture(null);
+      }
+    }
   }
 
   @Override

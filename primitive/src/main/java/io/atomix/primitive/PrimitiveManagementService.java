@@ -16,8 +16,8 @@
 package io.atomix.primitive;
 
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
-import io.atomix.cluster.messaging.ClusterEventingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.primitive.partition.PartitionService;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,14 +46,14 @@ public interface PrimitiveManagementService {
    *
    * @return the cluster communication service
    */
-  ClusterMessagingService getCommunicationService();
+  ClusterCommunicationService getCommunicationService();
 
   /**
    * Returns the cluster event service.
    *
    * @return the cluster event service
    */
-  ClusterEventingService getEventService();
+  ClusterEventService getEventService();
 
   /**
    * Returns the partition service.
@@ -68,5 +68,12 @@ public interface PrimitiveManagementService {
    * @return the primitive registry
    */
   PrimitiveRegistry getPrimitiveRegistry();
+
+  /**
+   * Returns the primitive type registry.
+   *
+   * @return the primitive type registry
+   */
+  PrimitiveTypeRegistry getPrimitiveTypeRegistry();
 
 }

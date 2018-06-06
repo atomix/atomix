@@ -40,6 +40,7 @@ import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.buffer.Bytes;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import io.atomix.utils.serializer.Serializer;
@@ -203,7 +204,14 @@ public class RaftServiceContext implements ServiceContext {
   public void installSnapshot(SnapshotReader reader) {
     log.debug("Installing snapshot {}", reader.snapshot().index());
     reader.skip(Bytes.LONG); // Skip the service ID
-    PrimitiveType primitiveType = raft.getPrimitiveTypes().get(reader.readString());
+    PrimitiveType primitiveType;
+    try {
+      primitiveType = raft.getPrimitiveTypes().getPrimitiveType(reader.readString());
+    } catch (ConfigurationException e) {
+      log.error(e.getMessage(), e);
+      return;
+    }
+
     String serviceName = reader.readString();
     int sessionCount = reader.readInt();
     for (int i = 0; i < sessionCount; i++) {
@@ -251,7 +259,7 @@ public class RaftServiceContext implements ServiceContext {
 
     // Serialize sessions to the in-memory snapshot and request a snapshot from the state machine.
     writer.writeLong(primitiveId.id());
-    writer.writeString(primitiveType.id());
+    writer.writeString(primitiveType.name());
     writer.writeString(serviceName);
     writer.writeInt(sessions.getSessions().size());
     for (RaftSession session : sessions.getSessions()) {

@@ -15,26 +15,25 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
+import com.google.common.collect.Streams;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
-import io.atomix.cluster.impl.DefaultPersistentMetadataService;
-import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
-import io.atomix.cluster.messaging.ManagedClusterEventingService;
-import io.atomix.cluster.messaging.ManagedClusterMessagingService;
-import io.atomix.cluster.messaging.impl.DefaultClusterEventingService;
-import io.atomix.cluster.messaging.impl.DefaultClusterMessagingService;
-import io.atomix.messaging.BroadcastService;
-import io.atomix.messaging.ManagedBroadcastService;
-import io.atomix.messaging.ManagedMessagingService;
-import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.impl.NettyBroadcastService;
-import io.atomix.messaging.impl.NettyMessagingService;
+import io.atomix.cluster.messaging.BroadcastService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.cluster.messaging.ManagedBroadcastService;
+import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
+import io.atomix.cluster.messaging.ManagedClusterEventService;
+import io.atomix.cluster.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
+import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
+import io.atomix.cluster.messaging.impl.NettyBroadcastService;
+import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.utils.config.Configs;
+import io.atomix.utils.config.ConfigMapper;
 import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +44,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -53,31 +53,68 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Cluster configuration.
  */
 public class AtomixCluster implements Managed<Void> {
+  static final String[] DEFAULT_RESOURCES = new String[]{"cluster"};
+
+  private static String[] withDefaultResources(String config) {
+    return Streams.concat(Stream.of(config), Stream.of(DEFAULT_RESOURCES)).toArray(String[]::new);
+  }
 
   /**
-   * Returns a new Atomix cluster builder.
+   * Returns a new Atomix configuration from the given resources.
    *
-   * @return a new Atomix cluster builder
+   * @param resources   the resources from which to return a new Atomix configuration
+   * @param classLoader the class loader
+   * @return a new Atomix configuration from the given resource
+   */
+  private static ClusterConfig config(String[] resources, ClassLoader classLoader) {
+    return new ConfigMapper(classLoader).loadResources(ClusterConfig.class, resources);
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @return a new Atomix builder
    */
   public static Builder builder() {
-    return new Builder();
+    return builder(Thread.currentThread().getContextClassLoader());
   }
 
   /**
-   * Returns a new Atomix cluster builder.
+   * Returns a new Atomix builder.
    *
-   * @param configFile the configuration file with which to initialize the builder
-   * @return a new Atomix cluster builder
+   * @param classLoader the class loader
+   * @return a new Atomix builder
    */
-  public static Builder builder(File configFile) {
-    return new Builder(loadConfig(configFile));
+  public static Builder builder(ClassLoader classLoader) {
+    return builder(config(DEFAULT_RESOURCES, classLoader));
   }
 
   /**
-   * Returns a new Atomix cluster builder.
+   * Returns a new Atomix builder.
    *
-   * @param config the Atomix cluster configuration
-   * @return a new Atomix cluster builder
+   * @param config the Atomix configuration
+   * @return a new Atomix builder
+   */
+  public static Builder builder(String config) {
+    return builder(config, Thread.currentThread().getContextClassLoader());
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param config      the Atomix configuration
+   * @param classLoader the class loader
+   * @return a new Atomix builder
+   */
+  public static Builder builder(String config, ClassLoader classLoader) {
+    return new Builder(config(withDefaultResources(config), classLoader));
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   *
+   * @param config the Atomix configuration
+   * @return a new Atomix builder
    */
   public static Builder builder(ClusterConfig config) {
     return new Builder(config);
@@ -87,32 +124,46 @@ public class AtomixCluster implements Managed<Void> {
 
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
-  protected final ManagedBootstrapMetadataService bootstrapMetadataService;
-  protected final ManagedPersistentMetadataService persistentMetadataService;
   protected final ManagedClusterMembershipService membershipService;
-  protected final ManagedClusterMessagingService clusterMessagingService;
-  protected final ManagedClusterEventingService clusterEventingService;
+  protected final ManagedClusterCommunicationService communicationService;
+  protected final ManagedClusterEventService eventingService;
   protected volatile CompletableFuture<Void> openFuture;
   protected volatile CompletableFuture<Void> closeFuture;
   private final ThreadContext threadContext = new SingleThreadContext("atomix-cluster-%d");
   private final AtomicBoolean started = new AtomicBoolean();
 
   public AtomixCluster(String configFile) {
-    this(loadConfig(new File(System.getProperty("user.dir"), configFile)));
+    this(loadConfig(new File(System.getProperty("user.dir"), configFile), Thread.currentThread().getContextClassLoader()));
   }
 
   public AtomixCluster(File configFile) {
-    this(loadConfig(configFile));
+    this(loadConfig(configFile, Thread.currentThread().getContextClassLoader()));
   }
 
   public AtomixCluster(ClusterConfig config) {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
-    this.bootstrapMetadataService = buildBootstrapMetadataService(config);
-    this.persistentMetadataService = buildPersistentMetadataService(config, messagingService);
-    this.membershipService = buildClusterMembershipService(config, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService);
-    this.clusterMessagingService = buildClusterMessagingService(membershipService, messagingService);
-    this.clusterEventingService = buildClusterEventService(membershipService, messagingService);
+    this.membershipService = buildClusterMembershipService(config, messagingService, broadcastService);
+    this.communicationService = buildClusterMessagingService(membershipService, messagingService);
+    this.eventingService = buildClusterEventService(membershipService, messagingService);
+  }
+
+  /**
+   * Returns the broadcast service.
+   *
+   * @return the broadcast service
+   */
+  public BroadcastService getBroadcastService() {
+    return broadcastService;
+  }
+
+  /**
+   * Returns the messaging service.
+   *
+   * @return the messaging service
+   */
+  public MessagingService getMessagingService() {
+    return messagingService;
   }
 
   /**
@@ -120,17 +171,17 @@ public class AtomixCluster implements Managed<Void> {
    *
    * @return the cluster service
    */
-  public ClusterMembershipService membershipService() {
+  public ClusterMembershipService getMembershipService() {
     return membershipService;
   }
 
   /**
-   * Returns the cluster messaging service.
+   * Returns the cluster communication service.
    *
-   * @return the cluster messaging service
+   * @return the cluster communication service
    */
-  public ClusterMessagingService messagingService() {
-    return clusterMessagingService;
+  public ClusterCommunicationService getCommunicationService() {
+    return communicationService;
   }
 
   /**
@@ -138,8 +189,8 @@ public class AtomixCluster implements Managed<Void> {
    *
    * @return the cluster event service
    */
-  public ClusterEventingService eventingService() {
-    return clusterEventingService;
+  public ClusterEventService getEventingService() {
+    return eventingService;
   }
 
   @Override
@@ -155,7 +206,6 @@ public class AtomixCluster implements Managed<Void> {
     }
 
     openFuture = startServices()
-        .thenComposeAsync(v -> joinCluster(), threadContext)
         .thenComposeAsync(v -> completeStartup(), threadContext);
 
     return openFuture;
@@ -164,17 +214,10 @@ public class AtomixCluster implements Managed<Void> {
   protected CompletableFuture<Void> startServices() {
     return messagingService.start()
         .thenComposeAsync(v -> broadcastService.start(), threadContext)
-        .thenComposeAsync(v -> bootstrapMetadataService.start(), threadContext)
-        .thenComposeAsync(v -> persistentMetadataService.start(), threadContext)
         .thenComposeAsync(v -> membershipService.start(), threadContext)
-        .thenComposeAsync(v -> clusterMessagingService.start(), threadContext)
-        .thenComposeAsync(v -> clusterEventingService.start(), threadContext)
+        .thenComposeAsync(v -> communicationService.start(), threadContext)
+        .thenComposeAsync(v -> eventingService.start(), threadContext)
         .thenApply(v -> null);
-  }
-
-  protected CompletableFuture<Void> joinCluster() {
-    persistentMetadataService.addMember(membershipService().getLocalMember());
-    return CompletableFuture.completedFuture(null);
   }
 
   protected CompletableFuture<Void> completeStartup() {
@@ -194,27 +237,17 @@ public class AtomixCluster implements Managed<Void> {
       return closeFuture;
     }
 
-    closeFuture = leaveCluster()
-        .thenComposeAsync(v -> stopServices(), threadContext)
+    closeFuture = stopServices()
         .thenComposeAsync(v -> completeShutdown(), threadContext);
     return closeFuture;
   }
 
-  protected CompletableFuture<Void> leaveCluster() {
-    persistentMetadataService.removeMember(membershipService().getLocalMember());
-    return CompletableFuture.completedFuture(null);
-  }
-
   protected CompletableFuture<Void> stopServices() {
-    return clusterMessagingService.stop()
+    return communicationService.stop()
         .exceptionally(e -> null)
-        .thenComposeAsync(v -> clusterEventingService.stop(), threadContext)
+        .thenComposeAsync(v -> eventingService.stop(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> membershipService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> persistentMetadataService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> bootstrapMetadataService.stop(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> broadcastService.stop(), threadContext)
         .exceptionally(e -> null)
@@ -238,8 +271,8 @@ public class AtomixCluster implements Managed<Void> {
   /**
    * Loads a configuration from the given file.
    */
-  private static ClusterConfig loadConfig(File config) {
-    return Configs.load(config, ClusterConfig.class);
+  private static ClusterConfig loadConfig(File config, ClassLoader classLoader) {
+    return new ConfigMapper(classLoader).loadResources(ClusterConfig.class, config.getAbsolutePath());
   }
 
   /**
@@ -264,73 +297,42 @@ public class AtomixCluster implements Managed<Void> {
   }
 
   /**
-   * Builds a bootstrap metadata service.
-   */
-  protected static ManagedBootstrapMetadataService buildBootstrapMetadataService(ClusterConfig config) {
-    boolean hasPersistentNodes = config.getMembers().values().stream().anyMatch(node -> node.getType() == Member.Type.PERSISTENT);
-    ClusterMetadata metadata = ClusterMetadata.builder()
-        .withNodes(config.getMembers()
-            .values()
-            .stream()
-            .filter(node -> (!hasPersistentNodes && node.getType() == Member.Type.EPHEMERAL) || (hasPersistentNodes && node.getType() == Member.Type.PERSISTENT))
-            .map(Member::new)
-            .collect(Collectors.toList()))
-        .build();
-    return new DefaultBootstrapMetadataService(metadata);
-  }
-
-  /**
-   * Builds a core metadata service.
-   */
-  protected static ManagedPersistentMetadataService buildPersistentMetadataService(ClusterConfig config, MessagingService messagingService) {
-    ClusterMetadata metadata = ClusterMetadata.builder()
-        .withNodes(config.getMembers()
-            .values()
-            .stream()
-            .filter(node -> node.getType() == Member.Type.PERSISTENT)
-            .map(Member::new)
-            .collect(Collectors.toList()))
-        .build();
-    return new DefaultPersistentMetadataService(metadata, messagingService);
-  }
-
-  /**
    * Builds a cluster service.
    */
   protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
-      BootstrapMetadataService bootstrapMetadataService,
-      PersistentMetadataService persistentMetadataService,
       MessagingService messagingService,
       BroadcastService broadcastService) {
     // If the local node has not be configured, create a default node.
     Member localMember;
     if (config.getLocalMember() == null) {
-      Address address = Address.empty();
-      localMember = Member.builder(address.toString())
-          .withType(Member.Type.PERSISTENT)
-          .withAddress(address)
-          .build();
+      Address address = Address.local();
+      localMember = Member.member(address);
     } else {
       localMember = new Member(config.getLocalMember());
     }
-    return new DefaultClusterMembershipService(localMember, bootstrapMetadataService, persistentMetadataService, messagingService, broadcastService, config.getMembershipConfig());
+    return new DefaultClusterMembershipService(
+        localMember,
+        config.getMembers()
+            .stream()
+            .map(Member::new)
+            .collect(Collectors.toList()), messagingService, broadcastService, config.getMembershipConfig());
   }
 
   /**
    * Builds a cluster messaging service.
    */
-  protected static ManagedClusterMessagingService buildClusterMessagingService(
+  protected static ManagedClusterCommunicationService buildClusterMessagingService(
       ClusterMembershipService membershipService, MessagingService messagingService) {
-    return new DefaultClusterMessagingService(membershipService, messagingService);
+    return new DefaultClusterCommunicationService(membershipService, messagingService);
   }
 
   /**
    * Builds a cluster event service.
    */
-  protected static ManagedClusterEventingService buildClusterEventService(
+  protected static ManagedClusterEventService buildClusterEventService(
       ClusterMembershipService membershipService, MessagingService messagingService) {
-    return new DefaultClusterEventingService(membershipService, messagingService);
+    return new DefaultClusterEventService(membershipService, messagingService);
   }
 
   /**

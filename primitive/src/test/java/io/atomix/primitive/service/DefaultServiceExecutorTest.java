@@ -95,7 +95,7 @@ public class DefaultServiceExecutorTest {
   private ServiceExecutor executor() {
     ServiceContext context = mock(ServiceContext.class);
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
-    when(context.serviceType()).thenReturn(new TestPrimitiveType());
+    when(context.serviceType()).thenReturn(TestPrimitiveType.instance());
     when(context.serviceName()).thenReturn("test");
     when(context.currentOperation()).thenReturn(OperationType.COMMAND);
     return new DefaultServiceExecutor(context, Serializer.using(KryoNamespaces.BASIC));

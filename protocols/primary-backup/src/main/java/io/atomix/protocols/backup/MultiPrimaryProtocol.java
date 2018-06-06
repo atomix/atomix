@@ -26,7 +26,6 @@ import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -41,18 +40,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class MultiPrimaryProtocol implements PrimitiveProtocol {
   public static final Type TYPE = new Type();
-
-  /**
-   * The multi-primary protocol type.
-   */
-  public static class Type implements PrimitiveProtocol.Type {
-    private static final String NAME = "multi-primary";
-
-    @Override
-    public String name() {
-      return NAME;
-    }
-  }
 
   /**
    * Returns a new multi-primary protocol builder.
@@ -71,6 +58,28 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
    */
   public static Builder builder(String group) {
     return new Builder(new MultiPrimaryProtocolConfig().setGroup(group));
+  }
+
+  /**
+   * Multi-primary protocol type.
+   */
+  public static final class Type implements PrimitiveProtocol.Type<MultiPrimaryProtocolConfig> {
+    private static final String NAME = "multi-primary";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
+
+    @Override
+    public MultiPrimaryProtocolConfig newConfig() {
+      return new MultiPrimaryProtocolConfig();
+    }
+
+    @Override
+    public PrimitiveProtocol newProtocol(MultiPrimaryProtocolConfig config) {
+      return new MultiPrimaryProtocol(config);
+    }
   }
 
   protected final MultiPrimaryProtocolConfig config;

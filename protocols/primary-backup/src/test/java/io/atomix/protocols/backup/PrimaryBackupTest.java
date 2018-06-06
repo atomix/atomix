@@ -416,7 +416,6 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
         .withMembershipService(new TestClusterMembershipService(memberId, nodes))
         .withMemberGroupProvider(MemberGroupStrategy.NODE_AWARE)
         .withPrimaryElection(election)
-        .addPrimitiveType(TestPrimitiveType.INSTANCE)
         .build();
     servers.add(server);
     return server;
@@ -443,7 +442,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
    * Creates a new primary-backup proxy.
    */
   private PartitionProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+    return client.proxyBuilder("primary-backup-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withNumBackups(backups)
         .withReplication(replication)
         .build()
@@ -474,42 +473,39 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   private static final EventType EXPIRE_EVENT = EventType.from("expire");
   private static final EventType CLOSE_EVENT = EventType.from("close");
 
-  /**
-   * Test primitive type.
-   */
-  private static class TestPrimitiveType implements PrimitiveType {
-    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+  public static class TestPrimitiveType implements PrimitiveType {
+    private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
 
     @Override
-    public String id() {
-      return "test";
+    public String name() {
+      return "primary-backup-test";
+    }
+
+    @Override
+    public PrimitiveConfig newConfig() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+      throw new UnsupportedOperationException();
     }
 
     @Override
     public PrimitiveService newService(ServiceConfig config) {
-      return new TestPrimitiveService(config);
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
+      return new TestPrimitiveService();
     }
   }
 
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveService extends AbstractPrimitiveService<Object, ServiceConfig> {
+  public static class TestPrimitiveService extends AbstractPrimitiveService<Object> {
     private Commit<Void> expire;
     private Commit<Void> close;
 
-    public TestPrimitiveService(ServiceConfig config) {
-      super(config);
+    public TestPrimitiveService() {
+      super(TestPrimitiveType.INSTANCE);
     }
 
     @Override

@@ -15,8 +15,7 @@
  */
 package io.atomix.core.lock.impl;
 
-import io.atomix.primitive.operation.Operation;
-import io.atomix.primitive.operation.OperationType;
+import io.atomix.primitive.operation.Command;
 
 /**
  * Distributed lock service.
@@ -28,7 +27,7 @@ public interface DistributedLockService {
    *
    * @param lockId the lock identifier
    */
-  @Operation(value = "lock", type = OperationType.COMMAND)
+  @Command("lock")
   default void lock(int lockId) {
     lock(lockId, -1);
   }
@@ -39,7 +38,7 @@ public interface DistributedLockService {
    * @param lockId  the lock identifier
    * @param timeout the lock to acquire
    */
-  @Operation(value = "lockWithTimeout", type = OperationType.COMMAND)
+  @Command("lockWithTimeout")
   void lock(int lockId, long timeout);
 
   /**
@@ -47,7 +46,7 @@ public interface DistributedLockService {
    *
    * @param lockId the lock identifier
    */
-  @Operation(value = "unlock", type = OperationType.COMMAND)
+  @Command("unlock")
   void unlock(int lockId);
 
   /**

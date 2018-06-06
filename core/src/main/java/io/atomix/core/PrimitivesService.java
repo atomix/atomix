@@ -346,21 +346,21 @@ public interface PrimitivesService {
    * Creates a new DistributedSemaphoreBuilder.
    *
    * @param name the primitive name
-   * @param protocol the primitive protocol
    * @return distributed semaphore builder
    */
-  default DistributedSemaphoreBuilder semaphoreBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, DistributedSemaphoreType.instance(), protocol);
+  default DistributedSemaphoreBuilder semaphoreBuilder(String name) {
+    return primitiveBuilder(name, DistributedSemaphoreType.instance());
   }
 
   /**
    * Creates a new DistributedSemaphoreBuilder.
    *
-   * @param name the primitive name
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
    * @return distributed semaphore builder
    */
-  default DistributedSemaphoreBuilder semaphoreBuilder(String name) {
-    return primitiveBuilder(name, DistributedSemaphoreType.instance());
+  default DistributedSemaphoreBuilder semaphoreBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedSemaphoreType.instance(), protocol);
   }
 
   /**
@@ -535,6 +535,16 @@ public interface PrimitivesService {
   <P extends DistributedPrimitive> P getPrimitive(String name);
 
   /**
+   * Returns a registered primitive.
+   *
+   * @param name          the primitive name
+   * @param primitiveType the primitive type
+   * @param <P>           the primitive type
+   * @return the primitive instance
+   */
+  <P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, ?, P> primitiveType);
+
+  /**
    * Returns a cached primitive.
    *
    * @param name            the primitive name
@@ -546,7 +556,7 @@ public interface PrimitivesService {
    */
   <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(
       String name,
-      PrimitiveType<?, C, P, ?> primitiveType,
+      PrimitiveType<?, C, P> primitiveType,
       C primitiveConfig);
 
   /**
@@ -560,7 +570,7 @@ public interface PrimitivesService {
    */
   <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, C, P, ?> primitiveType);
+      PrimitiveType<B, C, P> primitiveType);
 
   /**
    * Returns a primitive builder of the given type.
@@ -574,7 +584,7 @@ public interface PrimitivesService {
    */
   default <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
-      PrimitiveType<B, C, P, ?> primitiveType,
+      PrimitiveType<B, C, P> primitiveType,
       PrimitiveProtocol protocol) {
     return primitiveBuilder(name, primitiveType).withProtocol(protocol);
   }

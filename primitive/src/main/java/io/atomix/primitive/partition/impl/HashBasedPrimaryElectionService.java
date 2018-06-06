@@ -17,7 +17,7 @@ package io.atomix.primitive.partition.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.partition.ManagedPrimaryElectionService;
 import io.atomix.primitive.partition.PartitionGroupMembershipService;
 import io.atomix.primitive.partition.PartitionId;
@@ -46,13 +46,13 @@ public class HashBasedPrimaryElectionService
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final ClusterMembershipService clusterMembershipService;
   private final PartitionGroupMembershipService groupMembershipService;
-  private final ClusterMessagingService messagingService;
+  private final ClusterCommunicationService messagingService;
   private final Map<PartitionId, HashBasedPrimaryElection> elections = Maps.newConcurrentMap();
   private final PrimaryElectionEventListener primaryElectionListener = this::post;
   private final ScheduledExecutorService executor;
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public HashBasedPrimaryElectionService(ClusterMembershipService clusterMembershipService, PartitionGroupMembershipService groupMembershipService, ClusterMessagingService messagingService) {
+  public HashBasedPrimaryElectionService(ClusterMembershipService clusterMembershipService, PartitionGroupMembershipService groupMembershipService, ClusterCommunicationService messagingService) {
     this.clusterMembershipService = clusterMembershipService;
     this.groupMembershipService = groupMembershipService;
     this.messagingService = messagingService;

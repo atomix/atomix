@@ -17,8 +17,8 @@ package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.MemberId;
-import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.impl.NettyMessagingService;
+import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -200,6 +200,7 @@ public class RaftFuzzTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
@@ -223,6 +224,7 @@ public class RaftFuzzTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -585,8 +587,7 @@ public class RaftFuzzTest implements Runnable {
             .withDirectory(new File(String.format("target/fuzz-logs/%s", member.memberId())))
             .withSerializer(storageSerializer)
             .withMaxSegmentSize(1024 * 1024)
-            .build())
-        .addPrimitiveType(TestPrimitiveType.INSTANCE);
+            .build());
 
     RaftServer server = builder.build();
     servers.add(server);
@@ -623,7 +624,7 @@ public class RaftFuzzTest implements Runnable {
    * Creates a test session.
    */
   private PartitionProxy createProxy(RaftClient client, ReadConsistency consistency) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+    return client.proxyBuilder("raft-fuzz-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build()
@@ -636,30 +637,27 @@ public class RaftFuzzTest implements Runnable {
   private static final OperationId REMOVE = OperationId.command("remove");
   private static final OperationId INDEX = OperationId.command("index");
 
-  /**
-   * Test primitive type.
-   */
-  private static class TestPrimitiveType implements PrimitiveType {
-    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+  public static class TestPrimitiveType implements PrimitiveType {
+    private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
 
     @Override
-    public String id() {
-      return "test";
+    public String name() {
+      return "raft-fuzz-test";
+    }
+
+    @Override
+    public PrimitiveConfig newConfig() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+      throw new UnsupportedOperationException();
     }
 
     @Override
     public PrimitiveService newService(ServiceConfig config) {
-      return new FuzzStateMachine(config);
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
+      return new FuzzStateMachine();
     }
   }
 
@@ -669,8 +667,8 @@ public class RaftFuzzTest implements Runnable {
   public static class FuzzStateMachine extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
 
-    public FuzzStateMachine(ServiceConfig config) {
-      super(config);
+    public FuzzStateMachine() {
+      super(TestPrimitiveType.INSTANCE);
     }
 
     @Override

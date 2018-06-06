@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.cluster.MemberId;
+import io.atomix.primitive.impl.ClasspathScanningPrimitiveTypeRegistry;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftCluster;
@@ -224,7 +225,10 @@ public class DefaultRaftServer implements RaftServer {
 
     @Override
     public RaftServer build() {
-      if (primitiveTypes.size() == 0) {
+      if (primitiveTypes == null) {
+        primitiveTypes = new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader());
+      }
+      if (primitiveTypes.getPrimitiveTypes().isEmpty()) {
         throw new IllegalStateException("No primitive services registered");
       }
 

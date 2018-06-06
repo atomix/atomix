@@ -16,17 +16,14 @@
 package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.ClusterMetadata;
 import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.impl.DefaultBootstrapMetadataService;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
-import io.atomix.cluster.impl.DefaultPersistentMetadataService;
-import io.atomix.messaging.BroadcastService;
-import io.atomix.messaging.ManagedMessagingService;
-import io.atomix.messaging.MessagingService;
-import io.atomix.messaging.impl.NettyMessagingService;
+import io.atomix.cluster.messaging.BroadcastService;
+import io.atomix.cluster.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -215,6 +212,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
@@ -238,6 +236,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -435,10 +434,9 @@ public class RaftPerformanceTest implements Runnable {
    *
    * @return The next unique member identifier.
    */
-  private Member nextNode(Member.Type type) {
+  private Member nextNode() {
     Address address = Address.from("localhost", ++port);
     Member member = Member.builder(MemberId.from(String.valueOf(++nextId)))
-        .withType(type)
         .withAddress(address)
         .build();
     addressMap.put(member.id(), address);
@@ -452,7 +450,7 @@ public class RaftPerformanceTest implements Runnable {
     List<RaftServer> servers = new ArrayList<>();
 
     for (int i = 0; i < nodes; i++) {
-      members.add(nextNode(Member.Type.PERSISTENT));
+      members.add(nextNode());
     }
 
     CountDownLatch latch = new CountDownLatch(nodes);
@@ -490,8 +488,7 @@ public class RaftPerformanceTest implements Runnable {
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .withMembershipService(new DefaultClusterMembershipService(
             member,
-            new DefaultBootstrapMetadataService(new ClusterMetadata(Collections.emptyList())),
-            new DefaultPersistentMetadataService(new ClusterMetadata(members), messagingService),
+            members,
             messagingService,
             new BroadcastServiceAdapter(),
             new GroupMembershipConfig()))
@@ -501,8 +498,7 @@ public class RaftPerformanceTest implements Runnable {
             .withSerializer(storageSerializer)
             .withMaxEntriesPerSegment(32768)
             .withMaxSegmentSize(1024 * 1024)
-            .build())
-        .addPrimitiveType(TestPrimitiveType.INSTANCE);
+            .build());
 
     RaftServer server = builder.build();
     servers.add(server);
@@ -513,7 +509,7 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a Raft client.
    */
   private RaftClient createClient() throws Exception {
-    Member member = nextNode(Member.Type.EPHEMERAL);
+    Member member = nextNode();
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
@@ -538,7 +534,7 @@ public class RaftPerformanceTest implements Runnable {
    * Creates a test session.
    */
   private PartitionProxy createProxy(RaftClient client) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+    return client.proxyBuilder("raft-performance-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build();
@@ -549,30 +545,27 @@ public class RaftPerformanceTest implements Runnable {
   private static final OperationId REMOVE = OperationId.command("remove");
   private static final OperationId INDEX = OperationId.command("index");
 
-  /**
-   * Test primitive type.
-   */
-  private static class TestPrimitiveType implements PrimitiveType {
-    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+  public static class TestPrimitiveType implements PrimitiveType {
+    private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
 
     @Override
-    public String id() {
-      return "test";
+    public String name() {
+      return "raft-performance-test";
+    }
+
+    @Override
+    public PrimitiveConfig newConfig() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+      throw new UnsupportedOperationException();
     }
 
     @Override
     public PrimitiveService newService(ServiceConfig config) {
-      return new PerformanceService(config);
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
+      return new PerformanceService();
     }
   }
 
@@ -582,8 +575,8 @@ public class RaftPerformanceTest implements Runnable {
   public static class PerformanceService extends AbstractPrimitiveService {
     private Map<String, String> map = new HashMap<>();
 
-    public PerformanceService(ServiceConfig config) {
-      super(config);
+    public PerformanceService() {
+      super(TestPrimitiveType.INSTANCE);
     }
 
     @Override

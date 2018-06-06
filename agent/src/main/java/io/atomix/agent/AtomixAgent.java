@@ -15,14 +15,12 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberConfig;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
-import io.atomix.utils.config.Configs;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -35,11 +33,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Atomix agent runner.
@@ -48,52 +42,34 @@ public class AtomixAgent {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
-    Function<Member.Type, ArgumentType<MemberConfig>> memberArgumentType = (type) -> (ArgumentParser argumentParser, Argument argument, String value) -> {
-      return new MemberConfig()
-          .setId(parseMemberId(value))
-          .setType(type)
-          .setAddress(parseAddress(value));
-    };
+    ArgumentType<MemberConfig> memberArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> new MemberConfig()
+        .setId(parseMemberId(value))
+        .setAddress(parseAddress(value));
 
-    ArgumentType<Member.Type> typeArgumentType = (argumentParser, argument, value) -> Member.Type.valueOf(value.toUpperCase());
     ArgumentType<Address> addressArgumentType = (argumentParser, argument, value) -> Address.from(value);
 
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
         .description("Atomix server");
     parser.addArgument("member")
-        .type(memberArgumentType.apply(Member.Type.PERSISTENT))
+        .type(String.class)
         .nargs("?")
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The member info for the local member. This should be in the format [NAME@]HOST[:PORT]. " +
             "If no name is provided, the member name will default to the host. " +
             "If no port is provided, the port will default to 5679.");
-    parser.addArgument("--type", "-t")
-        .type(typeArgumentType)
-        .metavar("TYPE")
-        .choices(Member.Type.PERSISTENT, Member.Type.EPHEMERAL)
-        .setDefault(Member.Type.PERSISTENT)
-        .help("Indicates the local member type.");
     parser.addArgument("--config", "-c")
         .metavar("FILE|JSON|YAML")
         .required(false)
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
-    parser.addArgument("--persistent-members", "-n")
+    parser.addArgument("--bootstrap", "-b")
         .nargs("*")
-        .type(memberArgumentType.apply(Member.Type.PERSISTENT))
+        .type(memberArgumentType)
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The set of core members, if any. When bootstrapping a new cluster, if the local member is a core member " +
             "then it should be present in the core configuration as well.");
-    parser.addArgument("--ephemeral-members", "-b")
-        .nargs("*")
-        .type(memberArgumentType.apply(Member.Type.EPHEMERAL))
-        .metavar("NAME@HOST:PORT")
-        .required(false)
-        .help("The set of bootstrap members. If core members are provided, the cluster will be bootstrapped from the " +
-            "core members. For clusters without core members, at least one bootstrap member must be provided unless " +
-            "using multicast discovery or bootstrapping a new cluster.");
     parser.addArgument("--multicast", "-m")
         .action(new StoreTrueArgumentAction())
         .setDefault(false)
@@ -118,82 +94,84 @@ public class AtomixAgent {
     }
 
     final String configString = namespace.get("config");
-    final MemberConfig localMember = namespace.get("member");
-    final Member.Type localMemberType = namespace.get("type");
-    final List<MemberConfig> persistentMembers = namespace.getList("persistent_members");
-    final List<MemberConfig> ephemeralMembers = namespace.getList("ephemeral_members");
+    final String localMemberInfo = namespace.get("member");
+    final List<MemberConfig> bootstrapMembers = namespace.getList("bootstrap");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
     final Address multicastAddress = namespace.get("multicast_address");
     final Integer httpPort = namespace.getInt("http_port");
 
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
-    final Atomix.Builder builder;
+    AtomixConfig config;
     if (configString != null) {
-      AtomixConfig config = loadConfig(configString);
-      if (localMember != null) {
-        config.getClusterConfig().getMembers().values().stream()
-            .filter(member -> member.getId().equals(localMember.getId()))
-            .findAny()
-            .ifPresent(localMemberConfig -> {
-              if (localMemberType == null) {
-                localMember.setType(localMemberConfig.getType());
-              }
-              localMember.setAddress(localMemberConfig.getAddress());
-              localMember.setZone(localMemberConfig.getZone());
-              localMember.setRack(localMemberConfig.getRack());
-              localMember.setHost(localMemberConfig.getHost());
-            });
-      }
-      builder = Atomix.builder(config);
+      config = Atomix.config(configString);
     } else {
-      builder = Atomix.builder();
+      config = Atomix.config();
     }
 
-    builder.withShutdownHook(true);
+    // If the local member info is specified, attempt to look up the member in the members list.
+    // Otherwise, create a new member.
+    MemberConfig localMember = null;
+    if (localMemberInfo != null) {
+      MemberId localMemberId = parseMemberId(localMemberInfo);
+      if (localMemberId != null) {
+        localMember = config.getClusterConfig().getMembers().stream()
+            .filter(member -> member.getId().equals(localMemberId))
+            .findFirst()
+            .orElse(null);
+        if (localMember == null && bootstrapMembers != null) {
+          localMember = bootstrapMembers.stream()
+              .filter(member -> member.getId().equals(localMemberId))
+              .findFirst()
+              .orElse(null);
+        }
+      } else {
+        Address localMemberAddress = parseAddress(localMemberInfo);
+        localMember = config.getClusterConfig().getMembers().stream()
+            .filter(member -> member.getAddress().equals(localMemberAddress))
+            .findFirst()
+            .orElse(null);
+        if (localMember == null && bootstrapMembers != null) {
+          localMember = bootstrapMembers.stream()
+              .filter(member -> member.getAddress().equals(localMemberAddress))
+              .findFirst()
+              .orElse(null);
+        }
+      }
 
-    // If a local member was provided, add the local member to the builder.
-    if (localMember != null) {
-      localMember.setType(localMemberType);
-      Member member = new Member(localMember);
-      builder.withLocalMember(member);
-      LOGGER.info("member: {}", member);
-    }
-
-    // If a cluster configuration was provided, add all the cluster members to the builder.
-    if (persistentMembers != null || ephemeralMembers != null) {
-      List<Member> members = Stream.concat(
-          persistentMembers != null ? persistentMembers.stream() : Stream.empty(),
-          ephemeralMembers != null ? ephemeralMembers.stream() : Stream.empty())
-          .map(member -> Member.builder(member.getId())
-              .withType(member.getType())
-              .withAddress(member.getAddress())
-              .build())
-          .collect(Collectors.toList());
-      builder.withMembers(members);
-    }
-
-    // Enable multicast if provided.
-    if (multicastEnabled) {
-      builder.withMulticastEnabled();
-      if (multicastAddress != null) {
-        builder.withMulticastAddress(multicastAddress);
+      if (localMember == null) {
+        localMember = new MemberConfig()
+            .setId(parseMemberId(localMemberInfo))
+            .setAddress(parseAddress(localMemberInfo));
       }
     }
 
-    Atomix atomix = builder.build();
+    if (localMember != null) {
+      config.getClusterConfig().setLocalMember(localMember);
+    }
+
+    if (bootstrapMembers != null) {
+      config.getClusterConfig().setMembers(bootstrapMembers);
+    }
+
+    if (multicastEnabled) {
+      config.getClusterConfig().setMulticastEnabled(true);
+      config.getClusterConfig().setMulticastAddress(multicastAddress);
+    }
+
+    Atomix atomix = Atomix.builder(config).withShutdownHookEnabled().build();
 
     atomix.start().join();
 
-    LOGGER.info("Atomix listening at {}:{}", atomix.membershipService().getLocalMember().address().host(), atomix.membershipService().getLocalMember().address().port());
+    LOGGER.info("Atomix listening at {}:{}", atomix.getMembershipService().getLocalMember().address().host(), atomix.getMembershipService().getLocalMember().address().port());
 
     ManagedRestService rest = RestService.builder()
         .withAtomix(atomix)
-        .withAddress(Address.from(atomix.membershipService().getLocalMember().address().host(), httpPort))
+        .withAddress(Address.from(atomix.getMembershipService().getLocalMember().address().host(), httpPort))
         .build();
 
     rest.start().join();
 
-    LOGGER.info("HTTP server listening at {}:{}", atomix.membershipService().getLocalMember().address().address().getHostAddress(), httpPort);
+    LOGGER.info("HTTP server listening at {}:{}", atomix.getMembershipService().getLocalMember().address().address().getHostAddress(), httpPort);
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {
@@ -202,29 +180,12 @@ public class AtomixAgent {
     }
   }
 
-  /**
-   * Loads a configuration from the given file.
-   */
-  private static AtomixConfig loadConfig(String config) {
-    File configFile = new File(config);
-    if (configFile.exists()) {
-      return Configs.load(configFile, AtomixConfig.class);
-    } else {
-      return Configs.load(config, AtomixConfig.class);
-    }
-  }
-
   static MemberId parseMemberId(String address) {
     int endIndex = address.indexOf('@');
     if (endIndex > 0) {
       return MemberId.from(address.substring(0, endIndex));
-    } else {
-      try {
-        return MemberId.from(Address.from(address).host());
-      } catch (MalformedAddressException e) {
-        return MemberId.from(address);
-      }
     }
+    return null;
   }
 
   static Address parseAddress(String address) {
@@ -233,7 +194,7 @@ public class AtomixAgent {
       try {
         return Address.from(address);
       } catch (MalformedAddressException e) {
-        return Address.from("0.0.0.0");
+        return Address.local();
       }
     } else {
       return Address.from(address.substring(startIndex + 1));

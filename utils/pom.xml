@@ -47,6 +47,16 @@
       <artifactId>kryo</artifactId>
       <version>${kryo.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.typesafe</groupId>
+      <artifactId>config</artifactId>
+      <version>${config.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.lukehutch</groupId>
+      <artifactId>fast-classpath-scanner</artifactId>
+      <version>${fast-classpath-scanner.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -61,7 +71,7 @@
               io.atomix.utils.*
             </Export-Package>
             <Import-Package>
-              sun.nio.ch;resolution:=optional,sun.misc;resolution:=optional,*
+              sun.nio.ch;resolution:=optional,sun.misc;resolution:=optional,com.sun.jmx.remote.internal;resolution:=optional,*
             </Import-Package>
           </instructions>
         </configuration>

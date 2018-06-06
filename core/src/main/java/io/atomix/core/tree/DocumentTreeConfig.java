@@ -17,6 +17,7 @@ package io.atomix.core.tree;
 
 import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Document tree configuration.
@@ -24,8 +25,9 @@ import io.atomix.primitive.PrimitiveConfig;
 public class DocumentTreeConfig extends PrimitiveConfig<DocumentTreeConfig> {
   private Ordering ordering;
 
-  public DocumentTreeConfig() {
-    super(DocumentTreeType.instance());
+  @Override
+  public PrimitiveType getType() {
+    return DocumentTreeType.instance();
   }
 
   /**

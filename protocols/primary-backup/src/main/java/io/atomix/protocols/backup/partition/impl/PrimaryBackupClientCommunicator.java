@@ -18,8 +18,8 @@ package io.atomix.protocols.backup.partition.impl;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterMessagingService;
-import io.atomix.messaging.MessagingException;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.session.SessionId;
@@ -42,9 +42,9 @@ import java.util.function.Consumer;
 public class PrimaryBackupClientCommunicator implements PrimaryBackupClientProtocol {
   private final PrimaryBackupMessageContext context;
   private final Serializer serializer;
-  private final ClusterMessagingService clusterCommunicator;
+  private final ClusterCommunicationService clusterCommunicator;
 
-  public PrimaryBackupClientCommunicator(String prefix, Serializer serializer, ClusterMessagingService clusterCommunicator) {
+  public PrimaryBackupClientCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
     this.context = new PrimaryBackupMessageContext(prefix);
     this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");

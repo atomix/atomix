@@ -25,18 +25,17 @@ import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.ClusterMessagingService;
-import io.atomix.messaging.MessagingException;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionGroupMembershipService;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.primitive.partition.PartitionGroupFactory;
 import io.atomix.primitive.partition.PartitionGroupMembership;
 import io.atomix.primitive.partition.PartitionGroupMembershipEvent;
 import io.atomix.primitive.partition.PartitionGroupMembershipEventListener;
 import io.atomix.primitive.partition.PartitionGroupMembershipService;
-import io.atomix.primitive.partition.PartitionGroups;
+import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -71,7 +70,8 @@ public class DefaultPartitionGroupMembershipService
   private static final String BOOTSTRAP_SUBJECT = "partition-group-bootstrap";
 
   private final ClusterMembershipService membershipService;
-  private final ClusterMessagingService messagingService;
+  private final ClusterCommunicationService messagingService;
+  private final PartitionGroupTypeRegistry groupTypeRegistry;
   private final Serializer serializer;
   private volatile PartitionGroupMembership systemGroup;
   private final Map<String, PartitionGroupMembership> groups = Maps.newConcurrentMap();
@@ -82,11 +82,13 @@ public class DefaultPartitionGroupMembershipService
   @SuppressWarnings("unchecked")
   public DefaultPartitionGroupMembershipService(
       ClusterMembershipService membershipService,
-      ClusterMessagingService messagingService,
+      ClusterCommunicationService messagingService,
       ManagedPartitionGroup systemGroup,
-      Collection<ManagedPartitionGroup> groups) {
+      Collection<ManagedPartitionGroup> groups,
+      PartitionGroupTypeRegistry groupTypeRegistry) {
     this.membershipService = membershipService;
     this.messagingService = messagingService;
+    this.groupTypeRegistry = groupTypeRegistry;
     this.systemGroup = systemGroup != null
         ? new PartitionGroupMembership(
         systemGroup.name(),
@@ -98,18 +100,16 @@ public class DefaultPartitionGroupMembershipService
           group.config(),
           ImmutableSet.of(membershipService.getLocalMember().id()), false));
     });
-
-    KryoNamespace.Builder builder = KryoNamespace.builder()
+    serializer = Serializer.using(KryoNamespace.builder()
         .register(KryoNamespaces.BASIC)
         .register(MemberId.class)
+        .register(MemberId.Type.class)
         .register(PartitionGroupMembership.class)
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)
-        .register(MemberGroupStrategy.class);
-    for (PartitionGroupFactory factory : PartitionGroups.getGroupFactories()) {
-      builder.register(factory.configClass());
-    }
-    serializer = Serializer.using(builder.build());
+        .register(MemberGroupStrategy.class)
+        .setRegistrationRequired(false)
+        .build());
   }
 
   @Override
@@ -135,7 +135,7 @@ public class DefaultPartitionGroupMembershipService
    * Handles a cluster membership change.
    */
   private void handleMembershipChange(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_ACTIVATED) {
+    if (event.type() == ClusterMembershipEvent.Type.MEMBER_ADDED) {
       bootstrap(event.subject());
     } else if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
       threadContext.execute(() -> {
@@ -219,6 +219,7 @@ public class DefaultPartitionGroupMembershipService
             if (error instanceof MessagingException.NoRemoteHandler || error instanceof TimeoutException) {
               threadContext.schedule(Duration.ofSeconds(1), () -> bootstrap(member, future));
             } else {
+              LOGGER.debug("{} - Failed to bootstrap from member {}", membershipService.getLocalMember().id(), member, error);
               future.complete(null);
             }
           }

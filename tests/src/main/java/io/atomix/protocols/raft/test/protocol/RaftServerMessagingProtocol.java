@@ -52,7 +52,7 @@ import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.utils.net.Address;
-import io.atomix.messaging.MessagingService;
+import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Serializer;
 

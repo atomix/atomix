@@ -15,71 +15,26 @@
  */
 package io.atomix.primitive;
 
-import com.google.common.collect.Maps;
-import io.atomix.utils.config.ConfigurationException;
-
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Primitive registry.
  */
-public class PrimitiveTypeRegistry {
-  private final Map<String, PrimitiveType> types = Maps.newConcurrentMap();
-
-  public PrimitiveTypeRegistry() {
-    this(new ArrayList<>());
-  }
-
-  public PrimitiveTypeRegistry(Collection<Class<? extends PrimitiveType>> types) {
-    for (PrimitiveType type : PrimitiveTypes.getPrimitiveTypes()) {
-      this.types.put(type.id(), type);
-    }
-    for (Class<? extends PrimitiveType> typeClass : types) {
-      try {
-        PrimitiveType type = typeClass.newInstance();
-        this.types.put(type.id(), type);
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException("Failed to instantiate primitive type", e);
-      }
-    }
-  }
+public interface PrimitiveTypeRegistry {
 
   /**
-   * Registers a primitive type.
+   * Returns the collection of registered primitive types.
    *
-   * @param type the primitive type
+   * @return the collection of registered primitive types
    */
-  public void register(PrimitiveType type) {
-    types.put(type.id(), type);
-  }
+  Collection<PrimitiveType> getPrimitiveTypes();
 
   /**
-   * Unregisters a primitive type.
-   *
-   * @param type the primitive type
-   */
-  public void unregister(PrimitiveType type) {
-    types.remove(type.id());
-  }
-
-  /**
-   * Returns a primitive type by name.
+   * Returns the primitive type for the given name.
    *
    * @param typeName the primitive type name
-   * @return the primitive type or {@code null} if no type with the given name is registered
+   * @return the primitive type
    */
-  public PrimitiveType get(String typeName) {
-    return types.get(typeName);
-  }
+  PrimitiveType getPrimitiveType(String typeName);
 
-  /**
-   * Returns the number of registered primitive types.
-   *
-   * @return the number of registered primitive types
-   */
-  public int size() {
-    return types.size();
-  }
 }

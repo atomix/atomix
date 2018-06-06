@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.partition;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.Recovery;
@@ -32,8 +31,6 @@ import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
-import io.atomix.utils.concurrent.Futures;
-import io.atomix.utils.config.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +54,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft partition group.
  */
 public class RaftPartitionGroup implements ManagedPartitionGroup {
-  public static final PartitionGroup.Type TYPE = new Type();
+  public static final Type TYPE = new Type();
 
   /**
    * Returns a new Raft partition group builder.
@@ -70,14 +67,24 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   }
 
   /**
-   * The Raft partition group type.
+   * Raft partition group type.
    */
-  public static class Type implements PartitionGroup.Type {
+  public static class Type implements PartitionGroup.Type<RaftPartitionGroupConfig> {
     private static final String NAME = "raft";
 
     @Override
     public String name() {
       return NAME;
+    }
+
+    @Override
+    public RaftPartitionGroupConfig newConfig() {
+      return new RaftPartitionGroupConfig();
+    }
+
+    @Override
+    public ManagedPartitionGroup newPartitionGroup(RaftPartitionGroupConfig config) {
+      return new RaftPartitionGroup(config);
     }
   }
 
@@ -90,6 +97,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
       partitions.add(new RaftPartition(
           PartitionId.from(config.getName(), i + 1),
           StorageLevel.valueOf(config.getStorageLevel().toUpperCase()),
+          config.getSegmentSize().bytes(),
           config.isFlushOnCommit(),
           new File(partitionsDir, String.valueOf(i + 1))));
     }
@@ -160,12 +168,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
-    // Ensure the Raft group membership intersects with persistent cluster membership.
-    if (!validateMembership(managementService.getMembershipService())) {
-      return Futures.exceptionalFuture(new ConfigurationException("Raft partition group must be configured with persistent membership"));
-    }
-
-    this.metadata = buildPartitions(managementService.getMembershipService());
+    this.metadata = buildPartitions();
     List<CompletableFuture<Partition>> futures = metadata.stream()
         .map(metadata -> {
           RaftPartition partition = partitions.get(metadata.id());
@@ -183,25 +186,9 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     return join(managementService);
   }
 
-  private boolean validateMembership(ClusterMembershipService membershipService) {
-    if (config.getMembers().isEmpty()) {
-      return false;
-    }
-
-    for (String member : config.getMembers()) {
-      Member node = membershipService.getMember(member);
-      if (node == null || node.type() != Member.Type.PERSISTENT) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private Collection<PartitionMetadata> buildPartitions(ClusterMembershipService membershipService) {
-    List<MemberId> sorted = new ArrayList<>(membershipService.getMembers().stream()
-        .filter(node -> node.type() == Member.Type.PERSISTENT)
-        .filter(node -> config.getMembers().contains(node.id().id()))
-        .map(Member::id)
+  private Collection<PartitionMetadata> buildPartitions() {
+    List<MemberId> sorted = new ArrayList<>(config.getMembers().stream()
+        .map(MemberId::from)
         .collect(Collectors.toSet()));
     Collections.sort(sorted);
 

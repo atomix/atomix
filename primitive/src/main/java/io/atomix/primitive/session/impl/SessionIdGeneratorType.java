@@ -41,29 +41,29 @@ public class SessionIdGeneratorType implements PrimitiveType {
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new SessionIdGeneratorService(config);
+    return new SessionIdGeneratorService();
   }
 
   @Override
-  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
+  public PrimitiveConfig newConfig() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
+  public DistributedPrimitiveBuilder newBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

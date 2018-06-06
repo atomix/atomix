@@ -16,12 +16,14 @@
 package io.atomix.core.generator;
 
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * ID generator configuration.
  */
 public class AtomicIdGeneratorConfig extends PrimitiveConfig<AtomicIdGeneratorConfig> {
-  public AtomicIdGeneratorConfig() {
-    super(AtomicIdGeneratorType.instance());
+  @Override
+  public PrimitiveType getType() {
+    return AtomicIdGeneratorType.instance();
   }
 }

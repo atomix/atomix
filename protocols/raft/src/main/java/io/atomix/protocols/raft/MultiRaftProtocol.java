@@ -24,7 +24,6 @@ import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
 import java.time.Duration;
@@ -39,19 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Multi-Raft protocol.
  */
 public class MultiRaftProtocol implements PrimitiveProtocol {
-  public static final Type TYPE = new Type();
-
-  /**
-   * The multi-raft protocol type.
-   */
-  public static class Type implements PrimitiveProtocol.Type {
-    private static final String NAME = "multi-raft";
-
-    @Override
-    public String name() {
-      return NAME;
-    }
-  }
+  public static Type TYPE = new Type();
 
   /**
    * Returns a new multi-Raft protocol builder.
@@ -70,6 +57,28 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
    */
   public static Builder builder(String group) {
     return new Builder(new MultiRaftProtocolConfig().setGroup(group));
+  }
+
+  /**
+   * Multi-Raft protocol type.
+   */
+  public static final class Type implements PrimitiveProtocol.Type<MultiRaftProtocolConfig> {
+    private static final String NAME = "multi-raft";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
+
+    @Override
+    public MultiRaftProtocolConfig newConfig() {
+      return new MultiRaftProtocolConfig();
+    }
+
+    @Override
+    public PrimitiveProtocol newProtocol(MultiRaftProtocolConfig config) {
+      return new MultiRaftProtocol(config);
+    }
   }
 
   private final MultiRaftProtocolConfig config;

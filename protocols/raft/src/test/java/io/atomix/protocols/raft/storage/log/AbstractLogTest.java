@@ -78,6 +78,7 @@ public abstract class AbstractLogTest {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
+      .register(MemberId.Type.class)
       .register(RaftMember.Type.class)
       .register(ReadConsistency.class)
       .register(Instant.class)

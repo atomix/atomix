@@ -102,7 +102,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
     primaryElection.addListener(primaryElectionListener);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
         .addValue(clientName)
-        .add("type", primitiveType.id())
+        .add("type", primitiveType.name())
         .add("name", descriptor.name())
         .build());
   }
@@ -242,7 +242,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_DEACTIVATED && event.subject().id().equals(term.primary().memberId())) {
+    if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED && event.subject().id().equals(term.primary().memberId())) {
       threadContext.execute(() -> {
         state = State.SUSPENDED;
         stateChangeListeners.forEach(l -> l.accept(state));

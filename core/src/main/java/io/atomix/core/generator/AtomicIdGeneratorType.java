@@ -29,8 +29,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Atomic ID generator primitive type.
  */
-public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBuilder, AtomicIdGeneratorConfig, AtomicIdGenerator, ServiceConfig> {
+public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBuilder, AtomicIdGeneratorConfig, AtomicIdGenerator> {
   private static final String NAME = "id-generator";
+  private static final AtomicIdGeneratorType INSTANCE = new AtomicIdGeneratorType();
 
   /**
    * Returns a new atomic ID generator type.
@@ -38,17 +39,17 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
    * @return a new atomic ID generator type
    */
   public static AtomicIdGeneratorType instance() {
-    return new AtomicIdGeneratorType();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AtomicCounterService(config);
+    return new AtomicCounterService();
   }
 
   @Override
@@ -57,19 +58,19 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
   }
 
   @Override
-  public AtomicIdGeneratorBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new AtomicIdGeneratorConfig(), managementService);
+  public AtomicIdGeneratorConfig newConfig() {
+    return new AtomicIdGeneratorConfig();
   }
 
   @Override
-  public AtomicIdGeneratorBuilder newPrimitiveBuilder(String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
+  public AtomicIdGeneratorBuilder newBuilder(String name, AtomicIdGeneratorConfig config, PrimitiveManagementService managementService) {
     return new DelegatingAtomicIdGeneratorBuilder(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

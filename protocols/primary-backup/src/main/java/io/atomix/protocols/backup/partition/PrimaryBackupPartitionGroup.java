@@ -51,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Primary-backup partition group.
  */
 public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
-  public static final PartitionGroup.Type TYPE = new Type();
+  public static final Type TYPE = new Type();
 
   /**
    * Returns a new primary-backup partition group builder.
@@ -64,14 +64,24 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   }
 
   /**
-   * The primary-backup partition group type.
+   * Primary-backup partition group type.
    */
-  public static class Type implements PartitionGroup.Type {
+  public static class Type implements PartitionGroup.Type<PrimaryBackupPartitionGroupConfig> {
     private static final String NAME = "primary-backup";
 
     @Override
     public String name() {
       return NAME;
+    }
+
+    @Override
+    public PrimaryBackupPartitionGroupConfig newConfig() {
+      return new PrimaryBackupPartitionGroupConfig();
+    }
+
+    @Override
+    public ManagedPartitionGroup newPartitionGroup(PrimaryBackupPartitionGroupConfig config) {
+      return new PrimaryBackupPartitionGroup(config);
     }
   }
 

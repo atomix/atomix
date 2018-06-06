@@ -16,12 +16,14 @@
 package io.atomix.core.multimap;
 
 import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Consistent multimap configuration.
  */
 public class ConsistentMultimapConfig extends PrimitiveConfig<ConsistentMultimapConfig> {
-  public ConsistentMultimapConfig() {
-    super(ConsistentMultimapType.instance());
+  @Override
+  public PrimitiveType getType() {
+    return ConsistentMultimapType.instance();
   }
 }

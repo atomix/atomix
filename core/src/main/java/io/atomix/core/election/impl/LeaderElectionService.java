@@ -21,6 +21,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.atomix.core.election.Leader;
+import io.atomix.core.election.LeaderElectionType;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEvent.Type;
@@ -33,7 +34,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.utils.misc.ArraySizeHashPrinter;
@@ -79,8 +79,8 @@ public class LeaderElectionService extends AbstractPrimitiveService {
   private AtomicLong termCounter = new AtomicLong();
   private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
 
-  public LeaderElectionService(ServiceConfig config) {
-    super(config);
+  public LeaderElectionService() {
+    super(LeaderElectionType.instance());
   }
 
   @Override

@@ -23,7 +23,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
-import io.atomix.core.map.ConsistentMapException;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.map.impl.ConsistentMapOperations.ContainsKey;
@@ -43,8 +42,9 @@ import io.atomix.core.map.impl.ConsistentMapOperations.TransactionPrepare;
 import io.atomix.core.map.impl.ConsistentMapOperations.TransactionRollback;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.AbstractAsyncPrimitive;
+import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
@@ -367,7 +367,7 @@ public class ConsistentMapProxy extends AbstractAsyncPrimitive<AsyncConsistentMa
       MapEntryUpdateResult<String, byte[]> result) {
     if (result.status() == MapEntryUpdateResult.Status.PRECONDITION_FAILED ||
         result.status() == MapEntryUpdateResult.Status.WRITE_LOCK) {
-      return Futures.exceptionalFuture(new ConsistentMapException.ConcurrentModification());
+      return Futures.exceptionalFuture(new PrimitiveException.ConcurrentModification());
     }
     return CompletableFuture.completedFuture(result);
   }

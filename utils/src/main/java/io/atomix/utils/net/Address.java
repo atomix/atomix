@@ -35,12 +35,12 @@ public final class Address {
   }
 
   /**
-   * Returns an empty address.
+   * Returns an address that binds to all interfaces.
    *
    * @return the address
    */
-  public static Address empty() {
-    return from("0.0.0.0", DEFAULT_PORT);
+  public static Address local() {
+    return from(DEFAULT_PORT);
   }
 
   /**

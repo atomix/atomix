@@ -15,18 +15,17 @@
  */
 package io.atomix.cluster;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Node configuration.
  */
 public class MemberConfig implements Config {
-  private MemberId id;
-  private Member.Type type;
+  private MemberId id = MemberId.anonymous();
   private Address address;
   private String zone;
   private String rack;
@@ -62,27 +61,7 @@ public class MemberConfig implements Config {
    * @return the node configuration
    */
   public MemberConfig setId(MemberId id) {
-    this.id = id;
-    return this;
-  }
-
-  /**
-   * Returns the node type.
-   *
-   * @return the node type
-   */
-  public Member.Type getType() {
-    return type;
-  }
-
-  /**
-   * Sets the node type.
-   *
-   * @param type the node type
-   * @return the node configuration
-   */
-  public MemberConfig setType(Member.Type type) {
-    this.type = type;
+    this.id = id != null ? id : MemberId.anonymous();
     return this;
   }
 
@@ -199,7 +178,7 @@ public class MemberConfig implements Config {
   /**
    * Adds a node tag.
    *
-   * @param key the metadata key to add
+   * @param key   the metadata key to add
    * @param value the metadata value to add
    * @return the node configuration
    */

@@ -16,8 +16,8 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.impl.ClasspathScanningPrimitiveTypeRegistry;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.impl.DefaultMemberGroupService;
@@ -108,7 +108,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     protected ClusterMembershipService membershipService;
     protected PrimaryBackupServerProtocol protocol;
     protected PrimaryElection primaryElection;
-    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry();
+    protected PrimitiveTypeRegistry primitiveTypes;
     protected MemberGroupProvider memberGroupProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
@@ -168,18 +168,6 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
      */
     public Builder withPrimitiveTypes(PrimitiveTypeRegistry primitiveTypes) {
       this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
-      return this;
-    }
-
-    /**
-     * Adds a primitive type to the registry.
-     *
-     * @param primitiveType the primitive type to add
-     * @return the server builder
-     * @throws NullPointerException if the {@code primitiveType} is {@code null}
-     */
-    public Builder addPrimitiveType(PrimitiveType primitiveType) {
-      primitiveTypes.register(primitiveType);
       return this;
     }
 
@@ -245,7 +233,8 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
           new DefaultMemberGroupService(membershipService, memberGroupProvider),
           protocol,
           threadContextFactory,
-          primitiveTypes,
+          primitiveTypes != null ? primitiveTypes :
+                  new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader()),
           primaryElection));
     }
   }

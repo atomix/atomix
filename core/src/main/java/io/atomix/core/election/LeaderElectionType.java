@@ -29,8 +29,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Leader elector primitive type.
  */
-public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilder<T>, LeaderElectionConfig, LeaderElection<T>, ServiceConfig> {
+public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilder<T>, LeaderElectionConfig, LeaderElection<T>> {
   private static final String NAME = "leader-election";
+  private static final LeaderElectionType INSTANCE = new LeaderElectionType();
 
   /**
    * Returns a new leader elector type.
@@ -38,18 +39,19 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
    * @param <T> the election candidate type
    * @return a new leader elector type
    */
+  @SuppressWarnings("unchecked")
   public static <T> LeaderElectionType<T> instance() {
-    return new LeaderElectionType<>();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new LeaderElectionService(config);
+    return new LeaderElectionService();
   }
 
   @Override
@@ -59,19 +61,19 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
   }
 
   @Override
-  public LeaderElectionBuilder<T> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new LeaderElectionConfig(), managementService);
+  public LeaderElectionConfig newConfig() {
+    return new LeaderElectionConfig();
   }
 
   @Override
-  public LeaderElectionBuilder<T> newPrimitiveBuilder(String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
+  public LeaderElectionBuilder<T> newBuilder(String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
     return new LeaderElectionProxyBuilder<>(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

@@ -56,6 +56,8 @@
     <vertx.version>3.5.0</vertx.version>
     <jaxrs.version>2.0</jaxrs.version>
     <jackson.version>2.9.5</jackson.version>
+    <config.version>1.3.2</config.version>
+    <fast-classpath-scanner.version>2.21</fast-classpath-scanner.version>
     <resteasy.version>3.1.4.Final</resteasy.version>
     <rest-assured.version>3.0.7</rest-assured.version>
     <argparse4j.version>0.7.0</argparse4j.version>
@@ -64,6 +66,7 @@
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
     <maven.failsafe.plugin.version>2.14</maven.failsafe.plugin.version>
+    <maven.surefire.plugin.version>2.14</maven.surefire.plugin.version>
     <maven.clean.plugin.version>2.5</maven.clean.plugin.version>
     <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
     <maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
@@ -102,9 +105,7 @@
   <modules>
     <module>agent</module>
     <module>cluster</module>
-    <module>config</module>
     <module>core</module>
-    <module>messaging</module>
     <module>primitive</module>
     <module>protocols</module>
     <module>rest</module>
@@ -177,6 +178,15 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven.surefire.plugin.version}</version>
+        <configuration>
+          <argLine>-Xms4G -Xmx4G -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode</argLine>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>

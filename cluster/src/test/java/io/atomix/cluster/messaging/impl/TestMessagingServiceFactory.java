@@ -17,7 +17,7 @@ package io.atomix.cluster.messaging.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.utils.net.Address;
-import io.atomix.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.ManagedMessagingService;
 
 import java.util.Map;
 

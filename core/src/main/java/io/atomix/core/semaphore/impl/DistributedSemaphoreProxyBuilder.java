@@ -25,7 +25,6 @@ import io.atomix.primitive.proxy.PrimitiveProxy;
 
 import java.util.concurrent.CompletableFuture;
 
-
 public class DistributedSemaphoreProxyBuilder extends DistributedSemaphoreBuilder {
   public DistributedSemaphoreProxyBuilder(String name, DistributedSemaphoreConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
@@ -35,16 +34,16 @@ public class DistributedSemaphoreProxyBuilder extends DistributedSemaphoreBuilde
   @Override
   public CompletableFuture<DistributedSemaphore> buildAsync() {
     PrimitiveProxy proxy = protocol().newProxy(
-            name(),
-            primitiveType(),
-            new DistributedSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
-            managementService.getPartitionService());
+        name(),
+        primitiveType(),
+        new DistributedSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
+        managementService.getPartitionService());
 
     return new DistributedSemaphoreProxy(
-            proxy,
-            managementService.getPrimitiveRegistry(),
-            managementService.getExecutorService())
-            .connect()
-            .thenApply(AsyncDistributedSemaphore::sync);
+        proxy,
+        managementService.getPrimitiveRegistry(),
+        managementService.getExecutorService())
+        .connect()
+        .thenApply(AsyncDistributedSemaphore::sync);
   }
 }

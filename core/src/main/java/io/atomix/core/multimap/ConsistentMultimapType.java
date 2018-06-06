@@ -27,8 +27,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Consistent multimap primitive type.
  */
-public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMultimapBuilder<K, V>, ConsistentMultimapConfig, ConsistentMultimap<K, V>, ServiceConfig> {
+public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMultimapBuilder<K, V>, ConsistentMultimapConfig, ConsistentMultimap<K, V>> {
   private static final String NAME = "consistent-multimap";
+  private static final ConsistentMultimapType INSTANCE = new ConsistentMultimapType();
 
   /**
    * Returns a new consistent multimap type.
@@ -37,34 +38,35 @@ public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMul
    * @param <V> the value type
    * @return a new consistent multimap type
    */
+  @SuppressWarnings("unchecked")
   public static <K, V> ConsistentMultimapType<K, V> instance() {
-    return new ConsistentMultimapType<>();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentSetMultimapService(config);
+    return new ConsistentSetMultimapService();
   }
 
   @Override
-  public ConsistentMultimapBuilder<K, V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new ConsistentMultimapConfig(), managementService);
+  public ConsistentMultimapConfig newConfig() {
+    return new ConsistentMultimapConfig();
   }
 
   @Override
-  public ConsistentMultimapBuilder<K, V> newPrimitiveBuilder(String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
+  public ConsistentMultimapBuilder<K, V> newBuilder(String name, ConsistentMultimapConfig config, PrimitiveManagementService managementService) {
     return new ConsistentMultimapProxyBuilder<>(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

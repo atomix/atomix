@@ -36,7 +36,6 @@ public class TestClusterMembershipService implements ClusterMembershipService {
   @Override
   public Member getLocalMember() {
     return Member.builder(localNode)
-        .withType(Member.Type.PERSISTENT)
         .withAddress(Address.from("localhost", localNode.hashCode()))
         .build();
   }
@@ -45,7 +44,6 @@ public class TestClusterMembershipService implements ClusterMembershipService {
   public Set<Member> getMembers() {
     return nodes.stream()
         .map(node -> Member.builder(node)
-            .withType(Member.Type.PERSISTENT)
             .withAddress(Address.from("localhost", node.hashCode()))
             .build())
         .collect(Collectors.toSet());

@@ -20,18 +20,14 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.messaging.ClusterEventingService;
-import io.atomix.cluster.messaging.ClusterMessagingService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
-import io.atomix.core.config.jackson.impl.ConfigPropertyNamingStrategy;
-import io.atomix.core.config.jackson.impl.PartitionGroupDeserializer;
-import io.atomix.core.config.jackson.impl.PrimitiveConfigDeserializer;
-import io.atomix.core.config.jackson.impl.PrimitiveProtocolDeserializer;
 import io.atomix.core.utils.EventManager;
 import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.rest.resources.ClusterResource;
@@ -88,13 +84,13 @@ public class VertxRestService implements ManagedRestService {
     deployment.start();
 
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterMembershipService.class, atomix.membershipService());
+        .put(ClusterMembershipService.class, atomix.getMembershipService());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterMessagingService.class, atomix.messagingService());
+        .put(ClusterCommunicationService.class, atomix.getCommunicationService());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterEventingService.class, atomix.eventingService());
+        .put(ClusterEventService.class, atomix.getEventingService());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(PrimitivesService.class, atomix.primitivesService());
+        .put(PrimitivesService.class, atomix.getPrimitivesService());
     deployment.getDispatcher().getDefaultContextObjects()
         .put(EventManager.class, new EventManager());
 
@@ -151,9 +147,9 @@ public class VertxRestService implements ManagedRestService {
     mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
 
     SimpleModule module = new SimpleModule("PolymorphicTypes");
-    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer());
-    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer());
-    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer());
+    module.addDeserializer(PartitionGroupConfig.class, new PartitionGroupDeserializer(atomix.getRegistry()));
+    module.addDeserializer(PrimitiveProtocolConfig.class, new PrimitiveProtocolDeserializer(atomix.getRegistry()));
+    module.addDeserializer(PrimitiveConfig.class, new PrimitiveConfigDeserializer(atomix.getRegistry()));
     mapper.registerModule(module);
 
     return mapper;

@@ -21,7 +21,7 @@ import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
+import io.atomix.primitive.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;

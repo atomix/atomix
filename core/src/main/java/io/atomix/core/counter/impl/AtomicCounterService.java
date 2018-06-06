@@ -15,6 +15,7 @@
  */
 package io.atomix.core.counter.impl;
 
+import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.core.counter.impl.AtomicCounterOperations.AddAndGet;
 import io.atomix.core.counter.impl.AtomicCounterOperations.CompareAndSet;
 import io.atomix.core.counter.impl.AtomicCounterOperations.GetAndAdd;
@@ -23,7 +24,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
@@ -52,8 +52,8 @@ public class AtomicCounterService extends AbstractPrimitiveService {
 
   private Long value = 0L;
 
-  public AtomicCounterService(ServiceConfig config) {
-    super(config);
+  public AtomicCounterService() {
+    super(AtomicCounterType.instance());
   }
 
   @Override

@@ -29,8 +29,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Document tree primitive type.
  */
-public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>, ServiceConfig> {
+public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>, DocumentTreeConfig, DocumentTree<V>> {
   private static final String NAME = "document-tree";
+  private static final DocumentTreeType INSTANCE = new DocumentTreeType();
 
   /**
    * Returns a new document tree type.
@@ -38,18 +39,19 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
    * @param <V> the tree value type
    * @return a new document tree type
    */
+  @SuppressWarnings("unchecked")
   public static <V> DocumentTreeType<V> instance() {
-    return new DocumentTreeType<>();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DocumentTreeService(config);
+    return new DocumentTreeService();
   }
 
   @Override
@@ -59,19 +61,19 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
   }
 
   @Override
-  public DocumentTreeBuilder<V> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new DocumentTreeConfig(), managementService);
+  public DocumentTreeConfig newConfig() {
+    return new DocumentTreeConfig();
   }
 
   @Override
-  public DocumentTreeBuilder<V> newPrimitiveBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
+  public DocumentTreeBuilder<V> newBuilder(String name, DocumentTreeConfig config, PrimitiveManagementService managementService) {
     return new DocumentTreeProxyBuilder<>(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

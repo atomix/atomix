@@ -29,8 +29,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Work queue primitive type.
  */
-public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>, ServiceConfig> {
+public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, WorkQueueConfig, WorkQueue<E>> {
   private static final String NAME = "work-queue";
+  private static final WorkQueueType INSTANCE = new WorkQueueType();
 
   /**
    * Returns a new work queue type instance.
@@ -38,18 +39,19 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
    * @param <E> the element type
    * @return a new work queue type
    */
+  @SuppressWarnings("unchecked")
   public static <E> WorkQueueType<E> instance() {
-    return new WorkQueueType<>();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new WorkQueueService(config);
+    return new WorkQueueService();
   }
 
   @Override
@@ -59,19 +61,19 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
   }
 
   @Override
-  public WorkQueueBuilder<E> newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new WorkQueueConfig(), managementService);
+  public WorkQueueConfig newConfig() {
+    return new WorkQueueConfig();
   }
 
   @Override
-  public WorkQueueBuilder<E> newPrimitiveBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
+  public WorkQueueBuilder<E> newBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
     return new WorkQueueProxyBuilder<>(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }
