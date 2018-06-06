@@ -88,7 +88,7 @@ public class VertxRestService implements ManagedRestService {
     deployment.getDispatcher().getDefaultContextObjects()
         .put(ClusterCommunicationService.class, atomix.getCommunicationService());
     deployment.getDispatcher().getDefaultContextObjects()
-        .put(ClusterEventService.class, atomix.getEventingService());
+        .put(ClusterEventService.class, atomix.getEventService());
     deployment.getDispatcher().getDefaultContextObjects()
         .put(PrimitivesService.class, atomix.getPrimitivesService());
     deployment.getDispatcher().getDefaultContextObjects()
