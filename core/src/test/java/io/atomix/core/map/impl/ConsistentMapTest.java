@@ -243,7 +243,7 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
       assertNull(result);
     }).join();
 
-    map.put("bar", "Goodbye bar!", Duration.ofSeconds(1)).thenAccept(result -> {
+    map.put("bar", "Goodbye bar!", Duration.ofMillis(10)).thenAccept(result -> {
       assertEquals("Hello bar!", result.value());
     }).join();
 
@@ -257,7 +257,7 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
       assertNull(result);
     }).join();
 
-    map.putIfAbsent("baz", "Hello baz!", Duration.ofSeconds(1)).thenAccept(result -> {
+    map.putIfAbsent("baz", "Hello baz!", Duration.ofMillis(10)).thenAccept(result -> {
       assertNull(result);
     }).join();
 
