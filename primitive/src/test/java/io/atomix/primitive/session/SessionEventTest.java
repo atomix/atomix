@@ -23,13 +23,13 @@ import static org.mockito.Mockito.mock;
 /**
  * Raft session event test.
  */
-public class PrimitiveSessionEventTest {
+public class SessionEventTest {
   @Test
   public void testRaftSessionEvent() throws Exception {
-    PrimitiveSession session = mock(PrimitiveSession.class);
+    Session session = mock(Session.class);
     long timestamp = System.currentTimeMillis();
-    PrimitiveSessionEvent event = new PrimitiveSessionEvent(PrimitiveSessionEvent.Type.OPEN, session, timestamp);
-    assertEquals(PrimitiveSessionEvent.Type.OPEN, event.type());
+    SessionEvent event = new SessionEvent(SessionEvent.Type.OPEN, session, timestamp);
+    assertEquals(SessionEvent.Type.OPEN, event.type());
     assertEquals(session, event.subject());
     assertEquals(timestamp, event.time());
   }

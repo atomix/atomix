@@ -21,5 +21,5 @@ import io.atomix.utils.event.EventListener;
  * Raft session event listener.
  */
 @FunctionalInterface
-public interface PrimitiveSessionEventListener extends EventListener<PrimitiveSessionEvent> {
+public interface SessionEventListener extends EventListener<SessionEvent> {
 }

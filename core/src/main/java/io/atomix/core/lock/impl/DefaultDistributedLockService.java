@@ -19,7 +19,7 @@ import io.atomix.core.lock.DistributedLockType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -76,7 +76,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
         timers.put(holder.index, getScheduler().schedule(Duration.ofMillis(holder.expire - getWallClock().getTime().unixTimestamp()), () -> {
           timers.remove(holder.index);
           queue.remove(holder);
-          PrimitiveSession session = getSession(holder.session);
+          Session session = getSession(holder.session);
           if (session != null && session.getState().active()) {
             acceptOn(holder.session, service -> service.failed(holder.id));
           }
@@ -86,18 +86,18 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
   }
 
   @Override
-  public void onExpire(PrimitiveSession session) {
+  public void onExpire(Session session) {
     releaseSession(session);
   }
 
   @Override
-  public void onClose(PrimitiveSession session) {
+  public void onClose(Session session) {
     releaseSession(session);
   }
 
   @Override
   public void lock(int id, long timeout) {
-    PrimitiveSession session = getCurrentSession();
+    Session session = getCurrentSession();
     // If the lock is not already owned, immediately grant the lock to the requester.
     // Note that we still have to publish an event to the session. The event is guaranteed to be received
     // by the client-side primitive after the LOCK response.
@@ -166,7 +166,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
         }
 
         // Notify the client that it has acquired the lock.
-        PrimitiveSession lockSession = getSession(lock.session);
+        Session lockSession = getSession(lock.session);
         if (lockSession != null && lockSession.getState().active()) {
           acceptOn(lock.session, service -> service.locked(lock.id, getCurrentIndex()));
           break;
@@ -185,7 +185,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
    *
    * @param session the closed session
    */
-  private void releaseSession(PrimitiveSession session) {
+  private void releaseSession(Session session) {
     // Remove all instances of the session from the lock queue.
     queue.removeIf(lock -> lock.session.equals(session.sessionId()));
 
@@ -201,7 +201,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
         }
 
         // Notify the client that it has acquired the lock.
-        PrimitiveSession lockSession = getSession(lock.session);
+        Session lockSession = getSession(lock.session);
         if (lockSession != null && lockSession.getState().active()) {
           acceptOn(lock.session, service -> service.locked(lock.id, lock.index));
           break;

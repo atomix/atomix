@@ -29,7 +29,7 @@ import io.atomix.primitive.event.PrimitiveEvent;
  * expired or closed, linearizability, sequential consistency, and other guarantees for events and operations are
  * effectively lost. Session implementations guarantee linearizability for session messages by coordinating between
  * the client and a single server at any given time. This means messages {@link #publish(PrimitiveEvent) published}
- * via the {@link PrimitiveSession} are guaranteed to arrive on the other side of the connection exactly once and in the order
+ * via the {@link Session} are guaranteed to arrive on the other side of the connection exactly once and in the order
  * in which they are sent by replicated state machines. In the event of a server-to-client message being lost, the
  * message will be resent so long as at least one Raft server is able to communicate with the client and the client's
  * session does not expire while switching between servers.
@@ -43,7 +43,7 @@ import io.atomix.primitive.event.PrimitiveEvent;
  * When the message is published, it will be queued to be sent to the other side of the connection. Raft guarantees
  * that the message will eventually be received by the client unless the session itself times out or is closed.
  */
-public interface PrimitiveSession {
+public interface Session {
 
   /**
    * Returns the session identifier.

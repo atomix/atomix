@@ -21,7 +21,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.impl.OperationResult;
@@ -52,7 +52,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Raft session.
  */
-public class RaftSession implements PrimitiveSession {
+public class RaftSession implements Session {
   private final Logger log;
   private final SessionId sessionId;
   private final MemberId member;
@@ -110,7 +110,7 @@ public class RaftSession implements PrimitiveSession {
     this.context = context;
     this.server = server;
     this.eventExecutor = threadContextFactory.createContext();
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveSession.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(Session.class)
         .addValue(sessionId)
         .add("type", context.serviceType())
         .add("name", context.serviceName())
@@ -606,7 +606,7 @@ public class RaftSession implements PrimitiveSession {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof PrimitiveSession && ((PrimitiveSession) object).sessionId() == sessionId;
+    return object instanceof Session && ((Session) object).sessionId() == sessionId;
   }
 
   @Override

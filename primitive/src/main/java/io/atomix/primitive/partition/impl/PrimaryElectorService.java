@@ -28,7 +28,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -66,7 +66,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       .build());
 
   private Map<PartitionId, ElectionState> elections = new HashMap<>();
-  private Map<Long, PrimitiveSession> listeners = new LinkedHashMap<>();
+  private Map<Long, Session> listeners = new LinkedHashMap<>();
   private Scheduled rebalanceTimer;
 
   public PrimaryElectorService() {
@@ -216,7 +216,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
     return electionState != null ? electionState.term() : null;
   }
 
-  private void onSessionEnd(PrimitiveSession session) {
+  private void onSessionEnd(Session session) {
     listeners.remove(session.sessionId().id());
     Set<PartitionId> partitions = elections.keySet();
     partitions.forEach(partitionId -> {
@@ -300,7 +300,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       this.elections = elections;
     }
 
-    ElectionState cleanup(PrimitiveSession session) {
+    ElectionState cleanup(Session session) {
       Optional<Registration> registration =
           registrations.stream().filter(r -> r.sessionId() == session.sessionId().id()).findFirst();
       if (registration.isPresent()) {
@@ -441,17 +441,17 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   }
 
   @Override
-  public void onOpen(PrimitiveSession session) {
+  public void onOpen(Session session) {
     listeners.put(session.sessionId().id(), session);
   }
 
   @Override
-  public void onExpire(PrimitiveSession session) {
+  public void onExpire(Session session) {
     onSessionEnd(session);
   }
 
   @Override
-  public void onClose(PrimitiveSession session) {
+  public void onClose(Session session) {
     onSessionEnd(session);
   }
 }

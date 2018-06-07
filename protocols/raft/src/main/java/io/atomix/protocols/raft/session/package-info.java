@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides a {@link io.atomix.primitive.session.PrimitiveSession} implementation for the Raft consensus protocol.
+ * Provides a {@link io.atomix.primitive.session.Session} implementation for the Raft consensus protocol.
  */
 package io.atomix.protocols.raft.session;

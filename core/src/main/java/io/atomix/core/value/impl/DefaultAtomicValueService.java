@@ -20,7 +20,7 @@ import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -30,7 +30,7 @@ import java.util.HashSet;
  */
 public class DefaultAtomicValueService extends AbstractPrimitiveService<AtomicValueClient> implements AtomicValueService {
   private byte[] value;
-  private java.util.Set<PrimitiveSession> listeners = Sets.newHashSet();
+  private java.util.Set<Session> listeners = Sets.newHashSet();
 
   public DefaultAtomicValueService() {
     super(AtomicValueType.instance(), AtomicValueClient.class);
@@ -40,7 +40,7 @@ public class DefaultAtomicValueService extends AbstractPrimitiveService<AtomicVa
   public void backup(BackupOutput writer) {
     writer.writeInt(value.length).writeBytes(value);
     java.util.Set<Long> sessionIds = new HashSet<>();
-    for (PrimitiveSession session : listeners) {
+    for (Session session : listeners) {
       sessionIds.add(session.sessionId().id());
     }
     writer.writeObject(sessionIds);
