@@ -15,46 +15,30 @@
  */
 package io.atomix.core.counter.impl;
 
-import io.atomix.core.counter.impl.AtomicCounterOperations.Set;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
-import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import org.junit.Test;
 
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.SET;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 
 /**
  * Counter service test.
  */
-public class AtomicCounterServiceTest {
+public class DefaultAtomicCounterServiceTest {
   @Test
   public void testSnapshot() throws Exception {
-    AtomicCounterService service = new AtomicCounterService();
-    service.set(new DefaultCommit<>(
-        2,
-        SET,
-        new Set(1L),
-        mock(PrimitiveSession.class),
-        System.currentTimeMillis()));
+    DefaultAtomicCounterService service = new DefaultAtomicCounterService();
+    service.set(1);
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new AtomicCounterService();
+    service = new DefaultAtomicCounterService();
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
-    long value = service.get(new DefaultCommit<>(
-        2,
-        GET,
-        null,
-        mock(PrimitiveSession.class),
-        System.currentTimeMillis()));
+    long value = service.get();
     assertEquals(1, value);
   }
 }

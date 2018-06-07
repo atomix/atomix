@@ -53,7 +53,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Cluster configuration.
  */
 public class AtomixCluster implements Managed<Void> {
-  static final String[] DEFAULT_RESOURCES = new String[]{"cluster"};
+  private static final String[] DEFAULT_RESOURCES = new String[]{"cluster"};
 
   private static String[] withDefaultResources(String config) {
     return Streams.concat(Stream.of(config), Stream.of(DEFAULT_RESOURCES)).toArray(String[]::new);
@@ -126,7 +126,7 @@ public class AtomixCluster implements Managed<Void> {
   protected final ManagedBroadcastService broadcastService;
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterCommunicationService communicationService;
-  protected final ManagedClusterEventService eventingService;
+  protected final ManagedClusterEventService eventService;
   protected volatile CompletableFuture<Void> openFuture;
   protected volatile CompletableFuture<Void> closeFuture;
   private final ThreadContext threadContext = new SingleThreadContext("atomix-cluster-%d");
@@ -145,7 +145,7 @@ public class AtomixCluster implements Managed<Void> {
     this.broadcastService = buildBroadcastService(config);
     this.membershipService = buildClusterMembershipService(config, messagingService, broadcastService);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
-    this.eventingService = buildClusterEventService(membershipService, messagingService);
+    this.eventService = buildClusterEventService(membershipService, messagingService);
   }
 
   /**
@@ -189,8 +189,8 @@ public class AtomixCluster implements Managed<Void> {
    *
    * @return the cluster event service
    */
-  public ClusterEventService getEventingService() {
-    return eventingService;
+  public ClusterEventService getEventService() {
+    return eventService;
   }
 
   @Override
@@ -216,7 +216,7 @@ public class AtomixCluster implements Managed<Void> {
         .thenComposeAsync(v -> broadcastService.start(), threadContext)
         .thenComposeAsync(v -> membershipService.start(), threadContext)
         .thenComposeAsync(v -> communicationService.start(), threadContext)
-        .thenComposeAsync(v -> eventingService.start(), threadContext)
+        .thenComposeAsync(v -> eventService.start(), threadContext)
         .thenApply(v -> null);
   }
 
@@ -245,7 +245,7 @@ public class AtomixCluster implements Managed<Void> {
   protected CompletableFuture<Void> stopServices() {
     return communicationService.stop()
         .exceptionally(e -> null)
-        .thenComposeAsync(v -> eventingService.stop(), threadContext)
+        .thenComposeAsync(v -> eventService.stop(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> membershipService.stop(), threadContext)
         .exceptionally(e -> null)

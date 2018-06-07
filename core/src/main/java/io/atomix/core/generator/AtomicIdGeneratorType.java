@@ -15,7 +15,7 @@
  */
 package io.atomix.core.generator;
 
-import io.atomix.core.counter.impl.AtomicCounterService;
+import io.atomix.core.counter.impl.DefaultAtomicCounterService;
 import io.atomix.core.generator.impl.AtomicIdGeneratorResource;
 import io.atomix.core.generator.impl.DelegatingAtomicIdGeneratorBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -49,7 +49,7 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AtomicCounterService();
+    return new DefaultAtomicCounterService();
   }
 
   @Override
