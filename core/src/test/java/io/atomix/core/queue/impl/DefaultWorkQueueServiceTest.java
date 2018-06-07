@@ -17,13 +17,10 @@ package io.atomix.core.queue.impl;
 
 import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueueType;
-import io.atomix.core.queue.impl.WorkQueueOperations.Add;
-import io.atomix.core.queue.impl.WorkQueueOperations.Take;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
-import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.storage.buffer.Buffer;
@@ -33,8 +30,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static io.atomix.core.queue.impl.WorkQueueOperations.ADD;
-import static io.atomix.core.queue.impl.WorkQueueOperations.TAKE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -44,7 +39,7 @@ import static org.mockito.Mockito.when;
 /**
  * Work queue service test.
  */
-public class WorkQueueServiceTest {
+public class DefaultWorkQueueServiceTest {
   @Test
   public void testSnapshot() throws Exception {
     ServiceContext context = mock(ServiceContext.class);
@@ -54,30 +49,21 @@ public class WorkQueueServiceTest {
 
     PrimitiveSession session = mock(PrimitiveSession.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
+    when(context.currentSession()).thenReturn(session);
 
-    WorkQueueService service = new WorkQueueService();
+    DefaultWorkQueueService service = new DefaultWorkQueueService();
     service.init(context);
 
-    service.add(new DefaultCommit<>(
-        2,
-        ADD,
-        new Add(Arrays.asList("Hello world!".getBytes())),
-        session,
-        System.currentTimeMillis()));
+    service.add(Arrays.asList("Hello world!".getBytes()));
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new WorkQueueService();
+    service = new DefaultWorkQueueService();
     service.init(context);
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
-    Collection<Task<byte[]>> value = service.take(new DefaultCommit<>(
-        2,
-        TAKE,
-        new Take(1),
-        session,
-        System.currentTimeMillis()));
+    Collection<Task<byte[]>> value = service.take(1);
     assertNotNull(value);
     assertEquals(1, value.size());
     assertArrayEquals("Hello world!".getBytes(), value.iterator().next().payload());
