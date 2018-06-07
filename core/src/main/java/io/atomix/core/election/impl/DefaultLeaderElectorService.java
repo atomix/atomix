@@ -243,9 +243,8 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
   }
 
   private void onSessionEnd(PrimitiveSession session) {
-    listeners.remove(session.sessionId().id());
+    listeners.remove(session.sessionId());
     Set<String> topics = elections.keySet();
-    List<LeadershipEvent<byte[]>> changes = Lists.newArrayList();
     topics.forEach(topic -> {
       Leadership<byte[]> oldLeadership = leadership(topic);
       elections.compute(topic, (k, v) -> v.cleanup(topic, session, termCounter(topic)::incrementAndGet));
