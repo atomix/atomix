@@ -1,11 +1,11 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,240 +15,68 @@
  */
 package io.atomix.core.queue.impl;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
-import com.google.common.collect.Sets;
 import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueueStats;
-import io.atomix.core.queue.WorkQueueType;
-import io.atomix.core.queue.impl.WorkQueueOperations.Add;
-import io.atomix.core.queue.impl.WorkQueueOperations.Complete;
-import io.atomix.core.queue.impl.WorkQueueOperations.Take;
-import io.atomix.primitive.service.AbstractPrimitiveService;
-import io.atomix.primitive.service.BackupInput;
-import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
+import io.atomix.primitive.operation.Command;
+import io.atomix.primitive.operation.Query;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static io.atomix.core.queue.impl.WorkQueueEvents.TASK_AVAILABLE;
-import static io.atomix.core.queue.impl.WorkQueueOperations.ADD;
-import static io.atomix.core.queue.impl.WorkQueueOperations.CLEAR;
-import static io.atomix.core.queue.impl.WorkQueueOperations.COMPLETE;
-import static io.atomix.core.queue.impl.WorkQueueOperations.REGISTER;
-import static io.atomix.core.queue.impl.WorkQueueOperations.STATS;
-import static io.atomix.core.queue.impl.WorkQueueOperations.TAKE;
-import static io.atomix.core.queue.impl.WorkQueueOperations.UNREGISTER;
 
 /**
- * State machine for {@link WorkQueueProxy} resource.
+ * Work queue service.
  */
-public class WorkQueueService extends AbstractPrimitiveService {
+public interface WorkQueueService {
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .register(WorkQueueOperations.NAMESPACE)
-      .register(WorkQueueEvents.NAMESPACE)
-      .register(TaskAssignment.class)
-      .register(new HashMap().keySet().getClass())
-      .register(ArrayDeque.class)
-      .build());
+  /**
+   * Adds a collection of tasks to the work queue.
+   *
+   * @param items collection of task items
+   */
+  @Command
+  void add(Collection<byte[]> items);
 
-  private final AtomicLong totalCompleted = new AtomicLong(0);
+  /**
+   * Picks up multiple tasks from the work queue to work on.
+   *
+   * @param maxItems maximum number of items to take from the queue. The actual number of tasks returned
+   *                 can be at the max this number
+   * @return an empty collection if there are no unassigned tasks in the work queue
+   */
+  @Command
+  Collection<Task<byte[]>> take(int maxItems);
 
-  private Queue<Task<byte[]>> unassignedTasks = Queues.newArrayDeque();
-  private Map<String, TaskAssignment> assignments = Maps.newHashMap();
-  private Map<Long, PrimitiveSession> registeredWorkers = Maps.newHashMap();
+  /**
+   * Completes a collection of tasks.
+   *
+   * @param taskIds ids of tasks to complete
+   */
+  @Command
+  void complete(Collection<String> taskIds);
 
-  public WorkQueueService() {
-    super(WorkQueueType.instance());
-  }
+  /**
+   * Returns work queue statistics.
+   *
+   * @return work queue stats
+   */
+  @Query
+  WorkQueueStats stats();
 
-  @Override
-  public Serializer serializer() {
-    return SERIALIZER;
-  }
+  /**
+   * Registers the current session as a task processor.
+   */
+  @Command
+  void register();
 
-  @Override
-  public void backup(BackupOutput writer) {
-    writer.writeObject(Sets.newHashSet(registeredWorkers.keySet()));
-    writer.writeObject(assignments);
-    writer.writeObject(unassignedTasks);
-    writer.writeLong(totalCompleted.get());
-  }
+  /**
+   * Unregisters the current session as a task processor.
+   */
+  @Command
+  void unregister();
 
-  @Override
-  public void restore(BackupInput reader) {
-    registeredWorkers = Maps.newHashMap();
-    for (Long sessionId : reader.<Set<Long>>readObject()) {
-      registeredWorkers.put(sessionId, getSession(sessionId));
-    }
-    assignments = reader.readObject();
-    unassignedTasks = reader.readObject();
-    totalCompleted.set(reader.readLong());
-  }
+  /**
+   * Removes all pending tasks from the queue.
+   */
+  @Command
+  void clear();
 
-  @Override
-  protected void configure(ServiceExecutor executor) {
-    executor.register(STATS, this::stats);
-    executor.register(REGISTER, (Consumer<Commit<Void>>) this::register);
-    executor.register(UNREGISTER, this::unregister);
-    executor.register(ADD, this::add);
-    executor.register(TAKE, this::take);
-    executor.register(COMPLETE, this::complete);
-    executor.register(CLEAR, this::clear);
-  }
-
-  protected WorkQueueStats stats(Commit<Void> commit) {
-    return WorkQueueStats.builder()
-        .withTotalCompleted(totalCompleted.get())
-        .withTotalPending(unassignedTasks.size())
-        .withTotalInProgress(assignments.size())
-        .build();
-  }
-
-  protected void clear(Commit<Void> commit) {
-    unassignedTasks.clear();
-    assignments.clear();
-    registeredWorkers.clear();
-    totalCompleted.set(0);
-  }
-
-  protected void register(Commit<Void> commit) {
-    registeredWorkers.put(commit.session().sessionId().id(), commit.session());
-  }
-
-  protected void unregister(Commit<Void> commit) {
-    registeredWorkers.remove(commit.session().sessionId().id());
-  }
-
-  protected void add(Commit<? extends Add> commit) {
-    Collection<byte[]> items = commit.value().items();
-
-    AtomicInteger itemIndex = new AtomicInteger(0);
-    items.forEach(item -> {
-      String taskId = String.format("%d:%d:%d", commit.session().sessionId().id(),
-          commit.index(),
-          itemIndex.getAndIncrement());
-      unassignedTasks.add(new Task<>(taskId, item));
-    });
-
-    // Send an event to all sessions that have expressed interest in task processing
-    // and are not actively processing a task.
-    registeredWorkers.values().forEach(session -> session.publish(TASK_AVAILABLE));
-    // FIXME: This generates a lot of event traffic.
-  }
-
-  protected Collection<Task<byte[]>> take(Commit<? extends Take> commit) {
-    try {
-      if (unassignedTasks.isEmpty()) {
-        return ImmutableList.of();
-      }
-      long sessionId = commit.session().sessionId().id();
-      int maxTasks = commit.value().maxTasks();
-      return IntStream.range(0, Math.min(maxTasks, unassignedTasks.size()))
-          .mapToObj(i -> {
-            Task<byte[]> task = unassignedTasks.poll();
-            String taskId = task.taskId();
-            TaskAssignment assignment = new TaskAssignment(sessionId, task);
-
-            // bookkeeping
-            assignments.put(taskId, assignment);
-
-            return task;
-          })
-          .collect(Collectors.toCollection(ArrayList::new));
-    } catch (Exception e) {
-      getLogger().warn("State machine update failed", e);
-      throw Throwables.propagate(e);
-    }
-  }
-
-  protected void complete(Commit<? extends Complete> commit) {
-    long sessionId = commit.session().sessionId().id();
-    try {
-      commit.value().taskIds().forEach(taskId -> {
-        TaskAssignment assignment = assignments.get(taskId);
-        if (assignment != null && assignment.sessionId() == sessionId) {
-          assignments.remove(taskId);
-          // bookkeeping
-          totalCompleted.incrementAndGet();
-        }
-      });
-    } catch (Exception e) {
-      getLogger().warn("State machine update failed", e);
-      throw Throwables.propagate(e);
-    }
-  }
-
-  @Override
-  public void onExpire(PrimitiveSession session) {
-    evictWorker(session.sessionId().id());
-  }
-
-  @Override
-  public void onClose(PrimitiveSession session) {
-    evictWorker(session.sessionId().id());
-  }
-
-  private void evictWorker(long sessionId) {
-    registeredWorkers.remove(sessionId);
-
-    // TODO: Maintain an index of tasks by session for efficient access.
-    Iterator<Map.Entry<String, TaskAssignment>> iter = assignments.entrySet().iterator();
-    while (iter.hasNext()) {
-      Map.Entry<String, TaskAssignment> entry = iter.next();
-      TaskAssignment assignment = entry.getValue();
-      if (assignment.sessionId() == sessionId) {
-        unassignedTasks.add(assignment.task());
-        iter.remove();
-      }
-    }
-  }
-
-  private static class TaskAssignment {
-    private final long sessionId;
-    private final Task<byte[]> task;
-
-    public TaskAssignment(long sessionId, Task<byte[]> task) {
-      this.sessionId = sessionId;
-      this.task = task;
-    }
-
-    public long sessionId() {
-      return sessionId;
-    }
-
-    public Task<byte[]> task() {
-      return task;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(getClass())
-          .add("sessionId", sessionId)
-          .add("task", task)
-          .toString();
-    }
-  }
 }

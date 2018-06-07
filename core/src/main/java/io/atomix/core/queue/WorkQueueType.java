@@ -15,14 +15,17 @@
  */
 package io.atomix.core.queue;
 
+import io.atomix.core.queue.impl.DefaultWorkQueueService;
 import io.atomix.core.queue.impl.WorkQueueProxyBuilder;
 import io.atomix.core.queue.impl.WorkQueueResource;
-import io.atomix.core.queue.impl.WorkQueueService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -50,8 +53,18 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
   }
 
   @Override
+  public Namespace namespace() {
+    return KryoNamespace.builder()
+        .register((KryoNamespace) PrimitiveType.super.namespace())
+        .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+        .register(Task.class)
+        .register(WorkQueueStats.class)
+        .build();
+  }
+
+  @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new WorkQueueService();
+    return new DefaultWorkQueueService();
   }
 
   @Override
