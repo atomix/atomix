@@ -53,6 +53,10 @@ public class DocumentTreeResult<V> {
   }
 
   @SuppressWarnings("unchecked")
+  public static final DocumentTreeResult NOOP =
+      new DocumentTreeResult(Status.NOOP, null);
+
+  @SuppressWarnings("unchecked")
   public static final DocumentTreeResult WRITE_LOCK =
       new DocumentTreeResult(Status.WRITE_LOCK, null);
 

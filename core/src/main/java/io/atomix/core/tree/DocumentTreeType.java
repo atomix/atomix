@@ -15,14 +15,28 @@
  */
 package io.atomix.core.tree;
 
+import io.atomix.core.map.impl.CommitResult;
+import io.atomix.core.map.impl.PrepareResult;
+import io.atomix.core.map.impl.RollbackResult;
+import io.atomix.core.transaction.TransactionId;
+import io.atomix.core.transaction.TransactionLog;
+import io.atomix.core.tree.impl.DefaultDocumentTreeService;
 import io.atomix.core.tree.impl.DocumentTreeProxyBuilder;
 import io.atomix.core.tree.impl.DocumentTreeResource;
-import io.atomix.core.tree.impl.DocumentTreeService;
+import io.atomix.core.tree.impl.DocumentTreeResult;
+import io.atomix.core.tree.impl.NodeUpdate;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.misc.Match;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.time.Versioned;
+
+import java.util.LinkedHashMap;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -50,8 +64,31 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
   }
 
   @Override
+  public Namespace namespace() {
+    return KryoNamespace.builder()
+        .register((KryoNamespace) PrimitiveType.super.namespace())
+        .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+        .register(LinkedHashMap.class)
+        .register(TransactionId.class)
+        .register(TransactionLog.class)
+        .register(PrepareResult.class)
+        .register(CommitResult.class)
+        .register(RollbackResult.class)
+        .register(NodeUpdate.class)
+        .register(NodeUpdate.Type.class)
+        .register(DocumentPath.class)
+        .register(Match.class)
+        .register(Versioned.class)
+        .register(DocumentTreeResult.class)
+        .register(DocumentTreeResult.Status.class)
+        .register(DocumentTreeEvent.class)
+        .register(DocumentTreeEvent.Type.class)
+        .build();
+  }
+
+  @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DocumentTreeService();
+    return new DefaultDocumentTreeService();
   }
 
   @Override

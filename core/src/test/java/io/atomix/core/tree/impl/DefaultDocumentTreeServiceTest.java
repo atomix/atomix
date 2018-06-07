@@ -16,57 +16,33 @@
 package io.atomix.core.tree.impl;
 
 import io.atomix.core.tree.DocumentPath;
-import io.atomix.core.tree.impl.DocumentTreeOperations.Get;
-import io.atomix.core.tree.impl.DocumentTreeOperations.Update;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
-import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.utils.misc.Match;
 import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
-import java.util.Optional;
-
-import static io.atomix.core.tree.impl.DocumentTreeOperations.GET;
-import static io.atomix.core.tree.impl.DocumentTreeOperations.UPDATE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 /**
  * Document tree service test.
  */
-public class DocumentTreeServiceTest {
+public class DefaultDocumentTreeServiceTest {
 
   @Test
   public void testSnapshot() throws Exception {
-    DocumentTreeService service = new DocumentTreeService();
-    service.update(new DefaultCommit<>(
-        2,
-        UPDATE,
-        new Update(
-            DocumentPath.from("root|foo"),
-            Optional.of("Hello world!".getBytes()),
-            Match.any(),
-            Match.ifNull()),
-        mock(PrimitiveSession.class),
-        System.currentTimeMillis()));
+    DefaultDocumentTreeService service = new DefaultDocumentTreeService();
+    service.set(DocumentPath.from("root|foo"), "Hello world!".getBytes());
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new DocumentTreeService();
+    service = new DefaultDocumentTreeService();
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
-    Versioned<byte[]> value = service.get(new DefaultCommit<>(
-        2,
-        GET,
-        new Get(DocumentPath.from("root|foo")),
-        mock(PrimitiveSession.class),
-        System.currentTimeMillis()));
+    Versioned<byte[]> value = service.get(DocumentPath.from("root|foo"));
     assertNotNull(value);
     assertArrayEquals("Hello world!".getBytes(), value.value());
   }
