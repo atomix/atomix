@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Multi-Raft protocol.
  */
 public class MultiRaftProtocol implements PrimitiveProtocol {
-  public static Type TYPE = new Type();
+  public static final Type TYPE = new Type();
 
   /**
    * Returns a new multi-Raft protocol builder.

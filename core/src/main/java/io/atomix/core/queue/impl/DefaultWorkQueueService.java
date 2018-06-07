@@ -177,15 +177,15 @@ public class DefaultWorkQueueService extends AbstractPrimitiveService<WorkQueueC
 
   @Override
   public void onExpire(PrimitiveSession session) {
-    evictWorker(session.sessionId().id());
+    evictWorker(session.sessionId());
   }
 
   @Override
   public void onClose(PrimitiveSession session) {
-    evictWorker(session.sessionId().id());
+    evictWorker(session.sessionId());
   }
 
-  private void evictWorker(long sessionId) {
+  private void evictWorker(SessionId sessionId) {
     registeredWorkers.remove(sessionId);
 
     // TODO: Maintain an index of tasks by session for efficient access.
@@ -193,7 +193,7 @@ public class DefaultWorkQueueService extends AbstractPrimitiveService<WorkQueueC
     while (iter.hasNext()) {
       Map.Entry<String, TaskAssignment> entry = iter.next();
       TaskAssignment assignment = entry.getValue();
-      if (assignment.sessionId() == sessionId) {
+      if (assignment.sessionId() == sessionId.id()) {
         unassignedTasks.add(assignment.task());
         iter.remove();
       }
