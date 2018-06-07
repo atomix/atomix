@@ -15,47 +15,30 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.impl.AtomicCounterMapOperations.Get;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.Put;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
-import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.PrimitiveSession;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import org.junit.Test;
 
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.GET;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.PUT;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 
 /**
  * Atomic counter map service test.
  */
-public class AtomicCounterMapServiceTest {
+public class DefaultAtomicCounterMapServiceTest {
   @Test
   public void testSnapshot() throws Exception {
-    AtomicCounterMapService service = new AtomicCounterMapService();
-    service.put(new DefaultCommit<>(
-        2,
-        PUT,
-        new Put("foo", 1),
-        mock(PrimitiveSession.class),
-        System.currentTimeMillis()));
+    DefaultAtomicCounterMapService service = new DefaultAtomicCounterMapService();
+    service.put("foo", 1);
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new AtomicCounterMapService();
+    service = new DefaultAtomicCounterMapService();
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
-    long value = service.get(new DefaultCommit<>(
-        2,
-        GET,
-        new Get("foo"),
-        mock(PrimitiveSession.class),
-        System.currentTimeMillis()));
+    long value = service.get("foo");
     assertEquals(1, value);
   }
 }

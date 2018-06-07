@@ -15,14 +15,25 @@
  */
 package io.atomix.core.map;
 
+import io.atomix.core.map.impl.CommitResult;
 import io.atomix.core.map.impl.ConsistentMapProxyBuilder;
 import io.atomix.core.map.impl.ConsistentMapResource;
-import io.atomix.core.map.impl.ConsistentMapService;
+import io.atomix.core.map.impl.DefaultConsistentMapService;
+import io.atomix.core.map.impl.MapEntryUpdateResult;
+import io.atomix.core.map.impl.MapUpdate;
+import io.atomix.core.map.impl.PrepareResult;
+import io.atomix.core.map.impl.RollbackResult;
+import io.atomix.core.transaction.TransactionId;
+import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.time.Versioned;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -52,8 +63,30 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
   }
 
   @Override
+  public Namespace namespace() {
+    return KryoNamespace.builder()
+        .register((KryoNamespace) PrimitiveType.super.namespace())
+        .register(KryoNamespaces.BASIC)
+        .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+        .register(TransactionId.class)
+        .register(TransactionLog.class)
+        .register(MapUpdate.class)
+        .register(MapUpdate.Type.class)
+        .register(PrepareResult.class)
+        .register(CommitResult.class)
+        .register(RollbackResult.class)
+        .register(MapEntryUpdateResult.class)
+        .register(MapEntryUpdateResult.Status.class)
+        .register(Versioned.class)
+        .register(MapEvent.class)
+        .register(MapEvent.Type.class)
+        .register(byte[].class)
+        .build();
+  }
+
+  @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new ConsistentMapService();
+    return new DefaultConsistentMapService();
   }
 
   @Override

@@ -72,9 +72,13 @@ public final class Operations {
    */
   public static Map<OperationId, Method> getOperationMap(Class<?> serviceInterface) {
     if (!serviceInterface.isInterface()) {
+      Class type = serviceInterface;
       Map<OperationId, Method> operations = new HashMap<>();
-      for (Class<?> iface : serviceInterface.getInterfaces()) {
-        operations.putAll(findOperations(iface));
+      while (type != Object.class) {
+        for (Class<?> iface : type.getInterfaces()) {
+          operations.putAll(findOperations(iface));
+        }
+        type = type.getSuperclass();
       }
       return operations;
     }
