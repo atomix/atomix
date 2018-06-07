@@ -18,9 +18,9 @@ package io.atomix.core.lock.impl;
 import com.google.common.collect.Maps;
 import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.core.lock.DistributedLock;
+import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.proxy.PrimitiveProxy;
 import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.OrderedExecutor;
@@ -74,6 +74,8 @@ public class DistributedLockProxy
     LockAttempt attempt = attempts.remove(id);
     if (attempt != null) {
       attempt.complete(new Version(version));
+    } else {
+      acceptBy(getPartitionKey(), service -> service.unlock(id));
     }
   }
 
