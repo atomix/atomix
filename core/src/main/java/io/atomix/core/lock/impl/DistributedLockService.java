@@ -16,6 +16,7 @@
 package io.atomix.core.lock.impl;
 
 import io.atomix.primitive.operation.Command;
+import io.atomix.primitive.operation.Query;
 
 /**
  * Distributed lock service.
@@ -54,6 +55,6 @@ public interface DistributedLockService {
    *
    * @return {@code true} if this lock is locked, {@code false} otherwise
    */
-  @Operation(value = "isLocked", type = OperationType.QUERY)
+  @Query
   boolean isLocked();
 }
