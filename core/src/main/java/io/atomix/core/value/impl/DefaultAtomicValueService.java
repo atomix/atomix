@@ -21,9 +21,6 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -32,22 +29,11 @@ import java.util.HashSet;
  * Raft atomic value service.
  */
 public class DefaultAtomicValueService extends AbstractPrimitiveService<AtomicValueClient> implements AtomicValueService {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .register(AtomicValueOperations.NAMESPACE)
-      .register(AtomicValueEvents.NAMESPACE)
-      .build());
-
   private byte[] value;
   private java.util.Set<PrimitiveSession> listeners = Sets.newHashSet();
 
   public DefaultAtomicValueService() {
     super(AtomicValueType.instance(), AtomicValueClient.class);
-  }
-
-  @Override
-  public Serializer serializer() {
-    return SERIALIZER;
   }
 
   @Override
