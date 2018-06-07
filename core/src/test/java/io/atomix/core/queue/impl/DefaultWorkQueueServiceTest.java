@@ -13,60 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.multimap.impl;
+package io.atomix.core.queue.impl;
 
-import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.Get;
-import io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.Put;
+import io.atomix.core.queue.Task;
+import io.atomix.core.queue.WorkQueueType;
+import io.atomix.primitive.PrimitiveId;
+import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
-import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.SessionId;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.utils.misc.Match;
-import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.GET;
-import static io.atomix.core.multimap.impl.ConsistentSetMultimapOperations.PUT;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
- * Consistent set multimap service test.
+ * Work queue service test.
  */
-public class ConsistentSetMultimapServiceTest {
+public class DefaultWorkQueueServiceTest {
   @Test
-  @SuppressWarnings("unchecked")
   public void testSnapshot() throws Exception {
-    ConsistentSetMultimapService service = new ConsistentSetMultimapService();
-    service.put(new DefaultCommit<>(
-        2,
-        PUT,
-        new Put(
-            "foo", Arrays.asList("Hello world!".getBytes()), Match.ANY),
-        mock(PrimitiveSession.class),
-        System.currentTimeMillis()));
+    ServiceContext context = mock(ServiceContext.class);
+    when(context.serviceType()).thenReturn(WorkQueueType.instance());
+    when(context.serviceName()).thenReturn("test");
+    when(context.serviceId()).thenReturn(PrimitiveId.from(1));
+
+    PrimitiveSession session = mock(PrimitiveSession.class);
+    when(session.sessionId()).thenReturn(SessionId.from(1));
+    when(context.currentSession()).thenReturn(session);
+
+    DefaultWorkQueueService service = new DefaultWorkQueueService();
+    service.init(context);
+
+    service.add(Arrays.asList("Hello world!".getBytes()));
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
-    service = new ConsistentSetMultimapService();
+    service = new DefaultWorkQueueService();
+    service.init(context);
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
-    Versioned<Collection<? extends byte[]>> value = service.get(new DefaultCommit<>(
-        2,
-        GET,
-        new Get("foo"),
-        mock(PrimitiveSession.class),
-        System.currentTimeMillis()));
+    Collection<Task<byte[]>> value = service.take(1);
     assertNotNull(value);
-    assertEquals(1, value.value().size());
-    assertArrayEquals("Hello world!".getBytes(), value.value().iterator().next());
+    assertEquals(1, value.size());
+    assertArrayEquals("Hello world!".getBytes(), value.iterator().next().payload());
   }
 }
