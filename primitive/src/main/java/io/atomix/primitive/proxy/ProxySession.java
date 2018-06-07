@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 /**
  * Partition proxy.
  */
-public interface PartitionProxy extends Proxy<PartitionProxy> {
+public interface ProxySession extends Proxy<ProxySession> {
 
   /**
    * Returns the proxy session identifier.
@@ -71,6 +71,6 @@ public interface PartitionProxy extends Proxy<PartitionProxy> {
   /**
    * Partition proxy builder.
    */
-  abstract class Builder implements io.atomix.utils.Builder<PartitionProxy> {
+  abstract class Builder implements io.atomix.utils.Builder<ProxySession> {
   }
 }

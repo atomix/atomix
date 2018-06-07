@@ -18,7 +18,7 @@ package io.atomix.primitive.proxy.impl;
 import com.google.common.base.Throwables;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -35,9 +35,9 @@ import java.util.function.Predicate;
 /**
  * Retrying primitive proxy.
  */
-public class RetryingPartitionProxy extends DelegatingPartitionProxy {
+public class RetryingProxySession extends DelegatingProxySession {
   private final Logger log;
-  private final PartitionProxy proxy;
+  private final ProxySession proxy;
   private final Scheduler scheduler;
   private final int maxRetries;
   private final Duration delayBetweenRetries;
@@ -53,13 +53,13 @@ public class RetryingPartitionProxy extends DelegatingPartitionProxy {
           || e instanceof PrimitiveException.UnknownSession
           || e instanceof PrimitiveException.ClosedSession;
 
-  public RetryingPartitionProxy(PartitionProxy delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
+  public RetryingProxySession(ProxySession delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
     super(delegate);
     this.proxy = delegate;
     this.scheduler = scheduler;
     this.maxRetries = maxRetries;
     this.delayBetweenRetries = delayBetweenRetries;
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(ProxySession.class)
         .addValue(proxy.sessionId())
         .add("type", proxy.type())
         .add("name", proxy.name())
@@ -68,7 +68,7 @@ public class RetryingPartitionProxy extends DelegatingPartitionProxy {
 
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
-    if (getState() == PartitionProxy.State.CLOSED) {
+    if (getState() == ProxySession.State.CLOSED) {
       return Futures.exceptionalFuture(new PrimitiveException.Unavailable());
     }
     CompletableFuture<byte[]> future = new CompletableFuture<>();

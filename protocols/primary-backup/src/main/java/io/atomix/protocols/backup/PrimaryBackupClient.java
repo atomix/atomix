@@ -20,16 +20,15 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.primitive.proxy.impl.BlockingAwarePartitionProxy;
-import io.atomix.primitive.proxy.impl.RecoveringPartitionProxy;
-import io.atomix.primitive.proxy.impl.RetryingPartitionProxy;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.proxy.impl.BlockingAwareProxySession;
+import io.atomix.primitive.proxy.impl.RecoveringProxySession;
+import io.atomix.primitive.proxy.impl.RetryingProxySession;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionIdService;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
-import io.atomix.protocols.backup.proxy.PrimaryBackupProxy;
+import io.atomix.protocols.backup.proxy.PrimaryBackupProxySession;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
@@ -48,7 +47,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup client.
  */
-public class PrimaryBackupClient implements ProxyClient {
+public class PrimaryBackupClient {
 
   /**
    * Returns a new primary-backup client builder.
@@ -86,13 +85,20 @@ public class PrimaryBackupClient implements ProxyClient {
     this.threadContext = threadContextFactory.createContext();
   }
 
-  @Override
-  public PrimaryBackupProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+  /**
+   * Creates a new primary backup proxy session builder.
+   *
+   * @param primitiveName the primitive name
+   * @param primitiveType the primitive type
+   * @param serviceConfig the service configuration
+   * @return a new primary-backup proxy session builder
+   */
+  public PrimaryBackupProxySession.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
     byte[] configBytes = Serializer.using(primitiveType.namespace()).encode(serviceConfig);
-    return new PrimaryBackupProxy.Builder() {
+    return new PrimaryBackupProxySession.Builder() {
       @Override
-      public PartitionProxy build() {
-        Supplier<PartitionProxy> proxyBuilder = () -> new PrimaryBackupProxy(
+      public ProxySession build() {
+        Supplier<ProxySession> proxyBuilder = () -> new PrimaryBackupProxySession(
             clientName,
             partitionId,
             sessionIdService.nextSessionId().join(),
@@ -108,9 +114,9 @@ public class PrimaryBackupClient implements ProxyClient {
             primaryElection,
             threadContextFactory.createContext());
 
-        PartitionProxy proxy;
+        ProxySession proxy;
         if (recovery == Recovery.RECOVER) {
-          proxy = new RecoveringPartitionProxy(
+          proxy = new RecoveringProxySession(
               clientName,
               partitionId,
               primitiveName,
@@ -123,7 +129,7 @@ public class PrimaryBackupClient implements ProxyClient {
 
         // If max retries is set, wrap the client in a retrying proxy client.
         if (maxRetries > 0) {
-          proxy = new RetryingPartitionProxy(
+          proxy = new RetryingProxySession(
               proxy,
               threadContextFactory.createContext(),
               maxRetries,
@@ -132,7 +138,7 @@ public class PrimaryBackupClient implements ProxyClient {
 
         // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
         Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-        return new BlockingAwarePartitionProxy(proxy, executor);
+        return new BlockingAwareProxySession(proxy, executor);
       }
     };
   }

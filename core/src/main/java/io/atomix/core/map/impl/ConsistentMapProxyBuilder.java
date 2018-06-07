@@ -21,7 +21,7 @@ import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapBuilder;
 import io.atomix.core.map.ConsistentMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -41,7 +41,7 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentMap<K, V>> buildAsync() {
-    PrimitiveProxy proxy = protocol().newProxy(
+    ProxyClient proxy = protocol().newProxy(
         name(),
         primitiveType(),
         new ServiceConfig(),

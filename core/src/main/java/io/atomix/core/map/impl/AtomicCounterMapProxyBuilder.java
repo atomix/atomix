@@ -20,7 +20,7 @@ import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapBuilder;
 import io.atomix.core.map.AtomicCounterMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -37,7 +37,7 @@ public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicCounterMap<K>> buildAsync() {
-    PrimitiveProxy proxy = protocol().newProxy(
+    ProxyClient proxy = protocol().newProxy(
         name(),
         primitiveType(),
         new ServiceConfig(),

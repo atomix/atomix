@@ -22,7 +22,7 @@ import io.atomix.core.value.AtomicValueEvent;
 import io.atomix.core.value.AtomicValueEventListener;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 
 import java.time.Duration;
 import java.util.Set;
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
 public class AtomicValueProxy extends AbstractAsyncPrimitiveProxy<AsyncAtomicValue<byte[]>, AtomicValueService> implements AsyncAtomicValue<byte[]>, AtomicValueClient {
   private final Set<AtomicValueEventListener<byte[]>> eventListeners = Sets.newConcurrentHashSet();
 
-  public AtomicValueProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public AtomicValueProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(AtomicValueService.class, proxy, registry);
   }
 

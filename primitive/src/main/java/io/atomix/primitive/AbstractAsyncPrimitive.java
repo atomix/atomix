@@ -23,8 +23,8 @@ import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
@@ -58,7 +58,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
     }
   };
 
-  private final PrimitiveProxy proxy;
+  private final ProxyClient client;
   private final PrimitiveRegistry registry;
   private final Serializer serializer;
   private final Set<Consumer<Status>> statusChangeListeners = Sets.newCopyOnWriteArraySet();
@@ -66,21 +66,21 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
   private final Map<BiConsumer<PartitionId, Proxy.State>, Map<PartitionId, Consumer<Proxy.State>>> stateChangeListeners =
       Maps.newIdentityHashMap();
 
-  public AbstractAsyncPrimitive(PrimitiveProxy proxy, PrimitiveRegistry registry) {
-    this.proxy = checkNotNull(proxy, "proxy cannot be null");
+  public AbstractAsyncPrimitive(ProxyClient client, PrimitiveRegistry registry) {
+    this.client = checkNotNull(client, "proxy cannot be null");
     this.registry = checkNotNull(registry, "registry cannot be null");
-    this.serializer = Serializer.using(proxy.type().namespace());
-    proxy.addStateChangeListener(this::onStateChange);
+    this.serializer = Serializer.using(client.type().namespace());
+    client.addStateChangeListener(this::onStateChange);
   }
 
   @Override
   public String name() {
-    return proxy.name();
+    return client.name();
   }
 
   @Override
   public PrimitiveType primitiveType() {
-    return proxy.type();
+    return client.type();
   }
 
   /**
@@ -128,8 +128,8 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    *
    * @return the underlying proxy
    */
-  protected PrimitiveProxy getProxy() {
-    return proxy;
+  protected ProxyClient getClient() {
+    return client;
   }
 
   /**
@@ -137,8 +137,8 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    *
    * @return the collection of all partitions
    */
-  protected Collection<PartitionProxy> getPartitions() {
-    return getProxy().getPartitions();
+  protected Collection<ProxySession> getPartitions() {
+    return getClient().getPartitions();
   }
 
   /**
@@ -147,7 +147,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @return the collection of all partition IDs
    */
   protected Collection<PartitionId> getPartitionIds() {
-    return getProxy().getPartitionIds();
+    return getClient().getPartitionIds();
   }
 
   /**
@@ -156,8 +156,8 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @param partitionId the partition identifier
    * @return the partition proxy
    */
-  protected PartitionProxy getPartition(PartitionId partitionId) {
-    return getProxy().getPartition(partitionId);
+  protected ProxySession getPartition(PartitionId partitionId) {
+    return getClient().getPartition(partitionId);
   }
 
   /**
@@ -166,8 +166,8 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
    * @param key the key for which to return the partition
    * @return the partition proxy for the given key
    */
-  protected PartitionProxy getPartition(String key) {
-    return getProxy().getPartition(key);
+  protected ProxySession getPartition(String key) {
+    return getClient().getPartition(key);
   }
 
   /**
@@ -652,13 +652,13 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive> implement
 
   @Override
   public CompletableFuture<Void> close() {
-    return proxy.close();
+    return client.close();
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("proxy", proxy)
+        .add("proxy", client)
         .toString();
   }
 }

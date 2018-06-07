@@ -19,7 +19,7 @@ import io.atomix.core.counter.AsyncAtomicCounter;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -35,7 +35,7 @@ public class AtomicCounterProxy extends AbstractAsyncPrimitiveProxy<AsyncAtomicC
       .register(KryoNamespaces.BASIC)
       .build());
 
-  public AtomicCounterProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public AtomicCounterProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(AtomicCounterService.class, proxy, registry);
   }
 

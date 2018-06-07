@@ -22,8 +22,8 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.utils.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +46,8 @@ public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, S> e
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final Map<PartitionId, ServiceProxy<S>> serviceProxies = Maps.newConcurrentMap();
 
-  @SuppressWarnings("unchecked")
-  public AbstractAsyncPrimitiveProxy(Class<S> serviceType, PrimitiveProxy proxy, PrimitiveRegistry registry) {
-    super(proxy, registry);
+  protected AbstractAsyncPrimitiveProxy(Class<S> serviceType, ProxyClient client, PrimitiveRegistry registry) {
+    super(client, registry);
     registerOperations(serviceType);
     registerEvents(getClass());
   }
@@ -58,7 +57,7 @@ public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, S> e
    */
   @SuppressWarnings("unchecked")
   private void registerOperations(Class<S> serviceType) {
-    for (PartitionProxy partition : getPartitions()) {
+    for (ProxySession partition : getPartitions()) {
       ServiceProxyHandler serviceProxyHandler = new ServiceProxyHandler(serviceType, partition);
       S serviceProxy = (S) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{serviceType}, serviceProxyHandler);
       serviceProxies.put(partition.partitionId(), new ServiceProxy<>(serviceProxy, serviceProxyHandler));
@@ -70,7 +69,7 @@ public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, S> e
    */
   private void registerEvents(Class<?> clientType) {
     Events.getEventMap(clientType).forEach((eventType, method) -> {
-      for (PartitionProxy partition : getPartitions()) {
+      for (ProxySession partition : getPartitions()) {
         partition.addEventListener(eventType, event -> {
           try {
             method.invoke(this, (Object[]) decode(event.value()));
@@ -108,7 +107,7 @@ public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, S> e
    * @return the service proxy for the given key
    */
   private ServiceProxy<S> getServiceProxy(String key) {
-    return getServiceProxy(getProxy().getPartitionId(key));
+    return getServiceProxy(getClient().getPartitionId(key));
   }
 
   /**
@@ -232,11 +231,11 @@ public abstract class AbstractAsyncPrimitiveProxy<A extends AsyncPrimitive, S> e
    * The invocation handler
    */
   private class ServiceProxyHandler implements InvocationHandler {
-    private final PartitionProxy proxy;
+    private final ProxySession proxy;
     private final ThreadLocal<CompletableFuture> future = new ThreadLocal<>();
     private final Map<Method, OperationId> operations = new ConcurrentHashMap<>();
 
-    private ServiceProxyHandler(Class<?> type, PartitionProxy proxy) {
+    private ServiceProxyHandler(Class<?> type, ProxySession proxy) {
       this.proxy = proxy;
       this.operations.putAll(Operations.getMethodMap(type));
     }

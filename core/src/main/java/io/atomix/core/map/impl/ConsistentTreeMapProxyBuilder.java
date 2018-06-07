@@ -20,7 +20,7 @@ import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMapBuilder;
 import io.atomix.core.map.ConsistentTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -39,7 +39,7 @@ public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentTreeMap<V>> buildAsync() {
-    PrimitiveProxy proxy = protocol().newProxy(
+    ProxyClient proxy = protocol().newProxy(
         name(),
         primitiveType(),
         new ServiceConfig(),

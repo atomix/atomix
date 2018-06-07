@@ -29,7 +29,7 @@ public interface Proxy<P extends Proxy> {
    * Indicates the state of the client's communication with the Raft cluster.
    * <p>
    * Throughout the lifetime of a client, the client will transition through various states according to its
-   * ability to communicate with the cluster within the context of a {@link PartitionProxy}. In some cases, client
+   * ability to communicate with the cluster within the context of a {@link ProxySession}. In some cases, client
    * state changes may be indicative of a loss of guarantees. Users of the client should
    * {@link Proxy#addStateChangeListener(Consumer) watch the state of the client} to determine when guarantees
    * are lost and react to changes in the client's ability to communicate with the cluster.
@@ -99,14 +99,14 @@ public interface Proxy<P extends Proxy> {
    *
    * @param listener The callback to call when the session state changes.
    */
-  void addStateChangeListener(Consumer<PartitionProxy.State> listener);
+  void addStateChangeListener(Consumer<ProxySession.State> listener);
 
   /**
    * Removes a state change listener.
    *
    * @param listener the state change listener to remove
    */
-  void removeStateChangeListener(Consumer<PartitionProxy.State> listener);
+  void removeStateChangeListener(Consumer<ProxySession.State> listener);
 
   /**
    * Connects the proxy.

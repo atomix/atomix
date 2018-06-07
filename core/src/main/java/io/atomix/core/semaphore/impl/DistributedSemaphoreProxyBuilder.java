@@ -21,7 +21,7 @@ import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
 import io.atomix.core.semaphore.DistributedSemaphoreConfig;
 import io.atomix.core.semaphore.DistributedSemaphoreServiceConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -33,7 +33,7 @@ public class DistributedSemaphoreProxyBuilder extends DistributedSemaphoreBuilde
   @SuppressWarnings("unchecked")
   @Override
   public CompletableFuture<DistributedSemaphore> buildAsync() {
-    PrimitiveProxy proxy = protocol().newProxy(
+    ProxyClient proxy = protocol().newProxy(
         name(),
         primitiveType(),
         new DistributedSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),

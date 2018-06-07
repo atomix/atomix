@@ -34,8 +34,8 @@ import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.Query;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -297,9 +297,9 @@ public class RaftTest extends ConcurrentTestCase {
   public void testClientKeepAlive() throws Throwable {
     createServers(3);
     RaftClient client = createClient();
-    PartitionProxy session = createSession(client);
+    ProxySession session = createSession(client);
     Thread.sleep(Duration.ofSeconds(10).toMillis());
-    threadAssertTrue(session.getState() == PartitionProxy.State.CONNECTED);
+    threadAssertTrue(session.getState() == ProxySession.State.CONNECTED);
   }
 
   /**
@@ -1251,15 +1251,15 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Creates a test session.
    */
-  private PartitionProxy createSession(RaftClient client) throws Exception {
+  private ProxySession createSession(RaftClient client) throws Exception {
     return createSession(client, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Creates a test session.
    */
-  private PartitionProxy createSession(RaftClient client, ReadConsistency consistency) throws Exception {
-    return client.proxyBuilder("raft-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+  private ProxySession createSession(RaftClient client, ReadConsistency consistency) throws Exception {
+    return client.sessionBuilder("raft-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(consistency)
         .withMinTimeout(Duration.ofMillis(250))
         .withMaxTimeout(Duration.ofSeconds(5))
@@ -1279,8 +1279,8 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a new primitive instance.
    */
   private TestPrimitive createPrimitive(RaftClient client, ReadConsistency consistency) throws Exception {
-    PartitionProxy partition = createSession(client, consistency);
-    PrimitiveProxy proxy = mock(PrimitiveProxy.class);
+    ProxySession partition = createSession(client, consistency);
+    ProxyClient proxy = mock(ProxyClient.class);
     when(proxy.type()).thenReturn(TestPrimitiveType.INSTANCE);
     when(proxy.getPartitions()).thenReturn(Collections.singletonList(partition));
     when(proxy.getPartitionId(any(String.class))).thenReturn(partition.partitionId());
@@ -1419,7 +1419,7 @@ public class RaftTest extends ConcurrentTestCase {
     private final Set<Consumer<String>> expireListeners = Sets.newCopyOnWriteArraySet();
     private final Set<Consumer<String>> closeListeners = Sets.newCopyOnWriteArraySet();
 
-    public TestPrimitiveImpl(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+    public TestPrimitiveImpl(ProxyClient proxy, PrimitiveRegistry registry) {
       super(TestPrimitiveService.class, proxy, registry);
     }
 

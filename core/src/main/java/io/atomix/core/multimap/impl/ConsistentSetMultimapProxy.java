@@ -25,8 +25,8 @@ import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.MultimapEventListener;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -50,7 +50,7 @@ public class ConsistentSetMultimapProxy
 
   private final Map<MultimapEventListener<String, byte[]>, Executor> mapEventListeners = new ConcurrentHashMap<>();
 
-  public ConsistentSetMultimapProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public ConsistentSetMultimapProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(ConsistentSetMultimapService.class, proxy, registry);
   }
 
@@ -185,7 +185,7 @@ public class ConsistentSetMultimapProxy
     return super.connect()
         .thenRun(() -> getPartitionIds().forEach(partition -> {
           addStateChangeListenerOn(partition, state -> {
-            if (state == PartitionProxy.State.CONNECTED && isListening()) {
+            if (state == ProxySession.State.CONNECTED && isListening()) {
               acceptOn(partition, service -> service.listen());
             }
           });
