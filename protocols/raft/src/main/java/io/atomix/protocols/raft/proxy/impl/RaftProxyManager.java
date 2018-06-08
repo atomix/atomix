@@ -19,8 +19,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import io.atomix.cluster.MemberId;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftClient;
@@ -191,7 +191,7 @@ public class RaftProxyManager {
           sessions.put(state.getSessionId().id(), state);
 
           state.addStateChangeListener(s -> {
-            if (s == ProxySession.State.CLOSED) {
+            if (s == PrimitiveState.CLOSED) {
               sessions.remove(state.getSessionId().id());
             }
           });
@@ -357,9 +357,9 @@ public class RaftProxyManager {
             Set<Long> keptAliveSessions = Sets.newHashSet(Longs.asList(response.sessionIds()));
             for (RaftProxyState session : needKeepAlive) {
               if (keptAliveSessions.contains(session.getSessionId().id())) {
-                session.setState(ProxySession.State.CONNECTED);
+                session.setState(PrimitiveState.CONNECTED);
               } else {
-                session.setState(ProxySession.State.CLOSED);
+                session.setState(PrimitiveState.CLOSED);
               }
             }
             scheduleKeepAlive(System.currentTimeMillis(), sessionTimeout, delta);
@@ -372,7 +372,7 @@ public class RaftProxyManager {
           }
           // If no leader was set, set the session state to unstable and schedule another keep-alive.
           else {
-            needKeepAlive.forEach(s -> s.setState(ProxySession.State.SUSPENDED));
+            needKeepAlive.forEach(s -> s.setState(PrimitiveState.SUSPENDED));
             selectorManager.resetAll();
             scheduleKeepAlive(lastKeepAliveTime, sessionTimeout, delta);
           }
@@ -385,7 +385,7 @@ public class RaftProxyManager {
         }
         // If no leader was set, set the session state to unstable and schedule another keep-alive.
         else {
-          needKeepAlive.forEach(s -> s.setState(ProxySession.State.SUSPENDED));
+          needKeepAlive.forEach(s -> s.setState(PrimitiveState.SUSPENDED));
           selectorManager.resetAll();
           scheduleKeepAlive(lastKeepAliveTime, sessionTimeout, delta);
         }

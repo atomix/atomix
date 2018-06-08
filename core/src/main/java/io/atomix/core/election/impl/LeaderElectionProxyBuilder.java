@@ -36,9 +36,10 @@ public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<LeaderElection<T>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
+    ProxyClient<LeaderElectionService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        LeaderElectionService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new LeaderElectionProxy(proxy, managementService.getPrimitiveRegistry())

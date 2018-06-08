@@ -33,9 +33,10 @@ public class DistributedSemaphoreProxyBuilder extends DistributedSemaphoreBuilde
   @SuppressWarnings("unchecked")
   @Override
   public CompletableFuture<DistributedSemaphore> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
+    ProxyClient<DistributedSemaphoreService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        DistributedSemaphoreService.class,
         new DistributedSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
         managementService.getPartitionService());
 

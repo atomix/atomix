@@ -18,15 +18,17 @@ package io.atomix.protocols.raft;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.event.Event;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.OperationType;
@@ -34,8 +36,8 @@ import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.Query;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -297,9 +299,9 @@ public class RaftTest extends ConcurrentTestCase {
   public void testClientKeepAlive() throws Throwable {
     createServers(3);
     RaftClient client = createClient();
-    ProxySession session = createSession(client);
+    SessionClient session = createSession(client);
     Thread.sleep(Duration.ofSeconds(10).toMillis());
-    threadAssertTrue(session.getState() == ProxySession.State.CONNECTED);
+    threadAssertTrue(session.getState() == PrimitiveState.CONNECTED);
   }
 
   /**
@@ -1251,14 +1253,14 @@ public class RaftTest extends ConcurrentTestCase {
   /**
    * Creates a test session.
    */
-  private ProxySession createSession(RaftClient client) throws Exception {
+  private SessionClient createSession(RaftClient client) throws Exception {
     return createSession(client, ReadConsistency.LINEARIZABLE);
   }
 
   /**
    * Creates a test session.
    */
-  private ProxySession createSession(RaftClient client, ReadConsistency consistency) throws Exception {
+  private SessionClient createSession(RaftClient client, ReadConsistency consistency) throws Exception {
     return client.sessionBuilder("raft-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(consistency)
         .withMinTimeout(Duration.ofMillis(250))
@@ -1279,11 +1281,13 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a new primitive instance.
    */
   private TestPrimitive createPrimitive(RaftClient client, ReadConsistency consistency) throws Exception {
-    ProxySession partition = createSession(client, consistency);
-    ProxyClient proxy = mock(ProxyClient.class);
-    when(proxy.type()).thenReturn(TestPrimitiveType.INSTANCE);
-    when(proxy.getPartitions()).thenReturn(Collections.singletonList(partition));
-    when(proxy.getPartitionId(any(String.class))).thenReturn(partition.partitionId());
+    SessionClient partition = createSession(client, consistency);
+    ProxyClient<TestPrimitiveService> proxy = new DefaultProxyClient<>(
+        "test",
+        TestPrimitiveType.INSTANCE,
+        TestPrimitiveService.class,
+        Collections.singletonList(partition),
+        (key, partitions) -> partitions.get(0));
     PrimitiveRegistry registry = mock(PrimitiveRegistry.class);
     when(registry.createPrimitive(any(String.class), any(PrimitiveType.class))).thenReturn(CompletableFuture.completedFuture(new PrimitiveInfo("raft-test", TestPrimitiveType.INSTANCE)));
     return new TestPrimitiveImpl(proxy, registry);
@@ -1413,29 +1417,29 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   public static class TestPrimitiveImpl
-      extends AbstractAsyncPrimitiveProxy<TestPrimitive, TestPrimitiveService>
+      extends AbstractAsyncPrimitive<TestPrimitive, TestPrimitiveService>
       implements TestPrimitive, TestPrimitiveClient {
     private final Set<Consumer<Long>> eventListeners = Sets.newCopyOnWriteArraySet();
     private final Set<Consumer<String>> expireListeners = Sets.newCopyOnWriteArraySet();
     private final Set<Consumer<String>> closeListeners = Sets.newCopyOnWriteArraySet();
 
-    public TestPrimitiveImpl(ProxyClient proxy, PrimitiveRegistry registry) {
-      super(TestPrimitiveService.class, proxy, registry);
+    public TestPrimitiveImpl(ProxyClient<TestPrimitiveService> proxy, PrimitiveRegistry registry) {
+      super(proxy, registry);
     }
 
     @Override
     public CompletableFuture<Long> write(String value) {
-      return applyBy(getPartitionKey(), service -> service.write(value));
+      return getProxyClient().applyBy(name(), service -> service.write(value));
     }
 
     @Override
     public CompletableFuture<Long> read() {
-      return applyBy(getPartitionKey(), service -> service.read());
+      return getProxyClient().applyBy(name(), service -> service.read());
     }
 
     @Override
     public CompletableFuture<Long> sendEvent(boolean sender) {
-      return applyBy(getPartitionKey(), service -> service.sendEvent(sender));
+      return getProxyClient().applyBy(name(), service -> service.sendEvent(sender));
     }
 
     @Override
@@ -1447,13 +1451,13 @@ public class RaftTest extends ConcurrentTestCase {
     @Override
     public CompletableFuture<Void> onExpire(Consumer<String> callback) {
       expireListeners.add(callback);
-      return acceptBy(getPartitionKey(), service -> service.onExpire());
+      return getProxyClient().acceptBy(name(), service -> service.onExpire());
     }
 
     @Override
     public CompletableFuture<Void> onClose(Consumer<String> callback) {
       closeListeners.add(callback);
-      return acceptBy(getPartitionKey(), service -> service.onClose());
+      return getProxyClient().acceptBy(name(), service -> service.onClose());
     }
 
     @Override

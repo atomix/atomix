@@ -45,7 +45,6 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder, C extends 
    *
    * @return a new primitive configuration
    */
-  @SuppressWarnings("unchecked")
   C newConfig();
 
   /**

@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.proxy;
 
 import io.atomix.primitive.Recovery;
-import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.protocols.raft.ReadConsistency;
 
 import java.time.Duration;
@@ -29,12 +29,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Raft primitive proxy.
  */
-public interface RaftProxySession extends ProxySession {
+public interface RaftSessionClient extends SessionClient {
 
   /**
    * Raft proxy builder.
    */
-  abstract class Builder extends ProxySession.Builder {
+  abstract class Builder extends SessionClient.Builder {
     protected Duration minTimeout = Duration.ofMillis(250);
     protected Duration maxTimeout = Duration.ofSeconds(30);
     protected ReadConsistency readConsistency = ReadConsistency.SEQUENTIAL;

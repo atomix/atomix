@@ -37,9 +37,10 @@ public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicCounterMap<K>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
+    ProxyClient<AtomicCounterMapService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        AtomicCounterMapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new AtomicCounterMapProxy(proxy, managementService.getPrimitiveRegistry())

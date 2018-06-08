@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.proxy.impl;
+package io.atomix.primitive.client.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.PrimitiveState;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -35,9 +36,9 @@ import java.util.function.Predicate;
 /**
  * Retrying primitive proxy.
  */
-public class RetryingProxySession extends DelegatingProxySession {
+public class RetryingSessionClient extends DelegatingSessionClient {
   private final Logger log;
-  private final ProxySession proxy;
+  private final SessionClient proxy;
   private final Scheduler scheduler;
   private final int maxRetries;
   private final Duration delayBetweenRetries;
@@ -53,13 +54,13 @@ public class RetryingProxySession extends DelegatingProxySession {
           || e instanceof PrimitiveException.UnknownSession
           || e instanceof PrimitiveException.ClosedSession;
 
-  public RetryingProxySession(ProxySession delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
+  public RetryingSessionClient(SessionClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
     super(delegate);
     this.proxy = delegate;
     this.scheduler = scheduler;
     this.maxRetries = maxRetries;
     this.delayBetweenRetries = delayBetweenRetries;
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(ProxySession.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
         .addValue(proxy.sessionId())
         .add("type", proxy.type())
         .add("name", proxy.name())
@@ -68,7 +69,7 @@ public class RetryingProxySession extends DelegatingProxySession {
 
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
-    if (getState() == ProxySession.State.CLOSED) {
+    if (getState() == PrimitiveState.CLOSED) {
       return Futures.exceptionalFuture(new PrimitiveException.Unavailable());
     }
     CompletableFuture<byte[]> future = new CompletableFuture<>();

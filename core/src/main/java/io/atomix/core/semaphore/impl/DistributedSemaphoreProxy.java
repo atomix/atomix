@@ -18,7 +18,7 @@ package io.atomix.core.semaphore.impl;
 import io.atomix.core.semaphore.AsyncDistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.QueueStatus;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.time.Version;
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public class DistributedSemaphoreProxy
-    extends AbstractAsyncPrimitiveProxy<AsyncDistributedSemaphore, DistributedSemaphoreService>
+    extends AbstractAsyncPrimitive<AsyncDistributedSemaphore, DistributedSemaphoreService>
     implements AsyncDistributedSemaphore, DistributedSemaphoreClient {
   private static Duration NO_TIMEOUT = Duration.ofMillis(-1);
 
@@ -43,10 +43,8 @@ public class DistributedSemaphoreProxy
   private final Map<Long, AcquireAttempt> attempts = new ConcurrentHashMap<>();
   private final AtomicLong attemptId = new AtomicLong();
 
-  public DistributedSemaphoreProxy(ProxyClient proxy,
-                                   PrimitiveRegistry registry,
-                                   ScheduledExecutorService scheduledExecutor) {
-    super(DistributedSemaphoreService.class, proxy, registry);
+  public DistributedSemaphoreProxy(ProxyClient<DistributedSemaphoreService> proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
+    super(proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
   }
 
@@ -107,7 +105,7 @@ public class DistributedSemaphoreProxy
     AcquireAttempt attempt = new AcquireAttempt(id, permits, timeout, a -> onExpired(a.id()));
 
     attempts.put(id, attempt);
-    acceptBy(getPartitionKey(), service -> service.acquire(attempt.id(), permits, timeout.toMillis()))
+    getProxyClient().acceptBy(name(), service -> service.acquire(attempt.id(), permits, timeout.toMillis()))
         .whenComplete((result, error) -> {
           if (error != null) {
             attempts.remove(id);
@@ -126,32 +124,32 @@ public class DistributedSemaphoreProxy
   @Override
   public CompletableFuture<Void> release(int permits) {
     if (permits < 0) throw new IllegalArgumentException();
-    return acceptBy(getPartitionKey(), service -> service.release(permits));
+    return getProxyClient().acceptBy(name(), service -> service.release(permits));
   }
 
   @Override
   public CompletableFuture<Integer> availablePermits() {
-    return applyBy(getPartitionKey(), service -> service.available());
+    return getProxyClient().applyBy(name(), service -> service.available());
   }
 
   @Override
   public CompletableFuture<Integer> drainPermits() {
-    return applyBy(getPartitionKey(), service -> service.drain());
+    return getProxyClient().applyBy(name(), service -> service.drain());
   }
 
   @Override
   public CompletableFuture<Integer> increase(int permits) {
-    return applyBy(getPartitionKey(), service -> service.increase(permits));
+    return getProxyClient().applyBy(name(), service -> service.increase(permits));
   }
 
   @Override
   public CompletableFuture<Integer> reduce(int permits) {
-    return applyBy(getPartitionKey(), service -> service.reduce(permits));
+    return getProxyClient().applyBy(name(), service -> service.reduce(permits));
   }
 
   @Override
   public CompletableFuture<QueueStatus> queueStatus() {
-    return applyBy(getPartitionKey(), service -> service.queueStatus());
+    return getProxyClient().applyBy(name(), service -> service.queueStatus());
   }
 
   @Override
@@ -166,7 +164,7 @@ public class DistributedSemaphoreProxy
    * @return CompletableFuture that is completed with the current permit holders
    */
   CompletableFuture<Map<Long, Integer>> holderStatus() {
-    return applyBy(getPartitionKey(), service -> service.holderStatus());
+    return getProxyClient().applyBy(name(), service -> service.holderStatus());
   }
 
   private class AcquireAttempt extends CompletableFuture<Version> {

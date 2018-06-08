@@ -36,9 +36,10 @@ public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<WorkQueue<E>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
+    ProxyClient<WorkQueueService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        WorkQueueService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new WorkQueueProxy(proxy, managementService.getPrimitiveRegistry())

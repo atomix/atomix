@@ -20,10 +20,10 @@ import io.atomix.core.queue.AsyncWorkQueue;
 import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueStats;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.AbstractAccumulator;
 import io.atomix.utils.concurrent.Accumulator;
 import org.slf4j.Logger;
@@ -48,7 +48,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Distributed resource providing the {@link WorkQueue} primitive.
  */
 public class WorkQueueProxy
-    extends AbstractAsyncPrimitiveProxy<AsyncWorkQueue<byte[]>, WorkQueueService>
+    extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]>, WorkQueueService>
     implements AsyncWorkQueue<byte[]>, WorkQueueClient {
 
   private final Logger log = getLogger(getClass());
@@ -57,8 +57,8 @@ public class WorkQueueProxy
   private final Timer timer = new Timer("atomix-work-queue-completer");
   private final AtomicBoolean isRegistered = new AtomicBoolean(false);
 
-  public WorkQueueProxy(ProxyClient proxy, PrimitiveRegistry registry) {
-    super(WorkQueueService.class, proxy, registry);
+  public WorkQueueProxy(ProxyClient<WorkQueueService> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
     executor = newSingleThreadExecutor(namedThreads("atomix-work-queue-" + proxy.name() + "-%d", log));
   }
 
@@ -71,7 +71,7 @@ public class WorkQueueProxy
   public CompletableFuture<Void> delete() {
     executor.shutdown();
     timer.cancel();
-    return acceptBy(getPartitionKey(), service -> service.clear());
+    return getProxyClient().acceptBy(name(), service -> service.clear());
   }
 
   @Override
@@ -79,7 +79,7 @@ public class WorkQueueProxy
     if (items.isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
-    return acceptBy(getPartitionKey(), service -> service.add(items));
+    return getProxyClient().acceptBy(name(), service -> service.add(items));
   }
 
   @Override
@@ -87,7 +87,7 @@ public class WorkQueueProxy
     if (maxTasks <= 0) {
       return CompletableFuture.completedFuture(ImmutableList.of());
     }
-    return applyBy(getPartitionKey(), service -> service.take(maxTasks));
+    return getProxyClient().applyBy(name(), service -> service.take(maxTasks));
   }
 
   @Override
@@ -95,7 +95,7 @@ public class WorkQueueProxy
     if (taskIds.isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
-    return acceptBy(getPartitionKey(), service -> service.complete(taskIds));
+    return getProxyClient().acceptBy(name(), service -> service.complete(taskIds));
   }
 
   @Override
@@ -119,7 +119,7 @@ public class WorkQueueProxy
 
   @Override
   public CompletableFuture<WorkQueueStats> stats() {
-    return applyBy(getPartitionKey(), service -> service.stats());
+    return getProxyClient().applyBy(name(), service -> service.stats());
   }
 
   private void resumeWork() {
@@ -132,23 +132,22 @@ public class WorkQueueProxy
   }
 
   private CompletableFuture<Void> register() {
-    return acceptBy(getPartitionKey(), service -> service.register()).thenRun(() -> isRegistered.set(true));
+    return getProxyClient().acceptBy(name(), service -> service.register()).thenRun(() -> isRegistered.set(true));
   }
 
   private CompletableFuture<Void> unregister() {
-    return acceptBy(getPartitionKey(), service -> service.unregister()).thenRun(() -> isRegistered.set(false));
+    return getProxyClient().acceptBy(name(), service -> service.unregister()).thenRun(() -> isRegistered.set(false));
   }
 
   @Override
   public CompletableFuture<AsyncWorkQueue<byte[]>> connect() {
     return super.connect()
-        .thenRun(() -> {
-          addStateChangeListenerBy(getPartitionKey(), state -> {
-            if (state == Proxy.State.CONNECTED && isRegistered.get()) {
-              acceptBy(getPartitionKey(), service -> service.register());
-            }
-          });
-        }).thenApply(v -> this);
+        .thenRun(() -> getProxyClient().getPartition(name()).addStateChangeListener(state -> {
+          if (state == PrimitiveState.CONNECTED && isRegistered.get()) {
+            getProxyClient().acceptBy(name(), service -> service.register());
+          }
+        }))
+        .thenApply(v -> this);
   }
 
   @Override

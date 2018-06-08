@@ -17,7 +17,7 @@ package io.atomix.primitive.partition;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.service.ServiceConfig;
 
 import java.util.Collection;
@@ -70,6 +70,6 @@ public interface Partition {
    * @param serviceConfig the primitive service configuration
    * @return a new proxy builder for the given primitive type
    */
-  ProxySession.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig);
+  SessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig);
 
 }

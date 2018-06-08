@@ -21,6 +21,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
@@ -30,8 +31,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.atomix.primitive.DistributedPrimitive.Status.INACTIVE;
-import static io.atomix.primitive.DistributedPrimitive.Status.SUSPENDED;
+import static io.atomix.primitive.PrimitiveState.CLOSED;
+import static io.atomix.primitive.PrimitiveState.SUSPENDED;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -43,7 +44,7 @@ public class CachingAsyncConsistentMultimap<K, V> extends DelegatingAsyncConsist
 
   private final LoadingCache<K, CompletableFuture<Versioned<Collection<? extends V>>>> cache;
   private final MultimapEventListener<K, V> cacheUpdater;
-  private final Consumer<Status> statusListener;
+  private final Consumer<PrimitiveState> stateListener;
 
   /**
    * Default constructor.
@@ -103,16 +104,16 @@ public class CachingAsyncConsistentMultimap<K, V> extends DelegatingAsyncConsist
           break;
       }
     };
-    statusListener = status -> {
+    stateListener = status -> {
       log.debug("{} status changed to {}", this.name(), status);
       // If the status of the underlying map is SUSPENDED or INACTIVE
       // we can no longer guarantee that the cache will be in sync.
-      if (status == SUSPENDED || status == INACTIVE) {
+      if (status == SUSPENDED || status == CLOSED) {
         cache.invalidateAll();
       }
     };
     super.addListener(cacheUpdater);
-    super.addStatusChangeListener(statusListener);
+    super.addStateChangeListener(stateListener);
   }
 
   @Override
@@ -174,7 +175,7 @@ public class CachingAsyncConsistentMultimap<K, V> extends DelegatingAsyncConsist
 
   @Override
   public CompletableFuture<Void> close() {
-    super.removeStatusChangeListener(statusListener);
+    super.removeStateChangeListener(stateListener);
     return super.close().thenCompose(v -> removeListener(cacheUpdater));
   }
 }

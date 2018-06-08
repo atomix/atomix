@@ -33,8 +33,8 @@ import java.util.concurrent.CompletableFuture;
  * Implementation of {@link io.atomix.core.map.AsyncConsistentTreeMap}.
  */
 public class ConsistentTreeMapProxy extends AbstractConsistentMapProxy<AsyncConsistentTreeMap<byte[]>, ConsistentTreeMapService> implements AsyncConsistentTreeMap<byte[]> {
-  public ConsistentTreeMapProxy(ProxyClient proxy, PrimitiveRegistry registry) {
-    super(ConsistentTreeMapService.class, proxy, registry);
+  public ConsistentTreeMapProxy(ProxyClient<ConsistentTreeMapService> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   protected String greaterKey(String a, String b) {
@@ -55,73 +55,73 @@ public class ConsistentTreeMapProxy extends AbstractConsistentMapProxy<AsyncCons
 
   @Override
   public CompletableFuture<String> firstKey() {
-    return this.applyAll(service -> service.firstKey())
+    return getProxyClient().applyAll(service -> service.firstKey())
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> lastKey() {
-    return this.applyAll(service -> service.lastKey())
+    return getProxyClient().applyAll(service -> service.lastKey())
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> ceilingEntry(String key) {
-    return this.applyAll(service -> service.ceilingEntry(key))
+    return getProxyClient().applyAll(service -> service.ceilingEntry(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> floorEntry(String key) {
-    return this.applyAll(service -> service.floorEntry(key))
+    return getProxyClient().applyAll(service -> service.floorEntry(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> higherEntry(String key) {
-    return this.applyAll(service -> service.higherEntry(key))
+    return getProxyClient().applyAll(service -> service.higherEntry(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lowerEntry(String key) {
-    return this.applyAll(service -> service.lowerEntry(key))
+    return getProxyClient().applyAll(service -> service.lowerEntry(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> firstEntry() {
-    return this.applyAll(service -> service.firstEntry())
+    return getProxyClient().applyAll(service -> service.firstEntry())
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lastEntry() {
-    return this.applyAll(service -> service.lastEntry())
+    return getProxyClient().applyAll(service -> service.lastEntry())
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> lowerKey(String key) {
-    return this.applyAll(service -> service.lowerKey(key))
+    return getProxyClient().applyAll(service -> service.lowerKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> floorKey(String key) {
-    return this.applyAll(service -> service.floorKey(key))
+    return getProxyClient().applyAll(service -> service.floorKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> ceilingKey(String key) {
-    return this.applyAll(service -> service.ceilingKey(key))
+    return getProxyClient().applyAll(service -> service.ceilingKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
   public CompletableFuture<String> higherKey(String key) {
-    return this.applyAll(service -> service.higherKey(key))
+    return getProxyClient().applyAll(service -> service.higherKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 

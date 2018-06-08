@@ -20,15 +20,15 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.primitive.proxy.ProxySession;
-import io.atomix.primitive.proxy.impl.BlockingAwareProxySession;
-import io.atomix.primitive.proxy.impl.RecoveringProxySession;
-import io.atomix.primitive.proxy.impl.RetryingProxySession;
+import io.atomix.primitive.client.SessionClient;
+import io.atomix.primitive.client.impl.BlockingAwareSessionClient;
+import io.atomix.primitive.client.impl.RecoveringSessionClient;
+import io.atomix.primitive.client.impl.RetryingSessionClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionIdService;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
-import io.atomix.protocols.backup.proxy.PrimaryBackupProxySession;
+import io.atomix.protocols.backup.proxy.PrimaryBackupSessionClient;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
@@ -93,12 +93,12 @@ public class PrimaryBackupClient {
    * @param serviceConfig the service configuration
    * @return a new primary-backup proxy session builder
    */
-  public PrimaryBackupProxySession.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+  public PrimaryBackupSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
     byte[] configBytes = Serializer.using(primitiveType.namespace()).encode(serviceConfig);
-    return new PrimaryBackupProxySession.Builder() {
+    return new PrimaryBackupSessionClient.Builder() {
       @Override
-      public ProxySession build() {
-        Supplier<ProxySession> proxyBuilder = () -> new PrimaryBackupProxySession(
+      public SessionClient build() {
+        Supplier<SessionClient> proxyBuilder = () -> new PrimaryBackupSessionClient(
             clientName,
             partitionId,
             sessionIdService.nextSessionId().join(),
@@ -114,9 +114,9 @@ public class PrimaryBackupClient {
             primaryElection,
             threadContextFactory.createContext());
 
-        ProxySession proxy;
+        SessionClient proxy;
         if (recovery == Recovery.RECOVER) {
-          proxy = new RecoveringProxySession(
+          proxy = new RecoveringSessionClient(
               clientName,
               partitionId,
               primitiveName,
@@ -129,7 +129,7 @@ public class PrimaryBackupClient {
 
         // If max retries is set, wrap the client in a retrying proxy client.
         if (maxRetries > 0) {
-          proxy = new RetryingProxySession(
+          proxy = new RetryingSessionClient(
               proxy,
               threadContextFactory.createContext(),
               maxRetries,
@@ -138,7 +138,7 @@ public class PrimaryBackupClient {
 
         // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
         Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-        return new BlockingAwareProxySession(proxy, executor);
+        return new BlockingAwareSessionClient(proxy, executor);
       }
     };
   }

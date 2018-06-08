@@ -15,37 +15,12 @@
  */
 package io.atomix.primitive;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.function.Consumer;
 
 /**
  * Interface for all distributed primitives.
  */
 public interface DistributedPrimitive {
-
-  /**
-   * Status of distributed primitive.
-   */
-  enum Status {
-
-    /**
-     * Signifies a state wherein the primitive is operating correctly and is capable of meeting the advertised
-     * consistency and reliability guarantees.
-     */
-    ACTIVE,
-
-    /**
-     * Signifies a state wherein the primitive is temporarily incapable of providing the advertised
-     * consistency properties.
-     */
-    SUSPENDED,
-
-    /**
-     * Signifies a state wherein the primitive has been shutdown and therefore cannot perform its functions.
-     */
-    INACTIVE
-  }
 
   /**
    * Default timeout for primitive operations.
@@ -67,28 +42,19 @@ public interface DistributedPrimitive {
   PrimitiveType primitiveType();
 
   /**
-   * Registers a listener to be called when the primitive's status changes.
+   * Registers a listener to be called when the primitive's state changes.
    *
-   * @param listener The listener to be called when the status changes.
+   * @param listener The listener to be called when the state changes.
    */
-  default void addStatusChangeListener(Consumer<Status> listener) {
+  default void addStateChangeListener(Consumer<PrimitiveState> listener) {
   }
 
   /**
-   * Unregisters a previously registered listener to be called when the primitive's status changes.
+   * Unregisters a previously registered listener to be called when the primitive's state changes.
    *
    * @param listener The listener to unregister
    */
-  default void removeStatusChangeListener(Consumer<Status> listener) {
-  }
-
-  /**
-   * Returns the collection of status change listeners previously registered.
-   *
-   * @return collection of status change listeners
-   */
-  default Collection<Consumer<Status>> statusChangeListeners() {
-    return Collections.emptyList();
+  default void removeStateChangeListener(Consumer<PrimitiveState> listener) {
   }
 
 }

@@ -18,11 +18,11 @@ package io.atomix.core.tree.impl;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
 import io.atomix.core.tree.AsyncDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeListener;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
@@ -30,8 +30,8 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static io.atomix.primitive.DistributedPrimitive.Status.INACTIVE;
-import static io.atomix.primitive.DistributedPrimitive.Status.SUSPENDED;
+import static io.atomix.primitive.PrimitiveState.CLOSED;
+import static io.atomix.primitive.PrimitiveState.SUSPENDED;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -43,7 +43,7 @@ public class CachingAsyncDocumentTree<V> extends DelegatingAsyncDocumentTree<V> 
 
   private final LoadingCache<DocumentPath, CompletableFuture<Versioned<V>>> cache;
   private final DocumentTreeListener<V> cacheUpdater;
-  private final Consumer<Status> statusListener;
+  private final Consumer<PrimitiveState> stateListener;
 
   /**
    * Default constructor.
@@ -72,16 +72,16 @@ public class CachingAsyncDocumentTree<V> extends DelegatingAsyncDocumentTree<V> 
         cache.put(event.path(), CompletableFuture.completedFuture(event.newValue().get()));
       }
     };
-    statusListener = status -> {
+    stateListener = status -> {
       log.debug("{} status changed to {}", this.name(), status);
       // If the status of the underlying map is SUSPENDED or INACTIVE
       // we can no longer guarantee that the cache will be in sync.
-      if (status == SUSPENDED || status == INACTIVE) {
+      if (status == SUSPENDED || status == CLOSED) {
         cache.invalidateAll();
       }
     };
     super.addListener(cacheUpdater);
-    super.addStatusChangeListener(statusListener);
+    super.addStateChangeListener(stateListener);
   }
 
   @Override

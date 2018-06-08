@@ -18,9 +18,9 @@ package io.atomix.core.map.impl;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
@@ -30,8 +30,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static io.atomix.primitive.DistributedPrimitive.Status.INACTIVE;
-import static io.atomix.primitive.DistributedPrimitive.Status.SUSPENDED;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -54,7 +52,7 @@ public class CachingAsyncConsistentMap<K, V> extends DelegatingAsyncConsistentMa
   private final LoadingCache<K, CompletableFuture<Versioned<V>>> cache;
   private final AsyncConsistentMap<K, V> backingMap;
   private final MapEventListener<K, V> cacheUpdater;
-  private final Consumer<Status> statusListener;
+  private final Consumer<PrimitiveState> statusListener;
 
   /**
    * Default constructor.
@@ -89,17 +87,17 @@ public class CachingAsyncConsistentMap<K, V> extends DelegatingAsyncConsistentMa
       log.debug("{} status changed to {}", this.name(), status);
       // If the status of the underlying map is SUSPENDED or INACTIVE
       // we can no longer guarantee that the cache will be in sync.
-      if (status == SUSPENDED || status == INACTIVE) {
+      if (status == PrimitiveState.SUSPENDED || status == PrimitiveState.CLOSED) {
         cache.invalidateAll();
       }
     };
     super.addListener(cacheUpdater);
-    super.addStatusChangeListener(statusListener);
+    super.addStateChangeListener(statusListener);
   }
 
   @Override
   public CompletableFuture<Void> delete() {
-    super.removeStatusChangeListener(statusListener);
+    super.removeStateChangeListener(statusListener);
     return super.delete().thenCompose(v -> removeListener(cacheUpdater));
   }
 

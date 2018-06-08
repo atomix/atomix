@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.proxy.impl;
+package io.atomix.primitive.client.impl;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
@@ -41,41 +42,40 @@ import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Primitive proxy that supports recovery.
  */
-public class RecoveringProxySession implements ProxySession {
+public class RecoveringSessionClient implements SessionClient {
   private static final SessionId DEFAULT_SESSION_ID = SessionId.from(0);
   private final PartitionId partitionId;
   private final String name;
   private final PrimitiveType primitiveType;
-  private final Supplier<ProxySession> proxyFactory;
+  private final Supplier<SessionClient> proxyFactory;
   private final Scheduler scheduler;
   private Logger log;
-  private volatile OrderedFuture<ProxySession> clientFuture;
-  private volatile ProxySession proxy;
-  private volatile State state = State.CLOSED;
-  private final Set<Consumer<ProxySession.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
+  private volatile OrderedFuture<SessionClient> clientFuture;
+  private volatile SessionClient proxy;
+  private volatile PrimitiveState state = PrimitiveState.CLOSED;
+  private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Multimap<EventType, Consumer<PrimitiveEvent>> eventListeners = HashMultimap.create();
   private Scheduled recoverTask;
   private volatile boolean connected = false;
 
-  public RecoveringProxySession(String clientId, PartitionId partitionId, String name, PrimitiveType primitiveType, Supplier<ProxySession> proxyFactory, Scheduler scheduler) {
+  public RecoveringSessionClient(String clientId, PartitionId partitionId, String name, PrimitiveType primitiveType, Supplier<SessionClient> proxyFactory, Scheduler scheduler) {
     this.partitionId = checkNotNull(partitionId);
     this.name = checkNotNull(name);
     this.primitiveType = checkNotNull(primitiveType);
     this.proxyFactory = checkNotNull(proxyFactory);
     this.scheduler = checkNotNull(scheduler);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(ProxySession.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
         .addValue(clientId)
         .build());
   }
 
   @Override
   public SessionId sessionId() {
-    ProxySession proxy = this.proxy;
+    SessionClient proxy = this.proxy;
     return proxy != null ? proxy.sessionId() : DEFAULT_SESSION_ID;
   }
 
@@ -95,7 +95,7 @@ public class RecoveringProxySession implements ProxySession {
   }
 
   @Override
-  public ProxySession.State getState() {
+  public PrimitiveState getState() {
     return state;
   }
 
@@ -104,11 +104,11 @@ public class RecoveringProxySession implements ProxySession {
    *
    * @param state the session state
    */
-  private synchronized void onStateChange(ProxySession.State state) {
+  private synchronized void onStateChange(PrimitiveState state) {
     if (this.state != state) {
-      if (state == ProxySession.State.CLOSED) {
+      if (state == PrimitiveState.CLOSED) {
         if (connected) {
-          onStateChange(ProxySession.State.SUSPENDED);
+          onStateChange(PrimitiveState.SUSPENDED);
           recover();
         } else {
           log.debug("State changed: {}", state);
@@ -124,20 +124,13 @@ public class RecoveringProxySession implements ProxySession {
   }
 
   @Override
-  public void addStateChangeListener(Consumer<ProxySession.State> listener) {
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
     stateChangeListeners.add(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<ProxySession.State> listener) {
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
     stateChangeListeners.remove(listener);
-  }
-
-  /**
-   * Verifies that the client is open.
-   */
-  private void checkOpen() {
-    checkState(connected, "client not open");
   }
 
   /**
@@ -153,7 +146,7 @@ public class RecoveringProxySession implements ProxySession {
    *
    * @return a future to be completed once the client has been opened
    */
-  private CompletableFuture<ProxySession> openProxy() {
+  private CompletableFuture<SessionClient> openProxy() {
     if (connected) {
       log.debug("Opening proxy session");
 
@@ -162,7 +155,7 @@ public class RecoveringProxySession implements ProxySession {
 
       return clientFuture.thenApply(proxy -> {
         synchronized (this) {
-          this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(ProxySession.class)
+          this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
               .addValue(proxy.sessionId())
               .add("type", proxy.type())
               .add("name", proxy.name())
@@ -170,7 +163,7 @@ public class RecoveringProxySession implements ProxySession {
           this.proxy = proxy;
           proxy.addStateChangeListener(this::onStateChange);
           eventListeners.forEach(proxy::addEventListener);
-          onStateChange(ProxySession.State.CONNECTED);
+          onStateChange(PrimitiveState.CONNECTED);
         }
         return proxy;
       });
@@ -183,7 +176,7 @@ public class RecoveringProxySession implements ProxySession {
    *
    * @param future the future to be completed once the client is opened
    */
-  private void openProxy(CompletableFuture<ProxySession> future) {
+  private void openProxy(CompletableFuture<SessionClient> future) {
     proxyFactory.get().connect().whenComplete((proxy, error) -> {
       if (error == null) {
         future.complete(proxy);
@@ -195,8 +188,7 @@ public class RecoveringProxySession implements ProxySession {
 
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
-    checkOpen();
-    ProxySession proxy = this.proxy;
+    SessionClient proxy = this.proxy;
     if (proxy != null) {
       return proxy.execute(operation);
     } else {
@@ -206,9 +198,8 @@ public class RecoveringProxySession implements ProxySession {
 
   @Override
   public synchronized void addEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
-    checkOpen();
     eventListeners.put(eventType.canonicalize(), consumer);
-    ProxySession proxy = this.proxy;
+    SessionClient proxy = this.proxy;
     if (proxy != null) {
       proxy.addEventListener(eventType, consumer);
     }
@@ -216,16 +207,15 @@ public class RecoveringProxySession implements ProxySession {
 
   @Override
   public synchronized void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
-    checkOpen();
     eventListeners.remove(eventType.canonicalize(), consumer);
-    ProxySession proxy = this.proxy;
+    SessionClient proxy = this.proxy;
     if (proxy != null) {
       proxy.removeEventListener(eventType, consumer);
     }
   }
 
   @Override
-  public synchronized CompletableFuture<ProxySession> connect() {
+  public synchronized CompletableFuture<SessionClient> connect() {
     if (!connected) {
       connected = true;
       return openProxy().thenApply(c -> this);
@@ -241,7 +231,7 @@ public class RecoveringProxySession implements ProxySession {
         recoverTask.cancel();
       }
 
-      ProxySession proxy = this.proxy;
+      SessionClient proxy = this.proxy;
       if (proxy != null) {
         return proxy.close();
       } else {

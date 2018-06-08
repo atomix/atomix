@@ -17,12 +17,15 @@ package io.atomix.primitive.proxy.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -39,28 +42,32 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Default primitive proxy.
  */
-public class PartitionedProxyClient implements ProxyClient {
+public class DefaultProxyClient<S> implements ProxyClient<S> {
   private final String name;
   private final PrimitiveType type;
+  private final Serializer serializer;
   private final List<PartitionId> partitionIds = new CopyOnWriteArrayList<>();
-  private final Map<PartitionId, ProxySession> partitions = Maps.newConcurrentMap();
+  private final Map<PartitionId, ProxySession<S>> partitions = Maps.newConcurrentMap();
   private final Partitioner<String> partitioner;
-  private final Set<Consumer<ProxySession.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
-  private final Map<PartitionId, State> states = Maps.newHashMap();
-  private volatile State state = State.CLOSED;
+  private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
+  private final Map<PartitionId, PrimitiveState> states = Maps.newHashMap();
+  private volatile PrimitiveState state = PrimitiveState.CLOSED;
 
-  public PartitionedProxyClient(
+  public DefaultProxyClient(
       String name,
       PrimitiveType type,
-      Collection<ProxySession> partitions,
+      Class<S> serviceType,
+      Collection<SessionClient> partitions,
       Partitioner<String> partitioner) {
     this.name = checkNotNull(name, "name cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
+    this.serializer = Serializer.using(type.namespace());
     this.partitioner = checkNotNull(partitioner, "partitioner cannot be null");
     partitions.forEach(partition -> {
       this.partitionIds.add(partition.partitionId());
-      this.partitions.put(partition.partitionId(), new LazyProxySession(partition));
-      states.put(partition.partitionId(), State.CLOSED);
+      this.partitions.put(partition.partitionId(), new DefaultProxySession<>(partition, serviceType, serializer));
+      states.put(partition.partitionId(), PrimitiveState.CLOSED);
+      partition.addStateChangeListener(state -> onStateChange(partition.partitionId(), state));
     });
     Collections.sort(partitionIds);
   }
@@ -76,12 +83,12 @@ public class PartitionedProxyClient implements ProxyClient {
   }
 
   @Override
-  public State getState() {
+  public PrimitiveState getState() {
     return state;
   }
 
   @Override
-  public Collection<ProxySession> getPartitions() {
+  public Collection<ProxySession<S>> getPartitions() {
     return partitions.values();
   }
 
@@ -91,7 +98,7 @@ public class PartitionedProxyClient implements ProxyClient {
   }
 
   @Override
-  public ProxySession getPartition(PartitionId partitionId) {
+  public ProxySession<S> getPartition(PartitionId partitionId) {
     return partitions.get(partitionId);
   }
 
@@ -101,44 +108,17 @@ public class PartitionedProxyClient implements ProxyClient {
   }
 
   @Override
-  public void addStateChangeListener(Consumer<ProxySession.State> listener) {
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
     stateChangeListeners.add(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<ProxySession.State> listener) {
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
     stateChangeListeners.remove(listener);
   }
 
-  /**
-   * Handles a partition proxy state change.
-   */
-  private synchronized void onStateChange(PartitionId partitionId, ProxySession.State state) {
-    states.put(partitionId, state);
-    switch (state) {
-      case CONNECTED:
-        if (this.state != State.CONNECTED && !states.containsValue(State.SUSPENDED) && !states.containsValue(State.CLOSED)) {
-          this.state = State.CONNECTED;
-          stateChangeListeners.forEach(l -> l.accept(State.CONNECTED));
-        }
-        break;
-      case SUSPENDED:
-        if (this.state == State.CONNECTED) {
-          this.state = State.SUSPENDED;
-          stateChangeListeners.forEach(l -> l.accept(State.SUSPENDED));
-        }
-        break;
-      case CLOSED:
-        if (this.state != State.CLOSED) {
-          this.state = State.CLOSED;
-          stateChangeListeners.forEach(l -> l.accept(State.CLOSED));
-        }
-        break;
-    }
-  }
-
   @Override
-  public CompletableFuture<ProxyClient> connect() {
+  public CompletableFuture<ProxyClient<S>> connect() {
     partitions.forEach((partitionId, partition) -> {
       partition.addStateChangeListener(state -> onStateChange(partitionId, state));
     });
@@ -156,5 +136,32 @@ public class PartitionedProxyClient implements ProxyClient {
         .map(ProxySession::close)
         .collect(Collectors.toList()))
         .thenApply(v -> null);
+  }
+
+  /**
+   * Handles a partition proxy state change.
+   */
+  private synchronized void onStateChange(PartitionId partitionId, PrimitiveState state) {
+    states.put(partitionId, state);
+    switch (state) {
+      case CONNECTED:
+        if (this.state != PrimitiveState.CONNECTED && !states.containsValue(PrimitiveState.SUSPENDED) && !states.containsValue(PrimitiveState.CLOSED)) {
+          this.state = PrimitiveState.CONNECTED;
+          stateChangeListeners.forEach(l -> l.accept(PrimitiveState.CONNECTED));
+        }
+        break;
+      case SUSPENDED:
+        if (this.state == PrimitiveState.CONNECTED) {
+          this.state = PrimitiveState.SUSPENDED;
+          stateChangeListeners.forEach(l -> l.accept(PrimitiveState.SUSPENDED));
+        }
+        break;
+      case CLOSED:
+        if (this.state != PrimitiveState.CLOSED) {
+          this.state = PrimitiveState.CLOSED;
+          stateChangeListeners.forEach(l -> l.accept(PrimitiveState.CLOSED));
+        }
+        break;
+    }
   }
 }

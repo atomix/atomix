@@ -16,18 +16,19 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.cluster.MemberId;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RaftProxySession;
+import io.atomix.protocols.raft.proxy.RaftSessionClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.LoggerContext;
@@ -57,7 +58,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * In the event that the client session expires, clients are responsible for opening a new session by creating and
  * opening a new session object.
  */
-public class DefaultRaftProxySession implements RaftProxySession {
+public class DefaultRaftSessionClient implements RaftSessionClient {
   private final String serviceName;
   private final PrimitiveType primitiveType;
   private final ServiceConfig serviceConfig;
@@ -75,7 +76,7 @@ public class DefaultRaftProxySession implements RaftProxySession {
   private volatile RaftProxyState state;
   private final Consumer<MemberId> leaderChangeListener = this::onLeaderChange;
 
-  public DefaultRaftProxySession(
+  public DefaultRaftSessionClient(
       String serviceName,
       PrimitiveType primitiveType,
       ServiceConfig serviceConfig,
@@ -123,19 +124,19 @@ public class DefaultRaftProxySession implements RaftProxySession {
   }
 
   @Override
-  public ProxySession.State getState() {
+  public PrimitiveState getState() {
     return state.getState();
   }
 
   @Override
-  public void addStateChangeListener(Consumer<ProxySession.State> listener) {
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
     if (state != null) {
       state.addStateChangeListener(listener);
     }
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<ProxySession.State> listener) {
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
     if (state != null) {
       state.removeStateChangeListener(listener);
     }
@@ -165,7 +166,7 @@ public class DefaultRaftProxySession implements RaftProxySession {
   }
 
   @Override
-  public CompletableFuture<ProxySession> connect() {
+  public CompletableFuture<SessionClient> connect() {
     return sessionManager.openSession(
         serviceName,
         primitiveType,
@@ -182,7 +183,7 @@ public class DefaultRaftProxySession implements RaftProxySession {
               protocol,
               selectorManager.createSelector(CommunicationStrategy.LEADER),
               context,
-              LoggerContext.builder(ProxySession.class)
+              LoggerContext.builder(SessionClient.class)
                   .addValue(state.getSessionId())
                   .add("type", state.getPrimitiveType())
                   .add("name", state.getPrimitiveName())
@@ -191,7 +192,7 @@ public class DefaultRaftProxySession implements RaftProxySession {
               protocol,
               selectorManager.createSelector(communicationStrategy),
               context,
-              LoggerContext.builder(ProxySession.class)
+              LoggerContext.builder(SessionClient.class)
                   .addValue(state.getSessionId())
                   .add("type", state.getPrimitiveType())
                   .add("name", state.getPrimitiveName())
@@ -215,7 +216,7 @@ public class DefaultRaftProxySession implements RaftProxySession {
 
           selectorManager.addLeaderChangeListener(leaderChangeListener);
           state.addStateChangeListener(s -> {
-            if (s == RaftProxySession.State.CLOSED) {
+            if (s == PrimitiveState.CLOSED) {
               selectorManager.removeLeaderChangeListener(leaderChangeListener);
             }
           });
@@ -234,7 +235,7 @@ public class DefaultRaftProxySession implements RaftProxySession {
   public CompletableFuture<Void> close() {
     if (state != null) {
       return sessionManager.closeSession(state.getSessionId())
-          .whenComplete((result, error) -> state.setState(ProxySession.State.CLOSED));
+          .whenComplete((result, error) -> state.setState(PrimitiveState.CLOSED));
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -246,8 +247,8 @@ public class DefaultRaftProxySession implements RaftProxySession {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof DefaultRaftProxySession
-        && ((DefaultRaftProxySession) object).state.getSessionId() == state.getSessionId();
+    return object instanceof DefaultRaftSessionClient
+        && ((DefaultRaftSessionClient) object).state.getSessionId() == state.getSessionId();
   }
 
   @Override

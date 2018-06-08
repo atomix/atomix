@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides a {@link io.atomix.primitive.proxy.ProxySession} implementation for the Raft consensus protocol.
+ * Provides a {@link io.atomix.primitive.client.SessionClient} implementation for the Raft consensus protocol.
  */
 package io.atomix.protocols.raft.proxy;

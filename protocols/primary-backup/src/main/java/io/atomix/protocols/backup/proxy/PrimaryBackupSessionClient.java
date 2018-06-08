@@ -23,9 +23,11 @@ import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -33,7 +35,6 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.CloseRequest;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
@@ -62,7 +63,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup proxy.
  */
-public class PrimaryBackupProxySession implements ProxySession {
+public class PrimaryBackupSessionClient implements SessionClient {
   private static final int MAX_ATTEMPTS = 50;
   private static final int RETRY_DELAY = 100;
   private Logger log;
@@ -74,14 +75,14 @@ public class PrimaryBackupProxySession implements ProxySession {
   private final SessionId sessionId;
   private final PrimaryElection primaryElection;
   private final ThreadContext threadContext;
-  private final Set<Consumer<State>> stateChangeListeners = Sets.newIdentityHashSet();
+  private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newIdentityHashSet();
   private final Map<EventType, Set<Consumer<PrimitiveEvent>>> eventListeners = Maps.newHashMap();
   private final PrimaryElectionEventListener primaryElectionListener = event -> changeReplicas(event.term());
   private final ClusterMembershipEventListener membershipEventListener = this::handleClusterEvent;
   private PrimaryTerm term;
-  private volatile State state = State.CLOSED;
+  private volatile PrimitiveState state = PrimitiveState.CLOSED;
 
-  public PrimaryBackupProxySession(
+  public PrimaryBackupSessionClient(
       String clientName,
       PartitionId partitionId,
       SessionId sessionId,
@@ -100,7 +101,7 @@ public class PrimaryBackupProxySession implements ProxySession {
     this.primaryElection = primaryElection;
     this.threadContext = threadContext;
     primaryElection.addListener(primaryElectionListener);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(ProxySession.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
         .addValue(clientName)
         .add("type", primitiveType.name())
         .add("name", descriptor.name())
@@ -118,7 +119,7 @@ public class PrimaryBackupProxySession implements ProxySession {
   }
 
   @Override
-  public State getState() {
+  public PrimitiveState getState() {
     return state;
   }
 
@@ -133,12 +134,12 @@ public class PrimaryBackupProxySession implements ProxySession {
   }
 
   @Override
-  public void addStateChangeListener(Consumer<State> listener) {
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
     stateChangeListeners.add(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<State> listener) {
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
     stateChangeListeners.remove(listener);
   }
 
@@ -244,7 +245,7 @@ public class PrimaryBackupProxySession implements ProxySession {
   private void handleClusterEvent(ClusterMembershipEvent event) {
     if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED && event.subject().id().equals(term.primary().memberId())) {
       threadContext.execute(() -> {
-        state = State.SUSPENDED;
+        state = PrimitiveState.SUSPENDED;
         stateChangeListeners.forEach(l -> l.accept(state));
       });
     }
@@ -262,8 +263,8 @@ public class PrimaryBackupProxySession implements ProxySession {
   }
 
   @Override
-  public CompletableFuture<ProxySession> connect() {
-    CompletableFuture<ProxySession> future = new CompletableFuture<>();
+  public CompletableFuture<SessionClient> connect() {
+    CompletableFuture<SessionClient> future = new CompletableFuture<>();
     threadContext.execute(() -> {
       connect(1, future);
     });
@@ -273,7 +274,7 @@ public class PrimaryBackupProxySession implements ProxySession {
   /**
    * Recursively connects to the partition.
    */
-  private void connect(int attempt, CompletableFuture<ProxySession> future) {
+  private void connect(int attempt, CompletableFuture<SessionClient> future) {
     if (attempt > MAX_ATTEMPTS) {
       future.completeExceptionally(new PrimitiveException.Unavailable());
       return;
@@ -320,7 +321,7 @@ public class PrimaryBackupProxySession implements ProxySession {
   /**
    * Primary-backup partition proxy builder.
    */
-  public abstract static class Builder extends ProxySession.Builder {
+  public abstract static class Builder extends SessionClient.Builder {
     protected Consistency consistency = Consistency.SEQUENTIAL;
     protected Replication replication = Replication.ASYNCHRONOUS;
     protected Recovery recovery = Recovery.RECOVER;
