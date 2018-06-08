@@ -129,7 +129,7 @@ public class DefaultWorkQueueService extends AbstractPrimitiveService<WorkQueueC
 
     // Send an event to all sessions that have expressed interest in task processing
     // and are not actively processing a task.
-    registeredWorkers.forEach(session -> acceptOn(session, client -> client.taskAvailable()));
+    registeredWorkers.forEach(session -> getSession(session).accept(client -> client.taskAvailable()));
     // FIXME: This generates a lot of event traffic.
   }
 

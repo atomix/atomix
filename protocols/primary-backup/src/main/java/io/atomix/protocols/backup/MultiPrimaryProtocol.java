@@ -26,6 +26,7 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 
 import java.time.Duration;
 import java.util.Collection;

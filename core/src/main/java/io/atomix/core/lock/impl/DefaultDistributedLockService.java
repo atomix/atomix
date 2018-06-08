@@ -78,7 +78,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
           queue.remove(holder);
           Session session = getSession(holder.session);
           if (session != null && session.getState().active()) {
-            acceptOn(holder.session, service -> service.failed(holder.id));
+            getSession(holder.session).accept(service -> service.failed(holder.id));
           }
         }));
       }
@@ -97,7 +97,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
 
   @Override
   public void lock(int id, long timeout) {
-    Session session = getCurrentSession();
+    Session<DistributedLockClient> session = getCurrentSession();
     // If the lock is not already owned, immediately grant the lock to the requester.
     // Note that we still have to publish an event to the session. The event is guaranteed to be received
     // by the client-side primitive after the LOCK response.
@@ -107,10 +107,10 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
           getCurrentIndex(),
           session.sessionId(),
           0);
-      acceptOn(session, service -> service.locked(id, getCurrentIndex()));
+      session.accept(service -> service.locked(id, getCurrentIndex()));
       // If the timeout is 0, that indicates this is a tryLock request. Immediately fail the request.
     } else if (timeout == 0) {
-      acceptOn(session, service -> service.failed(id));
+      session.accept(service -> service.failed(id));
       // If a timeout exists, add the request to the queue and set a timer. Note that the lock request expiration
       // time is based on the *state machine* time - not the system time - to ensure consistency across servers.
     } else if (timeout > 0) {
@@ -127,7 +127,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
         timers.remove(getCurrentIndex());
         queue.remove(holder);
         if (session.getState().active()) {
-          acceptOn(session, service -> service.failed(id));
+          session.accept(service -> service.failed(id));
         }
       }));
       // If the lock is -1, just add the request to the queue with no expiration.
@@ -168,7 +168,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
         // Notify the client that it has acquired the lock.
         Session lockSession = getSession(lock.session);
         if (lockSession != null && lockSession.getState().active()) {
-          acceptOn(lock.session, service -> service.locked(lock.id, getCurrentIndex()));
+          getSession(lock.session).accept(service -> service.locked(lock.id, getCurrentIndex()));
           break;
         }
         lock = queue.poll();
@@ -203,7 +203,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
         // Notify the client that it has acquired the lock.
         Session lockSession = getSession(lock.session);
         if (lockSession != null && lockSession.getState().active()) {
-          acceptOn(lock.session, service -> service.locked(lock.id, lock.index));
+          getSession(lock.session).accept(service -> service.locked(lock.id, lock.index));
           break;
         }
         lock = queue.poll();

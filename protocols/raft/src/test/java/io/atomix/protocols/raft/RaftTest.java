@@ -1505,14 +1505,14 @@ public class RaftTest extends ConcurrentTestCase {
     @Override
     public void onExpire(Session session) {
       if (expire != null) {
-        acceptOn(expire, client -> client.expire("Hello world!"));
+        getSession(expire).accept(client -> client.expire("Hello world!"));
       }
     }
 
     @Override
     public void onClose(Session session) {
       if (close != null && !session.sessionId().equals(close)) {
-        acceptOn(close, client -> client.close("Hello world!"));
+        getSession(close).accept(client -> client.close("Hello world!"));
       }
     }
 
@@ -1539,10 +1539,10 @@ public class RaftTest extends ConcurrentTestCase {
     @Override
     public long sendEvent(boolean sender) {
       if (sender) {
-        acceptOn(getCurrentSession().sessionId(), service -> service.event(getCurrentIndex()));
+        getCurrentSession().accept(service -> service.event(getCurrentIndex()));
       } else {
-        for (Session session : getSessions()) {
-          acceptOn(session.sessionId(), service -> service.event(getCurrentIndex()));
+        for (Session<TestPrimitiveClient> session : getSessions()) {
+          session.accept(service -> service.event(getCurrentIndex()));
         }
       }
       return getCurrentIndex();
