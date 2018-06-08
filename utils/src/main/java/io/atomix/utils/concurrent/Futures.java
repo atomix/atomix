@@ -15,9 +15,6 @@
  */
 package io.atomix.utils.concurrent;
 
-import com.google.common.collect.Lists;
-import io.atomix.utils.misc.Match;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -93,6 +90,24 @@ public final class Futures {
   }
 
   /**
+   * Returns a future that completes callbacks in add order.
+   *
+   * @param <T> future value type
+   * @return a new completable future that will complete added callbacks in the order in which they were added
+   */
+  public static <T> CompletableFuture<T> orderedFuture(CompletableFuture<T> future) {
+    CompletableFuture<T> newFuture = new OrderedFuture<>();
+    future.whenComplete((r, e) -> {
+      if (e == null) {
+        newFuture.complete(r);
+      } else {
+        newFuture.completeExceptionally(e);
+      }
+    });
+    return newFuture;
+  }
+
+  /**
    * Returns a wrapped future that will be completed on the given executor.
    *
    * @param future   the future to be completed on the given executor
@@ -154,40 +169,9 @@ public final class Futures {
    * @param <T>        value type of CompletableFuture
    * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
    */
-  public static <T> CompletableFuture<T> allOf(List<CompletableFuture<T>> futures,
-                                               BinaryOperator<T> reducer,
-                                               T emptyValue) {
+  public static <T> CompletableFuture<T> allOf(
+      List<CompletableFuture<T>> futures, BinaryOperator<T> reducer, T emptyValue) {
     return allOf(futures).thenApply(resultList -> resultList.stream().reduce(reducer).orElse(emptyValue));
-  }
-
-  /**
-   * Returns a new CompletableFuture completed by with the first positive result from a list of
-   * input CompletableFutures.
-   *
-   * @param futures               the input list of CompletableFutures
-   * @param positiveResultMatcher matcher to identify a positive result
-   * @param negativeResult        value to complete with if none of the futures complete with a positive result
-   * @param <T>                   value type of CompletableFuture
-   * @return a new CompletableFuture
-   */
-  public static <T> CompletableFuture<T> firstOf(List<CompletableFuture<T>> futures,
-                                                 Match<T> positiveResultMatcher,
-                                                 T negativeResult) {
-    CompletableFuture<T> responseFuture = new CompletableFuture<>();
-    allOf(Lists.transform(futures, future -> future.thenAccept(r -> {
-      if (positiveResultMatcher.matches(r)) {
-        responseFuture.complete(r);
-      }
-    }))).whenComplete((r, e) -> {
-      if (!responseFuture.isDone()) {
-        if (e != null) {
-          responseFuture.completeExceptionally(e);
-        } else {
-          responseFuture.complete(negativeResult);
-        }
-      }
-    });
-    return responseFuture;
   }
 
 }

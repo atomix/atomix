@@ -41,7 +41,6 @@ import io.atomix.protocols.backup.protocol.ExecuteRequest;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
-import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -270,7 +269,7 @@ public class PrimaryBackupSessionClient implements SessionClient {
 
   @Override
   public CompletableFuture<SessionClient> connect() {
-    CompletableFuture<SessionClient> future = new AtomixFuture<>();
+    CompletableFuture<SessionClient> future = new CompletableFuture<>();
     threadContext.execute(() -> {
       connect(1, future);
     });
@@ -308,7 +307,7 @@ public class PrimaryBackupSessionClient implements SessionClient {
 
   @Override
   public CompletableFuture<Void> close() {
-    CompletableFuture<Void> future = new AtomixFuture<>();
+    CompletableFuture<Void> future = new CompletableFuture<>();
     PrimaryTerm term = this.term;
     if (term.primary() != null) {
       protocol.close(term.primary().memberId(), new CloseRequest(descriptor, sessionId.id()))

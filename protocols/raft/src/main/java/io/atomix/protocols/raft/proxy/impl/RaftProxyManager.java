@@ -34,7 +34,6 @@ import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -147,7 +146,7 @@ public class RaftProxyManager {
    * Opens a new session.
    *
    * @param serviceName           The session name.
-   * @param primitiveType           The session type.
+   * @param primitiveType         The session type.
    * @param communicationStrategy The strategy with which to communicate with servers.
    * @param minTimeout            The minimum session timeout.
    * @param maxTimeout            The maximum session timeout.
@@ -177,7 +176,7 @@ public class RaftProxyManager {
         .withMaxTimeout(maxTimeout.toMillis())
         .build();
 
-    CompletableFuture<RaftProxyState> future = new AtomixFuture<>();
+    CompletableFuture<RaftProxyState> future = new CompletableFuture<>();
     ThreadContext proxyContext = threadContextFactory.createContext();
     connection.openSession(request).whenCompleteAsync((response, error) -> {
       if (error == null) {
@@ -228,7 +227,7 @@ public class RaftProxyManager {
         .withSession(sessionId.id())
         .build();
 
-    CompletableFuture<Void> future = new AtomixFuture<>();
+    CompletableFuture<Void> future = new CompletableFuture<>();
     connection.closeSession(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
@@ -286,7 +285,7 @@ public class RaftProxyManager {
       return Futures.exceptionalFuture(new IllegalArgumentException("Unknown session: " + sessionId));
     }
 
-    CompletableFuture<Void> future = new AtomixFuture<>();
+    CompletableFuture<Void> future = new CompletableFuture<>();
 
     KeepAliveRequest request = KeepAliveRequest.builder()
         .withSessionIds(new long[]{sessionId.id()})
@@ -404,7 +403,7 @@ public class RaftProxyManager {
     }
 
     // Schedule the keep alive for 3/4 the timeout minus the delta from the last keep-alive request.
-    keepAliveTimers.put(timeout, threadContext.schedule(Duration.ofMillis(Math.max(Math.max((long)(timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0)), () -> {
+    keepAliveTimers.put(timeout, threadContext.schedule(Duration.ofMillis(Math.max(Math.max((long) (timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0)), () -> {
       if (open.get()) {
         keepAliveSessions(lastKeepAliveTime, timeout);
       }
@@ -435,7 +434,7 @@ public class RaftProxyManager {
    */
   public CompletableFuture<Void> close() {
     if (open.compareAndSet(true, false)) {
-      CompletableFuture<Void> future = new AtomixFuture<>();
+      CompletableFuture<Void> future = new CompletableFuture<>();
       threadContext.execute(() -> {
         synchronized (this) {
           for (Scheduled keepAliveFuture : keepAliveTimers.values()) {

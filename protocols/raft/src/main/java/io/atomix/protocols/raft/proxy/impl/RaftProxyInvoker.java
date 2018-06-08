@@ -27,7 +27,6 @@ import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.net.ConnectException;
@@ -89,7 +88,7 @@ final class RaftProxyInvoker {
    * @return A completable future to be completed once the command has been submitted.
    */
   public CompletableFuture<byte[]> invoke(PrimitiveOperation operation) {
-    CompletableFuture<byte[]> future = new AtomixFuture<>();
+    CompletableFuture<byte[]> future = new CompletableFuture<>();
     switch (operation.id().type()) {
       case COMMAND:
         context.execute(() -> invokeCommand(operation, future));

@@ -31,7 +31,6 @@ import io.atomix.protocols.raft.proxy.RaftSessionClient;
 import io.atomix.protocols.raft.proxy.impl.DefaultRaftSessionClient;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
-import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -98,7 +97,7 @@ public class DefaultRaftClient implements RaftClient {
 
   @Override
   public synchronized CompletableFuture<RaftClient> connect(Collection<MemberId> cluster) {
-    CompletableFuture<RaftClient> future = new AtomixFuture<>();
+    CompletableFuture<RaftClient> future = new CompletableFuture<>();
 
     // If the provided cluster list is null or empty, use the default list.
     if (cluster == null || cluster.isEmpty()) {
