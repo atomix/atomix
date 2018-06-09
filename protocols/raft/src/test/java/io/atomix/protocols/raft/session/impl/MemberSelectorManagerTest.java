@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.cluster.MemberId;
+import io.atomix.protocols.raft.session.impl.MemberSelectorManager;
 import org.junit.Test;
 
 import java.util.Arrays;

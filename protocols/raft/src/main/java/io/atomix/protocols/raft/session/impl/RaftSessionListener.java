@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
-import io.atomix.primitive.client.SessionClient;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
@@ -38,16 +38,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Client session message listener.
  */
-final class RaftProxyListener {
+final class RaftSessionListener {
   private final Logger log;
   private final RaftClientProtocol protocol;
   private final MemberSelector memberSelector;
-  private final RaftProxyState state;
+  private final RaftSessionState state;
   private final Map<EventType, Set<Consumer<PrimitiveEvent>>> eventListeners = Maps.newHashMap();
-  private final RaftProxySequencer sequencer;
+  private final RaftSessionSequencer sequencer;
   private final Executor executor;
 
-  public RaftProxyListener(RaftClientProtocol protocol, MemberSelector memberSelector, RaftProxyState state, RaftProxySequencer sequencer, Executor executor) {
+  public RaftSessionListener(RaftClientProtocol protocol, MemberSelector memberSelector, RaftSessionState state, RaftSessionSequencer sequencer, Executor executor) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.memberSelector = checkNotNull(memberSelector, "nodeSelector cannot be null");
     this.state = checkNotNull(state, "state cannot be null");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.atomix.protocols.raft.session;
 
 /**
- * Provides interfaces for operating on distributed primitive services.
+ * Session recovery strategy.
  */
-package io.atomix.primitive.client;
+public enum RecoveryStrategy {
+  /**
+   * Indicates that the session should be recovered when lost.
+   */
+  RECOVER,
+
+  /**
+   * Indicates that the session should be closed when lost.
+   */
+  CLOSE,
+}

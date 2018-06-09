@@ -18,19 +18,19 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
-import io.atomix.primitive.client.SessionClient;
-import io.atomix.primitive.client.impl.BlockingAwareSessionClient;
-import io.atomix.primitive.client.impl.RecoveringSessionClient;
-import io.atomix.primitive.client.impl.RetryingSessionClient;
+import io.atomix.primitive.session.SessionClient;
+import io.atomix.primitive.session.impl.BlockingAwareSessionClient;
+import io.atomix.primitive.session.impl.RecoveringSessionClient;
+import io.atomix.primitive.session.impl.RetryingSessionClient;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.RaftSessionClient;
-import io.atomix.protocols.raft.proxy.impl.DefaultRaftSessionClient;
-import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
-import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
+import io.atomix.protocols.raft.session.RaftSessionClient;
+import io.atomix.protocols.raft.session.impl.DefaultRaftSessionClient;
+import io.atomix.protocols.raft.session.impl.MemberSelectorManager;
+import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -56,7 +56,7 @@ public class DefaultRaftClient implements RaftClient {
   private final ThreadContext threadContext;
   private final RaftMetadataClient metadata;
   private final MemberSelectorManager selectorManager = new MemberSelectorManager();
-  private final RaftProxyManager sessionManager;
+  private final RaftSessionManager sessionManager;
 
   public DefaultRaftClient(
       String clientId,
@@ -72,7 +72,7 @@ public class DefaultRaftClient implements RaftClient {
     this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
     this.threadContext = threadContextFactory.createContext();
     this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager, threadContextFactory.createContext());
-    this.sessionManager = new RaftProxyManager(clientId, memberId, protocol, selectorManager, threadContextFactory);
+    this.sessionManager = new RaftSessionManager(clientId, memberId, protocol, selectorManager, threadContextFactory);
   }
 
   @Override

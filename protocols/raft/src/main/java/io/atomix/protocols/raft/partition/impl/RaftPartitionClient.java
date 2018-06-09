@@ -16,9 +16,13 @@
 package io.atomix.protocols.raft.partition.impl;
 
 import io.atomix.cluster.MemberId;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionClient;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
+import io.atomix.protocols.raft.session.RaftSessionClient;
 import io.atomix.utils.Managed;
 import org.slf4j.Logger;
 
@@ -29,7 +33,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * StoragePartition client.
  */
-public class RaftPartitionClient implements Managed<RaftPartitionClient> {
+public class RaftPartitionClient implements PartitionClient, Managed<RaftPartitionClient> {
 
   private final Logger log = getLogger(getClass());
 
@@ -62,13 +66,9 @@ public class RaftPartitionClient implements Managed<RaftPartitionClient> {
     return client != null ? client.leader() : null;
   }
 
-  /**
-   * Returns the proxy client.
-   *
-   * @return the proxy client
-   */
-  public RaftClient getProxyClient() {
-    return client;
+  @Override
+  public RaftSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+    return client.sessionBuilder(primitiveName, primitiveType, serviceConfig);
   }
 
   @Override

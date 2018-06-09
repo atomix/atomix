@@ -26,8 +26,8 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryElectionService;
-import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
@@ -87,7 +87,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimaryElectionService> start() {
-    return partitions.getPartitions().iterator().next()
+    return partitions.getPartitions().iterator().next().getClient()
         .sessionBuilder(PRIMITIVE_NAME, PrimaryElectorType.instance(), new ServiceConfig())
         .build()
         .connect()

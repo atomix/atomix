@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.session.SessionId;
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftProxyInvokerTest {
+public class RaftSessionInvokerTest {
   private static final OperationId COMMAND = OperationId.command("command");
   private static final OperationId QUERY = OperationId.query("query");
 
@@ -58,7 +58,7 @@ public class RaftProxyInvokerTest {
    */
   @Test
   public void testSubmitCommand() throws Throwable {
-    RaftProxyConnection connection = mock(RaftProxyConnection.class);
+    RaftSessionConnection connection = mock(RaftSessionConnection.class);
     when(connection.command(any(CommandRequest.class)))
       .thenReturn(CompletableFuture.completedFuture(CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
@@ -66,11 +66,11 @@ public class RaftProxyInvokerTest {
         .withResult("Hello world!".getBytes())
         .build()));
 
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
-    RaftProxyManager manager = mock(RaftProxyManager.class);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    RaftSessionManager manager = mock(RaftSessionManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxyInvoker submitter = new RaftProxyInvoker(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, threadContext);
+    RaftSessionInvoker submitter = new RaftSessionInvoker(connection, mock(RaftSessionConnection.class), state, new RaftSessionSequencer(state), manager, threadContext);
     assertArrayEquals(submitter.invoke(operation(COMMAND, HeapBytes.EMPTY)).get(), "Hello world!".getBytes());
     assertEquals(state.getCommandRequest(), 1);
     assertEquals(state.getCommandResponse(), 1);
@@ -85,16 +85,16 @@ public class RaftProxyInvokerTest {
     CompletableFuture<CommandResponse> future1 = new CompletableFuture<>();
     CompletableFuture<CommandResponse> future2 = new CompletableFuture<>();
 
-    RaftProxyConnection connection = mock(RaftProxyConnection.class);
+    RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.command(any(CommandRequest.class)))
       .thenReturn(future1)
       .thenReturn(future2);
 
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
-    RaftProxyManager manager = mock(RaftProxyManager.class);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    RaftSessionManager manager = mock(RaftSessionManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxyInvoker submitter = new RaftProxyInvoker(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, threadContext);
+    RaftSessionInvoker submitter = new RaftSessionInvoker(connection, mock(RaftSessionConnection.class), state, new RaftSessionSequencer(state), manager, threadContext);
 
     CompletableFuture<byte[]> result1 = submitter.invoke(operation(COMMAND));
     CompletableFuture<byte[]> result2 = submitter.invoke(operation(COMMAND));
@@ -133,7 +133,7 @@ public class RaftProxyInvokerTest {
    */
   @Test
   public void testSubmitQuery() throws Throwable {
-    RaftProxyConnection connection = mock(RaftProxyConnection.class);
+    RaftSessionConnection connection = mock(RaftSessionConnection.class);
     when(connection.query(any(QueryRequest.class)))
       .thenReturn(CompletableFuture.completedFuture(QueryResponse.builder()
         .withStatus(RaftResponse.Status.OK)
@@ -141,11 +141,11 @@ public class RaftProxyInvokerTest {
         .withResult("Hello world!".getBytes())
         .build()));
 
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
-    RaftProxyManager manager = mock(RaftProxyManager.class);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    RaftSessionManager manager = mock(RaftSessionManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxyInvoker submitter = new RaftProxyInvoker(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, threadContext);
+    RaftSessionInvoker submitter = new RaftSessionInvoker(mock(RaftSessionConnection.class), connection, state, new RaftSessionSequencer(state), manager, threadContext);
     assertTrue(Arrays.equals(submitter.invoke(operation(QUERY)).get(), "Hello world!".getBytes()));
     assertEquals(state.getResponseIndex(), 10);
   }
@@ -158,16 +158,16 @@ public class RaftProxyInvokerTest {
     CompletableFuture<QueryResponse> future1 = new CompletableFuture<>();
     CompletableFuture<QueryResponse> future2 = new CompletableFuture<>();
 
-    RaftProxyConnection connection = mock(RaftProxyConnection.class);
+    RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
       .thenReturn(future1)
       .thenReturn(future2);
 
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
-    RaftProxyManager manager = mock(RaftProxyManager.class);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    RaftSessionManager manager = mock(RaftSessionManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxyInvoker submitter = new RaftProxyInvoker(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, threadContext);
+    RaftSessionInvoker submitter = new RaftSessionInvoker(mock(RaftSessionConnection.class), connection, state, new RaftSessionSequencer(state), manager, threadContext);
 
     CompletableFuture<byte[]> result1 = submitter.invoke(operation(QUERY));
     CompletableFuture<byte[]> result2 = submitter.invoke(operation(QUERY));
@@ -205,16 +205,16 @@ public class RaftProxyInvokerTest {
     CompletableFuture<QueryResponse> future1 = new CompletableFuture<>();
     CompletableFuture<QueryResponse> future2 = new CompletableFuture<>();
 
-    RaftProxyConnection connection = mock(RaftProxyConnection.class);
+    RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
       .thenReturn(future1)
       .thenReturn(future2);
 
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
-    RaftProxyManager manager = mock(RaftProxyManager.class);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    RaftSessionManager manager = mock(RaftSessionManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxyInvoker submitter = new RaftProxyInvoker(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, threadContext);
+    RaftSessionInvoker submitter = new RaftSessionInvoker(mock(RaftSessionConnection.class), connection, state, new RaftSessionSequencer(state), manager, threadContext);
 
     CompletableFuture<byte[]> result1 = submitter.invoke(operation(QUERY));
     CompletableFuture<byte[]> result2 = submitter.invoke(operation(QUERY));
@@ -245,14 +245,14 @@ public class RaftProxyInvokerTest {
   public void testExpireSessionOnCommandFailure() throws Throwable {
     CompletableFuture<CommandResponse> future = new CompletableFuture<>();
 
-    RaftProxyConnection connection = mock(RaftProxyConnection.class);
+    RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.command(any(CommandRequest.class))).thenReturn(future);
 
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
-    RaftProxyManager manager = mock(RaftProxyManager.class);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    RaftSessionManager manager = mock(RaftSessionManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxyInvoker submitter = new RaftProxyInvoker(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, threadContext);
+    RaftSessionInvoker submitter = new RaftSessionInvoker(connection, mock(RaftSessionConnection.class), state, new RaftSessionSequencer(state), manager, threadContext);
 
     CompletableFuture<byte[]> result = submitter.invoke(operation(COMMAND));
 
@@ -272,15 +272,15 @@ public class RaftProxyInvokerTest {
   public void testExpireSessionOnQueryFailure() throws Throwable {
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
 
-    RaftProxyConnection connection = mock(RaftProxyConnection.class);
+    RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
       .thenReturn(future);
 
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
-    RaftProxyManager manager = mock(RaftProxyManager.class);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    RaftSessionManager manager = mock(RaftSessionManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxyInvoker submitter = new RaftProxyInvoker(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, threadContext);
+    RaftSessionInvoker submitter = new RaftSessionInvoker(mock(RaftSessionConnection.class), connection, state, new RaftSessionSequencer(state), manager, threadContext);
 
     CompletableFuture<byte[]> result = submitter.invoke(operation(QUERY));
 

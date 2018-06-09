@@ -16,17 +16,14 @@
 package io.atomix.protocols.raft.partition;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.partition.impl.RaftClientCommunicator;
 import io.atomix.protocols.raft.partition.impl.RaftNamespaces;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionClient;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionServer;
-import io.atomix.protocols.raft.proxy.RaftSessionClient;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.serializer.Serializer;
 
@@ -136,8 +133,8 @@ public class RaftPartition implements Partition {
   }
 
   @Override
-  public RaftSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
-    return client.getProxyClient().sessionBuilder(primitiveName, primitiveType, serviceConfig);
+  public RaftPartitionClient getClient() {
+    return client;
   }
 
   /**

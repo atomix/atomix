@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.client.SessionClient;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -27,8 +27,8 @@ import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RaftSessionClient;
+import io.atomix.protocols.raft.session.CommunicationStrategy;
+import io.atomix.protocols.raft.session.RaftSessionClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.LoggerContext;
@@ -67,13 +67,13 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
   private final Duration maxTimeout;
   private final RaftClientProtocol protocol;
   private final MemberSelectorManager selectorManager;
-  private final RaftProxyManager sessionManager;
+  private final RaftSessionManager sessionManager;
   private final ReadConsistency readConsistency;
   private final CommunicationStrategy communicationStrategy;
   private final ThreadContext context;
-  private volatile RaftProxyListener proxyListener;
-  private volatile RaftProxyInvoker proxyInvoker;
-  private volatile RaftProxyState state;
+  private volatile RaftSessionListener proxyListener;
+  private volatile RaftSessionInvoker proxyInvoker;
+  private volatile RaftSessionState state;
   private final Consumer<MemberId> leaderChangeListener = this::onLeaderChange;
 
   public DefaultRaftSessionClient(
@@ -83,7 +83,7 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
       PartitionId partitionId,
       RaftClientProtocol protocol,
       MemberSelectorManager selectorManager,
-      RaftProxyManager sessionManager,
+      RaftSessionManager sessionManager,
       ReadConsistency readConsistency,
       CommunicationStrategy communicationStrategy,
       ThreadContext context,
@@ -149,7 +149,7 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
 
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
-    RaftProxyInvoker invoker = this.proxyInvoker;
+    RaftSessionInvoker invoker = this.proxyInvoker;
     if (invoker == null) {
       return Futures.exceptionalFuture(new IllegalStateException("Session not open"));
     }
@@ -184,7 +184,7 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
           this.state = state;
 
           // Create command/query connections.
-          RaftProxyConnection leaderConnection = new RaftProxyConnection(
+          RaftSessionConnection leaderConnection = new RaftSessionConnection(
               protocol,
               selectorManager.createSelector(CommunicationStrategy.LEADER),
               context,
@@ -193,7 +193,7 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
                   .add("type", state.getPrimitiveType())
                   .add("name", state.getPrimitiveName())
                   .build());
-          RaftProxyConnection sessionConnection = new RaftProxyConnection(
+          RaftSessionConnection sessionConnection = new RaftSessionConnection(
               protocol,
               selectorManager.createSelector(communicationStrategy),
               context,
@@ -204,14 +204,14 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
                   .build());
 
           // Create proxy submitter/listener.
-          RaftProxySequencer sequencer = new RaftProxySequencer(state);
-          this.proxyListener = new RaftProxyListener(
+          RaftSessionSequencer sequencer = new RaftSessionSequencer(state);
+          this.proxyListener = new RaftSessionListener(
               protocol,
               selectorManager.createSelector(CommunicationStrategy.ANY),
               state,
               sequencer,
               context);
-          this.proxyInvoker = new RaftProxyInvoker(
+          this.proxyInvoker = new RaftSessionInvoker(
               leaderConnection,
               sessionConnection,
               state,

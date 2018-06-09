@@ -21,8 +21,8 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RaftSessionClient;
+import io.atomix.protocols.raft.session.CommunicationStrategy;
+import io.atomix.protocols.raft.session.RaftSessionClient;
 import io.atomix.utils.concurrent.ThreadModel;
 
 import java.util.Arrays;

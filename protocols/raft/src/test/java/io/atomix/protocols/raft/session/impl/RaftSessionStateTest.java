@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.TestPrimitiveType;
+import io.atomix.protocols.raft.session.impl.RaftSessionState;
 import org.junit.Test;
 
 import java.util.UUID;
@@ -28,7 +29,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftProxyStateTest {
+public class RaftSessionStateTest {
 
   /**
    * Tests session state defaults.
@@ -36,7 +37,7 @@ public class RaftProxyStateTest {
   @Test
   public void testSessionStateDefaults() {
     String sessionName = UUID.randomUUID().toString();
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), sessionName, TestPrimitiveType.instance(), 1000);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), sessionName, TestPrimitiveType.instance(), 1000);
     assertEquals(state.getSessionId(), SessionId.from(1));
     assertEquals(state.getPrimitiveName(), sessionName);
     assertEquals(state.getPrimitiveType().name(), "test");
@@ -51,7 +52,7 @@ public class RaftProxyStateTest {
    */
   @Test
   public void testSessionState() {
-    RaftProxyState state = new RaftProxyState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
     assertEquals(state.getSessionId(), SessionId.from(1));
     assertEquals(state.getResponseIndex(), 1);
     assertEquals(state.getEventIndex(), 1);

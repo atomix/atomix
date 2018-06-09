@@ -28,7 +28,7 @@ import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.primitive.client.SessionClient;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.event.Event;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.OperationType;
