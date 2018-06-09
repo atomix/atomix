@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -54,13 +53,14 @@ public class RecoveringSessionClient implements SessionClient {
   private final Supplier<SessionClient> proxyFactory;
   private final ThreadContext context;
   private Logger log;
-  private volatile CompletableFuture<SessionClient> clientFuture;
+  private volatile CompletableFuture<SessionClient> connectFuture;
+  private volatile CompletableFuture<Void> closeFuture;
   private volatile SessionClient proxy;
   private volatile PrimitiveState state = PrimitiveState.CLOSED;
   private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Multimap<EventType, Consumer<PrimitiveEvent>> eventListeners = HashMultimap.create();
   private Scheduled recoverTask;
-  private final AtomicBoolean connected = new AtomicBoolean();
+  private volatile boolean connected;
 
   public RecoveringSessionClient(
       String clientId,
@@ -118,7 +118,7 @@ public class RecoveringSessionClient implements SessionClient {
   private synchronized void onStateChange(PrimitiveState state) {
     if (this.state != state) {
       if (state == PrimitiveState.CLOSED) {
-        if (connected.get()) {
+        if (connected) {
           onStateChange(PrimitiveState.SUSPENDED);
           recover();
         } else {
@@ -149,34 +149,8 @@ public class RecoveringSessionClient implements SessionClient {
    */
   private void recover() {
     proxy = null;
-    openProxy();
-  }
-
-  /**
-   * Opens a new client.
-   *
-   * @return a future to be completed once the client has been opened
-   */
-  private CompletableFuture<SessionClient> openProxy() {
-    log.debug("Opening proxy session");
-
-    clientFuture = new OrderedFuture<>();
-    openProxy(clientFuture);
-
-    return clientFuture.thenApply(proxy -> {
-      synchronized (this) {
-        this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
-            .addValue(proxy.sessionId())
-            .add("type", proxy.type())
-            .add("name", proxy.name())
-            .build());
-        this.proxy = proxy;
-        proxy.addStateChangeListener(this::onStateChange);
-        eventListeners.forEach(proxy::addEventListener);
-        onStateChange(PrimitiveState.CONNECTED);
-      }
-      return this;
-    });
+    connectFuture = new OrderedFuture<>();
+    openProxy(connectFuture);
   }
 
   /**
@@ -185,9 +159,21 @@ public class RecoveringSessionClient implements SessionClient {
    * @param future the future to be completed once the client is opened
    */
   private void openProxy(CompletableFuture<SessionClient> future) {
+    log.debug("Opening proxy session");
     proxyFactory.get().connect().whenComplete((proxy, error) -> {
       if (error == null) {
-        future.complete(proxy);
+        synchronized (this) {
+          this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
+              .addValue(proxy.sessionId())
+              .add("type", proxy.type())
+              .add("name", proxy.name())
+              .build());
+          this.proxy = proxy;
+          proxy.addStateChangeListener(this::onStateChange);
+          eventListeners.forEach(proxy::addEventListener);
+          onStateChange(PrimitiveState.CONNECTED);
+        }
+        future.complete(this);
       } else {
         recoverTask = context.schedule(Duration.ofSeconds(1), () -> openProxy(future));
       }
@@ -200,7 +186,7 @@ public class RecoveringSessionClient implements SessionClient {
     if (proxy != null) {
       return proxy.execute(operation);
     } else {
-      return clientFuture.thenCompose(c -> c.execute(operation));
+      return connectFuture.thenCompose(c -> c.execute(operation));
     }
   }
 
@@ -224,27 +210,34 @@ public class RecoveringSessionClient implements SessionClient {
 
   @Override
   public CompletableFuture<SessionClient> connect() {
-    if (connected.compareAndSet(false, true)) {
-      return openProxy();
+    if (connectFuture == null) {
+      synchronized (this) {
+        if (connectFuture == null) {
+          connected = true;
+          connectFuture = new OrderedFuture<>();
+          openProxy(connectFuture);
+        }
+      }
     }
-    return clientFuture;
+    return connectFuture;
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    if (connected.compareAndSet(true, false)) {
-      if (recoverTask != null) {
-        recoverTask.cancel();
-      }
-
-      SessionClient proxy = this.proxy;
-      if (proxy != null) {
-        return proxy.close();
-      } else {
-        return clientFuture.thenCompose(c -> c.close());
+    if (closeFuture == null) {
+      synchronized (this) {
+        if (closeFuture == null) {
+          connected = false;
+          SessionClient proxy = this.proxy;
+          if (proxy != null) {
+            closeFuture = proxy.close();
+          } else {
+            closeFuture = connectFuture.thenCompose(c -> c.close());
+          }
+        }
       }
     }
-    return CompletableFuture.completedFuture(null);
+    return closeFuture;
   }
 
   @Override
