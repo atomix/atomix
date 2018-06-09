@@ -205,11 +205,11 @@ public class DefaultDistributedSemaphoreService extends AbstractPrimitiveService
   }
 
   private void success(SessionId sessionId, long operationId, int acquirePermits, long version) {
-    acceptOn(sessionId, client -> client.succeeded(operationId, version, acquirePermits));
+    getSession(sessionId).accept(client -> client.succeeded(operationId, version, acquirePermits));
   }
 
   private void fail(SessionId sessionId, long operationId) {
-    acceptOn(sessionId, client -> client.failed(operationId));
+    getSession(sessionId).accept(client -> client.failed(operationId));
   }
 
   private void releaseSession(Session session) {

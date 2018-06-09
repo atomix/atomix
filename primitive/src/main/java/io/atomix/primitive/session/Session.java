@@ -20,6 +20,8 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 
+import java.util.function.Consumer;
+
 /**
  * Provides an interface to communicating with a client via session events.
  * <p>
@@ -43,7 +45,7 @@ import io.atomix.primitive.event.PrimitiveEvent;
  * When the message is published, it will be queued to be sent to the other side of the connection. Raft guarantees
  * that the message will eventually be received by the client unless the session itself times out or is closed.
  */
-public interface Session {
+public interface Session<C> {
 
   /**
    * Returns the session identifier.
@@ -57,14 +59,14 @@ public interface Session {
    *
    * @return The session's service name.
    */
-  String serviceName();
+  String primitiveName();
 
   /**
    * Returns the session's service type.
    *
    * @return The session's service type.
    */
-  PrimitiveType serviceType();
+  PrimitiveType primitiveType();
 
   /**
    * Returns the member identifier to which the session belongs.
@@ -104,6 +106,13 @@ public interface Session {
    * @param event the event to publish
    */
   void publish(PrimitiveEvent event);
+
+  /**
+   * Sends an event to the client via the client proxy.
+   *
+   * @param event the client proxy operation
+   */
+  void accept(Consumer<C> event);
 
   /**
    * Session state enums.

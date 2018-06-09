@@ -320,7 +320,7 @@ public class DefaultConsistentSetMultimapService extends AbstractPrimitiveServic
    * @param newValue the new value
    */
   private void onChange(String key, byte[] oldValue, byte[] newValue) {
-    listeners.forEach(id -> acceptOn(id, client -> client.onChange(key, oldValue, newValue)));
+    listeners.forEach(id -> getSession(id).accept(client -> client.onChange(key, oldValue, newValue)));
   }
 
   private interface MapEntryValues {

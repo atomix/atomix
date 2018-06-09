@@ -19,14 +19,12 @@ import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.event.EventType;
-import io.atomix.primitive.event.Events;
-import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.primitive.session.impl.ClientSession;
 import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -37,13 +35,11 @@ import io.atomix.utils.time.WallClock;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Raft service.
@@ -55,7 +51,7 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
   private Logger log;
   private ServiceContext context;
   private ServiceExecutor executor;
-  private final Map<SessionId, SessionProxy> sessions = Maps.newHashMap();
+  private final Map<SessionId, Session<C>> sessions = Maps.newHashMap();
 
   protected AbstractPrimitiveService(PrimitiveType primitiveType) {
     this(primitiveType, null);
@@ -235,8 +231,8 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    *
    * @return the current session
    */
-  protected Session getCurrentSession() {
-    return context.currentSession();
+  protected Session<C> getCurrentSession() {
+    return getSession(context.currentSession().sessionId());
   }
 
   /**
@@ -272,7 +268,7 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    * @param sessionId the session identifier
    * @return the primitive session
    */
-  protected Session getSession(long sessionId) {
+  protected Session<C> getSession(long sessionId) {
     return getSession(SessionId.from(sessionId));
   }
 
@@ -282,9 +278,8 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    * @param sessionId the session identifier
    * @return the primitive session
    */
-  protected Session getSession(SessionId sessionId) {
-    SessionProxy sessionProxy = sessions.get(sessionId);
-    return sessionProxy != null ? sessionProxy.session : null;
+  protected Session<C> getSession(SessionId sessionId) {
+    return sessions.get(sessionId);
   }
 
   /**
@@ -292,70 +287,30 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    *
    * @return the collection of open sessions
    */
-  protected Collection<Session> getSessions() {
-    return sessions.values().stream().map(sessionProxy -> sessionProxy.session).collect(Collectors.toList());
-  }
-
-  /**
-   * Publishes an event to the given session.
-   *
-   * @param session the session to which to publish the event
-   * @param event   the event to publish
-   */
-  protected void acceptOn(Session session, Consumer<C> event) {
-    acceptOn(session.sessionId(), event);
-  }
-
-  /**
-   * Publishes an event to the given session.
-   *
-   * @param sessionId the session to which to publish the event
-   * @param event     the event to publish
-   */
-  protected void acceptOn(SessionId sessionId, Consumer<C> event) {
-    SessionProxy sessionProxy = sessions.get(sessionId);
-    if (sessionProxy != null) {
-      sessionProxy.accept(event);
-    }
-  }
-
-  /**
-   * Publishes an event to all sessions.
-   *
-   * @param event the event to publish
-   */
-  protected void acceptAll(Consumer<C> event) {
-    for (SessionProxy sessionProxy : sessions.values()) {
-      sessionProxy.accept(event);
-    }
+  protected Collection<Session<C>> getSessions() {
+    return sessions.values();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public final void register(Session session) {
-    SessionProxyHandler sessionProxyHandler = new SessionProxyHandler(session);
-    if (clientInterface != null) {
-      C sessionProxy = (C) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{clientInterface}, sessionProxyHandler);
-      sessions.put(session.sessionId(), new SessionProxy(session, sessionProxy));
-    } else {
-      sessions.put(session.sessionId(), new SessionProxy(session, null));
-    }
+    sessions.put(session.sessionId(), new ClientSession<>(clientInterface, session));
     onOpen(session);
   }
 
   @Override
   public final void expire(SessionId sessionId) {
-    SessionProxy session = sessions.remove(sessionId);
+    Session session = sessions.remove(sessionId);
     if (session != null) {
-      onExpire(session.session);
+      onExpire(session);
     }
   }
 
   @Override
   public final void close(SessionId sessionId) {
-    SessionProxy session = sessions.remove(sessionId);
+    Session session = sessions.remove(sessionId);
     if (session != null) {
-      onClose(session.session);
+      onClose(session);
     }
   }
 
@@ -364,7 +319,7 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    * <p>
    * A session is registered when a new client connects to the cluster or an existing client recovers its
    * session after being partitioned from the cluster. It's important to note that when this method is called,
-   * the {@link Session} is <em>not yet open</em> and so events cannot be {@link Session#publish(PrimitiveEvent) published}
+   * the {@link Session} is <em>not yet open</em> and so events cannot be {@link Session#accept(Consumer) published}
    * to the registered session. This is because clients cannot reliably track messages pushed from server state machines
    * to the client until the session has been fully registered. Session event messages may still be published to
    * other already-registered sessions in reaction to a session being registered.
@@ -382,8 +337,7 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    * and notify the client before the event message is sent. Published event messages sent via this method will
    * be sent the next time an operation is applied to the state machine.
    *
-   * @param session The session that was registered. State machines <em>cannot</em> {@link Session#publish(PrimitiveEvent)} session
-   *                events to this session.
+   * @param session The session that was registered
    */
   protected void onOpen(Session session) {
 
@@ -396,13 +350,8 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    * from a client for a configurable time interval, the leader will expire the session to free the related memory.
    * This method will always be called for a given session before {@link #onClose(Session)}, and {@link #onClose(Session)}
    * will always be called following this method.
-   * <p>
-   * State machines are free to {@link Session#publish(PrimitiveEvent)} session event messages to any session except
-   * the one that expired. Session event messages sent to the session that expired will be lost since the session is closed once this
-   * method call completes.
    *
-   * @param session The session that was expired. State machines <em>cannot</em> {@link Session#publish(PrimitiveEvent)} session
-   *                events to this session.
+   * @param session The session that was expired
    */
   protected void onExpire(Session session) {
 
@@ -412,60 +361,10 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    * Called when a session was closed by the client.
    * <p>
    * This method is called when a client explicitly closes a session.
-   * <p>
-   * State machines are free to {@link Session#publish(PrimitiveEvent)} session event messages to any session except
-   * the one that was closed. Session event messages sent to the session that was closed will be lost since the session is closed once this
-   * method call completes.
    *
-   * @param session The session that was closed. State machines <em>cannot</em> {@link Session#publish(PrimitiveEvent)} session
-   *                events to this session.
+   * @param session The session that was closed
    */
   protected void onClose(Session session) {
 
-  }
-
-  /**
-   * Session proxy.
-   */
-  private final class SessionProxy {
-    private final Session session;
-    private final C proxy;
-
-    public SessionProxy(Session session, C proxy) {
-      this.session = session;
-      this.proxy = proxy;
-    }
-
-    /**
-     * Publishes an event to the session.
-     *
-     * @param event the event to publish
-     */
-    void accept(Consumer<C> event) {
-      event.accept(proxy);
-    }
-  }
-
-  /**
-   * Session proxy invocation handler.
-   */
-  private final class SessionProxyHandler implements InvocationHandler {
-    private final Session session;
-    private final Map<Method, EventType> events;
-
-    private SessionProxyHandler(Session session) {
-      this.session = session;
-      this.events = clientInterface != null ? Events.getMethodMap(clientInterface) : Maps.newHashMap();
-    }
-
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-      EventType eventType = events.get(method);
-      if (eventType == null) {
-        throw new PrimitiveException.ServiceException("Cannot invoke unknown event type: " + method.getName());
-      }
-      session.publish(PrimitiveEvent.event(eventType, encode(args)));
-      return null;
-    }
   }
 }

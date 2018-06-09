@@ -705,15 +705,15 @@ public class RaftServiceManager implements AutoCloseable {
 
       Set<SessionMetadata> sessions = new HashSet<>();
       for (RaftSession s : raft.getSessions().getSessions()) {
-        if (s.serviceName().equals(session.serviceName())) {
-          sessions.add(new SessionMetadata(s.sessionId().id(), s.serviceName(), s.serviceType().name()));
+        if (s.primitiveName().equals(session.primitiveName())) {
+          sessions.add(new SessionMetadata(s.sessionId().id(), s.primitiveName(), s.primitiveType().name()));
         }
       }
       return new MetadataResult(sessions);
     } else {
       Set<SessionMetadata> sessions = new HashSet<>();
       for (RaftSession session : raft.getSessions().getSessions()) {
-        sessions.add(new SessionMetadata(session.sessionId().id(), session.serviceName(), session.serviceType().name()));
+        sessions.add(new SessionMetadata(session.sessionId().id(), session.primitiveName(), session.primitiveType().name()));
       }
       return new MetadataResult(sessions);
     }

@@ -778,7 +778,7 @@ public class DefaultConsistentMapService
    * @param events list of map event to publish
    */
   private void publish(List<MapEvent<String, byte[]>> events) {
-    listeners.forEach(listener -> events.forEach(event -> acceptOn(listener, client -> client.change(event))));
+    listeners.forEach(listener -> events.forEach(event -> getSession(listener).accept(client -> client.change(event))));
   }
 
   @Override

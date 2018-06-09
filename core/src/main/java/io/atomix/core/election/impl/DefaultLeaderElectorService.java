@@ -91,7 +91,7 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
   }
 
   private void notifyLeadershipChange(String topic, Leadership<byte[]> previousLeadership, Leadership<byte[]> newLeadership) {
-    listeners.forEach(id -> acceptOn(id, client -> client.onLeadershipChange(topic, previousLeadership, newLeadership)));
+    listeners.forEach(id -> getSession(id).accept(client -> client.onLeadershipChange(topic, previousLeadership, newLeadership)));
   }
 
   @Override

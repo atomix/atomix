@@ -266,7 +266,7 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
     listeners.entrySet()
         .stream()
         .filter(e -> event.path().isDescendentOf(e.getValue().leastCommonAncestorPath()))
-        .forEach(e -> acceptOn(e.getKey(), client -> client.change(event)));
+        .forEach(e -> getSession(e.getKey()).accept(client -> client.change(event)));
   }
 
   @Override
