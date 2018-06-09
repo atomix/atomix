@@ -32,6 +32,7 @@ import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -118,7 +119,7 @@ public class RaftProxyConnection {
    * @return a future to be completed with the response
    */
   public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
-    CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
+    CompletableFuture<OpenSessionResponse> future = new AtomixFuture<>();
     if (context.isCurrentContext()) {
       sendRequest(request, protocol::openSession, future);
     } else {
@@ -134,7 +135,7 @@ public class RaftProxyConnection {
    * @return a future to be completed with the response
    */
   public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
-    CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();
+    CompletableFuture<CloseSessionResponse> future = new AtomixFuture<>();
     if (context.isCurrentContext()) {
       sendRequest(request, protocol::closeSession, future);
     } else {
@@ -150,7 +151,7 @@ public class RaftProxyConnection {
    * @return a future to be completed with the response
    */
   public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
-    CompletableFuture<KeepAliveResponse> future = new CompletableFuture<>();
+    CompletableFuture<KeepAliveResponse> future = new AtomixFuture<>();
     if (context.isCurrentContext()) {
       sendRequest(request, protocol::keepAlive, future);
     } else {
@@ -166,7 +167,7 @@ public class RaftProxyConnection {
    * @return a future to be completed with the response
    */
   public CompletableFuture<QueryResponse> query(QueryRequest request) {
-    CompletableFuture<QueryResponse> future = new CompletableFuture<>();
+    CompletableFuture<QueryResponse> future = new AtomixFuture<>();
     if (context.isCurrentContext()) {
       sendRequest(request, protocol::query, future);
     } else {
@@ -182,7 +183,7 @@ public class RaftProxyConnection {
    * @return a future to be completed with the response
    */
   public CompletableFuture<CommandResponse> command(CommandRequest request) {
-    CompletableFuture<CommandResponse> future = new CompletableFuture<>();
+    CompletableFuture<CommandResponse> future = new AtomixFuture<>();
     if (context.isCurrentContext()) {
       sendRequest(request, protocol::command, future);
     } else {
@@ -198,7 +199,7 @@ public class RaftProxyConnection {
    * @return a future to be completed with the response
    */
   public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
-    CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
+    CompletableFuture<MetadataResponse> future = new AtomixFuture<>();
     if (context.isCurrentContext()) {
       sendRequest(request, protocol::metadata, future);
     } else {

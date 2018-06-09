@@ -18,11 +18,11 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
-import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.client.impl.BlockingAwareSessionClient;
 import io.atomix.primitive.client.impl.RecoveringSessionClient;
 import io.atomix.primitive.client.impl.RetryingSessionClient;
+import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
@@ -31,6 +31,7 @@ import io.atomix.protocols.raft.proxy.RaftSessionClient;
 import io.atomix.protocols.raft.proxy.impl.DefaultRaftSessionClient;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
+import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -39,7 +40,6 @@ import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -98,7 +98,7 @@ public class DefaultRaftClient implements RaftClient {
 
   @Override
   public synchronized CompletableFuture<RaftClient> connect(Collection<MemberId> cluster) {
-    CompletableFuture<RaftClient> future = new CompletableFuture<>();
+    CompletableFuture<RaftClient> future = new AtomixFuture<>();
 
     // If the provided cluster list is null or empty, use the default list.
     if (cluster == null || cluster.isEmpty()) {
@@ -146,6 +146,8 @@ public class DefaultRaftClient implements RaftClient {
 
         SessionClient proxy;
 
+        ThreadContext context = threadContextFactory.createContext();
+
         // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
         if (recoveryStrategy == Recovery.RECOVER) {
           proxy = new RecoveringSessionClient(
@@ -154,7 +156,7 @@ public class DefaultRaftClient implements RaftClient {
               primitiveName,
               primitiveType,
               proxyFactory,
-              threadContextFactory.createContext());
+              context);
         } else {
           proxy = proxyFactory.get();
         }
@@ -163,14 +165,11 @@ public class DefaultRaftClient implements RaftClient {
         if (maxRetries > 0) {
           proxy = new RetryingSessionClient(
               proxy,
-              threadContextFactory.createContext(),
+              context,
               maxRetries,
               retryDelay);
         }
-
-        // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
-        Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-        return new BlockingAwareSessionClient(proxy, executor);
+        return new BlockingAwareSessionClient(proxy, context);
       }
     };
   }

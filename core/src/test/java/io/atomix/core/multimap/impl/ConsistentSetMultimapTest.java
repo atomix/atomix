@@ -20,16 +20,16 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
-
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
-
 import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -277,6 +277,25 @@ public abstract class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
     });
 
     map.delete().join();
+  }
+
+  @Test
+  public void testBlocking() throws Exception {
+    AsyncConsistentMultimap<String, String> map = createMultimap("testMultimapBlocking");
+    map.put("foo", "Hello world!").thenRun(() -> {
+      assertEquals(1, map.get("foo").join().value().size());
+    }).join();
+
+    CountDownLatch latch = new CountDownLatch(1);
+    map.addListener(event -> {
+      assertEquals("Hello world!", event.newValue());
+      assertEquals("Hello world!", map.get("bar").join().value().iterator().next());
+      map.put("bar", "Hello world again!").join();
+      assertEquals(2, map.get("bar").join().value().size());
+      latch.countDown();
+    }).join();
+    map.put("bar", "Hello world!").join();
+    latch.await(5, TimeUnit.SECONDS);
   }
 
   /**

@@ -27,6 +27,7 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyConnection;
+import io.atomix.utils.concurrent.AtomixFuture;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.LoggerContext;
 
@@ -71,7 +72,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
    * @return A completable future to be completed with cluster metadata.
    */
   private CompletableFuture<MetadataResponse> getMetadata() {
-    CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
+    CompletableFuture<MetadataResponse> future = new AtomixFuture<>();
     connection.metadata(MetadataRequest.builder().build()).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {

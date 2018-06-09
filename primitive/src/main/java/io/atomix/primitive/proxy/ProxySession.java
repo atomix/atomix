@@ -18,6 +18,7 @@ package io.atomix.primitive.proxy;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -41,6 +42,13 @@ public interface ProxySession<S> {
    * @return The client proxy type.
    */
   PrimitiveType type();
+
+  /**
+   * Returns the session thread context.
+   *
+   * @return the session thread context
+   */
+  ThreadContext context();
 
   /**
    * Returns the session state.

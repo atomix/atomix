@@ -42,7 +42,7 @@ public class DistributedLockProxyBuilder extends DistributedLockBuilder {
         DistributedLockService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new DistributedLockProxy(proxy, managementService.getPrimitiveRegistry(), managementService.getExecutorService())
+    return new DistributedLockProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(AsyncDistributedLock::sync);
   }

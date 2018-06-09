@@ -36,7 +36,6 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
   private int backups = 1;
   private int maxRetries = 0;
   private Duration retryDelay = Duration.ofMillis(100);
-  private Executor executor;
 
   @Override
   public PrimitiveProtocol.Type getType() {
@@ -198,8 +197,9 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    *
    * @return the executor
    */
+  @Deprecated
   public Executor getExecutor() {
-    return executor;
+    return null;
   }
 
   /**
@@ -208,8 +208,8 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    * @param executor the executor
    * @return the protocol configuration
    */
+  @Deprecated
   public MultiPrimaryProtocolConfig setExecutor(Executor executor) {
-    this.executor = executor;
-    return this;
+    throw new UnsupportedOperationException();
   }
 }

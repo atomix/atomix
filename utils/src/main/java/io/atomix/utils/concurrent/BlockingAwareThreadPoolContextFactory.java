@@ -26,24 +26,24 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Thread pool context factory.
  */
-public class ThreadPoolContextFactory implements ThreadContextFactory {
+public class BlockingAwareThreadPoolContextFactory implements ThreadContextFactory {
   private final ScheduledExecutorService executor;
 
-  public ThreadPoolContextFactory(String name, int threadPoolSize, Logger logger) {
+  public BlockingAwareThreadPoolContextFactory(String name, int threadPoolSize, Logger logger) {
     this(threadPoolSize, namedThreads(name, logger));
   }
 
-  public ThreadPoolContextFactory(int threadPoolSize, ThreadFactory threadFactory) {
+  public BlockingAwareThreadPoolContextFactory(int threadPoolSize, ThreadFactory threadFactory) {
     this(Executors.newScheduledThreadPool(threadPoolSize, threadFactory));
   }
 
-  public ThreadPoolContextFactory(ScheduledExecutorService executor) {
+  public BlockingAwareThreadPoolContextFactory(ScheduledExecutorService executor) {
     this.executor = executor;
   }
 
   @Override
   public ThreadContext createContext() {
-    return new ThreadPoolContext(executor);
+    return new BlockingAwareThreadPoolContext(executor);
   }
 
   @Override

@@ -21,31 +21,30 @@ import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.utils.concurrent.Futures.asyncFuture;
 
 /**
  * Raft proxy delegate that completes futures on a thread pool.
  */
 public class BlockingAwareSessionClient extends DelegatingSessionClient {
-  private final Executor executor;
+  private final ThreadContext context;
   private final Map<Consumer<PrimitiveState>, Consumer<PrimitiveState>> stateChangeListeners = Maps.newConcurrentMap();
   private final Map<Consumer<PrimitiveEvent>, Consumer<PrimitiveEvent>> eventListeners = Maps.newConcurrentMap();
 
-  public BlockingAwareSessionClient(SessionClient delegate, Executor executor) {
+  public BlockingAwareSessionClient(SessionClient delegate, ThreadContext context) {
     super(delegate);
-    this.executor = checkNotNull(executor, "executor cannot be null");
+    this.context = context;
   }
 
   @Override
   public void addStateChangeListener(Consumer<PrimitiveState> listener) {
-    Consumer<PrimitiveState> wrappedListener = state -> executor.execute(() -> listener.accept(state));
+    Consumer<PrimitiveState> wrappedListener = state -> context.execute(() -> listener.accept(state));
     stateChangeListeners.put(listener, wrappedListener);
     super.addStateChangeListener(wrappedListener);
   }
@@ -60,12 +59,12 @@ public class BlockingAwareSessionClient extends DelegatingSessionClient {
 
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
-    return Futures.blockingAwareFuture(super.execute(operation), executor);
+    return asyncFuture(super.execute(operation), context);
   }
 
   @Override
   public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
-    Consumer<PrimitiveEvent> wrappedListener = e -> executor.execute(() -> listener.accept(e));
+    Consumer<PrimitiveEvent> wrappedListener = e -> context.execute(() -> listener.accept(e));
     eventListeners.put(listener, wrappedListener);
     super.addEventListener(eventType, wrappedListener);
   }
@@ -76,5 +75,15 @@ public class BlockingAwareSessionClient extends DelegatingSessionClient {
     if (wrappedListener != null) {
       super.removeEventListener(eventType, wrappedListener);
     }
+  }
+
+  @Override
+  public CompletableFuture<SessionClient> connect() {
+    return asyncFuture(super.connect(), context);
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return asyncFuture(super.close(), context);
   }
 }

@@ -18,12 +18,12 @@ package io.atomix.protocols.backup;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
-import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.client.impl.BlockingAwareSessionClient;
 import io.atomix.primitive.client.impl.RecoveringSessionClient;
 import io.atomix.primitive.client.impl.RetryingSessionClient;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionIdService;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
@@ -38,7 +38,6 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -115,6 +114,7 @@ public class PrimaryBackupClient {
             threadContextFactory.createContext());
 
         SessionClient proxy;
+        ThreadContext context = threadContextFactory.createContext();
         if (recovery == Recovery.RECOVER) {
           proxy = new RecoveringSessionClient(
               clientName,
@@ -122,7 +122,7 @@ public class PrimaryBackupClient {
               primitiveName,
               primitiveType,
               proxyBuilder,
-              threadContextFactory.createContext());
+              context);
         } else {
           proxy = proxyBuilder.get();
         }
@@ -131,14 +131,11 @@ public class PrimaryBackupClient {
         if (maxRetries > 0) {
           proxy = new RetryingSessionClient(
               proxy,
-              threadContextFactory.createContext(),
+              context,
               maxRetries,
               retryDelay);
         }
-
-        // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
-        Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-        return new BlockingAwareSessionClient(proxy, executor);
+        return new BlockingAwareSessionClient(proxy, context);
       }
     };
   }
