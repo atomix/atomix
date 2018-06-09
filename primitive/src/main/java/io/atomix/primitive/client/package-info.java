@@ -17,4 +17,4 @@
 /**
  * Provides interfaces for operating on distributed primitive services.
  */
-package io.atomix.primitive.proxy;
+package io.atomix.primitive.client;

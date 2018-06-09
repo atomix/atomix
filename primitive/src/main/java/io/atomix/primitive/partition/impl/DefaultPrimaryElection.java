@@ -23,7 +23,7 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryElectionService;
 import io.atomix.primitive.partition.PrimaryTerm;
-import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
 
@@ -48,13 +48,13 @@ public class DefaultPrimaryElection implements ManagedPrimaryElection {
       .build());
 
   private final PartitionId partitionId;
-  private final ProxySession proxy;
+  private final SessionClient proxy;
   private final PrimaryElectionService service;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private final PrimaryElectionEventListener eventListener;
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public DefaultPrimaryElection(PartitionId partitionId, ProxySession proxy, PrimaryElectionService service) {
+  public DefaultPrimaryElection(PartitionId partitionId, SessionClient proxy, PrimaryElectionService service) {
     this.partitionId = checkNotNull(partitionId);
     this.proxy = proxy;
     this.service = service;

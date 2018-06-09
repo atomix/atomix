@@ -26,7 +26,7 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryElectionService;
-import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -62,7 +62,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   };
   private final Map<PartitionId, ManagedPrimaryElection> elections = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
-  private ProxySession proxy;
+  private SessionClient proxy;
 
   public DefaultPrimaryElectionService(PartitionGroup partitionGroup) {
     this.partitions = checkNotNull(partitionGroup);
@@ -106,7 +106,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
 
   @Override
   public CompletableFuture<Void> stop() {
-    ProxySession proxy = this.proxy;
+    SessionClient proxy = this.proxy;
     if (proxy != null) {
       return proxy.close()
           .whenComplete((result, error) -> {

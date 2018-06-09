@@ -13,8 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.atomix.primitive;
 
 /**
- * Provides a {@link io.atomix.primitive.client.SessionClient} implementation for primary-backup.
+ * State of distributed primitive.
  */
-package io.atomix.protocols.backup.proxy;
+public enum PrimitiveState {
+
+  /**
+   * Signifies a state wherein the primitive is operating correctly and is capable of meeting the advertised
+   * consistency and reliability guarantees.
+   */
+  CONNECTED,
+
+  /**
+   * Signifies a state wherein the primitive is temporarily incapable of providing the advertised
+   * consistency properties.
+   */
+  SUSPENDED,
+
+  /**
+   * Signifies a state wherein the primitive has been shutdown and therefore cannot perform its functions.
+   */
+  CLOSED
+}

@@ -16,7 +16,7 @@
 package io.atomix.primitive.session.impl;
 
 import io.atomix.primitive.partition.PartitionGroup;
-import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.ManagedSessionIdService;
 import io.atomix.primitive.session.SessionId;
@@ -40,7 +40,7 @@ public class ReplicatedSessionIdService implements ManagedSessionIdService {
   private static final String PRIMITIVE_NAME = "session-id";
 
   private final PartitionGroup systemPartitionGroup;
-  private ProxySession proxy;
+  private SessionClient proxy;
   private final AtomicBoolean started = new AtomicBoolean();
 
   public ReplicatedSessionIdService(PartitionGroup systemPartitionGroup) {

@@ -17,7 +17,6 @@ package io.atomix.primitive;
 
 import com.google.common.base.MoreObjects;
 
-import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -50,18 +49,13 @@ public abstract class DelegatingAsyncPrimitive implements AsyncPrimitive {
   }
 
   @Override
-  public void addStatusChangeListener(Consumer<Status> listener) {
-    primitive.addStatusChangeListener(listener);
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
+    primitive.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStatusChangeListener(Consumer<Status> listener) {
-    primitive.removeStatusChangeListener(listener);
-  }
-
-  @Override
-  public Collection<Consumer<Status>> statusChangeListeners() {
-    return primitive.statusChangeListeners();
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
+    primitive.removeStateChangeListener(listener);
   }
 
   @Override

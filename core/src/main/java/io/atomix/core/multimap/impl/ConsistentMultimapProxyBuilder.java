@@ -39,9 +39,10 @@ public class ConsistentMultimapProxyBuilder<K, V> extends ConsistentMultimapBuil
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentMultimap<K, V>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
+    ProxyClient<ConsistentSetMultimapService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        ConsistentSetMultimapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new ConsistentSetMultimapProxy(proxy, managementService.getPrimitiveRegistry())

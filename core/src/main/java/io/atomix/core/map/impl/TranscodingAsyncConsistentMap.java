@@ -24,6 +24,7 @@ import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
@@ -320,18 +321,13 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   }
 
   @Override
-  public void addStatusChangeListener(Consumer<Status> listener) {
-    backingMap.addStatusChangeListener(listener);
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
+    backingMap.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStatusChangeListener(Consumer<Status> listener) {
-    backingMap.removeStatusChangeListener(listener);
-  }
-
-  @Override
-  public Collection<Consumer<Status>> statusChangeListeners() {
-    return backingMap.statusChangeListeners();
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
+    backingMap.removeStateChangeListener(listener);
   }
 
   @Override

@@ -26,12 +26,12 @@ import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
@@ -56,12 +56,12 @@ import java.util.stream.Collectors;
  * Distributed resource providing the {@link AsyncConsistentMap} primitive.
  */
 public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S extends ConsistentMapService>
-    extends AbstractAsyncPrimitiveProxy<P, S>
+    extends AbstractAsyncPrimitive<P, S>
     implements AsyncConsistentMap<String, byte[]>, ConsistentMapClient {
   private final Map<MapEventListener<String, byte[]>, Executor> mapEventListeners = new ConcurrentHashMap<>();
 
-  protected AbstractConsistentMapProxy(Class<S> serviceClass, ProxyClient proxy, PrimitiveRegistry registry) {
-    super(serviceClass, proxy, registry);
+  protected AbstractConsistentMapProxy(ProxyClient<S> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   @Override
@@ -76,36 +76,36 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
 
   @Override
   public CompletableFuture<Integer> size() {
-    return applyAll(service -> service.size())
+    return getProxyClient().applyAll(service -> service.size())
         .thenApply(results -> results.reduce(Math::addExact).orElse(0));
   }
 
   @Override
   public CompletableFuture<Boolean> containsKey(String key) {
-    return applyBy(key, service -> service.containsKey(key));
+    return getProxyClient().applyBy(key, service -> service.containsKey(key));
   }
 
   @Override
   public CompletableFuture<Boolean> containsValue(byte[] value) {
-    return applyAll(service -> service.containsValue(value))
+    return getProxyClient().applyAll(service -> service.containsValue(value))
         .thenApply(results -> results.filter(Predicate.isEqual(true)).findFirst().orElse(false));
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(String key) {
-    return applyBy(key, service -> service.get(key));
+    return getProxyClient().applyBy(key, service -> service.get(key));
   }
 
   @Override
   public CompletableFuture<Map<String, Versioned<byte[]>>> getAllPresent(Iterable<String> keys) {
-    return Futures.allOf(getPartitionIds()
+    return Futures.allOf(getProxyClient().getPartitions()
         .stream()
         .map(partition -> {
           Set<String> uniqueKeys = new HashSet<>();
           for (String key : keys) {
             uniqueKeys.add(key);
           }
-          return applyOn(partition, service -> service.getAllPresent(uniqueKeys));
+          return partition.apply(service -> service.getAllPresent(uniqueKeys));
         })
         .collect(Collectors.toList()))
         .thenApply(maps -> {
@@ -119,31 +119,31 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
 
   @Override
   public CompletableFuture<Versioned<byte[]>> getOrDefault(String key, byte[] defaultValue) {
-    return applyBy(key, service -> service.getOrDefault(key, defaultValue));
+    return getProxyClient().applyBy(key, service -> service.getOrDefault(key, defaultValue));
   }
 
   @Override
   public CompletableFuture<Set<String>> keySet() {
-    return applyAll(service -> service.keySet())
+    return getProxyClient().applyAll(service -> service.keySet())
         .thenApply(results -> results.reduce((s1, s2) -> ImmutableSet.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableSet.of()));
   }
 
   @Override
   public CompletableFuture<Collection<Versioned<byte[]>>> values() {
-    return applyAll(service -> service.values())
+    return getProxyClient().applyAll(service -> service.values())
         .thenApply(results -> results.reduce((s1, s2) -> ImmutableList.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableList.of()));
   }
 
   @Override
   public CompletableFuture<Set<Entry<String, Versioned<byte[]>>>> entrySet() {
-    return applyAll(service -> service.entrySet())
+    return getProxyClient().applyAll(service -> service.entrySet())
         .thenApply(results -> results.reduce((s1, s2) -> ImmutableSet.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableSet.of()));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> put(String key, byte[] value, Duration ttl) {
-    return applyBy(key, service -> service.put(key, value, ttl.toMillis()))
+    return getProxyClient().applyBy(key, service -> service.put(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -151,7 +151,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> putAndGet(String key, byte[] value, Duration ttl) {
-    return applyBy(key, service -> service.putAndGet(key, value, ttl.toMillis()))
+    return getProxyClient().applyBy(key, service -> service.putAndGet(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -159,7 +159,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> putIfAbsent(String key, byte[] value, Duration ttl) {
-    return applyBy(key, service -> service.putIfAbsent(key, value, ttl.toMillis()))
+    return getProxyClient().applyBy(key, service -> service.putIfAbsent(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -167,7 +167,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> remove(String key) {
-    return applyBy(key, service -> service.remove(key))
+    return getProxyClient().applyBy(key, service -> service.remove(key))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -175,7 +175,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> remove(String key, byte[] value) {
-    return applyBy(key, service -> service.remove(key, value))
+    return getProxyClient().applyBy(key, service -> service.remove(key, value))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
@@ -183,7 +183,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> remove(String key, long version) {
-    return applyBy(key, service -> service.remove(key, version))
+    return getProxyClient().applyBy(key, service -> service.remove(key, version))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
@@ -191,7 +191,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Versioned<byte[]>> replace(String key, byte[] value) {
-    return applyBy(key, service -> service.replace(key, value))
+    return getProxyClient().applyBy(key, service -> service.replace(key, value))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
@@ -199,7 +199,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> replace(String key, byte[] oldValue, byte[] newValue) {
-    return applyBy(key, service -> service.replace(key, oldValue, newValue))
+    return getProxyClient().applyBy(key, service -> service.replace(key, oldValue, newValue))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
@@ -207,14 +207,14 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> replace(String key, long oldVersion, byte[] newValue) {
-    return applyBy(key, service -> service.replace(key, oldVersion, newValue))
+    return getProxyClient().applyBy(key, service -> service.replace(key, oldVersion, newValue))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    return acceptAll(service -> service.clear());
+    return getProxyClient().acceptAll(service -> service.clear());
   }
 
   @Override
@@ -241,17 +241,17 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
       }
 
       if (r1 == null) {
-        return applyBy(key, service -> service.putIfAbsent(key, computedValue))
+        return getProxyClient().applyBy(key, service -> service.putIfAbsent(key, computedValue))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(result -> new Versioned<>(computedValue, result.version()));
       } else if (computedValue == null) {
-        return applyBy(key, service -> service.remove(key, r1.version()))
+        return getProxyClient().applyBy(key, service -> service.remove(key, r1.version()))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(v -> null);
       } else {
-        return applyBy(key, service -> service.replace(key, r1.version(), computedValue))
+        return getProxyClient().applyBy(key, service -> service.replace(key, r1.version(), computedValue))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(result -> result.status() == MapEntryUpdateResult.Status.OK
@@ -273,7 +273,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   public synchronized CompletableFuture<Void> addListener(MapEventListener<String, byte[]> listener, Executor executor) {
     if (mapEventListeners.isEmpty()) {
       mapEventListeners.put(listener, executor);
-      return acceptAll(service -> service.listen()).thenApply(v -> null);
+      return getProxyClient().acceptAll(service -> service.listen()).thenApply(v -> null);
     } else {
       mapEventListeners.put(listener, executor);
       return CompletableFuture.completedFuture(null);
@@ -283,7 +283,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   @Override
   public synchronized CompletableFuture<Void> removeListener(MapEventListener<String, byte[]> listener) {
     if (mapEventListeners.remove(listener) != null && mapEventListeners.isEmpty()) {
-      return acceptAll(service -> service.unlisten()).thenApply(v -> null);
+      return getProxyClient().acceptAll(service -> service.unlisten()).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -304,15 +304,14 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
     Map<PartitionId, List<MapUpdate<String, byte[]>>> updatesGroupedByMap = Maps.newIdentityHashMap();
     transactionLog.records().forEach(update -> {
-      ProxySession partition = getPartition(update.key());
-      updatesGroupedByMap.computeIfAbsent(partition.partitionId(), k -> Lists.newLinkedList()).add(update);
+      updatesGroupedByMap.computeIfAbsent(getProxyClient().getPartitionId(update.key()), k -> Lists.newLinkedList()).add(update);
     });
     Map<PartitionId, TransactionLog<MapUpdate<String, byte[]>>> transactionsByMap =
         Maps.transformValues(updatesGroupedByMap, list -> new TransactionLog<>(transactionLog.transactionId(), transactionLog.version(), list));
 
     return Futures.allOf(transactionsByMap.entrySet()
         .stream()
-        .map(e -> applyOn(e.getKey(), service -> service.prepare(transactionLog))
+        .map(e -> getProxyClient().applyOn(e.getKey(), service -> service.prepare(transactionLog))
             .thenApply(v -> v == PrepareResult.OK || v == PrepareResult.PARTIAL_FAILURE))
         .collect(Collectors.toList()))
         .thenApply(list -> list.stream().reduce(Boolean::logicalAnd).orElse(true));
@@ -320,23 +319,23 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
 
   @Override
   public CompletableFuture<Void> commit(TransactionId transactionId) {
-    return applyAll(service -> service.commit(transactionId))
+    return getProxyClient().applyAll(service -> service.commit(transactionId))
         .thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<Void> rollback(TransactionId transactionId) {
-    return applyAll(service -> service.rollback(transactionId))
+    return getProxyClient().applyAll(service -> service.rollback(transactionId))
         .thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<P> connect() {
     return super.connect()
-        .thenRun(() -> getPartitionIds().forEach(partition -> {
-          addStateChangeListenerOn(partition, state -> {
-            if (state == ProxySession.State.CONNECTED && isListening()) {
-              acceptOn(partition, service -> service.listen());
+        .thenRun(() -> getProxyClient().getPartitions().forEach(partition -> {
+          partition.addStateChangeListener(state -> {
+            if (state == PrimitiveState.CONNECTED && isListening()) {
+              partition.accept(service -> service.listen());
             }
           });
         }))

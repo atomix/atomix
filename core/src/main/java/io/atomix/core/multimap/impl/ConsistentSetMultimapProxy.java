@@ -23,9 +23,9 @@ import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.MultimapEventListener;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.time.Versioned;
 
@@ -45,13 +45,13 @@ import java.util.stream.Collectors;
  * Note: this implementation does not allow null entries or duplicate entries.
  */
 public class ConsistentSetMultimapProxy
-    extends AbstractAsyncPrimitiveProxy<AsyncConsistentMultimap<String, byte[]>, ConsistentSetMultimapService>
+    extends AbstractAsyncPrimitive<AsyncConsistentMultimap<String, byte[]>, ConsistentSetMultimapService>
     implements AsyncConsistentMultimap<String, byte[]>, ConsistentSetMultimapClient {
 
   private final Map<MultimapEventListener<String, byte[]>, Executor> mapEventListeners = new ConcurrentHashMap<>();
 
-  public ConsistentSetMultimapProxy(ProxyClient proxy, PrimitiveRegistry registry) {
-    super(ConsistentSetMultimapService.class, proxy, registry);
+  public ConsistentSetMultimapProxy(ProxyClient<ConsistentSetMultimapService> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   @Override
@@ -62,101 +62,101 @@ public class ConsistentSetMultimapProxy
 
   @Override
   public CompletableFuture<Integer> size() {
-    return applyAll(service -> service.size())
+    return getProxyClient().applyAll(service -> service.size())
         .thenApply(results -> results.reduce(Math::addExact).orElse(0));
   }
 
   @Override
   public CompletableFuture<Boolean> isEmpty() {
-    return applyAll(service -> service.isEmpty())
+    return getProxyClient().applyAll(service -> service.isEmpty())
         .thenApply(results -> results.allMatch(Predicate.isEqual(true)));
   }
 
   @Override
   public CompletableFuture<Boolean> containsKey(String key) {
-    return applyBy(key, service -> service.containsKey(key));
+    return getProxyClient().applyBy(key, service -> service.containsKey(key));
   }
 
   @Override
   public CompletableFuture<Boolean> containsValue(byte[] value) {
-    return applyAll(service -> service.containsValue(value))
+    return getProxyClient().applyAll(service -> service.containsValue(value))
         .thenApply(results -> results.anyMatch(Predicate.isEqual(true)));
   }
 
   @Override
   public CompletableFuture<Boolean> containsEntry(String key, byte[] value) {
-    return applyBy(key, service -> service.containsEntry(key, value));
+    return getProxyClient().applyBy(key, service -> service.containsEntry(key, value));
   }
 
   @Override
   public CompletableFuture<Boolean> put(String key, byte[] value) {
-    return applyBy(key, service -> service.put(key, value));
+    return getProxyClient().applyBy(key, service -> service.put(key, value));
   }
 
   @Override
   public CompletableFuture<Boolean> remove(String key, byte[] value) {
-    return applyBy(key, service -> service.remove(key, value));
+    return getProxyClient().applyBy(key, service -> service.remove(key, value));
   }
 
   @Override
   public CompletableFuture<Boolean> removeAll(String key, Collection<? extends byte[]> values) {
-    return applyBy(key, service -> service.removeAll(key, values));
+    return getProxyClient().applyBy(key, service -> service.removeAll(key, values));
   }
 
   @Override
   public CompletableFuture<Versioned<Collection<? extends byte[]>>> removeAll(String key) {
-    return applyBy(key, service -> service.removeAll(key));
+    return getProxyClient().applyBy(key, service -> service.removeAll(key));
   }
 
   @Override
   public CompletableFuture<Boolean> putAll(String key, Collection<? extends byte[]> values) {
-    return applyBy(key, service -> service.putAll(key, values));
+    return getProxyClient().applyBy(key, service -> service.putAll(key, values));
   }
 
   @Override
   public CompletableFuture<Versioned<Collection<? extends byte[]>>> replaceValues(
       String key, Collection<byte[]> values) {
-    return applyBy(key, service -> service.replaceValues(key, values));
+    return getProxyClient().applyBy(key, service -> service.replaceValues(key, values));
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    return acceptAll(service -> service.clear());
+    return getProxyClient().acceptAll(service -> service.clear());
   }
 
   @Override
   public CompletableFuture<Versioned<Collection<? extends byte[]>>> get(String key) {
-    return applyBy(key, service -> service.get(key));
+    return getProxyClient().applyBy(key, service -> service.get(key));
   }
 
   @Override
   public CompletableFuture<Set<String>> keySet() {
-    return applyAll(service -> service.keySet())
+    return getProxyClient().applyAll(service -> service.keySet())
         .thenApply(results -> results.flatMap(Collection::stream).collect(Collectors.toSet()));
   }
 
   @Override
   public CompletableFuture<Multiset<String>> keys() {
-    return applyAll(service -> service.keys())
+    return getProxyClient().applyAll(service -> service.keys())
         .thenApply(results -> results.reduce(Multisets::sum).orElse(HashMultiset.create()));
   }
 
   @Override
   public CompletableFuture<Multiset<byte[]>> values() {
-    return applyAll(service -> service.values())
+    return getProxyClient().applyAll(service -> service.values())
         .thenApply(results -> results.reduce(Multisets::sum).orElse(HashMultiset.create()));
   }
 
   @Override
   public CompletableFuture<Collection<Map.Entry<String, byte[]>>> entries() {
-    return applyAll(service -> service.entries())
+    return getProxyClient().applyAll(service -> service.entries())
         .thenApply(results -> results.flatMap(Collection::stream).collect(Collectors.toList()));
   }
 
   @Override
   public CompletableFuture<Void> addListener(MultimapEventListener<String, byte[]> listener, Executor executor) {
     if (mapEventListeners.isEmpty()) {
-      return acceptAll(service -> service.listen());
+      return getProxyClient().acceptAll(service -> service.listen());
     } else {
       mapEventListeners.put(listener, executor);
       return CompletableFuture.completedFuture(null);
@@ -166,7 +166,7 @@ public class ConsistentSetMultimapProxy
   @Override
   public CompletableFuture<Void> removeListener(MultimapEventListener<String, byte[]> listener) {
     if (mapEventListeners.remove(listener) != null && mapEventListeners.isEmpty()) {
-      return acceptAll(service -> service.unlisten());
+      return getProxyClient().acceptAll(service -> service.unlisten());
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -183,10 +183,10 @@ public class ConsistentSetMultimapProxy
   @Override
   public CompletableFuture<AsyncConsistentMultimap<String, byte[]>> connect() {
     return super.connect()
-        .thenRun(() -> getPartitionIds().forEach(partition -> {
-          addStateChangeListenerOn(partition, state -> {
-            if (state == ProxySession.State.CONNECTED && isListening()) {
-              acceptOn(partition, service -> service.listen());
+        .thenRun(() -> getProxyClient().getPartitionIds().forEach(partition -> {
+          getProxyClient().getPartition(partition).addStateChangeListener(state -> {
+            if (state == PrimitiveState.CONNECTED && isListening()) {
+              getProxyClient().acceptOn(partition, service -> service.listen());
             }
           });
         }))

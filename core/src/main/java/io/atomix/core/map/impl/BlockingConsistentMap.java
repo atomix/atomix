@@ -21,6 +21,7 @@ import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapBackedJavaMap;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.concurrent.Retries;
 import io.atomix.utils.time.Versioned;
@@ -198,18 +199,13 @@ public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<
   }
 
   @Override
-  public void addStatusChangeListener(Consumer<Status> listener) {
-    asyncMap.addStatusChangeListener(listener);
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
+    asyncMap.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStatusChangeListener(Consumer<Status> listener) {
-    asyncMap.removeStatusChangeListener(listener);
-  }
-
-  @Override
-  public Collection<Consumer<Status>> statusChangeListeners() {
-    return asyncMap.statusChangeListeners();
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
+    asyncMap.removeStateChangeListener(listener);
   }
 
   @Override

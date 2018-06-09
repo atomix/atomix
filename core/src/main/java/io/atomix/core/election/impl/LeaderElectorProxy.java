@@ -23,10 +23,10 @@ import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.primitive.proxy.Proxy;
 
 import java.time.Duration;
 import java.util.Map;
@@ -37,14 +37,14 @@ import java.util.concurrent.CompletableFuture;
  * Distributed resource providing the {@link AsyncLeaderElector} primitive.
  */
 public class LeaderElectorProxy
-    extends AbstractAsyncPrimitiveProxy<AsyncLeaderElector<byte[]>, LeaderElectorService>
+    extends AbstractAsyncPrimitive<AsyncLeaderElector<byte[]>, LeaderElectorService>
     implements AsyncLeaderElector<byte[]>, LeaderElectorClient {
 
   private final Set<LeadershipEventListener<byte[]>> leadershipChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Map<String, Set<LeadershipEventListener<byte[]>>> topicListeners = Maps.newConcurrentMap();
 
-  public LeaderElectorProxy(ProxyClient proxy, PrimitiveRegistry registry) {
-    super(LeaderElectorService.class, proxy, registry);
+  public LeaderElectorProxy(ProxyClient<LeaderElectorService> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   @Override
@@ -59,37 +59,37 @@ public class LeaderElectorProxy
 
   @Override
   public CompletableFuture<Leadership<byte[]>> run(String topic, byte[] id) {
-    return applyBy(topic, service -> service.run(topic, id));
+    return getProxyClient().applyBy(topic, service -> service.run(topic, id));
   }
 
   @Override
   public CompletableFuture<Void> withdraw(String topic, byte[] id) {
-    return acceptBy(topic, service -> service.withdraw(topic, id));
+    return getProxyClient().acceptBy(topic, service -> service.withdraw(topic, id));
   }
 
   @Override
   public CompletableFuture<Boolean> anoint(String topic, byte[] id) {
-    return applyBy(topic, service -> service.anoint(topic, id));
+    return getProxyClient().applyBy(topic, service -> service.anoint(topic, id));
   }
 
   @Override
   public CompletableFuture<Boolean> promote(String topic, byte[] id) {
-    return applyBy(topic, service -> service.promote(topic, id));
+    return getProxyClient().applyBy(topic, service -> service.promote(topic, id));
   }
 
   @Override
   public CompletableFuture<Void> evict(byte[] id) {
-    return acceptAll(service -> service.evict(id));
+    return getProxyClient().acceptAll(service -> service.evict(id));
   }
 
   @Override
   public CompletableFuture<Leadership<byte[]>> getLeadership(String topic) {
-    return applyBy(topic, service -> service.getLeadership(topic));
+    return getProxyClient().applyBy(topic, service -> service.getLeadership(topic));
   }
 
   @Override
   public CompletableFuture<Map<String, Leadership<byte[]>>> getLeaderships() {
-    return applyAll(service -> service.getLeaderships())
+    return getProxyClient().applyAll(service -> service.getLeaderships())
         .thenApply(leaderships -> {
           ImmutableMap.Builder<String, Leadership<byte[]>> builder = ImmutableMap.builder();
           leaderships.forEach(builder::putAll);
@@ -100,13 +100,13 @@ public class LeaderElectorProxy
   @Override
   public synchronized CompletableFuture<Void> addListener(LeadershipEventListener<byte[]> listener) {
     leadershipChangeListeners.add(listener);
-    return acceptAll(service -> service.listen());
+    return getProxyClient().acceptAll(service -> service.listen());
   }
 
   @Override
   public synchronized CompletableFuture<Void> removeListener(LeadershipEventListener<byte[]> listener) {
     if (leadershipChangeListeners.remove(listener)) {
-      return acceptAll(service -> service.unlisten());
+      return getProxyClient().acceptAll(service -> service.unlisten());
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -123,7 +123,7 @@ public class LeaderElectorProxy
     });
 
     if (empty) {
-      return acceptBy(topic, service -> service.listen());
+      return getProxyClient().acceptBy(topic, service -> service.listen());
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -135,7 +135,7 @@ public class LeaderElectorProxy
       return s.size() == 0 ? null : s;
     });
     if (topicListeners.isEmpty()) {
-      return acceptBy(topic, service -> service.unlisten());
+      return getProxyClient().acceptBy(topic, service -> service.unlisten());
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -147,13 +147,13 @@ public class LeaderElectorProxy
   @Override
   public CompletableFuture<AsyncLeaderElector<byte[]>> connect() {
     return super.connect()
-        .thenRun(() -> {
-          addStateChangeListeners((partition, state) -> {
-            if (state == Proxy.State.CONNECTED && isListening()) {
-              acceptOn(partition, service -> service.listen());
+        .thenRun(() -> getProxyClient().getPartitions().forEach(partition -> {
+          partition.addStateChangeListener(state -> {
+            if (state == PrimitiveState.CONNECTED && isListening()) {
+              partition.accept(service -> service.listen());
             }
           });
-        })
+        }))
         .thenApply(v -> this);
   }
 

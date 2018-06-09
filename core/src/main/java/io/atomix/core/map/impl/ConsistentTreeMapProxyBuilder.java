@@ -39,9 +39,10 @@ public class ConsistentTreeMapProxyBuilder<V> extends ConsistentTreeMapBuilder<V
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentTreeMap<V>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
+    ProxyClient<ConsistentTreeMapService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        ConsistentTreeMapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new ConsistentTreeMapProxy(proxy, managementService.getPrimitiveRegistry())

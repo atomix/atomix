@@ -66,11 +66,17 @@ public interface PrimitiveProtocol {
    *
    * @param primitiveName    the primitive name
    * @param primitiveType    the primitive type
+   * @param serviceType      the primitive service type
    * @param serviceConfig    the service configuration
    * @param partitionService the partition service
    * @return the proxy for the given partition group
    */
-  ProxyClient newProxy(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig, PartitionService partitionService);
+  <S> ProxyClient<S> newProxy(
+      String primitiveName,
+      PrimitiveType primitiveType,
+      Class<S> serviceType,
+      ServiceConfig serviceConfig,
+      PartitionService partitionService);
 
   /**
    * Primitive protocol.

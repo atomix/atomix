@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.proxy.impl;
+package io.atomix.primitive.client.impl;
 
 import com.google.common.collect.Maps;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.session.SessionId;
 
 import java.util.Map;
@@ -33,11 +34,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Default Raft proxy.
  */
-public class DelegatingProxySession implements ProxySession {
-  private final ProxySession proxy;
+public class DelegatingSessionClient implements SessionClient {
+  private final SessionClient proxy;
   private final Map<String, Map<Object, Consumer<PrimitiveEvent>>> eventTypeListeners = Maps.newConcurrentMap();
 
-  public DelegatingProxySession(ProxySession proxy) {
+  public DelegatingSessionClient(SessionClient proxy) {
     this.proxy = proxy;
   }
 
@@ -62,17 +63,17 @@ public class DelegatingProxySession implements ProxySession {
   }
 
   @Override
-  public State getState() {
+  public PrimitiveState getState() {
     return proxy.getState();
   }
 
   @Override
-  public void addStateChangeListener(Consumer<State> listener) {
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
     proxy.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<State> listener) {
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
     proxy.removeStateChangeListener(listener);
   }
 
@@ -92,7 +93,7 @@ public class DelegatingProxySession implements ProxySession {
   }
 
   @Override
-  public CompletableFuture<ProxySession> connect() {
+  public CompletableFuture<SessionClient> connect() {
     return proxy.connect().thenApply(c -> this);
   }
 

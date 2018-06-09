@@ -18,11 +18,11 @@ package io.atomix.core.lock.impl;
 import com.google.common.collect.Maps;
 import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.core.lock.DistributedLock;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.OrderedExecutor;
 import io.atomix.utils.time.Version;
 
@@ -43,25 +43,26 @@ import static io.atomix.utils.concurrent.Futures.orderedFuture;
  * Raft lock.
  */
 public class DistributedLockProxy
-    extends AbstractAsyncPrimitiveProxy<AsyncDistributedLock, DistributedLockService>
+    extends AbstractAsyncPrimitive<AsyncDistributedLock, DistributedLockService>
     implements AsyncDistributedLock, DistributedLockClient {
+
   private final ScheduledExecutorService scheduledExecutor;
   private final Executor orderedExecutor;
   private final Map<Integer, LockAttempt> attempts = Maps.newConcurrentMap();
   private final AtomicInteger id = new AtomicInteger();
   private final AtomicInteger lock = new AtomicInteger();
 
-  public DistributedLockProxy(ProxyClient proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
-    super(DistributedLockService.class, proxy, registry);
+  public DistributedLockProxy(ProxyClient<DistributedLockService> proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
+    super(proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
     this.orderedExecutor = new OrderedExecutor(scheduledExecutor);
     proxy.addStateChangeListener(this::onStateChange);
   }
 
-  private void onStateChange(Proxy.State state) {
-    if (state != Proxy.State.CONNECTED) {
+  private void onStateChange(PrimitiveState state) {
+    if (state != PrimitiveState.CONNECTED) {
       for (LockAttempt attempt : attempts.values()) {
-        acceptBy(getPartitionKey(), service -> service.unlock(attempt.id()));
+        getProxyClient().acceptBy(name(), service -> service.unlock(attempt.id()));
         attempt.completeExceptionally(new PrimitiveException.Unavailable());
       }
     }
@@ -91,7 +92,7 @@ public class DistributedLockProxy
   public CompletableFuture<Version> lock() {
     // Create and register a new attempt and invoke the LOCK operation on the replicated state machine.
     LockAttempt attempt = new LockAttempt();
-    acceptBy(getPartitionKey(), service -> service.lock(attempt.id(), -1)).whenComplete((result, error) -> {
+    getProxyClient().acceptBy(name(), service -> service.lock(attempt.id(), -1)).whenComplete((result, error) -> {
       if (error != null) {
         attempt.completeExceptionally(error);
       }
@@ -104,8 +105,8 @@ public class DistributedLockProxy
   @Override
   public CompletableFuture<Optional<Version>> tryLock() {
     // If the proxy is currently disconnected from the cluster, we can just fail the lock attempt here.
-    Proxy.State state = getPartition(getPartitionKey()).getState();
-    if (state != Proxy.State.CONNECTED) {
+    PrimitiveState state = getProxyClient().getPartition(name()).getState();
+    if (state != PrimitiveState.CONNECTED) {
       return CompletableFuture.completedFuture(Optional.empty());
     }
 
@@ -113,7 +114,7 @@ public class DistributedLockProxy
     // a 0 timeout. The timeout will cause the state machine to immediately reject the request if the lock is
     // already owned by another process.
     LockAttempt attempt = new LockAttempt();
-    acceptBy(getPartitionKey(), service -> service.lock(attempt.id(), 0)).whenComplete((result, error) -> {
+    getProxyClient().acceptBy(name(), service -> service.lock(attempt.id(), 0)).whenComplete((result, error) -> {
       if (error != null) {
         attempt.completeExceptionally(error);
       }
@@ -136,14 +137,14 @@ public class DistributedLockProxy
     // lock call also granted to this process.
     LockAttempt attempt = new LockAttempt(timeout, a -> {
       a.complete(null);
-      acceptBy(getPartitionKey(), service -> service.unlock(a.id()));
+      getProxyClient().acceptBy(name(), service -> service.unlock(a.id()));
     });
 
     // Invoke the LOCK operation on the replicated state machine with the given timeout. If the lock is currently
     // held by another process, the state machine will add the attempt to a queue and publish a FAILED event if
     // the timer expires before this process can be granted the lock. If the client cannot reach the Raft cluster,
     // the client-side timer will expire the attempt.
-    acceptBy(getPartitionKey(), service -> service.lock(attempt.id(), timeout.toMillis()))
+    getProxyClient().acceptBy(name(), service -> service.lock(attempt.id(), timeout.toMillis()))
         .whenComplete((result, error) -> {
           if (error != null) {
             attempt.completeExceptionally(error);
@@ -161,7 +162,7 @@ public class DistributedLockProxy
     int lock = this.lock.getAndSet(0);
     if (lock != 0) {
       return orderedFuture(
-          acceptBy(getPartitionKey(), service -> service.unlock(lock)),
+          getProxyClient().acceptBy(name(), service -> service.unlock(lock)),
           orderedExecutor,
           scheduledExecutor);
     }
@@ -171,7 +172,7 @@ public class DistributedLockProxy
   @Override
   public CompletableFuture<AsyncDistributedLock> connect() {
     return super.connect()
-        .thenCompose(v -> getPartition(getPartitionKey()).connect())
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
         .thenApply(v -> this);
   }
 

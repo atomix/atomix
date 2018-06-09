@@ -23,6 +23,7 @@ import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
@@ -277,18 +278,13 @@ public class TranscodingAsyncConsistentMultimap<K1, V1, K2, V2> implements Async
   }
 
   @Override
-  public void addStatusChangeListener(Consumer<Status> listener) {
-    backingMap.addStatusChangeListener(listener);
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
+    backingMap.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStatusChangeListener(Consumer<Status> listener) {
-    backingMap.removeStatusChangeListener(listener);
-  }
-
-  @Override
-  public Collection<Consumer<Status>> statusChangeListeners() {
-    return backingMap.statusChangeListeners();
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
+    backingMap.removeStateChangeListener(listener);
   }
 
   @Override

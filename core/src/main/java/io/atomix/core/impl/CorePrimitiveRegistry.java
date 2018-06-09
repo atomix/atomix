@@ -18,6 +18,7 @@ package io.atomix.core.impl;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.impl.ConsistentMapProxy;
+import io.atomix.core.map.impl.ConsistentMapService;
 import io.atomix.core.map.impl.TranscodingAsyncConsistentMap;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
@@ -121,9 +122,10 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimitiveRegistry> start() {
     PrimitiveProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
-    ProxyClient proxy = protocol.newProxy(
+    ProxyClient<ConsistentMapService> proxy = protocol.newProxy(
         "primitives",
         ConsistentMapType.instance(),
+        ConsistentMapService.class,
         new ServiceConfig(),
         partitionService);
     return proxy.connect()

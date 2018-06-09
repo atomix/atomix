@@ -41,9 +41,10 @@ public class ConsistentMapProxyBuilder<K, V> extends ConsistentMapBuilder<K, V> 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<ConsistentMap<K, V>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
+    ProxyClient<ConsistentMapService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        ConsistentMapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new ConsistentMapProxy(proxy, managementService.getPrimitiveRegistry())

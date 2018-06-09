@@ -21,10 +21,10 @@ import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.primitive.proxy.Proxy;
 
 import java.time.Duration;
 import java.util.Set;
@@ -34,13 +34,13 @@ import java.util.concurrent.CompletableFuture;
  * Distributed resource providing the {@link AsyncLeaderElection} primitive.
  */
 public class LeaderElectionProxy
-    extends AbstractAsyncPrimitiveProxy<AsyncLeaderElection<byte[]>, LeaderElectionService>
+    extends AbstractAsyncPrimitive<AsyncLeaderElection<byte[]>, LeaderElectionService>
     implements AsyncLeaderElection<byte[]>, LeaderElectionClient {
 
   private final Set<LeadershipEventListener<byte[]>> leadershipChangeListeners = Sets.newCopyOnWriteArraySet();
 
-  public LeaderElectionProxy(ProxyClient proxy, PrimitiveRegistry registry) {
-    super(LeaderElectionService.class, proxy, registry);
+  public LeaderElectionProxy(ProxyClient<LeaderElectionService> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   @Override
@@ -51,38 +51,38 @@ public class LeaderElectionProxy
 
   @Override
   public CompletableFuture<Leadership<byte[]>> run(byte[] id) {
-    return applyBy(getPartitionKey(), service -> service.run(id));
+    return getProxyClient().applyBy(name(), service -> service.run(id));
   }
 
   @Override
   public CompletableFuture<Void> withdraw(byte[] id) {
-    return acceptBy(getPartitionKey(), service -> service.withdraw(id));
+    return getProxyClient().acceptBy(name(), service -> service.withdraw(id));
   }
 
   @Override
   public CompletableFuture<Boolean> anoint(byte[] id) {
-    return applyBy(getPartitionKey(), service -> service.anoint(id));
+    return getProxyClient().applyBy(name(), service -> service.anoint(id));
   }
 
   @Override
   public CompletableFuture<Boolean> promote(byte[] id) {
-    return applyBy(getPartitionKey(), service -> service.promote(id));
+    return getProxyClient().applyBy(name(), service -> service.promote(id));
   }
 
   @Override
   public CompletableFuture<Void> evict(byte[] id) {
-    return acceptBy(getPartitionKey(), service -> service.evict(id));
+    return getProxyClient().acceptBy(name(), service -> service.evict(id));
   }
 
   @Override
   public CompletableFuture<Leadership<byte[]>> getLeadership() {
-    return applyBy(getPartitionKey(), service -> service.getLeadership());
+    return getProxyClient().applyBy(name(), service -> service.getLeadership());
   }
 
   @Override
-  public synchronized CompletableFuture<Void> addListener(LeadershipEventListener listener) {
+  public synchronized CompletableFuture<Void> addListener(LeadershipEventListener<byte[]> listener) {
     if (leadershipChangeListeners.isEmpty()) {
-      return acceptBy(getPartitionKey(), service -> service.listen()).thenRun(() -> leadershipChangeListeners.add(listener));
+      return getProxyClient().acceptBy(name(), service -> service.listen()).thenRun(() -> leadershipChangeListeners.add(listener));
     } else {
       leadershipChangeListeners.add(listener);
       return CompletableFuture.completedFuture(null);
@@ -90,9 +90,9 @@ public class LeaderElectionProxy
   }
 
   @Override
-  public synchronized CompletableFuture<Void> removeListener(LeadershipEventListener listener) {
+  public synchronized CompletableFuture<Void> removeListener(LeadershipEventListener<byte[]> listener) {
     if (leadershipChangeListeners.remove(listener) && leadershipChangeListeners.isEmpty()) {
-      return acceptBy(getPartitionKey(), service -> service.unlisten()).thenApply(v -> null);
+      return getProxyClient().acceptBy(name(), service -> service.unlisten()).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -104,13 +104,13 @@ public class LeaderElectionProxy
   @Override
   public CompletableFuture<AsyncLeaderElection<byte[]>> connect() {
     return super.connect()
-        .thenRun(() -> {
-          addStateChangeListeners((partition, state) -> {
-            if (state == Proxy.State.CONNECTED && isListening()) {
-              acceptBy(getPartitionKey(), service -> service.listen());
+        .thenRun(() -> getProxyClient().getPartitions().forEach(partition -> {
+          partition.addStateChangeListener(state -> {
+            if (state == PrimitiveState.CONNECTED && isListening()) {
+              partition.accept(service -> service.listen());
             }
           });
-        })
+        }))
         .thenApply(v -> this);
   }
 

@@ -26,7 +26,7 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionClient;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionServer;
-import io.atomix.protocols.backup.proxy.PrimaryBackupProxySession;
+import io.atomix.protocols.backup.proxy.PrimaryBackupSessionClient;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.Collection;
@@ -100,7 +100,7 @@ public class PrimaryBackupPartition implements Partition {
   }
 
   @Override
-  public PrimaryBackupProxySession.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+  public PrimaryBackupSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
     return client.getProxyClient().sessionBuilder(primitiveName, primitiveType, serviceConfig);
   }
 

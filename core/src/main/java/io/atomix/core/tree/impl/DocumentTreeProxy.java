@@ -25,9 +25,9 @@ import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeListener;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
@@ -47,12 +47,12 @@ import static io.atomix.core.tree.impl.DocumentTreeResult.Status.OK;
  * Distributed resource providing the {@link AsyncDocumentTree} primitive.
  */
 public class DocumentTreeProxy
-    extends AbstractAsyncPrimitiveProxy<AsyncDocumentTree<byte[]>, DocumentTreeService>
+    extends AbstractAsyncPrimitive<AsyncDocumentTree<byte[]>, DocumentTreeService>
     implements AsyncDocumentTree<byte[]>, DocumentTreeClient {
   private final Map<DocumentTreeListener<byte[]>, InternalListener> eventListeners = new HashMap<>();
 
-  public DocumentTreeProxy(ProxyClient proxy, PrimitiveRegistry registry) {
-    super(DocumentTreeService.class, proxy, registry);
+  public DocumentTreeProxy(ProxyClient<DocumentTreeService> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   @Override
@@ -62,18 +62,18 @@ public class DocumentTreeProxy
 
   @Override
   public CompletableFuture<Map<String, Versioned<byte[]>>> getChildren(DocumentPath path) {
-    return applyBy(getPartitionKey(), service -> service.getChildren(path))
+    return getProxyClient().applyBy(name(), service -> service.getChildren(path))
         .thenApply(result -> result.status() == OK ? result.result() : ImmutableMap.of());
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(DocumentPath path) {
-    return applyBy(getPartitionKey(), service -> service.get(path));
+    return getProxyClient().applyBy(name(), service -> service.get(path));
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> set(DocumentPath path, byte[] value) {
-    return applyBy(getPartitionKey(), service -> service.set(path, value))
+    return getProxyClient().applyBy(name(), service -> service.set(path, value))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -87,7 +87,7 @@ public class DocumentTreeProxy
 
   @Override
   public CompletableFuture<Boolean> create(DocumentPath path, byte[] value) {
-    return applyBy(getPartitionKey(), service -> service.create(path, value))
+    return getProxyClient().applyBy(name(), service -> service.create(path, value))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -101,7 +101,7 @@ public class DocumentTreeProxy
 
   @Override
   public CompletableFuture<Boolean> createRecursive(DocumentPath path, byte[] value) {
-    return applyBy(getPartitionKey(), service -> service.createRecursive(path, value))
+    return getProxyClient().applyBy(name(), service -> service.createRecursive(path, value))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -115,7 +115,7 @@ public class DocumentTreeProxy
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, long version) {
-    return applyBy(getPartitionKey(), service -> service.replace(path, newValue, version))
+    return getProxyClient().applyBy(name(), service -> service.replace(path, newValue, version))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -129,7 +129,7 @@ public class DocumentTreeProxy
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, byte[] currentValue) {
-    return applyBy(getPartitionKey(), service -> service.replace(path, newValue, currentValue))
+    return getProxyClient().applyBy(name(), service -> service.replace(path, newValue, currentValue))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -146,7 +146,7 @@ public class DocumentTreeProxy
     if (path.equals(root())) {
       return Futures.exceptionalFuture(new IllegalDocumentModificationException());
     }
-    return applyBy(getPartitionKey(), service -> service.removeNode(path))
+    return getProxyClient().applyBy(name(), service -> service.removeNode(path))
         .thenCompose(result -> {
           if (result.status() == INVALID_PATH) {
             return Futures.exceptionalFuture(new NoSuchDocumentPathException());
@@ -165,7 +165,7 @@ public class DocumentTreeProxy
     InternalListener internalListener = new InternalListener(path, listener, MoreExecutors.directExecutor());
     // TODO: Support API that takes an executor
     if (!eventListeners.containsKey(listener)) {
-      return acceptBy(getPartitionKey(), service -> service.listen(path))
+      return getProxyClient().acceptBy(name(), service -> service.listen(path))
           .thenRun(() -> eventListeners.put(listener, internalListener));
     }
     return CompletableFuture.completedFuture(null);
@@ -176,7 +176,7 @@ public class DocumentTreeProxy
     checkNotNull(listener);
     InternalListener internalListener = eventListeners.remove(listener);
     if (internalListener != null && eventListeners.isEmpty()) {
-      return acceptBy(getPartitionKey(), service -> service.unlisten(internalListener.path));
+      return getProxyClient().acceptBy(name(), service -> service.unlisten(internalListener.path));
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -184,18 +184,16 @@ public class DocumentTreeProxy
   @Override
   public CompletableFuture<AsyncDocumentTree<byte[]>> connect() {
     return super.connect()
-        .thenRun(() -> {
-          addStateChangeListeners((partition, state) -> {
-            if (state == ProxySession.State.CONNECTED && isListening()) {
-              acceptBy(getPartitionKey(), service -> service.listen(root()));
-            }
-          });
-        }).thenApply(v -> this);
+        .thenRun(() -> getProxyClient().getPartition(name()).addStateChangeListener(state -> {
+          if (state == PrimitiveState.CONNECTED && isListening()) {
+            getProxyClient().acceptBy(name(), service -> service.listen(root()));
+          }
+        })).thenApply(v -> this);
   }
 
   @Override
   public CompletableFuture<Void> delete() {
-    return acceptBy(getPartitionKey(), service -> service.clear());
+    return getProxyClient().acceptBy(name(), service -> service.clear());
   }
 
   @Override

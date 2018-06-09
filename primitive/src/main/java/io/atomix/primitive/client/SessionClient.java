@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.proxy;
+package io.atomix.primitive.client;
 
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.event.EventType;
+import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.session.SessionId;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
- * Proxy session.
+ * Partition proxy.
  */
-public interface ProxySession<S> {
+public interface SessionClient {
 
   /**
    * Returns the primitive name.
@@ -50,32 +53,43 @@ public interface ProxySession<S> {
   PrimitiveState getState();
 
   /**
-   * Registers a client listener.
+   * Returns the proxy session identifier.
    *
-   * @param client the client listener to register
+   * @return The proxy session identifier
    */
-  void register(Object client);
+  SessionId sessionId();
 
   /**
-   * Submits an empty operation to the given partition.
+   * Returns the partition identifier.
    *
-   * @param operation the operation identifier
-   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link PrimitiveOperation} submission futures that preceded it.
-   * @throws NullPointerException if {@code operation} is null
+   * @return the partition identifier.
    */
-  CompletableFuture<Void> accept(Consumer<S> operation);
+  PartitionId partitionId();
 
   /**
-   * Submits an empty operation to the given partition.
+   * Executes an operation to the cluster.
    *
-   * @param operation the operation identifier
-   * @param <R>       the operation result type
-   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
-   * {@link PrimitiveOperation} submission futures that preceded it.
+   * @param operation the operation to execute
+   * @return a future to be completed with the operation result
    * @throws NullPointerException if {@code operation} is null
    */
-  <R> CompletableFuture<R> apply(Function<S, R> operation);
+  CompletableFuture<byte[]> execute(PrimitiveOperation operation);
+
+  /**
+   * Adds an event listener.
+   *
+   * @param eventType the event type for which to add the listener
+   * @param listener  the event listener to add
+   */
+  void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener);
+
+  /**
+   * Removes an event listener.
+   *
+   * @param eventType the event type for which to remove the listener
+   * @param listener  the event listener to remove
+   */
+  void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener);
 
   /**
    * Registers a session state change listener.
@@ -92,17 +106,22 @@ public interface ProxySession<S> {
   void removeStateChangeListener(Consumer<PrimitiveState> listener);
 
   /**
-   * Connects the proxy session.
+   * Connects the proxy.
    *
-   * @return a future to be completed once the proxy session has been connected
+   * @return a future to be completed once the proxy has been connected
    */
-  CompletableFuture<ProxySession<S>> connect();
+  CompletableFuture<SessionClient> connect();
 
   /**
-   * Closes the proxy session.
+   * Closes the proxy.
    *
-   * @return a future to be completed once the proxy session has been closed
+   * @return a future to be completed once the proxy has been closed
    */
   CompletableFuture<Void> close();
 
+  /**
+   * Partition proxy builder.
+   */
+  abstract class Builder implements io.atomix.utils.Builder<SessionClient> {
+  }
 }

@@ -19,16 +19,16 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.ProxySession;
-import io.atomix.primitive.proxy.impl.BlockingAwareProxySession;
-import io.atomix.primitive.proxy.impl.RecoveringProxySession;
-import io.atomix.primitive.proxy.impl.RetryingProxySession;
+import io.atomix.primitive.client.SessionClient;
+import io.atomix.primitive.client.impl.BlockingAwareSessionClient;
+import io.atomix.primitive.client.impl.RecoveringSessionClient;
+import io.atomix.primitive.client.impl.RetryingSessionClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.RaftProxySession;
-import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxySession;
+import io.atomix.protocols.raft.proxy.RaftSessionClient;
+import io.atomix.protocols.raft.proxy.impl.DefaultRaftSessionClient;
 import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -125,12 +125,12 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public RaftProxySession.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
-    return new RaftProxySession.Builder() {
+  public RaftSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+    return new RaftSessionClient.Builder() {
       @Override
-      public ProxySession build() {
+      public SessionClient build() {
         // Create a proxy builder that uses the session manager to open a session.
-        Supplier<ProxySession> proxyFactory = () -> new DefaultRaftProxySession(
+        Supplier<SessionClient> proxyFactory = () -> new DefaultRaftSessionClient(
             primitiveName,
             primitiveType,
             serviceConfig,
@@ -144,11 +144,11 @@ public class DefaultRaftClient implements RaftClient {
             minTimeout,
             maxTimeout);
 
-        ProxySession proxy;
+        SessionClient proxy;
 
         // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
         if (recoveryStrategy == Recovery.RECOVER) {
-          proxy = new RecoveringProxySession(
+          proxy = new RecoveringSessionClient(
               clientId,
               partitionId,
               primitiveName,
@@ -161,7 +161,7 @@ public class DefaultRaftClient implements RaftClient {
 
         // If max retries is set, wrap the client in a retrying proxy client.
         if (maxRetries > 0) {
-          proxy = new RetryingProxySession(
+          proxy = new RetryingSessionClient(
               proxy,
               threadContextFactory.createContext(),
               maxRetries,
@@ -170,7 +170,7 @@ public class DefaultRaftClient implements RaftClient {
 
         // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
         Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-        return new BlockingAwareProxySession(proxy, executor);
+        return new BlockingAwareSessionClient(proxy, executor);
       }
     };
   }

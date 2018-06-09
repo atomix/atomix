@@ -38,9 +38,10 @@ public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicValue<V>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
+    ProxyClient<AtomicValueService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
+        AtomicValueService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new AtomicValueProxy(proxy, managementService.getPrimitiveRegistry())

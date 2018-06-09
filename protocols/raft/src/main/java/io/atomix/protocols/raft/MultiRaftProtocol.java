@@ -17,12 +17,12 @@ package io.atomix.protocols.raft;
 
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
+import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.primitive.proxy.ProxySession;
-import io.atomix.primitive.proxy.impl.PartitionedProxyClient;
+import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
@@ -99,8 +99,8 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
   }
 
   @Override
-  public ProxyClient newProxy(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig, PartitionService partitionService) {
-    Collection<ProxySession> partitions = partitionService.getPartitionGroup(this)
+  public <S> ProxyClient<S> newProxy(String primitiveName, PrimitiveType primitiveType, Class<S> serviceType, ServiceConfig serviceConfig, PartitionService partitionService) {
+    Collection<SessionClient> partitions = partitionService.getPartitionGroup(this)
         .getPartitions()
         .stream()
         .map(partition -> ((RaftPartition) partition).sessionBuilder(primitiveName, primitiveType, serviceConfig)
@@ -114,7 +114,7 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
             .withExecutor(config.getExecutor())
             .build())
         .collect(Collectors.toList());
-    return new PartitionedProxyClient(primitiveName, primitiveType, partitions, config.getPartitioner());
+    return new DefaultProxyClient<>(primitiveName, primitiveType, serviceType, partitions, config.getPartitioner());
   }
 
   /**

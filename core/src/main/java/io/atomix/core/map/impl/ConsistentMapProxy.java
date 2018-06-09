@@ -27,8 +27,8 @@ import java.time.Duration;
  */
 public class ConsistentMapProxy extends AbstractConsistentMapProxy<AsyncConsistentMap<String, byte[]>, ConsistentMapService>
     implements AsyncConsistentMap<String, byte[]>, ConsistentMapClient {
-  public ConsistentMapProxy(ProxyClient proxy, PrimitiveRegistry registry) {
-    super(ConsistentMapService.class, proxy, registry);
+  public ConsistentMapProxy(ProxyClient<ConsistentMapService> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
   }
 
   @Override

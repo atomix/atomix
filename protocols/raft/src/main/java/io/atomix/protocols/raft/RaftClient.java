@@ -22,7 +22,7 @@ import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.RaftProxySession;
+import io.atomix.protocols.raft.proxy.RaftSessionClient;
 import io.atomix.utils.concurrent.ThreadModel;
 
 import java.util.Arrays;
@@ -141,7 +141,7 @@ public interface RaftClient {
    * @param serviceConfig the service configuration
    * @return the Raft proxy session builder
    */
-  RaftProxySession.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig);
+  RaftSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig);
 
   /**
    * Connects the client to Raft cluster via the default server address.
