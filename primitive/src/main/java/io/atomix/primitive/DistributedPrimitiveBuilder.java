@@ -16,6 +16,7 @@
 package io.atomix.primitive;
 
 import com.google.common.base.Joiner;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;

@@ -13,17 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.rest.impl;
-
-import io.atomix.core.AtomixRegistry;
-import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
- * Primitive configuration deserializer.
+ * Distributed queueing primitive interfaces.
  */
-public class PrimitiveConfigDeserializer extends PolymorphicTypeDeserializer<PrimitiveConfig> {
-  @SuppressWarnings("unchecked")
-  public PrimitiveConfigDeserializer(AtomixRegistry registry) {
-    super(PrimitiveConfig.class, type -> registry.primitiveTypes().getPrimitiveType(type).newConfig().getClass());
-  }
-}
+package io.atomix.core.profile;

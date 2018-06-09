@@ -15,7 +15,7 @@
  */
 package io.atomix.core.multimap;
 
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**

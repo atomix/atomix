@@ -16,7 +16,7 @@
 package io.atomix.core.utils.config;
 
 import io.atomix.core.AtomixRegistry;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
  * Primitive configuration mapper.

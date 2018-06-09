@@ -18,7 +18,7 @@ package io.atomix.protocols.backup;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.TestClusterMembershipService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Replication;

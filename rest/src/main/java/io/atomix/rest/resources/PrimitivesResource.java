@@ -17,7 +17,7 @@ package io.atomix.rest.resources;
 
 import io.atomix.core.PrimitivesService;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.resource.PrimitiveResource;
 
 import javax.ws.rs.Consumes;

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.config.impl;
+package io.atomix.primitive.config.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.config.ConfigService;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.ConfigService;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 import java.util.Collection;
 import java.util.Map;
