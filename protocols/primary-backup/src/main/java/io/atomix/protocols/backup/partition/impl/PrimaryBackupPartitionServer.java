@@ -88,7 +88,10 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
   public CompletableFuture<Void> stop() {
     PrimaryBackupServer server = this.server;
     if (server != null) {
-      return server.stop().thenRun(() -> started.set(false));
+      return server.stop().exceptionally(throwable -> {
+        log.error("Failed stopping server for {}", partition.id(), throwable);
+        return null;
+      }).thenRun(() -> started.set(false));
     }
     started.set(false);
     return CompletableFuture.completedFuture(null);

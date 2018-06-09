@@ -42,6 +42,8 @@ import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,7 @@ import java.util.stream.Collectors;
  * Primary-backup server context.
  */
 public class PrimaryBackupServerContext implements Managed<Void> {
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final String serverName;
   private final ClusterMembershipService clusterMembershipService;
   private final ManagedMemberGroupService memberGroupService;
@@ -208,6 +211,12 @@ public class PrimaryBackupServerContext implements Managed<Void> {
     List<CompletableFuture<Void>> futures = services.values().stream()
         .map(future -> future.thenAccept(service -> service.close()))
         .collect(Collectors.toList());
-    return Futures.allOf(futures).thenCompose(v -> memberGroupService.stop());
+    return Futures.allOf(futures).exceptionally(throwable -> {
+      log.error("Failed closing services", throwable);
+      return null;
+    }).thenCompose(v -> memberGroupService.stop()).exceptionally(throwable -> {
+      log.error("Failed stopping member group service", throwable);
+      return null;
+    });
   }
 }

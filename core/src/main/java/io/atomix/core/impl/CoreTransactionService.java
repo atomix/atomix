@@ -122,7 +122,9 @@ public class CoreTransactionService implements ManagedTransactionService {
 
   @Override
   public CompletableFuture<Void> stop() {
-    started.set(false);
+    if (started.compareAndSet(true, false)) {
+      return transactions.close().exceptionally(e -> null);
+    }
     return CompletableFuture.completedFuture(null);
   }
 }

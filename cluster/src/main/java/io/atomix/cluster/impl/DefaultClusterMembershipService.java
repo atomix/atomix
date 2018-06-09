@@ -331,12 +331,12 @@ public class DefaultClusterMembershipService
   public CompletableFuture<Void> stop() {
     if (started.compareAndSet(true, false)) {
       heartbeatScheduler.shutdownNow();
-      heartbeatExecutor.shutdownNow();
       LOGGER.info("{} - Member deactivated: {}", localMember.id(), localMember);
       localMember.setState(State.INACTIVE);
       members.clear();
       heartbeatFuture.cancel(true);
       messagingService.unregisterHandler(HEARTBEAT_MESSAGE);
+      heartbeatExecutor.shutdownNow();
       LOGGER.info("Stopped");
     }
     return CompletableFuture.completedFuture(null);
