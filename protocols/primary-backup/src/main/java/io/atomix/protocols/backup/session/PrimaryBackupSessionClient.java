@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.backup.proxy;
+package io.atomix.protocols.backup.session;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
@@ -61,7 +61,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Primary-backup proxy.
+ * Primary-backup session client.
  */
 public class PrimaryBackupSessionClient implements SessionClient {
   private static final int MAX_ATTEMPTS = 50;

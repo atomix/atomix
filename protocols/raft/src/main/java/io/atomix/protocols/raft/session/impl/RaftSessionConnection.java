@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.protocols.raft.RaftError;
@@ -51,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Client connection that recursively connects to servers in the cluster and attempts to submit requests.
  */
-public class RaftProxyConnection {
+public class RaftSessionConnection {
   private static final Predicate<RaftResponse> COMPLETE_PREDICATE = response ->
       response.status() == RaftResponse.Status.OK
           || response.error().type() == RaftError.Type.COMMAND_FAILURE
@@ -69,7 +69,7 @@ public class RaftProxyConnection {
   private MemberId currentNode;
   private int selectionId;
 
-  public RaftProxyConnection(RaftClientProtocol protocol, MemberSelector selector, ThreadContext context, LoggerContext loggerContext) {
+  public RaftSessionConnection(RaftClientProtocol protocol, MemberSelector selector, ThreadContext context, LoggerContext loggerContext) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selector = checkNotNull(selector, "selector cannot be null");
     this.context = checkNotNull(context, "context cannot be null");

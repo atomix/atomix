@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
@@ -47,7 +47,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Session operation submitter.
  */
-final class RaftProxyInvoker {
+final class RaftSessionInvoker {
   private static final int[] FIBONACCI = new int[]{1, 1, 2, 3, 5};
   private static final Predicate<Throwable> EXCEPTION_PREDICATE = e ->
       e instanceof ConnectException
@@ -57,21 +57,21 @@ final class RaftProxyInvoker {
       e instanceof RaftException.ClosedSession
           || e instanceof RaftException.UnknownSession;
 
-  private final RaftProxyConnection leaderConnection;
-  private final RaftProxyConnection sessionConnection;
-  private final RaftProxyState state;
-  private final RaftProxySequencer sequencer;
-  private final RaftProxyManager manager;
+  private final RaftSessionConnection leaderConnection;
+  private final RaftSessionConnection sessionConnection;
+  private final RaftSessionState state;
+  private final RaftSessionSequencer sequencer;
+  private final RaftSessionManager manager;
   private final ThreadContext context;
   private final Map<Long, OperationAttempt> attempts = new LinkedHashMap<>();
   private final AtomicLong keepAliveIndex = new AtomicLong();
 
-  public RaftProxyInvoker(
-      RaftProxyConnection leaderConnection,
-      RaftProxyConnection sessionConnection,
-      RaftProxyState state,
-      RaftProxySequencer sequencer,
-      RaftProxyManager manager,
+  public RaftSessionInvoker(
+      RaftSessionConnection leaderConnection,
+      RaftSessionConnection sessionConnection,
+      RaftSessionState state,
+      RaftSessionSequencer sequencer,
+      RaftSessionManager manager,
       ThreadContext context) {
     this.leaderConnection = checkNotNull(leaderConnection, "leaderConnection");
     this.sessionConnection = checkNotNull(sessionConnection, "sessionConnection");
