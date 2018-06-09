@@ -60,7 +60,7 @@ import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.PrimitiveProtocol;

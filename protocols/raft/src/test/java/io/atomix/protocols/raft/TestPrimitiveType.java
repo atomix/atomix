@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
