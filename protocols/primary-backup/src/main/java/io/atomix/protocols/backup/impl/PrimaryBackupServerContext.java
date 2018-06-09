@@ -209,7 +209,7 @@ public class PrimaryBackupServerContext implements Managed<Void> {
     unregisterListeners();
     started.set(false);
     List<CompletableFuture<Void>> futures = services.values().stream()
-        .map(future -> future.thenAccept(service -> service.close()))
+        .map(future -> future.thenCompose(service -> service.close()))
         .collect(Collectors.toList());
     return Futures.allOf(futures).exceptionally(throwable -> {
       log.error("Failed closing services", throwable);
