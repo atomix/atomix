@@ -16,7 +16,7 @@
 package io.atomix.core.tree;
 
 import io.atomix.primitive.Ordering;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**

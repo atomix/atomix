@@ -16,7 +16,7 @@
 package io.atomix.core.transaction;
 
 import io.atomix.core.map.ConsistentMapType;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
