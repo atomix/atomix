@@ -17,13 +17,13 @@ package io.atomix.protocols.raft;
 
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
-import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 
@@ -103,7 +103,8 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
     Collection<SessionClient> partitions = partitionService.getPartitionGroup(this)
         .getPartitions()
         .stream()
-        .map(partition -> ((RaftPartition) partition).sessionBuilder(primitiveName, primitiveType, serviceConfig)
+        .map(partition -> ((RaftPartition) partition).getClient()
+            .sessionBuilder(primitiveName, primitiveType, serviceConfig)
             .withMinTimeout(config.getMinTimeout())
             .withMaxTimeout(config.getMaxTimeout())
             .withReadConsistency(config.getReadConsistency())

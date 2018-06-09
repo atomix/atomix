@@ -19,13 +19,13 @@ import io.atomix.primitive.Consistency;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
-import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 
 import java.time.Duration;
@@ -104,7 +104,8 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
     Collection<SessionClient> partitions = partitionService.getPartitionGroup(this)
         .getPartitions()
         .stream()
-        .map(partition -> ((PrimaryBackupPartition) partition).sessionBuilder(primitiveName, primitiveType, serviceConfig)
+        .map(partition -> ((PrimaryBackupPartition) partition).getClient()
+            .sessionBuilder(primitiveName, primitiveType, serviceConfig)
             .withConsistency(config.getConsistency())
             .withReplication(config.getReplication())
             .withRecovery(config.getRecovery())

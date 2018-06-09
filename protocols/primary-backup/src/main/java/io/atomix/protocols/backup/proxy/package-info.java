@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides a {@link io.atomix.primitive.client.SessionClient} implementation for primary-backup.
+ * Provides a {@link io.atomix.primitive.session.SessionClient} implementation for primary-backup.
  */
 package io.atomix.protocols.backup.proxy;

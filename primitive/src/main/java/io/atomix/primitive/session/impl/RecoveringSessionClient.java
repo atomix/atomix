@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.client.impl;
+package io.atomix.primitive.session.impl;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.client.SessionClient;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -55,7 +55,7 @@ public class RecoveringSessionClient implements SessionClient {
   private Logger log;
   private volatile CompletableFuture<SessionClient> connectFuture;
   private volatile CompletableFuture<Void> closeFuture;
-  private volatile SessionClient proxy;
+  private volatile SessionClient session;
   private volatile PrimitiveState state = PrimitiveState.CLOSED;
   private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Multimap<EventType, Consumer<PrimitiveEvent>> eventListeners = HashMultimap.create();
@@ -67,12 +67,12 @@ public class RecoveringSessionClient implements SessionClient {
       PartitionId partitionId,
       String name,
       PrimitiveType primitiveType,
-      Supplier<SessionClient> proxyFactory,
+      Supplier<SessionClient> sessionFactory,
       ThreadContext context) {
     this.partitionId = checkNotNull(partitionId);
     this.name = checkNotNull(name);
     this.primitiveType = checkNotNull(primitiveType);
-    this.proxyFactory = checkNotNull(proxyFactory);
+    this.proxyFactory = checkNotNull(sessionFactory);
     this.context = checkNotNull(context);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
         .addValue(clientId)
@@ -81,7 +81,7 @@ public class RecoveringSessionClient implements SessionClient {
 
   @Override
   public SessionId sessionId() {
-    SessionClient proxy = this.proxy;
+    SessionClient proxy = this.session;
     return proxy != null ? proxy.sessionId() : DEFAULT_SESSION_ID;
   }
 
@@ -148,7 +148,7 @@ public class RecoveringSessionClient implements SessionClient {
    * Recovers the client.
    */
   private void recover() {
-    proxy = null;
+    session = null;
     connectFuture = new OrderedFuture<>();
     openProxy(connectFuture);
   }
@@ -168,7 +168,7 @@ public class RecoveringSessionClient implements SessionClient {
               .add("type", proxy.type())
               .add("name", proxy.name())
               .build());
-          this.proxy = proxy;
+          this.session = proxy;
           proxy.addStateChangeListener(this::onStateChange);
           eventListeners.forEach(proxy::addEventListener);
           onStateChange(PrimitiveState.CONNECTED);
@@ -182,7 +182,7 @@ public class RecoveringSessionClient implements SessionClient {
 
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
-    SessionClient proxy = this.proxy;
+    SessionClient proxy = this.session;
     if (proxy != null) {
       return proxy.execute(operation);
     } else {
@@ -193,7 +193,7 @@ public class RecoveringSessionClient implements SessionClient {
   @Override
   public synchronized void addEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
     eventListeners.put(eventType.canonicalize(), consumer);
-    SessionClient proxy = this.proxy;
+    SessionClient proxy = this.session;
     if (proxy != null) {
       proxy.addEventListener(eventType, consumer);
     }
@@ -202,7 +202,7 @@ public class RecoveringSessionClient implements SessionClient {
   @Override
   public synchronized void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
     eventListeners.remove(eventType.canonicalize(), consumer);
-    SessionClient proxy = this.proxy;
+    SessionClient proxy = this.session;
     if (proxy != null) {
       proxy.removeEventListener(eventType, consumer);
     }
@@ -228,7 +228,7 @@ public class RecoveringSessionClient implements SessionClient {
       synchronized (this) {
         if (closeFuture == null) {
           connected = false;
-          SessionClient proxy = this.proxy;
+          SessionClient proxy = this.session;
           if (proxy != null) {
             closeFuture = proxy.close();
           } else {
@@ -243,8 +243,8 @@ public class RecoveringSessionClient implements SessionClient {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("name", proxy.name())
-        .add("serviceType", proxy.type())
+        .add("name", session.name())
+        .add("serviceType", session.type())
         .add("state", state)
         .toString();
   }

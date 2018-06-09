@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.client.impl;
+package io.atomix.primitive.session.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveState;
-import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Map;
@@ -31,7 +31,7 @@ import static io.atomix.utils.concurrent.Futures.asyncFuture;
 import static io.atomix.utils.concurrent.Futures.orderedFuture;
 
 /**
- * Raft proxy delegate that completes futures on a thread pool.
+ * Session client delegate that completes futures on a thread pool.
  */
 public class BlockingAwareSessionClient extends DelegatingSessionClient {
   private final ThreadContext context;
@@ -40,8 +40,8 @@ public class BlockingAwareSessionClient extends DelegatingSessionClient {
   private volatile CompletableFuture<SessionClient> connectFuture;
   private volatile CompletableFuture<Void> closeFuture;
 
-  public BlockingAwareSessionClient(SessionClient delegate, ThreadContext context) {
-    super(delegate);
+  public BlockingAwareSessionClient(SessionClient session, ThreadContext context) {
+    super(session);
     this.context = context;
   }
 
