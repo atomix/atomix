@@ -16,7 +16,7 @@
 package io.atomix.core;
 
 import io.atomix.cluster.ClusterConfig;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.utils.config.Config;
 

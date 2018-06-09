@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 

@@ -23,7 +23,7 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
-import io.atomix.core.config.ConfigService;
+import io.atomix.primitive.config.ConfigService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.core.election.LeaderElection;
@@ -60,7 +60,7 @@ import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -279,11 +279,15 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   @Override
   public CompletableFuture<Void> stop() {
-    return transactionService.stop()
-        .thenCompose(v -> primitiveRegistry.stop())
-        .whenComplete((r, e) -> {
-          started.set(false);
-          LOGGER.info("Stopped");
-        });
+    return transactionService.stop().exceptionally(throwable -> {
+      LOGGER.error("Failed stopping transaction service", throwable);
+      return null;
+    }).thenCompose(v -> primitiveRegistry.stop()).exceptionally(throwable -> {
+      LOGGER.error("Failed stopping primitive registry", throwable);
+      return null;
+    }).whenComplete((r, e) -> {
+      started.set(false);
+      LOGGER.info("Stopped");
+    });
   }
 }

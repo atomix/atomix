@@ -160,19 +160,23 @@ public class PrimaryRole extends PrimaryBackupRole {
     }
 
     HeapBuffer buffer = HeapBuffer.allocate();
-    Collection<PrimaryBackupSession> sessions = context.getSessions();
-    buffer.writeInt(sessions.size());
-    for (Session session : sessions) {
-      buffer.writeLong(session.sessionId().id());
-      buffer.writeString(session.memberId().id());
-    }
+    try {
+      Collection<PrimaryBackupSession> sessions = context.getSessions();
+      buffer.writeInt(sessions.size());
+      for (Session session : sessions) {
+        buffer.writeLong(session.sessionId().id());
+        buffer.writeString(session.memberId().id());
+      }
 
-    context.service().backup(new DefaultBackupOutput(buffer, context.service().serializer()));
-    buffer.flip();
-    byte[] bytes = buffer.readBytes(buffer.remaining());
-    return CompletableFuture.completedFuture(
-        RestoreResponse.ok(context.currentIndex(), context.currentTimestamp(), bytes))
-        .thenApply(this::logResponse);
+      context.service().backup(new DefaultBackupOutput(buffer, context.service().serializer()));
+      buffer.flip();
+      byte[] bytes = buffer.readBytes(buffer.remaining());
+      return CompletableFuture.completedFuture(
+              RestoreResponse.ok(context.currentIndex(), context.currentTimestamp(), bytes))
+              .thenApply(this::logResponse);
+    } finally {
+      buffer.release();
+    }
   }
 
   @Override
