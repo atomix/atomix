@@ -25,7 +25,7 @@ import io.atomix.core.election.Leadership;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.misc.ArraySizeHashPrinter;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -241,7 +241,7 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
     return new Leadership<>(leader(), candidates());
   }
 
-  private void onSessionEnd(PrimitiveSession session) {
+  private void onSessionEnd(Session session) {
     listeners.remove(session.sessionId());
     Leadership<byte[]> oldLeadership = leadership();
     cleanup(session);
@@ -301,7 +301,7 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
     }
   }
 
-  protected void cleanup(PrimitiveSession session) {
+  protected void cleanup(Session session) {
     Optional<Registration> registration =
         registrations.stream().filter(r -> r.sessionId() == session.sessionId().id()).findFirst();
     if (registration.isPresent()) {
@@ -353,12 +353,12 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
   }
 
   @Override
-  public void onExpire(PrimitiveSession session) {
+  public void onExpire(Session session) {
     onSessionEnd(session);
   }
 
   @Override
-  public void onClose(PrimitiveSession session) {
+  public void onClose(Session session) {
     onSessionEnd(session);
   }
 }

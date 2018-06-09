@@ -41,7 +41,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.cluster.RaftClusterEvent;
@@ -1499,14 +1499,14 @@ public class RaftTest extends ConcurrentTestCase {
     }
 
     @Override
-    public void onExpire(PrimitiveSession session) {
+    public void onExpire(Session session) {
       if (expire != null) {
         acceptOn(expire, client -> client.expire("Hello world!"));
       }
     }
 
     @Override
-    public void onClose(PrimitiveSession session) {
+    public void onClose(Session session) {
       if (close != null && !session.sessionId().equals(close)) {
         acceptOn(close, client -> client.close("Hello world!"));
       }
@@ -1537,7 +1537,7 @@ public class RaftTest extends ConcurrentTestCase {
       if (sender) {
         acceptOn(getCurrentSession().sessionId(), service -> service.event(getCurrentIndex()));
       } else {
-        for (PrimitiveSession session : getSessions()) {
+        for (Session session : getSessions()) {
           acceptOn(session.sessionId(), service -> service.event(getCurrentIndex()));
         }
       }

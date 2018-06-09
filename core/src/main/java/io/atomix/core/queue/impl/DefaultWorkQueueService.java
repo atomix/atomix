@@ -27,7 +27,7 @@ import io.atomix.core.queue.WorkQueueType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Serializer;
@@ -176,12 +176,12 @@ public class DefaultWorkQueueService extends AbstractPrimitiveService<WorkQueueC
   }
 
   @Override
-  public void onExpire(PrimitiveSession session) {
+  public void onExpire(Session session) {
     evictWorker(session.sessionId());
   }
 
   @Override
-  public void onClose(PrimitiveSession session) {
+  public void onClose(Session session) {
     evictWorker(session.sessionId());
   }
 

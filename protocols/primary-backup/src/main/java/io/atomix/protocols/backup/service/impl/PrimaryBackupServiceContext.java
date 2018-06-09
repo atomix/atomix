@@ -33,7 +33,7 @@ import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceContext;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
@@ -93,7 +93,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private List<MemberId> backups;
   private long currentTerm;
   private long currentIndex;
-  private PrimitiveSession currentSession;
+  private Session currentSession;
   private long currentTimestamp;
   private long operationIndex;
   private long commitIndex;
@@ -220,7 +220,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   }
 
   @Override
-  public PrimitiveSession currentSession() {
+  public Session currentSession() {
     return currentSession;
   }
 
@@ -333,7 +333,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * @param session the current session
    * @return the updated session
    */
-  public PrimitiveSession setSession(PrimitiveSession session) {
+  public Session setSession(Session session) {
     this.currentSession = session;
     return session;
   }
@@ -565,7 +565,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
     if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
-      for (PrimitiveSession session : sessions.values()) {
+      for (Session session : sessions.values()) {
         if (session.memberId().equals(event.subject().id())) {
           role.expire((PrimaryBackupSession) session);
         }

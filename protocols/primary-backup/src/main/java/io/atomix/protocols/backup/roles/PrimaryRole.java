@@ -18,7 +18,7 @@ package io.atomix.protocols.backup.roles;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.CloseOperation;
@@ -115,9 +115,9 @@ public class PrimaryRole extends PrimaryBackupRole {
 
   private CompletableFuture<ExecuteResponse> executeQuery(ExecuteRequest request) {
     // If the session doesn't exist, create and replicate a new session before applying the query.
-    PrimitiveSession session = context.getSession(request.session());
+    Session session = context.getSession(request.session());
     if (session == null) {
-      PrimitiveSession newSession = context.createSession(request.session(), request.node());
+      Session newSession = context.createSession(request.session(), request.node());
       long index = context.nextIndex();
       long timestamp = System.currentTimeMillis();
       return replicator.replicate(new ExecuteOperation(
@@ -136,7 +136,7 @@ public class PrimaryRole extends PrimaryBackupRole {
     }
   }
 
-  private ExecuteResponse applyQuery(ExecuteRequest request, PrimitiveSession session) {
+  private ExecuteResponse applyQuery(ExecuteRequest request, Session session) {
     try {
       byte[] result = context.service().apply(new DefaultCommit<>(
           context.getIndex(),
@@ -162,7 +162,7 @@ public class PrimaryRole extends PrimaryBackupRole {
     HeapBuffer buffer = HeapBuffer.allocate();
     Collection<PrimaryBackupSession> sessions = context.getSessions();
     buffer.writeInt(sessions.size());
-    for (PrimitiveSession session : sessions) {
+    for (Session session : sessions) {
       buffer.writeLong(session.sessionId().id());
       buffer.writeString(session.memberId().id());
     }

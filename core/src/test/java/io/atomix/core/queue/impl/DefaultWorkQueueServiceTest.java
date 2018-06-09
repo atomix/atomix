@@ -21,7 +21,7 @@ import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
@@ -47,7 +47,7 @@ public class DefaultWorkQueueServiceTest {
     when(context.serviceName()).thenReturn("test");
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
 
-    PrimitiveSession session = mock(PrimitiveSession.class);
+    Session session = mock(Session.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
     when(context.currentSession()).thenReturn(session);
 

@@ -19,7 +19,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.service.impl.PrimaryBackupServiceContext;
@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 /**
  * Primary-backup session.
  */
-public class PrimaryBackupSession implements PrimitiveSession {
+public class PrimaryBackupSession implements Session {
   private final Logger log;
   private final SessionId sessionId;
   private final MemberId memberId;

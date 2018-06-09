@@ -17,7 +17,7 @@ package io.atomix.primitive.service.impl;
 
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.utils.misc.ArraySizeHashPrinter;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClockTimestamp;
@@ -32,12 +32,12 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class DefaultCommit<T> implements Commit<T> {
   private final long index;
-  private final PrimitiveSession session;
+  private final Session session;
   private final long timestamp;
   private final OperationId operation;
   private final T value;
 
-  public DefaultCommit(long index, OperationId operation, T value, PrimitiveSession session, long timestamp) {
+  public DefaultCommit(long index, OperationId operation, T value, Session session, long timestamp) {
     this.index = index;
     this.session = session;
     this.timestamp = timestamp;
@@ -51,7 +51,7 @@ public class DefaultCommit<T> implements Commit<T> {
   }
 
   @Override
-  public PrimitiveSession session() {
+  public Session session() {
     return session;
   }
 
