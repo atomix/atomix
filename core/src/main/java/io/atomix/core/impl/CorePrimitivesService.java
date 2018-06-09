@@ -279,11 +279,15 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
 
   @Override
   public CompletableFuture<Void> stop() {
-    return transactionService.stop()
-        .thenCompose(v -> primitiveRegistry.stop())
-        .whenComplete((r, e) -> {
-          started.set(false);
-          LOGGER.info("Stopped");
-        });
+    return transactionService.stop().exceptionally(throwable -> {
+      LOGGER.error("Failed stopping transaction service", throwable);
+      return null;
+    }).thenCompose(v -> primitiveRegistry.stop()).exceptionally(throwable -> {
+      LOGGER.error("Failed stopping primitive registry", throwable);
+      return null;
+    }).whenComplete((r, e) -> {
+      started.set(false);
+      LOGGER.info("Stopped");
+    });
   }
 }
