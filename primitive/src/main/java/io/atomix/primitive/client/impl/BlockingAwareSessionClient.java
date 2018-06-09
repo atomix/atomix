@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static io.atomix.utils.concurrent.Futures.asyncFuture;
+import static io.atomix.utils.concurrent.Futures.orderedFuture;
 
 /**
  * Raft proxy delegate that completes futures on a thread pool.
@@ -36,6 +37,8 @@ public class BlockingAwareSessionClient extends DelegatingSessionClient {
   private final ThreadContext context;
   private final Map<Consumer<PrimitiveState>, Consumer<PrimitiveState>> stateChangeListeners = Maps.newConcurrentMap();
   private final Map<Consumer<PrimitiveEvent>, Consumer<PrimitiveEvent>> eventListeners = Maps.newConcurrentMap();
+  private volatile CompletableFuture<SessionClient> connectFuture;
+  private volatile CompletableFuture<Void> closeFuture;
 
   public BlockingAwareSessionClient(SessionClient delegate, ThreadContext context) {
     super(delegate);
@@ -79,11 +82,25 @@ public class BlockingAwareSessionClient extends DelegatingSessionClient {
 
   @Override
   public CompletableFuture<SessionClient> connect() {
-    return asyncFuture(super.connect(), context);
+    if (connectFuture == null) {
+      synchronized (this) {
+        if (connectFuture == null) {
+          connectFuture = orderedFuture(asyncFuture(super.connect(), context));
+        }
+      }
+    }
+    return connectFuture;
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return asyncFuture(super.close(), context);
+    if (closeFuture == null) {
+      synchronized (this) {
+        if (closeFuture == null) {
+          closeFuture = orderedFuture(asyncFuture(super.close(), context));
+        }
+      }
+    }
+    return closeFuture;
   }
 }

@@ -26,7 +26,6 @@ import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -37,6 +36,7 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -54,13 +54,13 @@ public class RecoveringSessionClient implements SessionClient {
   private final Supplier<SessionClient> proxyFactory;
   private final ThreadContext context;
   private Logger log;
-  private volatile OrderedFuture<SessionClient> clientFuture;
+  private volatile CompletableFuture<SessionClient> clientFuture;
   private volatile SessionClient proxy;
   private volatile PrimitiveState state = PrimitiveState.CLOSED;
   private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Multimap<EventType, Consumer<PrimitiveEvent>> eventListeners = HashMultimap.create();
   private Scheduled recoverTask;
-  private volatile boolean connected = false;
+  private final AtomicBoolean connected = new AtomicBoolean();
 
   public RecoveringSessionClient(
       String clientId,
@@ -118,7 +118,7 @@ public class RecoveringSessionClient implements SessionClient {
   private synchronized void onStateChange(PrimitiveState state) {
     if (this.state != state) {
       if (state == PrimitiveState.CLOSED) {
-        if (connected) {
+        if (connected.get()) {
           onStateChange(PrimitiveState.SUSPENDED);
           recover();
         } else {
@@ -158,28 +158,25 @@ public class RecoveringSessionClient implements SessionClient {
    * @return a future to be completed once the client has been opened
    */
   private CompletableFuture<SessionClient> openProxy() {
-    if (connected) {
-      log.debug("Opening proxy session");
+    log.debug("Opening proxy session");
 
-      clientFuture = new OrderedFuture<>();
-      openProxy(clientFuture);
+    clientFuture = new OrderedFuture<>();
+    openProxy(clientFuture);
 
-      return clientFuture.thenApply(proxy -> {
-        synchronized (this) {
-          this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
-              .addValue(proxy.sessionId())
-              .add("type", proxy.type())
-              .add("name", proxy.name())
-              .build());
-          this.proxy = proxy;
-          proxy.addStateChangeListener(this::onStateChange);
-          eventListeners.forEach(proxy::addEventListener);
-          onStateChange(PrimitiveState.CONNECTED);
-        }
-        return proxy;
-      });
-    }
-    return Futures.exceptionalFuture(new IllegalStateException("Client not open"));
+    return clientFuture.thenApply(proxy -> {
+      synchronized (this) {
+        this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
+            .addValue(proxy.sessionId())
+            .add("type", proxy.type())
+            .add("name", proxy.name())
+            .build());
+        this.proxy = proxy;
+        proxy.addStateChangeListener(this::onStateChange);
+        eventListeners.forEach(proxy::addEventListener);
+        onStateChange(PrimitiveState.CONNECTED);
+      }
+      return this;
+    });
   }
 
   /**
@@ -226,18 +223,16 @@ public class RecoveringSessionClient implements SessionClient {
   }
 
   @Override
-  public synchronized CompletableFuture<SessionClient> connect() {
-    if (!connected) {
-      connected = true;
-      return openProxy().thenApply(c -> this);
+  public CompletableFuture<SessionClient> connect() {
+    if (connected.compareAndSet(false, true)) {
+      return openProxy();
     }
-    return CompletableFuture.completedFuture(this);
+    return clientFuture;
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
-    if (connected) {
-      connected = false;
+  public CompletableFuture<Void> close() {
+    if (connected.compareAndSet(true, false)) {
       if (recoverTask != null) {
         recoverTask.cancel();
       }
