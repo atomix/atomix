@@ -108,23 +108,6 @@ public class Member implements Configured<MemberConfig> {
   }
 
   /**
-   * Node type.
-   */
-  @Deprecated
-  public enum Type {
-
-    /**
-     * Represents a persistent node.
-     */
-    PERSISTENT,
-
-    /**
-     * Represents an ephemeral node.
-     */
-    EPHEMERAL,
-  }
-
-  /**
    * Represents the operational state of the instance.
    */
   public enum State {
@@ -173,23 +156,6 @@ public class Member implements Configured<MemberConfig> {
    */
   public MemberId id() {
     return id;
-  }
-
-  /**
-   * Returns the node type.
-   *
-   * @return the node type
-   */
-  @Deprecated
-  public Type type() {
-    switch (id().type()) {
-      case IDENTIFIED:
-        return Type.PERSISTENT;
-      case ANONYMOUS:
-        return Type.EPHEMERAL;
-      default:
-        throw new AssertionError();
-    }
   }
 
   /**
@@ -310,18 +276,6 @@ public class Member implements Configured<MemberConfig> {
      */
     public Builder withId(MemberId id) {
       config.setId(id);
-      return this;
-    }
-
-    /**
-     * Sets the node type.
-     *
-     * @param type the node type
-     * @return the node builder
-     * @throws NullPointerException if the node type is null
-     */
-    @Deprecated
-    public Builder withType(Type type) {
       return this;
     }
 

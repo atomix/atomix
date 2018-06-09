@@ -63,14 +63,6 @@ public class RaftStorage {
     return new Builder();
   }
 
-  /**
-   * @deprecated since 2.1
-   */
-  @Deprecated
-  public static Builder newBuilder() {
-    return builder();
-  }
-
   private final String prefix;
   private final StorageLevel storageLevel;
   private final File directory;

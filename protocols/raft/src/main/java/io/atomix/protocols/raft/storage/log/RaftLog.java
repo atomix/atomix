@@ -37,11 +37,6 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
     return new Builder();
   }
 
-  @Deprecated
-  public static Builder newBuilder() {
-    return builder();
-  }
-
   private final SegmentedJournal<RaftLogEntry> journal;
   private final boolean flushOnCommit;
   private final RaftLogWriter writer;
