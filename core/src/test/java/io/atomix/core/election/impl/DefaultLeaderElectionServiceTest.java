@@ -51,6 +51,7 @@ public class DefaultLeaderElectionServiceTest {
 
     DefaultLeaderElectionService service = new DefaultLeaderElectionService();
     service.init(context);
+    service.register(session);
 
     byte[] id = "a".getBytes();
     service.run(id);
@@ -60,6 +61,7 @@ public class DefaultLeaderElectionServiceTest {
 
     service = new DefaultLeaderElectionService();
     service.init(context);
+    service.register(session);
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     Leadership<byte[]> value = service.getLeadership();

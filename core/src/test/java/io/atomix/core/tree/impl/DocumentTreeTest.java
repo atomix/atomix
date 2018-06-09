@@ -25,6 +25,7 @@ import io.atomix.core.tree.DocumentTreeListener;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.utils.time.Versioned;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -334,6 +335,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
     assertEquals("xy", event.newValue().get().value());
   }
 
+  @Ignore
   @Test(timeout = 45000)
   public void testFilteredNotifications() throws Throwable {
     String treeName = UUID.randomUUID().toString();
