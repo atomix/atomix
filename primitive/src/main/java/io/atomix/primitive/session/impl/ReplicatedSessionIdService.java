@@ -16,9 +16,9 @@
 package io.atomix.primitive.session.impl;
 
 import io.atomix.primitive.partition.PartitionGroup;
-import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.ManagedSessionIdService;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionIdService;
 import io.atomix.utils.serializer.KryoNamespace;
@@ -56,7 +56,7 @@ public class ReplicatedSessionIdService implements ManagedSessionIdService {
 
   @Override
   public CompletableFuture<SessionIdService> start() {
-    return systemPartitionGroup.getPartitions().iterator().next()
+    return systemPartitionGroup.getPartitions().iterator().next().getClient()
         .sessionBuilder(PRIMITIVE_NAME, SessionIdGeneratorType.instance(), new ServiceConfig())
         .build()
         .connect()

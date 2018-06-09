@@ -13,105 +13,102 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.client.impl;
+package io.atomix.primitive.session.impl;
 
-import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.client.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.ThreadContext;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Default Raft proxy.
+ * Base class for {@link SessionClient}s that delegate to an underlying client.
  */
 public class DelegatingSessionClient implements SessionClient {
-  private final SessionClient proxy;
-  private final Map<String, Map<Object, Consumer<PrimitiveEvent>>> eventTypeListeners = Maps.newConcurrentMap();
+  private final SessionClient session;
 
-  public DelegatingSessionClient(SessionClient proxy) {
-    this.proxy = proxy;
+  public DelegatingSessionClient(SessionClient session) {
+    this.session = session;
   }
 
   @Override
   public SessionId sessionId() {
-    return proxy.sessionId();
+    return session.sessionId();
   }
 
   @Override
   public PartitionId partitionId() {
-    return proxy.partitionId();
+    return session.partitionId();
   }
 
   @Override
   public ThreadContext context() {
-    return proxy.context();
+    return session.context();
   }
 
   @Override
   public String name() {
-    return proxy.name();
+    return session.name();
   }
 
   @Override
   public PrimitiveType type() {
-    return proxy.type();
+    return session.type();
   }
 
   @Override
   public PrimitiveState getState() {
-    return proxy.getState();
+    return session.getState();
   }
 
   @Override
   public void addStateChangeListener(Consumer<PrimitiveState> listener) {
-    proxy.addStateChangeListener(listener);
+    session.addStateChangeListener(listener);
   }
 
   @Override
   public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
-    proxy.removeStateChangeListener(listener);
+    session.removeStateChangeListener(listener);
   }
 
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
-    return proxy.execute(operation);
+    return session.execute(operation);
   }
 
   @Override
   public void addEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
-    proxy.addEventListener(eventType, listener);
+    session.addEventListener(eventType, listener);
   }
 
   @Override
   public void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> listener) {
-    proxy.removeEventListener(eventType, listener);
+    session.removeEventListener(eventType, listener);
   }
 
   @Override
   public CompletableFuture<SessionClient> connect() {
-    return proxy.connect().thenApply(c -> this);
+    return session.connect().thenApply(c -> this);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return proxy.close();
+    return session.close();
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("client", proxy)
+        .add("client", session)
         .toString();
   }
 }

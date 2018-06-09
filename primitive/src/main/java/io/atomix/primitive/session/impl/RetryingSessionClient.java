@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.client.impl;
+package io.atomix.primitive.session.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
-import io.atomix.primitive.client.SessionClient;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduler;
@@ -34,11 +34,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 
 /**
- * Retrying primitive proxy.
+ * Retrying primitive client.
  */
 public class RetryingSessionClient extends DelegatingSessionClient {
   private final Logger log;
-  private final SessionClient proxy;
+  private final SessionClient session;
   private final Scheduler scheduler;
   private final int maxRetries;
   private final Duration delayBetweenRetries;
@@ -54,16 +54,16 @@ public class RetryingSessionClient extends DelegatingSessionClient {
           || e instanceof PrimitiveException.UnknownSession
           || e instanceof PrimitiveException.ClosedSession;
 
-  public RetryingSessionClient(SessionClient delegate, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
-    super(delegate);
-    this.proxy = delegate;
+  public RetryingSessionClient(SessionClient session, Scheduler scheduler, int maxRetries, Duration delayBetweenRetries) {
+    super(session);
+    this.session = session;
     this.scheduler = scheduler;
     this.maxRetries = maxRetries;
     this.delayBetweenRetries = delayBetweenRetries;
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
-        .addValue(proxy.sessionId())
-        .add("type", proxy.type())
-        .add("name", proxy.name())
+        .addValue(this.session.sessionId())
+        .add("type", this.session.type())
+        .add("name", this.session.name())
         .build());
   }
 
@@ -78,7 +78,7 @@ public class RetryingSessionClient extends DelegatingSessionClient {
   }
 
   private void execute(PrimitiveOperation operation, int attemptIndex, CompletableFuture<byte[]> future) {
-    proxy.execute(operation).whenComplete((r, e) -> {
+    session.execute(operation).whenComplete((r, e) -> {
       if (e != null) {
         if (attemptIndex < maxRetries + 1 && retryableCheck.test(Throwables.getRootCause(e))) {
           log.debug("Retry attempt ({} of {}). Failure due to {}", attemptIndex, maxRetries, Throwables.getRootCause(e).getClass());

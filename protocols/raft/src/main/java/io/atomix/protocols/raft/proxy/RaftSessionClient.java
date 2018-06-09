@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.proxy;
 
 import io.atomix.primitive.Recovery;
-import io.atomix.primitive.client.SessionClient;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.protocols.raft.ReadConsistency;
 
 import java.time.Duration;
