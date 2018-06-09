@@ -53,6 +53,7 @@ public class DefaultWorkQueueServiceTest {
 
     DefaultWorkQueueService service = new DefaultWorkQueueService();
     service.init(context);
+    service.register(session);
 
     service.add(Arrays.asList("Hello world!".getBytes()));
 
@@ -61,6 +62,7 @@ public class DefaultWorkQueueServiceTest {
 
     service = new DefaultWorkQueueService();
     service.init(context);
+    service.register(session);
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
     Collection<Task<byte[]>> value = service.take(1);
