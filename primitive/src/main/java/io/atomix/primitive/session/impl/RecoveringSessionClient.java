@@ -20,11 +20,11 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.Scheduled;
@@ -228,11 +228,13 @@ public class RecoveringSessionClient implements SessionClient {
       synchronized (this) {
         if (closeFuture == null) {
           connected = false;
-          SessionClient proxy = this.session;
-          if (proxy != null) {
-            closeFuture = proxy.close();
-          } else {
+          SessionClient session = this.session;
+          if (session != null) {
+            closeFuture = session.close();
+          } else if (closeFuture != null) {
             closeFuture = connectFuture.thenCompose(c -> c.close());
+          } else {
+            closeFuture = CompletableFuture.completedFuture(null);
           }
         }
       }
