@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
@@ -28,7 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Client state.
  */
-public final class RaftProxyState {
+public final class RaftSessionState {
   private final String clientId;
   private final SessionId sessionId;
   private final String serviceName;
@@ -42,7 +42,7 @@ public final class RaftProxyState {
   private volatile long eventIndex;
   private final Set<Consumer<PrimitiveState>> changeListeners = new CopyOnWriteArraySet<>();
 
-  RaftProxyState(String clientId, SessionId sessionId, String serviceName, PrimitiveType primitiveType, long timeout) {
+  RaftSessionState(String clientId, SessionId sessionId, String serviceName, PrimitiveType primitiveType, long timeout) {
     this.clientId = clientId;
     this.sessionId = sessionId;
     this.serviceName = serviceName;

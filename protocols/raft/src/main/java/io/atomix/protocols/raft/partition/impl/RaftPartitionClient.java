@@ -22,7 +22,7 @@ import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.RaftSessionClient;
+import io.atomix.protocols.raft.session.RaftSessionClient;
 import io.atomix.utils.Managed;
 import org.slf4j.Logger;
 

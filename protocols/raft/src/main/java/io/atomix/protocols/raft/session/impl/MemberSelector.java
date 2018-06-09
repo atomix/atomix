@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.protocols.raft.proxy.impl;
+package io.atomix.protocols.raft.session.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.MemberId;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
+import io.atomix.protocols.raft.session.CommunicationStrategy;
 
 import java.util.Collection;
 import java.util.Iterator;
