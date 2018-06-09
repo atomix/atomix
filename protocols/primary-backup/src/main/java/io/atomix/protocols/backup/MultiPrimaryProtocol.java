@@ -22,10 +22,11 @@ import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.proxy.impl.PartitionedPrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.proxy.impl.PartitionedProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -99,11 +100,11 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
   }
 
   @Override
-  public PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig, PartitionService partitionService) {
-    Collection<PartitionProxy> partitions = partitionService.getPartitionGroup(this)
+  public ProxyClient newProxy(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig, PartitionService partitionService) {
+    Collection<ProxySession> partitions = partitionService.getPartitionGroup(this)
         .getPartitions()
         .stream()
-        .map(partition -> ((PrimaryBackupClient) partition.getProxyClient()).proxyBuilder(primitiveName, primitiveType, serviceConfig)
+        .map(partition -> ((PrimaryBackupPartition) partition).sessionBuilder(primitiveName, primitiveType, serviceConfig)
             .withConsistency(config.getConsistency())
             .withReplication(config.getReplication())
             .withRecovery(config.getRecovery())
@@ -113,7 +114,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
             .withExecutor(config.getExecutor())
             .build())
         .collect(Collectors.toList());
-    return new PartitionedPrimitiveProxy(primitiveName, primitiveType, partitions, config.getPartitioner());
+    return new PartitionedProxyClient(primitiveName, primitiveType, partitions, config.getPartitioner());
   }
 
   @Override

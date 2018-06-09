@@ -21,7 +21,7 @@ import io.atomix.core.lock.DistributedLock;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.OrderedExecutor;
 import io.atomix.utils.time.Version;
@@ -51,7 +51,7 @@ public class DistributedLockProxy
   private final AtomicInteger id = new AtomicInteger();
   private final AtomicInteger lock = new AtomicInteger();
 
-  public DistributedLockProxy(PrimitiveProxy proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
+  public DistributedLockProxy(ProxyClient proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
     super(DistributedLockService.class, proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
     this.orderedExecutor = new OrderedExecutor(scheduledExecutor);

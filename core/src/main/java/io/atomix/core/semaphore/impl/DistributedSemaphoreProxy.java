@@ -20,7 +20,7 @@ import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.QueueStatus;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.time.Version;
 
 import java.time.Duration;
@@ -43,7 +43,7 @@ public class DistributedSemaphoreProxy
   private final Map<Long, AcquireAttempt> attempts = new ConcurrentHashMap<>();
   private final AtomicLong attemptId = new AtomicLong();
 
-  public DistributedSemaphoreProxy(PrimitiveProxy proxy,
+  public DistributedSemaphoreProxy(ProxyClient proxy,
                                    PrimitiveRegistry registry,
                                    ScheduledExecutorService scheduledExecutor) {
     super(DistributedSemaphoreService.class, proxy, registry);

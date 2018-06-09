@@ -19,7 +19,7 @@ import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElectionBuilder;
 import io.atomix.core.election.LeaderElectionConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -36,7 +36,7 @@ public class LeaderElectionProxyBuilder<T> extends LeaderElectionBuilder<T> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<LeaderElection<T>> buildAsync() {
-    PrimitiveProxy proxy = protocol().newProxy(
+    ProxyClient proxy = protocol().newProxy(
         name(),
         primitiveType(),
         new ServiceConfig(),

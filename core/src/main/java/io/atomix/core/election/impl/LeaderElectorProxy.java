@@ -25,7 +25,7 @@ import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.Proxy;
 
 import java.time.Duration;
@@ -43,7 +43,7 @@ public class LeaderElectorProxy
   private final Set<LeadershipEventListener<byte[]>> leadershipChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Map<String, Set<LeadershipEventListener<byte[]>>> topicListeners = Maps.newConcurrentMap();
 
-  public LeaderElectorProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public LeaderElectorProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(LeaderElectorService.class, proxy, registry);
   }
 

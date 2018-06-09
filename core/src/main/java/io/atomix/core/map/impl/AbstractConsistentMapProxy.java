@@ -31,8 +31,8 @@ import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -60,7 +60,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     implements AsyncConsistentMap<String, byte[]>, ConsistentMapClient {
   private final Map<MapEventListener<String, byte[]>, Executor> mapEventListeners = new ConcurrentHashMap<>();
 
-  protected AbstractConsistentMapProxy(Class<S> serviceClass, PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  protected AbstractConsistentMapProxy(Class<S> serviceClass, ProxyClient proxy, PrimitiveRegistry registry) {
     super(serviceClass, proxy, registry);
   }
 
@@ -304,7 +304,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
     Map<PartitionId, List<MapUpdate<String, byte[]>>> updatesGroupedByMap = Maps.newIdentityHashMap();
     transactionLog.records().forEach(update -> {
-      PartitionProxy partition = getPartition(update.key());
+      ProxySession partition = getPartition(update.key());
       updatesGroupedByMap.computeIfAbsent(partition.partitionId(), k -> Lists.newLinkedList()).add(update);
     });
     Map<PartitionId, TransactionLog<MapUpdate<String, byte[]>>> transactionsByMap =
@@ -335,7 +335,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     return super.connect()
         .thenRun(() -> getPartitionIds().forEach(partition -> {
           addStateChangeListenerOn(partition, state -> {
-            if (state == PartitionProxy.State.CONNECTED && isListening()) {
+            if (state == ProxySession.State.CONNECTED && isListening()) {
               acceptOn(partition, service -> service.listen());
             }
           });

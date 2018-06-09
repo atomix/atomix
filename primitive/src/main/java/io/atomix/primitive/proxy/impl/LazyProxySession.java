@@ -18,7 +18,7 @@ package io.atomix.primitive.proxy.impl;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.ProxySession;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -26,10 +26,10 @@ import java.util.function.Consumer;
 /**
  * Lazy partition proxy.
  */
-public class LazyPartitionProxy extends DelegatingPartitionProxy {
-  private volatile CompletableFuture<PartitionProxy> connectFuture;
+public class LazyProxySession extends DelegatingProxySession {
+  private volatile CompletableFuture<ProxySession> connectFuture;
 
-  public LazyPartitionProxy(PartitionProxy proxy) {
+  public LazyProxySession(ProxySession proxy) {
     super(proxy);
   }
 
@@ -49,7 +49,7 @@ public class LazyPartitionProxy extends DelegatingPartitionProxy {
   }
 
   @Override
-  public CompletableFuture<PartitionProxy> connect() {
+  public CompletableFuture<ProxySession> connect() {
     if (connectFuture == null) {
       synchronized (this) {
         if (connectFuture == null) {

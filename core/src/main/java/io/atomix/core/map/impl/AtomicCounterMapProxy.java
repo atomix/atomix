@@ -19,7 +19,7 @@ import io.atomix.core.map.AsyncAtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -29,7 +29,7 @@ import java.util.function.Predicate;
  * {@code AsyncAtomicCounterMap} implementation backed by Atomix.
  */
 public class AtomicCounterMapProxy extends AbstractAsyncPrimitiveProxy<AsyncAtomicCounterMap<String>, AtomicCounterMapService> implements AsyncAtomicCounterMap<String> {
-  public AtomicCounterMapProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public AtomicCounterMapProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(AtomicCounterMapService.class, proxy, registry);
   }
 

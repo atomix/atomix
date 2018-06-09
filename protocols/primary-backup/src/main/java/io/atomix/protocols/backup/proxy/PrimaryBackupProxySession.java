@@ -33,7 +33,7 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
-import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.CloseRequest;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
@@ -62,7 +62,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup proxy.
  */
-public class PrimaryBackupProxy implements PartitionProxy {
+public class PrimaryBackupProxySession implements ProxySession {
   private static final int MAX_ATTEMPTS = 50;
   private static final int RETRY_DELAY = 100;
   private Logger log;
@@ -81,7 +81,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
   private PrimaryTerm term;
   private volatile State state = State.CLOSED;
 
-  public PrimaryBackupProxy(
+  public PrimaryBackupProxySession(
       String clientName,
       PartitionId partitionId,
       SessionId sessionId,
@@ -100,7 +100,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
     this.primaryElection = primaryElection;
     this.threadContext = threadContext;
     primaryElection.addListener(primaryElectionListener);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(ProxySession.class)
         .addValue(clientName)
         .add("type", primitiveType.name())
         .add("name", descriptor.name())
@@ -262,8 +262,8 @@ public class PrimaryBackupProxy implements PartitionProxy {
   }
 
   @Override
-  public CompletableFuture<PartitionProxy> connect() {
-    CompletableFuture<PartitionProxy> future = new CompletableFuture<>();
+  public CompletableFuture<ProxySession> connect() {
+    CompletableFuture<ProxySession> future = new CompletableFuture<>();
     threadContext.execute(() -> {
       connect(1, future);
     });
@@ -273,7 +273,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
   /**
    * Recursively connects to the partition.
    */
-  private void connect(int attempt, CompletableFuture<PartitionProxy> future) {
+  private void connect(int attempt, CompletableFuture<ProxySession> future) {
     if (attempt > MAX_ATTEMPTS) {
       future.completeExceptionally(new PrimitiveException.Unavailable());
       return;
@@ -320,7 +320,7 @@ public class PrimaryBackupProxy implements PartitionProxy {
   /**
    * Primary-backup partition proxy builder.
    */
-  public abstract static class Builder extends PartitionProxy.Builder {
+  public abstract static class Builder extends ProxySession.Builder {
     protected Consistency consistency = Consistency.SEQUENTIAL;
     protected Replication replication = Replication.ASYNCHRONOUS;
     protected Recovery recovery = Recovery.RECOVER;

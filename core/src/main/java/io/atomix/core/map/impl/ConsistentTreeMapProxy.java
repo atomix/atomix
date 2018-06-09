@@ -19,7 +19,7 @@ package io.atomix.core.map.impl;
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  * Implementation of {@link io.atomix.core.map.AsyncConsistentTreeMap}.
  */
 public class ConsistentTreeMapProxy extends AbstractConsistentMapProxy<AsyncConsistentTreeMap<byte[]>, ConsistentTreeMapService> implements AsyncConsistentTreeMap<byte[]> {
-  public ConsistentTreeMapProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public ConsistentTreeMapProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(ConsistentTreeMapService.class, proxy, registry);
   }
 

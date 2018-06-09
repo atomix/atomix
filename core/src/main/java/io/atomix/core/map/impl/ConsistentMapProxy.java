@@ -18,7 +18,7 @@ package io.atomix.core.map.impl;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 
 import java.time.Duration;
 
@@ -27,7 +27,7 @@ import java.time.Duration;
  */
 public class ConsistentMapProxy extends AbstractConsistentMapProxy<AsyncConsistentMap<String, byte[]>, ConsistentMapService>
     implements AsyncConsistentMap<String, byte[]>, ConsistentMapClient {
-  public ConsistentMapProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public ConsistentMapProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(ConsistentMapService.class, proxy, registry);
   }
 

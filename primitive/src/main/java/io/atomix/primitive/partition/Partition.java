@@ -16,7 +16,9 @@
 package io.atomix.primitive.partition;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.service.ServiceConfig;
 
 import java.util.Collection;
 
@@ -61,10 +63,13 @@ public interface Partition {
   Collection<MemberId> backups();
 
   /**
-   * Returns the primitive client for the partition.
+   * Returns a new session builder for the given primitive type.
    *
-   * @return the primitive client for the partition
+   * @param primitiveName the proxy name
+   * @param primitiveType the type for which to return a new proxy builder
+   * @param serviceConfig the primitive service configuration
+   * @return a new proxy builder for the given primitive type
    */
-  ProxyClient getProxyClient();
+  ProxySession.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig);
 
 }

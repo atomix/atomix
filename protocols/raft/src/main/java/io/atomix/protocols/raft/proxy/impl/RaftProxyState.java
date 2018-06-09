@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.session.SessionId;
 
 import java.util.Set;
@@ -34,13 +34,13 @@ public final class RaftProxyState {
   private final String serviceName;
   private final PrimitiveType primitiveType;
   private final long timeout;
-  private volatile PartitionProxy.State state = PartitionProxy.State.CONNECTED;
+  private volatile ProxySession.State state = ProxySession.State.CONNECTED;
   private volatile Long suspendedTime;
   private volatile long commandRequest;
   private volatile long commandResponse;
   private volatile long responseIndex;
   private volatile long eventIndex;
-  private final Set<Consumer<PartitionProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
+  private final Set<Consumer<ProxySession.State>> changeListeners = new CopyOnWriteArraySet<>();
 
   RaftProxyState(String clientId, SessionId sessionId, String serviceName, PrimitiveType primitiveType, long timeout) {
     this.clientId = clientId;
@@ -102,7 +102,7 @@ public final class RaftProxyState {
    *
    * @return The session state.
    */
-  public PartitionProxy.State getState() {
+  public ProxySession.State getState() {
     return state;
   }
 
@@ -111,10 +111,10 @@ public final class RaftProxyState {
    *
    * @param state The updates session state.
    */
-  public void setState(PartitionProxy.State state) {
+  public void setState(ProxySession.State state) {
     if (this.state != state) {
       this.state = state;
-      if (state == PartitionProxy.State.SUSPENDED) {
+      if (state == ProxySession.State.SUSPENDED) {
         if (suspendedTime == null) {
           suspendedTime = System.currentTimeMillis();
         }
@@ -122,9 +122,9 @@ public final class RaftProxyState {
         suspendedTime = null;
       }
       changeListeners.forEach(l -> l.accept(state));
-    } else if (this.state == PartitionProxy.State.SUSPENDED) {
+    } else if (this.state == ProxySession.State.SUSPENDED) {
       if (System.currentTimeMillis() - suspendedTime > timeout) {
-        setState(PartitionProxy.State.CLOSED);
+        setState(ProxySession.State.CLOSED);
       }
     }
   }
@@ -134,7 +134,7 @@ public final class RaftProxyState {
    *
    * @param listener The state change listener callback.
    */
-  public void addStateChangeListener(Consumer<PartitionProxy.State> listener) {
+  public void addStateChangeListener(Consumer<ProxySession.State> listener) {
     changeListeners.add(checkNotNull(listener));
   }
 
@@ -143,7 +143,7 @@ public final class RaftProxyState {
    *
    * @param listener the listener to remove
    */
-  public void removeStateChangeListener(Consumer<PartitionProxy.State> listener) {
+  public void removeStateChangeListener(Consumer<ProxySession.State> listener) {
     changeListeners.remove(checkNotNull(listener));
   }
 

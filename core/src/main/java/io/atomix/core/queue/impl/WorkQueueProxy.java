@@ -22,7 +22,7 @@ import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueStats;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.Proxy;
 import io.atomix.utils.concurrent.AbstractAccumulator;
 import io.atomix.utils.concurrent.Accumulator;
@@ -57,7 +57,7 @@ public class WorkQueueProxy
   private final Timer timer = new Timer("atomix-work-queue-completer");
   private final AtomicBoolean isRegistered = new AtomicBoolean(false);
 
-  public WorkQueueProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public WorkQueueProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(WorkQueueService.class, proxy, registry);
     executor = newSingleThreadExecutor(namedThreads("atomix-work-queue-" + proxy.name() + "-%d", log));
   }

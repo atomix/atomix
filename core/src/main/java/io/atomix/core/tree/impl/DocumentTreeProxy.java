@@ -27,8 +27,8 @@ import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -51,7 +51,7 @@ public class DocumentTreeProxy
     implements AsyncDocumentTree<byte[]>, DocumentTreeClient {
   private final Map<DocumentTreeListener<byte[]>, InternalListener> eventListeners = new HashMap<>();
 
-  public DocumentTreeProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
+  public DocumentTreeProxy(ProxyClient proxy, PrimitiveRegistry registry) {
     super(DocumentTreeService.class, proxy, registry);
   }
 
@@ -186,7 +186,7 @@ public class DocumentTreeProxy
     return super.connect()
         .thenRun(() -> {
           addStateChangeListeners((partition, state) -> {
-            if (state == PartitionProxy.State.CONNECTED && isListening()) {
+            if (state == ProxySession.State.CONNECTED && isListening()) {
               acceptBy(getPartitionKey(), service -> service.listen(root()));
             }
           });

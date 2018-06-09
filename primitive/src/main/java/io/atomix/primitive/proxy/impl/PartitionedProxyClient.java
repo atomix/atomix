@@ -20,8 +20,8 @@ import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Collection;
@@ -39,27 +39,27 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Default primitive proxy.
  */
-public class PartitionedPrimitiveProxy implements PrimitiveProxy {
+public class PartitionedProxyClient implements ProxyClient {
   private final String name;
   private final PrimitiveType type;
   private final List<PartitionId> partitionIds = new CopyOnWriteArrayList<>();
-  private final Map<PartitionId, PartitionProxy> partitions = Maps.newConcurrentMap();
+  private final Map<PartitionId, ProxySession> partitions = Maps.newConcurrentMap();
   private final Partitioner<String> partitioner;
-  private final Set<Consumer<PartitionProxy.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
+  private final Set<Consumer<ProxySession.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Map<PartitionId, State> states = Maps.newHashMap();
   private volatile State state = State.CLOSED;
 
-  public PartitionedPrimitiveProxy(
+  public PartitionedProxyClient(
       String name,
       PrimitiveType type,
-      Collection<PartitionProxy> partitions,
+      Collection<ProxySession> partitions,
       Partitioner<String> partitioner) {
     this.name = checkNotNull(name, "name cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
     this.partitioner = checkNotNull(partitioner, "partitioner cannot be null");
     partitions.forEach(partition -> {
       this.partitionIds.add(partition.partitionId());
-      this.partitions.put(partition.partitionId(), new LazyPartitionProxy(partition));
+      this.partitions.put(partition.partitionId(), new LazyProxySession(partition));
       states.put(partition.partitionId(), State.CLOSED);
     });
     Collections.sort(partitionIds);
@@ -81,7 +81,7 @@ public class PartitionedPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
-  public Collection<PartitionProxy> getPartitions() {
+  public Collection<ProxySession> getPartitions() {
     return partitions.values();
   }
 
@@ -91,7 +91,7 @@ public class PartitionedPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
-  public PartitionProxy getPartition(PartitionId partitionId) {
+  public ProxySession getPartition(PartitionId partitionId) {
     return partitions.get(partitionId);
   }
 
@@ -101,19 +101,19 @@ public class PartitionedPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
-  public void addStateChangeListener(Consumer<PartitionProxy.State> listener) {
+  public void addStateChangeListener(Consumer<ProxySession.State> listener) {
     stateChangeListeners.add(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<PartitionProxy.State> listener) {
+  public void removeStateChangeListener(Consumer<ProxySession.State> listener) {
     stateChangeListeners.remove(listener);
   }
 
   /**
    * Handles a partition proxy state change.
    */
-  private synchronized void onStateChange(PartitionId partitionId, PartitionProxy.State state) {
+  private synchronized void onStateChange(PartitionId partitionId, ProxySession.State state) {
     states.put(partitionId, state);
     switch (state) {
       case CONNECTED:
@@ -138,13 +138,13 @@ public class PartitionedPrimitiveProxy implements PrimitiveProxy {
   }
 
   @Override
-  public CompletableFuture<PrimitiveProxy> connect() {
+  public CompletableFuture<ProxyClient> connect() {
     partitions.forEach((partitionId, partition) -> {
       partition.addStateChangeListener(state -> onStateChange(partitionId, state));
     });
     return Futures.allOf(partitions.values()
         .stream()
-        .map(PartitionProxy::connect)
+        .map(ProxySession::connect)
         .collect(Collectors.toList()))
         .thenApply(v -> this);
   }
@@ -153,7 +153,7 @@ public class PartitionedPrimitiveProxy implements PrimitiveProxy {
   public CompletableFuture<Void> close() {
     return Futures.allOf(partitions.values()
         .stream()
-        .map(PartitionProxy::close)
+        .map(ProxySession::close)
         .collect(Collectors.toList()))
         .thenApply(v -> null);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,53 @@
  */
 package io.atomix.primitive.proxy;
 
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.primitive.partition.PartitionId;
+
+import java.util.Collection;
 
 /**
- * Proxy client.
+ * Primitive proxy.
  */
-public interface ProxyClient {
+public interface ProxyClient extends Proxy<ProxyClient> {
 
   /**
-   * Returns a new proxy builder for the given primitive type.
+   * Returns the collection of all partition proxies.
    *
-   * @param primitiveName the proxy name
-   * @param primitiveType the type for which to return a new proxy builder
-   * @param serviceConfig the primitive service configuration
-   * @return a new proxy builder for the given primitive type
+   * @return the collection of all partition proxies
    */
-  PartitionProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig);
+  Collection<ProxySession> getPartitions();
+
+  /**
+   * Returns the collection of all partition IDs.
+   *
+   * @return the collection of all partition IDs
+   */
+  Collection<PartitionId> getPartitionIds();
+
+  /**
+   * Returns the proxy with the given identifier.
+   *
+   * @param partitionId the partition with the given identifier
+   * @return the partition proxy with the given identifier
+   */
+  ProxySession getPartition(PartitionId partitionId);
+
+  /**
+   * Returns the partition proxy for the given key.
+   *
+   * @param key the key for which to return the partition proxy
+   * @return the partition proxy for the given key
+   */
+  default ProxySession getPartition(String key) {
+    return getPartition(getPartitionId(key));
+  }
+
+  /**
+   * Returns the partition ID for the given key.
+   *
+   * @param key the key for which to return the partition ID
+   * @return the partition ID for the given key
+   */
+  PartitionId getPartitionId(String key);
 
 }

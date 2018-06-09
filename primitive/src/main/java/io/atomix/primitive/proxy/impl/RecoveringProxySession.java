@@ -23,7 +23,7 @@ import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.PartitionProxy;
+import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
@@ -46,36 +46,36 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Primitive proxy that supports recovery.
  */
-public class RecoveringPartitionProxy implements PartitionProxy {
+public class RecoveringProxySession implements ProxySession {
   private static final SessionId DEFAULT_SESSION_ID = SessionId.from(0);
   private final PartitionId partitionId;
   private final String name;
   private final PrimitiveType primitiveType;
-  private final Supplier<PartitionProxy> proxyFactory;
+  private final Supplier<ProxySession> proxyFactory;
   private final Scheduler scheduler;
   private Logger log;
-  private volatile OrderedFuture<PartitionProxy> clientFuture;
-  private volatile PartitionProxy proxy;
+  private volatile OrderedFuture<ProxySession> clientFuture;
+  private volatile ProxySession proxy;
   private volatile State state = State.CLOSED;
-  private final Set<Consumer<PartitionProxy.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
+  private final Set<Consumer<ProxySession.State>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Multimap<EventType, Consumer<PrimitiveEvent>> eventListeners = HashMultimap.create();
   private Scheduled recoverTask;
   private volatile boolean connected = false;
 
-  public RecoveringPartitionProxy(String clientId, PartitionId partitionId, String name, PrimitiveType primitiveType, Supplier<PartitionProxy> proxyFactory, Scheduler scheduler) {
+  public RecoveringProxySession(String clientId, PartitionId partitionId, String name, PrimitiveType primitiveType, Supplier<ProxySession> proxyFactory, Scheduler scheduler) {
     this.partitionId = checkNotNull(partitionId);
     this.name = checkNotNull(name);
     this.primitiveType = checkNotNull(primitiveType);
     this.proxyFactory = checkNotNull(proxyFactory);
     this.scheduler = checkNotNull(scheduler);
-    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
+    this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(ProxySession.class)
         .addValue(clientId)
         .build());
   }
 
   @Override
   public SessionId sessionId() {
-    PartitionProxy proxy = this.proxy;
+    ProxySession proxy = this.proxy;
     return proxy != null ? proxy.sessionId() : DEFAULT_SESSION_ID;
   }
 
@@ -95,7 +95,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
   }
 
   @Override
-  public PartitionProxy.State getState() {
+  public ProxySession.State getState() {
     return state;
   }
 
@@ -104,11 +104,11 @@ public class RecoveringPartitionProxy implements PartitionProxy {
    *
    * @param state the session state
    */
-  private synchronized void onStateChange(PartitionProxy.State state) {
+  private synchronized void onStateChange(ProxySession.State state) {
     if (this.state != state) {
-      if (state == PartitionProxy.State.CLOSED) {
+      if (state == ProxySession.State.CLOSED) {
         if (connected) {
-          onStateChange(PartitionProxy.State.SUSPENDED);
+          onStateChange(ProxySession.State.SUSPENDED);
           recover();
         } else {
           log.debug("State changed: {}", state);
@@ -124,12 +124,12 @@ public class RecoveringPartitionProxy implements PartitionProxy {
   }
 
   @Override
-  public void addStateChangeListener(Consumer<PartitionProxy.State> listener) {
+  public void addStateChangeListener(Consumer<ProxySession.State> listener) {
     stateChangeListeners.add(listener);
   }
 
   @Override
-  public void removeStateChangeListener(Consumer<PartitionProxy.State> listener) {
+  public void removeStateChangeListener(Consumer<ProxySession.State> listener) {
     stateChangeListeners.remove(listener);
   }
 
@@ -153,7 +153,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
    *
    * @return a future to be completed once the client has been opened
    */
-  private CompletableFuture<PartitionProxy> openProxy() {
+  private CompletableFuture<ProxySession> openProxy() {
     if (connected) {
       log.debug("Opening proxy session");
 
@@ -162,7 +162,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
 
       return clientFuture.thenApply(proxy -> {
         synchronized (this) {
-          this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PartitionProxy.class)
+          this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(ProxySession.class)
               .addValue(proxy.sessionId())
               .add("type", proxy.type())
               .add("name", proxy.name())
@@ -170,7 +170,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
           this.proxy = proxy;
           proxy.addStateChangeListener(this::onStateChange);
           eventListeners.forEach(proxy::addEventListener);
-          onStateChange(PartitionProxy.State.CONNECTED);
+          onStateChange(ProxySession.State.CONNECTED);
         }
         return proxy;
       });
@@ -183,7 +183,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
    *
    * @param future the future to be completed once the client is opened
    */
-  private void openProxy(CompletableFuture<PartitionProxy> future) {
+  private void openProxy(CompletableFuture<ProxySession> future) {
     proxyFactory.get().connect().whenComplete((proxy, error) -> {
       if (error == null) {
         future.complete(proxy);
@@ -196,7 +196,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
     checkOpen();
-    PartitionProxy proxy = this.proxy;
+    ProxySession proxy = this.proxy;
     if (proxy != null) {
       return proxy.execute(operation);
     } else {
@@ -208,7 +208,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
   public synchronized void addEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
     checkOpen();
     eventListeners.put(eventType.canonicalize(), consumer);
-    PartitionProxy proxy = this.proxy;
+    ProxySession proxy = this.proxy;
     if (proxy != null) {
       proxy.addEventListener(eventType, consumer);
     }
@@ -218,14 +218,14 @@ public class RecoveringPartitionProxy implements PartitionProxy {
   public synchronized void removeEventListener(EventType eventType, Consumer<PrimitiveEvent> consumer) {
     checkOpen();
     eventListeners.remove(eventType.canonicalize(), consumer);
-    PartitionProxy proxy = this.proxy;
+    ProxySession proxy = this.proxy;
     if (proxy != null) {
       proxy.removeEventListener(eventType, consumer);
     }
   }
 
   @Override
-  public synchronized CompletableFuture<PartitionProxy> connect() {
+  public synchronized CompletableFuture<ProxySession> connect() {
     if (!connected) {
       connected = true;
       return openProxy().thenApply(c -> this);
@@ -241,7 +241,7 @@ public class RecoveringPartitionProxy implements PartitionProxy {
         recoverTask.cancel();
       }
 
-      PartitionProxy proxy = this.proxy;
+      ProxySession proxy = this.proxy;
       if (proxy != null) {
         return proxy.close();
       } else {

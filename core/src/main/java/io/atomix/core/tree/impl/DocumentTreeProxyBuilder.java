@@ -20,7 +20,7 @@ import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeBuilder;
 import io.atomix.core.tree.DocumentTreeConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -39,7 +39,7 @@ public class DocumentTreeProxyBuilder<V> extends DocumentTreeBuilder<V> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DocumentTree<V>> buildAsync() {
-    PrimitiveProxy proxy = protocol().newProxy(
+    ProxyClient proxy = protocol().newProxy(
         name(),
         primitiveType(),
         new ServiceConfig(),
