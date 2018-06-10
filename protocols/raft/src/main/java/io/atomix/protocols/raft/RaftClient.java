@@ -82,30 +82,6 @@ public interface RaftClient {
   }
 
   /**
-   * @deprecated since 2.1
-   */
-  @Deprecated
-  static Builder newBuilder() {
-    return builder();
-  }
-
-  /**
-   * @deprecated since 2.1
-   */
-  @Deprecated
-  static Builder newBuilder(MemberId... cluster) {
-    return builder(cluster);
-  }
-
-  /**
-   * @deprecated since 2.1
-   */
-  @Deprecated
-  static Builder newBuilder(Collection<MemberId> cluster) {
-    return builder(cluster);
-  }
-
-  /**
    * Returns the globally unique client identifier.
    *
    * @return the globally unique client identifier

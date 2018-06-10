@@ -23,7 +23,6 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 import java.time.Duration;
-import java.util.concurrent.Executor;
 
 /**
  * Multi-primary protocol configuration.
@@ -190,26 +189,5 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
   public MultiPrimaryProtocolConfig setRetryDelay(Duration retryDelay) {
     this.retryDelay = retryDelay;
     return this;
-  }
-
-  /**
-   * Returns the executor.
-   *
-   * @return the executor
-   */
-  @Deprecated
-  public Executor getExecutor() {
-    return null;
-  }
-
-  /**
-   * Sets the executor.
-   *
-   * @param executor the executor
-   * @return the protocol configuration
-   */
-  @Deprecated
-  public MultiPrimaryProtocolConfig setExecutor(Executor executor) {
-    throw new UnsupportedOperationException();
   }
 }

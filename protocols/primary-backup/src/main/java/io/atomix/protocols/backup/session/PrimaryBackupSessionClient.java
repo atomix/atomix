@@ -27,7 +27,6 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
-import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -35,6 +34,7 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.protocol.CloseRequest;
 import io.atomix.protocols.backup.protocol.ExecuteRequest;
@@ -52,7 +52,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -423,18 +422,6 @@ public class PrimaryBackupSessionClient implements SessionClient {
     public Builder withRetryDelay(Duration retryDelay) {
       this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
       return this;
-    }
-
-    /**
-     * Sets the executor with which to complete proxy futures.
-     *
-     * @param executor The executor with which to complete proxy futures.
-     * @return The proxy builder.
-     * @throws NullPointerException if the executor is null
-     */
-    @Deprecated
-    public Builder withExecutor(Executor executor) {
-      throw new UnsupportedOperationException();
     }
   }
 }
