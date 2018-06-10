@@ -24,7 +24,7 @@ import java.util.Collection;
  * Serializer configuration.
  */
 public class SerializerConfig implements Config {
-  private String name = KryoNamespace.NO_NAME;
+  private String name = Namespace.NO_NAME;
   private boolean registrationRequired = true;
   private boolean compatible = false;
   private Collection<SerializableTypeConfig> types = new ArrayList<>();

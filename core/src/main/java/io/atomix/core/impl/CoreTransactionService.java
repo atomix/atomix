@@ -23,8 +23,8 @@ import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.transaction.TransactionState;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
@@ -43,8 +43,8 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class CoreTransactionService implements ManagedTransactionService {
   private static final Logger LOGGER = LoggerFactory.getLogger(CoreTransactionService.class);
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
+      .register(Namespaces.BASIC)
       .register(TransactionId.class)
       .register(TransactionState.class)
       .build());

@@ -33,7 +33,7 @@ import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
@@ -52,8 +52,8 @@ import java.util.stream.Collectors;
  * State Machine for {@link DocumentTreeProxy} resource.
  */
 public class DefaultDocumentTreeService extends AbstractPrimitiveService<DocumentTreeClient> implements DocumentTreeService {
-  private final Serializer serializer = Serializer.using(KryoNamespace.builder()
-      .register((KryoNamespace) DocumentTreeType.instance().namespace())
+  private final Serializer serializer = Serializer.using(Namespace.builder()
+      .register((Namespace) DocumentTreeType.instance().namespace())
       .register(Versioned.class)
       .register(DocumentPath.class)
       .register(new LinkedHashMap().keySet().getClass())

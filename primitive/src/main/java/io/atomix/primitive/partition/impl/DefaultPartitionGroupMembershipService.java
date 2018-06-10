@@ -41,8 +41,8 @@ import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.event.AbstractListenerManager;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,8 +100,8 @@ public class DefaultPartitionGroupMembershipService
           group.config(),
           ImmutableSet.of(membershipService.getLocalMember().id()), false));
     });
-    serializer = Serializer.using(KryoNamespace.builder()
-        .register(KryoNamespaces.BASIC)
+    serializer = Serializer.using(Namespace.builder()
+        .register(Namespaces.BASIC)
         .register(MemberId.class)
         .register(MemberId.Type.class)
         .register(PartitionGroupMembership.class)

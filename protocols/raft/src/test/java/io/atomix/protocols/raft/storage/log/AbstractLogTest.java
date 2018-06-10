@@ -16,7 +16,6 @@
 package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -31,7 +30,7 @@ import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 import org.junit.After;
 import org.junit.Before;
@@ -64,7 +63,7 @@ public abstract class AbstractLogTest {
   protected static final int MAX_SEGMENT_SIZE = 1024 * 8;
   private static final Path PATH = Paths.get("target/test-logs/");
 
-  private static final Serializer serializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer serializer = Serializer.using(Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)

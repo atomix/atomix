@@ -99,7 +99,7 @@ import io.atomix.protocols.raft.test.protocol.RaftServerMessagingProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
@@ -155,7 +155,7 @@ public class RaftPerformanceTest implements Runnable {
     new RaftPerformanceTest().run();
   }
 
-  private static final Serializer protocolSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer protocolSerializer = Serializer.using(Namespace.builder()
       .register(HeartbeatRequest.class)
       .register(HeartbeatResponse.class)
       .register(OpenSessionRequest.class)
@@ -219,7 +219,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(Configuration.class)
       .build());
 
-  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer storageSerializer = Serializer.using(Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -244,7 +244,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(long[].class)
       .build());
 
-  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer clientSerializer = Serializer.using(Namespace.builder()
       .register(ReadConsistency.class)
       .register(Maps.immutableEntry("", "").getClass())
       .build());

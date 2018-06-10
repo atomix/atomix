@@ -28,8 +28,8 @@ import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClockTimestamp;
@@ -66,8 +66,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 public class DefaultClusterEventService implements ManagedClusterEventService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClusterEventService.class);
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
+      .register(Namespaces.BASIC)
       .register(MemberId.class)
       .register(MemberId.Type.class)
       .register(LogicalTimestamp.class)

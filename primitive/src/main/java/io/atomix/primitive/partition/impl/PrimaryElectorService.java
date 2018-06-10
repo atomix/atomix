@@ -30,7 +30,7 @@ import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
 import io.atomix.utils.concurrent.Scheduled;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.time.Duration;
@@ -57,7 +57,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
 
   private static final Duration REBALANCE_DURATION = Duration.ofSeconds(15);
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(PrimaryElectorOperations.NAMESPACE)
       .register(PrimaryElectorEvents.NAMESPACE)
       .register(ElectionState.class)

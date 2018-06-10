@@ -19,8 +19,8 @@ import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Objects;
@@ -29,8 +29,8 @@ import java.util.Objects;
  * Atomix long state.
  */
 public class DefaultAtomicCounterService extends AbstractPrimitiveService implements AtomicCounterService {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
+      .register(Namespaces.BASIC)
       .build());
 
   private long value;

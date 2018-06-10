@@ -31,7 +31,7 @@ import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.misc.Match;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
@@ -58,8 +58,8 @@ import java.util.stream.Collector;
  */
 public class DefaultConsistentSetMultimapService extends AbstractPrimitiveService<ConsistentSetMultimapClient> implements ConsistentSetMultimapService {
 
-  private final Serializer serializer = Serializer.using(KryoNamespace.builder()
-      .register((KryoNamespace) ConsistentMultimapType.instance().namespace())
+  private final Serializer serializer = Serializer.using(Namespace.builder()
+      .register((Namespace) ConsistentMultimapType.instance().namespace())
       .register(SessionId.class)
       .register(ByteArrayComparator.class)
       .register(new HashMap().keySet().getClass())

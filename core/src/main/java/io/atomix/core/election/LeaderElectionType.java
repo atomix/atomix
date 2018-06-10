@@ -23,7 +23,6 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Namespace;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -53,8 +52,8 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
 
   @Override
   public Namespace namespace() {
-    return KryoNamespace.builder()
-        .register((KryoNamespace) PrimitiveType.super.namespace())
+    return Namespace.builder()
+        .register((Namespace) PrimitiveType.super.namespace())
         .register(Leadership.class)
         .register(Leader.class)
         .build();
