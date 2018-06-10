@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.backup.partition;
 
-import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
@@ -26,7 +25,7 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
 public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<PrimaryBackupPartitionGroupConfig> {
   private static final int DEFAULT_PARTITIONS = 71;
 
-  private MemberGroupProvider memberGroupProvider = MemberGroupStrategy.NODE_AWARE;
+  private String memberGroupStrategy = MemberGroupStrategy.NODE_AWARE.name();
 
   @Override
   public PartitionGroup.Type getType() {
@@ -43,19 +42,8 @@ public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<Prim
    *
    * @return the member group provider
    */
-  public MemberGroupProvider getMemberGroupProvider() {
-    return memberGroupProvider;
-  }
-
-  /**
-   * Sets the member group provider.
-   *
-   * @param memberGroupProvider the member group provider
-   * @return the partition group configuration
-   */
-  public PrimaryBackupPartitionGroupConfig setMemberGroupProvider(MemberGroupProvider memberGroupProvider) {
-    this.memberGroupProvider = memberGroupProvider;
-    return this;
+  public MemberGroupStrategy getMemberGroupProvider() {
+    return MemberGroupStrategy.valueOf(memberGroupStrategy);
   }
 
   /**
@@ -65,6 +53,7 @@ public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<Prim
    * @return the partition group configuration
    */
   public PrimaryBackupPartitionGroupConfig setMemberGroupStrategy(MemberGroupStrategy memberGroupStrategy) {
-    return setMemberGroupProvider(memberGroupStrategy);
+    this.memberGroupStrategy = memberGroupStrategy.name();
+    return this;
   }
 }
