@@ -51,7 +51,7 @@ import java.util.stream.IntStream;
 public class DefaultWorkQueueService extends AbstractPrimitiveService<WorkQueueClient> implements WorkQueueService {
 
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
-      .register((Namespace) WorkQueueType.instance().namespace())
+      .register(WorkQueueType.instance().namespace())
       .register(TaskAssignment.class)
       .register(new HashMap().keySet().getClass())
       .register(ArrayDeque.class)
