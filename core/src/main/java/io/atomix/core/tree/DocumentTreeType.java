@@ -31,9 +31,8 @@ import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.misc.Match;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.time.Versioned;
 
 import java.util.LinkedHashMap;
@@ -65,9 +64,9 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
 
   @Override
   public Namespace namespace() {
-    return KryoNamespace.builder()
-        .register((KryoNamespace) PrimitiveType.super.namespace())
-        .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+    return Namespace.builder()
+        .register(PrimitiveType.super.namespace())
+        .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
         .register(LinkedHashMap.class)
         .register(TransactionId.class)
         .register(TransactionLog.class)

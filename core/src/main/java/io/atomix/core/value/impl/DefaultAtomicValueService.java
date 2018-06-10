@@ -21,7 +21,7 @@ import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.session.SessionId;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Arrays;
@@ -31,8 +31,8 @@ import java.util.Set;
  * Raft atomic value service.
  */
 public class DefaultAtomicValueService extends AbstractPrimitiveService<AtomicValueClient> implements AtomicValueService {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register((KryoNamespace) AtomicValueType.instance().namespace())
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
+      .register(AtomicValueType.instance().namespace())
       .register(SessionId.class)
       .build());
 

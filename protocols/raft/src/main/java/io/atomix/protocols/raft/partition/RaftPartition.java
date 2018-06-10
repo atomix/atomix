@@ -170,7 +170,10 @@ public class RaftPartition implements Partition {
    * Closes the partition.
    */
   CompletableFuture<Void> close() {
-    return closeClient().thenCompose(v -> closeServer());
+    return closeClient()
+        .exceptionally(v -> null)
+        .thenCompose(v -> closeServer())
+        .exceptionally(v -> null);
   }
 
   private CompletableFuture<Void> closeClient() {

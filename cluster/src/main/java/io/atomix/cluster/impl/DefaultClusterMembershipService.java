@@ -35,8 +35,8 @@ import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
@@ -70,9 +70,9 @@ public class DefaultClusterMembershipService
   private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
 
   private static final Serializer SERIALIZER = Serializer.using(
-      KryoNamespace.builder()
-          .register(KryoNamespaces.BASIC)
-          .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+      Namespace.builder()
+          .register(Namespaces.BASIC)
+          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
           .register(MemberId.class)
           .register(MemberId.Type.class)
           .register(Member.State.class)

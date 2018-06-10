@@ -17,8 +17,8 @@ package io.atomix.primitive.session.impl;
 
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 
 /**
  * ID generator operations.
@@ -45,8 +45,8 @@ public enum SessionIdGeneratorOperations implements OperationId {
     return type;
   }
 
-  public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+  public static final Namespace NAMESPACE = Namespace.builder()
+      .register(Namespaces.BASIC)
+      .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
       .build(SessionIdGeneratorOperations.class.getSimpleName());
 }

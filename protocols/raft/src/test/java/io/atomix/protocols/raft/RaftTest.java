@@ -63,7 +63,7 @@ import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.After;
@@ -106,7 +106,7 @@ import static org.mockito.Mockito.when;
  * Raft test.
  */
 public class RaftTest extends ConcurrentTestCase {
-  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer storageSerializer = Serializer.using(Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -131,7 +131,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(long[].class)
       .build());
 
-  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.DEFAULT);
+  private static final Serializer clientSerializer = Serializer.using(Namespace.DEFAULT);
 
   protected volatile int nextId;
   protected volatile List<RaftMember> members;

@@ -23,9 +23,8 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.time.Version;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -53,8 +52,8 @@ public class DistributedSemaphoreType implements PrimitiveType<DistributedSemaph
 
   @Override
   public Namespace namespace() {
-    return KryoNamespace.builder()
-        .register(KryoNamespaces.BASIC)
+    return Namespace.builder()
+        .register(Namespaces.BASIC)
         .register(DistributedSemaphoreServiceConfig.class)
         .register(Version.class)
         .register(QueueStatus.class)

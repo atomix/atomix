@@ -31,7 +31,7 @@ import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.misc.ArraySizeHashPrinter;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Arrays;
@@ -52,8 +52,8 @@ import java.util.stream.Collectors;
  */
 public class DefaultLeaderElectorService extends AbstractPrimitiveService<LeaderElectorClient> implements LeaderElectorService {
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register((KryoNamespace) LeaderElectorType.instance().namespace())
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
+      .register(LeaderElectorType.instance().namespace())
       .register(ElectionState.class)
       .register(Registration.class)
       .register(new LinkedHashMap<>().keySet().getClass())

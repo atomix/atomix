@@ -22,8 +22,8 @@ import io.atomix.primitive.partition.MemberGroupId;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryTerm;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 
 /**
  * Leader elector events.
@@ -42,8 +42,8 @@ public enum PrimaryElectorEvents implements EventType {
     return id;
   }
 
-  public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
-      .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID + 50)
+  public static final Namespace NAMESPACE = Namespace.builder()
+      .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 50)
       .register(PrimaryElectionEvent.class)
       .register(PrimaryElectionEvent.Type.class)
       .register(PrimaryTerm.class)

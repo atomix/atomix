@@ -20,8 +20,6 @@ import com.google.common.collect.Maps;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
-import io.atomix.primitive.partition.MemberGroup;
-import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionGroup;
@@ -30,13 +28,12 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
-import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.BlockingAwareThreadPoolContextFactory;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -223,44 +220,14 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
     }
 
     /**
-     * Sets the member group provider.
-     *
-     * @param memberGroupProvider the member group provider
-     * @return the partition group builder
-     */
-    public Builder withMemberGroupProvider(MemberGroupProvider memberGroupProvider) {
-      config.setMemberGroupProvider(memberGroupProvider);
-      return this;
-    }
-
-    /**
      * Sets the member group strategy.
      *
      * @param memberGroupStrategy the member group strategy
      * @return the partition group builder
      */
     public Builder withMemberGroupStrategy(MemberGroupStrategy memberGroupStrategy) {
-      return withMemberGroupProvider(memberGroupStrategy);
-    }
-
-    /**
-     * Sets the member groups.
-     *
-     * @param memberGroups the member groups
-     * @return the partition group builder
-     */
-    public Builder withMemberGroups(MemberGroup... memberGroups) {
-      return withMemberGroups(Arrays.asList(memberGroups));
-    }
-
-    /**
-     * Sets the member groups.
-     *
-     * @param memberGroups the member groups
-     * @return the partition group builder
-     */
-    public Builder withMemberGroups(Collection<MemberGroup> memberGroups) {
-      return withMemberGroupProvider(nodes -> memberGroups);
+      config.setMemberGroupStrategy(memberGroupStrategy);
+      return this;
     }
 
     @Override
