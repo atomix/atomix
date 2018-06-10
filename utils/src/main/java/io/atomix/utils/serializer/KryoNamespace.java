@@ -85,6 +85,7 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
 
   private final ImmutableList<RegistrationBlock> registeredBlocks;
 
+  private final ClassLoader classLoader;
   private final boolean compatible;
   private final boolean registrationRequired;
   private final String friendlyName;
@@ -97,6 +98,7 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
     private int blockHeadId = INITIAL_ID;
     private List<Pair<Class<?>[], Serializer<?>>> types = new ArrayList<>();
     private List<RegistrationBlock> blocks = new ArrayList<>();
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private boolean registrationRequired = true;
     private boolean compatible = false;
 
@@ -119,7 +121,7 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
       if (!types.isEmpty()) {
         blocks.add(new RegistrationBlock(this.blockHeadId, types));
       }
-      return new KryoNamespace(blocks, registrationRequired, compatible, friendlyName).populate(1);
+      return new KryoNamespace(blocks, classLoader, registrationRequired, compatible, friendlyName).populate(1);
     }
 
     /**
@@ -210,6 +212,17 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
     }
 
     /**
+     * Sets the namespace class loader.
+     *
+     * @param classLoader the namespace class loader
+     * @return the namespace builder
+     */
+    public Builder setClassLoader(ClassLoader classLoader) {
+      this.classLoader = classLoader;
+      return this;
+    }
+
+    /**
      * Sets whether backwards/forwards compatible versioned serialization is enabled.
      * <p>
      * When compatible serialization is enabled, the {@link CompatibleFieldSerializer} will be set as the
@@ -266,7 +279,7 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
   }
 
   public KryoNamespace(SerializerConfig config) {
-    this(buildRegistrationBlocks(config), config.isRegistrationRequired(), config.isCompatible(), config.getName());
+    this(buildRegistrationBlocks(config), Thread.currentThread().getContextClassLoader(), config.isRegistrationRequired(), config.isCompatible(), config.getName());
   }
 
   /**
@@ -277,12 +290,15 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
    * @param compatible           whether compatible serialization is enabled
    * @param friendlyName         friendly name for the namespace
    */
-  private KryoNamespace(final List<RegistrationBlock> registeredTypes,
-                        boolean registrationRequired,
-                        boolean compatible,
-                        String friendlyName) {
+  private KryoNamespace(
+      final List<RegistrationBlock> registeredTypes,
+      ClassLoader classLoader,
+      boolean registrationRequired,
+      boolean compatible,
+      String friendlyName) {
     this.registeredBlocks = ImmutableList.copyOf(registeredTypes);
     this.registrationRequired = registrationRequired;
+    this.classLoader = classLoader;
     this.compatible = compatible;
     this.friendlyName = checkNotNull(friendlyName);
   }
@@ -467,6 +483,7 @@ public final class KryoNamespace implements Namespace, KryoFactory, KryoPool {
   public Kryo create() {
     log.trace("Creating Kryo instance for {}", this);
     Kryo kryo = new Kryo();
+    kryo.setClassLoader(classLoader);
     kryo.setRegistrationRequired(registrationRequired);
 
     // If compatible serialization is enabled, override the default serializer.
