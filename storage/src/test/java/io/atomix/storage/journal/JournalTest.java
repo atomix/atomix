@@ -16,7 +16,7 @@
 package io.atomix.storage.journal;
 
 import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.storage.StorageLevel;
 import org.junit.After;
 import org.junit.Before;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class JournalTest {
   private static final Path PATH = Paths.get("target/test-logs/");
-  private static final Serializer serializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer serializer = Serializer.using(Namespace.builder()
       .register(TestEntry.class)
       .register(byte[].class)
       .build());

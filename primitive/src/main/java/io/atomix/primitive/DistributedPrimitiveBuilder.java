@@ -22,8 +22,8 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.Builder;
 import io.atomix.utils.config.ConfigurationException;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.serializer.SerializerConfig;
 
@@ -190,11 +190,11 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
     if (serializer == null) {
       SerializerConfig config = this.config.getSerializerConfig();
       if (config == null) {
-        serializer = Serializer.using(KryoNamespaces.BASIC);
+        serializer = Serializer.using(Namespaces.BASIC);
       } else {
-        serializer = Serializer.using(KryoNamespace.builder()
-            .register(KryoNamespaces.BASIC)
-            .register(new KryoNamespace(config))
+        serializer = Serializer.using(Namespace.builder()
+            .register(Namespaces.BASIC)
+            .register(new Namespace(config))
             .build());
       }
     }

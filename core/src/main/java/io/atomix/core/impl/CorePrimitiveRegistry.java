@@ -31,7 +31,7 @@ import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
@@ -48,7 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Core primitive registry.
  */
 public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
+  private static final Serializer SERIALIZER = Serializer.using(Namespaces.BASIC);
 
   private final PartitionService partitionService;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;

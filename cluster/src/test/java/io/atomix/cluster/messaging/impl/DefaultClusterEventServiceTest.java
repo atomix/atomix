@@ -24,7 +24,7 @@ import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.MessagingService;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;
 
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
  * Cluster event service test.
  */
 public class DefaultClusterEventServiceTest {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
+  private static final Serializer SERIALIZER = Serializer.using(Namespaces.BASIC);
 
   private Member buildNode(int memberId) {
     return Member.builder(String.valueOf(memberId))

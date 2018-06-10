@@ -30,7 +30,7 @@ import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.Scheduled;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
@@ -62,8 +62,8 @@ public class DefaultConsistentMapService
 
   public DefaultConsistentMapService() {
     super(ConsistentMapType.instance(), ConsistentMapClient.class);
-    serializer = Serializer.using(KryoNamespace.builder()
-        .register((KryoNamespace) ConsistentMapType.instance().namespace())
+    serializer = Serializer.using(Namespace.builder()
+        .register((Namespace) ConsistentMapType.instance().namespace())
         .register(TransactionScope.class)
         .register(MapEntryValue.class)
         .register(MapEntryValue.Type.class)
