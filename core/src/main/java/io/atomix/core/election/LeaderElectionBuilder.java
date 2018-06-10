@@ -18,10 +18,10 @@ package io.atomix.core.election;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.SerializerConfig;
+import io.atomix.utils.serializer.NamespaceConfig;
 
 /**
  * Builder for constructing new {@link AsyncLeaderElection} instances.
@@ -37,19 +37,19 @@ public abstract class LeaderElectionBuilder<T>
   public Serializer serializer() {
     Serializer serializer = this.serializer;
     if (serializer == null) {
-      SerializerConfig config = this.config.getSerializerConfig();
+      NamespaceConfig config = this.config.getNamespaceConfig();
       if (config == null) {
-        serializer = Serializer.using(KryoNamespace.builder()
-            .register(KryoNamespaces.BASIC)
+        serializer = Serializer.using(Namespace.builder()
+            .register(Namespaces.BASIC)
             .register(MemberId.class)
             .register(MemberId.Type.class)
             .build());
       } else {
-        serializer = Serializer.using(KryoNamespace.builder()
-            .register(KryoNamespaces.BASIC)
+        serializer = Serializer.using(Namespace.builder()
+            .register(Namespaces.BASIC)
             .register(MemberId.class)
             .register(MemberId.Type.class)
-            .register(new KryoNamespace(config))
+            .register(new Namespace(config))
             .build());
       }
     }

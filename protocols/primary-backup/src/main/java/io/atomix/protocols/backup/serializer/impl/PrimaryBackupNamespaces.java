@@ -39,8 +39,8 @@ import io.atomix.protocols.backup.protocol.PrimaryBackupResponse;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
 import io.atomix.protocols.backup.protocol.RestoreRequest;
 import io.atomix.protocols.backup.protocol.RestoreResponse;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 
 /**
  * Primary-backup serializer namespaces.
@@ -50,9 +50,9 @@ public final class PrimaryBackupNamespaces {
   /**
    * Primary-backup protocol namespace.
    */
-  public static final KryoNamespace PROTOCOL = KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+  public static final Namespace PROTOCOL = Namespace.builder()
+      .register(Namespaces.BASIC)
+      .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
       .register(MemberId.class)
       .register(MemberId.Type.class)
       .register(PrimaryBackupResponse.Status.class)

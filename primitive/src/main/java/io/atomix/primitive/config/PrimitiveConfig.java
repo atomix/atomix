@@ -19,7 +19,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.config.NamedConfig;
 import io.atomix.utils.config.TypedConfig;
-import io.atomix.utils.serializer.SerializerConfig;
+import io.atomix.utils.serializer.NamespaceConfig;
 
 /**
  * Primitive configuration.
@@ -28,7 +28,7 @@ public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> implements T
   private static final int DEFAULT_CACHE_SIZE = 1000;
 
   private String name;
-  private SerializerConfig serializerConfig;
+  private NamespaceConfig namespaceConfig;
   private PrimitiveProtocolConfig protocolConfig;
   private boolean cacheEnabled = false;
   private int cacheSize = DEFAULT_CACHE_SIZE;
@@ -51,19 +51,19 @@ public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> implements T
    *
    * @return the serializer configuration
    */
-  public SerializerConfig getSerializerConfig() {
-    return serializerConfig;
+  public NamespaceConfig getNamespaceConfig() {
+    return namespaceConfig;
   }
 
   /**
    * Sets the serializer configuration.
    *
-   * @param serializerConfig the serializer configuration
+   * @param namespaceConfig the serializer configuration
    * @return the primitive configuration
    */
   @SuppressWarnings("unchecked")
-  public C setSerializerConfig(SerializerConfig serializerConfig) {
-    this.serializerConfig = serializerConfig;
+  public C setNamespaceConfig(NamespaceConfig namespaceConfig) {
+    this.namespaceConfig = namespaceConfig;
     return (C) this;
   }
 

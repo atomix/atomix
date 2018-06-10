@@ -16,10 +16,10 @@
 package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.DelegatingJournal;
 import io.atomix.storage.journal.SegmentedJournal;
+import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 
@@ -35,11 +35,6 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    */
   public static Builder builder() {
     return new Builder();
-  }
-
-  @Deprecated
-  public static Builder newBuilder() {
-    return builder();
   }
 
   private final SegmentedJournal<RaftLogEntry> journal;

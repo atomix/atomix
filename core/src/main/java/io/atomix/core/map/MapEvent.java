@@ -112,19 +112,6 @@ public class MapEvent<K, V> {
   }
 
   /**
-   * Returns the value associated with this event. If type is REMOVE,
-   * this is the value that was removed. If type is INSERT/UPDATE, this is
-   * the new value.
-   *
-   * @return the value
-   * @deprecated 1.5.0 Falcon release. Use {@link #newValue()} or {@link #oldValue()} instead.
-   */
-  @Deprecated
-  public Versioned<V> value() {
-    return type == Type.REMOVE ? oldValue() : newValue();
-  }
-
-  /**
    * Returns the new value in the map associated with the key. If {@link #type()} returns {@code REMOVE},
    * this method will return {@code null}.
    *

@@ -15,7 +15,7 @@
  */
 package io.atomix.utils.serializer.serializers;
 
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
 /**
@@ -26,7 +26,7 @@ public class DefaultSerializers {
   /**
    * Basic serializer.
    */
-  public static Serializer BASIC = Serializer.using(KryoNamespaces.BASIC);
+  public static Serializer BASIC = Serializer.using(Namespaces.BASIC);
 
   private DefaultSerializers() {
   }

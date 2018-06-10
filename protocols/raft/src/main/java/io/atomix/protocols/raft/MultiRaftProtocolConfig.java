@@ -22,7 +22,6 @@ import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.protocols.raft.session.CommunicationStrategy;
 
 import java.time.Duration;
-import java.util.concurrent.Executor;
 
 /**
  * Raft protocol configuration.
@@ -210,26 +209,5 @@ public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftPr
   public MultiRaftProtocolConfig setRetryDelay(Duration retryDelay) {
     this.retryDelay = retryDelay;
     return this;
-  }
-
-  /**
-   * Returns the executor.
-   *
-   * @return the executor
-   */
-  @Deprecated
-  public Executor getExecutor() {
-    return null;
-  }
-
-  /**
-   * Sets the executor.
-   *
-   * @param executor the executor
-   * @return the protocol configuration
-   */
-  @Deprecated
-  public MultiRaftProtocolConfig setExecutor(Executor executor) {
-    throw new UnsupportedOperationException();
   }
 }

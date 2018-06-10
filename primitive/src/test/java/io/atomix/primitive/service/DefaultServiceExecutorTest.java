@@ -22,7 +22,7 @@ import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
 import io.atomix.primitive.session.Session;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.junit.Test;
@@ -98,7 +98,7 @@ public class DefaultServiceExecutorTest {
     when(context.serviceType()).thenReturn(TestPrimitiveType.instance());
     when(context.serviceName()).thenReturn("test");
     when(context.currentOperation()).thenReturn(OperationType.COMMAND);
-    return new DefaultServiceExecutor(context, Serializer.using(KryoNamespaces.BASIC));
+    return new DefaultServiceExecutor(context, Serializer.using(Namespaces.BASIC));
   }
 
   @SuppressWarnings("unchecked")

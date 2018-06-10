@@ -30,7 +30,6 @@ import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -231,18 +230,6 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
      */
     public Builder withRetryDelay(Duration retryDelay) {
       config.setRetryDelay(retryDelay);
-      return this;
-    }
-
-    /**
-     * Sets the executor with which to complete proxy futures.
-     *
-     * @param executor The executor with which to complete proxy futures.
-     * @return The proxy builder.
-     * @throws NullPointerException if the executor is null
-     */
-    @Deprecated
-    public Builder withExecutor(Executor executor) {
       return this;
     }
 

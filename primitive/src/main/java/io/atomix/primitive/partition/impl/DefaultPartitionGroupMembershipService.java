@@ -30,6 +30,7 @@ import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionGroupMembershipService;
 import io.atomix.primitive.partition.MemberGroupStrategy;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionGroupMembership;
 import io.atomix.primitive.partition.PartitionGroupMembershipEvent;
@@ -41,14 +42,16 @@ import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.event.AbstractListenerManager;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -100,16 +103,24 @@ public class DefaultPartitionGroupMembershipService
           group.config(),
           ImmutableSet.of(membershipService.getLocalMember().id()), false));
     });
-    serializer = Serializer.using(KryoNamespace.builder()
-        .register(KryoNamespaces.BASIC)
+
+    Namespace.Builder namespaceBuilder = Namespace.builder()
+        .register(Namespaces.BASIC)
         .register(MemberId.class)
         .register(MemberId.Type.class)
         .register(PartitionGroupMembership.class)
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)
-        .register(MemberGroupStrategy.class)
-        .setRegistrationRequired(false)
-        .build());
+        .register(MemberGroupStrategy.class);
+
+    List<PartitionGroup.Type> groupTypes = Lists.newArrayList(groupTypeRegistry.getGroupTypes());
+    groupTypes.sort(Comparator.comparing(PartitionGroup.Type::name));
+    for (PartitionGroup.Type groupType : groupTypes) {
+      namespaceBuilder.register(groupType.getClass());
+      namespaceBuilder.register(groupType.newConfig().getClass());
+    }
+
+    serializer = Serializer.using(namespaceBuilder.build());
   }
 
   @Override
@@ -233,7 +244,8 @@ public class DefaultPartitionGroupMembershipService
       post(new PartitionGroupMembershipEvent(MEMBERS_CHANGED, systemGroup));
       LOGGER.debug("{} - Bootstrapped system group {} from {}", membershipService.getLocalMember().id(), systemGroup, info.memberId);
     } else if (systemGroup != null && info.systemGroup != null) {
-      if ((!systemGroup.group().equals(info.systemGroup.group()) || !systemGroup.config().getType().equals(info.systemGroup.config().getType()))) {
+      if (!systemGroup.group().equals(info.systemGroup.group())
+          || !systemGroup.config().getType().name().equals(info.systemGroup.config().getType().name())) {
         throw new ConfigurationException("Duplicate system group detected");
       } else {
         Set<MemberId> newMembers = Stream.concat(systemGroup.members().stream(), info.systemGroup.members().stream())
@@ -253,7 +265,8 @@ public class DefaultPartitionGroupMembershipService
         groups.put(newMembership.group(), newMembership);
         post(new PartitionGroupMembershipEvent(MEMBERS_CHANGED, newMembership));
         LOGGER.debug("{} - Bootstrapped partition group {} from {}", membershipService.getLocalMember().id(), newMembership, info.memberId);
-      } else if ((!oldMembership.group().equals(newMembership.group()) || !oldMembership.config().getType().equals(newMembership.config().getType()))) {
+      } else if (!oldMembership.group().equals(newMembership.group())
+          || !oldMembership.config().getType().name().equals(newMembership.config().getType().name())) {
         throw new ConfigurationException("Duplicate partition group " + newMembership.group() + " detected");
       } else {
         Set<MemberId> newMembers = Stream.concat(oldMembership.members().stream(), newMembership.members().stream())

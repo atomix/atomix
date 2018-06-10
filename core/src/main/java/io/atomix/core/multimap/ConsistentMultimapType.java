@@ -22,9 +22,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
 import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.time.Versioned;
 
 import java.util.ArrayList;
@@ -57,9 +56,9 @@ public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMul
 
   @Override
   public Namespace namespace() {
-    return KryoNamespace.builder()
-        .register((KryoNamespace) PrimitiveType.super.namespace())
-        .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+    return Namespace.builder()
+        .register(PrimitiveType.super.namespace())
+        .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
         .register(Versioned.class)
         .register(ArrayList.class)
         .register(Maps.immutableEntry("", "").getClass())

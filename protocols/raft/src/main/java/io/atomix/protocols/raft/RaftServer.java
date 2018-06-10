@@ -18,7 +18,6 @@ package io.atomix.protocols.raft;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.impl.ClasspathScanningPrimitiveTypeRegistry;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.protocols.raft.cluster.RaftCluster;
@@ -591,17 +590,6 @@ public interface RaftServer {
      */
     public Builder withMembershipService(ClusterMembershipService membershipService) {
       this.membershipService = checkNotNull(membershipService, "membershipService cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the initial server member type.
-     *
-     * @param type The initial server member type.
-     * @return The server builder.
-     */
-    @Deprecated
-    public Builder withType(RaftMember.Type type) {
       return this;
     }
 
