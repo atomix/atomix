@@ -146,9 +146,7 @@ public class PrimaryBackupClient {
    * @return future to be completed once the client is closed
    */
   public CompletableFuture<Void> close() {
-    // TODO: Close client proxies
     threadContext.close();
-    threadContextFactory.close();
     return CompletableFuture.completedFuture(null);
   }
 
