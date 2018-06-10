@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Serializer configuration.
+ * Namespace configuration.
  */
-public class SerializerConfig implements Config {
+public class NamespaceConfig implements Config {
   private String name = Namespace.NO_NAME;
   private boolean registrationRequired = true;
   private boolean compatible = false;
-  private Collection<SerializableTypeConfig> types = new ArrayList<>();
+  private Collection<NamespaceTypeConfig> types = new ArrayList<>();
 
   /**
    * Returns the serializer name.
@@ -43,7 +43,7 @@ public class SerializerConfig implements Config {
    *
    * @param name the serializer name
    */
-  public SerializerConfig setName(String name) {
+  public NamespaceConfig setName(String name) {
     this.name = name;
     return this;
   }
@@ -63,7 +63,7 @@ public class SerializerConfig implements Config {
    * @param registrationRequired whether registration is required
    * @return the serializer configuration
    */
-  public SerializerConfig setRegistrationRequired(boolean registrationRequired) {
+  public NamespaceConfig setRegistrationRequired(boolean registrationRequired) {
     this.registrationRequired = registrationRequired;
     return this;
   }
@@ -83,7 +83,7 @@ public class SerializerConfig implements Config {
    * @param compatible whether compatible serialization is enabled
    * @return the serializer configuration
    */
-  public SerializerConfig setCompatible(boolean compatible) {
+  public NamespaceConfig setCompatible(boolean compatible) {
     this.compatible = compatible;
     return this;
   }
@@ -93,7 +93,7 @@ public class SerializerConfig implements Config {
    *
    * @return the serializable types
    */
-  public Collection<SerializableTypeConfig> getTypes() {
+  public Collection<NamespaceTypeConfig> getTypes() {
     return types;
   }
 
@@ -103,7 +103,7 @@ public class SerializerConfig implements Config {
    * @param types the serializable types
    * @return the serializer configuration
    */
-  public SerializerConfig setTypes(Collection<SerializableTypeConfig> types) {
+  public NamespaceConfig setTypes(Collection<NamespaceTypeConfig> types) {
     this.types = types;
     return this;
   }
@@ -114,7 +114,7 @@ public class SerializerConfig implements Config {
    * @param type the serializable type to add
    * @return the serializer configuration
    */
-  public SerializerConfig addType(SerializableTypeConfig type) {
+  public NamespaceConfig addType(NamespaceTypeConfig type) {
     types.add(type);
     return this;
   }

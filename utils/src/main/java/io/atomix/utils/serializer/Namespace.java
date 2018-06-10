@@ -264,11 +264,11 @@ public final class Namespace implements KryoFactory, KryoPool {
   }
 
   @SuppressWarnings("unchecked")
-  private static List<RegistrationBlock> buildRegistrationBlocks(SerializerConfig config) {
+  private static List<RegistrationBlock> buildRegistrationBlocks(NamespaceConfig config) {
     List<Pair<Class<?>[], Serializer<?>>> types = new ArrayList<>();
     List<RegistrationBlock> blocks = new ArrayList<>();
     blocks.addAll(Namespaces.BASIC.registeredBlocks);
-    for (SerializableTypeConfig type : config.getTypes()) {
+    for (NamespaceTypeConfig type : config.getTypes()) {
       try {
         if (type.getId() == null) {
           types.add(Pair.of(new Class[]{type.getType()}, type.getSerializer().newInstance()));
@@ -283,7 +283,7 @@ public final class Namespace implements KryoFactory, KryoPool {
     return blocks;
   }
 
-  public Namespace(SerializerConfig config) {
+  public Namespace(NamespaceConfig config) {
     this(buildRegistrationBlocks(config), Thread.currentThread().getContextClassLoader(), config.isRegistrationRequired(), config.isCompatible(), config.getName());
   }
 
