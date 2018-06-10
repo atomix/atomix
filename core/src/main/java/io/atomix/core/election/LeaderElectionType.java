@@ -53,7 +53,7 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
   @Override
   public Namespace namespace() {
     return Namespace.builder()
-        .register((Namespace) PrimitiveType.super.namespace())
+        .register(PrimitiveType.super.namespace())
         .register(Leadership.class)
         .register(Leader.class)
         .build();

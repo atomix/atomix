@@ -59,7 +59,7 @@ import java.util.stream.Collector;
 public class DefaultConsistentSetMultimapService extends AbstractPrimitiveService<ConsistentSetMultimapClient> implements ConsistentSetMultimapService {
 
   private final Serializer serializer = Serializer.using(Namespace.builder()
-      .register((Namespace) ConsistentMultimapType.instance().namespace())
+      .register(ConsistentMultimapType.instance().namespace())
       .register(SessionId.class)
       .register(ByteArrayComparator.class)
       .register(new HashMap().keySet().getClass())

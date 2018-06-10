@@ -38,7 +38,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class DefaultDistributedLockService extends AbstractPrimitiveService<DistributedLockClient> implements DistributedLockService {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
-      .register((Namespace) DistributedLockType.instance().namespace())
+      .register(DistributedLockType.instance().namespace())
       .register(LockHolder.class)
       .register(SessionId.class)
       .build());

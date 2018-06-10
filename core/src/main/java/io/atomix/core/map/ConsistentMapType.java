@@ -64,7 +64,7 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
   @Override
   public Namespace namespace() {
     return Namespace.builder()
-        .register((Namespace) PrimitiveType.super.namespace())
+        .register(PrimitiveType.super.namespace())
         .register(Namespaces.BASIC)
         .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
         .register(TransactionId.class)

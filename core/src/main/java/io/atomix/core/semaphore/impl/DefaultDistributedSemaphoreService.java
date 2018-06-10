@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DefaultDistributedSemaphoreService extends AbstractPrimitiveService<DistributedSemaphoreClient> implements DistributedSemaphoreService {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
-      .register((Namespace) DistributedSemaphoreType.instance().namespace())
+      .register(DistributedSemaphoreType.instance().namespace())
       .register(Waiter.class)
       .build());
 

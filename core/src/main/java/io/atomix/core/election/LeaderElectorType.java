@@ -51,7 +51,7 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
   @Override
   public Namespace namespace() {
     return Namespace.builder()
-        .register((Namespace) PrimitiveType.super.namespace())
+        .register(PrimitiveType.super.namespace())
         .register(Leadership.class)
         .register(Leader.class)
         .build();

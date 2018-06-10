@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 public class DefaultLeaderElectorService extends AbstractPrimitiveService<LeaderElectorClient> implements LeaderElectorService {
 
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
-      .register((Namespace) LeaderElectorType.instance().namespace())
+      .register(LeaderElectorType.instance().namespace())
       .register(ElectionState.class)
       .register(Registration.class)
       .register(new LinkedHashMap<>().keySet().getClass())

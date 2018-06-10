@@ -32,7 +32,7 @@ import java.util.Set;
  */
 public class DefaultAtomicValueService extends AbstractPrimitiveService<AtomicValueClient> implements AtomicValueService {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
-      .register((Namespace) AtomicValueType.instance().namespace())
+      .register(AtomicValueType.instance().namespace())
       .register(SessionId.class)
       .build());
 

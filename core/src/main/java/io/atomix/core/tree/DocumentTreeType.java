@@ -65,7 +65,7 @@ public class DocumentTreeType<V> implements PrimitiveType<DocumentTreeBuilder<V>
   @Override
   public Namespace namespace() {
     return Namespace.builder()
-        .register((Namespace) PrimitiveType.super.namespace())
+        .register(PrimitiveType.super.namespace())
         .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
         .register(LinkedHashMap.class)
         .register(TransactionId.class)

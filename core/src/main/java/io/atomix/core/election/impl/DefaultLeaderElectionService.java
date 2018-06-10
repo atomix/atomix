@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 public class DefaultLeaderElectionService extends AbstractPrimitiveService<LeaderElectionClient> implements LeaderElectionService {
 
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
-      .register((Namespace) LeaderElectionType.instance().namespace())
+      .register(LeaderElectionType.instance().namespace())
       .register(SessionId.class)
       .register(Registration.class)
       .register(new LinkedHashMap<>().keySet().getClass())

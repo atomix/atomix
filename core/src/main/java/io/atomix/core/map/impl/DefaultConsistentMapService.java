@@ -63,7 +63,7 @@ public class DefaultConsistentMapService
   public DefaultConsistentMapService() {
     super(ConsistentMapType.instance(), ConsistentMapClient.class);
     serializer = Serializer.using(Namespace.builder()
-        .register((Namespace) ConsistentMapType.instance().namespace())
+        .register(ConsistentMapType.instance().namespace())
         .register(TransactionScope.class)
         .register(MapEntryValue.class)
         .register(MapEntryValue.Type.class)

@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  */
 public class DefaultDocumentTreeService extends AbstractPrimitiveService<DocumentTreeClient> implements DocumentTreeService {
   private final Serializer serializer = Serializer.using(Namespace.builder()
-      .register((Namespace) DocumentTreeType.instance().namespace())
+      .register(DocumentTreeType.instance().namespace())
       .register(Versioned.class)
       .register(DocumentPath.class)
       .register(new LinkedHashMap().keySet().getClass())
