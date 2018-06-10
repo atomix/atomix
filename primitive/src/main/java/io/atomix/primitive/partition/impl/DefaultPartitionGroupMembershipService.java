@@ -108,6 +108,7 @@ public class DefaultPartitionGroupMembershipService
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)
         .register(MemberGroupStrategy.class)
+        .setClassLoader(getClass().getClassLoader())
         .setRegistrationRequired(false)
         .build());
   }
