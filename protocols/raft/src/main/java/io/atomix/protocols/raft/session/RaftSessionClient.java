@@ -20,7 +20,6 @@ import io.atomix.primitive.session.SessionClient;
 import io.atomix.protocols.raft.ReadConsistency;
 
 import java.time.Duration;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -142,18 +141,6 @@ public interface RaftSessionClient extends SessionClient {
     public Builder withRetryDelay(Duration retryDelay) {
       this.retryDelay = checkNotNull(retryDelay, "retryDelay cannot be null");
       return this;
-    }
-
-    /**
-     * Sets the executor with which to complete proxy futures.
-     *
-     * @param executor The executor with which to complete proxy futures.
-     * @return The proxy builder.
-     * @throws NullPointerException if the executor is null
-     */
-    @Deprecated
-    public Builder withExecutor(Executor executor) {
-      throw new UnsupportedOperationException();
     }
   }
 }
