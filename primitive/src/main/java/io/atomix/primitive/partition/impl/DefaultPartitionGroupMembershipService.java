@@ -244,7 +244,8 @@ public class DefaultPartitionGroupMembershipService
       post(new PartitionGroupMembershipEvent(MEMBERS_CHANGED, systemGroup));
       LOGGER.debug("{} - Bootstrapped system group {} from {}", membershipService.getLocalMember().id(), systemGroup, info.memberId);
     } else if (systemGroup != null && info.systemGroup != null) {
-      if ((!systemGroup.group().equals(info.systemGroup.group()) || !systemGroup.config().getType().equals(info.systemGroup.config().getType()))) {
+      if (!systemGroup.group().equals(info.systemGroup.group())
+          || !systemGroup.config().getType().name().equals(info.systemGroup.config().getType().name())) {
         throw new ConfigurationException("Duplicate system group detected");
       } else {
         Set<MemberId> newMembers = Stream.concat(systemGroup.members().stream(), info.systemGroup.members().stream())
@@ -264,7 +265,8 @@ public class DefaultPartitionGroupMembershipService
         groups.put(newMembership.group(), newMembership);
         post(new PartitionGroupMembershipEvent(MEMBERS_CHANGED, newMembership));
         LOGGER.debug("{} - Bootstrapped partition group {} from {}", membershipService.getLocalMember().id(), newMembership, info.memberId);
-      } else if ((!oldMembership.group().equals(newMembership.group()) || !oldMembership.config().getType().equals(newMembership.config().getType()))) {
+      } else if (!oldMembership.group().equals(newMembership.group())
+          || !oldMembership.config().getType().name().equals(newMembership.config().getType().name())) {
         throw new ConfigurationException("Duplicate partition group " + newMembership.group() + " detected");
       } else {
         Set<MemberId> newMembers = Stream.concat(oldMembership.members().stream(), newMembership.members().stream())

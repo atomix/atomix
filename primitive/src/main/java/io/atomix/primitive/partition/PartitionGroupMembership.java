@@ -51,7 +51,7 @@ public final class PartitionGroupMembership {
    *
    * @return the partition group configuration
    */
-  public PartitionGroupConfig config() {
+  public PartitionGroupConfig<?> config() {
     return config;
   }
 
