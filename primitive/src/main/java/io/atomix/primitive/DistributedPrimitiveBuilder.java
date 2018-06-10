@@ -25,7 +25,7 @@ import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.SerializerConfig;
+import io.atomix.utils.serializer.NamespaceConfig;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -188,7 +188,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   public Serializer serializer() {
     Serializer serializer = this.serializer;
     if (serializer == null) {
-      SerializerConfig config = this.config.getSerializerConfig();
+      NamespaceConfig config = this.config.getNamespaceConfig();
       if (config == null) {
         serializer = Serializer.using(Namespaces.BASIC);
       } else {

@@ -19,9 +19,9 @@ import com.esotericsoftware.kryo.Serializer;
 import io.atomix.utils.config.Config;
 
 /**
- * Serializable type configuration.
+ * Namespace type configuration.
  */
-public class SerializableTypeConfig implements Config {
+public class NamespaceTypeConfig implements Config {
   private Class<?> type;
   private Integer id;
   private Class<? extends com.esotericsoftware.kryo.Serializer> serializer;
@@ -41,7 +41,7 @@ public class SerializableTypeConfig implements Config {
    * @param type the serializable type
    * @return the type configuration
    */
-  public SerializableTypeConfig setType(Class<?> type) {
+  public NamespaceTypeConfig setType(Class<?> type) {
     this.type = type;
     return this;
   }
@@ -61,7 +61,7 @@ public class SerializableTypeConfig implements Config {
    * @param id the type identifier
    * @return the type configuration
    */
-  public SerializableTypeConfig setId(Integer id) {
+  public NamespaceTypeConfig setId(Integer id) {
     this.id = id;
     return this;
   }
@@ -81,7 +81,7 @@ public class SerializableTypeConfig implements Config {
    * @param serializer the serializer class
    * @return the type configuration
    */
-  public SerializableTypeConfig setSerializer(Class<? extends Serializer> serializer) {
+  public NamespaceTypeConfig setSerializer(Class<? extends Serializer> serializer) {
     this.serializer = serializer;
     return this;
   }
