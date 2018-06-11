@@ -634,35 +634,33 @@ public class NettyMessagingService implements ManagedMessagingService {
   @Override
   public CompletableFuture<Void> stop() {
     if (started.compareAndSet(true, false)) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      serverChannel.close().addListener(f -> {
-        future.complete(null);
-      });
-      return future.whenCompleteAsync((result, error) -> {
-        boolean interrupted = false;
+      boolean interrupted = false;
+      try {
         try {
-          Future<?> serverShutdownFuture = serverGroup.shutdownGracefully();
-          Future<?> clientShutdownFuture = clientGroup.shutdownGracefully();
-          try {
-            serverShutdownFuture.sync();
-          } catch (InterruptedException e) {
-            interrupted = true;
-          }
-          try {
-            clientShutdownFuture.sync();
-          } catch (InterruptedException e) {
-            interrupted = true;
-          }
-          timeoutFuture.cancel(false);
-          timeoutExecutor.shutdown();
-          log.info("Stopped");
-        } finally {
-          future.complete(null);
-          if (interrupted) {
-            Thread.currentThread().interrupt();
-          }
+          serverChannel.close().sync();
         }
-      });
+        catch (InterruptedException e) {
+          interrupted = true;
+        }
+        Future<?> serverShutdownFuture = serverGroup.shutdownGracefully();
+        Future<?> clientShutdownFuture = clientGroup.shutdownGracefully();
+        try {
+          serverShutdownFuture.sync();
+        } catch (InterruptedException e) {
+          interrupted = true;
+        }
+        try {
+          clientShutdownFuture.sync();
+        } catch (InterruptedException e) {
+          interrupted = true;
+        }
+        timeoutFuture.cancel(false);
+        timeoutExecutor.shutdown();
+      } finally {
+        if (interrupted) {
+          Thread.currentThread().interrupt();
+        }
+      }
     }
     log.info("Stopped");
     return CompletableFuture.completedFuture(null);
