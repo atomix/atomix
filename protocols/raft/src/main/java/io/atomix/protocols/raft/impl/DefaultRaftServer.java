@@ -123,7 +123,7 @@ public class DefaultRaftServer implements RaftServer {
 
     return openFuture.whenComplete((result, error) -> {
       if (error == null) {
-        log.info("Server started successfully!");
+        log.debug("Server started successfully!");
       } else {
         log.warn("Failed to start server!");
       }

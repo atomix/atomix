@@ -58,7 +58,7 @@ public class PrimaryBackupPartitionServer implements Managed<PrimaryBackupPartit
       server = buildServer();
     }
     return server.start().thenApply(s -> {
-      log.info("Successfully started server for {}", partition.id());
+      log.debug("Successfully started server for {}", partition.id());
       started.set(true);
       return this;
     });

@@ -78,9 +78,9 @@ public class RaftPartitionClient implements PartitionClient, Managed<RaftPartiti
     }
     return client.connect(partition.members()).whenComplete((r, e) -> {
       if (e == null) {
-        log.info("Successfully started client for partition {}", partition.id());
+        log.debug("Successfully started client for partition {}", partition.id());
       } else {
-        log.info("Failed to start client for partition {}", partition.id(), e);
+        log.warn("Failed to start client for partition {}", partition.id(), e);
       }
     }).thenApply(v -> null);
   }
