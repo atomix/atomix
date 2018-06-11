@@ -24,6 +24,7 @@ import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -66,8 +67,13 @@ public class TranscodingAsyncConsistentTreeMap<V1, V2> implements AsyncConsisten
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return backingMap.primitiveType();
+  public PrimitiveType type() {
+    return backingMap.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return backingMap.protocol();
   }
 
   @Override

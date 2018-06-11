@@ -20,6 +20,7 @@ import io.atomix.core.transaction.AsyncTransactionalMap;
 import io.atomix.core.transaction.TransactionalMap;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -44,8 +45,13 @@ public class BlockingTransactionalMap<K, V> implements TransactionalMap<K, V> {
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return asyncMap.primitiveType();
+  public PrimitiveType type() {
+    return asyncMap.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return asyncMap.protocol();
   }
 
   @Override

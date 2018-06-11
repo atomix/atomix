@@ -22,6 +22,7 @@ import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.DelegatingAsyncPrimitive;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -51,6 +52,11 @@ public class DelegatingAsyncConsistentTreeMap<V>
     super(delegateMap);
     this.delegateMap = checkNotNull(delegateMap,
         "delegate map cannot be null");
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return delegateMap.protocol();
   }
 
   @Override

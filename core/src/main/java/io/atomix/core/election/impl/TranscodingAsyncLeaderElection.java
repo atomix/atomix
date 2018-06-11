@@ -22,6 +22,7 @@ import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.time.Duration;
 import java.util.Map;
@@ -52,8 +53,13 @@ public class TranscodingAsyncLeaderElection<V1, V2> implements AsyncLeaderElecti
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return backingElection.primitiveType();
+  public PrimitiveType type() {
+    return backingElection.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return backingElection.protocol();
   }
 
   @Override

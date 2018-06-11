@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -42,8 +43,13 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive, S> implem
   }
 
   @Override
-  public PrimitiveType primitiveType() {
+  public PrimitiveType type() {
     return client.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return client.protocol();
   }
 
   /**
@@ -72,7 +78,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive, S> implem
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<A> connect() {
-    return registry.createPrimitive(name(), primitiveType())
+    return registry.createPrimitive(name(), type())
         .thenApply(v -> (A) this);
   }
 

@@ -29,7 +29,7 @@ public interface PrimitiveProtocol {
   /**
    * Distributed primitive protocol type.
    */
-  interface Type<C extends PrimitiveProtocolConfig<C>> extends NamedType {
+  interface Type<C extends PrimitiveProtocolConfig<C>> extends NamedType, Comparable<Type<C>> {
 
     /**
      * Returns a new protocol configuration.
@@ -45,6 +45,11 @@ public interface PrimitiveProtocol {
      * @return the protocol instance
      */
     PrimitiveProtocol newProtocol(C config);
+
+    @Override
+    default int compareTo(Type<C> o) {
+      return name().compareTo(o.name());
+    }
   }
 
   /**

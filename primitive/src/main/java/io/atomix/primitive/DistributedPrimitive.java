@@ -15,6 +15,8 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+
 import java.util.function.Consumer;
 
 /**
@@ -39,7 +41,14 @@ public interface DistributedPrimitive {
    *
    * @return primitive type
    */
-  PrimitiveType primitiveType();
+  PrimitiveType type();
+
+  /**
+   * Returns the primitive protocol.
+   *
+   * @return the primitive protocol
+   */
+  PrimitiveProtocol protocol();
 
   /**
    * Registers a listener to be called when the primitive's state changes.

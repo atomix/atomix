@@ -21,14 +21,13 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.primitive.session.SessionClient;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.event.Event;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.OperationType;
@@ -36,6 +35,7 @@ import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.Query;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
 import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.AbstractPrimitiveService;
@@ -44,6 +44,7 @@ import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.cluster.RaftClusterEvent;
@@ -1285,6 +1286,7 @@ public class RaftTest extends ConcurrentTestCase {
     ProxyClient<TestPrimitiveService> proxy = new DefaultProxyClient<>(
         "test",
         TestPrimitiveType.INSTANCE,
+        MultiRaftProtocol.builder().build(),
         TestPrimitiveService.class,
         Collections.singletonList(partition),
         (key, partitions) -> partitions.get(0));
@@ -1425,6 +1427,11 @@ public class RaftTest extends ConcurrentTestCase {
 
     public TestPrimitiveImpl(ProxyClient<TestPrimitiveService> proxy, PrimitiveRegistry registry) {
       super(proxy, registry);
+    }
+
+    @Override
+    public PrimitiveProtocol protocol() {
+      throw new UnsupportedOperationException();
     }
 
     @Override

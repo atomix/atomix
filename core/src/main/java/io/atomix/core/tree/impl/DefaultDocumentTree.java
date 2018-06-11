@@ -28,6 +28,7 @@ import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.primitive.Ordering;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Iterator;
@@ -68,7 +69,12 @@ public class DefaultDocumentTree<V> implements DocumentTree<V> {
   }
 
   @Override
-  public PrimitiveType primitiveType() {
+  public PrimitiveType type() {
+    return null;
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
     return null;
   }
 

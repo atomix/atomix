@@ -49,9 +49,10 @@ public interface TransactionService {
    * Marks the given transaction as preparing.
    *
    * @param transactionId the transaction to mark as preparing
+   * @param participants the set of participants in the transaction
    * @return a future to be completed once the transaction state has been updated
    */
-  CompletableFuture<Void> preparing(TransactionId transactionId);
+  CompletableFuture<Void> preparing(TransactionId transactionId, Set<ParticipantInfo> participants);
 
   /**
    * Marks the given transaction as committing.
