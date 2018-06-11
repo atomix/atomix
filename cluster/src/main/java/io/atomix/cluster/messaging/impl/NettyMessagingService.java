@@ -634,35 +634,37 @@ public class NettyMessagingService implements ManagedMessagingService {
   @Override
   public CompletableFuture<Void> stop() {
     if (started.compareAndSet(true, false)) {
-      boolean interrupted = false;
-      try {
+      return CompletableFuture.supplyAsync(() -> {
+        boolean interrupted = false;
         try {
-          serverChannel.close().sync();
+          try {
+            serverChannel.close().sync();
+          } catch (InterruptedException e) {
+            interrupted = true;
+          }
+          Future<?> serverShutdownFuture = serverGroup.shutdownGracefully();
+          Future<?> clientShutdownFuture = clientGroup.shutdownGracefully();
+          try {
+            serverShutdownFuture.sync();
+          } catch (InterruptedException e) {
+            interrupted = true;
+          }
+          try {
+            clientShutdownFuture.sync();
+          } catch (InterruptedException e) {
+            interrupted = true;
+          }
+          timeoutFuture.cancel(false);
+          timeoutExecutor.shutdown();
+        } finally {
+          log.info("Stopped");
+          if (interrupted) {
+            Thread.currentThread().interrupt();
+          }
         }
-        catch (InterruptedException e) {
-          interrupted = true;
-        }
-        Future<?> serverShutdownFuture = serverGroup.shutdownGracefully();
-        Future<?> clientShutdownFuture = clientGroup.shutdownGracefully();
-        try {
-          serverShutdownFuture.sync();
-        } catch (InterruptedException e) {
-          interrupted = true;
-        }
-        try {
-          clientShutdownFuture.sync();
-        } catch (InterruptedException e) {
-          interrupted = true;
-        }
-        timeoutFuture.cancel(false);
-        timeoutExecutor.shutdown();
-      } finally {
-        if (interrupted) {
-          Thread.currentThread().interrupt();
-        }
-      }
+        return null;
+      });
     }
-    log.info("Stopped");
     return CompletableFuture.completedFuture(null);
   }
 
