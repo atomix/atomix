@@ -1085,7 +1085,6 @@ public class NettyMessagingService implements ManagedMessagingService {
     @Override
     public void close() {
       if (closed.compareAndSet(false, true)) {
-        timeoutFuture.cancel(false);
         for (Callback callback : futures.values()) {
           callback.completeExceptionally(new ConnectException());
         }
