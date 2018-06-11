@@ -18,17 +18,16 @@ package io.atomix.protocols.backup;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.TestClusterMembershipService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.TestPrimaryElection;
-import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -37,9 +36,11 @@ import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.protocol.TestPrimaryBackupProtocolFactory;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.serializer.serializers.DefaultSerializers;
 import net.jodah.concurrentunit.ConcurrentTestCase;
@@ -55,6 +56,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 import static org.junit.Assert.assertEquals;
@@ -453,6 +455,14 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   @Before
   @After
   public void clearTests() throws Exception {
+    Futures.allOf(servers.stream()
+        .map(s -> s.stop().exceptionally(v -> null))
+        .collect(Collectors.toList()))
+        .get(30, TimeUnit.SECONDS);
+    Futures.allOf(clients.stream()
+        .map(c -> c.close().exceptionally(v -> null))
+        .collect(Collectors.toList()))
+        .get(30, TimeUnit.SECONDS);
     nodes = new ArrayList<>();
     memberId = 0;
     sessionId = 0;

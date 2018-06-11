@@ -62,6 +62,7 @@ public class PrimaryBackupServerContext implements Managed<Void> {
   private final ManagedMemberGroupService memberGroupService;
   private final PrimaryBackupServerProtocol protocol;
   private final ThreadContextFactory threadContextFactory;
+  private final boolean closeOnStop;
   private final PrimitiveTypeRegistry primitiveTypes;
   private final PrimaryElection primaryElection;
   private final Map<String, CompletableFuture<PrimaryBackupServiceContext>> services = Maps.newConcurrentMap();
@@ -72,14 +73,16 @@ public class PrimaryBackupServerContext implements Managed<Void> {
       ClusterMembershipService clusterMembershipService,
       ManagedMemberGroupService memberGroupService,
       PrimaryBackupServerProtocol protocol,
-      ThreadContextFactory threadContextFactory,
       PrimitiveTypeRegistry primitiveTypes,
-      PrimaryElection primaryElection) {
+      PrimaryElection primaryElection,
+      ThreadContextFactory threadContextFactory,
+      boolean closeOnStop) {
     this.serverName = serverName;
     this.clusterMembershipService = clusterMembershipService;
     this.memberGroupService = memberGroupService;
     this.protocol = protocol;
     this.threadContextFactory = threadContextFactory;
+    this.closeOnStop = closeOnStop;
     this.primitiveTypes = primitiveTypes;
     this.primaryElection = primaryElection;
   }
@@ -217,6 +220,10 @@ public class PrimaryBackupServerContext implements Managed<Void> {
     }).thenCompose(v -> memberGroupService.stop()).exceptionally(throwable -> {
       log.error("Failed stopping member group service", throwable);
       return null;
+    }).thenRunAsync(() -> {
+      if (closeOnStop) {
+        threadContextFactory.close();
+      }
     });
   }
 }
