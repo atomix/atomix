@@ -106,7 +106,7 @@ public class CoreTransactionService implements ManagedTransactionService {
     return transactions.compute(transactionId, (id, info) -> {
       if (info == null) {
         return null;
-      } else if (info.state == TransactionState.ACTIVE) {
+      } else if (info.state == TransactionState.ACTIVE && info.coordinator.equals(localMemberId)) {
         return new TransactionInfo(info.coordinator, TransactionState.PREPARING, participants);
       } else {
         return info;
@@ -129,7 +129,7 @@ public class CoreTransactionService implements ManagedTransactionService {
     return transactions.compute(transactionId, (id, info) -> {
       if (info == null) {
         return null;
-      } else if (info.state == TransactionState.PREPARING) {
+      } else if (info.state == TransactionState.PREPARING && info.coordinator.equals(localMemberId)) {
         return new TransactionInfo(info.coordinator, TransactionState.COMMITTING, info.participants);
       } else {
         return info;
@@ -152,7 +152,7 @@ public class CoreTransactionService implements ManagedTransactionService {
     return transactions.compute(transactionId, (id, info) -> {
       if (info == null) {
         return null;
-      } else if (info.state == TransactionState.PREPARING) {
+      } else if (info.state == TransactionState.PREPARING && info.coordinator.equals(localMemberId)) {
         return new TransactionInfo(info.coordinator, TransactionState.ROLLING_BACK, info.participants);
       } else {
         return info;
@@ -216,6 +216,7 @@ public class CoreTransactionService implements ManagedTransactionService {
    * @param transactionId the transaction identifier for the transaction to complete
    */
   private void completePreparingTransaction(TransactionId transactionId) {
+    // Change ownership of the transaction to the local node and set its state to ROLLING_BACK and then roll it back.
     completeTransaction(
         transactionId,
         TransactionState.PREPARING,
@@ -240,6 +241,7 @@ public class CoreTransactionService implements ManagedTransactionService {
    * @param transactionId the transaction identifier for the transaction to complete
    */
   private void completeCommittingTransaction(TransactionId transactionId) {
+    // Change ownership of the transaction to the local node and then commit it.
     completeTransaction(
         transactionId,
         TransactionState.COMMITTING,
@@ -264,6 +266,7 @@ public class CoreTransactionService implements ManagedTransactionService {
    * @param transactionId the transaction identifier for the transaction to complete
    */
   private void completeRollingBackTransaction(TransactionId transactionId) {
+    // Change ownership of the transaction to the local node and then roll it back.
     completeTransaction(
         transactionId,
         TransactionState.ROLLING_BACK,
@@ -319,7 +322,7 @@ public class CoreTransactionService implements ManagedTransactionService {
   private CompletableFuture<Void> completeParticipant(
       ParticipantInfo participantInfo,
       Function<Transactional<?>, CompletableFuture<Void>> completionFunction) {
-    // Loop up the primitive type for the participant. If the primitive type is not found, return an exception.
+    // Look up the primitive type for the participant. If the primitive type is not found, return an exception.
     PrimitiveType primitiveType = managementService.getPrimitiveTypeRegistry().getPrimitiveType(participantInfo.type());
     if (primitiveType == null) {
       return Futures.exceptionalFuture(new TransactionException("Failed to locate primitive type " + participantInfo.type() + " for participant " + participantInfo.name()));
@@ -331,7 +334,7 @@ public class CoreTransactionService implements ManagedTransactionService {
       return Futures.exceptionalFuture(new TransactionException("Failed to locate protocol type for participant " + participantInfo.name()));
     }
 
-    // Loop up the partition group in which the primitive is stored.
+    // Look up the partition group in which the primitive is stored.
     PartitionGroup partitionGroup;
     if (participantInfo.group() == null) {
       partitionGroup = managementService.getPartitionService().getPartitionGroup(protocolType);
