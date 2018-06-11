@@ -636,6 +636,9 @@ public class NettyMessagingService implements ManagedMessagingService {
     if (started.compareAndSet(true, false)) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       serverChannel.close().addListener(f -> {
+        future.complete(null);
+      });
+      return future.whenCompleteAsync((result, error) -> {
         boolean interrupted = false;
         try {
           Future<?> serverShutdownFuture = serverGroup.shutdownGracefully();
@@ -660,7 +663,6 @@ public class NettyMessagingService implements ManagedMessagingService {
           }
         }
       });
-      return future;
     }
     log.info("Stopped");
     return CompletableFuture.completedFuture(null);
