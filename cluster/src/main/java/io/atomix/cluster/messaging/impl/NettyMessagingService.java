@@ -633,7 +633,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<Void> stop() {
-    if (started.compareAndSet(false, true)) {
+    if (started.compareAndSet(true, false)) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       serverChannel.close().addListener(f -> {
         boolean interrupted = false;
