@@ -400,7 +400,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
         if (error == null) {
           if (response.status() == RaftResponse.Status.OK) {
-            log.info("Successfully joined via {}", member.getMember().memberId());
+            log.debug("Successfully joined via {}", member.getMember().memberId());
 
             Configuration configuration = new Configuration(response.index(), response.term(), response.timestamp(), response.members());
 

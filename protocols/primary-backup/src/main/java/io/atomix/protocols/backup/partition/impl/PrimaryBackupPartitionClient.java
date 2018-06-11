@@ -59,7 +59,7 @@ public class PrimaryBackupPartitionClient implements PartitionClient, Managed<Pr
   public CompletableFuture<PrimaryBackupPartitionClient> start() {
     synchronized (PrimaryBackupPartitionClient.this) {
       client = newClient();
-      log.info("Successfully started client for {}", partition.id());
+      log.debug("Successfully started client for {}", partition.id());
     }
     return CompletableFuture.completedFuture(this);
   }
