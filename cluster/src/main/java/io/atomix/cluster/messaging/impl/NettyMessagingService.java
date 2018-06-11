@@ -46,6 +46,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.concurrent.Future;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
@@ -632,16 +633,32 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<Void> stop() {
-    if (started.get()) {
+    if (started.compareAndSet(false, true)) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       serverChannel.close().addListener(f -> {
-        serverGroup.shutdownGracefully();
-        clientGroup.shutdownGracefully();
-        timeoutFuture.cancel(false);
-        timeoutExecutor.shutdown();
-        started.set(false);
-        log.info("Stopped");
-        future.complete(null);
+        boolean interrupted = false;
+        try {
+          Future<?> serverShutdownFuture = serverGroup.shutdownGracefully();
+          Future<?> clientShutdownFuture = clientGroup.shutdownGracefully();
+          try {
+            serverShutdownFuture.sync();
+          } catch (InterruptedException e) {
+            interrupted = true;
+          }
+          try {
+            clientShutdownFuture.sync();
+          } catch (InterruptedException e) {
+            interrupted = true;
+          }
+          timeoutFuture.cancel(false);
+          timeoutExecutor.shutdown();
+          log.info("Stopped");
+        } finally {
+          future.complete(null);
+          if (interrupted) {
+            Thread.currentThread().interrupt();
+          }
+        }
       });
       return future;
     }
