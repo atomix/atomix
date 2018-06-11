@@ -46,6 +46,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.concurrent.Future;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
@@ -632,18 +633,36 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<Void> stop() {
-    if (started.get()) {
+    if (started.compareAndSet(true, false)) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       serverChannel.close().addListener(f -> {
-        serverGroup.shutdownGracefully();
-        clientGroup.shutdownGracefully();
-        timeoutFuture.cancel(false);
-        timeoutExecutor.shutdown();
-        started.set(false);
-        log.info("Stopped");
         future.complete(null);
       });
-      return future;
+      return future.whenCompleteAsync((result, error) -> {
+        boolean interrupted = false;
+        try {
+          Future<?> serverShutdownFuture = serverGroup.shutdownGracefully();
+          Future<?> clientShutdownFuture = clientGroup.shutdownGracefully();
+          try {
+            serverShutdownFuture.sync();
+          } catch (InterruptedException e) {
+            interrupted = true;
+          }
+          try {
+            clientShutdownFuture.sync();
+          } catch (InterruptedException e) {
+            interrupted = true;
+          }
+          timeoutFuture.cancel(false);
+          timeoutExecutor.shutdown();
+          log.info("Stopped");
+        } finally {
+          future.complete(null);
+          if (interrupted) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      });
     }
     log.info("Stopped");
     return CompletableFuture.completedFuture(null);
@@ -1068,7 +1087,6 @@ public class NettyMessagingService implements ManagedMessagingService {
     @Override
     public void close() {
       if (closed.compareAndSet(false, true)) {
-        timeoutFuture.cancel(false);
         for (Callback callback : futures.values()) {
           callback.completeExceptionally(new ConnectException());
         }
