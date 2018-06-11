@@ -20,6 +20,7 @@ import io.atomix.core.transaction.AsyncTransactionalMap;
 import io.atomix.core.transaction.AsyncTransactionalSet;
 import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -40,8 +41,13 @@ public class DefaultTransactionalSet<E> implements AsyncTransactionalSet<E> {
   }
 
   @Override
-  public PrimitiveType primitiveType() {
+  public PrimitiveType type() {
     return DistributedSetType.instance();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return transactionalMap.protocol();
   }
 
   @Override

@@ -20,6 +20,7 @@ import io.atomix.core.queue.Task;
 import io.atomix.core.queue.WorkQueue;
 import io.atomix.core.queue.WorkQueueStats;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -52,8 +53,13 @@ public class TranscodingAsyncWorkQueue<V1, V2> implements AsyncWorkQueue<V1> {
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return backingQueue.primitiveType();
+  public PrimitiveType type() {
+    return backingQueue.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return backingQueue.protocol();
   }
 
   @Override

@@ -19,6 +19,7 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Collection;
@@ -45,6 +46,13 @@ public interface ProxyClient<S> {
    * @return The client proxy type.
    */
   PrimitiveType type();
+
+  /**
+   * Returns the client proxy protocol.
+   *
+   * @return the client proxy protocol
+   */
+  PrimitiveProtocol protocol();
 
   /**
    * Returns the session state.

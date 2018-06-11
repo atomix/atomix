@@ -19,6 +19,7 @@ import io.atomix.core.counter.AsyncAtomicCounter;
 import io.atomix.core.generator.AsyncAtomicIdGenerator;
 import io.atomix.core.generator.AtomicIdGenerator;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -52,8 +53,13 @@ public class DelegatingAtomicIdGenerator implements AsyncAtomicIdGenerator {
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return counter.primitiveType();
+  public PrimitiveType type() {
+    return counter.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return counter.protocol();
   }
 
   @Override

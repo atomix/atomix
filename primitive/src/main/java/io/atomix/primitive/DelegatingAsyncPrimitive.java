@@ -16,6 +16,7 @@
 package io.atomix.primitive;
 
 import com.google.common.base.MoreObjects;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -39,8 +40,13 @@ public abstract class DelegatingAsyncPrimitive implements AsyncPrimitive {
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return primitive.primitiveType();
+  public PrimitiveType type() {
+    return primitive.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return primitive.protocol();
   }
 
   @Override

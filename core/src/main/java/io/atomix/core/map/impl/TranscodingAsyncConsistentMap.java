@@ -26,6 +26,7 @@ import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -82,8 +83,13 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return backingMap.primitiveType();
+  public PrimitiveType type() {
+    return backingMap.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return backingMap.protocol();
   }
 
   @Override

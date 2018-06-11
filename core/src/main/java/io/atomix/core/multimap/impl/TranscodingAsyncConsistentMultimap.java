@@ -25,6 +25,7 @@ import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.MultimapEventListener;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -95,8 +96,13 @@ public class TranscodingAsyncConsistentMultimap<K1, V1, K2, V2> implements Async
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return backingMap.primitiveType();
+  public PrimitiveType type() {
+    return backingMap.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return backingMap.protocol();
   }
 
   @Override

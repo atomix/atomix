@@ -23,6 +23,7 @@ import io.atomix.core.transaction.TransactionalMapBuilder;
 import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,6 +38,12 @@ public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilde
     super(name, config, managementService);
     this.mapBuilder = ConsistentMapType.<K, V>instance().newBuilder(name, new ConsistentMapConfig(), managementService);
     this.transaction = transaction;
+  }
+
+  @Override
+  public TransactionalMapBuilder<K, V> withSerializer(Serializer serializer) {
+    mapBuilder.withSerializer(serializer);
+    return this;
   }
 
   @Override

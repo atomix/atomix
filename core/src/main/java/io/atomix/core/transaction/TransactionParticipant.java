@@ -15,12 +15,14 @@
  */
 package io.atomix.core.transaction;
 
+import io.atomix.primitive.DistributedPrimitive;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Transaction participant.
  */
-public interface TransactionParticipant<T> {
+public interface TransactionParticipant<T> extends DistributedPrimitive {
 
   /**
    * Returns the participant's transaction log.
@@ -49,5 +51,12 @@ public interface TransactionParticipant<T> {
    * @return a future to be completed once the participant has been rolled back
    */
   CompletableFuture<Void> rollback();
+
+  /**
+   * Closes the participant.
+   *
+   * @return a future to be completed once the participant has been closed
+   */
+  CompletableFuture<Void> close();
 
 }

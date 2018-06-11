@@ -19,11 +19,12 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
 
@@ -45,6 +46,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DefaultProxyClient<S> implements ProxyClient<S> {
   private final String name;
   private final PrimitiveType type;
+  private final PrimitiveProtocol protocol;
   private final Serializer serializer;
   private final List<PartitionId> partitionIds = new CopyOnWriteArrayList<>();
   private final Map<PartitionId, ProxySession<S>> partitions = Maps.newConcurrentMap();
@@ -56,11 +58,13 @@ public class DefaultProxyClient<S> implements ProxyClient<S> {
   public DefaultProxyClient(
       String name,
       PrimitiveType type,
+      PrimitiveProtocol protocol,
       Class<S> serviceType,
       Collection<SessionClient> partitions,
       Partitioner<String> partitioner) {
     this.name = checkNotNull(name, "name cannot be null");
     this.type = checkNotNull(type, "type cannot be null");
+    this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.serializer = Serializer.using(type.namespace());
     this.partitioner = checkNotNull(partitioner, "partitioner cannot be null");
     partitions.forEach(partition -> {
@@ -80,6 +84,11 @@ public class DefaultProxyClient<S> implements ProxyClient<S> {
   @Override
   public PrimitiveType type() {
     return type;
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return protocol;
   }
 
   @Override

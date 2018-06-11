@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive;
 
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.AtomixRuntimeException;
 
 import java.util.concurrent.ExecutionException;
@@ -41,8 +42,13 @@ public abstract class Synchronous<T extends AsyncPrimitive> implements SyncPrimi
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return primitive.primitiveType();
+  public PrimitiveType type() {
+    return primitive.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return primitive.protocol();
   }
 
   @Override

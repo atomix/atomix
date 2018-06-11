@@ -23,7 +23,6 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
-import io.atomix.primitive.config.ConfigService;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.core.election.LeaderElection;
@@ -60,10 +59,11 @@ import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
-import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.ConfigService;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.utils.AtomixRuntimeException;
 import org.slf4j.Logger;
@@ -109,7 +109,9 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         eventService,
         partitionService,
         primitiveRegistry,
-        registry.primitiveTypes());
+        registry.primitiveTypes(),
+        registry.protocolTypes(),
+        registry.partitionGroupTypes());
     this.transactionService = new CoreTransactionService(managementService);
     this.configService = checkNotNull(configService);
   }
