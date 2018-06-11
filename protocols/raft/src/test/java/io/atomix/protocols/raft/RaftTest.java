@@ -857,7 +857,7 @@ public class RaftTest extends ConcurrentTestCase {
     primitive.onEvent(event -> {
       threadAssertEquals(index.get(), event);
       try {
-        threadAssertTrue(index.get() <= primitive.read().get(5, TimeUnit.SECONDS));
+        threadAssertTrue(index.get() <= primitive.read().get(10, TimeUnit.SECONDS));
       } catch (InterruptedException | TimeoutException | ExecutionException e) {
         threadFail(e);
       }
