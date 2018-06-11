@@ -99,6 +99,7 @@ public class PrimaryBackupSessionClient implements SessionClient {
     this.protocol = protocol;
     this.primaryElection = primaryElection;
     this.threadContext = threadContext;
+    clusterMembershipService.addListener(membershipEventListener);
     primaryElection.addListener(primaryElectionListener);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
         .addValue(clientName)
@@ -311,10 +312,13 @@ public class PrimaryBackupSessionClient implements SessionClient {
     if (term.primary() != null) {
       protocol.close(term.primary().memberId(), new CloseRequest(descriptor, sessionId.id()))
           .whenCompleteAsync((response, error) -> {
-            protocol.unregisterEventListener(sessionId);
-            clusterMembershipService.removeListener(membershipEventListener);
-            primaryElection.removeListener(primaryElectionListener);
-            future.complete(null);
+            try {
+              protocol.unregisterEventListener(sessionId);
+              clusterMembershipService.removeListener(membershipEventListener);
+              primaryElection.removeListener(primaryElectionListener);
+            } finally {
+              future.complete(null);
+            }
           }, threadContext);
     } else {
       future.complete(null);
