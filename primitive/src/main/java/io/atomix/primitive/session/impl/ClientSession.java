@@ -93,7 +93,7 @@ public class ClientSession<C> implements Session<C> {
     @SuppressWarnings("unchecked")
     SessionProxy(Class<C> clientType) {
       proxy = clientType == null ? null : (C) java.lang.reflect.Proxy.newProxyInstance(
-          getClass().getClassLoader(),
+          clientType.getClassLoader(),
           new Class[]{clientType},
           new SessionProxyHandler(clientType));
     }
