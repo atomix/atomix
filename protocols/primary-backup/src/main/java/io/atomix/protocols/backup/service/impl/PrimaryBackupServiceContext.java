@@ -631,6 +631,6 @@ public class PrimaryBackupServiceContext implements ServiceContext {
         future.complete(null);
       }
     });
-    return future;
+    return future.thenRunAsync(() -> threadContext.close());
   }
 }

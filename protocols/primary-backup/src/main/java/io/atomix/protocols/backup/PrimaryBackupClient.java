@@ -65,6 +65,7 @@ public class PrimaryBackupClient {
   private final SessionIdService sessionIdService;
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext threadContext;
+  private final boolean closeOnStop;
 
   public PrimaryBackupClient(
       String clientName,
@@ -73,7 +74,8 @@ public class PrimaryBackupClient {
       PrimaryBackupClientProtocol protocol,
       PrimaryElection primaryElection,
       SessionIdService sessionIdService,
-      ThreadContextFactory threadContextFactory) {
+      ThreadContextFactory threadContextFactory,
+      boolean closeOnStop) {
     this.clientName = clientName;
     this.partitionId = partitionId;
     this.clusterMembershipService = clusterMembershipService;
@@ -82,6 +84,7 @@ public class PrimaryBackupClient {
     this.sessionIdService = sessionIdService;
     this.threadContextFactory = threadContextFactory;
     this.threadContext = threadContextFactory.createContext();
+    this.closeOnStop = closeOnStop;
   }
 
   /**
@@ -147,6 +150,9 @@ public class PrimaryBackupClient {
    */
   public CompletableFuture<Void> close() {
     threadContext.close();
+    if (closeOnStop) {
+      threadContextFactory.close();
+    }
     return CompletableFuture.completedFuture(null);
   }
 
@@ -273,9 +279,18 @@ public class PrimaryBackupClient {
       Logger log = ContextualLoggerFactory.getLogger(PrimaryBackupClient.class, LoggerContext.builder(PrimaryBackupClient.class)
           .addValue(clientName)
           .build());
-      ThreadContextFactory threadContextFactory = this.threadContextFactory != null
-          ? this.threadContextFactory
-          : threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
+
+      // If a ThreadContextFactory was not provided, create one and ensure it's closed when the client is stopped.
+      boolean closeOnStop;
+      ThreadContextFactory threadContextFactory;
+      if (this.threadContextFactory == null) {
+        threadContextFactory = threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
+        closeOnStop = true;
+      } else {
+        threadContextFactory = this.threadContextFactory;
+        closeOnStop = false;
+      }
+
       return new PrimaryBackupClient(
           clientName,
           partitionId,
@@ -283,7 +298,8 @@ public class PrimaryBackupClient {
           protocol,
           primaryElection,
           sessionIdService,
-          threadContextFactory);
+          threadContextFactory,
+          closeOnStop);
     }
   }
 }
