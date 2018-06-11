@@ -182,7 +182,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
     List<CompletableFuture<Void>> futures = partitions.values().stream()
         .map(PrimaryBackupPartition::close)
         .collect(Collectors.toList());
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).whenCompleteAsync((r, e) -> {
       ThreadContextFactory threadFactory = this.threadFactory;
       if (threadFactory != null) {
         threadFactory.close();
