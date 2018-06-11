@@ -54,7 +54,7 @@ public class DefaultProxySession<S> implements ProxySession<S> {
     this.session = session;
     this.serializer = serializer;
     ServiceProxyHandler serviceProxyHandler = new ServiceProxyHandler(serviceType);
-    S serviceProxy = (S) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{serviceType}, serviceProxyHandler);
+    S serviceProxy = (S) java.lang.reflect.Proxy.newProxyInstance(serviceType.getClassLoader(), new Class[]{serviceType}, serviceProxyHandler);
     proxy = new ServiceProxy<>(serviceProxy, serviceProxyHandler);
   }
 
