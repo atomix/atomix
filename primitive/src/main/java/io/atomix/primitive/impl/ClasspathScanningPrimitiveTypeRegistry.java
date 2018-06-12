@@ -36,7 +36,11 @@ public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegi
   private final Map<String, PrimitiveType> primitiveTypes = new ConcurrentHashMap<>();
 
   public ClasspathScanningPrimitiveTypeRegistry(ClassLoader classLoader) {
-    new FastClasspathScanner().addClassLoader(classLoader).matchClassesImplementing(PrimitiveType.class, type -> {
+    final String scanSpec = System.getProperty("io.atomix.scanSpec");
+    final FastClasspathScanner classpathScanner = scanSpec != null ?
+            new FastClasspathScanner(scanSpec).addClassLoader(classLoader) :
+            new FastClasspathScanner().addClassLoader(classLoader);
+    classpathScanner.matchClassesImplementing(PrimitiveType.class, type -> {
       if (!Modifier.isAbstract(type.getModifiers()) && !Modifier.isPrivate(type.getModifiers())) {
         PrimitiveType primitiveType = newInstance(type);
         PrimitiveType oldPrimitiveType = primitiveTypes.put(primitiveType.name(), primitiveType);

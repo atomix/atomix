@@ -49,7 +49,10 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
   private final ProfileRegistry profileTypes;
 
   public ClasspathScanningAtomixRegistry(ClassLoader classLoader) {
-    final FastClasspathScanner classpathScanner = new FastClasspathScanner().addClassLoader(classLoader);
+    final String scanSpec = System.getProperty("io.atomix.scanSpec");
+    final FastClasspathScanner classpathScanner = scanSpec != null ?
+            new FastClasspathScanner(scanSpec).addClassLoader(classLoader) :
+            new FastClasspathScanner().addClassLoader(classLoader);
 
     final Map<String, PartitionGroup.Type> partitionGroupTypes = new ConcurrentHashMap<>();
     classpathScanner.matchClassesImplementing(PartitionGroup.Type.class, type -> {
