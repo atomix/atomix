@@ -28,10 +28,6 @@ import java.util.TreeMap;
  * {@link TreeMap}.
  */
 public class DefaultConsistentTreeMapService extends DefaultConsistentMapService implements ConsistentTreeMapService {
-  public DefaultConsistentTreeMapService() {
-    super();
-  }
-
   @Override
   protected TreeMap<String, MapEntryValue> createMap() {
     return Maps.newTreeMap();
