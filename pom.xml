@@ -184,7 +184,7 @@
         <version>${maven.surefire.plugin.version}</version>
         <configuration>
           <shutdown>kill</shutdown>
-          <argLine>-Xss256k -Xms2G -Xmx4G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine>
+          <argLine>${argLine} -Xss256k -Xms2G -Xmx4G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine>
         </configuration>
       </plugin>
 
