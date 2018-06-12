@@ -1,6 +1,6 @@
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+  MAVEN_CLI_OPTS: "-s bin/settings.xml --batch-mode --errors --fail-at-end --show-version -Droot.logging.level=INFO"
 
 cache:
   paths:
@@ -8,5 +8,14 @@ cache:
 
 image: maven:3-jdk-8
 
-build:
-  script: "mvn --batch-mode verify -Droot.logging.level=INFO"
+test:
+  stage: test
+  script:
+    - mvn $MAVEN_CLI_OPTS verify jacoco:report coveralls:report
+
+deploy:
+  stage: deploy
+  script:
+    - mvn $MAVEN_CLI_OPTS deploy -DskipTests=true -Dmaven.javadoc.skip=true
+  only:
+    - master
