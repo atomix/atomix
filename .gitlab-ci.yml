@@ -13,11 +13,11 @@ image: maven:3-jdk-8
 test:
   stage: test
   script:
-    - mvn $MAVEN_CLI_OPTS verify jacoco:report coveralls:report -DrepoToken=$COVERALLS_TOKEN -Dmaven.javadoc.skip=true
+    - mvn $MAVEN_CLI_OPTS -DrepoToken=$COVERALLS_TOKEN clean verify jacoco:report coveralls:report -Dmaven.javadoc.skip=true
 
 deploy:
   stage: deploy
   script:
-    - mvn $MAVEN_CLI_OPTS deploy -DskipTests=true -DrepoToken=$COVERALLS_TOKEN -Dmaven.javadoc.skip=true
+    - mvn $MAVEN_CLI_OPTS deploy -DskipTests=true -Dmaven.javadoc.skip=true
   only:
     - master
