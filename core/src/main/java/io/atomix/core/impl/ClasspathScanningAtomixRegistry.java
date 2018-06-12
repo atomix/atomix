@@ -34,7 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -42,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningAtomixRegistry.class);
+  private static final Map<ClassLoader, ScanResults> CACHE = Collections.synchronizedMap(new WeakHashMap<>());
 
   private final PartitionGroupTypeRegistry partitionGroupTypes;
   private final PrimitiveTypeRegistry primitiveTypes;
@@ -49,6 +52,14 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
   private final ProfileRegistry profileTypes;
 
   public ClasspathScanningAtomixRegistry(ClassLoader classLoader) {
+    ScanResults results = CACHE.computeIfAbsent(classLoader, l -> scan(l));
+    this.partitionGroupTypes = new DefaultPartitionGroupTypeRegistry(results.partitionGroupTypes);
+    this.primitiveTypes = new DefaultPrimitiveTypeRegistry(results.primitiveTypes);
+    this.protocolTypes = new DefaultPrimitiveProtocolTypeRegistry(results.protocolTypes);
+    this.profileTypes = new DefaultProfileRegistry(results.profileTypes);
+  }
+
+  private static ScanResults scan(ClassLoader classLoader) {
     final FastClasspathScanner classpathScanner = new FastClasspathScanner().addClassLoader(classLoader);
 
     final Map<String, PartitionGroup.Type> partitionGroupTypes = new ConcurrentHashMap<>();
@@ -58,7 +69,7 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
         PartitionGroup.Type oldPartitionGroupType = partitionGroupTypes.put(partitionGroupType.name(), partitionGroupType);
         if (oldPartitionGroupType != null) {
           LOGGER.warn("Found multiple partition group types with name={}, classes=[{}, {}]", partitionGroupType.name(),
-                  oldPartitionGroupType.getClass().getName(), partitionGroupType.getClass().getName());
+              oldPartitionGroupType.getClass().getName(), partitionGroupType.getClass().getName());
         }
       }
     });
@@ -69,7 +80,7 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
         PrimitiveType oldPrimitiveType = primitiveTypes.put(primitiveType.name(), primitiveType);
         if (oldPrimitiveType != null) {
           LOGGER.warn("Found multiple primitive types with name={}, classes=[{}, {}]", primitiveType.name(),
-                  oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
+              oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
         }
       }
     });
@@ -80,7 +91,7 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
         PrimitiveProtocol.Type oldProtocolType = protocolTypes.put(protocolType.name(), protocolType);
         if (oldProtocolType != null) {
           LOGGER.warn("Found multiple protocol types with name={}, classes=[{}, {}]", protocolType.name(),
-                  oldProtocolType.getClass().getName(), protocolType.getClass().getName());
+              oldProtocolType.getClass().getName(), protocolType.getClass().getName());
         }
       }
     });
@@ -91,16 +102,12 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
         Profile oldProfileType = profileTypes.put(profileType.name(), profileType);
         if (oldProfileType != null) {
           LOGGER.warn("Found multiple profile types with name={}, classes=[{}, {}]", profileType.name(),
-                  oldProfileType.getClass().getName(), profileType.getClass().getName());
+              oldProfileType.getClass().getName(), profileType.getClass().getName());
         }
       }
     });
     classpathScanner.scan();
-
-    this.partitionGroupTypes = new DefaultPartitionGroupTypeRegistry(partitionGroupTypes);
-    this.primitiveTypes = new DefaultPrimitiveTypeRegistry(primitiveTypes);
-    this.protocolTypes = new DefaultPrimitiveProtocolTypeRegistry(protocolTypes);
-    this.profileTypes = new DefaultProfileRegistry(profileTypes);
+    return new ScanResults(partitionGroupTypes, primitiveTypes, protocolTypes, profileTypes);
   }
 
   /**
@@ -138,5 +145,23 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
   @Override
   public ProfileRegistry profiles() {
     return profileTypes;
+  }
+
+  private static class ScanResults {
+    private final Map<String, PartitionGroup.Type> partitionGroupTypes;
+    private final Map<String, PrimitiveType> primitiveTypes;
+    private final Map<String, PrimitiveProtocol.Type> protocolTypes;
+    private final Map<String, Profile> profileTypes;
+
+    public ScanResults(
+        Map<String, PartitionGroup.Type> partitionGroupTypes,
+        Map<String, PrimitiveType> primitiveTypes,
+        Map<String, PrimitiveProtocol.Type> protocolTypes,
+        Map<String, Profile> profileTypes) {
+      this.partitionGroupTypes = partitionGroupTypes;
+      this.primitiveTypes = primitiveTypes;
+      this.protocolTypes = protocolTypes;
+      this.profileTypes = profileTypes;
+    }
   }
 }

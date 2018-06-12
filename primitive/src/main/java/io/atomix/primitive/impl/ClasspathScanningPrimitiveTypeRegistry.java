@@ -24,7 +24,9 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Modifier;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,20 +34,29 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegistry {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningPrimitiveTypeRegistry.class);
+  private static final Map<ClassLoader, Map<String, PrimitiveType>> CACHE = Collections.synchronizedMap(new WeakHashMap<>());
 
-  private final Map<String, PrimitiveType> primitiveTypes = new ConcurrentHashMap<>();
+  private final Map<String, PrimitiveType> primitiveTypes;
 
   public ClasspathScanningPrimitiveTypeRegistry(ClassLoader classLoader) {
-    new FastClasspathScanner().addClassLoader(classLoader).matchClassesImplementing(PrimitiveType.class, type -> {
+    primitiveTypes = CACHE.computeIfAbsent(classLoader, l -> scan(l));
+  }
+
+  private static Map<String, PrimitiveType> scan(ClassLoader classLoader) {
+    final FastClasspathScanner classpathScanner = new FastClasspathScanner().addClassLoader(classLoader);
+    final Map<String, PrimitiveType> primitiveTypes = new ConcurrentHashMap<>();
+    classpathScanner.matchClassesImplementing(PrimitiveType.class, type -> {
       if (!Modifier.isAbstract(type.getModifiers()) && !Modifier.isPrivate(type.getModifiers())) {
         PrimitiveType primitiveType = newInstance(type);
         PrimitiveType oldPrimitiveType = primitiveTypes.put(primitiveType.name(), primitiveType);
         if (oldPrimitiveType != null) {
-          LOGGER.warn("Found multiple primitives types name={}, classes=[{}, {}]", primitiveType.name(),
-                  oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
+          LOGGER.warn("Found multiple primitive types with name={}, classes=[{}, {}]", primitiveType.name(),
+              oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
         }
       }
-    }).scan();
+    });
+    classpathScanner.scan();
+    return primitiveTypes;
   }
 
   /**
