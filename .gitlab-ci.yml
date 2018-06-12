@@ -1,6 +1,6 @@
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
-  MAVEN_CLI_OPTS: "-s bin/settings.xml --batch-mode --errors --fail-at-end --show-version -Droot.logging.level=INFO"
+  MAVEN_CLI_OPTS: "-s bin/settings.xml --batch-mode --errors --fail-at-end --show-version -DrepoToken=$COVERALLS_TOKEN -Droot.logging.level=INFO"
 
 cache:
   paths:
