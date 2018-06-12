@@ -1,17 +1,19 @@
 variables:
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
-  MAVEN_CLI_OPTS: "-s bin/settings.xml --batch-mode --errors --fail-at-end --show-version -DrepoToken=$COVERALLS_TOKEN -Droot.logging.level=INFO"
+  MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository"
+  MAVEN_CLI_OPTS: "-s bin/settings.xml --batch-mode --errors --fail-at-end --show-version -Droot.logging.level=INFO -DrepoToken=$COVERALLS_TOKEN"
 
 cache:
   paths:
-    - .m2/repository
+    - ./.m2/repository
+  # keep cache across branch
+  key: "$CI_BUILD_REF_NAME"
 
 image: maven:3-jdk-8
 
 test:
   stage: test
   script:
-    - mvn $MAVEN_CLI_OPTS verify jacoco:report coveralls:report
+    - mvn $MAVEN_CLI_OPTS verify jacoco:report coveralls:report -Dmaven.javadoc.skip=true
 
 deploy:
   stage: deploy
