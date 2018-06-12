@@ -228,7 +228,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   private void getTlsParameters() {
     // default is TLS enabled unless key stores cannot be loaded
-    enableNettyTls = Boolean.parseBoolean(System.getProperty("enableNettyTLS", Boolean.toString(TLS_ENABLED)));
+    enableNettyTls = Boolean.parseBoolean(System.getProperty("io.atomix.enableNettyTLS", Boolean.toString(TLS_ENABLED)));
 
     if (enableNettyTls) {
       enableNettyTls = loadKeyStores();
