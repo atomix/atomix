@@ -24,9 +24,11 @@ import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.set.SetEvent;
 import io.atomix.core.set.SetEventListener;
 import io.atomix.primitive.DelegatingAsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.concurrent.Futures;
 
 import java.time.Duration;
@@ -50,6 +52,11 @@ public class DelegatingAsyncDistributedSet<E> extends DelegatingAsyncPrimitive i
   public DelegatingAsyncDistributedSet(AsyncConsistentMap<E, Boolean> backingMap) {
     super(backingMap);
     this.backingMap = backingMap;
+  }
+
+  @Override
+  public PrimitiveType type() {
+    return DistributedSetType.instance();
   }
 
   @Override
