@@ -113,7 +113,7 @@ public class MultiPrimaryProtocol implements PrimitiveProtocol {
             .withRetryDelay(config.getRetryDelay())
             .build())
         .collect(Collectors.toList());
-    return new DefaultProxyClient<>(primitiveName, primitiveType, serviceType, partitions, config.getPartitioner());
+    return new DefaultProxyClient<>(primitiveName, primitiveType, this, serviceType, partitions, config.getPartitioner());
   }
 
   @Override

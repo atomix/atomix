@@ -17,6 +17,7 @@ package io.atomix.core.set.impl;
 
 import com.google.common.io.BaseEncoding;
 import io.atomix.core.map.AsyncConsistentMap;
+import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.impl.CachingAsyncConsistentMap;
 import io.atomix.core.map.impl.ConsistentMapProxy;
 import io.atomix.core.map.impl.ConsistentMapService;
@@ -47,7 +48,7 @@ public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E>
   public CompletableFuture<DistributedSet<E>> buildAsync() {
     ProxyClient<ConsistentMapService> proxy = protocol().newProxy(
         name(),
-        primitiveType(),
+        ConsistentMapType.instance(),
         ConsistentMapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());

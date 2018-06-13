@@ -47,8 +47,8 @@ public abstract class TransactionalMapParticipant<K, V> implements AsyncTransact
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return consistentMap.primitiveType();
+  public PrimitiveType type() {
+    return consistentMap.type();
   }
 
   @Override

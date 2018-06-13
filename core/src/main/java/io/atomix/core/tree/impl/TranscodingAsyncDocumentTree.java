@@ -22,6 +22,7 @@ import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeListener;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -53,8 +54,13 @@ public class TranscodingAsyncDocumentTree<V1, V2> implements AsyncDocumentTree<V
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return backingTree.primitiveType();
+  public PrimitiveType type() {
+    return backingTree.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return backingTree.protocol();
   }
 
   @Override

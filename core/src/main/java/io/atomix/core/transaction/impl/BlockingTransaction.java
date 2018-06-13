@@ -24,6 +24,7 @@ import io.atomix.core.transaction.TransactionalMapBuilder;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -50,8 +51,13 @@ public class BlockingTransaction implements Transaction {
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return asyncTransaction.primitiveType();
+  public PrimitiveType type() {
+    return asyncTransaction.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return asyncTransaction.protocol();
   }
 
   @Override
