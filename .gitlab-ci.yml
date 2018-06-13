@@ -14,7 +14,7 @@ test:
   stage: test
   script:
     - export repoToken=$COVERALLS_TOKEN
-    - mvn $MAVEN_CLI_OPTS clean verify jacoco:report coveralls:report -Dmaven.javadoc.skip=true
+    - mvn $MAVEN_CLI_OPTS clean install verify jacoco:report coveralls:report -Dmaven.javadoc.skip=true
 
 deploy:
   stage: deploy
