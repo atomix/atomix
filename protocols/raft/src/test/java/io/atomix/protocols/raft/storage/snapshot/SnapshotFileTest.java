@@ -20,6 +20,7 @@ import org.junit.Test;
 import java.io.File;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -43,6 +44,10 @@ public class SnapshotFileTest {
   public void testCreateValidateSnapshotFile() throws Exception {
     assertTrue(SnapshotFile.isSnapshotFile(SnapshotFile.createSnapshotFile(new File(System.getProperty("user.dir")), "foo", 1)));
     assertTrue(SnapshotFile.isSnapshotFile(SnapshotFile.createSnapshotFile(new File(System.getProperty("user.dir")), "foo-bar", 1)));
+    assertFalse(SnapshotFile.isSnapshotFile(new File(System.getProperty("user.dir") + "/foo")));
+    assertFalse(SnapshotFile.isSnapshotFile(new File(System.getProperty("user.dir") + "/foo.bar")));
+    assertFalse(SnapshotFile.isSnapshotFile(new File(System.getProperty("user.dir") + "/foo.snapshot")));
+    assertFalse(SnapshotFile.isSnapshotFile(new File(System.getProperty("user.dir") + "/foo-bar.snapshot")));
   }
 
   @Test

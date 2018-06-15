@@ -46,6 +46,7 @@ public class RaftSessionRegistryTest {
     RaftSession session = createSession(1);
     sessionManager.addSession(session);
     assertNotNull(sessionManager.getSession(1));
+    assertNotNull(sessionManager.getSession(session.sessionId()));
     assertEquals(0, sessionManager.getSessions(PrimitiveId.from(1)).size());
     session.open();
     assertEquals(1, sessionManager.getSessions(PrimitiveId.from(1)).size());
