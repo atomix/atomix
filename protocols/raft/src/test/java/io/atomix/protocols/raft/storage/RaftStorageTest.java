@@ -57,8 +57,21 @@ public class RaftStorageTest {
     assertEquals(new File(System.getProperty("user.dir"), "foo"), storage.directory());
     assertEquals(1024 * 1024, storage.maxLogSegmentSize());
     assertEquals(1024, storage.maxLogEntriesPerSegment());
+    assertFalse(storage.dynamicCompaction());
     assertEquals(.5, storage.freeDiskBuffer(), .01);
     assertFalse(storage.isFlushOnCommit());
     assertTrue(storage.isRetainStaleSnapshots());
+  }
+
+  @Test
+  public void testCustomConfiguration2() throws Exception {
+    RaftStorage storage = RaftStorage.builder()
+            .withDirectory(System.getProperty("user.dir") + "/baz")
+            .withDynamicCompaction()
+            .withFlushOnCommit()
+            .build();
+    assertEquals(new File(System.getProperty("user.dir"), "baz"), storage.directory());
+    assertTrue(storage.dynamicCompaction());
+    assertTrue(storage.isFlushOnCommit());
   }
 }
