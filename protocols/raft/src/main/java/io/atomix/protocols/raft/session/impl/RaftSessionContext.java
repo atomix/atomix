@@ -58,7 +58,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Raft session.
  */
 public class RaftSessionContext implements RaftSession {
-  private static final int EVENT_BATCH_SIZE = 1024 * 1024 * 32;
+  private static final int EVENT_BATCH_SIZE = 1024 * 32;
   private final Logger log;
   private final SessionId sessionId;
   private final MemberId member;
@@ -666,6 +666,7 @@ public class RaftSessionContext implements RaftSession {
         currentBatchSize = 0;
       }
       currentBatch.add(raftEvent);
+      currentBatchSize += raftEvent.value().length;
     }
 
     if (!currentBatch.isEmpty()) {
