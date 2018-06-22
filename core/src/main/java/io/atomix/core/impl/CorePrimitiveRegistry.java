@@ -78,20 +78,9 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives() {
-    try {
-      return primitives.entrySet()
-          .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
-          .stream()
-          .map(entry -> new PrimitiveInfo(entry.getKey(), primitiveTypeRegistry.getPrimitiveType(entry.getValue().value())))
-          .collect(Collectors.toList());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new PrimitiveException.Interrupted();
-    } catch (TimeoutException e) {
-      throw new PrimitiveException.Timeout();
-    } catch (ExecutionException e) {
-      throw new PrimitiveException(e.getCause());
-    }
+    return primitives.sync().entrySet().stream()
+        .map(entry -> new PrimitiveInfo(entry.getKey(), primitiveTypeRegistry.getPrimitiveType(entry.getValue().value())))
+        .collect(Collectors.toList());
   }
 
   @Override

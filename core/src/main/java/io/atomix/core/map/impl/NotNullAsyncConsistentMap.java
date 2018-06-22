@@ -16,14 +16,11 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.collect.ImmutableMap;
-
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.utils.time.Versioned;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -52,8 +49,8 @@ public class NotNullAsyncConsistentMap<K, V> extends DelegatingAsyncConsistentMa
   @Override
   public CompletableFuture<Map<K, Versioned<V>>> getAllPresent(Iterable<K> keys) {
     return super.getAllPresent(keys).thenApply(m -> ImmutableMap.copyOf(m.entrySet()
-            .stream().filter(e -> e.getValue().value() != null)
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
+        .stream().filter(e -> e.getValue().value() != null)
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
   }
 
   @Override
@@ -75,20 +72,6 @@ public class NotNullAsyncConsistentMap<K, V> extends DelegatingAsyncConsistentMa
       return super.remove(key).thenApply(v -> null);
     }
     return super.putAndGet(key, value);
-  }
-
-  @Override
-  public CompletableFuture<Collection<Versioned<V>>> values() {
-    return super.values().thenApply(value -> value.stream()
-        .filter(v -> v.value() != null)
-        .collect(Collectors.toList()));
-  }
-
-  @Override
-  public CompletableFuture<Set<Map.Entry<K, Versioned<V>>>> entrySet() {
-    return super.entrySet().thenApply(entries -> entries.stream()
-        .filter(e -> e.getValue().value() != null)
-        .collect(Collectors.toSet()));
   }
 
   @Override

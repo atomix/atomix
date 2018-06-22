@@ -82,7 +82,7 @@ public class CoreTransactionService implements ManagedTransactionService {
   @Override
   public Set<TransactionId> getActiveTransactions() {
     checkState(isRunning());
-    return transactions.keySet().join();
+    return transactions.sync().keySet();
   }
 
   @Override
@@ -180,11 +180,11 @@ public class CoreTransactionService implements ManagedTransactionService {
    */
   private void onMembershipChange(ClusterMembershipEvent event) {
     if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
-      transactions.entrySet().thenAccept(entries -> entries.stream()
-          .filter(entry -> entry.getValue().value().coordinator.equals(event.subject().id()))
-          .forEach(entry -> {
-            recoverTransaction(entry.getKey(), entry.getValue().value());
-          }));
+      transactions.entrySet().stream()
+          .thenAccept(stream -> stream.filter(entry -> entry.getValue().value().coordinator.equals(event.subject().id()))
+              .forEach(entry -> {
+                recoverTransaction(entry.getKey(), entry.getValue().value());
+              }));
     }
   }
 

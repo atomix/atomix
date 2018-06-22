@@ -22,6 +22,7 @@ import io.atomix.utils.time.Versioned;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * State machine corresponding to {@link ConsistentTreeMapProxy} backed by a
@@ -33,18 +34,18 @@ public class DefaultConsistentTreeMapService extends DefaultConsistentMapService
   }
 
   @Override
-  protected TreeMap<String, MapEntryValue> createMap() {
-    return Maps.newTreeMap();
+  protected NavigableMap<String, MapEntryValue> createMap() {
+    return new ConcurrentSkipListMap<>();
   }
 
   @Override
-  protected TreeMap<String, MapEntryValue> entries() {
-    return (TreeMap<String, MapEntryValue>) super.entries();
+  protected NavigableMap<String, MapEntryValue> entries() {
+    return (NavigableMap<String, MapEntryValue>) super.entries();
   }
 
   @Override
   public NavigableMap<String, byte[]> subMap(String fromKey, boolean fromInclusive, String toKey, boolean toInclusive) {
-    TreeMap<String, byte[]> map = new TreeMap<>();
+    NavigableMap<String, byte[]> map = new TreeMap<>();
     entries().subMap(fromKey, fromInclusive, toKey, toInclusive).forEach((k, v) -> map.put(k, v.value()));
     return map;
   }

@@ -17,14 +17,14 @@
 package io.atomix.core.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.set.DistributedSet;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -238,7 +238,7 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    *
    * @return a set of the keys contained in this map
    */
-  Set<K> keySet();
+  DistributedSet<K> keySet();
 
   /**
    * Returns the collection of values (and associated versions) contained in this map.
@@ -249,7 +249,7 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    *
    * @return a collection of the values (and associated versions) contained in this map
    */
-  Collection<Versioned<V>> values();
+  DistributedCollection<Versioned<V>> values();
 
   /**
    * Returns the set of entries contained in this map.
@@ -260,7 +260,7 @@ public interface ConsistentMap<K, V> extends SyncPrimitive {
    *
    * @return set of entries contained in this map.
    */
-  Set<Entry<K, Versioned<V>>> entrySet();
+  DistributedSet<Entry<K, Versioned<V>>> entrySet();
 
   /**
    * If the specified key is not already associated with a value

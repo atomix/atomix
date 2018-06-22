@@ -22,6 +22,7 @@ import io.atomix.primitive.operation.Query;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,6 +55,15 @@ public interface ConsistentMapService {
    */
   @Query
   boolean containsKey(String key);
+
+  /**
+   * Returns true if this map contains mappings for all the specified keys.
+   *
+   * @param keys keys
+   * @return true if map contains key, false otherwise
+   */
+  @Query
+  boolean containsKeys(Collection<? extends String> keys);
 
   /**
    * Returns true if this map contains the specified value.
@@ -297,6 +307,84 @@ public interface ConsistentMapService {
   MapEntryUpdateResult<String, byte[]> replace(String key, long oldVersion, byte[] newValue);
 
   /**
+   * Returns a key iterator.
+   *
+   * @return the key iterator ID
+   */
+  @Command
+  long iterateKeys();
+
+  /**
+   * Returns the next batch of entries for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position the iterator position
+   * @return the next batch of keys for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<String> nextKeys(long iteratorId, int position);
+
+  /**
+   * Closes a key iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeKeys(long iteratorId);
+
+  /**
+   * Returns a values iterator.
+   *
+   * @return the values iterator ID
+   */
+  @Command
+  long iterateValues();
+
+  /**
+   * Returns the next batch of values for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position the iterator position
+   * @return the next batch of values for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<Versioned<byte[]>> nextValues(long iteratorId, int position);
+
+  /**
+   * Closes a value iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeValues(long iteratorId);
+
+  /**
+   * Returns an entry iterator.
+   *
+   * @return the entry iterator ID
+   */
+  @Command
+  long iterateEntries();
+
+  /**
+   * Returns the next batch of entries for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position the iterator position
+   * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<Map.Entry<String, Versioned<byte[]>>> nextEntries(long iteratorId, int position);
+
+  /**
+   * Closes an entry iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeEntries(long iteratorId);
+
+  /**
    * Adds a listener to the service.
    */
   @Command
@@ -352,5 +440,60 @@ public interface ConsistentMapService {
    */
   @Command
   RollbackResult rollback(TransactionId transactionId);
+
+  /**
+   * Iterator batch.
+   *
+   * @param <T> the batch element type
+   */
+  final class Batch<T> implements Iterator<T> {
+    private final int position;
+    private final Collection<T> entries;
+    private transient volatile Iterator<T> iterator;
+
+    Batch(int position, Collection<T> entries) {
+      this.position = position;
+      this.entries = entries;
+    }
+
+    /**
+     * Returns the iterator position.
+     *
+     * @return the iterator position
+     */
+    public int position() {
+      return position;
+    }
+
+    /**
+     * Returns the batch of entries.
+     *
+     * @return the batch of entries
+     */
+    public Collection<T> entries() {
+      return entries;
+    }
+
+    private Iterator<T> iterator() {
+      if (iterator == null) {
+        synchronized (this) {
+          if (iterator == null) {
+            iterator = entries.iterator();
+          }
+        }
+      }
+      return iterator;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return iterator().hasNext();
+    }
+
+    @Override
+    public T next() {
+      return iterator().next();
+    }
+  }
 
 }

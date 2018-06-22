@@ -18,10 +18,14 @@ package io.atomix.core.map.impl;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveState;
@@ -31,7 +35,6 @@ import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,7 +63,10 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   private final Function<K2, K1> keyDecoder;
   private final Function<V2, V1> valueDecoder;
   private final Function<V1, V2> valueEncoder;
-  private final Function<Versioned<V2>, Versioned<V1>> versionedValueTransform;
+  private final Function<Versioned<V2>, Versioned<V1>> versionedValueDecoder;
+  private final Function<Versioned<V1>, Versioned<V2>> versionedValueEncoder;
+  private final Function<Entry<K2, Versioned<V2>>, Entry<K1, Versioned<V1>>> entryDecoder;
+  private final Function<Entry<K1, Versioned<V1>>, Entry<K2, Versioned<V2>>> entryEncoder;
   private final Map<MapEventListener<K1, V1>, InternalBackingMapEventListener> listeners =
       Maps.newIdentityHashMap();
 
@@ -74,7 +80,10 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
     this.keyDecoder = k -> k == null ? null : keyDecoder.apply(k);
     this.valueEncoder = v -> v == null ? null : valueEncoder.apply(v);
     this.valueDecoder = v -> v == null ? null : valueDecoder.apply(v);
-    this.versionedValueTransform = v -> v == null ? null : v.map(valueDecoder);
+    this.versionedValueDecoder = v -> v == null ? null : v.map(valueDecoder);
+    this.versionedValueEncoder = v -> v == null ? null : v.map(valueEncoder);
+    this.entryDecoder = e -> e == null ? null : Maps.immutableEntry(keyDecoder.apply(e.getKey()), versionedValueDecoder.apply(e.getValue()));
+    this.entryEncoder = e -> e == null ? null : Maps.immutableEntry(keyEncoder.apply(e.getKey()), versionedValueEncoder.apply(e.getValue()));
   }
 
   @Override
@@ -118,7 +127,7 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   @Override
   public CompletableFuture<Versioned<V1>> get(K1 key) {
     try {
-      return backingMap.get(keyEncoder.apply(key)).thenApply(versionedValueTransform);
+      return backingMap.get(keyEncoder.apply(key)).thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -134,7 +143,7 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
       return backingMap.getAllPresent(uniqueKeys).thenApply(
           entries -> ImmutableMap.copyOf(entries.entrySet().stream()
               .collect(Collectors.toMap(o -> keyDecoder.apply(o.getKey()),
-                  o -> versionedValueTransform.apply(o.getValue())))));
+                  o -> versionedValueDecoder.apply(o.getValue())))));
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -144,7 +153,7 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   public CompletableFuture<Versioned<V1>> getOrDefault(K1 key, V1 defaultValue) {
     try {
       return backingMap.getOrDefault(keyEncoder.apply(key), valueEncoder.apply(defaultValue))
-          .thenApply(versionedValueTransform);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -159,7 +168,7 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
           v -> condition.test(valueDecoder.apply(v)),
           (k, v) -> valueEncoder.apply(remappingFunction.apply(keyDecoder.apply(k),
               valueDecoder.apply(v))))
-          .thenApply(versionedValueTransform);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -169,7 +178,7 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   public CompletableFuture<Versioned<V1>> put(K1 key, V1 value, Duration ttl) {
     try {
       return backingMap.put(keyEncoder.apply(key), valueEncoder.apply(value), ttl)
-          .thenApply(versionedValueTransform);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -179,7 +188,7 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   public CompletableFuture<Versioned<V1>> putAndGet(K1 key, V1 value, Duration ttl) {
     try {
       return backingMap.putAndGet(keyEncoder.apply(key), valueEncoder.apply(value), ttl)
-          .thenApply(versionedValueTransform);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -188,7 +197,7 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   @Override
   public CompletableFuture<Versioned<V1>> remove(K1 key) {
     try {
-      return backingMap.remove(keyEncoder.apply(key)).thenApply(versionedValueTransform);
+      return backingMap.remove(keyEncoder.apply(key)).thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -200,31 +209,25 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   }
 
   @Override
-  public CompletableFuture<Set<K1>> keySet() {
-    return backingMap.keySet()
-        .thenApply(s -> s.stream().map(keyDecoder).collect(Collectors.toSet()));
+  public AsyncDistributedSet<K1> keySet() {
+    return new TranscodingAsyncDistributedSet<>(backingMap.keySet(), keyEncoder, keyDecoder);
   }
 
   @Override
-  public CompletableFuture<Collection<Versioned<V1>>> values() {
-    return backingMap.values()
-        .thenApply(c -> c.stream().map(versionedValueTransform).collect(Collectors.toList()));
+  public AsyncDistributedCollection<Versioned<V1>> values() {
+    return new TranscodingAsyncDistributedCollection<>(backingMap.values(), versionedValueEncoder, versionedValueDecoder);
   }
 
   @Override
-  public CompletableFuture<Set<Entry<K1, Versioned<V1>>>> entrySet() {
-    return backingMap.entrySet()
-        .thenApply(s -> s.stream()
-            .map(e -> Maps.immutableEntry(keyDecoder.apply(e.getKey()),
-                versionedValueTransform.apply(e.getValue())))
-            .collect(Collectors.toSet()));
+  public AsyncDistributedSet<Entry<K1, Versioned<V1>>> entrySet() {
+    return new TranscodingAsyncDistributedSet<>(backingMap.entrySet(), entryEncoder, entryDecoder);
   }
 
   @Override
   public CompletableFuture<Versioned<V1>> putIfAbsent(K1 key, V1 value, Duration ttl) {
     try {
       return backingMap.putIfAbsent(keyEncoder.apply(key), valueEncoder.apply(value), ttl)
-          .thenApply(versionedValueTransform);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -252,7 +255,7 @@ public class TranscodingAsyncConsistentMap<K1, V1, K2, V2> implements AsyncConsi
   public CompletableFuture<Versioned<V1>> replace(K1 key, V1 value) {
     try {
       return backingMap.replace(keyEncoder.apply(key), valueEncoder.apply(value))
-          .thenApply(versionedValueTransform);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }

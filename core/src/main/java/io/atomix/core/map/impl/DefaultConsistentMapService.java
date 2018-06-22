@@ -35,6 +35,7 @@ import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,11 +54,14 @@ import static com.google.common.base.Preconditions.checkState;
 public class DefaultConsistentMapService
     extends AbstractPrimitiveService<ConsistentMapClient>
     implements ConsistentMapService {
+  private static final int MAX_ITERATOR_BATCH_SIZE = 1024 * 32;
+
   private final Serializer serializer;
   protected Set<SessionId> listeners = Sets.newLinkedHashSet();
   private Map<String, MapEntryValue> map;
   protected Set<String> preparedKeys = Sets.newHashSet();
   protected Map<TransactionId, TransactionScope> activeTransactions = Maps.newHashMap();
+  protected Map<Long, IteratorContext> entryIterators = Maps.newHashMap();
   protected long currentVersion;
 
   public DefaultConsistentMapService() {
@@ -70,12 +74,13 @@ public class DefaultConsistentMapService
         .register(MapEntryValue.class)
         .register(MapEntryValue.Type.class)
         .register(new HashMap().keySet().getClass())
+        .register(IteratorContext.class)
         .build());
     map = createMap();
   }
 
   protected Map<String, MapEntryValue> createMap() {
-    return Maps.newHashMap();
+    return Maps.newConcurrentMap();
   }
 
   protected Map<String, MapEntryValue> entries() {
@@ -94,6 +99,7 @@ public class DefaultConsistentMapService
     writer.writeObject(entries());
     writer.writeObject(activeTransactions);
     writer.writeLong(currentVersion);
+    writer.writeObject(entryIterators);
   }
 
   @Override
@@ -103,6 +109,8 @@ public class DefaultConsistentMapService
     map = reader.readObject();
     activeTransactions = reader.readObject();
     currentVersion = reader.readLong();
+    entryIterators = reader.readObject();
+
     map.forEach((key, value) -> {
       if (value.ttl() > 0) {
         value.timer = getScheduler().schedule(Duration.ofMillis(value.ttl() - (getWallClock().getTime().unixTimestamp() - value.created())), () -> {
@@ -117,6 +125,16 @@ public class DefaultConsistentMapService
   public boolean containsKey(String key) {
     MapEntryValue value = entries().get(key);
     return value != null && value.type() != MapEntryValue.Type.TOMBSTONE;
+  }
+
+  @Override
+  public boolean containsKeys(Collection<? extends String> keys) {
+    for (String key : keys) {
+      if (!containsKey(key)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
@@ -514,6 +532,82 @@ public class DefaultConsistentMapService
   }
 
   @Override
+  public long iterateKeys() {
+    return iterateEntries();
+  }
+
+  @Override
+  public Batch<String> nextKeys(long iteratorId, int position) {
+    Batch<Map.Entry<String, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet()));
+  }
+
+  @Override
+  public void closeKeys(long iteratorId) {
+    closeEntries(iteratorId);
+  }
+
+  @Override
+  public long iterateValues() {
+    return iterateEntries();
+  }
+
+  @Override
+  public Batch<Versioned<byte[]>> nextValues(long iteratorId, int position) {
+    Batch<Map.Entry<String, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+        .map(Map.Entry::getValue)
+        .collect(Collectors.toSet()));
+  }
+
+  @Override
+  public void closeValues(long iteratorId) {
+    closeEntries(iteratorId);
+  }
+
+  @Override
+  public long iterateEntries() {
+    entryIterators.put(getCurrentIndex(), new IteratorContext(getCurrentSession().sessionId().id()));
+    return getCurrentIndex();
+  }
+
+  @Override
+  public Batch<Map.Entry<String, Versioned<byte[]>>> nextEntries(long iteratorId, int position) {
+    IteratorContext context = entryIterators.get(iteratorId);
+    if (context == null) {
+      return null;
+    }
+
+    List<Map.Entry<String, Versioned<byte[]>>> entries = new ArrayList<>();
+    int size = 0;
+    while (context.iterator.hasNext()) {
+      context.position++;
+      if (context.position > position) {
+        Map.Entry<String, MapEntryValue> entry = context.iterator.next();
+        entries.add(Maps.immutableEntry(entry.getKey(), toVersioned(entry.getValue())));
+        size += entry.getKey().length();
+        size += entry.getValue().value().length;
+
+        if (size >= MAX_ITERATOR_BATCH_SIZE) {
+          break;
+        }
+      }
+    }
+
+    if (entries.isEmpty()) {
+      return null;
+    }
+    return new Batch<>(context.position, entries);
+  }
+
+  @Override
+  public void closeEntries(long iteratorId) {
+    entryIterators.remove(iteratorId);
+  }
+
+  @Override
   public void listen() {
     listeners.add(getCurrentSession().sessionId());
   }
@@ -786,11 +880,13 @@ public class DefaultConsistentMapService
   @Override
   public void onExpire(Session session) {
     listeners.remove(session.sessionId());
+    entryIterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
   }
 
   @Override
   public void onClose(Session session) {
     listeners.remove(session.sessionId());
+    entryIterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
   }
 
   /**
@@ -918,6 +1014,16 @@ public class DefaultConsistentMapService
      */
     TransactionScope prepared(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
       return new TransactionScope(version, transactionLog);
+    }
+  }
+
+  private class IteratorContext {
+    private final long sessionId;
+    private int position = 0;
+    private transient Iterator<Map.Entry<String, MapEntryValue>> iterator = entries().entrySet().iterator();
+
+    IteratorContext(long sessionId) {
+      this.sessionId = sessionId;
     }
   }
 }

@@ -18,6 +18,7 @@ package io.atomix.core.map;
 import io.atomix.core.map.impl.CommitResult;
 import io.atomix.core.map.impl.ConsistentMapProxyBuilder;
 import io.atomix.core.map.impl.ConsistentMapResource;
+import io.atomix.core.map.impl.ConsistentMapService;
 import io.atomix.core.map.impl.DefaultConsistentMapService;
 import io.atomix.core.map.impl.MapEntryUpdateResult;
 import io.atomix.core.map.impl.MapUpdate;
@@ -79,6 +80,7 @@ public class ConsistentMapType<K, V> implements PrimitiveType<ConsistentMapBuild
         .register(Versioned.class)
         .register(MapEvent.class)
         .register(MapEvent.Type.class)
+        .register(ConsistentMapService.Batch.class)
         .register(byte[].class)
         .build();
   }
