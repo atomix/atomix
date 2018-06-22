@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.collection.impl;
 
+import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.SyncIterator;
-import io.atomix.core.collection.impl.BlockingIterator;
-import io.atomix.core.set.AsyncDistributedSet;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.SetEventListener;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 
@@ -30,81 +28,81 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Implementation of {@link DistributedSet} that merely delegates to a {@link AsyncDistributedSet}
+ * Implementation of {@link DistributedCollection} that merely delegates to a {@link AsyncDistributedCollection}
  * and waits for the operation to complete.
  *
- * @param <E> set element type
+ * @param <E> collection element type
  */
-public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E>> implements DistributedSet<E> {
+public class BlockingDistributedCollection<E> extends Synchronous<AsyncDistributedCollection<E>> implements DistributedCollection<E> {
 
   private final long operationTimeoutMillis;
 
-  private final AsyncDistributedSet<E> asyncSet;
+  private final AsyncDistributedCollection<E> asyncCollection;
 
-  public BlockingDistributedSet(AsyncDistributedSet<E> asyncSet, long operationTimeoutMillis) {
-    super(asyncSet);
-    this.asyncSet = asyncSet;
+  public BlockingDistributedCollection(AsyncDistributedCollection<E> asyncCollection, long operationTimeoutMillis) {
+    super(asyncCollection);
+    this.asyncCollection = asyncCollection;
     this.operationTimeoutMillis = operationTimeoutMillis;
   }
 
   @Override
   public int size() {
-    return complete(asyncSet.size());
+    return complete(asyncCollection.size());
   }
 
   @Override
   public boolean isEmpty() {
-    return complete(asyncSet.isEmpty());
+    return complete(asyncCollection.isEmpty());
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public boolean contains(Object o) {
-    return complete(asyncSet.contains((E) o));
+    return complete(asyncCollection.contains((E) o));
   }
 
   @Override
   public boolean add(E e) {
-    return complete(asyncSet.add(e));
+    return complete(asyncCollection.add(e));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public boolean remove(Object o) {
-    return complete(asyncSet.remove((E) o));
+    return complete(asyncCollection.remove((E) o));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public boolean containsAll(Collection<?> c) {
-    return complete(asyncSet.containsAll((Collection<? extends E>) c));
+    return complete(asyncCollection.containsAll((Collection<? extends E>) c));
   }
 
   @Override
   public boolean addAll(Collection<? extends E> c) {
-    return complete(asyncSet.addAll(c));
+    return complete(asyncCollection.addAll(c));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public boolean retainAll(Collection<?> c) {
-    return complete(asyncSet.retainAll((Collection<? extends E>) c));
+    return complete(asyncCollection.retainAll((Collection<? extends E>) c));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public boolean removeAll(Collection<?> c) {
-    return complete(asyncSet.removeAll((Collection<? extends E>) c));
+    return complete(asyncCollection.removeAll((Collection<? extends E>) c));
   }
 
   @Override
   public void clear() {
-    complete(asyncSet.clear());
+    complete(asyncCollection.clear());
   }
 
   @Override
   public SyncIterator<E> iterator() {
-    return new BlockingIterator<>(complete(asyncSet.iterator()), operationTimeoutMillis);
+    return new BlockingIterator<>(complete(asyncCollection.iterator()), operationTimeoutMillis);
   }
 
   @Override
@@ -120,18 +118,8 @@ public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E
   }
 
   @Override
-  public void addListener(SetEventListener<E> listener) {
-    complete(asyncSet.addListener(listener));
-  }
-
-  @Override
-  public void removeListener(SetEventListener<E> listener) {
-    complete(asyncSet.removeListener(listener));
-  }
-
-  @Override
-  public AsyncDistributedSet<E> async() {
-    return asyncSet;
+  public AsyncDistributedCollection<E> async() {
+    return asyncCollection;
   }
 
   private <T> T complete(CompletableFuture<T> future) {

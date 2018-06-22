@@ -16,9 +16,11 @@
 
 package io.atomix.core.map.impl;
 
+import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.DelegatingAsyncPrimitive;
@@ -26,11 +28,9 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
@@ -194,17 +194,17 @@ public class DelegatingAsyncConsistentTreeMap<V>
   }
 
   @Override
-  public CompletableFuture<Set<String>> keySet() {
+  public AsyncDistributedSet<String> keySet() {
     return delegateMap.keySet();
   }
 
   @Override
-  public CompletableFuture<Collection<Versioned<V>>> values() {
+  public AsyncDistributedCollection<Versioned<V>> values() {
     return delegateMap.values();
   }
 
   @Override
-  public CompletableFuture<Set<Map.Entry<String, Versioned<V>>>> entrySet() {
+  public AsyncDistributedSet<Map.Entry<String, Versioned<V>>> entrySet() {
     return delegateMap.entrySet();
   }
 

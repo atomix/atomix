@@ -17,18 +17,18 @@
 package io.atomix.core.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.map.impl.MapUpdate;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.transaction.Transactional;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
@@ -273,7 +273,7 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    *
    * @return a set of the keys contained in this map
    */
-  CompletableFuture<Set<K>> keySet();
+  AsyncDistributedSet<K> keySet();
 
   /**
    * Returns the collection of values (and associated versions) contained in this map.
@@ -284,7 +284,7 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    *
    * @return a collection of the values (and associated versions) contained in this map
    */
-  CompletableFuture<Collection<Versioned<V>>> values();
+  AsyncDistributedCollection<Versioned<V>> values();
 
   /**
    * Returns the set of entries contained in this map.
@@ -295,7 +295,7 @@ public interface AsyncConsistentMap<K, V> extends AsyncPrimitive, Transactional<
    *
    * @return set of entries contained in this map.
    */
-  CompletableFuture<Set<Entry<K, Versioned<V>>>> entrySet();
+  AsyncDistributedSet<Entry<K, Versioned<V>>> entrySet();
 
   /**
    * If the specified key is not already associated with a value associates

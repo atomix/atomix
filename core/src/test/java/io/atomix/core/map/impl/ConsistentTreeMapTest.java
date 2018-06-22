@@ -16,14 +16,20 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.AsyncConsistentTreeMap;
+import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -173,16 +179,12 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     }).join());
 
     //Test various collections of keys, values and entries
-    map.keySet().thenAccept(keys -> assertTrue(stringArrayCollectionIsEqual(keys, all))).join();
-    map.values().thenAccept(values -> assertTrue(
-        stringArrayCollectionIsEqual(values.stream().map(v -> v.value())
-            .collect(Collectors.toSet()), all))).join();
-    map.entrySet().thenAccept(entrySet -> {
-      entrySet.forEach(entry -> {
-        assertTrue(all.contains(entry.getKey()));
-        assertEquals(entry.getValue().value(), all.get(all.indexOf(entry.getKey())));
-      });
-    }).join();
+    assertTrue(stringArrayCollectionIsEqual(map.sync().keySet(), all));
+    assertTrue(stringArrayCollectionIsEqual(map.sync().values().stream().map(v -> v.value()).collect(Collectors.toSet()), all));
+    map.sync().entrySet().forEach(entry -> {
+      assertTrue(all.contains(entry.getKey()));
+      assertEquals(entry.getValue().value(), all.get(all.indexOf(entry.getKey())));
+    });
     map.clear().join();
     map.isEmpty().thenAccept(result -> assertTrue(result)).join();
 
@@ -405,6 +407,81 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
 
     // TODO: delete() is not supported
     //map.delete().join();
+  }
+
+  @Test
+  public void testTreeMapViews() {
+    ConsistentTreeMap<String> map = createResource("testTreeMapViews").sync();
+
+    assertTrue(map.isEmpty());
+    assertTrue(map.keySet().isEmpty());
+    assertTrue(map.entrySet().isEmpty());
+    assertTrue(map.values().isEmpty());
+
+    for (char a = 'a'; a <= 'z'; a++) {
+      map.put(String.valueOf(a), String.valueOf(a));
+    }
+
+    assertFalse(map.isEmpty());
+    assertFalse(map.keySet().isEmpty());
+    assertFalse(map.entrySet().isEmpty());
+    assertFalse(map.values().isEmpty());
+
+    assertEquals(26, map.keySet().stream().count());
+    assertEquals(26, map.entrySet().stream().count());
+    assertEquals(26, map.values().stream().count());
+
+    String a = String.valueOf('a');
+    String b = String.valueOf('b');
+    String c = String.valueOf('c');
+    String d = String.valueOf('d');
+
+    assertTrue(map.keySet().contains(a));
+    assertTrue(map.values().contains(new Versioned<>(a, 0)));
+    assertTrue(map.entrySet().contains(Maps.immutableEntry(a, new Versioned<>(a, 0))));
+    assertTrue(map.keySet().containsAll(Arrays.asList(a, b, c, d)));
+
+    assertTrue(map.keySet().remove(a));
+    assertFalse(map.keySet().contains(a));
+    assertFalse(map.containsKey(a));
+    assertEquals(b, map.firstKey());
+
+    assertTrue(map.entrySet().remove(Maps.immutableEntry(b, map.get(b))));
+    assertFalse(map.keySet().contains(b));
+    assertFalse(map.containsKey(b));
+    assertEquals(c, map.firstKey());
+
+    assertTrue(map.entrySet().remove(Maps.immutableEntry(c, new Versioned<>(c, 0))));
+    assertFalse(map.keySet().contains(c));
+    assertFalse(map.containsKey(c));
+    assertEquals(d, map.firstKey());
+
+    assertFalse(map.entrySet().remove(Maps.immutableEntry(d, new Versioned<>(d, 1))));
+    assertTrue(map.keySet().contains(d));
+    assertTrue(map.containsKey(d));
+    assertEquals(d, map.firstKey());
+
+    assertEquals(23, map.size());
+    assertEquals(23, map.keySet().size());
+    assertEquals(23, map.entrySet().size());
+    assertEquals(23, map.values().size());
+
+    assertEquals(23, map.keySet().toArray().length);
+    assertEquals(23, map.entrySet().toArray().length);
+    assertEquals(23, map.values().toArray().length);
+
+    assertEquals(23, map.keySet().toArray(new String[23]).length);
+    assertEquals(23, map.entrySet().toArray(new Map.Entry[23]).length);
+    assertEquals(23, map.values().toArray(new Versioned[23]).length);
+
+    Iterator<String> iterator = map.keySet().iterator();
+    int i = 0;
+    while (iterator.hasNext()) {
+      iterator.next();
+      i += 1;
+      map.put(String.valueOf(26 + i), String.valueOf(26 + i));
+    }
+    assertEquals(String.valueOf(27), map.get(String.valueOf(27)).value());
   }
 
   private AsyncConsistentTreeMap<String> createResource(String mapName) {

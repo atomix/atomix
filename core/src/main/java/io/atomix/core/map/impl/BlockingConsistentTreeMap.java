@@ -17,20 +17,22 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
+import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.ConsistentMapBackedJavaMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -213,18 +215,18 @@ public class BlockingConsistentTreeMap<V>
   }
 
   @Override
-  public Set<String> keySet() {
-    return complete(treeMap.keySet());
+  public DistributedSet<String> keySet() {
+    return new BlockingDistributedSet<>(treeMap.keySet(), operationTimeoutMillis);
   }
 
   @Override
-  public Collection<Versioned<V>> values() {
-    return complete(treeMap.values());
+  public DistributedCollection<Versioned<V>> values() {
+    return new BlockingDistributedCollection<>(treeMap.values(), operationTimeoutMillis);
   }
 
   @Override
-  public Set<Map.Entry<String, Versioned<V>>> entrySet() {
-    return complete(treeMap.entrySet());
+  public DistributedSet<Map.Entry<String, Versioned<V>>> entrySet() {
+    return new BlockingDistributedSet<>(treeMap.entrySet(), operationTimeoutMillis);
   }
 
   @Override

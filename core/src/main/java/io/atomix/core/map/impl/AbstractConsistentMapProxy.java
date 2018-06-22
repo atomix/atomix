@@ -15,15 +15,22 @@
  */
 package io.atomix.core.map.impl;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.collection.DistributedCollectionType;
+import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.SetEvent;
+import io.atomix.core.set.SetEventListener;
+import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.AbstractAsyncPrimitive;
@@ -31,24 +38,32 @@ import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -123,21 +138,18 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
   }
 
   @Override
-  public CompletableFuture<Set<String>> keySet() {
-    return getProxyClient().applyAll(service -> service.keySet())
-        .thenApply(results -> results.reduce((s1, s2) -> ImmutableSet.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableSet.of()));
+  public AsyncDistributedSet<String> keySet() {
+    return new ConsistentMapKeySet();
   }
 
   @Override
-  public CompletableFuture<Collection<Versioned<byte[]>>> values() {
-    return getProxyClient().applyAll(service -> service.values())
-        .thenApply(results -> results.reduce((s1, s2) -> ImmutableList.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableList.of()));
+  public AsyncDistributedCollection<Versioned<byte[]>> values() {
+    return new ConsistentMapValuesCollection();
   }
 
   @Override
-  public CompletableFuture<Set<Entry<String, Versioned<byte[]>>>> entrySet() {
-    return getProxyClient().applyAll(service -> service.entrySet())
-        .thenApply(results -> results.reduce((s1, s2) -> ImmutableSet.copyOf(Iterables.concat(s1, s2))).orElse(ImmutableSet.of()));
+  public AsyncDistributedSet<Entry<String, Versioned<byte[]>>> entrySet() {
+    return new ConsistentMapEntrySet();
   }
 
   @Override
@@ -344,5 +356,476 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
 
   private boolean isListening() {
     return !mapEventListeners.isEmpty();
+  }
+
+  /**
+   * Provides a view of the ConsistentMap's entry set.
+   */
+  private class ConsistentMapEntrySet implements AsyncDistributedSet<Map.Entry<String, Versioned<byte[]>>> {
+    private final Map<SetEventListener<Map.Entry<String, Versioned<byte[]>>>, MapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+
+    @Override
+    public String name() {
+      return AbstractConsistentMapProxy.this.name();
+    }
+
+    @Override
+    public PrimitiveProtocol protocol() {
+      return AbstractConsistentMapProxy.this.protocol();
+    }
+
+    @Override
+    public synchronized CompletableFuture<Void> addListener(SetEventListener<Map.Entry<String, Versioned<byte[]>>> listener) {
+      MapEventListener<String, byte[]> mapListener = event -> {
+        switch (event.type()) {
+          case INSERT:
+            listener.event(new SetEvent<>(name(), SetEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
+            break;
+          case REMOVE:
+            listener.event(new SetEvent<>(name(), SetEvent.Type.REMOVE, Maps.immutableEntry(event.key(), event.oldValue())));
+            break;
+          default:
+            break;
+        }
+      };
+      eventListeners.put(listener, mapListener);
+      return AbstractConsistentMapProxy.this.addListener(mapListener);
+    }
+
+    @Override
+    public synchronized CompletableFuture<Void> removeListener(SetEventListener<Map.Entry<String, Versioned<byte[]>>> listener) {
+      MapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
+      if (mapListener != null) {
+        return AbstractConsistentMapProxy.this.removeListener(mapListener);
+      }
+      return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> add(Entry<String, Versioned<byte[]>> element) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> remove(Entry<String, Versioned<byte[]>> element) {
+      if (element.getValue().version() > 0) {
+        return AbstractConsistentMapProxy.this.remove(element.getKey(), element.getValue().version());
+      } else {
+        return AbstractConsistentMapProxy.this.remove(element.getKey(), element.getValue().value());
+      }
+    }
+
+    @Override
+    public CompletableFuture<Integer> size() {
+      return AbstractConsistentMapProxy.this.size();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isEmpty() {
+      return AbstractConsistentMapProxy.this.isEmpty();
+    }
+
+    @Override
+    public CompletableFuture<Void> clear() {
+      return AbstractConsistentMapProxy.this.clear();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> contains(Entry<String, Versioned<byte[]>> element) {
+      return get(element.getKey()).thenApply(versioned -> {
+        if (versioned == null) {
+          return false;
+        } else if (!Arrays.equals(versioned.value(), element.getValue().value())) {
+          return false;
+        } else if (element.getValue().version() > 0 && versioned.version() != element.getValue().version()) {
+          return false;
+        }
+        return true;
+      });
+    }
+
+    @Override
+    public CompletableFuture<Boolean> addAll(Collection<? extends Entry<String, Versioned<byte[]>>> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> containsAll(Collection<? extends Entry<String, Versioned<byte[]>>> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> retainAll(Collection<? extends Entry<String, Versioned<byte[]>>> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removeAll(Collection<? extends Entry<String, Versioned<byte[]>>> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<AsyncIterator<Map.Entry<String, Versioned<byte[]>>>> iterator() {
+      return Futures.allOf(getProxyClient().getPartitionIds().stream()
+          .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateEntries())
+              .thenApply(iteratorId -> new ConsistentMapPartitionIterator<>(
+                  partitionId,
+                  iteratorId,
+                  (service, position) -> service.nextEntries(iteratorId, position),
+                  service -> service.closeEntries(iteratorId)))))
+          .thenApply(iterators -> new ConsistentMapIterator<>(iterators.collect(Collectors.toList())));
+    }
+
+    @Override
+    public DistributedSet<Entry<String, Versioned<byte[]>>> sync(Duration operationTimeout) {
+      return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return CompletableFuture.completedFuture(null);
+    }
+  }
+
+  /**
+   * Provides a view of the ConsistentMap's key set.
+   */
+  private class ConsistentMapKeySet implements AsyncDistributedSet<String> {
+    private final Map<SetEventListener<String>, MapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+
+    @Override
+    public String name() {
+      return AbstractConsistentMapProxy.this.name();
+    }
+
+    @Override
+    public PrimitiveProtocol protocol() {
+      return AbstractConsistentMapProxy.this.protocol();
+    }
+
+    @Override
+    public synchronized CompletableFuture<Void> addListener(SetEventListener<String> listener) {
+      MapEventListener<String, byte[]> mapListener = event -> {
+        switch (event.type()) {
+          case INSERT:
+            listener.event(new SetEvent<>(name(), SetEvent.Type.ADD, event.key()));
+            break;
+          case REMOVE:
+            listener.event(new SetEvent<>(name(), SetEvent.Type.REMOVE, event.key()));
+            break;
+          default:
+            break;
+        }
+      };
+      eventListeners.put(listener, mapListener);
+      return AbstractConsistentMapProxy.this.addListener(mapListener);
+    }
+
+    @Override
+    public synchronized CompletableFuture<Void> removeListener(SetEventListener<String> listener) {
+      MapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
+      if (mapListener != null) {
+        return AbstractConsistentMapProxy.this.removeListener(mapListener);
+      }
+      return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> add(String element) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> remove(String element) {
+      return AbstractConsistentMapProxy.this.remove(element).thenApply(value -> value != null);
+    }
+
+    @Override
+    public CompletableFuture<Integer> size() {
+      return AbstractConsistentMapProxy.this.size();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isEmpty() {
+      return AbstractConsistentMapProxy.this.isEmpty();
+    }
+
+    @Override
+    public CompletableFuture<Void> clear() {
+      return AbstractConsistentMapProxy.this.clear();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> contains(String element) {
+      return containsKey(element);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> addAll(Collection<? extends String> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> containsAll(Collection<? extends String> keys) {
+      Map<PartitionId, Collection<String>> partitions = Maps.newHashMap();
+      keys.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
+      return Futures.allOf(partitions.entrySet().stream()
+          .map(entry -> getProxyClient()
+              .applyOn(entry.getKey(), service -> service.containsKeys(entry.getValue())))
+          .collect(Collectors.toList()))
+          .thenApply(results -> results.stream().reduce(Boolean::logicalAnd).orElse(false));
+    }
+
+    @Override
+    public CompletableFuture<Boolean> retainAll(Collection<? extends String> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removeAll(Collection<? extends String> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<AsyncIterator<String>> iterator() {
+      return Futures.allOf(getProxyClient().getPartitionIds().stream()
+          .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateKeys())
+              .thenApply(iteratorId -> new ConsistentMapPartitionIterator<>(
+                  partitionId,
+                  iteratorId,
+                  (service, position) -> service.nextKeys(iteratorId, position),
+                  service -> service.closeKeys(iteratorId)))))
+          .thenApply(iterators -> new ConsistentMapIterator<>(iterators.collect(Collectors.toList())));
+    }
+
+    @Override
+    public DistributedSet<String> sync(Duration operationTimeout) {
+      return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return CompletableFuture.completedFuture(null);
+    }
+  }
+
+  /**
+   * Provides a view of the ConsistentMap's values collection.
+   */
+  private class ConsistentMapValuesCollection implements AsyncDistributedCollection<Versioned<byte[]>> {
+    @Override
+    public String name() {
+      return AbstractConsistentMapProxy.this.name();
+    }
+
+    @Override
+    public PrimitiveProtocol protocol() {
+      return AbstractConsistentMapProxy.this.protocol();
+    }
+
+    @Override
+    public PrimitiveType type() {
+      return DistributedCollectionType.instance();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> add(Versioned<byte[]> element) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> remove(Versioned<byte[]> element) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Integer> size() {
+      return AbstractConsistentMapProxy.this.size();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isEmpty() {
+      return AbstractConsistentMapProxy.this.isEmpty();
+    }
+
+    @Override
+    public CompletableFuture<Void> clear() {
+      return AbstractConsistentMapProxy.this.clear();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> contains(Versioned<byte[]> element) {
+      return containsValue(element.value());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> addAll(Collection<? extends Versioned<byte[]>> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> containsAll(Collection<? extends Versioned<byte[]>> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> retainAll(Collection<? extends Versioned<byte[]>> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removeAll(Collection<? extends Versioned<byte[]>> c) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<AsyncIterator<Versioned<byte[]>>> iterator() {
+      return Futures.allOf(getProxyClient().getPartitionIds().stream()
+          .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateValues())
+              .thenApply(iteratorId -> new ConsistentMapPartitionIterator<>(
+                  partitionId,
+                  iteratorId,
+                  (service, position) -> service.nextValues(iteratorId, position),
+                  service -> service.closeValues(iteratorId)))))
+          .thenApply(iterators -> new ConsistentMapIterator<>(iterators.collect(Collectors.toList())));
+    }
+
+    @Override
+    public DistributedCollection<Versioned<byte[]>> sync(Duration operationTimeout) {
+      return new BlockingDistributedCollection<>(this, operationTimeout.toMillis());
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return CompletableFuture.completedFuture(null);
+    }
+  }
+
+  /**
+   * Consistent map iterator.
+   */
+  private class ConsistentMapIterator<T> implements AsyncIterator<T> {
+    private final Iterator<AsyncIterator<T>> iterators;
+    private volatile AsyncIterator<T> iterator;
+
+    public ConsistentMapIterator(Collection<AsyncIterator<T>> iterators) {
+      this.iterators = iterators.iterator();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> hasNext() {
+      if (iterator == null && iterators.hasNext()) {
+        iterator = iterators.next();
+      }
+      if (iterator == null) {
+        return CompletableFuture.completedFuture(false);
+      }
+      return iterator.hasNext()
+          .thenCompose(hasNext -> {
+            if (!hasNext) {
+              iterator = null;
+              return hasNext();
+            }
+            return CompletableFuture.completedFuture(true);
+          });
+    }
+
+    @Override
+    public CompletableFuture<T> next() {
+      if (iterator == null && iterators.hasNext()) {
+        iterator = iterators.next();
+      }
+      if (iterator == null) {
+        return Futures.exceptionalFuture(new NoSuchElementException());
+      }
+      return iterator.next();
+    }
+  }
+
+  /**
+   * Consistent map partition iterator.
+   */
+  private class ConsistentMapPartitionIterator<T> implements AsyncIterator<T> {
+    private final PartitionId partitionId;
+    private final long iteratorId;
+    private final BiFunction<ConsistentMapService, Integer, ConsistentMapService.Batch<T>> nextFunction;
+    private final Consumer<ConsistentMapService> closeFunction;
+    private volatile CompletableFuture<ConsistentMapService.Batch<T>> batch;
+    private volatile CompletableFuture<Void> closeFuture;
+
+    ConsistentMapPartitionIterator(
+        PartitionId partitionId,
+        long iteratorId,
+        BiFunction<ConsistentMapService, Integer, ConsistentMapService.Batch<T>> nextFunction,
+        Consumer<ConsistentMapService> closeFunction) {
+      this.partitionId = partitionId;
+      this.iteratorId = iteratorId;
+      this.nextFunction = nextFunction;
+      this.closeFunction = closeFunction;
+      this.batch = CompletableFuture.completedFuture(
+          new ConsistentMapService.Batch<T>(0, Collections.emptyList()));
+    }
+
+    /**
+     * Returns the current batch iterator or lazily fetches the next batch from the cluster.
+     *
+     * @return the next batch iterator
+     */
+    private CompletableFuture<Iterator<T>> batch() {
+      return batch.thenCompose(iterator -> {
+        if (iterator != null && !iterator.hasNext()) {
+          batch = fetch(iterator.position());
+          return batch.thenApply(Function.identity());
+        }
+        return CompletableFuture.completedFuture(iterator);
+      });
+    }
+
+    /**
+     * Fetches the next batch of entries from the cluster.
+     *
+     * @param position the position from which to fetch the next batch
+     * @return the next batch of entries from the cluster
+     */
+    private CompletableFuture<ConsistentMapService.Batch<T>> fetch(int position) {
+      return getProxyClient().applyOn(partitionId, service -> nextFunction.apply(service, position))
+          .thenCompose(batch -> {
+            if (batch == null) {
+              return close().thenApply(v -> null);
+            }
+            return CompletableFuture.completedFuture(batch);
+          });
+    }
+
+    /**
+     * Closes the iterator.
+     *
+     * @return future to be completed once the iterator has been closed
+     */
+    private CompletableFuture<Void> close() {
+      if (closeFuture == null) {
+        synchronized (this) {
+          if (closeFuture == null) {
+            closeFuture = getProxyClient().acceptOn(partitionId, service -> closeFunction.accept(service));
+          }
+        }
+      }
+      return closeFuture;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> hasNext() {
+      return batch().thenApply(iterator -> iterator != null && iterator.hasNext());
+    }
+
+    @Override
+    public CompletableFuture<T> next() {
+      return batch().thenCompose(iterator -> {
+        if (iterator == null) {
+          return Futures.exceptionalFuture(new NoSuchElementException());
+        }
+        return CompletableFuture.completedFuture(iterator.next());
+      });
+    }
   }
 }

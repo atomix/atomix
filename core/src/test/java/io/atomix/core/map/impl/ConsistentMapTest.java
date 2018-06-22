@@ -15,6 +15,7 @@
  */
 package io.atomix.core.map.impl;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.AsyncConsistentMap;
@@ -29,7 +30,9 @@ import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -131,23 +134,15 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
       assertTrue(result == 2);
     }).join();
 
-    map.keySet().thenAccept(result -> {
-      assertTrue(result.size() == 2);
-      assertTrue(result.containsAll(Sets.newHashSet("foo", "bar")));
-    }).join();
+    map.keySet().size().thenAccept(size -> assertTrue(size == 2)).join();
+    map.keySet().containsAll(Sets.newHashSet("foo", "bar")).thenAccept(containsAll -> assertTrue(containsAll)).join();
 
-    map.values().thenAccept(result -> {
-      assertTrue(result.size() == 2);
-      List<String> rawValues =
-          result.stream().map(v -> new String(v.value())).collect(Collectors.toList());
-      assertTrue(rawValues.contains("Hello foo!"));
-      assertTrue(rawValues.contains("Hello bar!"));
-    }).join();
+    map.values().size().thenAccept(size -> assertTrue(size == 2)).join();
+    List<String> rawValues = map.values().sync().stream().map(v -> new String(v.value())).collect(Collectors.toList());
+    assertTrue(rawValues.contains("Hello foo!"));
+    assertTrue(rawValues.contains("Hello bar!"));
 
-    map.entrySet().thenAccept(result -> {
-      assertTrue(result.size() == 2);
-      // TODO: check entries
-    }).join();
+    map.entrySet().size().thenAccept(size -> assertTrue(size == 2)).join();
 
     map.get("foo").thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), fooValue);
@@ -378,6 +373,77 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
     assertEquals("expire", event.oldValue().value());
 
     map.removeListener(listener).join();
+  }
+
+  @Test
+  public void testMapViews() throws Exception {
+    ConsistentMap<String, String> map = atomix().<String, String>consistentMapBuilder("testMapViews", protocol()).build();
+
+    assertTrue(map.isEmpty());
+    assertTrue(map.keySet().isEmpty());
+    assertTrue(map.entrySet().isEmpty());
+    assertTrue(map.values().isEmpty());
+
+    for (int i = 0; i < 100; i++) {
+      map.put(String.valueOf(i), String.valueOf(i));
+    }
+
+    assertFalse(map.isEmpty());
+    assertFalse(map.keySet().isEmpty());
+    assertFalse(map.entrySet().isEmpty());
+    assertFalse(map.values().isEmpty());
+
+    assertEquals(100, map.keySet().stream().count());
+    assertEquals(100, map.entrySet().stream().count());
+    assertEquals(100, map.values().stream().count());
+
+    String one = String.valueOf(1);
+    String two = String.valueOf(2);
+    String three = String.valueOf(3);
+    String four = String.valueOf(4);
+
+    assertTrue(map.keySet().contains(one));
+    assertTrue(map.values().contains(new Versioned<>(one, 0)));
+    assertTrue(map.entrySet().contains(Maps.immutableEntry(one, new Versioned<>(one, 0))));
+    assertTrue(map.keySet().containsAll(Arrays.asList(one, two, three, four)));
+
+    assertTrue(map.keySet().remove(one));
+    assertFalse(map.keySet().contains(one));
+    assertFalse(map.containsKey(one));
+
+    assertTrue(map.entrySet().remove(Maps.immutableEntry(two, map.get(two))));
+    assertFalse(map.keySet().contains(two));
+    assertFalse(map.containsKey(two));
+
+    assertTrue(map.entrySet().remove(Maps.immutableEntry(three, new Versioned<>(three, 0))));
+    assertFalse(map.keySet().contains(three));
+    assertFalse(map.containsKey(three));
+
+    assertFalse(map.entrySet().remove(Maps.immutableEntry(four, new Versioned<>(four, 1))));
+    assertTrue(map.keySet().contains(four));
+    assertTrue(map.containsKey(four));
+
+    assertEquals(97, map.size());
+    assertEquals(97, map.keySet().size());
+    assertEquals(97, map.entrySet().size());
+    assertEquals(97, map.values().size());
+
+    assertEquals(97, map.keySet().toArray().length);
+    assertEquals(97, map.entrySet().toArray().length);
+    assertEquals(97, map.values().toArray().length);
+
+    assertEquals(97, map.keySet().toArray(new String[97]).length);
+    assertEquals(97, map.entrySet().toArray(new Map.Entry[97]).length);
+    assertEquals(97, map.values().toArray(new Versioned[97]).length);
+
+    Iterator<String> iterator = map.keySet().iterator();
+    int i = 0;
+    while (iterator.hasNext()) {
+      iterator.next();
+      i += 1;
+      map.put(String.valueOf(100 * i), String.valueOf(100 * i));
+    }
+    assertEquals(String.valueOf(100), map.get(String.valueOf(100)).value());
   }
 
   @Test

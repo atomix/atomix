@@ -15,13 +15,14 @@
  */
 package io.atomix.core.set;
 
+import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -33,7 +34,11 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <E> set entry type
  */
-public interface AsyncDistributedSet<E> extends AsyncPrimitive {
+public interface AsyncDistributedSet<E> extends AsyncDistributedCollection<E> {
+  @Override
+  default PrimitiveType type() {
+    return DistributedSetType.instance();
+  }
 
   /**
    * Registers the specified listener to be notified whenever
@@ -53,86 +58,6 @@ public interface AsyncDistributedSet<E> extends AsyncPrimitive {
   CompletableFuture<Void> removeListener(SetEventListener<E> listener);
 
   /**
-   * Adds the specified element to this set if it is not already present (optional operation).
-   *
-   * @param element element to add
-   * @return {@code true} if this set did not already contain the specified element.
-   */
-  CompletableFuture<Boolean> add(E element);
-
-  /**
-   * Removes the specified element to this set if it is present (optional operation).
-   *
-   * @param element element to remove
-   * @return {@code true} if this set contained the specified element
-   */
-  CompletableFuture<Boolean> remove(E element);
-
-  /**
-   * Returns the number of elements in the set.
-   *
-   * @return size of the set
-   */
-  CompletableFuture<Integer> size();
-
-  /**
-   * Returns if the set is empty.
-   *
-   * @return {@code true} if this set is empty
-   */
-  CompletableFuture<Boolean> isEmpty();
-
-  /**
-   * Removes all elements from the set.
-   *
-   * @return CompletableFuture that is completed when the operation completes
-   */
-  CompletableFuture<Void> clear();
-
-  /**
-   * Returns if this set contains the specified element.
-   *
-   * @param element element to check
-   * @return {@code true} if this set contains the specified element
-   */
-  CompletableFuture<Boolean> contains(E element);
-
-  /**
-   * Adds all of the elements in the specified collection to this set if they're not
-   * already present (optional operation).
-   *
-   * @param c collection containing elements to be added to this set
-   * @return {@code true} if this set contains all elements in the collection
-   */
-  CompletableFuture<Boolean> addAll(Collection<? extends E> c);
-
-  /**
-   * Returns if this set contains all the elements in specified collection.
-   *
-   * @param c collection
-   * @return {@code true} if this set contains all elements in the collection
-   */
-  CompletableFuture<Boolean> containsAll(Collection<? extends E> c);
-
-  /**
-   * Retains only the elements in this set that are contained in the specified collection (optional operation).
-   *
-   * @param c collection containing elements to be retained in this set
-   * @return {@code true} if this set changed as a result of the call
-   */
-  CompletableFuture<Boolean> retainAll(Collection<? extends E> c);
-
-  /**
-   * Removes from this set all of its elements that are contained in the specified collection (optional operation).
-   * If the specified collection is also a set, this operation effectively modifies this set so that its
-   * value is the asymmetric set difference of the two sets.
-   *
-   * @param c collection containing elements to be removed from this set
-   * @return {@code true} if this set changed as a result of the call
-   */
-  CompletableFuture<Boolean> removeAll(Collection<? extends E> c);
-
-  /**
    * Returns a new {@link DistributedSet} that is backed by this instance.
    *
    * @return new {@code DistributedSet} instance
@@ -150,14 +75,6 @@ public interface AsyncDistributedSet<E> extends AsyncPrimitive {
   default DistributedSet<E> asDistributedSet(long timeoutMillis) {
     return new BlockingDistributedSet<>(this, timeoutMillis);
   }
-
-  /**
-   * Returns the entries as a immutable set. The returned set is a snapshot and will not reflect new changes made to
-   * this AsyncDistributedSet
-   *
-   * @return immutable set copy
-   */
-  CompletableFuture<? extends Set<E>> getAsImmutableSet();
 
   @Override
   default DistributedSet<E> sync() {

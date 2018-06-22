@@ -17,9 +17,11 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.base.MoreObjects;
+import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.DelegatingAsyncPrimitive;
@@ -27,10 +29,8 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
@@ -112,17 +112,17 @@ public class DelegatingAsyncConsistentMap<K, V>
   }
 
   @Override
-  public CompletableFuture<Set<K>> keySet() {
+  public AsyncDistributedSet<K> keySet() {
     return delegateMap.keySet();
   }
 
   @Override
-  public CompletableFuture<Collection<Versioned<V>>> values() {
+  public AsyncDistributedCollection<Versioned<V>> values() {
     return delegateMap.values();
   }
 
   @Override
-  public CompletableFuture<Set<Entry<K, Versioned<V>>>> entrySet() {
+  public AsyncDistributedSet<Entry<K, Versioned<V>>> entrySet() {
     return delegateMap.entrySet();
   }
 

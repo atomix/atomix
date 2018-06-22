@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.primitive.SyncPrimitive;
+import io.atomix.core.collection.DistributedCollection;
 
 import java.util.Set;
 
@@ -24,7 +24,7 @@ import java.util.Set;
  *
  * @param <E> set entry type
  */
-public interface DistributedSet<E> extends Set<E>, SyncPrimitive {
+public interface DistributedSet<E> extends DistributedCollection<E>, Set<E> {
 
   /**
    * Registers the specified listener to be notified whenever

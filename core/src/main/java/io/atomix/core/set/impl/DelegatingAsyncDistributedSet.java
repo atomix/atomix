@@ -15,10 +15,8 @@
  */
 package io.atomix.core.set.impl;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
+import io.atomix.core.collection.AsyncIterator;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
@@ -35,7 +33,6 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -98,8 +95,7 @@ public class DelegatingAsyncDistributedSet<E> extends DelegatingAsyncPrimitive i
 
   @Override
   public CompletableFuture<Boolean> retainAll(Collection<? extends E> c) {
-    return backingMap.keySet().thenApply(set -> Sets.difference(set, Sets.newHashSet(c)))
-        .thenCompose(this::removeAll);
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
   }
 
   @Override
@@ -109,13 +105,13 @@ public class DelegatingAsyncDistributedSet<E> extends DelegatingAsyncPrimitive i
   }
 
   @Override
-  public CompletableFuture<Void> clear() {
-    return backingMap.clear();
+  public CompletableFuture<AsyncIterator<E>> iterator() {
+    return backingMap.keySet().iterator();
   }
 
   @Override
-  public CompletableFuture<? extends Set<E>> getAsImmutableSet() {
-    return backingMap.keySet().thenApply(s -> ImmutableSet.copyOf(s));
+  public CompletableFuture<Void> clear() {
+    return backingMap.clear();
   }
 
   @Override

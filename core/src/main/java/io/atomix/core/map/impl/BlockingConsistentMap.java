@@ -16,10 +16,14 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
+import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMapBackedJavaMap;
 import io.atomix.core.map.MapEventListener;
+import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.Synchronous;
@@ -27,10 +31,8 @@ import io.atomix.utils.concurrent.Retries;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -144,18 +146,18 @@ public class BlockingConsistentMap<K, V> extends Synchronous<AsyncConsistentMap<
   }
 
   @Override
-  public Set<K> keySet() {
-    return complete(asyncMap.keySet());
+  public DistributedSet<K> keySet() {
+    return new BlockingDistributedSet<K>(asyncMap.keySet(), operationTimeoutMillis);
   }
 
   @Override
-  public Collection<Versioned<V>> values() {
-    return complete(asyncMap.values());
+  public DistributedCollection<Versioned<V>> values() {
+    return new BlockingDistributedCollection<>(asyncMap.values(), operationTimeoutMillis);
   }
 
   @Override
-  public Set<Map.Entry<K, Versioned<V>>> entrySet() {
-    return complete(asyncMap.entrySet());
+  public DistributedSet<Map.Entry<K, Versioned<V>>> entrySet() {
+    return new BlockingDistributedSet<>(asyncMap.entrySet(), operationTimeoutMillis);
   }
 
   @Override

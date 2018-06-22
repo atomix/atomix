@@ -15,6 +15,7 @@
  */
 package io.atomix.core.map.impl;
 
+import com.google.common.collect.Sets;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.utils.time.Versioned;
@@ -93,9 +94,9 @@ public class ConsistentMapResource implements PrimitiveResource {
   @Path("/keys")
   @Produces(MediaType.APPLICATION_JSON)
   public void keys(@Suspended AsyncResponse response) {
-    map.keySet().whenComplete((result, error) -> {
+    map.keySet().iterator().whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok(result).build());
+        response.resume(Response.ok(Sets.newHashSet(result.sync())).build());
       } else {
         LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());

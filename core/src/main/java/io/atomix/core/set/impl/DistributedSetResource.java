@@ -15,6 +15,7 @@
  */
 package io.atomix.core.set.impl;
 
+import com.google.common.collect.Sets;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
@@ -46,9 +47,9 @@ public class DistributedSetResource implements PrimitiveResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public void get(@Suspended AsyncResponse response) {
-    set.getAsImmutableSet().whenComplete((result, error) -> {
+    set.iterator().whenComplete((iterator, error) -> {
       if (error == null) {
-        response.resume(Response.ok(result).build());
+        response.resume(Response.ok(Sets.newHashSet(iterator.sync())).build());
       } else {
         LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
