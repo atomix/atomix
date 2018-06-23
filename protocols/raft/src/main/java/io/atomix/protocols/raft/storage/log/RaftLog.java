@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
+import io.atomix.protocols.raft.storage.log.index.RaftTermIndex;
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.DelegatingJournal;
@@ -45,6 +46,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
   private final SegmentedJournal<RaftLogEntry> journal;
   private final boolean flushOnCommit;
   private final RaftLogWriter writer;
+  private final RaftTermIndex termIndex = new RaftTermIndex();
   private volatile long commitIndex;
 
   protected RaftLog(SegmentedJournal<RaftLogEntry> journal, boolean flushOnCommit) {
@@ -103,6 +105,13 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
   }
 
   /**
+   * Returns the log term index.
+   */
+  RaftTermIndex getTermIndex() {
+    return termIndex;
+  }
+
+  /**
    * Returns a boolean indicating whether a segment can be removed from the journal prior to the given index.
    *
    * @param index the index from which to remove segments
@@ -131,6 +140,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
    */
   public void compact(long index) {
     journal.compact(index);
+    termIndex.compact(index);
   }
 
   /**

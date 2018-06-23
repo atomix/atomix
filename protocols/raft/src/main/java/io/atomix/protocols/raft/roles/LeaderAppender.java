@@ -29,7 +29,6 @@ import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -403,8 +402,7 @@ final class LeaderAppender extends AbstractAppender {
     // us converge on the matchIndex faster than by simply decrementing nextIndex one index at a time.
     else {
       member.appendFailed();
-      resetMatchIndex(member, response);
-      resetNextIndex(member, response);
+      resetIndexes(member, request, response);
 
       // If there are more entries to send then attempt to send another commit.
       if (hasMoreEntries(member)) {
