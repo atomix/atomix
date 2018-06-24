@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
-
-import io.atomix.core.collection.DistributedCollection;
+package io.atomix.core.collection;
 
 import java.util.Set;
 

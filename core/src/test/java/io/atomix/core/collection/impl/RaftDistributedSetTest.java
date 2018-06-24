@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.collection.impl;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;

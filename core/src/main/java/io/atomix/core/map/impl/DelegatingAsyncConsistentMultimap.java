@@ -17,11 +17,11 @@
 package io.atomix.core.map.impl;
 
 import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.collection.AsyncDistributedMultiset;
+import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.map.AsyncConsistentMultimap;
 import io.atomix.core.map.ConsistentMultimap;
 import io.atomix.core.map.MultimapEventListener;
-import io.atomix.core.set.AsyncDistributedMultiset;
-import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.primitive.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 

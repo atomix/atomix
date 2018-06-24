@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.collection.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

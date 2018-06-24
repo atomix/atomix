@@ -15,7 +15,7 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.collection.DistributedSetType;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 

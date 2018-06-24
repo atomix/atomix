@@ -13,34 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.core.collection;
 
-import io.atomix.core.map.impl.DefaultConsistentMapService;
-import io.atomix.core.set.impl.DelegatingDistributedSetBuilder;
-import io.atomix.core.set.impl.DistributedSetResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Distributed set primitive type.
+ * Placeholder type for the distributed multiset primitive type.
  */
-public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>> {
-  private static final String NAME = "set";
-  private static final DistributedSetType INSTANCE = new DistributedSetType();
+public class DistributedMultisetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>> {
+  private static final String NAME = "multiset";
+  private static final DistributedMultisetType INSTANCE = new DistributedMultisetType();
 
   /**
-   * Returns a new distributed set type.
+   * Returns a new distributed multiset type.
    *
-   * @param <E> the set element type
-   * @return a new distributed set type
+   * @param <E> the multiset element type
+   * @return a new distributed multiset type
    */
   @SuppressWarnings("unchecked")
-  public static <E> DistributedSetType<E> instance() {
+  public static <E> DistributedMultisetType<E> instance() {
     return INSTANCE;
   }
 
@@ -51,23 +47,17 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultConsistentMapService();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(DistributedSet<E> primitive) {
-    return new DistributedSetResource((AsyncDistributedSet<String>) primitive.async());
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public DistributedSetConfig newConfig() {
-    return new DistributedSetConfig();
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public DistributedSetBuilder<E> newBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
-    return new DelegatingDistributedSetBuilder<>(name, config, managementService);
+    throw new UnsupportedOperationException();
   }
 
   @Override

@@ -18,13 +18,13 @@ package io.atomix.core.map.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
+import io.atomix.core.collection.impl.TranscodingAsyncDistributedSet;
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
-import io.atomix.core.set.AsyncDistributedSet;
-import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveType;

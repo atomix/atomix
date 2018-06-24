@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.collection.impl;
 
 import com.google.common.collect.Maps;
+import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.collection.DistributedSet;
+import io.atomix.core.collection.DistributedSetType;
+import io.atomix.core.collection.SetEvent;
+import io.atomix.core.collection.SetEventListener;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
-import io.atomix.core.set.AsyncDistributedSet;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.DistributedSetType;
-import io.atomix.core.set.SetEvent;
-import io.atomix.core.set.SetEventListener;
 import io.atomix.primitive.DelegatingAsyncPrimitive;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.concurrent.Futures;

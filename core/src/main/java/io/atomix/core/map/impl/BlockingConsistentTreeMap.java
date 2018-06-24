@@ -18,13 +18,13 @@ package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.collection.impl.BlockingDistributedSet;
 import io.atomix.core.map.AsyncConsistentTreeMap;
 import io.atomix.core.map.ConsistentMapBackedJavaMap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.map.MapEventListener;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;
