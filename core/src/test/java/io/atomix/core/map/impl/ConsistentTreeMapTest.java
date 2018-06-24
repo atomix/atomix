@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -66,73 +67,73 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     //primary purpose.
     AsyncConsistentTreeMap<String> map = createResource("basicTestMap");
     //test size
-    map.size().thenAccept(result -> assertEquals(0, (int) result)).join();
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
+    map.size().thenAccept(result -> assertEquals(0, (int) result)).get(30, TimeUnit.SECONDS);
+    map.isEmpty().thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS);
 
     //test contains key
     all.forEach(key -> map.containsKey(key).
-        thenAccept(result -> assertFalse(result)).join());
+        thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS));
 
     //test contains value
     all.forEach(value -> map.containsValue(value)
-        .thenAccept(result -> assertFalse(result)).join());
+        .thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS));
 
     //test get
     all.forEach(key -> map.get(key).
-        thenAccept(result -> assertNull(result)).join());
+        thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS));
 
     //test getOrDefault
     all.forEach(key -> map.getOrDefault(key, null).thenAccept(result -> {
       assertEquals(0, result.version());
       assertNull(result.value());
-    }).join());
+    }).get(30, TimeUnit.SECONDS));
 
     all.forEach(key -> map.getOrDefault(key, "bar").thenAccept(result -> {
       assertEquals(0, result.version());
       assertEquals("bar", result.value());
-    }).join());
+    }).get(30, TimeUnit.SECONDS));
 
     //populate and redo prior three tests
     all.forEach(key -> map.put(key, all.get(all.indexOf(key)))
-        .thenAccept(result -> assertNull(result)).join());
+        .thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS));
 
     //test contains key
     all.forEach(key -> map.containsKey(key)
-        .thenAccept(result -> assertTrue(result)).join());
+        .thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS));
 
     //test contains value
     all.forEach(value -> map.containsValue(value)
-        .thenAccept(result -> assertTrue(result)).join());
+        .thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS));
 
     //test get
     all.forEach(key -> map.get(key).thenAccept(result -> {
       assertEquals(all.get(all.indexOf(key)), result.value());
-    }).join());
+    }).get(30, TimeUnit.SECONDS));
 
     all.forEach(key -> map.getOrDefault(key, null).thenAccept(result -> {
       assertNotEquals(0, result.version());
       assertEquals(all.get(all.indexOf(key)), result.value());
-    }).join());
+    }).get(30, TimeUnit.SECONDS));
 
     //test all compute methods in this section
     all.forEach(key -> map.computeIfAbsent(key, v -> all.get(all.indexOf(key)))
         .thenAccept(result -> {
           assertEquals(all.get(all.indexOf(key)), result.value());
-        }).join());
+        }).get(30, TimeUnit.SECONDS));
 
-    map.size().thenAccept(result -> assertEquals(4, (int) result)).join();
-    map.isEmpty().thenAccept(result -> assertFalse(result)).join();
+    map.size().thenAccept(result -> assertEquals(4, (int) result)).get(30, TimeUnit.SECONDS);
+    map.isEmpty().thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS);
 
     all.forEach(key -> map.computeIfPresent(key, (k, v) -> null).
-        thenAccept(result -> assertNull(result)).join());
+        thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS));
 
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
+    map.isEmpty().thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS);
 
     all.forEach(key -> map.compute(key, (k, v) -> all.get(all.indexOf(key)))
-        .thenAccept(result -> assertEquals(all.get(all.indexOf(key)), result.value())).join());
+        .thenAccept(result -> assertEquals(all.get(all.indexOf(key)), result.value())).get(30, TimeUnit.SECONDS));
 
-    map.size().thenAccept(result -> assertEquals(4, (int) result)).join();
-    map.isEmpty().thenAccept(result -> assertFalse(result)).join();
+    map.size().thenAccept(result -> assertEquals(4, (int) result)).get(30, TimeUnit.SECONDS);
+    map.isEmpty().thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS);
 
     all.forEach(key -> map.computeIf(key,
         (k) -> all.indexOf(key) < 2, (k, v) -> null).thenAccept(result -> {
@@ -141,10 +142,10 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
       } else {
         assertEquals(all.get(all.indexOf(key)), result.value());
       }
-    }).join());
+    }).get(30, TimeUnit.SECONDS));
 
-    map.size().thenAccept(result -> assertEquals(2, (int) result)).join();
-    map.isEmpty().thenAccept(result -> assertFalse(result)).join();
+    map.size().thenAccept(result -> assertEquals(2, (int) result)).get(30, TimeUnit.SECONDS);
+    map.isEmpty().thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS);
 
     //test simple put
     all.forEach(key -> map.put(key, all.get(all.indexOf(key))).thenAccept(result -> {
@@ -153,10 +154,10 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
       } else {
         assertEquals(all.get(all.indexOf(key)), result.value());
       }
-    }).join());
+    }).get(30, TimeUnit.SECONDS));
 
-    map.size().thenAccept(result -> assertEquals(4, (int) result)).join();
-    map.isEmpty().thenAccept(result -> assertFalse(result)).join();
+    map.size().thenAccept(result -> assertEquals(4, (int) result)).get(30, TimeUnit.SECONDS);
+    map.isEmpty().thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS);
 
     //test put and get for version retrieval
     all.forEach(key -> map.putAndGet(key, all.get(all.indexOf(key))).thenAccept(firstResult -> {
@@ -164,19 +165,19 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
         assertEquals(all.get(all.indexOf(key)), firstResult.value());
         assertEquals(all.get(all.indexOf(key)), secondResult.value());
       });
-    }).join());
+    }).get(30, TimeUnit.SECONDS));
 
     //test removal
     all.forEach(key -> map.remove(key).thenAccept(
         result -> assertEquals(
             all.get(all.indexOf(key)), result.value()))
-        .join());
+        .get(30, TimeUnit.SECONDS));
     map.isEmpty().thenAccept(result -> assertTrue(result));
 
     //repopulating, this is not mainly for testing
     all.forEach(key -> map.put(key, all.get(all.indexOf(key))).thenAccept(result -> {
       assertNull(result);
-    }).join());
+    }).get(30, TimeUnit.SECONDS));
 
     //Test various collections of keys, values and entries
     assertTrue(stringArrayCollectionIsEqual(map.sync().keySet(), all));
@@ -185,57 +186,57 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
       assertTrue(all.contains(entry.getKey()));
       assertEquals(entry.getValue().value(), all.get(all.indexOf(entry.getKey())));
     });
-    map.clear().join();
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
+    map.clear().get(30, TimeUnit.SECONDS);
+    map.isEmpty().thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS);
 
     //test conditional put
     all.forEach(key -> map.putIfAbsent(key, all.get(all.indexOf(key)))
-        .thenAccept(result -> assertNull(result)).join());
+        .thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS));
     all.forEach(key -> map.putIfAbsent(key, null).thenAccept(result ->
         assertEquals(result.value(), all.get(all.indexOf(key)))
-    ).join());
+    ).get(30, TimeUnit.SECONDS));
 
     // test alternate removes that specify value or version
-    all.forEach(key -> map.remove(key, spare).thenAccept(result -> assertFalse(result)).join());
+    all.forEach(key -> map.remove(key, spare).thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS));
     all.forEach(key -> map.remove(key, all.get(all.indexOf(key)))
-        .thenAccept(result -> assertTrue(result)).join());
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
+        .thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS));
+    map.isEmpty().thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS);
     List<Long> versions = Lists.newArrayList();
 
     //repopulating set for version based removal
     all.forEach(key -> map.putAndGet(key, all.get(all.indexOf(key)))
-        .thenAccept(result -> versions.add(result.version())).join());
+        .thenAccept(result -> versions.add(result.version())).get(30, TimeUnit.SECONDS));
     all.forEach(key -> map.remove(key, versions.get(0)).thenAccept(result -> {
       assertTrue(result);
       versions.remove(0);
-    }).join());
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
+    }).get(30, TimeUnit.SECONDS));
+    map.isEmpty().thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS);
 
     //Testing all replace both simple (k, v), and complex that consider
     // previous mapping or version.
     all.forEach(key -> map.put(key, all.get(all.indexOf(key)))
-        .thenAccept(result -> assertNull(result)).join());
+        .thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS));
     all.forEach(key -> map.replace(key, all.get(3 - all.indexOf(key)))
         .thenAccept(result -> assertEquals(all.get(all.indexOf(key)), result.value()))
-        .join());
+        .get(30, TimeUnit.SECONDS));
     all.forEach(key -> map.replace(key, spare, all.get(all.indexOf(key)))
-        .thenAccept(result -> assertFalse(result)).join());
+        .thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS));
     all.forEach(key -> map.replace(key, all.get(3 - all.indexOf(key)),
-        all.get(all.indexOf(key))).thenAccept(result -> assertTrue(result)).join());
-    map.clear().join();
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
+        all.get(all.indexOf(key))).thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS));
+    map.clear().get(30, TimeUnit.SECONDS);
+    map.isEmpty().thenAccept(result -> assertTrue(result)).get(30, TimeUnit.SECONDS);
     versions.clear();
 
     //populate for version based replacement
     all.forEach(key -> map.putAndGet(key, all.get(3 - all.indexOf(key)))
-        .thenAccept(result -> versions.add(result.version())).join());
+        .thenAccept(result -> versions.add(result.version())).get(30, TimeUnit.SECONDS));
     all.forEach(key -> map.replace(key, 0, all.get(all.indexOf(key)))
-        .thenAccept(result -> assertFalse(result)).join());
+        .thenAccept(result -> assertFalse(result)).get(30, TimeUnit.SECONDS));
     all.forEach(key -> map.replace(key, versions.get(0), all.get(all.indexOf(key)))
         .thenAccept(result -> {
           assertTrue(result);
           versions.remove(0);
-        }).join());
+        }).get(30, TimeUnit.SECONDS));
   }
 
   @Test
@@ -250,7 +251,7 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
     // add listener; insert new value into map and verify an INSERT event
     // is received.
     map.addListener(listener).thenCompose(v -> map.put("foo", value1))
-        .join();
+        .get(30, TimeUnit.SECONDS);
     MapEvent<String, String> event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.INSERT, event.type());
@@ -258,13 +259,13 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
 
     // remove listener and verify listener is not notified.
     map.removeListener(listener).thenCompose(v -> map.put("foo", value2))
-        .join();
+        .get(30, TimeUnit.SECONDS);
     assertFalse(listener.eventReceived());
 
     // add the listener back and verify UPDATE events are received
     // correctly
     map.addListener(listener).thenCompose(v -> map.put("foo", value3))
-        .join();
+        .get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.UPDATE, event.type());
@@ -272,141 +273,141 @@ public abstract class ConsistentTreeMapTest extends AbstractPrimitiveTest {
 
     // perform a non-state changing operation and verify no events are
     // received.
-    map.putIfAbsent("foo", value1).join();
+    map.putIfAbsent("foo", value1).get(30, TimeUnit.SECONDS);
     assertFalse(listener.eventReceived());
 
     // verify REMOVE events are received correctly.
-    map.remove("foo").join();
+    map.remove("foo").get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.REMOVE, event.type());
     assertEquals(value3, event.oldValue().value());
 
     // verify compute methods also generate events.
-    map.computeIf("foo", v -> v == null, (k, v) -> value1).join();
+    map.computeIf("foo", v -> v == null, (k, v) -> value1).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.INSERT, event.type());
     assertEquals(value1, event.newValue().value());
 
-    map.compute("foo", (k, v) -> value2).join();
+    map.compute("foo", (k, v) -> value2).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.UPDATE, event.type());
     assertEquals(value2, event.newValue().value());
 
     map.computeIf(
-        "foo", v -> Objects.equals(v, value2), (k, v) -> null).join();
+        "foo", v -> Objects.equals(v, value2), (k, v) -> null).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.REMOVE, event.type());
     assertEquals(value2, event.oldValue().value());
 
-    map.removeListener(listener).join();
+    map.removeListener(listener).get(30, TimeUnit.SECONDS);
   }
 
   @Test
   public void treeMapFunctionsTest() {
     AsyncConsistentTreeMap<String> map = createResource("treeMapFunctionTestMap");
     //Tests on empty map
-    map.firstKey().thenAccept(result -> assertNull(result)).join();
-    map.lastKey().thenAccept(result -> assertNull(result)).join();
-    map.ceilingEntry(one).thenAccept(result -> assertNull(result)).join();
-    map.floorEntry(one).thenAccept(result -> assertNull(result)).join();
-    map.higherEntry(one).thenAccept(result -> assertNull(result)).join();
-    map.lowerEntry(one).thenAccept(result -> assertNull(result)).join();
-    map.firstEntry().thenAccept(result -> assertNull(result)).join();
-    map.lastEntry().thenAccept(result -> assertNull(result)).join();
-    map.lowerKey(one).thenAccept(result -> assertNull(result)).join();
-    map.floorKey(one).thenAccept(result -> assertNull(result)).join();
-    map.ceilingKey(one).thenAccept(result -> assertNull(result)).join();
-    map.higherKey(one).thenAccept(result -> assertNull(result)).join();
+    map.firstKey().thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.lastKey().thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.ceilingEntry(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.floorEntry(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.higherEntry(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.lowerEntry(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.firstEntry().thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.lastEntry().thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.lowerKey(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.floorKey(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.ceilingKey(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.higherKey(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
 
-    map.size().thenAccept(result -> assertEquals(0, (int) result)).join();
+    map.size().thenAccept(result -> assertEquals(0, (int) result)).get(30, TimeUnit.SECONDS);
 
     // TODO: delete() is not supported
-    //map.delete().join();
+    //map.delete().get(30, TimeUnit.SECONDS);
 
-    all.forEach(key -> map.put(key, key).thenAccept(result -> assertNull(result)).join());
-    map.size().thenAccept(result -> assertEquals(4, (int) result)).join();
+    all.forEach(key -> map.put(key, key).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS));
+    map.size().thenAccept(result -> assertEquals(4, (int) result)).get(30, TimeUnit.SECONDS);
     //Note ordering keys are in their proper ordering in ascending order
     //both in naming and in the allKeys list.
 
-    map.firstKey().thenAccept(result -> assertEquals(one, result)).join();
+    map.firstKey().thenAccept(result -> assertEquals(one, result)).get(30, TimeUnit.SECONDS);
 
-    map.lastKey().thenAccept(result -> assertEquals(four, result)).join();
+    map.lastKey().thenAccept(result -> assertEquals(four, result)).get(30, TimeUnit.SECONDS);
 
     map.ceilingEntry(one).thenAccept(result -> {
       assertEquals(one, result.getKey());
       assertEquals(one, result.getValue().value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     //adding an additional letter to make keyOne an unacceptable response
     map.ceilingEntry(one + "a").thenAccept(result -> {
       assertEquals(two, result.getKey());
       assertEquals(two, result.getValue().value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.ceilingEntry(four + "a")
         .thenAccept(result -> {
           assertNull(result);
-        }).join();
+        }).get(30, TimeUnit.SECONDS);
 
     map.floorEntry(two).thenAccept(result -> {
       assertEquals(two, result.getKey());
       assertEquals(two, result.getValue().value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     //shorten the key so it itself is not an acceptable reply
     map.floorEntry(two.substring(0, 2)).thenAccept(result -> {
       assertEquals(one, result.getKey());
       assertEquals(one, result.getValue().value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     // shorten least key so no acceptable response exists
-    map.floorEntry(one.substring(0, 1)).thenAccept(result -> assertNull(result)).join();
+    map.floorEntry(one.substring(0, 1)).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
 
     map.higherEntry(two).thenAccept(result -> {
       assertEquals(three, result.getKey());
       assertEquals(three, result.getValue().value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
-    map.higherEntry(four).thenAccept(result -> assertNull(result)).join();
+    map.higherEntry(four).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
 
     map.lowerEntry(four).thenAccept(result -> {
       assertEquals(three, result.getKey());
       assertEquals(three, result.getValue().value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
-    map.lowerEntry(one).thenAccept(result -> assertNull(result)).join();
+    map.lowerEntry(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
 
     map.firstEntry().thenAccept(result -> {
       assertEquals(one, result.getKey());
       assertEquals(one, result.getValue().value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.lastEntry().thenAccept(result -> {
       assertEquals(four, result.getKey());
       assertEquals(four, result.getValue().value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
-    all.forEach(key -> map.put(key, key).thenAccept(result -> assertEquals(key, result.value())).join());
+    all.forEach(key -> map.put(key, key).thenAccept(result -> assertEquals(key, result.value())).get(30, TimeUnit.SECONDS));
 
-    map.lowerKey(one).thenAccept(result -> assertNull(result)).join();
-    map.lowerKey(three).thenAccept(result -> assertEquals(two, result)).join();
-    map.floorKey(three).thenAccept(result -> assertEquals(three, result)).join();
+    map.lowerKey(one).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.lowerKey(three).thenAccept(result -> assertEquals(two, result)).get(30, TimeUnit.SECONDS);
+    map.floorKey(three).thenAccept(result -> assertEquals(three, result)).get(30, TimeUnit.SECONDS);
 
     //shortening the key so there is no acceptable response
-    map.floorKey(one.substring(0, 1)).thenAccept(result -> assertNull(result)).join();
-    map.ceilingKey(two).thenAccept(result -> assertEquals(two, result)).join();
+    map.floorKey(one.substring(0, 1)).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.ceilingKey(two).thenAccept(result -> assertEquals(two, result)).get(30, TimeUnit.SECONDS);
 
     //adding to highest key so there is no acceptable response
-    map.ceilingKey(four + "a").thenAccept(result -> assertNull(result)).join();
-    map.higherKey(three).thenAccept(result -> assertEquals(four, result)).join();
-    map.higherKey(four).thenAccept(result -> assertNull(result)).join();
+    map.ceilingKey(four + "a").thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
+    map.higherKey(three).thenAccept(result -> assertEquals(four, result)).get(30, TimeUnit.SECONDS);
+    map.higherKey(four).thenAccept(result -> assertNull(result)).get(30, TimeUnit.SECONDS);
 
     // TODO: delete() is not supported
-    //map.delete().join();
+    //map.delete().get(30, TimeUnit.SECONDS);
   }
 
   @Test

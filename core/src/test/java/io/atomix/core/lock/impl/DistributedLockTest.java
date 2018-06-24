@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -38,8 +39,8 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
   @Test
   public void testLockUnlock() throws Throwable {
     AsyncDistributedLock lock = atomix().lockBuilder("test-lock-unlock", protocol()).build().async();
-    lock.lock().join();
-    lock.unlock().join();
+    lock.lock().get(30, TimeUnit.SECONDS);
+    lock.unlock().get(30, TimeUnit.SECONDS);
   }
 
   /**
@@ -49,10 +50,10 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
   public void testReleaseOnClose() throws Throwable {
     AsyncDistributedLock lock1 = atomix().lockBuilder("test-lock-on-close", protocol()).build().async();
     AsyncDistributedLock lock2 = atomix().lockBuilder("test-lock-on-close", protocol()).build().async();
-    lock1.lock().join();
+    lock1.lock().get(30, TimeUnit.SECONDS);
     CompletableFuture<Version> future = lock2.lock();
     lock1.close();
-    future.join();
+    future.get(30, TimeUnit.SECONDS);
   }
 
   /**
@@ -63,9 +64,9 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
     AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail", protocol()).build().async();
     AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail", protocol()).build().async();
 
-    lock1.lock().join();
+    lock1.lock().get(30, TimeUnit.SECONDS);
 
-    assertFalse(lock2.tryLock().join().isPresent());
+    assertFalse(lock2.tryLock().get(30, TimeUnit.SECONDS).isPresent());
   }
 
   /**
@@ -74,7 +75,7 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
   @Test
   public void testTryLockSucceed() throws Throwable {
     AsyncDistributedLock lock = atomix().lockBuilder("test-try-lock-succeed", protocol()).build().async();
-    assertTrue(lock.tryLock().join().isPresent());
+    assertTrue(lock.tryLock().get(30, TimeUnit.SECONDS).isPresent());
   }
 
   /**
@@ -85,9 +86,9 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
     AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail-with-timeout", protocol()).build().async();
     AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail-with-timeout", protocol()).build().async();
 
-    lock1.lock().join();
+    lock1.lock().get(30, TimeUnit.SECONDS);
 
-    assertFalse(lock2.tryLock(Duration.ofSeconds(1)).join().isPresent());
+    assertFalse(lock2.tryLock(Duration.ofSeconds(1)).get(30, TimeUnit.SECONDS).isPresent());
   }
 
   /**
@@ -98,11 +99,11 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
     AsyncDistributedLock lock1 = atomix().lockBuilder("test-try-lock-succeed-with-timeout", protocol()).build().async();
     AsyncDistributedLock lock2 = atomix().lockBuilder("test-try-lock-succeed-with-timeout", protocol()).build().async();
 
-    lock1.lock().join();
+    lock1.lock().get(30, TimeUnit.SECONDS);
 
     CompletableFuture<Optional<Version>> future = lock2.tryLock(Duration.ofSeconds(1));
-    lock1.unlock().join();
-    assertTrue(future.join().isPresent());
+    lock1.unlock().get(30, TimeUnit.SECONDS);
+    assertTrue(future.get(30, TimeUnit.SECONDS).isPresent());
   }
 
   /**
@@ -114,9 +115,9 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
     AsyncDistributedLock lock2 = atomix().lockBuilder("test-blocking-unlock", protocol()).build().async();
 
     lock1.lock().thenRun(() -> {
-      lock1.unlock().join();
-    }).join();
+      lock1.unlock().get(30, TimeUnit.SECONDS);
+    }).get(30, TimeUnit.SECONDS);
 
-    lock2.lock().join();
+    lock2.lock().get(30, TimeUnit.SECONDS);
   }
 }

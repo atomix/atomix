@@ -21,6 +21,7 @@ import io.atomix.core.generator.AsyncAtomicIdGenerator;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,23 +41,23 @@ public abstract class IdGeneratorTest extends AbstractPrimitiveTest {
     CompletableFuture<Long> future11 = idGenerator1.nextId();
     CompletableFuture<Long> future12 = idGenerator1.nextId();
     CompletableFuture<Long> future13 = idGenerator1.nextId();
-    assertEquals(Long.valueOf(1), future11.join());
-    assertEquals(Long.valueOf(2), future12.join());
-    assertEquals(Long.valueOf(3), future13.join());
+    assertEquals(Long.valueOf(1), future11.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(2), future12.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(3), future13.get(30, TimeUnit.SECONDS));
 
     CompletableFuture<Long> future21 = idGenerator1.nextId();
     CompletableFuture<Long> future22 = idGenerator1.nextId();
     CompletableFuture<Long> future23 = idGenerator1.nextId();
-    assertEquals(Long.valueOf(6), future23.join());
-    assertEquals(Long.valueOf(5), future22.join());
-    assertEquals(Long.valueOf(4), future21.join());
+    assertEquals(Long.valueOf(6), future23.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(5), future22.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(4), future21.get(30, TimeUnit.SECONDS));
 
     CompletableFuture<Long> future31 = idGenerator2.nextId();
     CompletableFuture<Long> future32 = idGenerator2.nextId();
     CompletableFuture<Long> future33 = idGenerator2.nextId();
-    assertEquals(Long.valueOf(1001), future31.join());
-    assertEquals(Long.valueOf(1002), future32.join());
-    assertEquals(Long.valueOf(1003), future33.join());
+    assertEquals(Long.valueOf(1001), future31.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(1002), future32.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(1003), future33.get(30, TimeUnit.SECONDS));
   }
 
   /**
@@ -72,22 +73,22 @@ public abstract class IdGeneratorTest extends AbstractPrimitiveTest {
     CompletableFuture<Long> future11 = idGenerator1.nextId();
     CompletableFuture<Long> future12 = idGenerator1.nextId();
     CompletableFuture<Long> future13 = idGenerator1.nextId();
-    assertEquals(Long.valueOf(1), future11.join());
-    assertEquals(Long.valueOf(2), future12.join());
-    assertEquals(Long.valueOf(3), future13.join());
+    assertEquals(Long.valueOf(1), future11.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(2), future12.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(3), future13.get(30, TimeUnit.SECONDS));
 
     CompletableFuture<Long> future21 = idGenerator2.nextId();
     CompletableFuture<Long> future22 = idGenerator2.nextId();
     CompletableFuture<Long> future23 = idGenerator2.nextId();
-    assertEquals(Long.valueOf(5), future21.join());
-    assertEquals(Long.valueOf(6), future22.join());
-    assertEquals(Long.valueOf(7), future23.join());
+    assertEquals(Long.valueOf(5), future21.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(6), future22.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(7), future23.get(30, TimeUnit.SECONDS));
 
     CompletableFuture<Long> future14 = idGenerator1.nextId();
     CompletableFuture<Long> future15 = idGenerator1.nextId();
     CompletableFuture<Long> future16 = idGenerator1.nextId();
-    assertEquals(Long.valueOf(4), future14.join());
-    assertEquals(Long.valueOf(9), future15.join());
-    assertEquals(Long.valueOf(10), future16.join());
+    assertEquals(Long.valueOf(4), future14.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(9), future15.get(30, TimeUnit.SECONDS));
+    assertEquals(Long.valueOf(10), future16.get(30, TimeUnit.SECONDS));
   }
 }

@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -65,31 +66,31 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
         .build().async();
 
     map.get("foo")
-        .thenAccept(v -> assertNull(v)).join();
+        .thenAccept(v -> assertNull(v)).get(30, TimeUnit.SECONDS);
     map.put("foo", null)
-        .thenAccept(v -> assertNull(v)).join();
+        .thenAccept(v -> assertNull(v)).get(30, TimeUnit.SECONDS);
     map.put("foo", fooValue).thenAccept(v -> {
       assertNotNull(v);
       assertNull(v.value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     map.get("foo").thenAccept(v -> {
       assertNotNull(v);
       assertEquals(v.value(), fooValue);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     map.replace("foo", fooValue, null)
-        .thenAccept(replaced -> assertTrue(replaced)).join();
+        .thenAccept(replaced -> assertTrue(replaced)).get(30, TimeUnit.SECONDS);
     map.get("foo").thenAccept(v -> {
       assertNotNull(v);
       assertNull(v.value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     map.replace("foo", fooValue, barValue)
-        .thenAccept(replaced -> assertFalse(replaced)).join();
+        .thenAccept(replaced -> assertFalse(replaced)).get(30, TimeUnit.SECONDS);
     map.replace("foo", null, barValue)
-        .thenAccept(replaced -> assertTrue(replaced)).join();
+        .thenAccept(replaced -> assertTrue(replaced)).get(30, TimeUnit.SECONDS);
     map.get("foo").thenAccept(v -> {
       assertNotNull(v);
       assertEquals(v.value(), barValue);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   @Test
@@ -101,170 +102,170 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
 
     map.isEmpty().thenAccept(result -> {
       assertTrue(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.put("foo", fooValue).thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.size().thenAccept(result -> {
       assertTrue(result == 1);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.isEmpty().thenAccept(result -> {
       assertFalse(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.putIfAbsent("foo", "Hello foo again!").thenAccept(result -> {
       assertNotNull(result);
       assertEquals(Versioned.valueOrElse(result, null), fooValue);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.getAllPresent(Collections.singleton("foo")).thenAccept(result -> {
       assertNotNull(result);
       assertTrue(result.size() == 1);
       assertEquals(result.get("foo").value(), fooValue);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.putIfAbsent("bar", barValue).thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.size().thenAccept(result -> {
       assertTrue(result == 2);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
-    map.keySet().size().thenAccept(size -> assertTrue(size == 2)).join();
-    map.keySet().containsAll(Sets.newHashSet("foo", "bar")).thenAccept(containsAll -> assertTrue(containsAll)).join();
+    map.keySet().size().thenAccept(size -> assertTrue(size == 2)).get(30, TimeUnit.SECONDS);
+    map.keySet().containsAll(Sets.newHashSet("foo", "bar")).thenAccept(containsAll -> assertTrue(containsAll)).get(30, TimeUnit.SECONDS);
 
-    map.values().size().thenAccept(size -> assertTrue(size == 2)).join();
+    map.values().size().thenAccept(size -> assertTrue(size == 2)).get(30, TimeUnit.SECONDS);
     List<String> rawValues = map.values().sync().stream().map(v -> new String(v.value())).collect(Collectors.toList());
     assertTrue(rawValues.contains("Hello foo!"));
     assertTrue(rawValues.contains("Hello bar!"));
 
-    map.entrySet().size().thenAccept(size -> assertTrue(size == 2)).join();
+    map.entrySet().size().thenAccept(size -> assertTrue(size == 2)).get(30, TimeUnit.SECONDS);
 
     map.get("foo").thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), fooValue);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.remove("foo").thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), fooValue);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.containsKey("foo").thenAccept(result -> {
       assertFalse(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.get("foo").thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.get("bar").thenAccept(result -> {
       assertNotNull(result);
       assertEquals(Versioned.valueOrElse(result, null), barValue);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.containsKey("bar").thenAccept(result -> {
       assertTrue(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.size().thenAccept(result -> {
       assertTrue(result == 1);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.containsValue(barValue).thenAccept(result -> {
       assertTrue(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.containsValue(fooValue).thenAccept(result -> {
       assertFalse(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.replace("bar", "Goodbye bar!").thenAccept(result -> {
       assertNotNull(result);
       assertEquals(Versioned.valueOrElse(result, null), barValue);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.replace("foo", "Goodbye foo!").thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     // try replace_if_value_match for a non-existent key
     map.replace("foo", "Goodbye foo!", fooValue).thenAccept(result -> {
       assertFalse(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.replace("bar", "Goodbye bar!", barValue).thenAccept(result -> {
       assertTrue(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.replace("bar", "Goodbye bar!", barValue).thenAccept(result -> {
       assertFalse(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
-    Versioned<String> barVersioned = map.get("bar").join();
+    Versioned<String> barVersioned = map.get("bar").get(30, TimeUnit.SECONDS);
     map.replace("bar", barVersioned.version(), "Goodbye bar!").thenAccept(result -> {
       assertTrue(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.replace("bar", barVersioned.version(), barValue).thenAccept(result -> {
       assertFalse(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
-    map.clear().join();
+    map.clear().get(30, TimeUnit.SECONDS);
 
     map.size().thenAccept(result -> {
       assertTrue(result == 0);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.put("foo", "Hello foo!", Duration.ofSeconds(3)).thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     Thread.sleep(1000);
 
     map.get("foo").thenAccept(result -> {
       assertEquals("Hello foo!", result.value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     Thread.sleep(5000);
 
     map.get("foo").thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.put("bar", "Hello bar!").thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.put("bar", "Goodbye bar!", Duration.ofMillis(10)).thenAccept(result -> {
       assertEquals("Hello bar!", result.value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.get("bar").thenAccept(result -> {
       assertEquals("Goodbye bar!", result.value());
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     Thread.sleep(5000);
 
     map.get("bar").thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.putIfAbsent("baz", "Hello baz!", Duration.ofMillis(10)).thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.get("baz").thenAccept(result -> {
       assertNotNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     Thread.sleep(5000);
 
     map.get("baz").thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   @Test
@@ -277,31 +278,31 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
 
     map.computeIfAbsent("foo", k -> value1).thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), value1);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.computeIfAbsent("foo", k -> value2).thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), value1);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.computeIfPresent("bar", (k, v) -> value2).thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.computeIfPresent("foo", (k, v) -> value3).thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), value3);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.computeIfPresent("foo", (k, v) -> null).thenAccept(result -> {
       assertNull(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.computeIf("foo", v -> v == null, (k, v) -> value1).thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), value1);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     map.compute("foo", (k, v) -> value2).thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), value2);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   @Test
@@ -314,54 +315,54 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
     TestMapEventListener listener = new TestMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event is received.
-    map.addListener(listener).thenCompose(v -> map.put("foo", value1)).join();
+    map.addListener(listener).thenCompose(v -> map.put("foo", value1)).get(30, TimeUnit.SECONDS);
     MapEvent<String, String> event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.INSERT, event.type());
     assertEquals(value1, event.newValue().value());
 
     // remove listener and verify listener is not notified.
-    map.removeListener(listener).thenCompose(v -> map.put("foo", value2)).join();
+    map.removeListener(listener).thenCompose(v -> map.put("foo", value2)).get(30, TimeUnit.SECONDS);
     assertFalse(listener.eventReceived());
 
     // add the listener back and verify UPDATE events are received correctly
-    map.addListener(listener).thenCompose(v -> map.put("foo", value3)).join();
+    map.addListener(listener).thenCompose(v -> map.put("foo", value3)).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.UPDATE, event.type());
     assertEquals(value3, event.newValue().value());
 
     // perform a non-state changing operation and verify no events are received.
-    map.putIfAbsent("foo", value1).join();
+    map.putIfAbsent("foo", value1).get(30, TimeUnit.SECONDS);
     assertFalse(listener.eventReceived());
 
     // verify REMOVE events are received correctly.
-    map.remove("foo").join();
+    map.remove("foo").get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.REMOVE, event.type());
     assertEquals(value3, event.oldValue().value());
 
     // verify compute methods also generate events.
-    map.computeIf("foo", v -> v == null, (k, v) -> value1).join();
+    map.computeIf("foo", v -> v == null, (k, v) -> value1).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.INSERT, event.type());
     assertEquals(value1, event.newValue().value());
 
-    map.compute("foo", (k, v) -> value2).join();
+    map.compute("foo", (k, v) -> value2).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.UPDATE, event.type());
     assertEquals(value2, event.newValue().value());
 
-    map.computeIf("foo", v -> Objects.equals(v, value2), (k, v) -> null).join();
+    map.computeIf("foo", v -> Objects.equals(v, value2), (k, v) -> null).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.REMOVE, event.type());
     assertEquals(value2, event.oldValue().value());
 
-    map.put("bar", "expire", Duration.ofSeconds(1)).join();
+    map.put("bar", "expire", Duration.ofSeconds(1)).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.INSERT, event.type());
@@ -372,7 +373,7 @@ public abstract class ConsistentMapTest extends AbstractPrimitiveTest {
     assertEquals(MapEvent.Type.REMOVE, event.type());
     assertEquals("expire", event.oldValue().value());
 
-    map.removeListener(listener).join();
+    map.removeListener(listener).get(30, TimeUnit.SECONDS);
   }
 
   @Test

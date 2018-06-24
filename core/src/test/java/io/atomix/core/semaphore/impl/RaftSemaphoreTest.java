@@ -25,6 +25,7 @@ import io.atomix.utils.time.Version;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,7 +47,7 @@ public class RaftSemaphoreTest extends SemaphoreTest {
             .build()
             .async();
 
-    semaphore.acquire(5).join();
+    semaphore.acquire(5).get(30, TimeUnit.SECONDS);
 
     QueueStatus status = semaphore.queueStatus().get();
     assertEquals(0, status.queueLength());
@@ -63,15 +64,15 @@ public class RaftSemaphoreTest extends SemaphoreTest {
     assertEquals(2, status3.queueLength());
     assertEquals(16, status3.totalPermits());
 
-    semaphore.release().join();
-    acquire6.join();
+    semaphore.release().get(30, TimeUnit.SECONDS);
+    acquire6.get(30, TimeUnit.SECONDS);
 
     QueueStatus status4 = semaphore.queueStatus().get();
     assertEquals(1, status4.queueLength());
     assertEquals(10, status4.totalPermits());
 
-    semaphore.release(10).join();
-    acquire10.join();
+    semaphore.release(10).get(30, TimeUnit.SECONDS);
+    acquire10.get(30, TimeUnit.SECONDS);
 
     QueueStatus status5 = semaphore.queueStatus().get();
     assertEquals(0, status5.queueLength());

@@ -29,6 +29,7 @@ import io.atomix.primitive.session.impl.RetryingSessionClient;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
 import io.atomix.protocols.backup.session.PrimaryBackupSessionClient;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
@@ -103,7 +104,7 @@ public class PrimaryBackupClient {
         Supplier<SessionClient> proxyBuilder = () -> new PrimaryBackupSessionClient(
             clientName,
             partitionId,
-            sessionIdService.nextSessionId().join(),
+            Futures.get(sessionIdService.nextSessionId()),
             primitiveType,
             new PrimitiveDescriptor(
                 primitiveName,

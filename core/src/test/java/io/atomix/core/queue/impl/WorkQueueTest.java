@@ -48,13 +48,13 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
     String queueName = UUID.randomUUID().toString();
     AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String item = DEFAULT_PAYLOAD;
-    queue1.addOne(item).join();
+    queue1.addOne(item).get(30, TimeUnit.SECONDS);
 
     AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String task2 = DEFAULT_PAYLOAD;
-    queue2.addOne(task2).join();
+    queue2.addOne(task2).get(30, TimeUnit.SECONDS);
 
-    WorkQueueStats stats = queue1.stats().join();
+    WorkQueueStats stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(stats.totalPending(), 2);
     assertEquals(stats.totalInProgress(), 0);
     assertEquals(stats.totalCompleted(), 0);
@@ -66,9 +66,9 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
     AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String item1 = DEFAULT_PAYLOAD;
     String item2 = DEFAULT_PAYLOAD;
-    queue1.addMultiple(Arrays.asList(item1, item2)).join();
+    queue1.addMultiple(Arrays.asList(item1, item2)).get(30, TimeUnit.SECONDS);
 
-    WorkQueueStats stats = queue1.stats().join();
+    WorkQueueStats stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(stats.totalPending(), 2);
     assertEquals(stats.totalInProgress(), 0);
     assertEquals(stats.totalCompleted(), 0);
@@ -79,26 +79,26 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
     String queueName = UUID.randomUUID().toString();
     AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String item1 = DEFAULT_PAYLOAD;
-    queue1.addOne(item1).join();
+    queue1.addOne(item1).get(30, TimeUnit.SECONDS);
 
     AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
-    Task<String> removedTask = queue2.take().join();
+    Task<String> removedTask = queue2.take().get(30, TimeUnit.SECONDS);
 
-    WorkQueueStats stats = queue2.stats().join();
+    WorkQueueStats stats = queue2.stats().get(30, TimeUnit.SECONDS);
     assertEquals(stats.totalPending(), 0);
     assertEquals(stats.totalInProgress(), 1);
     assertEquals(stats.totalCompleted(), 0);
 
     assertEquals(removedTask.payload(), item1);
-    queue2.complete(Arrays.asList(removedTask.taskId())).join();
+    queue2.complete(Arrays.asList(removedTask.taskId())).get(30, TimeUnit.SECONDS);
 
-    stats = queue1.stats().join();
+    stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(stats.totalPending(), 0);
     assertEquals(stats.totalInProgress(), 0);
     assertEquals(stats.totalCompleted(), 1);
 
     // Another take should return null
-    assertNull(queue2.take().join());
+    assertNull(queue2.take().get(30, TimeUnit.SECONDS));
   }
 
   @Test
@@ -106,19 +106,19 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
     String queueName = UUID.randomUUID().toString();
     AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String item1 = DEFAULT_PAYLOAD;
-    queue1.addOne(item1).join();
+    queue1.addOne(item1).get(30, TimeUnit.SECONDS);
 
     AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
-    queue2.take().join();
+    queue2.take().get(30, TimeUnit.SECONDS);
 
-    WorkQueueStats stats = queue1.stats().join();
+    WorkQueueStats stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(0, stats.totalPending());
     assertEquals(1, stats.totalInProgress());
     assertEquals(0, stats.totalCompleted());
 
-    queue2.close().join();
+    queue2.close().get(30, TimeUnit.SECONDS);
 
-    stats = queue1.stats().join();
+    stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(1, stats.totalPending());
     assertEquals(0, stats.totalInProgress());
     assertEquals(0, stats.totalCompleted());
@@ -135,7 +135,7 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
 
     AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String item1 = DEFAULT_PAYLOAD;
-    queue2.addOne(item1).join();
+    queue2.addOne(item1).get(30, TimeUnit.SECONDS);
 
     assertTrue(Uninterruptibles.awaitUninterruptibly(latch1, 5000, TimeUnit.MILLISECONDS));
     queue1.stopProcessing();
@@ -145,9 +145,9 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
 
     Thread.sleep((int) DEFAULT_PROCESSING_TIME.toMillis());
 
-    queue2.addMultiple(Arrays.asList(item2, item3)).join();
+    queue2.addMultiple(Arrays.asList(item2, item3)).get(30, TimeUnit.SECONDS);
 
-    WorkQueueStats stats = queue1.stats().join();
+    WorkQueueStats stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(2, stats.totalPending());
     assertEquals(0, stats.totalInProgress());
     assertEquals(1, stats.totalCompleted());
@@ -163,20 +163,20 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
     String queueName = UUID.randomUUID().toString();
     AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String item = DEFAULT_PAYLOAD;
-    queue1.addOne(item).join();
+    queue1.addOne(item).get(30, TimeUnit.SECONDS);
 
     AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String task2 = DEFAULT_PAYLOAD;
-    queue2.addOne(task2).join();
+    queue2.addOne(task2).get(30, TimeUnit.SECONDS);
 
-    WorkQueueStats stats = queue1.stats().join();
+    WorkQueueStats stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(stats.totalPending(), 2);
     assertEquals(stats.totalInProgress(), 0);
     assertEquals(stats.totalCompleted(), 0);
 
-    queue2.delete().join();
+    queue2.delete().get(30, TimeUnit.SECONDS);
 
-    stats = queue1.stats().join();
+    stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(stats.totalPending(), 0);
     assertEquals(stats.totalInProgress(), 0);
     assertEquals(stats.totalCompleted(), 0);
@@ -187,18 +187,18 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest {
     String queueName = UUID.randomUUID().toString();
     AsyncWorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
     String item = DEFAULT_PAYLOAD;
-    queue1.addOne(item).join();
+    queue1.addOne(item).get(30, TimeUnit.SECONDS);
 
-    Task<String> task = queue1.take().join();
+    Task<String> task = queue1.take().get(30, TimeUnit.SECONDS);
     String taskId = task.taskId();
 
     // Create another client and get a handle to the same queue.
     AsyncWorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName, protocol()).build().async();
 
     // Attempt completing the task with new client and verify task is not completed
-    queue2.complete(taskId).join();
+    queue2.complete(taskId).get(30, TimeUnit.SECONDS);
 
-    WorkQueueStats stats = queue1.stats().join();
+    WorkQueueStats stats = queue1.stats().get(30, TimeUnit.SECONDS);
     assertEquals(stats.totalPending(), 0);
     assertEquals(stats.totalInProgress(), 1);
     assertEquals(stats.totalCompleted(), 0);

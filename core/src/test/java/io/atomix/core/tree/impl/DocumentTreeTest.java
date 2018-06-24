@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -56,7 +57,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testQueries() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    Versioned<String> root = tree.get(path("root")).join();
+    Versioned<String> root = tree.get(path("root")).get(30, TimeUnit.SECONDS);
     assertEquals(1, root.version());
     assertNull(root.value());
   }
@@ -67,20 +68,20 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testCreate() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("root.a"), "a").join();
-    tree.create(path("root.a.b"), "ab").join();
-    tree.create(path("root.a.c"), "ac").join();
-    Versioned<String> a = tree.get(path("root.a")).join();
+    tree.create(path("root.a"), "a").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.b"), "ab").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
+    Versioned<String> a = tree.get(path("root.a")).get(30, TimeUnit.SECONDS);
     assertEquals("a", a.value());
 
-    Versioned<String> ab = tree.get(path("root.a.b")).join();
+    Versioned<String> ab = tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS);
     assertEquals("ab", ab.value());
 
-    Versioned<String> ac = tree.get(path("root.a.c")).join();
+    Versioned<String> ac = tree.get(path("root.a.c")).get(30, TimeUnit.SECONDS);
     assertEquals("ac", ac.value());
 
-    tree.create(path("root.x"), null).join();
-    Versioned<String> x = tree.get(path("root.x")).join();
+    tree.create(path("root.x"), null).get(30, TimeUnit.SECONDS);
+    Versioned<String> x = tree.get(path("root.x")).get(30, TimeUnit.SECONDS);
     assertNull(x.value());
   }
 
@@ -90,14 +91,14 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testRecursiveCreate() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.createRecursive(path("root.a.b.c"), "abc").join();
-    Versioned<String> a = tree.get(path("root.a")).join();
+    tree.createRecursive(path("root.a.b.c"), "abc").get(30, TimeUnit.SECONDS);
+    Versioned<String> a = tree.get(path("root.a")).get(30, TimeUnit.SECONDS);
     assertEquals(null, a.value());
 
-    Versioned<String> ab = tree.get(path("root.a.b")).join();
+    Versioned<String> ab = tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS);
     assertEquals(null, ab.value());
 
-    Versioned<String> abc = tree.get(path("root.a.b.c")).join();
+    Versioned<String> abc = tree.get(path("root.a.b.c")).get(30, TimeUnit.SECONDS);
     assertEquals("abc", abc.value());
   }
 
@@ -107,24 +108,24 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testSet() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("root.a"), "a").join();
-    tree.create(path("root.a.b"), "ab").join();
-    tree.create(path("root.a.c"), "ac").join();
+    tree.create(path("root.a"), "a").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.b"), "ab").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
 
-    tree.set(path("root.a.d"), "ad").join();
-    Versioned<String> ad = tree.get(path("root.a.d")).join();
+    tree.set(path("root.a.d"), "ad").get(30, TimeUnit.SECONDS);
+    Versioned<String> ad = tree.get(path("root.a.d")).get(30, TimeUnit.SECONDS);
     assertEquals("ad", ad.value());
 
-    tree.set(path("root.a"), "newA").join();
-    Versioned<String> newA = tree.get(path("root.a")).join();
+    tree.set(path("root.a"), "newA").get(30, TimeUnit.SECONDS);
+    Versioned<String> newA = tree.get(path("root.a")).get(30, TimeUnit.SECONDS);
     assertEquals("newA", newA.value());
 
-    tree.set(path("root.a.b"), "newAB").join();
-    Versioned<String> newAB = tree.get(path("root.a.b")).join();
+    tree.set(path("root.a.b"), "newAB").get(30, TimeUnit.SECONDS);
+    Versioned<String> newAB = tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS);
     assertEquals("newAB", newAB.value());
 
-    tree.set(path("root.x"), null).join();
-    Versioned<String> x = tree.get(path("root.x")).join();
+    tree.set(path("root.x"), null).get(30, TimeUnit.SECONDS);
+    Versioned<String> x = tree.get(path("root.x")).get(30, TimeUnit.SECONDS);
     assertNull(x.value());
   }
 
@@ -134,19 +135,19 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testReplaceVersion() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("root.a"), "a").join();
-    tree.create(path("root.a.b"), "ab").join();
-    tree.create(path("root.a.c"), "ac").join();
+    tree.create(path("root.a"), "a").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.b"), "ab").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
 
-    Versioned<String> ab = tree.get(path("root.a.b")).join();
-    assertTrue(tree.replace(path("root.a.b"), "newAB", ab.version()).join());
-    Versioned<String> newAB = tree.get(path("root.a.b")).join();
+    Versioned<String> ab = tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS);
+    assertTrue(tree.replace(path("root.a.b"), "newAB", ab.version()).get(30, TimeUnit.SECONDS));
+    Versioned<String> newAB = tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS);
     assertEquals("newAB", newAB.value());
 
-    assertFalse(tree.replace(path("root.a.b"), "newestAB", ab.version()).join());
-    assertEquals("newAB", tree.get(path("root.a.b")).join().value());
+    assertFalse(tree.replace(path("root.a.b"), "newestAB", ab.version()).get(30, TimeUnit.SECONDS));
+    assertEquals("newAB", tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS).value());
 
-    assertFalse(tree.replace(path("root.a.d"), "foo", 1).join());
+    assertFalse(tree.replace(path("root.a.d"), "foo", 1).get(30, TimeUnit.SECONDS));
   }
 
   /**
@@ -155,19 +156,19 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testReplaceValue() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("root.a"), "a").join();
-    tree.create(path("root.a.b"), "ab").join();
-    tree.create(path("root.a.c"), "ac").join();
+    tree.create(path("root.a"), "a").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.b"), "ab").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
 
-    Versioned<String> ab = tree.get(path("root.a.b")).join();
-    assertTrue(tree.replace(path("root.a.b"), "newAB", ab.value()).join());
-    Versioned<String> newAB = tree.get(path("root.a.b")).join();
+    Versioned<String> ab = tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS);
+    assertTrue(tree.replace(path("root.a.b"), "newAB", ab.value()).get(30, TimeUnit.SECONDS));
+    Versioned<String> newAB = tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS);
     assertEquals("newAB", newAB.value());
 
-    assertFalse(tree.replace(path("root.a.b"), "newestAB", ab.value()).join());
-    assertEquals("newAB", tree.get(path("root.a.b")).join().value());
+    assertFalse(tree.replace(path("root.a.b"), "newestAB", ab.value()).get(30, TimeUnit.SECONDS));
+    assertEquals("newAB", tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS).value());
 
-    assertFalse(tree.replace(path("root.a.d"), "bar", "foo").join());
+    assertFalse(tree.replace(path("root.a.d"), "bar", "foo").get(30, TimeUnit.SECONDS));
   }
 
   /**
@@ -176,26 +177,26 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testRemove() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("root.a"), "a").join();
-    tree.create(path("root.a.b"), "ab").join();
-    tree.create(path("root.a.c"), "ac").join();
+    tree.create(path("root.a"), "a").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.b"), "ab").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
 
-    Versioned<String> ab = tree.removeNode(path("root.a.b")).join();
+    Versioned<String> ab = tree.removeNode(path("root.a.b")).get(30, TimeUnit.SECONDS);
     assertEquals("ab", ab.value());
-    assertNull(tree.get(path("root.a.b")).join());
+    assertNull(tree.get(path("root.a.b")).get(30, TimeUnit.SECONDS));
 
-    Versioned<String> ac = tree.removeNode(path("root.a.c")).join();
+    Versioned<String> ac = tree.removeNode(path("root.a.c")).get(30, TimeUnit.SECONDS);
     assertEquals("ac", ac.value());
-    assertNull(tree.get(path("root.a.c")).join());
+    assertNull(tree.get(path("root.a.c")).get(30, TimeUnit.SECONDS));
 
-    Versioned<String> a = tree.removeNode(path("root.a")).join();
+    Versioned<String> a = tree.removeNode(path("root.a")).get(30, TimeUnit.SECONDS);
     assertEquals("a", a.value());
-    assertNull(tree.get(path("root.a")).join());
+    assertNull(tree.get(path("root.a")).get(30, TimeUnit.SECONDS));
 
-    tree.create(path("root.x"), null).join();
-    Versioned<String> x = tree.removeNode(path("root.x")).join();
+    tree.create(path("root.x"), null).get(30, TimeUnit.SECONDS);
+    Versioned<String> x = tree.removeNode(path("root.x")).get(30, TimeUnit.SECONDS);
     assertNull(x.value());
-    assertNull(tree.get(path("root.a.x")).join());
+    assertNull(tree.get(path("root.a.x")).get(30, TimeUnit.SECONDS));
   }
 
   /**
@@ -204,26 +205,26 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testRemoveFailures() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("root.a"), "a").join();
-    tree.create(path("root.a.b"), "ab").join();
-    tree.create(path("root.a.c"), "ac").join();
+    tree.create(path("root.a"), "a").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.b"), "ab").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
 
     try {
-      tree.removeNode(path("root")).join();
+      tree.removeNode(path("root")).get(30, TimeUnit.SECONDS);
       fail();
     } catch (Exception e) {
       assertTrue(Throwables.getRootCause(e) instanceof IllegalDocumentModificationException);
     }
 
     try {
-      tree.removeNode(path("root.a")).join();
+      tree.removeNode(path("root.a")).get(30, TimeUnit.SECONDS);
       fail();
     } catch (Exception e) {
       assertTrue(Throwables.getRootCause(e) instanceof IllegalDocumentModificationException);
     }
 
     try {
-      tree.removeNode(path("root.d")).join();
+      tree.removeNode(path("root.d")).get(30, TimeUnit.SECONDS);
       fail();
     } catch (Exception e) {
       assertTrue(Throwables.getRootCause(e) instanceof NoSuchDocumentPathException);
@@ -237,7 +238,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   public void testCreateFailures() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
     try {
-      tree.create(path("root.a.c"), "ac").join();
+      tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
       fail();
     } catch (Exception e) {
       assertTrue(Throwables.getRootCause(e) instanceof IllegalDocumentModificationException);
@@ -251,7 +252,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   public void testSetFailures() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
     try {
-      tree.set(path("root.a.c"), "ac").join();
+      tree.set(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
       fail();
     } catch (Exception e) {
       assertTrue(Throwables.getRootCause(e) instanceof IllegalDocumentModificationException);
@@ -264,24 +265,24 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testGetChildren() throws Throwable {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("root.a"), "a").join();
-    tree.create(path("root.a.b"), "ab").join();
-    tree.create(path("root.a.c"), "ac").join();
+    tree.create(path("root.a"), "a").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.b"), "ab").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
 
-    Map<String, Versioned<String>> rootChildren = tree.getChildren(path("root")).join();
+    Map<String, Versioned<String>> rootChildren = tree.getChildren(path("root")).get(30, TimeUnit.SECONDS);
     assertEquals(1, rootChildren.size());
     Versioned<String> a = rootChildren.get("a");
     assertEquals("a", a.value());
 
-    Map<String, Versioned<String>> children = tree.getChildren(path("root.a")).join();
+    Map<String, Versioned<String>> children = tree.getChildren(path("root.a")).get(30, TimeUnit.SECONDS);
     assertEquals(2, children.size());
     Versioned<String> ab = children.get("b");
     assertEquals("ab", ab.value());
     Versioned<String> ac = children.get("c");
     assertEquals("ac", ac.value());
 
-    assertEquals(0, tree.getChildren(path("root.a.b")).join().size());
-    assertEquals(0, tree.getChildren(path("root.a.c")).join().size());
+    assertEquals(0, tree.getChildren(path("root.a.b")).get(30, TimeUnit.SECONDS).size());
+    assertEquals(0, tree.getChildren(path("root.a.c")).get(30, TimeUnit.SECONDS).size());
   }
 
   /**
@@ -290,12 +291,12 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
   @Test
   public void testClear() throws Exception {
     AsyncDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("root.a"), "a").join();
-    tree.create(path("root.a.b"), "ab").join();
-    tree.create(path("root.a.c"), "ac").join();
+    tree.create(path("root.a"), "a").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.b"), "ab").get(30, TimeUnit.SECONDS);
+    tree.create(path("root.a.c"), "ac").get(30, TimeUnit.SECONDS);
 
-    tree.delete().join();
-    assertEquals(0, tree.getChildren(path("root")).join().size());
+    tree.delete().get(30, TimeUnit.SECONDS);
+    assertEquals(0, tree.getChildren(path("root")).get(30, TimeUnit.SECONDS).size());
   }
 
   /**
@@ -307,25 +308,25 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
     TestEventListener listener = new TestEventListener();
 
     // add listener; create a node in the tree and verify an CREATED event is received.
-    tree.addListener(listener).thenCompose(v -> tree.set(path("root.a"), "a")).join();
+    tree.addListener(listener).thenCompose(v -> tree.set(path("root.a"), "a")).get(30, TimeUnit.SECONDS);
     DocumentTreeEvent<String> event = listener.event();
     assertEquals(DocumentTreeEvent.Type.CREATED, event.type());
     assertFalse(event.oldValue().isPresent());
     assertEquals("a", event.newValue().get().value());
     // update a node in the tree and verify an UPDATED event is received.
-    tree.set(path("root.a"), "newA").join();
+    tree.set(path("root.a"), "newA").get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertEquals(DocumentTreeEvent.Type.UPDATED, event.type());
     assertEquals("newA", event.newValue().get().value());
     assertEquals("a", event.oldValue().get().value());
     // remove a node in the tree and verify an REMOVED event is received.
-    tree.removeNode(path("root.a")).join();
+    tree.removeNode(path("root.a")).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertEquals(DocumentTreeEvent.Type.DELETED, event.type());
     assertFalse(event.newValue().isPresent());
     assertEquals("newA", event.oldValue().get().value());
     // recursively create a node and verify CREATED events for all intermediate nodes.
-    tree.createRecursive(path("root.x.y"), "xy").join();
+    tree.createRecursive(path("root.x.y"), "xy").get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertEquals(DocumentTreeEvent.Type.CREATED, event.type());
     assertEquals(path("root.x"), event.path());
@@ -346,11 +347,11 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
     TestEventListener listener1ab = new TestEventListener();
     TestEventListener listener2abc = new TestEventListener();
 
-    tree1.addListener(path("root.a"), listener1a).join();
-    tree1.addListener(path("root.a.b"), listener1ab).join();
-    tree2.addListener(path("root.a.b.c"), listener2abc).join();
+    tree1.addListener(path("root.a"), listener1a).get(30, TimeUnit.SECONDS);
+    tree1.addListener(path("root.a.b"), listener1ab).get(30, TimeUnit.SECONDS);
+    tree2.addListener(path("root.a.b.c"), listener2abc).get(30, TimeUnit.SECONDS);
 
-    tree1.createRecursive(path("root.a.b.c"), "abc").join();
+    tree1.createRecursive(path("root.a.b.c"), "abc").get(30, TimeUnit.SECONDS);
     DocumentTreeEvent<String> event = listener1a.event();
     assertEquals(path("root.a"), event.path());
     event = listener1a.event();

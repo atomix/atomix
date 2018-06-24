@@ -27,6 +27,7 @@ import org.junit.Test;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,7 +50,7 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
       assertEquals(1, result.leader().term());
       assertEquals(1, result.candidates().size());
       assertEquals(node1, result.candidates().get(0));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-run", protocol()).build().async();
     election2.run(node2).thenAccept(result -> {
@@ -58,43 +59,43 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
       assertEquals(2, result.candidates().size());
       assertEquals(node1, result.candidates().get(0));
       assertEquals(node2, result.candidates().get(1));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   @Test
   public void testWithdraw() throws Throwable {
     AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-withdraw", protocol()).build().async();
-    election1.run(node1).join();
+    election1.run(node1).get(30, TimeUnit.SECONDS);
     AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-withdraw", protocol()).build().async();
-    election2.run(node2).join();
+    election2.run(node2).get(30, TimeUnit.SECONDS);
 
     LeaderEventListener listener1 = new LeaderEventListener();
-    election1.addListener(listener1).join();
+    election1.addListener(listener1).get(30, TimeUnit.SECONDS);
 
     LeaderEventListener listener2 = new LeaderEventListener();
-    election2.addListener(listener2).join();
+    election2.addListener(listener2).get(30, TimeUnit.SECONDS);
 
-    election1.withdraw(node1).join();
+    election1.withdraw(node1).get(30, TimeUnit.SECONDS);
 
     listener1.nextEvent().thenAccept(result -> {
       assertEquals(node2, result.newLeadership().leader().id());
       assertEquals(2, result.newLeadership().leader().term());
       assertEquals(1, result.newLeadership().candidates().size());
       assertEquals(node2, result.newLeadership().candidates().get(0));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     listener2.nextEvent().thenAccept(result -> {
       assertEquals(node2, result.newLeadership().leader().id());
       assertEquals(2, result.newLeadership().leader().term());
       assertEquals(1, result.newLeadership().candidates().size());
       assertEquals(node2, result.newLeadership().candidates().get(0));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
-    Leadership<MemberId> leadership1 = election1.getLeadership().join();
+    Leadership<MemberId> leadership1 = election1.getLeadership().get(30, TimeUnit.SECONDS);
     assertEquals(node2, leadership1.leader().id());
     assertEquals(1, leadership1.candidates().size());
 
-    Leadership<MemberId> leadership2 = election2.getLeadership().join();
+    Leadership<MemberId> leadership2 = election2.getLeadership().get(30, TimeUnit.SECONDS);
     assertEquals(node2, leadership2.leader().id());
     assertEquals(1, leadership2.candidates().size());
   }
@@ -104,45 +105,45 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
     AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint", protocol()).build().async();
     AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint", protocol()).build().async();
     AsyncLeaderElection<MemberId> election3 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint", protocol()).build().async();
-    election1.run(node1).join();
-    election2.run(node2).join();
+    election1.run(node1).get(30, TimeUnit.SECONDS);
+    election2.run(node2).get(30, TimeUnit.SECONDS);
 
     LeaderEventListener listener1 = new LeaderEventListener();
-    election1.addListener(listener1).join();
+    election1.addListener(listener1).get(30, TimeUnit.SECONDS);
     LeaderEventListener listener2 = new LeaderEventListener();
     election2.addListener(listener2);
     LeaderEventListener listener3 = new LeaderEventListener();
-    election3.addListener(listener3).join();
+    election3.addListener(listener3).get(30, TimeUnit.SECONDS);
 
     election3.anoint(node3).thenAccept(result -> {
       assertFalse(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     assertFalse(listener1.hasEvent());
     assertFalse(listener2.hasEvent());
     assertFalse(listener3.hasEvent());
 
     election3.anoint(node2).thenAccept(result -> {
       assertTrue(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     listener1.nextEvent().thenAccept(result -> {
       assertEquals(node2, result.newLeadership().leader().id());
       assertEquals(2, result.newLeadership().candidates().size());
       assertEquals(node1, result.newLeadership().candidates().get(0));
       assertEquals(node2, result.newLeadership().candidates().get(1));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     listener2.nextEvent().thenAccept(result -> {
       assertEquals(node2, result.newLeadership().leader().id());
       assertEquals(2, result.newLeadership().candidates().size());
       assertEquals(node1, result.newLeadership().candidates().get(0));
       assertEquals(node2, result.newLeadership().candidates().get(1));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     listener3.nextEvent().thenAccept(result -> {
       assertEquals(node2, result.newLeadership().leader().id());
       assertEquals(2, result.newLeadership().candidates().size());
       assertEquals(node1, result.newLeadership().candidates().get(0));
       assertEquals(node2, result.newLeadership().candidates().get(1));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   @Test
@@ -150,100 +151,100 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
     AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-promote", protocol()).build().async();
     AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-promote", protocol()).build().async();
     AsyncLeaderElection<MemberId> election3 = atomix().<MemberId>leaderElectionBuilder("test-election-promote", protocol()).build().async();
-    election1.run(node1).join();
-    election2.run(node2).join();
+    election1.run(node1).get(30, TimeUnit.SECONDS);
+    election2.run(node2).get(30, TimeUnit.SECONDS);
 
     LeaderEventListener listener1 = new LeaderEventListener();
-    election1.addListener(listener1).join();
+    election1.addListener(listener1).get(30, TimeUnit.SECONDS);
     LeaderEventListener listener2 = new LeaderEventListener();
-    election2.addListener(listener2).join();
+    election2.addListener(listener2).get(30, TimeUnit.SECONDS);
     LeaderEventListener listener3 = new LeaderEventListener();
-    election3.addListener(listener3).join();
+    election3.addListener(listener3).get(30, TimeUnit.SECONDS);
 
     election3.promote(node3).thenAccept(result -> {
       assertFalse(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     assertFalse(listener1.hasEvent());
     assertFalse(listener2.hasEvent());
     assertFalse(listener3.hasEvent());
 
-    election3.run(node3).join();
+    election3.run(node3).get(30, TimeUnit.SECONDS);
 
     listener1.nextEvent().thenAccept(result -> {
       assertEquals(node3, result.newLeadership().candidates().get(2));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     listener2.nextEvent().thenAccept(result -> {
       assertEquals(node3, result.newLeadership().candidates().get(2));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     listener3.nextEvent().thenAccept(result -> {
       assertEquals(node3, result.newLeadership().candidates().get(2));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     election3.promote(node3).thenAccept(result -> {
       assertTrue(result);
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
 
     listener1.nextEvent().thenAccept(result -> {
       assertEquals(node3, result.newLeadership().candidates().get(0));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     listener2.nextEvent().thenAccept(result -> {
       assertEquals(node3, result.newLeadership().candidates().get(0));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     listener3.nextEvent().thenAccept(result -> {
       assertEquals(node3, result.newLeadership().candidates().get(0));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   @Test
   public void testLeaderSessionClose() throws Throwable {
     AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-leader-session-close", protocol()).build().async();
-    election1.run(node1).join();
+    election1.run(node1).get(30, TimeUnit.SECONDS);
     AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-leader-session-close", protocol()).build().async();
     LeaderEventListener listener = new LeaderEventListener();
-    election2.run(node2).join();
-    election2.addListener(listener).join();
+    election2.run(node2).get(30, TimeUnit.SECONDS);
+    election2.addListener(listener).get(30, TimeUnit.SECONDS);
     election1.close();
     listener.nextEvent().thenAccept(result -> {
       assertEquals(node2, result.newLeadership().leader().id());
       assertEquals(1, result.newLeadership().candidates().size());
       assertEquals(node2, result.newLeadership().candidates().get(0));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   @Test
   public void testNonLeaderSessionClose() throws Throwable {
     AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-non-leader-session-close", protocol()).build().async();
-    election1.run(node1).join();
+    election1.run(node1).get(30, TimeUnit.SECONDS);
     AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-non-leader-session-close", protocol()).build().async();
     LeaderEventListener listener = new LeaderEventListener();
-    election2.run(node2).join();
-    election1.addListener(listener).join();
-    election2.close().join();
+    election2.run(node2).get(30, TimeUnit.SECONDS);
+    election1.addListener(listener).get(30, TimeUnit.SECONDS);
+    election2.close().get(30, TimeUnit.SECONDS);
     listener.nextEvent().thenAccept(result -> {
       assertEquals(node1, result.newLeadership().leader().id());
       assertEquals(1, result.newLeadership().candidates().size());
       assertEquals(node1, result.newLeadership().candidates().get(0));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   @Test
   public void testQueries() throws Throwable {
     AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-query", protocol()).build().async();
     AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-query", protocol()).build().async();
-    election1.run(node1).join();
-    election2.run(node2).join();
-    election2.run(node2).join();
+    election1.run(node1).get(30, TimeUnit.SECONDS);
+    election2.run(node2).get(30, TimeUnit.SECONDS);
+    election2.run(node2).get(30, TimeUnit.SECONDS);
     election1.getLeadership().thenAccept(result -> {
       assertEquals(node1, result.leader().id());
       assertEquals(node1, result.candidates().get(0));
       assertEquals(node2, result.candidates().get(1));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
     election2.getLeadership().thenAccept(result -> {
       assertEquals(node1, result.leader().id());
       assertEquals(node1, result.candidates().get(0));
       assertEquals(node2, result.candidates().get(1));
-    }).join();
+    }).get(30, TimeUnit.SECONDS);
   }
 
   private static class LeaderEventListener implements LeadershipEventListener<MemberId> {
