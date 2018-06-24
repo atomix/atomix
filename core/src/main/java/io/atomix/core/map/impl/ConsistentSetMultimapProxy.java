@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.core.multimap.impl;
+package io.atomix.core.map.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -22,10 +22,10 @@ import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.AsyncIterator;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
-import io.atomix.core.multimap.AsyncConsistentMultimap;
-import io.atomix.core.multimap.ConsistentMultimap;
-import io.atomix.core.multimap.MultimapEvent;
-import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.core.map.AsyncConsistentMultimap;
+import io.atomix.core.map.ConsistentMultimap;
+import io.atomix.core.map.MultimapEvent;
+import io.atomix.core.map.MultimapEventListener;
 import io.atomix.core.set.AsyncDistributedMultiset;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.DistributedMultiset;

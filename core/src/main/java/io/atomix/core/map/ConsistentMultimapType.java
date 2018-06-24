@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.multimap;
+package io.atomix.core.map;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.multimap.impl.ConsistentMultimapProxyBuilder;
-import io.atomix.core.multimap.impl.ConsistentSetMultimapService;
-import io.atomix.core.multimap.impl.DefaultConsistentSetMultimapService;
+import io.atomix.core.map.impl.ConsistentMultimapProxyBuilder;
+import io.atomix.core.map.impl.ConsistentSetMultimapService;
+import io.atomix.core.map.impl.DefaultConsistentSetMultimapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;

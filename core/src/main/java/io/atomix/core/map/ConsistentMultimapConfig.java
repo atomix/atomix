@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.multimap.impl;
+package io.atomix.core.map;
+
+import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
- * Consistent multimap factory.
+ * Consistent multimap configuration.
  */
-public interface ConsistentMultimapFactory {
+public class ConsistentMultimapConfig extends PrimitiveConfig<ConsistentMultimapConfig> {
+  @Override
+  public PrimitiveType getType() {
+    return ConsistentMultimapType.instance();
+  }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.core.multimap;
+package io.atomix.core.map;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.collection.DistributedCollection;
