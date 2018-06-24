@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.multimap.impl;
+package io.atomix.core.map.impl;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
-import io.atomix.core.multimap.AsyncConsistentMultimap;
-import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.core.map.AsyncConsistentMultimap;
+import io.atomix.core.map.MultimapEventListener;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;

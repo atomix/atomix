@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package io.atomix.core.multimap.impl;
+package io.atomix.core.map.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.core.multimap.AsyncConsistentMultimap;
-import io.atomix.core.multimap.ConsistentMultimap;
+import io.atomix.core.map.AsyncConsistentMultimap;
+import io.atomix.core.map.ConsistentMultimap;
 import org.junit.Test;
 
 import java.util.Arrays;

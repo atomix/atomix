@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.multimap.impl;
+package io.atomix.core.map.impl;
 
-import io.atomix.primitive.event.Event;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
- * Consistent set multimap client.
+ * Raft multimap test.
  */
-public interface ConsistentSetMultimapClient {
-
-  /**
-   * Handles a change event.
-   *
-   * @param key      the key that changed
-   * @param oldValue the old value
-   * @param newValue the new value
-   */
-  @Event("change")
-  void onChange(String key, byte[] oldValue, byte[] newValue);
-
+public class RaftConsistentSetMultimapTest extends ConsistentSetMultimapTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return MultiRaftProtocol.builder()
+        .withMaxRetries(5)
+        .build();
+  }
 }

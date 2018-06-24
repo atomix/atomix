@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.core.multimap.impl;
+package io.atomix.core.map.impl;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -23,7 +23,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.core.multimap.ConsistentMultimapType;
+import io.atomix.core.map.ConsistentMultimapType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;

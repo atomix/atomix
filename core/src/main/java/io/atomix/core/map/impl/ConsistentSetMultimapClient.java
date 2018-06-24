@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.multimap;
+package io.atomix.core.map.impl;
 
-import io.atomix.primitive.config.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.event.Event;
 
 /**
- * Consistent multimap configuration.
+ * Consistent set multimap client.
  */
-public class ConsistentMultimapConfig extends PrimitiveConfig<ConsistentMultimapConfig> {
-  @Override
-  public PrimitiveType getType() {
-    return ConsistentMultimapType.instance();
-  }
+public interface ConsistentSetMultimapClient {
+
+  /**
+   * Handles a change event.
+   *
+   * @param key      the key that changed
+   * @param oldValue the old value
+   * @param newValue the new value
+   */
+  @Event("change")
+  void onChange(String key, byte[] oldValue, byte[] newValue);
+
 }

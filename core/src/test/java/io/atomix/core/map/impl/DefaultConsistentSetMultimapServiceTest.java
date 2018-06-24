@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.multimap.impl;
+package io.atomix.core.map.impl;
 
-import io.atomix.core.multimap.ConsistentMultimapType;
+import io.atomix.core.map.ConsistentMultimapType;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;

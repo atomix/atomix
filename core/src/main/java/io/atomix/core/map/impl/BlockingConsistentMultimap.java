@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package io.atomix.core.multimap.impl;
+package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
-import io.atomix.core.multimap.AsyncConsistentMultimap;
-import io.atomix.core.multimap.ConsistentMultimap;
-import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.core.map.AsyncConsistentMultimap;
+import io.atomix.core.map.ConsistentMultimap;
+import io.atomix.core.map.MultimapEventListener;
 import io.atomix.core.set.DistributedMultiset;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.impl.BlockingDistributedMultiset;

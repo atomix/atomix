@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.core.multimap;
+package io.atomix.core.map;
 
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
