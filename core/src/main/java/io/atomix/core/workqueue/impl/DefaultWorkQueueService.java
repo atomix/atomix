@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue.impl;
+package io.atomix.core.workqueue.impl;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
@@ -21,9 +21,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
-import io.atomix.core.queue.Task;
-import io.atomix.core.queue.WorkQueueStats;
-import io.atomix.core.queue.WorkQueueType;
+import io.atomix.core.workqueue.Task;
+import io.atomix.core.workqueue.WorkQueueStats;
+import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;

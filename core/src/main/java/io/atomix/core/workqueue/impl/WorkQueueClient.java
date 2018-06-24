@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue.impl;
+package io.atomix.core.workqueue.impl;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.primitive.event.Event;
 
 /**
- * Raft work queue test.
+ * Work queue client.
  */
-public class RaftWorkQueueTest extends WorkQueueTest {
-  @Override
-  protected PrimitiveProtocol protocol() {
-    return MultiRaftProtocol.builder()
-        .withMaxRetries(5)
-        .build();
-  }
+public interface WorkQueueClient {
+
+  /**
+   * Notifies the client that a task is available.
+   */
+  @Event
+  void taskAvailable();
+
 }

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue.impl;
+package io.atomix.core.workqueue.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.core.queue.AsyncWorkQueue;
+import io.atomix.core.workqueue.AsyncWorkQueue;
 import io.atomix.core.utils.EventLog;
 import io.atomix.core.utils.EventManager;
 import io.atomix.primitive.resource.PrimitiveResource;

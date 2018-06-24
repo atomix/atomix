@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue;
+package io.atomix.core.workqueue;
 
 import com.google.common.collect.ImmutableList;
 import io.atomix.primitive.AsyncPrimitive;
