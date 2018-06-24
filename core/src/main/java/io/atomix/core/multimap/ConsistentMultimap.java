@@ -16,14 +16,15 @@
 
 package io.atomix.core.multimap;
 
-import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.set.DistributedMultiset;
+import io.atomix.core.set.DistributedSet;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -172,7 +173,7 @@ public interface ConsistentMultimap<K, V> extends SyncPrimitive {
    * @return the collection of all keys with one or more associated values,
    * this may be empty
    */
-  Set<K> keySet();
+  DistributedSet<K> keySet();
 
   /**
    * Returns a multiset of the keys present in this multimap with one or more
@@ -181,7 +182,7 @@ public interface ConsistentMultimap<K, V> extends SyncPrimitive {
    *
    * @return a multiset of the keys, this may be empty
    */
-  Multiset<K> keys();
+  DistributedMultiset<K> keys();
 
   /**
    * Returns a collection of values in the set with duplicates permitted, the
@@ -190,24 +191,14 @@ public interface ConsistentMultimap<K, V> extends SyncPrimitive {
    *
    * @return a collection of values, this may be empty
    */
-  Multiset<V> values();
+  DistributedMultiset<V> values();
 
   /**
    * Returns a collection of each key-value pair in this map.
    *
    * @return a collection of all entries in the map, this may be empty
    */
-  Collection<Map.Entry<K, V>> entries();
-
-  /**
-   * Returns a map of keys to collections of values that reflect the set of
-   * key-value pairs contained in the multimap, where the key value pairs
-   * would be the key paired with each of the values in the collection.
-   *
-   * @return a map of keys to collections of values, the returned map may be
-   * empty.
-   */
-  Map<K, Collection<V>> asMap();
+  DistributedCollection<Map.Entry<K, V>> entries();
 
   /**
    * Registers the specified listener to be notified whenever the map is updated.

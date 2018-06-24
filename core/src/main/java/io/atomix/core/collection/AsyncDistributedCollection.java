@@ -16,6 +16,7 @@
 package io.atomix.core.collection;
 
 import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -25,6 +26,10 @@ import java.util.concurrent.CompletableFuture;
  * Asynchronous distributed collection.
  */
 public interface AsyncDistributedCollection<E> extends AsyncPrimitive, AsyncIterable<E> {
+  @Override
+  default PrimitiveType type() {
+    return DistributedCollectionType.instance();
+  }
 
   /**
    * Adds the specified element to this collection if it is not already present (optional operation).

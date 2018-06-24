@@ -16,8 +16,10 @@
 
 package io.atomix.core.multimap;
 
-import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.set.AsyncDistributedMultiset;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.utils.time.Versioned;
@@ -25,7 +27,6 @@ import io.atomix.utils.time.Versioned;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -193,7 +194,7 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    * @return a future whose value will be the collection of all keys with one
    * or more associated values, this may be empty
    */
-  CompletableFuture<Set<K>> keySet();
+  AsyncDistributedSet<K> keySet();
 
   /**
    * Returns a multiset of the keys present in this multimap with one or more
@@ -203,7 +204,7 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    * @return a future whose value will be a multiset of the keys, this may
    * be empty
    */
-  CompletableFuture<Multiset<K>> keys();
+  AsyncDistributedMultiset<K> keys();
 
   /**
    * Returns a collection of values in the set with duplicates permitted, the
@@ -213,7 +214,7 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    * @return a future whose value will be a collection of values, this may be
    * empty
    */
-  CompletableFuture<Multiset<V>> values();
+  AsyncDistributedMultiset<V> values();
 
   /**
    * Returns a collection of each key-value pair in this map.
@@ -221,7 +222,7 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    * @return a future whose value will be a collection of all entries in the
    * map, this may be empty
    */
-  CompletableFuture<Collection<Map.Entry<K, V>>> entries();
+  AsyncDistributedCollection<Map.Entry<K, V>> entries();
 
   /**
    * Registers the specified listener to be notified whenever the map is updated.
@@ -250,16 +251,6 @@ public interface AsyncConsistentMultimap<K, V> extends AsyncPrimitive {
    * @return future that will be completed when the operation finishes
    */
   CompletableFuture<Void> removeListener(MultimapEventListener<K, V> listener);
-
-  /**
-   * Returns a map of keys to collections of values that reflect the set of
-   * key-value pairs contained in the multimap, where the key value pairs
-   * would be the key paired with each of the values in the collection.
-   *
-   * @return a future whose value will be a map of keys to collections of
-   * values, the returned map may be empty.
-   */
-  CompletableFuture<Map<K, Collection<V>>> asMap();
 
   @Override
   default ConsistentMultimap<K, V> sync() {

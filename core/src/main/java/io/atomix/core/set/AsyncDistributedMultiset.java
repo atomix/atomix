@@ -1,11 +1,11 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,18 +23,12 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A distributed collection designed for holding unique elements.
- * <p>
- * All methods of {@code AsyncDistributedSet} immediately return a {@link CompletableFuture future}.
- * The returned future will be {@link CompletableFuture#complete completed} when the operation
- * completes.
- *
- * @param <E> set entry type
+ * Asynchronous distributed multiset.
  */
-public interface AsyncDistributedSet<E> extends AsyncDistributedCollection<E> {
+public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<E> {
   @Override
   default PrimitiveType type() {
-    return DistributedSetType.instance();
+    return DistributedMultisetType.instance();
   }
 
   /**
@@ -55,10 +49,10 @@ public interface AsyncDistributedSet<E> extends AsyncDistributedCollection<E> {
   CompletableFuture<Void> removeListener(SetEventListener<E> listener);
 
   @Override
-  default DistributedSet<E> sync() {
+  default DistributedMultiset<E> sync() {
     return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
   @Override
-  DistributedSet<E> sync(Duration operationTimeout);
+  DistributedMultiset<E> sync(Duration operationTimeout);
 }

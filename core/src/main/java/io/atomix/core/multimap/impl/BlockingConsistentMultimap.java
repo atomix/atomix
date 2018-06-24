@@ -17,17 +17,21 @@
 package io.atomix.core.multimap.impl;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.Multiset;
+import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.core.set.DistributedMultiset;
+import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.impl.BlockingDistributedMultiset;
+import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -120,30 +124,23 @@ public class BlockingConsistentMultimap<K, V>
   }
 
   @Override
-  public Set<K> keySet() {
-    return complete(asyncMultimap.keySet());
+  public DistributedSet<K> keySet() {
+    return new BlockingDistributedSet<>(asyncMultimap.keySet(), operationTimeoutMillis);
   }
 
   @Override
-  public Multiset<K> keys() {
-    return complete(asyncMultimap.keys());
+  public DistributedMultiset<K> keys() {
+    return new BlockingDistributedMultiset<>(asyncMultimap.keys(), operationTimeoutMillis);
   }
 
   @Override
-  public Multiset<V> values() {
-    return complete(asyncMultimap.values());
+  public DistributedMultiset<V> values() {
+    return new BlockingDistributedMultiset<>(asyncMultimap.values(), operationTimeoutMillis);
   }
 
   @Override
-  public Collection<Map.Entry<K, V>> entries() {
-    return complete(asyncMultimap.entries());
-  }
-
-  @Override
-  public Map<K, Collection<V>> asMap() {
-    throw new UnsupportedOperationException("This operation is not yet " +
-        "supported.");
-    //FIXME implement this when a new version of ConsistentMapBackedJavaMap is made for multimaps
+  public DistributedCollection<Map.Entry<K, V>> entries() {
+    return new BlockingDistributedCollection<>(asyncMultimap.entries(), operationTimeoutMillis);
   }
 
   @Override
