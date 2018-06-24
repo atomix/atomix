@@ -17,6 +17,7 @@ package io.atomix.core.multimap;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.multimap.impl.ConsistentMultimapProxyBuilder;
+import io.atomix.core.multimap.impl.ConsistentSetMultimapService;
 import io.atomix.core.multimap.impl.DefaultConsistentSetMultimapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -62,6 +63,7 @@ public class ConsistentMultimapType<K, V> implements PrimitiveType<ConsistentMul
         .register(Versioned.class)
         .register(ArrayList.class)
         .register(Maps.immutableEntry("", "").getClass())
+        .register(ConsistentSetMultimapService.Batch.class)
         .build();
   }
 

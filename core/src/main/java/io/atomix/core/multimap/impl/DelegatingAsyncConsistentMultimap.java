@@ -16,18 +16,18 @@
 
 package io.atomix.core.multimap.impl;
 
-import com.google.common.collect.Multiset;
-
+import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.core.set.AsyncDistributedMultiset;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.primitive.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -119,22 +119,22 @@ public class DelegatingAsyncConsistentMultimap<K, V>
   }
 
   @Override
-  public CompletableFuture<Set<K>> keySet() {
+  public AsyncDistributedSet<K> keySet() {
     return delegateMap.keySet();
   }
 
   @Override
-  public CompletableFuture<Multiset<K>> keys() {
+  public AsyncDistributedMultiset<K> keys() {
     return delegateMap.keys();
   }
 
   @Override
-  public CompletableFuture<Multiset<V>> values() {
+  public AsyncDistributedMultiset<V> values() {
     return delegateMap.values();
   }
 
   @Override
-  public CompletableFuture<Collection<Map.Entry<K, V>>> entries() {
+  public AsyncDistributedCollection<Map.Entry<K, V>> entries() {
     return delegateMap.entries();
   }
 
@@ -151,11 +151,6 @@ public class DelegatingAsyncConsistentMultimap<K, V>
   @Override
   public CompletableFuture<Void> close() {
     return delegateMap.close();
-  }
-
-  @Override
-  public CompletableFuture<Map<K, Collection<V>>> asMap() {
-    return delegateMap.asMap();
   }
 
   @Override

@@ -15,14 +15,13 @@
  */
 package io.atomix.core.multimap.impl;
 
-import com.google.common.collect.Multiset;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Consistent set multimap service.
@@ -55,6 +54,17 @@ public interface ConsistentSetMultimapService {
    */
   @Query
   boolean containsKey(String key);
+
+  /**
+   * Returns true if there is at lease one key-value pair with a key equal to each
+   * key.
+   *
+   * @param keys the key to query
+   * @return true if the map contains a
+   * key-value pair with key false otherwise
+   */
+  @Query
+  boolean containsKeys(Collection<String> keys);
 
   /**
    * Returns true if this map contains at lease one key-value pair with a
@@ -182,27 +192,7 @@ public interface ConsistentSetMultimapService {
    * this may be empty
    */
   @Query
-  Set<String> keySet();
-
-  /**
-   * Returns a multiset of the keys present in this multimap with one or more
-   * associated values each. Keys will appear once for each key-value pair
-   * in which they participate.
-   *
-   * @return a multiset of the keys, this may be empty
-   */
-  @Query
-  Multiset<String> keys();
-
-  /**
-   * Returns a collection of values in the set with duplicates permitted, the
-   * size of this collection will equal the size of the map at the time of
-   * creation.
-   *
-   * @return a collection of values, this may be empty
-   */
-  @Query
-  Multiset<byte[]> values();
+  int keyCount();
 
   /**
    * Returns a collection of each key-value pair in this map.
@@ -210,7 +200,7 @@ public interface ConsistentSetMultimapService {
    * @return a collection of all entries in the map, this may be empty
    */
   @Query
-  Collection<Map.Entry<String, byte[]>> entries();
+  int entryCount();
 
   /**
    * Registers the specified listener to be notified whenever the map is updated.
@@ -224,5 +214,164 @@ public interface ConsistentSetMultimapService {
    */
   @Command
   void unlisten();
+
+  /**
+   * Returns a key iterator.
+   *
+   * @return the key iterator ID
+   */
+  @Command
+  long iterateKeySet();
+
+  /**
+   * Returns the next batch of entries for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position   the iterator position
+   * @return the next batch of keys for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<String> nextKeySet(long iteratorId, int position);
+
+  /**
+   * Closes a key iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeKeySet(long iteratorId);
+
+  /**
+   * Returns a key iterator.
+   *
+   * @return the key iterator ID
+   */
+  @Command
+  long iterateKeys();
+
+  /**
+   * Returns the next batch of entries for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position   the iterator position
+   * @return the next batch of keys for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<String> nextKeys(long iteratorId, int position);
+
+  /**
+   * Closes a key iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeKeys(long iteratorId);
+
+  /**
+   * Returns a values iterator.
+   *
+   * @return the values iterator ID
+   */
+  @Command
+  long iterateValues();
+
+  /**
+   * Returns the next batch of values for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position   the iterator position
+   * @return the next batch of values for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<byte[]> nextValues(long iteratorId, int position);
+
+  /**
+   * Closes a value iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeValues(long iteratorId);
+
+  /**
+   * Returns an entry iterator.
+   *
+   * @return the entry iterator ID
+   */
+  @Command
+  long iterateEntries();
+
+  /**
+   * Returns the next batch of entries for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position   the iterator position
+   * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<Map.Entry<String, byte[]>> nextEntries(long iteratorId, int position);
+
+  /**
+   * Closes an entry iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeEntries(long iteratorId);
+
+  /**
+   * Iterator batch.
+   *
+   * @param <T> the batch element type
+   */
+  final class Batch<T> implements Iterator<T> {
+    private final int position;
+    private final Collection<T> entries;
+    private transient volatile Iterator<T> iterator;
+
+    Batch(int position, Collection<T> entries) {
+      this.position = position;
+      this.entries = entries;
+    }
+
+    /**
+     * Returns the iterator position.
+     *
+     * @return the iterator position
+     */
+    public int position() {
+      return position;
+    }
+
+    /**
+     * Returns the batch of entries.
+     *
+     * @return the batch of entries
+     */
+    public Collection<T> entries() {
+      return entries;
+    }
+
+    private Iterator<T> iterator() {
+      if (iterator == null) {
+        synchronized (this) {
+          if (iterator == null) {
+            iterator = entries.iterator();
+          }
+        }
+      }
+      return iterator;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return iterator().hasNext();
+    }
+
+    @Override
+    public T next() {
+      return iterator().next();
+    }
+  }
 
 }

@@ -22,7 +22,6 @@ import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import io.atomix.core.multimap.ConsistentMultimapType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
@@ -36,13 +35,16 @@ import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -52,11 +54,14 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * State Machine for {@link ConsistentSetMultimapProxy} resource.
  */
 public class DefaultConsistentSetMultimapService extends AbstractPrimitiveService<ConsistentSetMultimapClient> implements ConsistentSetMultimapService {
+
+  private static final int MAX_ITERATOR_BATCH_SIZE = 1024 * 32;
 
   private final Serializer serializer = Serializer.using(Namespace.builder()
       .register(ConsistentMultimapType.instance().namespace())
@@ -82,7 +87,8 @@ public class DefaultConsistentSetMultimapService extends AbstractPrimitiveServic
 
   private AtomicLong globalVersion = new AtomicLong(1);
   private Set<SessionId> listeners = new LinkedHashSet<>();
-  private Map<String, MapEntryValues> backingMap = Maps.newHashMap();
+  private Map<String, MapEntryValues> backingMap = Maps.newConcurrentMap();
+  protected Map<Long, IteratorContext> entryIterators = Maps.newHashMap();
 
   public DefaultConsistentSetMultimapService() {
     super(ConsistentMultimapType.instance(), ConsistentSetMultimapClient.class);
@@ -136,6 +142,16 @@ public class DefaultConsistentSetMultimapService extends AbstractPrimitiveServic
   }
 
   @Override
+  public boolean containsKeys(Collection<String> keys) {
+    for (String key : keys) {
+      if (!containsKey(key)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Override
   public boolean containsValue(byte[] value) {
     if (backingMap.values().isEmpty()) {
       return false;
@@ -173,33 +189,15 @@ public class DefaultConsistentSetMultimapService extends AbstractPrimitiveServic
   }
 
   @Override
-  public Set<String> keySet() {
-    return ImmutableSet.copyOf(backingMap.keySet());
+  public int keyCount() {
+    return backingMap.keySet().size();
   }
 
   @Override
-  public Multiset<String> keys() {
-    Multiset keys = HashMultiset.create();
-    backingMap.forEach((key, mapEntryValues) -> {
-      keys.add(key, mapEntryValues.values().size());
-    });
-    return keys;
-  }
-
-  @Override
-  public Multiset<byte[]> values() {
-    return backingMap
-        .values()
-        .stream()
-        .collect(new HashMultisetValueCollector());
-  }
-
-  @Override
-  public Collection<Map.Entry<String, byte[]>> entries() {
-    return backingMap
-        .entrySet()
-        .stream()
-        .collect(new EntrySetCollector());
+  public int entryCount() {
+    return backingMap.entrySet().stream()
+        .mapToInt(entry -> entry.getValue().values().size())
+        .sum();
   }
 
   @Override
@@ -300,6 +298,104 @@ public class DefaultConsistentSetMultimapService extends AbstractPrimitiveServic
       }
     }
     return removedValues;
+  }
+
+  @Override
+  public long iterateKeySet() {
+    return iterateEntries();
+  }
+
+  @Override
+  public Batch<String> nextKeySet(long iteratorId, int position) {
+    Batch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet()));
+  }
+
+  @Override
+  public void closeKeySet(long iteratorId) {
+    closeEntries(iteratorId);
+  }
+
+  @Override
+  public long iterateKeys() {
+    return iterateEntries();
+  }
+
+  @Override
+  public Batch<String> nextKeys(long iteratorId, int position) {
+    Batch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toList()));
+  }
+
+  @Override
+  public void closeKeys(long iteratorId) {
+    closeEntries(iteratorId);
+  }
+
+  @Override
+  public long iterateValues() {
+    return iterateEntries();
+  }
+
+  @Override
+  public Batch<byte[]> nextValues(long iteratorId, int position) {
+    Batch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+        .map(Map.Entry::getValue)
+        .collect(Collectors.toSet()));
+  }
+
+  @Override
+  public void closeValues(long iteratorId) {
+    closeEntries(iteratorId);
+  }
+
+  @Override
+  public long iterateEntries() {
+    entryIterators.put(getCurrentIndex(), new IteratorContext(getCurrentSession().sessionId().id()));
+    return getCurrentIndex();
+  }
+
+  @Override
+  public Batch<Map.Entry<String, byte[]>> nextEntries(long iteratorId, int position) {
+    IteratorContext context = entryIterators.get(iteratorId);
+    if (context == null) {
+      return null;
+    }
+
+    List<Map.Entry<String, byte[]>> entries = new ArrayList<>();
+    int size = 0;
+    while (context.iterator.hasNext()) {
+      context.position++;
+      if (context.position > position) {
+        Map.Entry<String, MapEntryValues> entry = context.iterator.next();
+        String key = entry.getKey();
+        int keySize = key.length();
+        for (byte[] value : entry.getValue().values()) {
+          entries.add(Maps.immutableEntry(key, value));
+          size += keySize;
+          size += value.length;
+        }
+
+        if (size >= MAX_ITERATOR_BATCH_SIZE) {
+          break;
+        }
+      }
+    }
+
+    if (entries.isEmpty()) {
+      return null;
+    }
+    return new Batch<>(context.position, entries);
+  }
+
+  @Override
+  public void closeEntries(long iteratorId) {
+    entryIterators.remove(iteratorId);
   }
 
   @Override
@@ -564,6 +660,16 @@ public class DefaultConsistentSetMultimapService extends AbstractPrimitiveServic
         }
         return o1.length > o2.length ? 1 : -1;
       }
+    }
+  }
+
+  private class IteratorContext {
+    private final long sessionId;
+    private int position = 0;
+    private transient Iterator<Map.Entry<String, MapEntryValues>> iterator = backingMap.entrySet().iterator();
+
+    IteratorContext(long sessionId) {
+      this.sessionId = sessionId;
     }
   }
 }

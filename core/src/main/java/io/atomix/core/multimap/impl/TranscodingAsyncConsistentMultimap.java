@@ -19,10 +19,16 @@ package io.atomix.core.multimap.impl;
 import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
+import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
 import io.atomix.core.multimap.ConsistentMultimap;
 import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.MultimapEventListener;
+import io.atomix.core.set.AsyncDistributedMultiset;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.impl.TranscodingAsyncDistributedMultiset;
+import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
@@ -61,6 +67,8 @@ public class TranscodingAsyncConsistentMultimap<K1, V1, K2, V2> implements Async
   private final Function<K2, K1> keyDecoder;
   private final Function<V2, V1> valueDecoder;
   private final Function<V1, V2> valueEncoder;
+  private final Function<Map.Entry<K1, V1>, Map.Entry<K2, V2>> entryEncoder;
+  private final Function<Map.Entry<K2, V2>, Map.Entry<K1, V1>> entryDecoder;
   private final Function<? extends Versioned<V2>,
       ? extends Versioned<V1>> versionedValueTransform;
   private final Function<Versioned<Collection<? extends V2>>,
@@ -81,6 +89,8 @@ public class TranscodingAsyncConsistentMultimap<K1, V1, K2, V2> implements Async
     this.keyDecoder = k -> k == null ? null : keyDecoder.apply(k);
     this.valueEncoder = v -> v == null ? null : valueEncoder.apply(v);
     this.valueDecoder = v -> v == null ? null : valueDecoder.apply(v);
+    this.entryEncoder = e -> Maps.immutableEntry(this.keyEncoder.apply(e.getKey()), this.valueEncoder.apply(e.getValue()));
+    this.entryDecoder = e -> Maps.immutableEntry(this.keyDecoder.apply(e.getKey()), this.valueDecoder.apply(e.getValue()));
     this.versionedValueTransform = v -> v == null ? null :
         v.map(valueDecoder);
     this.versionedValueCollectionDecode = v -> v == null ? null :
@@ -93,6 +103,11 @@ public class TranscodingAsyncConsistentMultimap<K1, V1, K2, V2> implements Async
             v.creationTime());
     this.valueCollectionEncode = v -> v == null ? null :
         v.stream().map(valueEncoder).collect(Collectors.toSet());
+  }
+
+  @Override
+  public String name() {
+    return backingMap.name();
   }
 
   @Override
@@ -226,40 +241,23 @@ public class TranscodingAsyncConsistentMultimap<K1, V1, K2, V2> implements Async
   }
 
   @Override
-  public CompletableFuture<Set<K1>> keySet() {
-    return backingMap.keySet().thenApply(s -> s.stream()
-        .map(keyDecoder)
-        .collect(Collectors.toSet()));
+  public AsyncDistributedSet<K1> keySet() {
+    return new TranscodingAsyncDistributedSet<>(backingMap.keySet(), keyEncoder, keyDecoder);
   }
 
   @Override
-  public CompletableFuture<Multiset<K1>> keys() {
-    return backingMap.keys().thenApply(s -> s.stream().map(keyDecoder)
-        .collect(new MultisetCollector<>()));
+  public AsyncDistributedMultiset<K1> keys() {
+    return new TranscodingAsyncDistributedMultiset<>(backingMap.keys(), keyEncoder, keyDecoder);
   }
 
   @Override
-  public CompletableFuture<Multiset<V1>> values() {
-    return backingMap.values().thenApply(s ->
-        s.stream().map(valueDecoder).collect(new MultisetCollector<>()));
+  public AsyncDistributedMultiset<V1> values() {
+    return new TranscodingAsyncDistributedMultiset<>(backingMap.values(), valueEncoder, valueDecoder);
   }
 
   @Override
-  public CompletableFuture<Collection<Map.Entry<K1, V1>>> entries() {
-    return backingMap.entries().thenApply(s -> s.stream()
-        .map(e -> Maps.immutableEntry(keyDecoder.apply(e.getKey()),
-            valueDecoder.apply(e.getValue())))
-        .collect(Collectors.toSet()));
-  }
-
-  @Override
-  public CompletableFuture<Map<K1, Collection<V1>>> asMap() {
-    throw new UnsupportedOperationException("Unsupported operation.");
-  }
-
-  @Override
-  public String name() {
-    return backingMap.name();
+  public AsyncDistributedCollection<Map.Entry<K1, V1>> entries() {
+    return new TranscodingAsyncDistributedCollection<>(backingMap.entries(), entryEncoder, entryDecoder);
   }
 
   @Override

@@ -17,6 +17,7 @@ package io.atomix.core.lock.impl;
 
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.lock.AsyncDistributedLock;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Version;
 import org.junit.Test;
 
@@ -115,7 +116,7 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest {
     AsyncDistributedLock lock2 = atomix().lockBuilder("test-blocking-unlock", protocol()).build().async();
 
     lock1.lock().thenRun(() -> {
-      lock1.unlock().get(30, TimeUnit.SECONDS);
+      Futures.get(lock1.unlock());
     }).get(30, TimeUnit.SECONDS);
 
     lock2.lock().get(30, TimeUnit.SECONDS);

@@ -18,14 +18,15 @@ package io.atomix.core.multimap.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multiset;
-import com.google.common.collect.TreeMultiset;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.multimap.AsyncConsistentMultimap;
+import io.atomix.core.multimap.ConsistentMultimap;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -322,52 +323,6 @@ public abstract class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
       }).join();
     });
 
-    //Test that the key set is correct
-    map.keySet()
-        .thenAccept(result ->
-            assertTrue(stringArrayCollectionIsEqual(all, result)))
-        .join();
-    //Test that the correct set and occurrence of values are found in the
-    //values result
-    map.values().thenAccept(result -> {
-      final Multiset<String> set = TreeMultiset.create();
-      for (int i = 0; i < 4; i++) {
-        set.addAll(all);
-      }
-      assertEquals(16, result.size());
-      result.forEach(value -> assertTrue(set.remove(value)));
-      assertTrue(set.isEmpty());
-
-    }).join();
-
-    //Test that keys returns the right result including the correct number
-    //of each item
-    map.keys().thenAccept(result -> {
-      final Multiset<String> set = TreeMultiset.create();
-      for (int i = 0; i < 4; i++) {
-        set.addAll(all);
-      }
-      assertEquals(16, result.size());
-      result.forEach(value -> assertTrue(set.remove(value)));
-      assertTrue(set.isEmpty());
-
-    }).join();
-
-    //Test that the right combination of key, value pairs are present
-    map.entries().thenAccept(result -> {
-      final Multiset<Map.Entry<String, String>> set =
-          TreeMultiset.create(new EntryComparator());
-      all.forEach(key -> {
-        all.forEach(value -> {
-          set.add(Maps.immutableEntry(key, value));
-        });
-      });
-      assertEquals(16, result.size());
-      result.forEach(entry -> assertTrue(set.remove(entry)));
-      assertTrue(set.isEmpty());
-    }).join();
-
-
     //Testing for empty map behavior
     map.clear().join();
 
@@ -377,13 +332,103 @@ public abstract class ConsistentSetMultimapTest extends AbstractPrimitiveTest {
       }).join();
     });
 
-    map.keySet().thenAccept(result -> assertTrue(result.isEmpty())).join();
-    map.values().thenAccept(result -> assertTrue(result.isEmpty())).join();
-    map.keys().thenAccept(result -> assertTrue(result.isEmpty())).join();
-    map.entries()
-        .thenAccept(result -> assertTrue(result.isEmpty())).join();
-
     map.delete().join();
+  }
+
+  @Test
+  public void testMultimapViews() throws Exception {
+    ConsistentMultimap<String, String> map = atomix().<String, String>consistentMultimapBuilder("testMultimapViews", protocol()).build();
+
+    assertTrue(map.isEmpty());
+    assertTrue(map.keySet().isEmpty());
+    assertTrue(map.keys().isEmpty());
+    assertTrue(map.entries().isEmpty());
+    assertTrue(map.values().isEmpty());
+
+    for (int i = 0; i < 100; i++) {
+      map.put(String.valueOf(i), String.valueOf(i));
+    }
+
+    assertFalse(map.isEmpty());
+    assertFalse(map.keySet().isEmpty());
+    assertFalse(map.keys().isEmpty());
+    assertFalse(map.entries().isEmpty());
+    assertFalse(map.values().isEmpty());
+
+    assertEquals(100, map.keySet().stream().count());
+    assertEquals(100, map.keys().stream().count());
+    assertEquals(100, map.entries().stream().count());
+    assertEquals(100, map.values().stream().count());
+
+    for (int i = 0; i < 100; i++) {
+      map.put(String.valueOf(i), String.valueOf(i + 1));
+    }
+
+    assertEquals(100, map.keySet().size());
+    assertEquals(200, map.keys().size());
+    assertEquals(200, map.entries().size());
+    assertEquals(200, map.values().size());
+
+    String one = String.valueOf(1);
+    String two = String.valueOf(2);
+    String three = String.valueOf(3);
+    String four = String.valueOf(4);
+
+    assertTrue(map.keySet().contains(one));
+    assertTrue(map.keys().contains(one));
+    assertTrue(map.values().contains(one));
+    assertTrue(map.entries().contains(Maps.immutableEntry(one, one)));
+    assertTrue(map.keySet().containsAll(Arrays.asList(one, two, three, four)));
+    assertTrue(map.keys().containsAll(Arrays.asList(one, two, three, four)));
+    assertTrue(map.values().containsAll(Arrays.asList(one, two, three, four)));
+
+    assertTrue(map.keySet().remove(one));
+    assertFalse(map.keySet().contains(one));
+    assertFalse(map.containsKey(one));
+
+    assertTrue(map.keys().remove(two));
+    assertFalse(map.keys().contains(two));
+    assertFalse(map.containsKey(two));
+
+    assertTrue(map.entries().remove(Maps.immutableEntry(three, three)));
+    assertTrue(map.keySet().contains(three));
+    assertTrue(map.containsKey(three));
+    assertTrue(map.entries().remove(Maps.immutableEntry(three, four)));
+    assertFalse(map.keySet().contains(three));
+    assertFalse(map.containsKey(three));
+
+    assertFalse(map.entries().remove(Maps.immutableEntry(four, three)));
+    assertTrue(map.keySet().contains(four));
+    assertTrue(map.containsKey(four));
+
+    assertEquals(194, map.size());
+    assertEquals(97, map.keySet().size());
+    assertEquals(194, map.keys().size());
+    assertEquals(194, map.entries().size());
+    assertEquals(194, map.values().size());
+
+    assertEquals(97, map.keySet().stream().count());
+    assertEquals(194, map.keys().stream().count());
+    assertEquals(194, map.entries().stream().count());
+    assertEquals(194, map.values().stream().count());
+
+    assertEquals(97, map.keySet().toArray().length);
+    assertEquals(194, map.keys().toArray().length);
+    assertEquals(194, map.entries().toArray().length);
+    assertEquals(194, map.values().toArray().length);
+
+    assertEquals(97, map.keySet().toArray(new String[97]).length);
+    assertEquals(194, map.keys().toArray(new String[194]).length);
+    assertEquals(194, map.entries().toArray(new Map.Entry[194]).length);
+    assertEquals(194, map.values().toArray(new String[194]).length);
+
+    Iterator<String> iterator = map.keySet().iterator();
+    int i = 0;
+    while (iterator.hasNext()) {
+      iterator.next();
+      i += 1;
+      map.put(String.valueOf(100 * i), String.valueOf(100 * i));
+    }
   }
 
   private AsyncConsistentMultimap<String, String> createMultimap(String mapName) {
