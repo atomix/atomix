@@ -32,7 +32,7 @@ import io.atomix.core.map.ConsistentMap;
 import io.atomix.core.map.ConsistentMultimap;
 import io.atomix.core.map.ConsistentTreeMap;
 import io.atomix.core.profile.Profile;
-import io.atomix.core.queue.WorkQueue;
+import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue.impl;
+package io.atomix.core.workqueue.impl;
 
-import io.atomix.core.queue.Task;
-import io.atomix.core.queue.WorkQueueType;
+import io.atomix.core.workqueue.Task;
+import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;

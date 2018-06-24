@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue.impl;
+package io.atomix.core.workqueue.impl;
 
-import io.atomix.core.queue.AsyncWorkQueue;
-import io.atomix.core.queue.Task;
-import io.atomix.core.queue.WorkQueue;
-import io.atomix.core.queue.WorkQueueStats;
+import io.atomix.core.workqueue.AsyncWorkQueue;
+import io.atomix.core.workqueue.Task;
+import io.atomix.core.workqueue.WorkQueue;
+import io.atomix.core.workqueue.WorkQueueStats;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue.impl;
+package io.atomix.core.workqueue.impl;
 
-import io.atomix.core.queue.WorkQueue;
-import io.atomix.core.queue.WorkQueueBuilder;
-import io.atomix.core.queue.WorkQueueConfig;
+import io.atomix.core.workqueue.WorkQueue;
+import io.atomix.core.workqueue.WorkQueueBuilder;
+import io.atomix.core.workqueue.WorkQueueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
