@@ -13,20 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.collection;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.core.collection.DistributedCollection;
 
 /**
- * Primary-backup distributed set test.
+ * Distributed multiset.
  */
-public class PrimaryBackupDistributedSetTest extends DistributedSetTest {
+public interface DistributedMultiset<E> extends DistributedCollection<E> {
+
+  /**
+   * Registers the specified listener to be notified whenever
+   * the set is updated.
+   *
+   * @param listener listener to notify about set update events
+   */
+  void addListener(SetEventListener<E> listener);
+
+  /**
+   * Unregisters the specified listener.
+   *
+   * @param listener listener to unregister.
+   */
+  void removeListener(SetEventListener<E> listener);
+
   @Override
-  protected PrimitiveProtocol protocol() {
-    return MultiPrimaryProtocol.builder()
-        .withBackups(2)
-        .withMaxRetries(5)
-        .build();
-  }
+  AsyncDistributedMultiset<E> async();
 }

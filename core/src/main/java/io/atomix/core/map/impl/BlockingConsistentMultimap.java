@@ -18,14 +18,14 @@ package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.collection.DistributedMultiset;
+import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.collection.impl.BlockingDistributedMultiset;
+import io.atomix.core.collection.impl.BlockingDistributedSet;
 import io.atomix.core.map.AsyncConsistentMultimap;
 import io.atomix.core.map.ConsistentMultimap;
 import io.atomix.core.map.MultimapEventListener;
-import io.atomix.core.set.DistributedMultiset;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.impl.BlockingDistributedMultiset;
-import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;

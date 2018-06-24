@@ -15,9 +15,6 @@
  */
 package io.atomix.core.collection;
 
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.DistributedSetBuilder;
-import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;

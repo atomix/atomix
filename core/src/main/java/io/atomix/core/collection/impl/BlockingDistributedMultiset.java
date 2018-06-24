@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.collection.impl;
 
+import io.atomix.core.collection.AsyncDistributedMultiset;
+import io.atomix.core.collection.DistributedMultiset;
+import io.atomix.core.collection.SetEventListener;
 import io.atomix.core.collection.SyncIterator;
-import io.atomix.core.collection.impl.BlockingIterator;
-import io.atomix.core.set.AsyncDistributedSet;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.SetEventListener;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 
@@ -30,18 +29,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Implementation of {@link DistributedSet} that merely delegates to a {@link AsyncDistributedSet}
+ * Implementation of {@link DistributedMultiset} that merely delegates to a {@link AsyncDistributedMultiset}
  * and waits for the operation to complete.
  *
  * @param <E> set element type
  */
-public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E>> implements DistributedSet<E> {
+public class BlockingDistributedMultiset<E> extends Synchronous<AsyncDistributedMultiset<E>> implements DistributedMultiset<E> {
 
   private final long operationTimeoutMillis;
 
-  private final AsyncDistributedSet<E> asyncSet;
+  private final AsyncDistributedMultiset<E> asyncSet;
 
-  public BlockingDistributedSet(AsyncDistributedSet<E> asyncSet, long operationTimeoutMillis) {
+  public BlockingDistributedMultiset(AsyncDistributedMultiset<E> asyncSet, long operationTimeoutMillis) {
     super(asyncSet);
     this.asyncSet = asyncSet;
     this.operationTimeoutMillis = operationTimeoutMillis;
@@ -130,7 +129,7 @@ public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E
   }
 
   @Override
-  public AsyncDistributedSet<E> async() {
+  public AsyncDistributedMultiset<E> async() {
     return asyncSet;
   }
 

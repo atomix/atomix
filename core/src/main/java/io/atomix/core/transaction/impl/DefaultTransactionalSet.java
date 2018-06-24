@@ -15,7 +15,7 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.collection.DistributedSetType;
 import io.atomix.core.transaction.AsyncTransactionalMap;
 import io.atomix.core.transaction.AsyncTransactionalSet;
 import io.atomix.core.transaction.TransactionalSet;

@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package io.atomix.core.set.impl;
+package io.atomix.core.collection.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
-import io.atomix.core.set.AsyncDistributedSet;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.SetEvent;
-import io.atomix.core.set.SetEventListener;
+import io.atomix.core.collection.AsyncDistributedSet;
+import io.atomix.core.collection.DistributedSet;
+import io.atomix.core.collection.SetEvent;
+import io.atomix.core.collection.SetEventListener;
 
 import java.time.Duration;
 import java.util.Map;

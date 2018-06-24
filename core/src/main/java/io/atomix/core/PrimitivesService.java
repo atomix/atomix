@@ -15,6 +15,9 @@
  */
 package io.atomix.core;
 
+import io.atomix.core.collection.DistributedSet;
+import io.atomix.core.collection.DistributedSetBuilder;
+import io.atomix.core.collection.DistributedSetType;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterBuilder;
 import io.atomix.core.counter.AtomicCounterType;
@@ -48,9 +51,6 @@ import io.atomix.core.queue.WorkQueueType;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
 import io.atomix.core.semaphore.DistributedSemaphoreType;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.DistributedSetBuilder;
-import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeBuilder;

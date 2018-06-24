@@ -13,17 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
-
-import io.atomix.primitive.config.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveType;
 
 /**
- * Distributed set configuration.
+ * Distributed set primitive interfaces.
  */
-public class DistributedSetConfig extends PrimitiveConfig<DistributedSetConfig> {
-  @Override
-  public PrimitiveType getType() {
-    return DistributedSetType.instance();
-  }
-}
+package io.atomix.core.collection;

@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.collection.impl;
 
 import com.google.common.io.BaseEncoding;
+import io.atomix.core.collection.DistributedSet;
+import io.atomix.core.collection.DistributedSetBuilder;
+import io.atomix.core.collection.DistributedSetConfig;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.ConsistentMapType;
 import io.atomix.core.map.impl.CachingAsyncConsistentMap;
@@ -23,9 +26,6 @@ import io.atomix.core.map.impl.ConsistentMapProxy;
 import io.atomix.core.map.impl.ConsistentMapService;
 import io.atomix.core.map.impl.TranscodingAsyncConsistentMap;
 import io.atomix.core.map.impl.UnmodifiableAsyncConsistentMap;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.DistributedSetBuilder;
-import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;

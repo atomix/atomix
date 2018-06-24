@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.collection.impl;
 
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.core.set.DistributedSet;
+import io.atomix.core.collection.DistributedSet;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

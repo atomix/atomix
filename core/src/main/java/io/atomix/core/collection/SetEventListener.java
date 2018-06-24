@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.core.collection;
 
 /**
  * Listener to be notified about updates to a DistributedSet.

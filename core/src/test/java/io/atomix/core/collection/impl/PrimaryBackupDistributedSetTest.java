@@ -13,8 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.atomix.core.collection.impl;
+
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
- * Distributed set primitive interfaces.
+ * Primary-backup distributed set test.
  */
-package io.atomix.core.set;
+public class PrimaryBackupDistributedSetTest extends DistributedSetTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return MultiPrimaryProtocol.builder()
+        .withBackups(2)
+        .withMaxRetries(5)
+        .build();
+  }
+}

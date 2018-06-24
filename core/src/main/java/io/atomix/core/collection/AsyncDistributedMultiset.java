@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.core.collection;
 
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.primitive.DistributedPrimitive;

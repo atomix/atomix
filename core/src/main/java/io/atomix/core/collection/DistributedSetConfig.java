@@ -13,30 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.core.collection;
 
-import io.atomix.core.collection.DistributedCollection;
+import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
- * Distributed multiset.
+ * Distributed set configuration.
  */
-public interface DistributedMultiset<E> extends DistributedCollection<E> {
-
-  /**
-   * Registers the specified listener to be notified whenever
-   * the set is updated.
-   *
-   * @param listener listener to notify about set update events
-   */
-  void addListener(SetEventListener<E> listener);
-
-  /**
-   * Unregisters the specified listener.
-   *
-   * @param listener listener to unregister.
-   */
-  void removeListener(SetEventListener<E> listener);
-
+public class DistributedSetConfig extends PrimitiveConfig<DistributedSetConfig> {
   @Override
-  AsyncDistributedMultiset<E> async();
+  public PrimitiveType getType() {
+    return DistributedSetType.instance();
+  }
 }
