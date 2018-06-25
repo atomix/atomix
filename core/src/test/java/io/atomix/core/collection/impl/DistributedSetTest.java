@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class DistributedSetTest extends AbstractPrimitiveTest {
   @Test
-  public void testQueueOperations() throws Exception {
+  public void testSetOperations() throws Exception {
     DistributedSet<String> set = atomix().<String>setBuilder("test-set")
         .withProtocol(protocol())
         .build();
@@ -91,10 +91,10 @@ public abstract class DistributedSetTest extends AbstractPrimitiveTest {
     assertTrue(set.removeAll(Arrays.asList("foo", "bar", "baz")));
     event = listener.event();
     assertEquals(CollectionEvent.Type.REMOVE, event.type());
-    assertEquals("bar", event.element());
+    assertTrue(event.element().equals("bar") || event.element().equals("baz"));
     event = listener.event();
     assertEquals(CollectionEvent.Type.REMOVE, event.type());
-    assertEquals("baz", event.element());
+    assertTrue(event.element().equals("bar") || event.element().equals("baz"));
   }
 
   private static class TestSetEventListener implements CollectionEventListener<String> {

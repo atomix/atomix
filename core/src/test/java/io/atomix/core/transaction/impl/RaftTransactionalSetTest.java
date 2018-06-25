@@ -1,11 +1,11 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.map.impl;
+package io.atomix.core.transaction.impl;
+
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
- * Response enum for two phase commit rollback operation.
+ * Raft transactional set test.
  */
-public enum RollbackResult {
-  /**
-   * Signifies a successful rollback execution.
-   */
-  OK,
-
-  /**
-   * Signifies a failure due to unrecognized transaction identifier.
-   */
-  UNKNOWN_TRANSACTION_ID,
+public class RaftTransactionalSetTest extends TransactionalSetTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return MultiRaftProtocol.builder()
+        .withMaxRetries(5)
+        .build();
+  }
 }

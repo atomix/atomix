@@ -15,9 +15,9 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.map.ConsistentMapBuilder;
-import io.atomix.core.map.ConsistentMapConfig;
-import io.atomix.core.map.ConsistentMapType;
+import io.atomix.core.collection.DistributedSetBuilder;
+import io.atomix.core.collection.DistributedSetConfig;
+import io.atomix.core.collection.DistributedSetType;
 import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
@@ -31,44 +31,44 @@ import java.util.concurrent.CompletableFuture;
  * Default transactional set builder.
  */
 public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E> {
+  private final DistributedSetBuilder<E> setBuilder;
   private final DefaultTransaction transaction;
-  private final ConsistentMapBuilder<E, Boolean> mapBuilder;
 
   public DefaultTransactionalSetBuilder(String name, TransactionalSetConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
     super(name, config, managementService);
+    this.setBuilder = DistributedSetType.<E>instance().newBuilder(name, new DistributedSetConfig(), managementService);
     this.transaction = transaction;
-    this.mapBuilder = ConsistentMapType.<E, Boolean>instance().newBuilder(name, new ConsistentMapConfig(), managementService);
   }
 
   @Override
   public TransactionalSetBuilder<E> withSerializer(Serializer serializer) {
-    mapBuilder.withSerializer(serializer);
+    setBuilder.withSerializer(serializer);
     return this;
   }
 
   @Override
   public TransactionalSetBuilder<E> withProtocol(PrimitiveProtocol protocol) {
-    mapBuilder.withProtocol(protocol);
+    setBuilder.withProtocol(protocol);
     return this;
   }
 
   @Override
   public CompletableFuture<TransactionalSet<E>> buildAsync() {
-    return mapBuilder.buildAsync()
-        .thenApply(map -> {
-          TransactionalMapParticipant<E, Boolean> transactionalMap;
+    return setBuilder.buildAsync()
+        .thenApply(set -> {
+          TransactionalSetParticipant<E> transactionalSet;
           switch (transaction.isolation()) {
             case READ_COMMITTED:
-              transactionalMap = new ReadCommittedTransactionalMap<>(transaction.transactionId(), map.async());
+              transactionalSet = new ReadCommittedTransactionalSet<>(transaction.transactionId(), set.async());
               break;
             case REPEATABLE_READS:
-              transactionalMap = new RepeatableReadsTransactionalMap<>(transaction.transactionId(), map.async());
+              transactionalSet = new RepeatableReadsTransactionalSet<>(transaction.transactionId(), set.async());
               break;
             default:
               throw new AssertionError();
           }
-          transaction.addParticipants(transactionalMap);
-          return transactionalMap;
-        }).thenApply(map -> new DefaultTransactionalSet<>(map).sync());
+          transaction.addParticipants(transactionalSet);
+          return transactionalSet.sync();
+        });
   }
 }

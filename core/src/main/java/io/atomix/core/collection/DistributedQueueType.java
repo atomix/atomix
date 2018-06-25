@@ -15,6 +15,7 @@
  */
 package io.atomix.core.collection;
 
+import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DefaultDistributedQueueService;
 import io.atomix.core.collection.impl.DistributedCollectionService;
 import io.atomix.core.collection.impl.DistributedQueueProxyBuilder;
@@ -58,6 +59,8 @@ public class DistributedQueueType<E> implements PrimitiveType<DistributedQueueBu
         .register(PrimitiveType.super.namespace())
         .register(Namespaces.BASIC)
         .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
+        .register(CollectionUpdateResult.class)
+        .register(CollectionUpdateResult.Status.class)
         .register(CollectionEvent.class)
         .register(CollectionEvent.Type.class)
         .register(DistributedCollectionService.Batch.class)

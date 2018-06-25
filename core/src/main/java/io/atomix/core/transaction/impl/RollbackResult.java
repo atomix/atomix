@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.map.impl;
+package io.atomix.core.transaction.impl;
 
 /**
- * Response enum for two phase commit operation.
+ * Response enum for two phase commit rollback operation.
  */
-public enum CommitResult {
+public enum RollbackResult {
   /**
-   * Signifies a successful commit execution.
+   * Signifies a successful rollback execution.
    */
   OK,
 
@@ -28,14 +28,4 @@ public enum CommitResult {
    * Signifies a failure due to unrecognized transaction identifier.
    */
   UNKNOWN_TRANSACTION_ID,
-
-  /**
-   * Signifies a failure to get participants to agree to commit (during prepare stage).
-   */
-  FAILURE_TO_PREPARE,
-
-  /**
-   * Failure during commit phase.
-   */
-  FAILURE_DURING_COMMIT
 }

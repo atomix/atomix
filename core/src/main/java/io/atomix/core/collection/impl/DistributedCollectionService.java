@@ -97,7 +97,7 @@ public interface DistributedCollectionService {
    *         time due to insertion restrictions
    */
   @Command
-  boolean add(String element);
+  CollectionUpdateResult<Boolean> add(String element);
 
   /**
    * Removes a single instance of the specified element from this
@@ -120,7 +120,7 @@ public interface DistributedCollectionService {
    *         is not supported by this collection
    */
   @Command("removeValue")
-  boolean remove(Object o);
+  CollectionUpdateResult<Boolean> remove(Object o);
 
   /**
    * Returns <tt>true</tt> if this collection contains all of the elements
@@ -168,7 +168,7 @@ public interface DistributedCollectionService {
    * @see #add(String)
    */
   @Command
-  boolean addAll(Collection<? extends String> c);
+  CollectionUpdateResult<Boolean> addAll(Collection<? extends String> c);
 
   /**
    * Retains only the elements in this collection that are contained in the
@@ -193,7 +193,7 @@ public interface DistributedCollectionService {
    * @see #contains(Object)
    */
   @Command
-  boolean retainAll(Collection<?> c);
+  CollectionUpdateResult<Boolean> retainAll(Collection<?> c);
 
   /**
    * Removes all of this collection's elements that are also contained in the
@@ -219,7 +219,7 @@ public interface DistributedCollectionService {
    * @see #contains(Object)
    */
   @Command
-  boolean removeAll(Collection<?> c);
+  CollectionUpdateResult<Boolean> removeAll(Collection<?> c);
 
   /**
    * Removes all of the elements from this collection (optional operation).
@@ -229,7 +229,7 @@ public interface DistributedCollectionService {
    *         is not supported by this collection
    */
   @Command
-  void clear();
+  CollectionUpdateResult<Void> clear();
 
   /**
    * Adds a listener to the service.

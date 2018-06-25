@@ -15,10 +15,17 @@
  */
 package io.atomix.core.collection;
 
+import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DefaultDistributedSetService;
 import io.atomix.core.collection.impl.DistributedSetProxyBuilder;
 import io.atomix.core.collection.impl.DistributedCollectionService;
 import io.atomix.core.collection.impl.DistributedSetResource;
+import io.atomix.core.collection.impl.SetUpdate;
+import io.atomix.core.transaction.TransactionId;
+import io.atomix.core.transaction.TransactionLog;
+import io.atomix.core.transaction.impl.CommitResult;
+import io.atomix.core.transaction.impl.PrepareResult;
+import io.atomix.core.transaction.impl.RollbackResult;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
@@ -58,9 +65,18 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
         .register(PrimitiveType.super.namespace())
         .register(Namespaces.BASIC)
         .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
+        .register(CollectionUpdateResult.class)
+        .register(CollectionUpdateResult.Status.class)
         .register(CollectionEvent.class)
         .register(CollectionEvent.Type.class)
         .register(DistributedCollectionService.Batch.class)
+        .register(TransactionId.class)
+        .register(TransactionLog.class)
+        .register(SetUpdate.class)
+        .register(SetUpdate.Type.class)
+        .register(PrepareResult.class)
+        .register(CommitResult.class)
+        .register(RollbackResult.class)
         .build();
   }
 

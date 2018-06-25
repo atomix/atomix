@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.map.impl;
+package io.atomix.core.transaction.impl;
 
 /**
  * Response enum for two phase commit prepare operation.

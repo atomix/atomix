@@ -16,14 +16,12 @@
 
 package io.atomix.core.collection.impl;
 
-import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedSet;
-import io.atomix.core.collection.CollectionEvent;
-import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedSet;
+import io.atomix.core.transaction.TransactionId;
+import io.atomix.core.transaction.TransactionLog;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -35,11 +33,8 @@ import java.util.function.Function;
  * @param <E1> key type of this map
  */
 public class TranscodingAsyncDistributedSet<E1, E2> extends TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistributedSet<E1> {
-
   private final AsyncDistributedSet<E2> backingSet;
-  private final Function<E2, E1> entryDecoder;
-  private final Map<CollectionEventListener<E1>, InternalBackingCollectionEventListener> listeners =
-      Maps.newIdentityHashMap();
+  private final Function<E1, E2> entryEncoder;
 
   public TranscodingAsyncDistributedSet(
       AsyncDistributedSet<E2> backingSet,
@@ -47,45 +42,26 @@ public class TranscodingAsyncDistributedSet<E1, E2> extends TranscodingAsyncDist
       Function<E2, E1> entryDecoder) {
     super(backingSet, entryEncoder, entryDecoder);
     this.backingSet = backingSet;
-    this.entryDecoder = k -> k == null ? null : entryDecoder.apply(k);
+    this.entryEncoder = k -> k == null ? null : entryEncoder.apply(k);
   }
 
   @Override
-  public CompletableFuture<Void> addListener(CollectionEventListener<E1> listener) {
-    synchronized (listeners) {
-      InternalBackingCollectionEventListener backingSetListener =
-          listeners.computeIfAbsent(listener, k -> new InternalBackingCollectionEventListener(listener));
-      return backingSet.addListener(backingSetListener);
-    }
+  public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<E1>> transactionLog) {
+    return backingSet.prepare(transactionLog.map(record -> record.map(entryEncoder)));
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(CollectionEventListener<E1> listener) {
-    synchronized (listeners) {
-      InternalBackingCollectionEventListener backingMapListener = listeners.remove(listener);
-      if (backingMapListener != null) {
-        return backingSet.removeListener(backingMapListener);
-      } else {
-        return CompletableFuture.completedFuture(null);
-      }
-    }
+  public CompletableFuture<Void> commit(TransactionId transactionId) {
+    return backingSet.commit(transactionId);
+  }
+
+  @Override
+  public CompletableFuture<Void> rollback(TransactionId transactionId) {
+    return backingSet.rollback(transactionId);
   }
 
   @Override
   public DistributedSet<E1> sync(Duration operationTimeout) {
     return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
-  }
-
-  private class InternalBackingCollectionEventListener implements CollectionEventListener<E2> {
-    private final CollectionEventListener<E1> listener;
-
-    InternalBackingCollectionEventListener(CollectionEventListener<E1> listener) {
-      this.listener = listener;
-    }
-
-    @Override
-    public void onEvent(CollectionEvent<E2> event) {
-      listener.onEvent(new CollectionEvent<>(event.type(), entryDecoder.apply(event.element())));
-    }
   }
 }

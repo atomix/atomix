@@ -17,33 +17,12 @@ package io.atomix.core.collection.impl;
 
 import io.atomix.primitive.operation.Command;
 
-import java.util.Collection;
 import java.util.NoSuchElementException;
 
 /**
  * Distributed queue service.
  */
 public interface DistributedQueueService extends DistributedCollectionService {
-
-  /**
-   * Inserts the specified element into this queue if it is possible to do so
-   * immediately without violating capacity restrictions, returning
-   * {@code true} upon success and throwing an {@code IllegalStateException}
-   * if no space is currently available.
-   *
-   * @param e the element to add
-   * @return {@code true} (as specified by {@link Collection#add})
-   * @throws IllegalStateException if the element cannot be added at this
-   *         time due to capacity restrictions
-   * @throws ClassCastException if the class of the specified element
-   *         prevents it from being added to this queue
-   * @throws NullPointerException if the specified element is null and
-   *         this queue does not permit null elements
-   * @throws IllegalArgumentException if some property of this element
-   *         prevents it from being added to this queue
-   */
-  @Command
-  boolean add(String e);
 
   /**
    * Inserts the specified element into this queue if it is possible to do

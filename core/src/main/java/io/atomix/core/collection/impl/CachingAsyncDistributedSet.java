@@ -17,19 +17,41 @@ package io.atomix.core.collection.impl;
 
 import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.collection.DistributedSet;
+import io.atomix.core.transaction.TransactionId;
+import io.atomix.core.transaction.TransactionLog;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Caching asynchronous distributed queue.
  */
 public class CachingAsyncDistributedSet<E> extends CachingAsyncDistributedCollection<E> implements AsyncDistributedSet<E> {
+  private final AsyncDistributedSet<E> backingSet;
+
   public CachingAsyncDistributedSet(AsyncDistributedSet<E> backingCollection) {
     super(backingCollection);
+    this.backingSet = backingCollection;
   }
 
   public CachingAsyncDistributedSet(AsyncDistributedSet<E> backingCollection, int cacheSize) {
     super(backingCollection, cacheSize);
+    this.backingSet = backingCollection;
+  }
+
+  @Override
+  public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<E>> transactionLog) {
+    return backingSet.prepare(transactionLog);
+  }
+
+  @Override
+  public CompletableFuture<Void> commit(TransactionId transactionId) {
+    return backingSet.commit(transactionId);
+  }
+
+  @Override
+  public CompletableFuture<Void> rollback(TransactionId transactionId) {
+    return backingSet.rollback(transactionId);
   }
 
   @Override

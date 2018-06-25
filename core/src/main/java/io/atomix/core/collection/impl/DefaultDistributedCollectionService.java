@@ -34,6 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static io.atomix.core.collection.impl.CollectionUpdateResult.noop;
+import static io.atomix.core.collection.impl.CollectionUpdateResult.ok;
+
 /**
  * Default distributed collection service.
  */
@@ -106,21 +109,21 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   }
 
   @Override
-  public boolean add(String element) {
+  public CollectionUpdateResult<Boolean> add(String element) {
     if (collection.add(element)) {
       added(element);
-      return true;
+      return ok(true);
     }
-    return false;
+    return noop(false);
   }
 
   @Override
-  public boolean remove(Object element) {
+  public CollectionUpdateResult<Boolean> remove(Object element) {
     if (collection.remove(element)) {
       removed((String) element);
-      return true;
+      return ok(true);
     }
-    return false;
+    return noop(false);
   }
 
   @Override
@@ -129,42 +132,43 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   }
 
   @Override
-  public boolean addAll(Collection<? extends String> c) {
+  public CollectionUpdateResult<Boolean> addAll(Collection<? extends String> c) {
     boolean changed = false;
     for (String element : c) {
-      if (add(element)) {
+      if (add(element).status() == CollectionUpdateResult.Status.OK) {
         changed = true;
       }
     }
-    return changed;
+    return ok(changed);
   }
 
   @Override
-  public boolean retainAll(Collection<?> c) {
+  public CollectionUpdateResult<Boolean> retainAll(Collection<?> c) {
     boolean changed = false;
     for (String element : collection) {
-      if (!c.contains(element) && remove(element)) {
+      if (!c.contains(element) && remove(element).status() == CollectionUpdateResult.Status.OK) {
         changed = true;
       }
     }
-    return changed;
+    return ok(changed);
   }
 
   @Override
-  public boolean removeAll(Collection<?> c) {
+  public CollectionUpdateResult<Boolean> removeAll(Collection<?> c) {
     boolean changed = false;
     for (Object element : c) {
-      if (remove(element)) {
+      if (remove(element).status() == CollectionUpdateResult.Status.OK) {
         changed = true;
       }
     }
-    return changed;
+    return ok(changed);
   }
 
   @Override
-  public void clear() {
+  public CollectionUpdateResult<Void> clear() {
     collection.forEach(element -> removed(element));
     collection.clear();
+    return ok();
   }
 
   @Override
@@ -228,7 +232,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
     iterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
   }
 
-  private class IteratorContext {
+  protected class IteratorContext {
     private final long sessionId;
     private int position = 0;
     private transient Iterator<String> iterator = collection().iterator();
