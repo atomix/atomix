@@ -15,8 +15,6 @@
  */
 package io.atomix.core.collection;
 
-import io.atomix.core.collection.DistributedCollection;
-
 /**
  * Distributed multiset.
  */
@@ -28,14 +26,14 @@ public interface DistributedMultiset<E> extends DistributedCollection<E> {
    *
    * @param listener listener to notify about set update events
    */
-  void addListener(SetEventListener<E> listener);
+  void addListener(CollectionEventListener<E> listener);
 
   /**
    * Unregisters the specified listener.
    *
    * @param listener listener to unregister.
    */
-  void removeListener(SetEventListener<E> listener);
+  void removeListener(CollectionEventListener<E> listener);
 
   @Override
   AsyncDistributedMultiset<E> async();

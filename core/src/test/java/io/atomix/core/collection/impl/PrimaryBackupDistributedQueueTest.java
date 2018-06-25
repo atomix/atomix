@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,18 @@
  */
 package io.atomix.core.collection.impl;
 
-import io.atomix.core.collection.AsyncDistributedSet;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
- * Distributed set resource.
+ * Primary-backup distributed queue test.
  */
-public class DistributedSetResource extends DistributedCollectionResource {
-  public DistributedSetResource(AsyncDistributedSet<String> set) {
-    super(set);
+public class PrimaryBackupDistributedQueueTest extends DistributedQueueTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return MultiPrimaryProtocol.builder()
+        .withBackups(2)
+        .withMaxRetries(5)
+        .build();
   }
 }

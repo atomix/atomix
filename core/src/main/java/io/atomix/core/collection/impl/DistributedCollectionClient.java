@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,20 @@
  */
 package io.atomix.core.collection.impl;
 
-import io.atomix.core.collection.AsyncDistributedSet;
+import io.atomix.core.collection.CollectionEvent;
+import io.atomix.primitive.event.Event;
 
 /**
- * Distributed set resource.
+ * Distributed collection client.
  */
-public class DistributedSetResource extends DistributedCollectionResource {
-  public DistributedSetResource(AsyncDistributedSet<String> set) {
-    super(set);
-  }
+public interface DistributedCollectionClient {
+
+  /**
+   * Called when an event is received by the client.
+   *
+   * @param event the collection event
+   */
+  @Event
+  void onEvent(CollectionEvent<String> event);
+
 }

@@ -18,9 +18,9 @@ package io.atomix.core.collection.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedSet;
+import io.atomix.core.collection.CollectionEvent;
+import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedSet;
-import io.atomix.core.collection.SetEvent;
-import io.atomix.core.collection.SetEventListener;
 
 import java.time.Duration;
 import java.util.Map;
@@ -38,7 +38,7 @@ public class TranscodingAsyncDistributedSet<E1, E2> extends TranscodingAsyncDist
 
   private final AsyncDistributedSet<E2> backingSet;
   private final Function<E2, E1> entryDecoder;
-  private final Map<SetEventListener<E1>, InternalBackingSetEventListener> listeners =
+  private final Map<CollectionEventListener<E1>, InternalBackingCollectionEventListener> listeners =
       Maps.newIdentityHashMap();
 
   public TranscodingAsyncDistributedSet(
@@ -51,18 +51,18 @@ public class TranscodingAsyncDistributedSet<E1, E2> extends TranscodingAsyncDist
   }
 
   @Override
-  public CompletableFuture<Void> addListener(SetEventListener<E1> listener) {
+  public CompletableFuture<Void> addListener(CollectionEventListener<E1> listener) {
     synchronized (listeners) {
-      InternalBackingSetEventListener backingSetListener =
-          listeners.computeIfAbsent(listener, k -> new InternalBackingSetEventListener(listener));
+      InternalBackingCollectionEventListener backingSetListener =
+          listeners.computeIfAbsent(listener, k -> new InternalBackingCollectionEventListener(listener));
       return backingSet.addListener(backingSetListener);
     }
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(SetEventListener<E1> listener) {
+  public CompletableFuture<Void> removeListener(CollectionEventListener<E1> listener) {
     synchronized (listeners) {
-      InternalBackingSetEventListener backingMapListener = listeners.remove(listener);
+      InternalBackingCollectionEventListener backingMapListener = listeners.remove(listener);
       if (backingMapListener != null) {
         return backingSet.removeListener(backingMapListener);
       } else {
@@ -76,20 +76,16 @@ public class TranscodingAsyncDistributedSet<E1, E2> extends TranscodingAsyncDist
     return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
   }
 
-  private class InternalBackingSetEventListener implements SetEventListener<E2> {
+  private class InternalBackingCollectionEventListener implements CollectionEventListener<E2> {
+    private final CollectionEventListener<E1> listener;
 
-    private final SetEventListener<E1> listener;
-
-    InternalBackingSetEventListener(SetEventListener<E1> listener) {
+    InternalBackingCollectionEventListener(CollectionEventListener<E1> listener) {
       this.listener = listener;
     }
 
     @Override
-    public void event(SetEvent<E2> event) {
-      listener.event(new SetEvent<>(
-          event.name(),
-          event.type(),
-          entryDecoder.apply(event.entry())));
+    public void onEvent(CollectionEvent<E2> event) {
+      listener.onEvent(new CollectionEvent<>(event.type(), entryDecoder.apply(event.element())));
     }
   }
 }

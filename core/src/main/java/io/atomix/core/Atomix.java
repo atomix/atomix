@@ -23,11 +23,13 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.atomic.AtomicCounter;
 import io.atomix.core.atomic.AtomicIdGenerator;
 import io.atomix.core.atomic.AtomicValue;
+import io.atomix.core.collection.DistributedQueue;
 import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.concurrent.DistributedLock;
 import io.atomix.core.concurrent.DistributedSemaphore;
 import io.atomix.core.coordination.LeaderElection;
 import io.atomix.core.coordination.LeaderElector;
+import io.atomix.core.coordination.WorkQueue;
 import io.atomix.core.impl.CorePrimitivesService;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.ConsistentMap;
@@ -41,7 +43,6 @@ import io.atomix.core.utils.config.PartitionGroupConfigMapper;
 import io.atomix.core.utils.config.PolymorphicConfigMapper;
 import io.atomix.core.utils.config.PrimitiveConfigMapper;
 import io.atomix.core.utils.config.PrimitiveProtocolConfigMapper;
-import io.atomix.core.coordination.WorkQueue;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
@@ -358,6 +359,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public <E> DistributedSet<E> getSet(String name) {
     return primitives.getSet(name);
+  }
+
+  @Override
+  public <E> DistributedQueue<E> getQueue(String name) {
+    return primitives.getQueue(name);
   }
 
   @Override

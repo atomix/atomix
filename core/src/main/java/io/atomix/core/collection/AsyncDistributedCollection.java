@@ -109,6 +109,23 @@ public interface AsyncDistributedCollection<E> extends AsyncPrimitive, AsyncIter
    */
   CompletableFuture<Boolean> removeAll(Collection<? extends E> c);
 
+  /**
+   * Registers the specified listener to be notified whenever
+   * the collection is updated.
+   *
+   * @param listener listener to notify about collection update events
+   * @return CompletableFuture that is completed when the operation completes
+   */
+  CompletableFuture<Void> addListener(CollectionEventListener<E> listener);
+
+  /**
+   * Unregisters the specified listener.
+   *
+   * @param listener listener to unregister.
+   * @return CompletableFuture that is completed when the operation completes
+   */
+  CompletableFuture<Void> removeListener(CollectionEventListener<E> listener);
+
   @Override
   default DistributedCollection<E> sync() {
     return sync(Duration.ofMillis(DEFAULT_OPERATION_TIMEOUT_MILLIS));

@@ -22,11 +22,11 @@ import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.AsyncDistributedMultiset;
 import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.collection.CollectionEvent;
+import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.DistributedMultiset;
 import io.atomix.core.collection.DistributedSet;
-import io.atomix.core.collection.SetEvent;
-import io.atomix.core.collection.SetEventListener;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.collection.impl.BlockingDistributedMultiset;
 import io.atomix.core.collection.impl.BlockingDistributedSet;
@@ -213,7 +213,7 @@ public class ConsistentSetMultimapProxy
    * Multimap key set.
    */
   private class ConsistentSetMultimapKeySet implements AsyncDistributedSet<String> {
-    private final Map<SetEventListener<String>, MultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+    private final Map<CollectionEventListener<String>, MultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
     public String name() {
@@ -295,14 +295,14 @@ public class ConsistentSetMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(SetEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
       MultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.ADD, event.key()));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
             break;
           case REMOVE:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.REMOVE, event.key()));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
             break;
           default:
             break;
@@ -313,7 +313,7 @@ public class ConsistentSetMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> removeListener(SetEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<String> listener) {
       MultimapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
       if (mapListener != null) {
         return ConsistentSetMultimapProxy.this.removeListener(mapListener);
@@ -333,7 +333,7 @@ public class ConsistentSetMultimapProxy
   }
 
   private class ConsistentSetMultimapKeys implements AsyncDistributedMultiset<String> {
-    private final Map<SetEventListener<String>, MultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+    private final Map<CollectionEventListener<String>, MultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
     public String name() {
@@ -414,14 +414,14 @@ public class ConsistentSetMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(SetEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
       MultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.ADD, event.key()));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
             break;
           case REMOVE:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.REMOVE, event.key()));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
             break;
           default:
             break;
@@ -432,7 +432,7 @@ public class ConsistentSetMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> removeListener(SetEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<String> listener) {
       MultimapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
       if (mapListener != null) {
         return ConsistentSetMultimapProxy.this.removeListener(mapListener);
@@ -452,7 +452,7 @@ public class ConsistentSetMultimapProxy
   }
 
   private class ConsistentSetMultimapValues implements AsyncDistributedMultiset<byte[]> {
-    private final Map<SetEventListener<byte[]>, MultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+    private final Map<CollectionEventListener<byte[]>, MultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
     public String name() {
@@ -529,14 +529,14 @@ public class ConsistentSetMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(SetEventListener<byte[]> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<byte[]> listener) {
       MultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.ADD, event.newValue()));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.newValue()));
             break;
           case REMOVE:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.REMOVE, event.oldValue()));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.oldValue()));
             break;
           default:
             break;
@@ -547,7 +547,7 @@ public class ConsistentSetMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> removeListener(SetEventListener<byte[]> listener) {
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<byte[]> listener) {
       MultimapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
       if (mapListener != null) {
         return ConsistentSetMultimapProxy.this.removeListener(mapListener);
@@ -567,6 +567,8 @@ public class ConsistentSetMultimapProxy
   }
 
   private class ConsistentSetMultimapEntries implements AsyncDistributedCollection<Map.Entry<String, byte[]>> {
+    private final Map<CollectionEventListener<Map.Entry<String, byte[]>>, MultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+
     @Override
     public String name() {
       return ConsistentSetMultimapProxy.this.name();
@@ -639,6 +641,33 @@ public class ConsistentSetMultimapProxy
                   (service, position) -> service.nextEntries(iteratorId, position),
                   service -> service.closeEntries(iteratorId)))))
           .thenApply(iterators -> new ConsistentMultimapIterator<>(iterators.collect(Collectors.toList())));
+    }
+
+    @Override
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<String, byte[]>> listener) {
+      MultimapEventListener<String, byte[]> mapListener = event -> {
+        switch (event.type()) {
+          case INSERT:
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
+            break;
+          case REMOVE:
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, Maps.immutableEntry(event.key(), event.oldValue())));
+            break;
+          default:
+            break;
+        }
+      };
+      eventListeners.put(listener, mapListener);
+      return ConsistentSetMultimapProxy.this.addListener(mapListener);
+    }
+
+    @Override
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<Map.Entry<String, byte[]>> listener) {
+      MultimapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
+      if (mapListener != null) {
+        return ConsistentSetMultimapProxy.this.removeListener(mapListener);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override

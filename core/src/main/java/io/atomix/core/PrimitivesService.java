@@ -24,6 +24,9 @@ import io.atomix.core.atomic.AtomicIdGeneratorType;
 import io.atomix.core.atomic.AtomicValue;
 import io.atomix.core.atomic.AtomicValueBuilder;
 import io.atomix.core.atomic.AtomicValueType;
+import io.atomix.core.collection.DistributedQueue;
+import io.atomix.core.collection.DistributedQueueBuilder;
+import io.atomix.core.collection.DistributedQueueType;
 import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.DistributedSetBuilder;
 import io.atomix.core.collection.DistributedSetType;
@@ -39,6 +42,9 @@ import io.atomix.core.coordination.LeaderElectionType;
 import io.atomix.core.coordination.LeaderElector;
 import io.atomix.core.coordination.LeaderElectorBuilder;
 import io.atomix.core.coordination.LeaderElectorType;
+import io.atomix.core.coordination.WorkQueue;
+import io.atomix.core.coordination.WorkQueueBuilder;
+import io.atomix.core.coordination.WorkQueueType;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapBuilder;
 import io.atomix.core.map.AtomicCounterMapType;
@@ -55,9 +61,6 @@ import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeBuilder;
 import io.atomix.core.tree.DocumentTreeType;
-import io.atomix.core.coordination.WorkQueue;
-import io.atomix.core.coordination.WorkQueueBuilder;
-import io.atomix.core.coordination.WorkQueueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
@@ -212,6 +215,29 @@ public interface PrimitivesService {
    */
   default <E> DistributedSetBuilder<E> setBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedSetType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedQueueBuilder.
+   *
+   * @param name the primitive name
+   * @param <E>  queue element type
+   * @return builder for a distributed queue
+   */
+  default <E> DistributedQueueBuilder<E> queueBuilder(String name) {
+    return primitiveBuilder(name, DistributedQueueType.instance());
+  }
+
+  /**
+   * Creates a new DistributedQueueBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <E>      queue element type
+   * @return builder for a distributed queue
+   */
+  default <E> DistributedQueueBuilder<E> queueBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedQueueType.instance(), protocol);
   }
 
   /**
@@ -455,9 +481,18 @@ public interface PrimitivesService {
    *
    * @param name the primitive name
    * @param <E>  set element type
-   * @return builder for an distributed set
+   * @return a multiton instance of a distributed set
    */
   <E> DistributedSet<E> getSet(String name);
+
+  /**
+   * Creates a new DistributedQueueBuilder.
+   *
+   * @param name the primitive name
+   * @param <E>  queue element type
+   * @return a multiton instance of a distributed queue
+   */
+  <E> DistributedQueue<E> getQueue(String name);
 
   /**
    * Creates a new AtomicCounterBuilder.

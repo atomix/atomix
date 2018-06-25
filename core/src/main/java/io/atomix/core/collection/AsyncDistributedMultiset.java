@@ -15,7 +15,6 @@
  */
 package io.atomix.core.collection;
 
-import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
 
@@ -38,7 +37,7 @@ public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<
    * @param listener listener to notify about set update events
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> addListener(SetEventListener<E> listener);
+  CompletableFuture<Void> addListener(CollectionEventListener<E> listener);
 
   /**
    * Unregisters the specified listener.
@@ -46,7 +45,7 @@ public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<
    * @param listener listener to unregister.
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> removeListener(SetEventListener<E> listener);
+  CompletableFuture<Void> removeListener(CollectionEventListener<E> listener);
 
   @Override
   default DistributedMultiset<E> sync() {
