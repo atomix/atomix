@@ -16,16 +16,10 @@
 package io.atomix.core.collection.impl;
 
 import com.google.common.io.BaseEncoding;
+import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.DistributedSetBuilder;
 import io.atomix.core.collection.DistributedSetConfig;
-import io.atomix.core.map.AsyncConsistentMap;
-import io.atomix.core.map.ConsistentMapType;
-import io.atomix.core.map.impl.CachingAsyncConsistentMap;
-import io.atomix.core.map.impl.ConsistentMapProxy;
-import io.atomix.core.map.impl.ConsistentMapService;
-import io.atomix.core.map.impl.TranscodingAsyncConsistentMap;
-import io.atomix.core.map.impl.UnmodifiableAsyncConsistentMap;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -38,39 +32,37 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <E> type for set elements
  */
-public class DelegatingDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
-  public DelegatingDistributedSetBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
+public class DistributedSetProxyBuilder<E> extends DistributedSetBuilder<E> {
+  public DistributedSetProxyBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedSet<E>> buildAsync() {
-    ProxyClient<ConsistentMapService> proxy = protocol().newProxy(
+    ProxyClient<DistributedSetService> proxy = protocol().newProxy(
         name(),
-        ConsistentMapType.instance(),
-        ConsistentMapService.class,
+        primitiveType(),
+        DistributedSetService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new ConsistentMapProxy(proxy, managementService.getPrimitiveRegistry())
+    return new DistributedSetProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(rawMap -> {
+        .thenApply(rawSet -> {
           Serializer serializer = serializer();
-          AsyncConsistentMap<E, Boolean> map = new TranscodingAsyncConsistentMap<>(
-              rawMap,
-              key -> BaseEncoding.base16().encode(serializer.encode(key)),
-              string -> serializer.decode(BaseEncoding.base16().decode(string)),
-              value -> serializer.encode(value),
-              bytes -> serializer.decode(bytes));
+          AsyncDistributedSet<E> set = new TranscodingAsyncDistributedSet<>(
+              rawSet,
+              element -> BaseEncoding.base16().encode(serializer.encode(element)),
+              string -> serializer.decode(BaseEncoding.base16().decode(string)));
 
           if (config.isCacheEnabled()) {
-            map = new CachingAsyncConsistentMap<>(map, config.getCacheSize());
+            set = new CachingAsyncDistributedSet<>(set, config.getCacheSize());
           }
 
           if (config.isReadOnly()) {
-            map = new UnmodifiableAsyncConsistentMap<>(map);
+            set = new UnmodifiableAsyncDistributedSet<>(set);
           }
-          return new DelegatingAsyncDistributedSet<>(map).sync();
+          return set.sync();
         });
   }
 }

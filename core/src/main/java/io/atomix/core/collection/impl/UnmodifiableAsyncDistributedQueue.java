@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Unmodifiable distributed queue.
  */
-public class UnmodifiableAsyncDistributedQueue<E> extends UnmodifiableDistributedCollection<E> implements AsyncDistributedQueue<E> {
+public class UnmodifiableAsyncDistributedQueue<E> extends UnmodifiableAsyncDistributedCollection<E> implements AsyncDistributedQueue<E> {
   private static final String ERROR_MSG = "updates are not allowed";
 
   public UnmodifiableAsyncDistributedQueue(AsyncDistributedCollection<E> delegateCollection) {

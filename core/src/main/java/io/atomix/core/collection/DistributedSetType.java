@@ -15,14 +15,17 @@
  */
 package io.atomix.core.collection;
 
-import io.atomix.core.map.impl.DefaultConsistentMapService;
-import io.atomix.core.collection.impl.DelegatingDistributedSetBuilder;
+import io.atomix.core.collection.impl.DefaultDistributedSetService;
+import io.atomix.core.collection.impl.DistributedSetProxyBuilder;
+import io.atomix.core.collection.impl.DistributedCollectionService;
 import io.atomix.core.collection.impl.DistributedSetResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -50,8 +53,20 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
   }
 
   @Override
+  public Namespace namespace() {
+    return Namespace.builder()
+        .register(PrimitiveType.super.namespace())
+        .register(Namespaces.BASIC)
+        .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
+        .register(CollectionEvent.class)
+        .register(CollectionEvent.Type.class)
+        .register(DistributedCollectionService.Batch.class)
+        .build();
+  }
+
+  @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultConsistentMapService();
+    return new DefaultDistributedSetService();
   }
 
   @Override
@@ -67,7 +82,7 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
 
   @Override
   public DistributedSetBuilder<E> newBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
-    return new DelegatingDistributedSetBuilder<>(name, config, managementService);
+    return new DistributedSetProxyBuilder<>(name, config, managementService);
   }
 
   @Override

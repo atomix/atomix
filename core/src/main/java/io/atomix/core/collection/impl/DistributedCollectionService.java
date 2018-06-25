@@ -171,6 +171,31 @@ public interface DistributedCollectionService {
   boolean addAll(Collection<? extends String> c);
 
   /**
+   * Retains only the elements in this collection that are contained in the
+   * specified collection (optional operation).  In other words, removes from
+   * this collection all of its elements that are not contained in the
+   * specified collection.
+   *
+   * @param c collection containing elements to be retained in this collection
+   * @return <tt>true</tt> if this collection changed as a result of the call
+   * @throws UnsupportedOperationException if the <tt>retainAll</tt> operation
+   *         is not supported by this collection
+   * @throws ClassCastException if the types of one or more elements
+   *         in this collection are incompatible with the specified
+   *         collection
+   *         (<a href="#optional-restrictions">optional</a>)
+   * @throws NullPointerException if this collection contains one or more
+   *         null elements and the specified collection does not permit null
+   *         elements
+   *         (<a href="#optional-restrictions">optional</a>),
+   *         or if the specified collection is null
+   * @see #remove(Object)
+   * @see #contains(Object)
+   */
+  @Command
+  boolean retainAll(Collection<?> c);
+
+  /**
    * Removes all of this collection's elements that are also contained in the
    * specified collection (optional operation).  After this call returns,
    * this collection will contain no elements in common with the specified

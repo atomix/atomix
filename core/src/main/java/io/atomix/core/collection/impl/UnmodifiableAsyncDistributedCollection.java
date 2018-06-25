@@ -24,10 +24,10 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Unmodifiable distributed collection.
  */
-public class UnmodifiableDistributedCollection<E> extends DelegatingAsyncDistributedCollection<E> {
+public class UnmodifiableAsyncDistributedCollection<E> extends DelegatingAsyncDistributedCollection<E> {
   private static final String ERROR_MSG = "updates are not allowed";
 
-  public UnmodifiableDistributedCollection(AsyncDistributedCollection<E> delegateCollection) {
+  public UnmodifiableAsyncDistributedCollection(AsyncDistributedCollection<E> delegateCollection) {
     super(delegateCollection);
   }
 
