@@ -24,6 +24,9 @@ import io.atomix.core.atomic.AtomicIdGeneratorType;
 import io.atomix.core.atomic.AtomicValue;
 import io.atomix.core.atomic.AtomicValueBuilder;
 import io.atomix.core.atomic.AtomicValueType;
+import io.atomix.core.collection.DistributedList;
+import io.atomix.core.collection.DistributedListBuilder;
+import io.atomix.core.collection.DistributedListType;
 import io.atomix.core.collection.DistributedQueue;
 import io.atomix.core.collection.DistributedQueueBuilder;
 import io.atomix.core.collection.DistributedQueueType;
@@ -238,6 +241,29 @@ public interface PrimitivesService {
    */
   default <E> DistributedQueueBuilder<E> queueBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedQueueType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedListBuilder.
+   *
+   * @param name the primitive name
+   * @param <E>  list element type
+   * @return builder for a distributed list
+   */
+  default <E> DistributedListBuilder<E> listBuilder(String name) {
+    return primitiveBuilder(name, DistributedListType.instance());
+  }
+
+  /**
+   * Creates a new DistributedQueueBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <E>      list element type
+   * @return builder for a distributed list
+   */
+  default <E> DistributedListBuilder<E> listBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedListType.instance(), protocol);
   }
 
   /**
@@ -477,7 +503,7 @@ public interface PrimitivesService {
   <K> AtomicCounterMap<K> getAtomicCounterMap(String name);
 
   /**
-   * Creates a new DistributedSetBuilder.
+   * Creates a new DistributedSet.
    *
    * @param name the primitive name
    * @param <E>  set element type
@@ -486,13 +512,22 @@ public interface PrimitivesService {
   <E> DistributedSet<E> getSet(String name);
 
   /**
-   * Creates a new DistributedQueueBuilder.
+   * Creates a new DistributedQueue.
    *
    * @param name the primitive name
    * @param <E>  queue element type
    * @return a multiton instance of a distributed queue
    */
   <E> DistributedQueue<E> getQueue(String name);
+
+  /**
+   * Creates a new DistributedList.
+   *
+   * @param name the primitive name
+   * @param <E>  list element type
+   * @return a multiton instance of a distributed list
+   */
+  <E> DistributedList<E> getList(String name);
 
   /**
    * Creates a new AtomicCounterBuilder.

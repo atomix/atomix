@@ -23,6 +23,7 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.atomic.AtomicCounter;
 import io.atomix.core.atomic.AtomicIdGenerator;
 import io.atomix.core.atomic.AtomicValue;
+import io.atomix.core.collection.DistributedList;
 import io.atomix.core.collection.DistributedQueue;
 import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.concurrent.DistributedLock;
@@ -364,6 +365,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public <E> DistributedQueue<E> getQueue(String name) {
     return primitives.getQueue(name);
+  }
+
+  @Override
+  public <E> DistributedList<E> getList(String name) {
+    return primitives.getList(name);
   }
 
   @Override

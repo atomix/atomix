@@ -45,6 +45,16 @@ public class CollectionUpdateResult<T> {
   /**
    * Returns a no-op result.
    *
+   * @param <T>    the result type
+   * @return the result
+   */
+  public static <T> CollectionUpdateResult<T> noop() {
+    return new CollectionUpdateResult<>(Status.NOOP, null);
+  }
+
+  /**
+   * Returns a no-op result.
+   *
    * @param result the update result
    * @param <T>    the result type
    * @return the result
